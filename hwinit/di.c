@@ -2,6 +2,7 @@
 #include "t210.h"
 #include "util.h"
 #include "i2c.h"
+#include "pmc.h"
 
 #include "di.inl"
 

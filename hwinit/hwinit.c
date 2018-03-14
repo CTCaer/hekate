@@ -61,6 +61,14 @@ void config_pmc_scratch()
 	PMC(APBDEV_PMC_SECURE_SCRATCH21) |= 0x10;
 }
 
+void mc_config_tsec_carveout(u32 bom, u32 size1mb, int lock)
+{
+	MC(0x670) = 0x90000000;
+	MC(0x674) = 1;
+	if (lock)
+		MC(0x678) = 1;
+}
+
 void mc_config_carveout()
 {
 	*(vu32 *)0x8005FFFC = 0xC0EDBBCC;
@@ -69,9 +77,10 @@ void mc_config_carveout()
 	MC(0x648) = 0;
 	MC(0x64C) = 0;
 	MC(0x650) = 1;
-	MC(0x670) = 0;
-	MC(0x674) = 0;
-	MC(0x678) = 1;
+
+	//Official code disables and locks the carveout here.
+	//mc_config_tsec_carveout(0, 0, 1);
+
 	MC(0x9A0) = 0;
 	MC(0x9A4) = 0;
 	MC(0x9A8) = 0;
@@ -196,7 +205,7 @@ void enable_clocks()
 void mc_enable_ahb_redirect()
 {
 	CLOCK(0x3A4) = CLOCK(0x3A4) & 0xFFF7FFFF | 0x80000;
-	MC(MC_IRAM_REG_CTRL) &= 0xFFFFFFFE;
+	//MC(MC_IRAM_REG_CTRL) &= 0xFFFFFFFE;
 	MC(MC_IRAM_BOM) = 0x40000000;
 	MC(MC_IRAM_TOM) = 0x4003F000;
 }
@@ -206,7 +215,7 @@ void mc_disable_ahb_redirect()
 	MC(MC_IRAM_BOM) = 0xFFFFF000;
 	MC(MC_IRAM_TOM) = 0;
 	//Disable IRAM_CFG_WRITE_ACCESS (sticky).
-	MC(MC_IRAM_REG_CTRL) = MC(MC_IRAM_REG_CTRL) & 0xFFFFFFFE | 1;
+	//MC(MC_IRAM_REG_CTRL) = MC(MC_IRAM_REG_CTRL) & 0xFFFFFFFE | 1;
 	CLOCK(0x3A4) &= 0xFFF7FFFF;
 }
 
@@ -229,8 +238,8 @@ clock_t clock_unk2 = { 0x358, 0x360, 0, 0x1E, 0, 0 };
 void nx_hwinit()
 {
 	enable_clocks();
+	clock_enable_se();
 	clock_enable_fuse(1);
-
 	fuse_disable_program();
 
 	mc_enable();

@@ -2,6 +2,8 @@
 #define _PMC_H_
 
 /*! PMC registers. */
+#define APBDEV_PMC_PWRGATE_TOGGLE 0x30
+#define APBDEV_PMC_PWRGATE_STATUS 0x38
 #define APBDEV_PMC_NO_IOPOWER 0x44
 #define APBDEV_PMC_SCRATCH20 0xA0
 #define APBDEV_PMC_DDR_PWR 0xE8
