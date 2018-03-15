@@ -19,7 +19,7 @@ void uart_init(u32 idx, u32 baud)
 	//Setup UART in fifo mode.
 	uart->UART_IER_DLAB = 0;
 	uart->UART_IIR_FCR = 7; //Enable and clear TX and RX FIFOs.
-	volatile u32 tmp = uart->UART_LSR;
+	(void)uart->UART_LSR;
 	sleep(3 * ((baud + 999999) / baud));
 	uart->UART_LCR = 3; //Set word length 8.
 	uart->UART_MCR = 0;

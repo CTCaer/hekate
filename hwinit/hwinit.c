@@ -63,8 +63,8 @@ void config_pmc_scratch()
 
 void mc_config_tsec_carveout(u32 bom, u32 size1mb, int lock)
 {
-	MC(0x670) = 0x90000000;
-	MC(0x674) = 1;
+	MC(0x670) = bom;
+	MC(0x674) = size1mb;
 	if (lock)
 		MC(0x678) = 1;
 }
