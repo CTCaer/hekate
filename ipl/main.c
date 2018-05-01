@@ -382,8 +382,8 @@ void *sd_file_read(char *path)
 
 int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
-	static u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
-	static u32 MULTIPART_SPLIT_SIZE = (1u << 31);
+	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
+	static const u32 MULTIPART_SPLIT_SIZE = (1u << 31);
 
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	char* outFilename = sd_path;
@@ -391,7 +391,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u32 numSplitParts = 0;
 	if ((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT/NX_EMMC_BLOCKSIZE))
 	{
-		const u32 MULTIPART_SPLIT_SECTORS = MULTIPART_SPLIT_SIZE/NX_EMMC_BLOCKSIZE;
+		static const u32 MULTIPART_SPLIT_SECTORS = MULTIPART_SPLIT_SIZE/NX_EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors+MULTIPART_SPLIT_SECTORS-1)/MULTIPART_SPLIT_SECTORS;
 
 		outFilename = alloca(sdPathLen+4);
@@ -412,7 +412,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 		return 0;
 
-	static u32 NUM_SECTORS_PER_ITER = 512;
+	static const u32 NUM_SECTORS_PER_ITER = 512;
 	u8 *buf = (u8 *)malloc(NX_EMMC_BLOCKSIZE * NUM_SECTORS_PER_ITER);
 
 	u32 lba_curr = part->lba_start;
@@ -511,7 +511,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	int i = 0;
 	if (dumpType & DUMP_BOOT)
 	{	
-		static u32 BOOT_PART_SIZE = 0x400000;
+		static const u32 BOOT_PART_SIZE = 0x400000;
 
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
@@ -557,7 +557,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		
 		if (dumpType & DUMP_RAW)
 		{
-			static u64 RAW_AREA_NUM_SECTORS = 0x3A3E000;
+			static const u32 RAW_AREA_NUM_SECTORS = 0x3A3E000;
 
 			emmc_part_t rawPart;
 			memset(&rawPart, 0, sizeof(rawPart));
