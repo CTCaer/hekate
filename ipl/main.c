@@ -418,6 +418,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u32 lba_curr = part->lba_start;
 	u32 bytesWritten = 0;
 	u32 currPartIdx = 0;
+	u32 prevPct=200;
 	while(totalSectors > 0)
 	{
 		if (numSplitParts != 0 && bytesWritten >= MULTIPART_SPLIT_SIZE)
@@ -442,17 +443,24 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			bytesWritten = 0;
 		}
 
+		int retryCount=0;
 		u32 num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
-
-		if(!sdmmc_storage_read(storage, lba_curr, num, buf))
+		while(!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
-			gfx_printf(&gfx_con, "%kError reading %d blocks @ LBA %08X%k\n",
-				0xFF0000FF, num, lba_curr, 0xFFFFFFFF);
-			goto out;
+			gfx_printf(&gfx_con, "%kError reading %d blocks @ LBA %08X (try %d) %k\n",
+				0xFF0000FF, num, lba_curr, ++retryCount, 0xFFFFFFFF);
+
+			sleep(500000);
+			if (retryCount >= 3)	
+				goto out;
 		}
 		f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
-		u32 pct = ((lba_curr - part->lba_start) * 100) / (part->lba_end - part->lba_start);
-		tui_pbar(&gfx_con, 0, gfx_con.y, pct);
+		u32 pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
+		if (pct != prevPct)
+		{
+			tui_pbar(&gfx_con, 0, gfx_con.y, pct);
+			prevPct = pct;
+		}	
 
 		lba_curr += num;
 		totalSectors -= num;
@@ -661,7 +669,7 @@ menu_t menu_cinfo = {
 
 ment_t ment_tools[] = {
 	MDEF_BACK(),
-	MDEF_HANDLER("Dump eMMC", dump_emmc_system),
+	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
 	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
 	MDEF_END()
