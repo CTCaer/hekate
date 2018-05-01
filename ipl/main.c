@@ -389,7 +389,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	char* outFilename = sd_path;
 	u32 sdPathLen = strlen(sd_path);
 	u32 numSplitParts = 0;
-	if (totalSectors > (FAT32_FILESIZE_LIMIT/NX_EMMC_BLOCKSIZE))
+	if ((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT/NX_EMMC_BLOCKSIZE))
 	{
 		const u32 MULTIPART_SPLIT_SECTORS = MULTIPART_SPLIT_SIZE/NX_EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors+MULTIPART_SPLIT_SECTORS-1)/MULTIPART_SPLIT_SECTORS;
@@ -465,6 +465,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		lba_curr += num;
 		totalSectors -= num;
 		bytesWritten += num * NX_EMMC_BLOCKSIZE;
+
+		//force a flush after a lot of data if not splitting
+		if (numSplitParts == 0 && bytesWritten >= MULTIPART_SPLIT_SIZE) 
+		{
+			f_sync(&fp);
+			bytesWritten = 0;
+		}
 	}
 	tui_pbar(&gfx_con, 0, gfx_con.y, 100);
 
@@ -478,7 +485,8 @@ typedef enum
 {
 	DUMP_BOOT = 1,
 	DUMP_SYSTEM = 2,
-	DUMP_USER = 4
+	DUMP_USER = 4,
+	DUMP_RAW = 8
 } dumpType_t;
 
 static void dump_emmc_selected(dumpType_t dumpType)
@@ -500,6 +508,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		goto out;
 	}
 
+	int i = 0;
 	if (dumpType & DUMP_BOOT)
 	{	
 		static u32 BOOT_PART_SIZE = 0x400000;
@@ -508,7 +517,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
 		bootPart.lba_end = (BOOT_PART_SIZE/NX_EMMC_BLOCKSIZE)-1;
-		for (u32 i=0; i<2; i++)
+		for (i=0; i<2; i++)
 		{
 			memcpy(bootPart.name, "BOOT", 4);
 			bootPart.name[4] = (u8)('0' + i);
@@ -521,28 +530,47 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			dump_emmc_part(bootPart.name, &storage, &bootPart);
 			gfx_putc(&gfx_con, '\n');
 		}		
-		
 	}
 
-	if ((dumpType & DUMP_SYSTEM) || (dumpType & DUMP_USER))
+	if ((dumpType & DUMP_SYSTEM) || (dumpType & DUMP_USER) || (dumpType & DUMP_RAW))
 	{
 		sdmmc_storage_set_mmc_partition(&storage, 0);
 
-		LIST_INIT(gpt);
-		nx_emmc_gpt_parse(&gpt, &storage);
-		int i = 0;
-		LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
+		if ((dumpType & DUMP_SYSTEM) || (dumpType & DUMP_USER))
 		{
-			if ((dumpType & DUMP_USER) == 0 && !strcmp(part->name, "USER"))
-				continue;
-			if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
-				continue;
+			LIST_INIT(gpt);
+			nx_emmc_gpt_parse(&gpt, &storage);
+			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
+			{
+				if ((dumpType & DUMP_USER) == 0 && !strcmp(part->name, "USER"))
+					continue;
+				if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
+					continue;
 
-			gfx_printf(&gfx_con, "%02d: %s (%08X-%08X)\n", i++,
-				part->name, part->lba_start, part->lba_end);
+				gfx_printf(&gfx_con, "%02d: %s (%08X-%08X)\n", i++,
+					part->name, part->lba_start, part->lba_end);
 
-			dump_emmc_part(part->name, &storage, part);
-			gfx_putc(&gfx_con, '\n');
+				dump_emmc_part(part->name, &storage, part);
+				gfx_putc(&gfx_con, '\n');
+			}
+		}
+		
+		if (dumpType & DUMP_RAW)
+		{
+			static u64 RAW_AREA_NUM_SECTORS = 0x3A3E000;
+
+			emmc_part_t rawPart;
+			memset(&rawPart, 0, sizeof(rawPart));
+			rawPart.lba_start = 0;
+			rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
+			strcpy(rawPart.name, "RawNand.bin");
+			{
+				gfx_printf(&gfx_con, "%02d: %s (%08X-%08X)\n", i++,
+					rawPart.name, rawPart.lba_start, rawPart.lba_end);
+
+				dump_emmc_part(rawPart.name, &storage, &rawPart);
+				gfx_putc(&gfx_con, '\n');
+			}		
 		}
 	}
 
@@ -557,6 +585,7 @@ out:;
 void dump_emmc_system() { dump_emmc_selected(DUMP_SYSTEM); }
 void dump_emmc_user() { dump_emmc_selected(DUMP_USER); }
 void dump_emmc_boot() { dump_emmc_selected(DUMP_BOOT); }
+void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
 
 void launch_firmware()
 {
@@ -669,6 +698,7 @@ menu_t menu_cinfo = {
 
 ment_t ment_tools[] = {
 	MDEF_BACK(),
+	MDEF_HANDLER("Dump eMMC RawNand", dump_emmc_rawnand),
 	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
 	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
