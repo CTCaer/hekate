@@ -44,7 +44,7 @@ OBJS = $(addprefix $(BUILD)/, \
 OBJS += $(addprefix $(BUILD)/, diskio.o ff.o ffunicode.o)
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
-CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11# -Wall
+CFLAGS = $(ARCH) -Os -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11# -Wall
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
 
 .PHONY: all clean
