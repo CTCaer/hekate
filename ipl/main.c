@@ -460,6 +460,315 @@ out:;
 	btn_wait();
 }
 
+void dump_boot0_emmc()
+{
+	emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 1);
+
+	//LIST_INIT(gpt);
+	//nx_emmc_gpt_parse(&gpt, &storage);
+
+	part->name[0] = 0x62;
+	part->name[1] = 0x6f;
+	part->name[2] = 0x6f;
+	part->name[3] = 0x74;
+	part->name[4] = 0x5f;
+	part->name[6] = 0x0;
+
+	part->name[5] = 0x30;
+	part->lba_start = 0x0000;
+	part->lba_end   = 0x1FFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	sdmmc_storage_end(&storage);
+
+out:;
+	sleep(100000);
+	btn_wait();
+}
+
+void dump_boot1_emmc()
+{
+	emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 2);
+
+	//LIST_INIT(gpt);
+	//nx_emmc_gpt_parse(&gpt, &storage);
+
+	part->name[0] = 0x62;
+	part->name[1] = 0x6f;
+	part->name[2] = 0x6f;
+	part->name[3] = 0x74;
+	part->name[4] = 0x5f;
+	part->name[6] = 0x0;
+
+	part->name[5] = 0x31;
+	part->lba_start = 0x0000;
+	part->lba_end   = 0x1FFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	sdmmc_storage_end(&storage);
+
+out:;
+	sleep(100000);
+	btn_wait();
+}
+
+void dump_raw_emmc()
+{
+	emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 0);
+
+	//LIST_INIT(gpt);
+	//nx_emmc_gpt_parse(&gpt, &storage);
+
+	part->name[0] = 0x70;
+	part->name[1] = 0x61;
+	part->name[2] = 0x72;
+	part->name[3] = 0x74;
+	part->name[4] = 0x5f;
+	part->name[6] = 0x0;
+
+	part->name[5] = 0x30;
+	part->lba_start = 0x000000;
+	part->lba_end   = 0x7FFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	part->name[5] = 0x31;
+	part->lba_start = 0x800000;
+	part->lba_end   = 0xFFFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	sdmmc_storage_end(&storage);
+
+out:;
+	sleep(100000);
+	btn_wait();
+}
+
+void dump_raw_emmc1()
+{
+	emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 0);
+
+	//LIST_INIT(gpt);
+	//nx_emmc_gpt_parse(&gpt, &storage);
+
+	part->name[0] = 0x70;
+	part->name[1] = 0x61;
+	part->name[2] = 0x72;
+	part->name[3] = 0x74;
+	part->name[4] = 0x5f;
+	part->name[6] = 0x0;
+
+	part->name[5] = 0x32;
+	part->lba_start = 0x1000000;
+	part->lba_end   = 0x17FFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	part->name[5] = 0x33;
+	part->lba_start = 0x1800000;
+	part->lba_end   = 0x1FFFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	sdmmc_storage_end(&storage);
+
+out:;
+	sleep(100000);
+	btn_wait();
+}
+
+void dump_raw_emmc2()
+{
+	emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 0);
+
+	//LIST_INIT(gpt);
+	//nx_emmc_gpt_parse(&gpt, &storage);
+
+	part->name[0] = 0x70;
+	part->name[1] = 0x61;
+	part->name[2] = 0x72;
+	part->name[3] = 0x74;
+	part->name[4] = 0x5f;
+	part->name[6] = 0x0;
+
+	part->name[5] = 0x34;
+	part->lba_start = 0x2000000;
+	part->lba_end   = 0x27FFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	part->name[5] = 0x35;
+	part->lba_start = 0x2800000;
+	part->lba_end   = 0x2FFFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	sdmmc_storage_end(&storage);
+
+out:;
+	sleep(100000);
+	btn_wait();
+}
+
+void dump_raw_emmc3()
+{
+	emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 0);
+
+	//LIST_INIT(gpt);
+	//nx_emmc_gpt_parse(&gpt, &storage);
+
+	part->name[0] = 0x70;
+	part->name[1] = 0x61;
+	part->name[2] = 0x72;
+	part->name[3] = 0x74;
+	part->name[4] = 0x5f;
+	part->name[6] = 0x0;
+
+	part->name[5] = 0x36;
+	part->lba_start = 0x3000000;
+	part->lba_end   = 0x37FFFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	part->name[5] = 0x37;
+	part->lba_start = 0x3800000;
+	part->lba_end   = 0x3A3DFFF;
+	gfx_printf(&gfx_con, "%s (%08X-%08X)\n",
+	part->name, part->lba_start, part->lba_end);
+	dump_emmc_part(part->name, &storage, part);
+	gfx_putc(&gfx_con, '\n');
+
+	sdmmc_storage_end(&storage);
+
+out:;
+	sleep(100000);
+	btn_wait();
+}
+
+
 void launch_firmware()
 {
 	ini_sec_t *cfg_sec = NULL;
@@ -569,9 +878,25 @@ menu_t menu_cinfo = {
 	"Console info", 0, 0
 };
 
+ment_t ment_rawemmc[] = {
+	MDEF_BACK(),
+	MDEF_HANDLER("Boot0", dump_boot0_emmc),
+	MDEF_HANDLER("Boot1", dump_boot1_emmc),
+	MDEF_HANDLER("1st 8GB", dump_raw_emmc),
+	MDEF_HANDLER("2nd 8GB", dump_raw_emmc1),
+	MDEF_HANDLER("3rd 8GB", dump_raw_emmc2),
+	MDEF_HANDLER("4th 8GB", dump_raw_emmc3),
+	MDEF_END()
+};
+menu_t menu_rawemmc = {
+	ment_rawemmc,
+	"Dump raw eMMC", 0, 0
+};
+
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_HANDLER("Dump eMMC", dump_emmc),
+	MDEF_MENU("Dump raw eMMC", &menu_rawemmc),
 	MDEF_END()
 };
 menu_t menu_tools = {
