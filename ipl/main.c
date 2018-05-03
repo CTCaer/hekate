@@ -528,7 +528,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 					return 0;
 				}
 
-				gfx_puts(&gfx_con, "\n1. Press any key and Power Switch from main menu.\n\
+				gfx_puts(&gfx_con, "\n1. Press any key and Power off Switch from the main menu.\n\
 					2. Move the files from SD card to free space.\n   \
 					Don\'t move the partial.idx file!\n\
 					3. Unplug and re-plug USB while pressing Vol+.\n\
