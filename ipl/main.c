@@ -550,14 +550,22 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		u32 num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 		while(!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
-			gfx_printf(&gfx_con, "%kError reading %d blocks @ LBA %08X (try %d) %k\n",
+			gfx_printf(&gfx_con, "%kError reading %d blocks @ LBA %08X from eMMC (try %d)%k\n",
 				0xFF0000FF, num, lba_curr, ++retryCount, 0xFFFFFFFF);
 
 			sleep(500000);
-			if (retryCount >= 3)	
+			if (retryCount >= 6)	
 				goto out;
 		}
-		f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
+		retryCount=0;
+		while (f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL)){
+			gfx_printf(&gfx_con, "%kError writing %d blocks from eMMC LBA %08X to SD Card (try %d)%k\n",
+				0xFF0000FF, num, lba_curr, ++retryCount, 0xFFFFFFFF);
+
+			sleep(500000);
+			if (retryCount >= 6)	
+				goto out;
+		}
 		u32 pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
@@ -638,8 +646,8 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 
-			gfx_printf(&gfx_con, "%02d: %s (%08X-%08X)\n", i,
-				bootPart.name, bootPart.lba_start, bootPart.lba_end);
+			gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i,
+				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFFFFFFF);
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
 			dump_emmc_part(bootPart.name, &storage, &bootPart);
@@ -662,8 +670,8 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
 					continue;
 
-				gfx_printf(&gfx_con, "%02d: %s (%08X-%08X)\n", i++,
-					part->name, part->lba_start, part->lba_end);
+				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
+					part->name, part->lba_start, part->lba_end, 0xFFFFFFFF);
 
 				dump_emmc_part(part->name, &storage, part);
 				gfx_putc(&gfx_con, '\n');
@@ -678,10 +686,10 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			memset(&rawPart, 0, sizeof(rawPart));
 			rawPart.lba_start = 0;
 			rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
-			strcpy(rawPart.name, "RawNand.bin");
+			strcpy(rawPart.name, "rawnand.bin");
 			{
-				gfx_printf(&gfx_con, "%02d: %s (%08X-%08X)\n", i++,
-					rawPart.name, rawPart.lba_start, rawPart.lba_end);
+				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
+					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFFFFFFF);
 
 				dump_emmc_part(rawPart.name, &storage, &rawPart);
 				gfx_putc(&gfx_con, '\n');
@@ -690,7 +698,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	}
 
 	sdmmc_storage_end(&storage);
-	gfx_puts(&gfx_con, "Done.\n");
+	gfx_puts(&gfx_con, "Done. Press any key.\n");
 
 out:;
 	sleep(100000);
@@ -813,7 +821,7 @@ menu_t menu_cinfo = {
 
 ment_t ment_tools[] = {
 	MDEF_BACK(),
-	MDEF_HANDLER("Dump eMMC RawNand", dump_emmc_rawnand),
+	MDEF_HANDLER("Dump RAW eMMC", dump_emmc_rawnand),
 	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
 	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
