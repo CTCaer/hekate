@@ -388,12 +388,63 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
 	static const u32 MULTIPART_SPLIT_SIZE = (1u << 31);
+	static const u32 SECTORS_TO_MB_COEFF  = 0x800;
 
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
+	u32 currPartIdx = 0;
+	u32 numSplitParts = 0;
+	u32 maxSplitParts = 0;
+	int isSmallSdCard = 0;
+	int partialDumpInProgress = 0;
 	char* outFilename = sd_path;
 	u32 sdPathLen = strlen(sd_path);
-	u32 numSplitParts = 0;
-	if ((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT/NX_EMMC_BLOCKSIZE))
+
+	FIL partialIdxFp;
+	char partialIdxFilename[12];
+	memcpy(partialIdxFilename, "partial.idx", 11);
+	partialIdxFilename[11] = 0;
+
+	gfx_printf(&gfx_con, "SD Card free space: %dMB, Total dump size %dMB\n",
+		sd_fs.free_clst * sd_fs.csize / SECTORS_TO_MB_COEFF,
+		totalSectors / SECTORS_TO_MB_COEFF);
+
+	// Check if the USER partition or the RAW eMMC fits the sd card free space
+	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
+	{
+		isSmallSdCard = 1;
+
+		gfx_printf(&gfx_con, "%kSD card free space is smaller than dump total size.%k\n", 0xFF00BAFF, 0xFFFFFFFF);
+
+		maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (MULTIPART_SPLIT_SIZE / 512);
+
+		if (!maxSplitParts)
+		{
+			gfx_printf(&gfx_con, "%kNot enough free space for partial dumping.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+
+			return 0;
+		}
+	}
+	// Check if we continueing a previous raw eMMC dump in progress.
+	if (isSmallSdCard)
+	{
+		if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK)
+		{
+			gfx_printf(&gfx_con, "%kFound partial dump in progress. Continuing...%k\n", 0xFF14FDAE, 0xFFFFFFFF);
+
+			partialDumpInProgress = 1;
+
+			f_read(&partialIdxFp, &currPartIdx, 4, NULL);
+			f_close(&partialIdxFp);
+
+			// Increase maxSplitParts to accommodate previously dumped parts 
+			maxSplitParts += currPartIdx;
+		}
+		else
+			gfx_printf(&gfx_con, "%kContinuing with partial dumping...%k\n", 0xFF00BAFF, 0xFFFFFFFF);
+	}
+
+	// Check if filesystem is FAT32 or the free space is smaller and dump in parts
+	if (((sd_fs.fs_type != FS_EXFAT) || isSmallSdCard) && totalSectors > (FAT32_FILESIZE_LIMIT/NX_EMMC_BLOCKSIZE))
 	{
 		static const u32 MULTIPART_SPLIT_SECTORS = MULTIPART_SPLIT_SIZE/NX_EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors+MULTIPART_SPLIT_SECTORS-1)/MULTIPART_SPLIT_SECTORS;
@@ -402,14 +453,28 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		memcpy(outFilename, sd_path, sdPathLen);
 		outFilename[sdPathLen++] = '.';
 
-		outFilename[sdPathLen] = '0';
-		if (numSplitParts >= 10)
+		if (!partialDumpInProgress)
 		{
-			outFilename[sdPathLen+1] = '0';
-			outFilename[sdPathLen+2] = 0;
+			outFilename[sdPathLen] = '0';
+			if (numSplitParts >= 10)
+			{
+				outFilename[sdPathLen+1] = '0';
+				outFilename[sdPathLen+2] = 0;
+			}
+			else
+				outFilename[sdPathLen+1] = 0;
 		}
+		// Continue from where we left, if partial dump in proggress.
 		else
-			outFilename[sdPathLen+1] = 0;
+		{
+			if (numSplitParts >= 10 && currPartIdx < 10)
+			{
+				outFilename[sdPathLen] = '0';
+				itoa(currPartIdx, &outFilename[sdPathLen+1], 10);
+			}
+			else
+				itoa(currPartIdx, &outFilename[sdPathLen], 10);
+		}
 	}
 
 	FIL fp;
@@ -421,8 +486,15 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 	u32 lba_curr = part->lba_start;
 	u32 bytesWritten = 0;
-	u32 currPartIdx = 0;
 	u32 prevPct=200;
+
+	// Continue from where we left, if partial dump in proggress.
+	if (partialDumpInProgress)
+	{
+		lba_curr += currPartIdx * (MULTIPART_SPLIT_SIZE / NX_EMMC_BLOCKSIZE);
+		totalSectors -= currPartIdx * (MULTIPART_SPLIT_SIZE / NX_EMMC_BLOCKSIZE);
+	}
+
 	while(totalSectors > 0)
 	{
 		if (numSplitParts != 0 && bytesWritten >= MULTIPART_SPLIT_SIZE)
@@ -438,6 +510,33 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			}
 			else
 				itoa(currPartIdx, &outFilename[sdPathLen], 10);
+
+			// More parts to dump that do not currently fit the sd card free space
+			if (isSmallSdCard && currPartIdx >= maxSplitParts)
+			{
+				// Create partial dump index file
+				if (f_open(&partialIdxFp, partialIdxFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+				{
+					f_write(&partialIdxFp, &currPartIdx, 4, NULL);
+					f_close(&partialIdxFp);
+				}
+				else
+				{
+					gfx_printf(&gfx_con, "%k\nError creating partial.idx file.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+
+					free(buf);
+					return 0;
+				}
+
+				gfx_puts(&gfx_con, "\n1. Press any key and Power Switch from main menu.\n\
+					2. Move the files from SD card to free space.\n   \
+					Don\'t move the partial.idx file!\n\
+					3. Unplug and re-plug USB while pressing Vol+.\n\
+					4. Run hekate - ipl again and press Dump RAW eMMC to continue");
+
+				free(buf);
+				return 1;
+			}
 
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
@@ -482,6 +581,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 out:;
 	free(buf);
 	f_close(&fp);
+	// Partial dump done. Remove partial dump index file.
+	if(partialDumpInProgress)
+	{
+		f_unlink(partialIdxFilename);
+		gfx_printf(&gfx_con, "\n\nYou can now join the files and get the complete raw eMMC dump.\n");
+	}
+
 	return 1;
 }
 
@@ -502,6 +608,11 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	{
 		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
 		goto out;
+	}
+	else
+	{
+		// Get SD Card free space for partial dumping
+		f_getfree("", &sd_fs.free_clst, NULL);
 	}
 
 	sdmmc_storage_t storage;
