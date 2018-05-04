@@ -209,10 +209,12 @@ static int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 			se_aes_key_clear(14);
 
 			se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-
-			// keyslot 11
 			se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10);
 			se_aes_key_set(12, keyblob + 0x20, 0x10);
+
+			//TODO: for some reason SE likes to hang if we don't execute an operation here.
+			memcpy(tmp, mkey_keyseed_retail, 0x10);
+			se_aes_crypt_block_ecb(12, 0, tmp, tmp);
 
 			// keyslot 14
 			memcpy(tmp, new_masterkey_seed, 0x10);
@@ -235,8 +237,6 @@ static int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 		}
 		break;
 	}
-
-
 	free(tmp);
 }
 
