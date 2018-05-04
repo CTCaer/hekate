@@ -171,6 +171,10 @@ void config_se_brom()
 	SE(SE_INT_STATUS_REG_OFFSET) = 0x1F;
 	//Lock SSK (although it's not set and unused anyways).
 	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
+	// Clear the boot reason to avoid problems later
+	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
+	PMC(APBDEV_PMC_RST_STATUS_0) = 0x0;
+	PMC(APBDEV_PMC_SCRATCH49_0) = 0x0;
 }
 
 void config_hw()
