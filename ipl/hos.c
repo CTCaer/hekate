@@ -427,10 +427,6 @@ int hos_launch(ini_sec_t *cfg)
 	if (!_read_emmc_pkg1(&ctxt))
 		return 0;
 
-	//Read package1 and the correct keyblob.
-	if (!_read_emmc_pkg1(&ctxt))
-		return 0;
-
 	//XXX: remove this once we support 3+.
 	//if (ctxt.pkg1_id->kb > 0)
 	//	return 0;
