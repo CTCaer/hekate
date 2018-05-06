@@ -759,6 +759,9 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 	case 1:
 		storage->sec_cnt = (1 + unstuff_bits(csd, 48, 22)) << 10;
 		break;
+	case 2:
+		storage->sec_cnt = (1 + unstuff_bits(csd, 48, 22)) << 10;
+		break;
 	default:
 		DPRINTF("[sd] Unknown CSD structure %d\n", csd_struct);
 		//TODO: I've encountered this with one of my SD cards, but
