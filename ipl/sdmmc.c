@@ -492,7 +492,7 @@ static int _sd_storage_send_if_cond(sdmmc_storage_t *storage)
 	if (!sdmmc_get_rsp(storage->sdmmc, &resp, 4, SDMMC_RSP_TYPE_5))
 		return 0;
 
-	return (resp & 0xFFF) == 0x1AA ? 1 : 0;
+	return (resp & 0xFF) == 0xAA ? 1 : 0;
 }
 
 static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int is_version_1, int supports_low_voltage)
@@ -518,8 +518,9 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 		{
 			if (cond & 0x40000000)
 				storage->has_sector_access = 1;
-
-			if (cond & 0x1000000 && supports_low_voltage)
+			// TODO: Some SD Card incorrectly report low voltage support
+			// Disable it for now
+			if (cond & 0x1000000 && supports_low_voltage && 0)
 			{
 				//The low voltage regulator configuration is valid for SDMMC1 only.
 				if (storage->sdmmc->id == SDMMC_1 && 
@@ -537,7 +538,7 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 		}
 		if (get_tmr() > timeout)
 			break;
-		sleep(1000);
+		sleep(10000); // Needs to be at least 10ms for some SD Cards
 	}
 
 	return 0;
@@ -815,7 +816,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 		}
 		DPRINTF("[sd] enabled highspeed (low voltage)\n");
 	}
-	else if (type != 6 && storage->scr[0] & 0xF != 0)
+	else if (type != 6 && (storage->scr[0] & 0xF) != 0)
 	{
 		if (!_sd_storage_enable_highspeed_high_volt(storage, buf))
 		{
