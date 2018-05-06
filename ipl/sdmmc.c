@@ -520,7 +520,7 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 				storage->has_sector_access = 1;
 			// TODO: Some SD Card incorrectly report low voltage support
 			// Disable it for now
-			if (cond & 0x1000000 && supports_low_voltage && 0)
+			if (cond & 0x1000000 && supports_low_voltage)
 			{
 				//The low voltage regulator configuration is valid for SDMMC1 only.
 				if (storage->sdmmc->id == SDMMC_1 && 
@@ -794,7 +794,8 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 	memcpy(storage->scr, buf, 8);
 	DPRINTF("[sd] got scr\n");
 
-	if (bus_width == SDMMC_BUS_WIDTH_4 && storage->scr[1] & 4)
+	// Check if card supports a wider bus and if it's not SD Version 1.0
+	if (bus_width == SDMMC_BUS_WIDTH_4 && storage->scr[1] & 4 && (storage->scr[0] & 0xF))
 	{
 		if (!_sd_storage_execute_app_cmd_type1(storage, &tmp, SD_APP_SET_BUS_WIDTH, SD_BUS_WIDTH_4, 0, R1_STATE_TRAN))
 		{
