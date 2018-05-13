@@ -67,7 +67,7 @@ static int _se_wait()
 	return 1;
 }
 
-static int _se_execute(u32 op, void *dst, u32 dst_size, void *src, u32 src_size)
+static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
 	se_ll_t *ll_dst = NULL, *ll_src = NULL;
 
@@ -99,7 +99,7 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, void *src, u32 src_size)
 	return res;
 }
 
-static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, void *src, u32 src_size)
+static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
 	u8 *block = (u8 *)malloc(0x10);
 	memset(block, 0, 0x10);
@@ -156,7 +156,7 @@ void se_aes_key_clear(u32 ks)
 	}
 }
 
-int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, void *input)
+int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input)
 {
 	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_DEC_ALG(ALG_AES_DEC) | SE_CONFIG_DST(DST_KEYTAB);
 	SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(ks_src) | SE_CRYPTO_CORE_SEL(CORE_DECRYPT);
@@ -164,7 +164,7 @@ int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, void *input)
 	return _se_execute(OP_START, NULL, 0, input, 0x10);
 }
 
-int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, void *src)
+int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
 {
 	if (enc)
 	{
@@ -180,7 +180,7 @@ int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, void *src)
 	return _se_execute(OP_START, dst, 0x10, src, 0x10);
 }
 
-int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, void *src, u32 src_size, void *ctr)
+int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_size, void *ctr)
 {
 	SE(SE_SPARE_0_REG_OFFSET) = 1;
 	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_ALG(ALG_AES_ENC) | SE_CONFIG_DST(DST_MEMORY);

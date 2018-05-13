@@ -32,11 +32,20 @@
 #include "pkg2.h"
 #include "ff.h"
 
-/*#include "gfx.h"
+#include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
-#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)*/
-#define DPRINTF(...)
+#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
+//#define DPRINTF(...)
+
+enum KB_FIRMWARE_VERSION {
+	KB_FIRMWARE_VERSION_100_200 = 0,
+	KB_FIRMWARE_VERSION_300 = 1,
+	KB_FIRMWARE_VERSION_301 = 2,
+	KB_FIRMWARE_VERSION_400 = 3,
+	KB_FIRMWARE_VERSION_500 = 4,
+	KB_FIRMWARE_VERSION_MAX
+};
 
 #define NUM_KEYBLOB_KEYS 5
 static const u8 keyblob_keyseeds[NUM_KEYBLOB_KEYS][0x10] = {
@@ -50,19 +59,19 @@ static const u8 keyblob_keyseeds[NUM_KEYBLOB_KEYS][0x10] = {
 static const u8 cmac_keyseed[0x10] =
 	{ 0x59, 0xC7, 0xFB, 0x6F, 0xBE, 0x9B, 0xBE, 0x87, 0x65, 0x6B, 0x15, 0xC0, 0x53, 0x73, 0x36, 0xA5 };
 
-static const u8 mkey_keyseed_retail[0x10] =
+static const u8 master_keyseed_retail[0x10] =
 	{ 0xD8, 0xA2, 0x41, 0x0A, 0xC6, 0xC5, 0x90, 0x01, 0xC6, 0x1D, 0x6A, 0x26, 0x7C, 0x51, 0x3F, 0x3C };
 
-static const u8 ckey_keyseed[0x10] =
+static const u8 console_keyseed[0x10] =
 	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
 
 static const u8 key8_keyseed[] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
-static const u8 new_masterkey_seed[0x10] = 
+static const u8 master_keyseed_4xx[0x10] = 
 	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
 
-static const u8 new_per_console_key[0x10] = 
+static const u8 console_keyseed_4xx[0x10] = 
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
 
@@ -94,18 +103,27 @@ static void _se_lock()
 }
 
 // <-- key derivation algorithm
-static int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
+int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 {
-	u8 *tmp = (u8 *)malloc(0x10);
+	u8 tmp[0x10];
 
-	se_key_acc_ctrl(12, 0x15);
-	se_key_acc_ctrl(13, 0x15);
+	se_key_acc_ctrl(0x0D, 0x15);
+	se_key_acc_ctrl(0x0E, 0x15);
 
 	//Get TSEC key.
 	if (tsec_query(tmp, 1, tsec_fw) < 0)
 		return 0;
 
-	se_aes_key_set(13, tmp, 0x10);
+	se_aes_key_set(0x0D, tmp, 0x10);
+
+	//Derive keyblob keys from TSEC+SBK.
+	se_aes_crypt_block_ecb(0x0D, 0x00, tmp, keyblob_keyseeds[0]);
+	se_aes_unwrap_key(0x0F, 0x0E, tmp);
+	se_aes_crypt_block_ecb(0xD, 0x00, tmp, keyblob_keyseeds[kb]);
+	se_aes_unwrap_key(0x0D, 0x0E, tmp);
+
+	// Clear SBK
+	se_aes_key_clear(0x0E);
 
 	//TODO: verify keyblob CMAC.
 	//se_aes_unwrap_key(11, 13, cmac_keyseed);
@@ -113,131 +131,43 @@ static int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	//if (!memcmp(keyblob, tmp, 0x10))
 	//	return 0;
 
-	switch(kb) {
-		// 1.0.0~2.0.0 FW
-		case 0: {
+	se_aes_crypt_block_ecb(0x0D, 0, tmp, cmac_keyseed);
+	se_aes_unwrap_key(0x0B, 0x0D, cmac_keyseed);
 
-			//Derive keyblob key from TSEC+SBK.
-			memcpy(tmp, keyblob_keyseeds[kb], 0x10);
-			se_aes_crypt_block_ecb(13, 0, tmp, tmp);
-			se_aes_unwrap_key(13, 14, tmp);
-			se_aes_key_clear(14);
+	//Decrypt keyblob and set keyslots.
+	se_aes_crypt_ctr(0x0D, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
+	se_aes_key_set(0x0B, keyblob + 0x20 + 0x80, 0x10); // package1 key
+	se_aes_key_set(0x0C, keyblob + 0x20, 0x10);
+	se_aes_key_set(0x0D, keyblob + 0x20, 0x10);
 
-			se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-			se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10);
-			se_aes_key_set(12, keyblob + 0x20, 0x10);
+	se_aes_crypt_block_ecb(0x0C, 0, tmp, master_keyseed_retail);
 
-			//TODO: for some reason SE likes to hang if we don't execute an operation here.
-			memcpy(tmp, mkey_keyseed_retail, 0x10);
-			se_aes_crypt_block_ecb(12, 0, tmp, tmp);
-
-			//Generate retail master key.
-			memcpy(tmp, mkey_keyseed_retail, 0x10);
-			se_aes_unwrap_key(12, 12, tmp);
-
-			//Generate console specific key.
-			memcpy(tmp, ckey_keyseed, 0x10);
-			se_aes_unwrap_key(13, 13, tmp);
-
-			memcpy(tmp, key8_keyseed, 0x10);
-			se_key_acc_ctrl(8, 0x15);
-			se_aes_unwrap_key(8, 12, tmp);
-
-			se_key_acc_ctrl(12, 0xFF);
-			se_key_acc_ctrl(13, 0xFF);
-		}
-		break;
-		// 3.0.0~3.0.1 FW
-		case 1:
-		case 2: {
-
-			// keyslot 10
-			memcpy(tmp, keyblob_keyseeds[0], 0x10);
-			se_aes_crypt_block_ecb(13, 0, tmp, tmp);
-			se_aes_unwrap_key(10, 14, tmp);
-
-			// keyslot 13
-			memcpy(tmp, keyblob_keyseeds[kb], 0x10);
-			se_aes_crypt_block_ecb(13, 0, tmp, tmp);
-			se_aes_unwrap_key(13, 14, tmp);
-
-			se_aes_key_clear(14);
-			se_aes_key_clear(15);
-
-			se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-			se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10);
-			se_aes_key_set(12, keyblob + 0x20, 0x10);
-
-			//TODO: for some reason SE likes to hang if we don't execute an operation here.
-			memcpy(tmp, mkey_keyseed_retail, 0x10);
-			se_aes_crypt_block_ecb(12, 0, tmp, tmp);
-
-			//Generate retail master key.
-			memcpy(tmp, mkey_keyseed_retail, 0x10);
-			se_aes_unwrap_key(12, 12, tmp);
-	
-			//Generate console specific key.
-			memcpy(tmp, ckey_keyseed, 0x10);
-			se_aes_unwrap_key(13, 10, tmp);	
-			se_aes_key_clear(10);
-
-			memcpy(tmp, key8_keyseed, 0x10);
-			se_key_acc_ctrl(8, 0x15);
-			se_aes_unwrap_key(8, 12, tmp);
-
-			se_key_acc_ctrl(12, 0xFF);
-			se_key_acc_ctrl(13, 0xFF);
-		}
+	switch (kb) {
+		case KB_FIRMWARE_VERSION_100_200:
+		case KB_FIRMWARE_VERSION_300:
+			se_aes_unwrap_key(0x0D, 0x0F, console_keyseed);
+			se_aes_unwrap_key(0x0C, 0x0C, master_keyseed_retail);
 		break;
 
-		// 4.0.0~5.0.1 FW
-		case 3:
-		case 4: {
-			se_key_acc_ctrl(14, 0x15);
-			se_key_acc_ctrl(15, 0x15);
+		case KB_FIRMWARE_VERSION_400:
+			se_aes_unwrap_key(0x0D, 0x0F, console_keyseed_4xx);
+			se_aes_unwrap_key(0x0F, 0x0F, console_keyseed);
+			se_aes_unwrap_key(0x0E, 0x0C, master_keyseed_4xx);
+			se_aes_unwrap_key(0x0C, 0x0C, master_keyseed_retail);
+		break;
 
-			// keyslot 15
-			memcpy(tmp, keyblob_keyseeds[0], 0x10);
-			se_aes_crypt_block_ecb(13, 0, tmp, tmp);
-			se_aes_unwrap_key(15, 14, tmp);
-
-			// keyslot 13
-			memcpy(tmp, keyblob_keyseeds[kb], 0x10);
-			se_aes_crypt_block_ecb(13, 0, tmp, tmp);
-			se_aes_unwrap_key(13, 14, tmp);
-
-			se_aes_key_clear(14);
-
-			se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-			se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10);
-			se_aes_key_set(12, keyblob + 0x20, 0x10);
-
-			//TODO: for some reason SE likes to hang if we don't execute an operation here.
-			memcpy(tmp, mkey_keyseed_retail, 0x10);
-			se_aes_crypt_block_ecb(12, 0, tmp, tmp);
-
-			// keyslot 14
-			memcpy(tmp, new_masterkey_seed, 0x10);
-			se_aes_unwrap_key(14, 12, tmp);
-
-			// keyslot 12
-			memcpy(tmp, mkey_keyseed_retail, 0x10);
-			se_aes_unwrap_key(12, 12, tmp);
-
-			// keyslot 13
-			memcpy(tmp, new_per_console_key, 0x10);
-			se_aes_unwrap_key(13, 15, tmp);
-
-			// keyslot 15
-			memcpy(tmp, ckey_keyseed, 0x10);
-			se_aes_unwrap_key(15, 13, tmp);
-
-			se_key_acc_ctrl(12, 0xFF);
-			se_key_acc_ctrl(15, 0xFF);
-		}
+		case KB_FIRMWARE_VERSION_500:
+		default:
+			se_aes_unwrap_key(0x0A, 0x0F, console_keyseed_4xx);
+			se_aes_unwrap_key(0x0F, 0x0F, console_keyseed);
+			se_aes_unwrap_key(0x0E, 0x0C, master_keyseed_4xx);
+			se_aes_unwrap_key(0x0C, 0x0C, master_keyseed_retail);
 		break;
 	}
-	free(tmp);
+
+	// Package2 key 
+	se_key_acc_ctrl(0x08, 0x15);
+	se_aes_unwrap_key(0x08, 0x0C, key8_keyseed);
 }
 
 
@@ -457,38 +387,39 @@ DPRINTF("decrypted and unpacked pkg1\n");
 	{
 		//Else we patch it to allow for an unsigned package2.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
+		
 		if (secmon_patchset != NULL) {
 			for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
 				*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 
-				DPRINTF("loaded warmboot.bin and secmon\n");
-				
-				//Read package2.
-				if (!_read_emmc_pkg2(&ctxt))
-					return 0;
+			DPRINTF("loaded warmboot.bin and secmon\n");
+			
+			//Read package2.
+			if (!_read_emmc_pkg2(&ctxt))
+				return 0;
 
-				DPRINTF("read pkg2\n");
-				//Decrypt package2 and parse KIP1 blobs in INI1 section.
-				pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
+			DPRINTF("read pkg2\n");
+			//Decrypt package2 and parse KIP1 blobs in INI1 section.
+			pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
 
-				LIST_INIT(kip1_info);
-				pkg2_parse_kips(&kip1_info, pkg2_hdr);
+			LIST_INIT(kip1_info);
+			pkg2_parse_kips(&kip1_info, pkg2_hdr);
 
-				DPRINTF("parsed ini1\n");
-				
-				//Use the kernel included in package2 in case we didn't load one already.
-				if (!ctxt.kernel)
-				{
-					ctxt.kernel = pkg2_hdr->data;
-					ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
-				}
+			DPRINTF("parsed ini1\n");
+			
+			//Use the kernel included in package2 in case we didn't load one already.
+			if (!ctxt.kernel)
+			{
+				ctxt.kernel = pkg2_hdr->data;
+				ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
+			}
 
-				//Merge extra KIP1s into loaded ones.
-				LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
-					pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
+			//Merge extra KIP1s into loaded ones.
+			LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
+				pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
-				//Rebuild and encrypt package2.
-				pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
+			//Rebuild and encrypt package2.
+			pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
 			DPRINTF("rebuilt pkg2\n");
 		} else {
 			//Read package2.
@@ -500,6 +431,14 @@ DPRINTF("decrypted and unpacked pkg1\n");
 		}
 	}
 
+	se_aes_key_clear(8);
+	se_aes_key_clear(11);
+	//se_aes_key_clear(13);
+	//se_key_acc_ctrl(10, 0xFF);
+	se_key_acc_ctrl(12, 0xFF);
+	//se_key_acc_ctrl(13, 0xFF);
+	//se_key_acc_ctrl(14, 0xFF);
+	se_key_acc_ctrl(15, 0xFF);
 
 	//Clear 'BootConfig'.
 	memset((void *)0x4003D000, 0, 0x3000);
@@ -530,6 +469,10 @@ DPRINTF("decrypted and unpacked pkg1\n");
 	//Signal package2 available.
 	*mb_in = 2;
 	sleep(100);
+	*mb_in = 3;
+	sleep(100);
+
+	
 
 	/*PMC(0x4) = 0x7FFFF3;
 	PMC(0x2C4) = 0xFFFFFFFF;
@@ -544,7 +487,7 @@ DPRINTF("decrypted and unpacked pkg1\n");
 	//display_end();
 
 	//Signal to continue boot.
-	*mb_in = 3;
+	*mb_in = 4;
 	sleep(100);
 
 	//Halt ourselves in waitevent state.

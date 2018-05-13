@@ -42,6 +42,19 @@ typedef struct _pkg1_id_t
 	patch_t *secmon_patchset;
 } pkg1_id_t;
 
+
+typedef struct _pk11_hdr_t
+{
+	u32 magic;
+	u32 wb_size;
+	u32 wb_off;
+	u32 pad;
+	u32 ldr_size;
+	u32 ldr_off;
+	u32 sm_size;
+	u32 sm_off;
+} pk11_hdr_t;
+
 const pkg1_id_t *pkg1_identify(u8 *pkg1);
 void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
 void pkg1_unpack(void *warmboot_dst, void *secmon_dst, const pkg1_id_t *id, u8 *pkg1);

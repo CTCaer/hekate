@@ -23,8 +23,7 @@ void se_rsa_acc_ctrl(u32 rs, u32 flags);
 void se_key_acc_ctrl(u32 ks, u32 flags);
 void se_aes_key_set(u32 ks, void *key, u32 size);
 void se_aes_key_clear(u32 ks);
-int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, void *input);
-int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, void *src);
-int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, void *src, u32 src_size, void *ctr);
-
+int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input);
+int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src);
+int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_size, void *ctr);
 #endif

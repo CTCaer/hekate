@@ -172,3 +172,4 @@ DPRINTF("INI1 encrypted\n");
 	memset(hdr->ctr, 0 , 0x10);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 }
+

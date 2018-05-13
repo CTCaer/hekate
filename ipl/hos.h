@@ -21,5 +21,6 @@
 #include "ini.h"
 
 int hos_launch(ini_sec_t *cfg);
+int keygen(u8 *keyblob, u32 kb, void *tsec_fw);
 
 #endif

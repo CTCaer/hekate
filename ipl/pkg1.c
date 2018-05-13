@@ -47,6 +47,22 @@ PATCHSET_DEF(_secmon_3_patchset,
 	{ 0xAC8 + 0xADC, _NOP() } //Sections SHA2.
 );
 
+PATCHSET_DEF(_secmon_5_patchset,
+	//Patch package2 decryption and signature/hash checks.
+	{ 0x1218 + 0x6E68, _NOP() }, //Header signature.
+	{ 0x1218 + 0x6E74, _NOP() }, //Version.
+	{ 0x1218 + 0x6FE4, _NOP() }, //Sections SHA2.
+	{ 0x1218 + 0x2DC, _NOP() } //Unknown.
+);
+
+PATCHSET_DEF(_secmon_6_patchset,
+	{ 0x12b0 + 0x4d0, _NOP() },
+	{ 0x12b0 + 0x4dc, _NOP() },
+	{ 0x12b0 + 0x794, _NOP() },
+	{ 0x12b0 + 0xb30, _NOP() }//,
+	//{ 0x12b0 + 0xa18 , _NOP() } // BootConfig Retail Check
+);
+
 /*
 * package1.1 header: <wb, ldr, sm>
 * package1.1 layout:
@@ -62,23 +78,12 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, 0x40014020, _secmon_1_patchset }, //1.0.0
 	{ "20170210155124", 0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, _secmon_2_patchset }, //2.0.0
 	{ "20170519101410", 1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, NULL }, //3.0.0
-	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, NULL }, //3.0.1
-	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, NULL }, //4.0.0
-	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, NULL }, //5.0.0
+	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, NULL }, //3.0.1	
+	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, _secmon_5_patchset }, //4.0.0
+	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, _secmon_6_patchset }, //5.0.0
 	{ NULL, 0, 0, 0, 0 } //End.
 };
 
-typedef struct _pk11_hdr_t
-{
-	u32 magic;
-	u32 wb_size;
-	u32 wb_off;
-	u32 pad;
-	u32 ldr_size;
-	u32 ldr_off;
-	u32 sm_size;
-	u32 sm_off;
-} pk11_hdr_t;
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1)
 {

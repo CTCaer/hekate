@@ -730,6 +730,103 @@ void dump_emmc_user() { dump_emmc_selected(DUMP_USER); }
 void dump_emmc_boot() { dump_emmc_selected(DUMP_BOOT); }
 void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
 
+u32 save_to_file(void * buf, u32 size, const char * filename) 
+{
+	FIL fp;
+	if (f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+		return -1;		
+	}
+
+	f_sync(&fp);
+	f_write(&fp, buf, size, NULL);
+	f_close(&fp);
+
+	return 0;
+}
+
+void dump_package1() 
+{
+	u8 * pkg1 = (u8 *)malloc(0x40000);
+	u8 * warmboot = (u8 *)malloc(0x40000);
+	u8 * secmon = (u8 *)malloc(0x40000);
+
+	gfx_clear(&gfx_ctxt, 0xFF000000);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (!sd_mount())
+	{
+		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+	sdmmc_storage_set_mmc_partition(&storage, 1);
+
+	//Read package1.
+	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
+	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
+	if (!pkg1_id)
+	{
+		gfx_printf(&gfx_con, "%kCould not identify package 1 version to read TSEC firmware (= '%s').%k\n", 0xFF0000FF, (char *)pkg1 + 0x10, 0xFFFFFFFF);
+		goto out;
+	}
+
+
+	// Read keyblob
+	u8 * keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
+	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
+
+	// decrypt
+	keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
+	pkg1_decrypt(pkg1_id, pkg1);
+
+	pkg1_unpack(warmboot, secmon, pkg1_id, pkg1);
+
+	// display info
+	gfx_printf(&gfx_con, "%kSecure monitor addr: %08X\n", 0xFF0000FF, pkg1_id->secmon_base);
+	gfx_printf(&gfx_con, "%kSecure monitor size: %08X\n", 0xFF0000FF, hdr->sm_size);
+	gfx_printf(&gfx_con, "%kSecure monitor off: %08X\n", 0xFF0000FF, hdr->sm_off);
+
+	// dump package1
+	if (save_to_file(pkg1, 0x40000, "pkg_decr.bin") == -1) {
+		gfx_printf(&gfx_con, "Failed to create pkg_decr.bin\n");
+		goto out;
+	}
+	gfx_puts(&gfx_con, "%kPackage1 dumped to pkg_decr.bin\n");
+
+	// dump sm
+	if (save_to_file(secmon, 0x40000, "sm.bin") == -1) {
+		gfx_puts(&gfx_con, "Failed to create sm.bin\n");
+		goto out;
+	}
+	gfx_puts(&gfx_con, "Secure Monitor dumped to sm.bin\n");
+
+	// dump warmboot
+	if (save_to_file(warmboot, 0x40000, "warmboot.bin") == -1) {
+		gfx_puts(&gfx_con, "Failed to create warmboot.bin\n");
+		goto out;
+	}
+	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n");
+
+
+	sdmmc_storage_end(&storage);
+	gfx_puts(&gfx_con, "Done. Press any key.\n");
+
+out:;
+	free(pkg1);
+	free(secmon);
+	free(warmboot);
+	sleep(100000);
+	btn_wait();
+}
+
 void launch_firmware()
 {
 	ini_sec_t *cfg_sec = NULL;
@@ -845,6 +942,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
 	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
+	MDEF_HANDLER("Dump Package1", dump_package1),
 	MDEF_END()
 };
 menu_t menu_tools = {
