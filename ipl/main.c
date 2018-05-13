@@ -46,6 +46,7 @@
 #include "se_t210.h"
 #include "hos.h"
 #include "pkg1.h"
+#include "mmc.h"
 
 //TODO: ugly.
 sdmmc_t sd_sdmmc;
