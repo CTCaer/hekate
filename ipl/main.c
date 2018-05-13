@@ -301,8 +301,36 @@ void print_fuseinfo()
 	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFFFF9955, 0xFFFFFFFF);
 	gfx_hexdump(&gfx_con, 0x7000F900, (u8 *)0x7000F900, 0x2FC);
 
-	sleep(100000);
-	btn_wait();
+	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+
+	sleep(1000000);
+
+	u32 btn = btn_wait();
+	if (btn & BTN_POWER)
+	{
+		if (!sd_mount())
+		{
+			gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n",
+				0xFF0000FF, 0xFFFFFFFF);
+		}
+		else
+		{
+			FIL fuseFp;
+			char fuseFilename[9];
+			memcpy(fuseFilename, "fuse.bin", 8);
+			fuseFilename[8] = 0;
+			if (f_open(&fuseFp, fuseFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+			{
+				f_write(&fuseFp, (u8 *)0x7000F900, 0x2FC, NULL);
+				f_close(&fuseFp);
+				gfx_puts(&gfx_con, "\nDone!\n");
+			}
+			else
+				gfx_printf(&gfx_con, "%k\nError creating fuse.bin file.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		}
+		sleep(2000000);
+		btn_wait();
+	}
 }
 
 void print_kfuseinfo()
@@ -317,8 +345,36 @@ void print_kfuseinfo()
 	else
 		gfx_hexdump(&gfx_con, 0, (u8 *)buf, KFUSE_NUM_WORDS * 4);
 
-	sleep(100000);
-	btn_wait();
+	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+
+	sleep(1000000);
+
+	u32 btn = btn_wait();
+	if (btn & BTN_POWER)
+	{
+		if (!sd_mount())
+		{
+			gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n",
+				0xFF0000FF, 0xFFFFFFFF);
+		}
+		else
+		{
+			FIL kfuseFp;
+			char kfuseFilename[10];
+			memcpy(kfuseFilename, "kfuse.bin", 9);
+			kfuseFilename[9] = 0;
+			if (f_open(&kfuseFp, kfuseFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
+			{
+				f_write(&kfuseFp, (u8 *)buf, KFUSE_NUM_WORDS * 4, NULL);
+				f_close(&kfuseFp);
+				gfx_puts(&gfx_con, "\nDone!\n");
+			}
+			else
+				gfx_printf(&gfx_con, "%k\nError creating kfuse.bin file.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		}
+		sleep(2000000);
+		btn_wait();
+	}
 }
 
 void print_mmc_info()
