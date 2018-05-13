@@ -35,10 +35,11 @@
 #define SD_APP_SEND_SCR          51   /* adtc                    R1  */
 
 /* OCR bit definitions */
-#define SD_OCR_S18R		(1 << 24)    /* 1.8V switching request */
-#define SD_ROCR_S18A		SD_OCR_S18R  /* 1.8V switching accepted by card */
-#define SD_OCR_XPC		(1 << 28)    /* SDXC power control */
-#define SD_OCR_CCS		(1 << 30)    /* Card Capacity Status */
+#define SD_OCR_S18R         (1 << 24)    /* 1.8V switching request */
+#define SD_ROCR_S18A        SD_OCR_S18R  /* 1.8V switching accepted by card */
+#define SD_OCR_XPC          (1 << 28)    /* SDXC power control */
+#define SD_OCR_CCS          (1 << 30)    /* Card Capacity Status */
+#define SD_OCR_VDD_32_33    (1 << 20)	 /* VDD voltage 3.2 ~ 3.3 */
 
 /*
 * SD_SWITCH argument format:
@@ -64,16 +65,27 @@
 /*
 * SCR field definitions
 */
-
 #define SCR_SPEC_VER_0		0	/* Implements system specification 1.0 - 1.01 */
 #define SCR_SPEC_VER_1		1	/* Implements system specification 1.10 */
 #define SCR_SPEC_VER_2		2	/* Implements system specification 2.00-3.0X */
+#define SD_SCR_BUS_WIDTH_1	(1<<0)
+#define SD_SCR_BUS_WIDTH_4	(1<<2)
 
 /*
 * SD bus widths
 */
 #define SD_BUS_WIDTH_1		0
 #define SD_BUS_WIDTH_4		2
+
+/*
+* SD bus speeds
+*/
+#define UHS_SDR12_BUS_SPEED		0
+#define HIGH_SPEED_BUS_SPEED	1
+#define UHS_SDR25_BUS_SPEED		1
+#define UHS_SDR50_BUS_SPEED		2
+#define UHS_SDR104_BUS_SPEED	3
+#define UHS_DDR50_BUS_SPEED		4
 
 /*
 * SD_SWITCH mode

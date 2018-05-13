@@ -289,6 +289,7 @@ c : clear by read
 #define EXT_CSD_CACHE_SIZE		249	/* RO, 4 bytes */
 #define EXT_CSD_PWR_CL_DDR_200_360	253	/* RO */
 #define EXT_CSD_FIRMWARE_VERSION	254	/* RO, 8 bytes */
+#define EXT_CSD_DEVICE_VERSION		262	/* RO, 2 bytes */
 #define EXT_CSD_PRE_EOL_INFO		267	/* RO */
 #define EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A	268	/* RO */
 #define EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B	269	/* RO */
