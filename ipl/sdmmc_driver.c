@@ -304,10 +304,30 @@ static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
 	case SDMMC_RSP_TYPE_2:
 		if (size < 0x10)
 			return 0;
-		rsp[0] = sdmmc->regs->rspreg0;
-		rsp[1] = sdmmc->regs->rspreg1;
-		rsp[2] = sdmmc->regs->rspreg2;
-		rsp[3] = sdmmc->regs->rspreg3;
+		// CRC is stripped, so shifting is needed.
+		u32 tempreg;
+		for (int i = 0; i < 4; i++)
+		{
+			switch(i)
+			{
+			case 0:
+				tempreg = sdmmc->regs->rspreg3;
+				break;
+			case 1:
+				tempreg = sdmmc->regs->rspreg2;
+				break;
+			case 2:
+				tempreg = sdmmc->regs->rspreg1;
+				break;
+			case 3:
+				tempreg = sdmmc->regs->rspreg0;
+				break;
+			}
+			rsp[i] = tempreg << 8;
+
+			if (i != 0)
+				rsp[i - 1] |= (tempreg >> 24) & 0xFF;
+		}
 		break;
 	default:
 		return 0;
