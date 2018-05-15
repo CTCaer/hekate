@@ -49,6 +49,10 @@
 #include "mmc.h"
 
 //TODO: ugly.
+gfx_ctxt_t gfx_ctxt;
+gfx_con_t gfx_con;
+
+//TODO: ugly.
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
@@ -59,11 +63,25 @@ int sd_mount()
 	if (sd_mounted)
 		return 1;
 
-	if (sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11) &&
-		f_mount(&sd_fs, "", 1) == FR_OK)
+	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
 	{
-		sd_mounted = 1;
-		return 1;
+		gfx_printf(&gfx_con, "%kFailed to init SD card (make sure that it is inserted).%k\n", 
+			0xFF0000FF, 0xFFFFFFFF);
+	}
+	else
+	{
+		int res = 0;
+		res = f_mount(&sd_fs, "", 1);
+		if (res == FR_OK)
+		{
+			sd_mounted = 1;
+			return 1;
+		}
+		else
+		{
+			gfx_printf(&gfx_con, "%kFailed to mount SD card (FatFS Error %d).\n(make sure that a FAT32/exFAT partition exists)%k\n",
+				0xFF0000FF, res, 0xFFFFFFFF);
+		}
 	}
 
 	return 0;
@@ -290,10 +308,6 @@ void config_hw()
 	sdram_lp0_save_params(sdram_get_params());
 }
 
-//TODO: ugly.
-gfx_ctxt_t gfx_ctxt;
-gfx_con_t gfx_con;
-
 void print_fuseinfo()
 {
 	gfx_clear(&gfx_ctxt, 0xFF000000);
@@ -309,12 +323,7 @@ void print_fuseinfo()
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
-		if (!sd_mount())
-		{
-			gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n",
-				0xFF0000FF, 0xFFFFFFFF);
-		}
-		else
+		if (sd_mount())
 		{
 			FIL fuseFp;
 			char fuseFilename[9];
@@ -353,12 +362,7 @@ void print_kfuseinfo()
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
-		if (!sd_mount())
-		{
-			gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n",
-				0xFF0000FF, 0xFFFFFFFF);
-		}
-		else
+		if (sd_mount())
 		{
 			FIL kfuseFp;
 			char kfuseFilename[10];
@@ -528,12 +532,7 @@ void print_sdcard_info()
 
 	static const u32 SECTORS_TO_MIB_COEFF  = 0x800;
 
-	if (!sd_mount())
-	{
-		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n",
-			0xFF0000FF, 0xFFFFFFFF);
-	}
-	else
+	if (sd_mount())
 	{
 		u32 capacity;
 
@@ -702,7 +701,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	{
 		if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK)
 		{
-			gfx_printf(&gfx_con, "%kFound partial dump in progress. Continuing...%k\n", 0xFF14FDAE, 0xFFFFFFFF);
+			gfx_printf(&gfx_con, "%kFound partial dump in progress. Continuing...%k\n\n", 0xFF14FDAE, 0xFFFFFFFF);
 
 			partialDumpInProgress = 1;
 
@@ -713,7 +712,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			maxSplitParts += currPartIdx;
 		}
 		else
-			gfx_printf(&gfx_con, "%kContinuing with partial dumping...%k\n", 0xFF00BAFF, 0xFFFFFFFF);
+			gfx_printf(&gfx_con, "%kContinuing with partial dumping...%k\n\n", 0xFF00BAFF, 0xFFFFFFFF);
 	}
 
 	// Check if filesystem is FAT32 or the free space is smaller and dump in parts
@@ -752,7 +751,11 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 	FIL fp;
 	if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+	{
+		gfx_printf(&gfx_con, "%kError creating file %s.%k\n", 0xFF0000FF, outFilename, 0xFFFFFFFF);
+
 		return 0;
+	}
 
 	static const u32 NUM_SECTORS_PER_ITER = 512;
 	u8 *buf = (u8 *)malloc(NX_EMMC_BLOCKSIZE * NUM_SECTORS_PER_ITER);
@@ -822,6 +825,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
+				gfx_printf(&gfx_con, "%kError creating file %s.%k\n", 0xFF0000FF, outFilename, 0xFFFFFFFF);
+
 				free(buf);
 				return 0;
 			}
@@ -901,21 +906,17 @@ typedef enum
 
 static void dump_emmc_selected(dumpType_t dumpType)
 {
+	int res = 0;
 	u32 timer = 0;
 	gfx_clear(&gfx_ctxt, 0xFF000000);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sd_mount())
-	{
-		gfx_printf(&gfx_con, "%kFailed to init/mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
 		goto out;
-	}
-	else
-	{
-		gfx_puts(&gfx_con, "Checking for available free space...\n");
-		// Get SD Card free space for partial dumping
-		f_getfree("", &sd_fs.free_clst, NULL);
-	}
+
+	gfx_puts(&gfx_con, "Checking for available free space...\n");
+	// Get SD Card free space for partial dumping
+	f_getfree("", &sd_fs.free_clst, NULL);
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -945,8 +946,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFFFFFFF);
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
-			dump_emmc_part(bootPart.name, &storage, &bootPart);
-			gfx_putc(&gfx_con, '\n');
+			res = dump_emmc_part(bootPart.name, &storage, &bootPart);
 		}		
 	}
 
@@ -968,8 +968,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFFFFFFF);
 
-				dump_emmc_part(part->name, &storage, part);
-				gfx_putc(&gfx_con, '\n');
+				res = dump_emmc_part(part->name, &storage, part);
 			}
 		}
 		
@@ -986,15 +985,16 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFFFFFFF);
 
-				dump_emmc_part(rawPart.name, &storage, &rawPart);
-				gfx_putc(&gfx_con, '\n');
+				res = dump_emmc_part(rawPart.name, &storage, &rawPart);
 			}		
 		}
 	}
 
+	gfx_putc(&gfx_con, '\n');
 	gfx_printf(&gfx_con, "%kTime taken: %d seconds.%k\n", 0xFF00FF96, (get_tmr() - timer) / 1000000, 0xFFFFFFFF);
 	sdmmc_storage_end(&storage);
-	gfx_puts(&gfx_con, "\nDone. Press any key.\n");
+	if (res)
+		gfx_puts(&gfx_con, "\nDone. Press any key.\n");
 
 out:;
 	sleep(1000000);
@@ -1030,10 +1030,7 @@ void dump_package1()
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sd_mount())
-	{
-		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
 		goto out;
-	}
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;

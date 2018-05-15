@@ -42,7 +42,6 @@ typedef struct _pkg1_id_t
 	patch_t *secmon_patchset;
 } pkg1_id_t;
 
-
 typedef struct _pk11_hdr_t
 {
 	u32 magic;

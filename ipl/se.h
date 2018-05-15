@@ -26,4 +26,5 @@ void se_aes_key_clear(u32 ks);
 int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input);
 int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src);
 int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_size, void *ctr);
+
 #endif

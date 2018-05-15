@@ -472,8 +472,6 @@ DPRINTF("decrypted and unpacked pkg1\n");
 	*mb_in = 3;
 	sleep(100);
 
-	
-
 	/*PMC(0x4) = 0x7FFFF3;
 	PMC(0x2C4) = 0xFFFFFFFF;
 	PMC(0x2D8) = 0xFFAFFFFF;
