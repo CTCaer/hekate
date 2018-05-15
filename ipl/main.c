@@ -574,9 +574,10 @@ void print_sdcard_info()
 			 Speed Class:    %d\n\
 			 UHS Grade:      U%d\n\
 			 Video Class:    V%d\n\
-			 App perf class: A%d\n\n",
-			sd_storage.ssr.bus_width,	sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade,
-			sd_storage.ssr.video_class, sd_storage.ssr.app_class);
+			 App perf class: A%d\n\
+			 Write Protect:  %d\n\n",
+			sd_storage.ssr.bus_width, sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade,
+			sd_storage.ssr.video_class, sd_storage.ssr.app_class, sd_storage.csd.write_protect);
 
 		gfx_puts(&gfx_con, "Acquiring FAT volume info...\n\n");
 		f_getfree("", &sd_fs.free_clst, NULL);

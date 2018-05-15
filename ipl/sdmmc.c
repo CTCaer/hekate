@@ -824,9 +824,22 @@ int _sd_storage_enable_highspeed_high_volt(sdmmc_storage_t *storage, u8 *buf)
 
 static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 {
-	u32 *raw_ssr = (u32 *)&(storage->raw_ssr);
-	storage->ssr.bus_width = unstuff_bits(raw_ssr, 510 - 384, 2) & SD_BUS_WIDTH_4 ? 4 : 1;
-	switch(unstuff_bits(raw_ssr, 440 - 384, 8))
+	// unstuff_bits supports only 4 u32 so break into 2 x 16byte groups
+	u32 raw_ssr1[4];
+	u32 raw_ssr2[4];
+
+	raw_ssr1[3] = *(u32 *)&storage->raw_ssr[12];
+	raw_ssr1[2] = *(u32 *)&storage->raw_ssr[8];
+	raw_ssr1[1] = *(u32 *)&storage->raw_ssr[4];
+	raw_ssr1[0] = *(u32 *)&storage->raw_ssr[0];
+
+	raw_ssr2[3] = *(u32 *)&storage->raw_ssr[28];
+	raw_ssr2[2] = *(u32 *)&storage->raw_ssr[24];
+	raw_ssr2[1] = *(u32 *)&storage->raw_ssr[20];
+	raw_ssr2[0] = *(u32 *)&storage->raw_ssr[16];
+
+	storage->ssr.bus_width = unstuff_bits(raw_ssr1, 510 - 384, 2) & SD_BUS_WIDTH_4 ? 4 : 1;
+	switch(unstuff_bits(raw_ssr1, 440 - 384, 8))
 	{
 	case 0:
 		storage->ssr.speed_class = 0;
@@ -844,12 +857,13 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 		storage->ssr.speed_class = 10;
 		break;
 	default:
-		storage->ssr.speed_class = unstuff_bits(raw_ssr, 440 - 384, 8);
+		storage->ssr.speed_class = unstuff_bits(raw_ssr1, 440 - 384, 8);
 		break;
 	}
-	storage->ssr.uhs_grade = unstuff_bits(raw_ssr, 396 - 384, 4);
-	storage->ssr.video_class = unstuff_bits(raw_ssr, 384 - 384, 8);
-	storage->ssr.app_class = unstuff_bits(raw_ssr + 16, 472 + 4 - 384, 4);
+	storage->ssr.uhs_grade = unstuff_bits(raw_ssr1, 396 - 384, 4);
+	storage->ssr.video_class = unstuff_bits(raw_ssr1, 384 - 384, 8);
+
+	storage->ssr.app_class = unstuff_bits(raw_ssr2, 336 - 256, 4);
 }
 
 static int _sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
@@ -894,17 +908,17 @@ static void _sd_storage_parse_cid(sdmmc_storage_t *storage)
 	u32 *raw_cid = (u32 *)&(storage->raw_cid);
 
 	storage->cid.manfid = unstuff_bits(raw_cid, 120, 8);
-	storage->cid.oemid = unstuff_bits(raw_cid, 104, 16);
+	storage->cid.oemid  = unstuff_bits(raw_cid, 104, 16);
 	storage->cid.prod_name[0] = unstuff_bits(raw_cid, 96, 8);
 	storage->cid.prod_name[1] = unstuff_bits(raw_cid, 88, 8);
 	storage->cid.prod_name[2] = unstuff_bits(raw_cid, 80, 8);
 	storage->cid.prod_name[3] = unstuff_bits(raw_cid, 72, 8);
 	storage->cid.prod_name[4] = unstuff_bits(raw_cid, 64, 8);
-	storage->cid.hwrev = unstuff_bits(raw_cid, 60, 4);
-	storage->cid.fwrev = unstuff_bits(raw_cid, 56, 4);
+	storage->cid.hwrev  = unstuff_bits(raw_cid, 60, 4);
+	storage->cid.fwrev  = unstuff_bits(raw_cid, 56, 4);
 	storage->cid.serial = unstuff_bits(raw_cid, 24, 32);
-	storage->cid.month = unstuff_bits(raw_cid, 8, 4);
-	storage->cid.year = unstuff_bits(raw_cid, 12, 8) + 2000;
+	storage->cid.month  = unstuff_bits(raw_cid, 8, 4);
+	storage->cid.year   = unstuff_bits(raw_cid, 12, 8) + 2000;
 }
 
 static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
@@ -912,8 +926,9 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 	u32 *raw_csd = (u32 *)&(storage->raw_csd);
 
 	storage->csd.structure = unstuff_bits(raw_csd, 126, 2);
-	storage->csd.cmdclass = unstuff_bits(raw_csd, 84, 12);
-	storage->csd.read_blkbits = unstuff_bits(raw_csd, 80, 4);
+	storage->csd.cmdclass  = unstuff_bits(raw_csd, 84, 12);
+	storage->csd.read_blkbits  = unstuff_bits(raw_csd, 80, 4);
+	storage->csd.write_protect = unstuff_bits(raw_csd, 12, 2);
 	switch(storage->csd.structure)
 	{
 	case 0:

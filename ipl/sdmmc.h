@@ -36,16 +36,17 @@ typedef struct _mmc_cid
 
 typedef struct _mmc_csd
 {
-	u8		structure;
-	u8		mmca_vsn;
-	u16		cmdclass;
-	u32		c_size;
-	u32		r2w_factor;
-	u32		max_dtr;
-	u32		erase_size;		/* In sectors */
-	u32		read_blkbits;
-	u32		write_blkbits;
-	u32		capacity;
+	u8  structure;
+	u8  mmca_vsn;
+	u16 cmdclass;
+	u32 c_size;
+	u32 r2w_factor;
+	u32 max_dtr;
+	u32 erase_size;		/* In sectors */
+	u32 read_blkbits;
+	u32 write_blkbits;
+	u32 capacity;
+	u8  write_protect;  
 } mmc_csd_t;
 
 typedef struct _mmc_ext_csd
