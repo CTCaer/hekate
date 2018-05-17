@@ -65,7 +65,7 @@ int sd_mount()
 
 	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
 	{
-		gfx_printf(&gfx_con, "%kFailed to init SD card (make sure that it is inserted).%k\n", 
+		gfx_printf(&gfx_con, "%kFailed to init SD card (make sure that it is inserted).%k\n",
 			0xFF0000FF, 0xFFFFFFFF);
 	}
 	else
@@ -257,7 +257,7 @@ void config_se_brom()
 
 void config_hw()
 {
-	//Bootrom stuff we skipped by going thru rcm.
+	//Bootrom stuff we skipped by going through rcm.
 	config_se_brom();
 	//FUSE(FUSE_PRIVATEKEYDISABLE) = 0x11;
 	SYSREG(0x110) &= 0xFFFFFF9F;
@@ -398,7 +398,7 @@ void print_mmc_info()
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	static const u32 SECTORS_TO_MIB_COEFF  = 0x800;
-	
+
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
@@ -515,7 +515,7 @@ void print_mmc_info()
 			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %05d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFFFFFFF,
 				storage.sec_cnt / SECTORS_TO_MIB_COEFF, storage.sec_cnt);
 			gfx_printf(&gfx_con, "%kGPP (eMMC USER) partition table:%k\n", 0xFFFFDD00, 0xFFFFFFFF);
-			
+
 			sdmmc_storage_set_mmc_partition(&storage, 0);
 			LIST_INIT(gpt);
 			nx_emmc_gpt_parse(&gpt, &storage);
@@ -591,9 +591,9 @@ void print_sdcard_info()
 
 		gfx_puts(&gfx_con, "Acquiring FAT volume info...\n\n");
 		f_getfree("", &sd_fs.free_clst, NULL);
-		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free: %d MiB\n", 0xFFFFDD00,
-				sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFFFFFFF,
-				sd_fs.free_clst * sd_fs.csize / SECTORS_TO_MIB_COEFF);
+		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d B\n",
+				0xFFFFDD00, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFFFFFFF,
+				sd_fs.free_clst * sd_fs.csize / SECTORS_TO_MIB_COEFF, sd_fs.csize * 512);
 	}
 
 	sleep(1000000);
@@ -618,7 +618,7 @@ void print_tsec_key()
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package 1 version to read TSEC firmware (= '%s').%k\n",
+		gfx_printf(&gfx_con, "%kCould not identify package1 version to read TSEC firmware (= '%s').%k\n",
 			0xFF0000FF, (char *)pkg1 + 0x10, 0xFFFFFFFF);
 		goto out;
 	}
@@ -755,7 +755,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			else
 				outFilename[sdPathLen+1] = 0;
 		}
-		// Continue from where we left, if partial dump in proggress.
+		// Continue from where we left, if partial dump in progress.
 		else
 		{
 			if (numSplitParts >= 10 && currPartIdx < 10)
@@ -784,7 +784,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u32 prevPct = 200;
 	int retryCount = 0;
 
-	// Continue from where we left, if partial dump in proggress.
+	// Continue from where we left, if partial dump in progress.
 	if (partialDumpInProgress)
 	{
 		lba_curr += currPartIdx * (MULTIPART_SPLIT_SIZE / NX_EMMC_BLOCKSIZE);
@@ -827,17 +827,18 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				// More parts to dump that do not currently fit the sd card free space or fatal error
 				if (currPartIdx >= maxSplitParts)
 				{
-				gfx_puts(&gfx_con, "\n1. Press any key and Power off Switch from the main menu.\n\
-					2. Move the files from SD card to free space.\n   \
-					Don\'t move the partial.idx file!\n\
-					3. Unplug and re-plug USB while pressing Vol+.\n\
-					4. Run hekate - ipl again and press Dump RAW eMMC or eMMC USER to continue");
+					gfx_puts(&gfx_con, "\n\n1. Press any key and Power off Switch from the main menu.\n\
+						2. Move the files from SD card to free space.\n\
+						   Don\'t move the partial.idx file!\n\
+						3. Unplug and re-plug USB while pressing Vol+.\n\
+						4. Run hekate - ipl again and press Dump RAW eMMC or eMMC USER to continue\n");
 
-				free(buf);
-				return 1;
+					free(buf);
+					return 1;
 				}
 			}
 
+			// Create next part
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
 				gfx_printf(&gfx_con, "%kError creating file %s.%k\n", 0xFF0000FF, outFilename, 0xFFFFFFFF);
@@ -857,7 +858,14 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 			sleep(500000);
 			if (retryCount >= 10)
-				goto out;
+			{
+				gfx_printf(&gfx_con, "%k\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..%k\n",
+				0xFF0000FF, num, lba_curr, 0xFFFFFFFF);
+
+				free(buf);
+				f_close(&fp);
+				return 0;
+			}
 		}
 		res = f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
 		if (res)
@@ -877,14 +885,14 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		{
 			tui_pbar(&gfx_con, 0, gfx_con.y, pct);
 			prevPct = pct;
-		}	
+		}
 
 		lba_curr += num;
 		totalSectors -= num;
 		bytesWritten += num * NX_EMMC_BLOCKSIZE;
 
-		//force a flush after a lot of data if not splitting
-		if (numSplitParts == 0 && bytesWritten >= MULTIPART_SPLIT_SIZE) 
+		// Force a flush after a lot of data if not splitting
+		if (numSplitParts == 0 && bytesWritten >= MULTIPART_SPLIT_SIZE)
 		{
 			f_sync(&fp);
 			bytesWritten = 0;
@@ -895,7 +903,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 out:;
 	free(buf);
 	f_close(&fp);
-	// Partial dump done. Remove partial dump index file.
+	// Remove partial dump index file if no fatal errors occurred.
 	if(isSmallSdCard)
 	{
 		f_unlink(partialIdxFilename);
@@ -939,7 +947,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	int i = 0;
 	timer = get_tmr();
 	if (dumpType & DUMP_BOOT)
-	{	
+	{
 		static const u32 BOOT_PART_SIZE = 0x400000;
 
 		emmc_part_t bootPart;
@@ -957,7 +965,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
 			res = dump_emmc_part(bootPart.name, &storage, &bootPart);
-		}		
+		}
 	}
 
 	if ((dumpType & DUMP_SYSTEM) || (dumpType & DUMP_USER) || (dumpType & DUMP_RAW))
@@ -981,7 +989,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				res = dump_emmc_part(part->name, &storage, part);
 			}
 		}
-		
+
 		if (dumpType & DUMP_RAW)
 		{
 			static const u32 RAW_AREA_NUM_SECTORS = 0x3A3E000;
@@ -996,7 +1004,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFFFFFFF);
 
 				res = dump_emmc_part(rawPart.name, &storage, &rawPart);
-			}		
+			}
 		}
 	}
 
@@ -1016,11 +1024,11 @@ void dump_emmc_user() { dump_emmc_selected(DUMP_USER); }
 void dump_emmc_boot() { dump_emmc_selected(DUMP_BOOT); }
 void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
 
-u32 save_to_file(void * buf, u32 size, const char * filename) 
+u32 save_to_file(void * buf, u32 size, const char * filename)
 {
 	FIL fp;
 	if (f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
-		return -1;		
+		return -1;
 	}
 
 	f_sync(&fp);
@@ -1030,7 +1038,7 @@ u32 save_to_file(void * buf, u32 size, const char * filename)
 	return 0;
 }
 
-void dump_package1() 
+void dump_package1()
 {
 	u8 * pkg1 = (u8 *)malloc(0x40000);
 	u8 * warmboot = (u8 *)malloc(0x40000);
@@ -1057,7 +1065,7 @@ void dump_package1()
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 	if (!pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package 1 version to read TSEC firmware (= '%s').%k\n", 0xFF0000FF, (char *)pkg1 + 0x10, 0xFFFFFFFF);
+		gfx_printf(&gfx_con, "%kCould not identify package1 version to read TSEC firmware (= '%s').%k\n", 0xFF0000FF, (char *)pkg1 + 0x10, 0xFFFFFFFF);
 		goto out;
 	}
 
@@ -1082,7 +1090,7 @@ void dump_package1()
 		gfx_printf(&gfx_con, "Failed to create pkg_decr.bin\n");
 		goto out;
 	}
-	gfx_puts(&gfx_con, "%kPackage1 dumped to pkg_decr.bin\n");
+	gfx_puts(&gfx_con, "%kpackage1 dumped to pkg_decr.bin\n");
 
 	// dump sm
 	if (save_to_file(secmon, 0x40000, "sm.bin") == -1) {
@@ -1153,8 +1161,6 @@ void launch_firmware()
 		else
 			gfx_printf(&gfx_con, "%kFailed to load 'hekate_ipl.ini'.%k\n", 0xFF0000FF, 0xFFFFFFFF);
 	}
-	else
-		gfx_printf(&gfx_con, "%kFailed to mount SD card (make sure that it is inserted).%k\n", 0xFF0000FF, 0xFFFFFFFF);
 
 	if (!cfg_sec)
 		gfx_printf(&gfx_con, "Using default launch configuration.\n");
@@ -1200,7 +1206,7 @@ void about()
 	gfx_clear(&gfx_ctxt, 0xFF000000);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, octopus, 0xFFFFCC00, 0xFFFFFFFF, 
+	gfx_printf(&gfx_con, octopus, 0xFFFFCC00, 0xFFFFFFFF,
 		0xFFFFCC00, 0xFFCCFF00, 0xFFFFCC00, 0xFFFFFFFF);
 
 	sleep(1000000);
@@ -1227,7 +1233,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
 	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
-	MDEF_HANDLER("Dump Package1", dump_package1),
+	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_END()
 };
 menu_t menu_tools = {
