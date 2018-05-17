@@ -87,6 +87,16 @@ int sd_mount()
 	return 0;
 }
 
+void sd_unmount()
+{
+	if (sd_mounted)
+	{
+		gfx_puts(&gfx_con, "Unmounting SD card...\n");
+		f_mount(NULL, "", 1);
+		sdmmc_storage_end(&sd_storage);
+	}
+}
+
 void *sd_file_read(char *path)
 {
 	FIL fp;
@@ -638,11 +648,13 @@ out:;
 
 void reboot_normal()
 {
+	sd_unmount();
 	panic(0x21); //Bypass fuse programming in package1.
 }
 
 void reboot_rcm()
 {
+	sd_unmount();
 	PMC(APBDEV_PMC_SCRATCH0) = 2; //Reboot into rcm.
 	PMC(0) |= 0x10;
 	while (1)
@@ -651,6 +663,7 @@ void reboot_rcm()
 
 void power_off()
 {
+	sd_unmount();
 	//TODO: we should probably make sure all regulators are powered off properly.
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
