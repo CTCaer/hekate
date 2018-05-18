@@ -127,6 +127,20 @@ void *sd_file_read(char *path)
 	return buf;
 }
 
+int sd_save_to_file(void * buf, u32 size, const char * filename)
+{
+	FIL fp;
+	if (f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+		return 1;
+	}
+
+	f_sync(&fp);
+	f_write(&fp, buf, size, NULL);
+	f_close(&fp);
+
+	return 0;
+}
+
 void panic(u32 val)
 {
 	//Set panic code.
@@ -341,14 +355,11 @@ void print_fuseinfo()
 			char fuseFilename[9];
 			memcpy(fuseFilename, "fuse.bin", 8);
 			fuseFilename[8] = 0;
-			if (f_open(&fuseFp, fuseFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
-			{
-				f_write(&fuseFp, (u8 *)0x7000F900, 0x2FC, NULL);
-				f_close(&fuseFp);
-				gfx_puts(&gfx_con, "\nDone!\n");
-			}
+
+			if (sd_save_to_file((u8 *)0x7000F900, 0x2FC, fuseFilename))
+				EPRINTF("\nError creating fuse.bin file.");
 			else
-				gfx_printf(&gfx_con, "%k\nError creating fuse.bin file.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+				gfx_puts(&gfx_con, "\nDone!\n");				
 		}
 		sleep(2000000);
 		btn_wait();
@@ -380,14 +391,11 @@ void print_kfuseinfo()
 			char kfuseFilename[10];
 			memcpy(kfuseFilename, "kfuse.bin", 9);
 			kfuseFilename[9] = 0;
-			if (f_open(&kfuseFp, kfuseFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
-			{
-				f_write(&kfuseFp, (u8 *)buf, KFUSE_NUM_WORDS * 4, NULL);
-				f_close(&kfuseFp);
-				gfx_puts(&gfx_con, "\nDone!\n");
-			}
+
+			if (sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, kfuseFilename))
+				EPRINTF("\nError creating kfuse.bin file.");
 			else
-				gfx_printf(&gfx_con, "%k\nError creating kfuse.bin file.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+				gfx_puts(&gfx_con, "\nDone!\n");
 		}
 		sleep(2000000);
 		btn_wait();
@@ -1023,20 +1031,6 @@ void dump_emmc_user() { dump_emmc_selected(DUMP_USER); }
 void dump_emmc_boot() { dump_emmc_selected(DUMP_BOOT); }
 void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
 
-u32 save_to_file(void * buf, u32 size, const char * filename)
-{
-	FIL fp;
-	if (f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
-		return -1;
-	}
-
-	f_sync(&fp);
-	f_write(&fp, buf, size, NULL);
-	f_close(&fp);
-
-	return 0;
-}
-
 void dump_package1()
 {
 	u8 * pkg1 = (u8 *)malloc(0x40000);
@@ -1085,21 +1079,21 @@ void dump_package1()
 	gfx_printf(&gfx_con, "%kSecure monitor off: %08X\n", 0xFF00FFA8, hdr->sm_off);
 
 	// dump package1
-	if (save_to_file(pkg1, 0x40000, "pkg_decr.bin") == -1) {
+	if (sd_save_to_file(pkg1, 0x40000, "pkg_decr.bin")) {
 		gfx_printf(&gfx_con, "Failed to create pkg_decr.bin\n");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "%kpackage1 dumped to pkg_decr.bin\n");
 
 	// dump sm
-	if (save_to_file(secmon, 0x40000, "sm.bin") == -1) {
+	if (sd_save_to_file(secmon, 0x40000, "sm.bin")) {
 		gfx_puts(&gfx_con, "Failed to create sm.bin\n");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Secure Monitor dumped to sm.bin\n");
 
 	// dump warmboot
-	if (save_to_file(warmboot, 0x40000, "warmboot.bin") == -1) {
+	if (sd_save_to_file(warmboot, 0x40000, "warmboot.bin")) {
 		gfx_puts(&gfx_con, "Failed to create warmboot.bin\n");
 		goto out;
 	}
