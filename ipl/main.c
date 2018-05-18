@@ -52,6 +52,10 @@
 gfx_ctxt_t gfx_ctxt;
 gfx_con_t gfx_con;
 
+//TODO: Create more macros (info, header, debug, etc) with different colors and utilize them for consistency.
+#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFF0000FF, 0xFFFFFFFF)
+#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFF0000FF, args, 0xFFFFFFFF)
+
 //TODO: ugly.
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
@@ -65,8 +69,7 @@ int sd_mount()
 
 	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
 	{
-		gfx_printf(&gfx_con, "%kFailed to init SD card (make sure that it is inserted).%k\n",
-			0xFF0000FF, 0xFFFFFFFF);
+		EPRINTF("Failed to init SD card (make sure that it is inserted).");
 	}
 	else
 	{
@@ -79,8 +82,7 @@ int sd_mount()
 		}
 		else
 		{
-			gfx_printf(&gfx_con, "%kFailed to mount SD card (FatFS Error %d).\n(make sure that a FAT32/exFAT partition exists)%k\n",
-				0xFF0000FF, res, 0xFFFFFFFF);
+			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\n(make sure that a FAT32/exFAT partition exists)", res);
 		}
 	}
 
@@ -361,7 +363,7 @@ void print_kfuseinfo()
 	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFFFF9955, 0xFFFFFFFF);
 	u32 buf[KFUSE_NUM_WORDS];
 	if (!kfuse_read(buf))
-		gfx_printf(&gfx_con, "%kCRC fail.\n", 0xFF0000FF);
+		EPRINTF("CRC fail.");
 	else
 		gfx_hexdump(&gfx_con, 0, (u8 *)buf, KFUSE_NUM_WORDS * 4);
 
@@ -404,7 +406,7 @@ void print_mmc_info()
 
 	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		EPRINTF("Failed to init eMMC.");
 		goto out;
 	}
 	else
@@ -447,12 +449,12 @@ void print_mmc_info()
 			storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
 			break;
 		default:
-			gfx_printf(&gfx_con, "%keMMC has unknown MMCA version %d%k\n", 0xFF0000FF, storage.csd.mmca_vsn, 0xFFFFFFFF);
+			EPRINTFARGS("eMMC has unknown MMCA version %d", storage.csd.mmca_vsn);
 			break;
 		}
 
 		if (storage.csd.structure == 0)
-			gfx_printf(&gfx_con, "%kUnknown CSD structure%k\n", 0xFF0000FF, 0xFFFFFFFF);
+			EPRINTF("Unknown CSD structure.");
 		else
 		{
 			gfx_printf(&gfx_con, "%kExtended Card-Specific Data V1.%d:%k\n",
@@ -618,8 +620,8 @@ void print_tsec_key()
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package1 version to read TSEC firmware (= '%s').%k\n",
-			0xFF0000FF, (char *)pkg1 + 0x10, 0xFFFFFFFF);
+		EPRINTFARGS("Could not identify package1 version to read TSEC firmware (= '%s').",
+			(char *)pkg1 + 0x10);
 		goto out;
 	}
 
@@ -635,7 +637,7 @@ void print_tsec_key()
 				gfx_printf(&gfx_con, "%02X", key[i]);
 		}
 		else
-			gfx_printf(&gfx_con, "%kERROR %X", 0xFF0000FF, res);
+			EPRINTFARGS("ERROR %X", res);
 		gfx_putc(&gfx_con, '\n');
 	}
 
@@ -704,7 +706,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		if (!maxSplitParts)
 		{
-			gfx_printf(&gfx_con, "%kNot enough free space for partial dumping.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+			EPRINTF("Not enough free space for partial dumping.");
 
 			return 0;
 		}
@@ -723,7 +725,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		if (!maxSplitParts)
 		{
-			gfx_printf(&gfx_con, "%kNot enough free space for partial dumping.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+			EPRINTF("Not enough free space for partial dumping.");
 
 			return 0;
 		}
@@ -771,7 +773,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	FIL fp;
 	if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 	{
-		gfx_printf(&gfx_con, "%kError creating file %s.%k\n", 0xFF0000FF, outFilename, 0xFFFFFFFF);
+		EPRINTFARGS("Error creating file %s.", outFilename);
 
 		return 0;
 	}
@@ -818,7 +820,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				}
 				else
 				{
-					gfx_printf(&gfx_con, "%k\nError creating partial.idx file.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+					EPRINTF("\nError creating partial.idx file.");
 
 					free(buf);
 					return 0;
@@ -841,7 +843,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			// Create next part
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
-				gfx_printf(&gfx_con, "%kError creating file %s.%k\n", 0xFF0000FF, outFilename, 0xFFFFFFFF);
+				EPRINTFARGS("Error creating file %s.", outFilename);
 
 				free(buf);
 				return 0;
@@ -853,14 +855,14 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		u32 num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 		while(!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
-			gfx_printf(&gfx_con, "%kError reading %d blocks @ LBA %08X from eMMC (try %d)%k\n",
-				0xFF0000FF, num, lba_curr, ++retryCount, 0xFFFFFFFF);
+			EPRINTFARGS("Error reading %d blocks @ LBA %08X from eMMC (try %d)",
+				num, lba_curr, ++retryCount);
 
 			sleep(500000);
 			if (retryCount >= 10)
 			{
-				gfx_printf(&gfx_con, "%k\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..%k\n",
-				0xFF0000FF, num, lba_curr, 0xFFFFFFFF);
+				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..",
+				num, lba_curr);
 
 				free(buf);
 				f_close(&fp);
@@ -870,11 +872,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		res = f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
 		if (res)
 		{
-			gfx_printf(&gfx_con, "%k\nFatal error (%d) when writing to SD Card%k\n\n",
-				0xFF0000FF, res, 0xFFFFFFFF);
-
-			gfx_printf(&gfx_con, "%k\nPress any key and try again.%k\n",
-						0xFF0000FF, 0xFFFFFFFF);
+			EPRINTFARGS("\nFatal error (%d) when writing to SD Card", res);
+			EPRINTF("\nPress any key and try again.");
 
 			free(buf);
 			f_close(&fp);
@@ -940,7 +939,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	sdmmc_t sdmmc;
 	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		EPRINTF("Failed to init eMMC.");
 		goto out;
 	}
 
@@ -1054,7 +1053,7 @@ void dump_package1()
 	sdmmc_t sdmmc;
 	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		EPRINTF("Failed to init eMMC.");
 		goto out;
 	}
 	sdmmc_storage_set_mmc_partition(&storage, 1);
@@ -1065,7 +1064,7 @@ void dump_package1()
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 	if (!pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package1 version to read TSEC firmware (= '%s').%k\n", 0xFF0000FF, (char *)pkg1 + 0x10, 0xFFFFFFFF);
+		EPRINTFARGS("Could not identify package1 version to read TSEC firmware (= '%s').", (char *)pkg1 + 0x10);
 		goto out;
 	}
 
@@ -1081,9 +1080,9 @@ void dump_package1()
 	pkg1_unpack(warmboot, secmon, pkg1_id, pkg1);
 
 	// display info
-	gfx_printf(&gfx_con, "%kSecure monitor addr: %08X\n", 0xFF0000FF, pkg1_id->secmon_base);
-	gfx_printf(&gfx_con, "%kSecure monitor size: %08X\n", 0xFF0000FF, hdr->sm_size);
-	gfx_printf(&gfx_con, "%kSecure monitor off: %08X\n", 0xFF0000FF, hdr->sm_off);
+	gfx_printf(&gfx_con, "%kSecure monitor addr: %08X\n", 0xFF00FFA8, pkg1_id->secmon_base);
+	gfx_printf(&gfx_con, "%kSecure monitor size: %08X\n", 0xFF00FFA8, hdr->sm_size);
+	gfx_printf(&gfx_con, "%kSecure monitor off: %08X\n", 0xFF00FFA8, hdr->sm_off);
 
 	// dump package1
 	if (save_to_file(pkg1, 0x40000, "pkg_decr.bin") == -1) {
@@ -1155,18 +1154,18 @@ void launch_firmware()
 					return;
 			}
 			else
-				gfx_printf(&gfx_con, "%kNo launch configurations found.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+				EPRINTF("No launch configurations found.");
 			free(ments);
 		}
 		else
-			gfx_printf(&gfx_con, "%kFailed to load 'hekate_ipl.ini'.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+			EPRINTF("Failed to load 'hekate_ipl.ini'.");
 	}
 
 	if (!cfg_sec)
 		gfx_printf(&gfx_con, "Using default launch configuration.\n");
 
 	if (!hos_launch(cfg_sec))
-		gfx_printf(&gfx_con, "%kFailed to launch firmware.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		EPRINTF("Failed to launch firmware.");
 
 	//TODO: free ini.
 
