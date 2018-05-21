@@ -50,5 +50,6 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len);
 
 void gfx_set_pixel(gfx_ctxt_t *ctxt, u32 x, u32 y, u32 color);
 void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color);
+void gfx_set_logo(gfx_ctxt_t *ctxt, u16 pos_x, u16 pos_y, const u16 size_x, const u16 size_y, const u8 *buf);
 
 #endif

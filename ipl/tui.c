@@ -16,6 +16,7 @@
 
 #include "tui.h"
 #include "btn.h"
+#include "ctc_logo.h"
 
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
 {
@@ -42,11 +43,12 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 {
 	int idx = 0, cnt;
 
-	gfx_clear(con->gfx_ctxt, 0xFF000000);
+	gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+	gfx_set_logo(con->gfx_ctxt, 538, 1180, LOGO_WIDTH, LOGO_HEIGHT, CTC_LOGO);
 
 	while (1)
 	{
-		gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF000000);
+		gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF1B1B1B);
 		gfx_con_setpos(con, menu->x, menu->y);
 		gfx_printf(con, "[%s]\n\n", menu->caption);
 
@@ -55,7 +57,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			if (cnt == idx)
 				gfx_con_setcol(con, 0xFF000000, 1, 0xFFCCCCCC);
 			else
-				gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF000000);
+				gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF1B1B1B);
 			con->x += 8;
 			gfx_printf(con, "%s", menu->ents[cnt].caption);
 			if(menu->ents[cnt].type == MENT_MENU)
@@ -63,7 +65,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			gfx_putc(con, '\n');
 		}
 
-		gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF000000);
+		gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF1B1B1B);
 		gfx_putc(con, '\n');
 
 		u32 btn = btn_wait();
@@ -94,7 +96,8 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				return NULL;
 				break;
 			}
-			gfx_clear(con->gfx_ctxt, 0xFF000000);
+			gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+			gfx_set_logo(con->gfx_ctxt, 538, 1180, LOGO_WIDTH, LOGO_HEIGHT, CTC_LOGO);
 		}
 	}
 

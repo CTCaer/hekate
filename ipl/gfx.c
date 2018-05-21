@@ -89,7 +89,7 @@ void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
 	con->y = 0;
 	con->fgcol = 0xFFFFFFFF;
 	con->fillbg = 0;
-	con->bgcol = 0xFF000000;
+	con->bgcol = 0xFF1B1B1B;
 }
 
 void gfx_con_setcol(gfx_con_t *con, u32 fgcol, int fillbg, u32 bgcol)
@@ -305,5 +305,19 @@ void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
 		e2 = err;
 		if (e2 >-dx) { err -= dy; x0 += sx; }
 		if (e2 < dy) { err += dx; y0 += sy; }
+	}
+}
+
+void gfx_set_logo(gfx_ctxt_t *ctxt, u16 pos_x, u16 pos_y,
+	const u16 size_x, const u16 size_y, const u8 *buf)
+{
+	u32 pos = 0;
+	for (u32 y = pos_y; y < pos_y + size_y; y++)
+	{
+		for (u32 x = pos_x; x < pos_x + size_x; x++)
+		{
+			ctxt->fb[x + y*ctxt->stride] = (0xFF << 24) | buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16);
+			pos+=3;
+		}
 	}
 }
