@@ -187,7 +187,7 @@ int sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, v
 }
 
 /*
-* MMC specific functions. 
+* MMC specific functions.
 */
 
 static int _mmc_storage_get_op_cond_inner(sdmmc_storage_t *storage, u32 *pout, u32 power)
@@ -605,7 +605,7 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 			if (cond & SD_ROCR_S18A && supports_low_voltage)
 			{
 				//The low voltage regulator configuration is valid for SDMMC1 only.
-				if (storage->sdmmc->id == SDMMC_1 && 
+				if (storage->sdmmc->id == SDMMC_1 &&
 					_sdmmc_storage_execute_cmd_type1(storage, SD_SWITCH_VOLTAGE, 0, 0, R1_STATE_READY))
 				{
 					if (!sdmmc_enable_low_voltage(storage->sdmmc))
