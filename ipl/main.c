@@ -668,9 +668,9 @@ void power_off()
 int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
-	static const u32 MULTIPART_SPLIT_SIZE = (1u << 31);
-	static const u32 SECTORS_TO_MIB_COEFF  = 0x800;
+	static const u32 SECTORS_TO_MIB_COEFF  = 11;
 
+	u32 multipartSplitSize = (1u << 31);
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
@@ -687,17 +687,21 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	partialIdxFilename[11] = 0;
 
 	gfx_printf(&gfx_con, "SD Card free space: %d MiB, Total dump size %d MiB\n",
-		sd_fs.free_clst * sd_fs.csize / SECTORS_TO_MIB_COEFF,
-		totalSectors / SECTORS_TO_MIB_COEFF);
+		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
+		totalSectors >> SECTORS_TO_MIB_COEFF);
 
-	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (MULTIPART_SPLIT_SIZE / 512);
+	// 1GB parts for sd cards 8GB and less
+	if ((sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits)) <= 8192)
+		multipartSplitSize = (1u << 30);
+	// Maximum parts fitting the free space available
+	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (multipartSplitSize / 512);
 
 	// Check if the USER partition or the RAW eMMC fits the sd card free space
 	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
 	{
 		isSmallSdCard = 1;
 
-		gfx_printf(&gfx_con, "%kSD card free space is smaller than dump total size.%k\n", 0xFF00BAFF, 0xFFFFFFFF);
+		gfx_printf(&gfx_con, "%k\nSD card free space is smaller than dump total size.%k\n", 0xFF00BAFF, 0xFFFFFFFF);
 
 		if (!maxSplitParts)
 		{
@@ -729,13 +733,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		maxSplitParts += currPartIdx;
 	}
 	else
-		gfx_printf(&gfx_con, "%kContinuing with partial dumping...%k\n\n", 0xFF00BAFF, 0xFFFFFFFF);
+		gfx_printf(&gfx_con, "%kPartial dumping enabled (with %d MiB parts)...%k\n\n", 0xFF00BAFF, multipartSplitSize >> 20, 0xFFFFFFFF);
 
 	// Check if filesystem is FAT32 or the free space is smaller and dump in parts
 	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
 	{
-		static const u32 MULTIPART_SPLIT_SECTORS = MULTIPART_SPLIT_SIZE/NX_EMMC_BLOCKSIZE;
-		numSplitParts = (totalSectors+MULTIPART_SPLIT_SECTORS-1)/MULTIPART_SPLIT_SECTORS;
+		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
+		numSplitParts = (totalSectors + multipartSplitSectors - 1) / multipartSplitSectors;
 
 		outFilename = alloca(sdPathLen+4);
 		memcpy(outFilename, sd_path, sdPathLen);
@@ -784,13 +788,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	// Continue from where we left, if partial dump in progress.
 	if (partialDumpInProgress)
 	{
-		lba_curr += currPartIdx * (MULTIPART_SPLIT_SIZE / NX_EMMC_BLOCKSIZE);
-		totalSectors -= currPartIdx * (MULTIPART_SPLIT_SIZE / NX_EMMC_BLOCKSIZE);
+		lba_curr += currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
+		totalSectors -= currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
 	}
 
 	while(totalSectors > 0)
 	{
-		if (numSplitParts != 0 && bytesWritten >= MULTIPART_SPLIT_SIZE)
+		if (numSplitParts != 0 && bytesWritten >= multipartSplitSize)
 		{
 			f_close(&fp);
 			memset(&fp, 0, sizeof(fp));
@@ -886,7 +890,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		bytesWritten += num * NX_EMMC_BLOCKSIZE;
 
 		// Force a flush after a lot of data if not splitting
-		if (numSplitParts == 0 && bytesWritten >= MULTIPART_SPLIT_SIZE)
+		if (numSplitParts == 0 && bytesWritten >= multipartSplitSize)
 		{
 			f_sync(&fp);
 			bytesWritten = 0;
