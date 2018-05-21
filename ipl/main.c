@@ -407,7 +407,7 @@ void print_mmc_info()
 	gfx_clear(&gfx_ctxt, 0xFF000000);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	static const u32 SECTORS_TO_MIB_COEFF  = 0x800;
+	static const u32 SECTORS_TO_MIB_COEFF  = 11;
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -523,7 +523,7 @@ void print_mmc_info()
 			gfx_printf(&gfx_con, " 3: %kRPMB       %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFFFFFFF,
 				rpmb_size / 1024, rpmb_size / 1024 / 512);
 			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %05d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFFFFFFF,
-				storage.sec_cnt / SECTORS_TO_MIB_COEFF, storage.sec_cnt);
+				storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
 			gfx_printf(&gfx_con, "%kGPP (eMMC USER) partition table:%k\n", 0xFFFFDD00, 0xFFFFFFFF);
 
 			sdmmc_storage_set_mmc_partition(&storage, 0);
@@ -533,7 +533,7 @@ void print_mmc_info()
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
 				gfx_printf(&gfx_con, " %02d: %k%s%k\n     Size: % 5d MiB (LBA Sectors 0x%07X, LBA Range: %08X-%08X)%k\n",
-					gpp_idx++, 0xFF14FDAE, part->name, 0xFFFFFFFF, (part->lba_end - part->lba_start + 1) / SECTORS_TO_MIB_COEFF,
+					gpp_idx++, 0xFF14FDAE, part->name, 0xFFFFFFFF, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end, 0xFFFFFFFF);
 			}
 		}
@@ -550,7 +550,7 @@ void print_sdcard_info()
 	gfx_clear(&gfx_ctxt, 0xFF000000);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	static const u32 SECTORS_TO_MIB_COEFF  = 0x800;
+	static const u32 SECTORS_TO_MIB_COEFF  = 11;
 
 	if (sd_mount())
 	{
@@ -572,30 +572,17 @@ void print_sdcard_info()
 			sd_storage.cid.month, sd_storage.cid.year);
 
 		gfx_printf(&gfx_con, "%kCard-Specific Data V%d.0:%k\n", 0xFFFFDD00, sd_storage.csd.structure + 1, 0xFFFFFFFF);
-		switch(sd_storage.csd.structure)
-		{
-		case 0:
-			capacity = (sd_storage.csd.capacity << sd_storage.csd.read_blkbits) / 1024 / 1024;
-			gfx_printf(&gfx_con,
-				" Cmd Classes:    %02X\n\
-				 Capacity:       %d MiB\n",
-				sd_storage.csd.cmdclass, capacity);
-			break;
-		case 1:
-			capacity = (sd_storage.csd.c_size << sd_storage.csd.read_blkbits) / 1024;
-			gfx_printf(&gfx_con,
-				" Cmd Classes:    %02X\n\
-				 Capacity:       %d MiB\n",
-				sd_storage.csd.cmdclass, capacity);
-			break;
-		}
+		capacity = sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits);
 		gfx_printf(&gfx_con,
-			" Bus Width:      %d\n\
+			" Cmd Classes:    %02X\n\
+			 Capacity:       %d MiB\n\
+			 Bus Width:      %d\n\
 			 Speed Class:    %d\n\
 			 UHS Grade:      U%d\n\
 			 Video Class:    V%d\n\
 			 App perf class: A%d\n\
 			 Write Protect:  %d\n\n",
+			sd_storage.csd.cmdclass, capacity,
 			sd_storage.ssr.bus_width, sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade,
 			sd_storage.ssr.video_class, sd_storage.ssr.app_class, sd_storage.csd.write_protect);
 
@@ -603,7 +590,7 @@ void print_sdcard_info()
 		f_getfree("", &sd_fs.free_clst, NULL);
 		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d B\n",
 				0xFFFFDD00, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFFFFFFF,
-				sd_fs.free_clst * sd_fs.csize / SECTORS_TO_MIB_COEFF, sd_fs.csize * 512);
+				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, sd_fs.csize * 512);
 	}
 
 	sleep(1000000);
@@ -745,7 +732,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		gfx_printf(&gfx_con, "%kContinuing with partial dumping...%k\n\n", 0xFF00BAFF, 0xFFFFFFFF);
 
 	// Check if filesystem is FAT32 or the free space is smaller and dump in parts
-	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT/NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
+	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
 	{
 		static const u32 MULTIPART_SPLIT_SECTORS = MULTIPART_SPLIT_SIZE/NX_EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors+MULTIPART_SPLIT_SECTORS-1)/MULTIPART_SPLIT_SECTORS;
@@ -759,11 +746,11 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			outFilename[sdPathLen] = '0';
 			if (numSplitParts >= 10)
 			{
-				outFilename[sdPathLen+1] = '0';
-				outFilename[sdPathLen+2] = 0;
+				outFilename[sdPathLen + 1] = '0';
+				outFilename[sdPathLen + 2] = 0;
 			}
 			else
-				outFilename[sdPathLen+1] = 0;
+				outFilename[sdPathLen + 1] = 0;
 		}
 		// Continue from where we left, if partial dump in progress.
 		else
@@ -771,7 +758,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			if (numSplitParts >= 10 && currPartIdx < 10)
 			{
 				outFilename[sdPathLen] = '0';
-				itoa(currPartIdx, &outFilename[sdPathLen+1], 10);
+				itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
 			}
 			else
 				itoa(currPartIdx, &outFilename[sdPathLen], 10);
@@ -812,7 +799,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			if (numSplitParts >= 10 && currPartIdx < 10)
 			{
 				outFilename[sdPathLen] = '0';
-				itoa(currPartIdx, &outFilename[sdPathLen+1], 10);
+				itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
 			}
 			else
 				itoa(currPartIdx, &outFilename[sdPathLen], 10);
@@ -939,7 +926,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	if (!sd_mount())
 		goto out;
 
-	gfx_puts(&gfx_con, "Checking for available free space...\n");
+	gfx_puts(&gfx_con, "Checking for available free space...\n\n");
 	// Get SD Card free space for partial dumping
 	f_getfree("", &sd_fs.free_clst, NULL);
 
@@ -961,7 +948,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
 		bootPart.lba_end = (BOOT_PART_SIZE/NX_EMMC_BLOCKSIZE)-1;
-		for (i=0; i<2; i++)
+		for (i = 0; i < 2; i++)
 		{
 			memcpy(bootPart.name, "BOOT", 4);
 			bootPart.name[4] = (u8)('0' + i);
