@@ -68,10 +68,14 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 
 		u32 btn = btn_wait();
 
-		if (btn & BTN_VOL_DOWN && idx < cnt - 1)
+		if (btn & BTN_VOL_DOWN && idx < (cnt - 1))
 			idx++;
+		else if (btn & BTN_VOL_DOWN && idx == (cnt - 1))
+			idx = 0;
 		if (btn & BTN_VOL_UP && idx > 0)
 			idx--;
+		else if (btn & BTN_VOL_UP && idx == 0)
+			idx = cnt - 1;
 		if (btn & BTN_POWER)
 		{
 			ment_t *ent = &menu->ents[idx];
