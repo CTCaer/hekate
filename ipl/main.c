@@ -732,7 +732,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		// Increase maxSplitParts to accommodate previously dumped parts
 		maxSplitParts += currPartIdx;
 	}
-	else
+	else if (isSmallSdCard)
 		gfx_printf(&gfx_con, "%kPartial dumping enabled (with %d MiB parts)...%k\n\n", 0xFF00BAFF, multipartSplitSize >> 20, 0xFFFFFFFF);
 
 	// Check if filesystem is FAT32 or the free space is smaller and dump in parts
