@@ -1159,6 +1159,37 @@ out:;
 	btn_wait();
 }
 
+void toggle_autorcm(){
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		goto out;
+	}
+
+	u8 *tempbuf = (u8 *)malloc(0x200);
+	sdmmc_storage_set_mmc_partition(&storage, 1);
+	
+	int i, sect = 0;
+	for (i = 0; i < 4; i++)
+	{
+		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
+		sdmmc_storage_read(&storage, sect, 1, tempbuf);
+		tempbuf[0x10] ^= 0x77; //xor by arbitrary number to corrupt
+		sdmmc_storage_write(&storage, sect, 1, tempbuf);
+	}
+	
+	free(tempbuf);
+	sdmmc_storage_end(&storage);
+	
+	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n", 0xFF00EE2C, 0xFFFFFFFF);
+
+out:;
+	sleep(1000000);
+	btn_wait();
+}
+
 void about()
 {
 	static const char octopus[] =
@@ -1211,6 +1242,24 @@ menu_t menu_cinfo = {
 	"Console info", 0, 0
 };
 
+ment_t ment_autorcm[] = {
+	MDEF_BACK(),
+	MDEF_BACK(),
+	MDEF_BACK(),
+	MDEF_BACK(),
+	MDEF_HANDLER("Toggle AutoRCM", toggle_autorcm),
+	MDEF_BACK(),
+	MDEF_BACK(),
+	MDEF_BACK(),
+	MDEF_BACK(),
+	MDEF_END()
+};
+
+menu_t menu_autorcm = {
+	ment_autorcm,
+	"AutoRCM", 0, 0
+};
+
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_HANDLER("Dump RAW eMMC", dump_emmc_rawnand),
@@ -1218,8 +1267,10 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
 	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
 	MDEF_HANDLER("Dump package1", dump_package1),
+	MDEF_MENU("AutoRCM", &menu_autorcm),
 	MDEF_END()
 };
+
 menu_t menu_tools = {
 	ment_tools,
 	"Tools", 0, 0
