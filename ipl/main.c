@@ -344,14 +344,11 @@ void print_fuseinfo()
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 
-	sleep(1000000);
-
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
 		if (sd_mount())
 		{
-			FIL fuseFp;
 			char fuseFilename[9];
 			memcpy(fuseFilename, "fuse.bin", 8);
 			fuseFilename[8] = 0;
@@ -361,7 +358,7 @@ void print_fuseinfo()
 			else
 				gfx_puts(&gfx_con, "\nDone!\n");				
 		}
-		sleep(2000000);
+
 		btn_wait();
 	}
 }
@@ -380,14 +377,11 @@ void print_kfuseinfo()
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 
-	sleep(1000000);
-
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
 		if (sd_mount())
 		{
-			FIL kfuseFp;
 			char kfuseFilename[10];
 			memcpy(kfuseFilename, "kfuse.bin", 9);
 			kfuseFilename[9] = 0;
@@ -397,7 +391,7 @@ void print_kfuseinfo()
 			else
 				gfx_puts(&gfx_con, "\nDone!\n");
 		}
-		sleep(2000000);
+
 		btn_wait();
 	}
 }
@@ -541,7 +535,6 @@ void print_mmc_info()
 
 out:
 	sdmmc_storage_end(&storage);
-	sleep(1000000);
 
 	btn_wait();
 }
@@ -594,8 +587,6 @@ void print_sdcard_info()
 				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, sd_fs.csize * 512);
 	}
 
-	sleep(1000000);
-
 	btn_wait();
 }
 
@@ -640,7 +631,6 @@ void print_tsec_key()
 out:;
 	free(pkg1);
 	sdmmc_storage_end(&storage);
-	sleep(1000000);
 	btn_wait();
 }
 
@@ -1014,7 +1004,6 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		gfx_puts(&gfx_con, "\nDone. Press any key.\n");
 
 out:;
-	sleep(1000000);
 	btn_wait();
 }
 
@@ -1099,7 +1088,7 @@ out:;
 	free(pkg1);
 	free(secmon);
 	free(warmboot);
-	sleep(1000000);
+
 	btn_wait();
 }
 
@@ -1187,7 +1176,6 @@ void toggle_autorcm(){
 	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n", 0xFF00EE2C, 0xFFCCCCCC);
 
 out:;
-	sleep(1000000);
 	btn_wait();
 }
 
@@ -1225,7 +1213,6 @@ void about()
 	gfx_printf(&gfx_con, octopus, 0xFFFFCC00, 0xFFCCCCCC,
 		0xFFFFCC00, 0xFFCCFF00, 0xFFFFCC00, 0xFFCCCCCC);
 
-	sleep(1000000);
 	btn_wait();
 }
 
