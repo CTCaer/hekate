@@ -42,28 +42,28 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 {
 	int idx = 0, cnt;
 
-	gfx_clear(con->gfx_ctxt, 0xFF000000);
+	gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
 
 	while (1)
 	{
-		gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF000000);
+		gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
 		gfx_con_setpos(con, menu->x, menu->y);
 		gfx_printf(con, "[%s]\n\n", menu->caption);
 
+		// Draw the menu
 		for (cnt = 0; menu->ents[cnt].type != MENT_END; cnt++)
 		{
 			if (cnt == idx)
-				gfx_con_setcol(con, 0xFF000000, 1, 0xFFCCCCCC);
+				gfx_con_setcol(con, 0xFF1B1B1B, 1, 0xFFCCCCCC);
 			else
-				gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF000000);
+				gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
 			con->x += 8;
 			gfx_printf(con, "%s", menu->ents[cnt].caption);
 			if(menu->ents[cnt].type == MENT_MENU)
 				gfx_printf(con, "%k...", 0xFFEE9900);
 			gfx_putc(con, '\n');
 		}
-
-		gfx_con_setcol(con, 0xFFFFFFFF, 1, 0xFF000000);
+		gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
 		gfx_putc(con, '\n');
 
 		u32 btn = btn_wait();
@@ -94,7 +94,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				return NULL;
 				break;
 			}
-			gfx_clear(con->gfx_ctxt, 0xFF000000);
+			gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
 		}
 	}
 
