@@ -87,9 +87,9 @@ void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
 	con->gfx_ctxt = ctxt;
 	con->x = 0;
 	con->y = 0;
-	con->fgcol = 0xFFFFFFFF;
+	con->fgcol = 0xFFCCCCCC;
 	con->fillbg = 0;
-	con->bgcol = 0xFF000000;
+	con->bgcol = 0xFF1B1B1B;
 }
 
 void gfx_con_setcol(gfx_con_t *con, u32 fgcol, int fillbg, u32 bgcol)
