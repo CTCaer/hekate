@@ -1231,9 +1231,13 @@ void about()
 
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("---- SoC Info ----", 0xFFE6B90A),
 	MDEF_HANDLER("Print fuse info", print_fuseinfo),
 	MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_HANDLER("Print TSEC keys", print_tsec_key),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("-- Storage Info --", 0xFFE6B90A),
 	MDEF_HANDLER("Print eMMC info", print_mmc_info),
 	MDEF_HANDLER("Print SD Card info", print_sdcard_info),
 	MDEF_END()
@@ -1244,6 +1248,7 @@ menu_t menu_cinfo = {
 };
 
 ment_t ment_autorcm[] = {
+	MDEF_CAPTION("WARNING: This corrupts your BOOT0 partition!", 0xFF00FFE6),
 	MDEF_BACK(),
 	MDEF_BACK(),
 	MDEF_BACK(),
@@ -1263,11 +1268,19 @@ menu_t menu_autorcm = {
 
 ment_t ment_tools[] = {
 	MDEF_BACK(),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("------ Full --------", 0xFFE6B90A),
 	MDEF_HANDLER("Dump RAW eMMC", dump_emmc_rawnand),
+	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("-- GP Partitions --", 0xFFE6B90A),
 	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
-	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("------ Misc -------", 0xFFE6B90A),
 	MDEF_HANDLER("Dump package1", dump_package1),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("---- Dangerous ----", 0xFF0000FF),
 	MDEF_MENU("AutoRCM", &menu_autorcm),
 	MDEF_END()
 };
@@ -1279,11 +1292,14 @@ menu_t menu_tools = {
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch firmware", launch_firmware),
+	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
-	MDEF_HANDLER("Reboot (normal)", reboot_normal),
-	MDEF_HANDLER("Reboot (rcm)", reboot_rcm),
+	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_HANDLER("Reboot (Normal)", reboot_normal),
+	MDEF_HANDLER("Reboot (RCM)", reboot_rcm),
 	MDEF_HANDLER("Power off", power_off),
+	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_HANDLER("About", about),
 	MDEF_END()
 };
