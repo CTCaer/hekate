@@ -307,3 +307,16 @@ void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
 		if (e2 < dy) { err += dx; y0 += sy; }
 	}
 }
+
+void gfx_set_logo(gfx_ctxt_t *ctxt, const u8 *buf)
+{
+	u32 pos = 0;
+	for (u32 y = 1180; y < 1256; y++)
+	{
+		for (u32 x = 538; x < 696; x++)
+		{
+			ctxt->fb[x + y*ctxt->stride] = (0xFF << 24) | buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16);
+			pos+=3;
+		}
+	}
+}

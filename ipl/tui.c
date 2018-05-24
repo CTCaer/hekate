@@ -16,6 +16,7 @@
 
 #include "tui.h"
 #include "btn.h"
+#include "ctc_logo2.h"
 
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
 {
@@ -44,6 +45,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 	int prev_idx = 0;
 
 	gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+	gfx_set_logo(con->gfx_ctxt, Kc_HEKATE_LOGO);
 
 	while (1)
 	{
@@ -125,6 +127,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				break;
 			}
 			gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+			gfx_set_logo(con->gfx_ctxt, Kc_HEKATE_LOGO);
 		}
 	}
 
