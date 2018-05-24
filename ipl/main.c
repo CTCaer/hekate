@@ -582,9 +582,9 @@ void print_sdcard_info()
 
 		gfx_puts(&gfx_con, "Acquiring FAT volume info...\n\n");
 		f_getfree("", &sd_fs.free_clst, NULL);
-		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d B\n",
+		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
 				0xFFFFDD00, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
-				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, sd_fs.csize * 512);
+				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
 	}
 
 	btn_wait();
@@ -631,6 +631,8 @@ void print_tsec_key()
 out:;
 	free(pkg1);
 	sdmmc_storage_end(&storage);
+
+	gfx_puts(&gfx_con, "\nPress any key...\n");
 	btn_wait();
 }
 
@@ -845,7 +847,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		u32 num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 		while(!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
-			EPRINTFARGS("Error reading %d blocks @ LBA %08X from eMMC (try %d)",
+			EPRINTFARGS("Error reading %d blocks @ LBA %08X from eMMC (try %d), retrying...",
 				num, lba_curr, ++retryCount);
 
 			sleep(500000);
@@ -1061,28 +1063,28 @@ void dump_package1()
 
 	// dump package1
 	if (sd_save_to_file(pkg1, 0x40000, "pkg_decr.bin")) {
-		gfx_printf(&gfx_con, "Failed to create pkg_decr.bin\n");
+		EPRINTF("\nFailed to create pkg_decr.bin");
 		goto out;
 	}
-	gfx_puts(&gfx_con, "%kpackage1 dumped to pkg_decr.bin\n");
+	gfx_puts(&gfx_con, "\npackage1 dumped to pkg_decr.bin\n");
 
 	// dump sm
 	if (sd_save_to_file(secmon, 0x40000, "sm.bin")) {
-		gfx_puts(&gfx_con, "Failed to create sm.bin\n");
+		EPRINTF("\nFailed to create sm.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Secure Monitor dumped to sm.bin\n");
 
 	// dump warmboot
 	if (sd_save_to_file(warmboot, 0x40000, "warmboot.bin")) {
-		gfx_puts(&gfx_con, "Failed to create warmboot.bin\n");
+		EPRINTF("\nFailed to create warmboot.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n");
 
 
 	sdmmc_storage_end(&storage);
-	gfx_puts(&gfx_con, "Done. Press any key.\n");
+	gfx_puts(&gfx_con, "\nDone. Press any key.\n");
 
 out:;
 	free(pkg1);
@@ -1133,11 +1135,14 @@ void launch_firmware()
 			free(ments);
 		}
 		else
-			EPRINTF("Failed to load 'hekate_ipl.ini'.");
+			EPRINTF("Could not find or open 'hekate_ipl.ini' from SD Card!\nMake sure it exists.");
 	}
 
 	if (!cfg_sec)
-		gfx_printf(&gfx_con, "Using default launch configuration.\n");
+	{
+		sleep(3000000);
+		gfx_printf(&gfx_con, "Using default launch configuration...\n");
+	}
 
 	if (!hos_launch(cfg_sec))
 		EPRINTF("Failed to launch firmware.");
@@ -1145,7 +1150,6 @@ void launch_firmware()
 	//TODO: free ini.
 
 out:;
-	sleep(200000);
 	btn_wait();
 }
 
@@ -1154,7 +1158,7 @@ void toggle_autorcm(){
 	sdmmc_t sdmmc;
 	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		gfx_printf(&gfx_con, "%kFailed to init eMMC.%k\n", 0xFF0000FF, 0xFFFFFFFF);
+		EPRINTF("Failed to init eMMC.");
 		goto out;
 	}
 
