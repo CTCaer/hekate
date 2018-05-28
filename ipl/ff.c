@@ -26,7 +26,7 @@
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
-#define EFSPRINTF(text, ...) gfx_printf(&gfx_con, "\n\n%k[FatFS] "text"%k\n", 0xFF00FFFF, 0xFFFFFFFF)
+#define EFSPRINTF(text, ...) gfx_printf(&gfx_con, "\n\n\n%k[FatFS] "text"%k\n", 0xFF00FFFF, 0xFFFFFFFF)
 //#define EFSPRINTF(...)
 
 /*--------------------------------------------------------------------------

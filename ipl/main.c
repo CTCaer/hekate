@@ -69,7 +69,7 @@ int sd_mount()
 
 	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
 	{
-		EPRINTF("Failed to init SD card (make sure that it is inserted).");
+		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.");
 	}
 	else
 	{
@@ -82,7 +82,7 @@ int sd_mount()
 		}
 		else
 		{
-			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\n(make sure that a FAT32/exFAT partition exists)", res);
+			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\n(make sure that a FAT type partition exists)", res);
 		}
 	}
 
@@ -339,7 +339,7 @@ void print_fuseinfo()
 	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFFFF9955, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFFFFDD00, 0xFFCCCCCC);
 	gfx_hexdump(&gfx_con, 0x7000F900, (u8 *)0x7000F900, 0x2FC);
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
@@ -368,7 +368,7 @@ void print_kfuseinfo()
 	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFFFF9955, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFFFFDD00, 0xFFCCCCCC);
 	u32 buf[KFUSE_NUM_WORDS];
 	if (!kfuse_read(buf))
 		EPRINTF("CRC fail.");
@@ -617,7 +617,7 @@ void print_tsec_key()
 		u8 key[0x10];
 		int res = tsec_query(key, i, pkg1 + pkg1_id->tsec_off);
 
-		gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFFFF9955, i, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFFFFDD00, i, 0xFFCCCCCC);
 		if (res >= 0)
 		{
 			for (u32 i = 0; i < 0x10; i++)
@@ -679,7 +679,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	memcpy(partialIdxFilename, "partial.idx", 11);
 	partialIdxFilename[11] = 0;
 
-	gfx_printf(&gfx_con, "SD Card free space: %d MiB, Total dump size %d MiB\n",
+	gfx_printf(&gfx_con, "\nSD Card free space: %d MiB, Total dump size %d MiB\n\n",
 		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
 		totalSectors >> SECTORS_TO_MIB_COEFF);
 
@@ -765,7 +765,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	FIL fp;
 	if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 	{
-		EPRINTFARGS("Error creating file %s.", outFilename);
+		EPRINTFARGS("Error creating file %s.\n", outFilename);
 
 		return 0;
 	}
@@ -812,7 +812,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				}
 				else
 				{
-					EPRINTF("\nError creating partial.idx file.");
+					EPRINTF("\nError creating partial.idx file.\n");
 
 					free(buf);
 					return 0;
@@ -835,7 +835,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			// Create next part
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
-				EPRINTFARGS("Error creating file %s.", outFilename);
+				EPRINTFARGS("Error creating file %s.\n", outFilename);
 
 				free(buf);
 				return 0;
@@ -853,8 +853,9 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			sleep(500000);
 			if (retryCount >= 10)
 			{
-				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..",
+				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..\n",
 				num, lba_curr);
+				EPRINTF("\nPress any key and try again.\n");
 
 				free(buf);
 				f_close(&fp);
@@ -865,7 +866,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		if (res)
 		{
 			EPRINTFARGS("\nFatal error (%d) when writing to SD Card", res);
-			EPRINTF("\nPress any key and try again.");
+			EPRINTF("\nPress any key and try again.\n");
 
 			free(buf);
 			f_close(&fp);
@@ -900,7 +901,7 @@ out:;
 		f_unlink(partialIdxFilename);
 		gfx_printf(&gfx_con, "\n\nYou can now join the files and get the complete raw eMMC dump.");
 	}
-	gfx_putc(&gfx_con, '\n');
+	gfx_puts(&gfx_con, "\n\n");
 
 	return 1;
 }
@@ -1135,7 +1136,7 @@ void launch_firmware()
 			free(ments);
 		}
 		else
-			EPRINTF("Could not find or open 'hekate_ipl.ini' from SD Card!\nMake sure it exists.");
+			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
 	}
 
 	if (!cfg_sec)
