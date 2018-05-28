@@ -867,8 +867,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			EPRINTFARGS("Error reading %d blocks @ LBA %08X from eMMC (try %d), retrying...",
 				num, lba_curr, ++retryCount);
 
-			sleep(500000);
-			if (retryCount >= 10)
+			sleep(150000);
+			if (retryCount >= 3)
 			{
 				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
