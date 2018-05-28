@@ -31,8 +31,8 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
 	
 	for (int i = 0; i < 6; i++)
 	{
-		gfx_line(con->gfx_ctxt, x, y + i + 1, x + 3 * val, y + i + 1, 0xFFFFFFFF);
-		gfx_line(con->gfx_ctxt, x + 3 * val, y + i + 1, x + 3 * 100, y + i + 1, 0xFF888888);
+		gfx_line(con->gfx_ctxt, x, y + i + 1, x + 3 * val, y + i + 1, 0xFFCCCCCC);
+		gfx_line(con->gfx_ctxt, x + 3 * val, y + i + 1, x + 3 * 100, y + i + 1, 0xFF555555);
 	}
 
 	gfx_con_setpos(con, cx, cy);
