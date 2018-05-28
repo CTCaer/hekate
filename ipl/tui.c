@@ -16,6 +16,7 @@
 
 #include "tui.h"
 #include "btn.h"
+#include "ctc_logo2.h"
 
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
 {
@@ -27,9 +28,9 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
 
 	gfx_printf(con, "[%3d%%]", val);
 
-	x += 7 * 8;
+	x += 7 * con->fntsz;
 	
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < con->fontmult * 6; i++)
 	{
 		gfx_line(con->gfx_ctxt, x, y + i + 1, x + 3 * val, y + i + 1, 0xFFCCCCCC);
 		gfx_line(con->gfx_ctxt, x + 3 * val, y + i + 1, x + 3 * 100, y + i + 1, 0xFF555555);
@@ -44,6 +45,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 	int prev_idx = 0;
 
 	gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+	gfx_set_logo(con->gfx_ctxt, Kc_HEKATE_LOGO);
 
 	while (1)
 	{
@@ -124,7 +126,9 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			default:
 				break;
 			}
+			gfx_con_setfontsz(con, 16);
 			gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+			gfx_set_logo(con->gfx_ctxt, Kc_HEKATE_LOGO);
 		}
 	}
 

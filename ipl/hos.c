@@ -213,10 +213,10 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		DPRINTF("%kCould not identify package1 version (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
+		DPRINTF("%kCould not identify package1,\nversion (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
 		goto out;
 	}
-	DPRINTF("Identified package1 ('%s'), keyblob version %d\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
+	DPRINTF("Identified package1 ('%s'),\nkeyblob version %d\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
 
 	//Read the correct keyblob.
 	ctxt->keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
