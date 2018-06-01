@@ -35,8 +35,8 @@
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
-#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
-//#define DPRINTF(...)
+//#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
+#define DPRINTF(...)
 
 enum KB_FIRMWARE_VERSION {
 	KB_FIRMWARE_VERSION_100_200 = 0,
@@ -213,10 +213,10 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		DPRINTF("%kCould not identify package1 version (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
+		gfx_printf(&gfx_con, "%kCould not identify package1 version (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
 		goto out;
 	}
-	DPRINTF("Identified package1 ('%s'), keyblob version %d\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
+	gfx_printf(&gfx_con, "Identified package1 ('%s'), Keyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
 
 	//Read the correct keyblob.
 	ctxt->keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
@@ -241,7 +241,7 @@ static int _read_emmc_pkg2(launch_ctxt_t *ctxt)
 	//Parse eMMC GPT.
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &storage);
-DPRINTF("parsed GPT\n");
+	DPRINTF("Parsed GPT\n");
 	//Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
@@ -254,10 +254,10 @@ DPRINTF("parsed GPT\n");
 	u32 *hdr = (u32 *)(tmp + 0x100);
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
 	free(tmp);
-DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
+	DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 	//Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
-DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
+	DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
 	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
@@ -315,7 +315,7 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 	merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
 	mkip1->kip1 = malloc(f_size(&fp));
 	f_read(&fp, mkip1->kip1, f_size(&fp), NULL);
-DPRINTF("loaded kip from SD (size %08X)\n", f_size(&fp));
+	DPRINTF("Loaded kip1 from SD (size %08X)\n", f_size(&fp));
 	f_close(&fp);
 	list_append(&ctxt->kip1_list, &mkip1->link);
 	return 1;
@@ -358,14 +358,10 @@ int hos_launch(ini_sec_t *cfg)
 	if (!_read_emmc_pkg1(&ctxt))
 		return 0;
 
-	//XXX: remove this once we support 3+.
-	//if (ctxt.pkg1_id->kb > 0)
-	//	return 0;
-
-DPRINTF("loaded pkg1 and keyblob\n");
+	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
 	//Generate keys.
 	keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
-DPRINTF("generated keys\n");
+	DPRINTF("generated keys\n");
 	//Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
@@ -373,7 +369,7 @@ DPRINTF("generated keys\n");
 		pkg1_unpack((void *)0x8000D000, (void *)ctxt.pkg1_id->secmon_base, ctxt.pkg1_id, ctxt.pkg1);
 		//gfx_hexdump(&gfx_con, 0x8000D000, (void *)0x8000D000, 0x100);
 		//gfx_hexdump(&gfx_con, ctxt.pkg1_id->secmon_base, (void *)ctxt.pkg1_id->secmon_base, 0x100);
-DPRINTF("decrypted and unpacked pkg1\n");
+		gfx_printf(&gfx_con, "Decrypted and unpacked package1\n");
 	}
 	//Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
@@ -399,14 +395,14 @@ DPRINTF("decrypted and unpacked pkg1\n");
 			if (!_read_emmc_pkg2(&ctxt))
 				return 0;
 
-			DPRINTF("read pkg2\n");
+			gfx_printf(&gfx_con, "Read package2\n");
 			//Decrypt package2 and parse KIP1 blobs in INI1 section.
 			pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
 
 			LIST_INIT(kip1_info);
 			pkg2_parse_kips(&kip1_info, pkg2_hdr);
 
-			DPRINTF("parsed ini1\n");
+			gfx_printf(&gfx_con, "Parsed ini1\n");
 			
 			//Use the kernel included in package2 in case we didn't load one already.
 			if (!ctxt.kernel)
@@ -421,13 +417,13 @@ DPRINTF("decrypted and unpacked pkg1\n");
 
 			//Rebuild and encrypt package2.
 			pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
-			DPRINTF("rebuilt pkg2\n");
+			gfx_printf(&gfx_con, "Rebuilt and loaded package2\n");
 		} else {
 			//Read package2.
 			if (!_read_emmc_pkg2(&ctxt))
 				return 0;
 
-			DPRINTF("read pkg2\n");
+			gfx_printf(&gfx_con, "Loaded package2\n");
 			memcpy((void *)0xA9800000, ctxt.pkg2, ctxt.pkg2_size);
 		}
 	}
@@ -446,8 +442,6 @@ DPRINTF("decrypted and unpacked pkg1\n");
 		case KB_FIRMWARE_VERSION_400:
 		case KB_FIRMWARE_VERSION_500:
 			se_key_acc_ctrl(0xC, 0xFF);
-			//se_key_acc_ctrl(0xD, 0xFF);
-			//se_key_acc_ctrl(0xE, 0xFF);
 			se_key_acc_ctrl(0xF, 0xFF);
 			break;
 	}
