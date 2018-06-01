@@ -372,6 +372,8 @@ static int _config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
 
 int hos_launch(ini_sec_t *cfg)
 {
+	int bootStatePackage2;
+	int bootStateContinue;
 	launch_ctxt_t ctxt;
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	list_init(&ctxt.kip1_list);
@@ -468,24 +470,30 @@ int hos_launch(ini_sec_t *cfg)
 			memcpy((void *)0xA9800000, ctxt.pkg2, ctxt.pkg2_size);
 		}
 	}
+    // Unmount SD Card
+	f_mount(NULL, "", 1);
 
 	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF00FF96, 0xFFCCCCCC);
 
 	se_aes_key_clear(0x8);
 	se_aes_key_clear(0xB);
-	
+
 	switch (ctxt.pkg1_id->kb) {
 		case KB_FIRMWARE_VERSION_100_200:
 		case KB_FIRMWARE_VERSION_300:
 		case KB_FIRMWARE_VERSION_301:
 			se_key_acc_ctrl(0xC, 0xFF);
 			se_key_acc_ctrl(0xD, 0xFF);
+			bootStatePackage2 = 2;
+			bootStateContinue = 3;
 			break;
 		default:
 		case KB_FIRMWARE_VERSION_400:
 		case KB_FIRMWARE_VERSION_500:
 			se_key_acc_ctrl(0xC, 0xFF);
 			se_key_acc_ctrl(0xF, 0xFF);
+			bootStatePackage2 = 3;
+			bootStateContinue = 4;
 			break;
 	}
 
@@ -503,7 +511,7 @@ int hos_launch(ini_sec_t *cfg)
 	vu32 *mb_in = (vu32 *)0x40002EF8;
 	vu32 *mb_out = (vu32 *)0x40002EFC;
 
-	*mb_in = 0;
+	*mb_in = bootStatePackage2;
 	*mb_out = 0;
 
 	//Wait for secmon to get ready.
@@ -512,14 +520,8 @@ int hos_launch(ini_sec_t *cfg)
 		sleep(1);
 
 	//Signal 'BootConfig'.
-	*mb_in = 1;
-	sleep(100);
-
-	//Signal package2 available.
-	*mb_in = 2;
-	sleep(100);
-	*mb_in = 3;
-	sleep(100);
+	//*mb_in = 1;
+	//sleep(100);
 
 	/*PMC(0x4) = 0x7FFFF3;
 	PMC(0x2C4) = 0xFFFFFFFF;
@@ -534,8 +536,7 @@ int hos_launch(ini_sec_t *cfg)
 	//display_end();
 
 	//Signal to continue boot.
-	*mb_in = 4;
-	sleep(100);
+	*mb_in = bootStateContinue;
 
 	//Halt ourselves in waitevent state.
 	while (1)
