@@ -190,6 +190,9 @@ typedef struct _launch_ctxt_t
 	void *kernel;
 	u32 kernel_size;
 	link_t kip1_list;
+
+	u8 *svcperm;
+	u8 *debugmode;
 } launch_ctxt_t;
 
 typedef struct _merge_kip_t
@@ -321,6 +324,26 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_svcperm(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*(u8 *)value == '1')
+	{
+		DPRINTF("Disabled SVC verification\n");
+		ctxt->svcperm = malloc(1);
+	}
+		
+	return 1;
+}
+
+static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*(u8 *)value == '1')
+	{
+		DPRINTF("Enabled Debug mode\n");
+		ctxt->debugmode = malloc(1);
+	}
+}
+
 typedef struct _cfg_handler_t
 {
 	const char *key;
@@ -332,6 +355,8 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "secmon", _config_secmon },
 	{ "kernel", _config_kernel },
 	{ "kip1", _config_kip1 },
+	{ "fullsvcperm", _config_svcperm },
+	{ "debugmode", _config_debugmode },
 	{ NULL, NULL },
 };
 
@@ -384,12 +409,18 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		//Else we patch it to allow for an unsigned package2.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
+		//In case a kernel patch option is set. Allows to disable Svc Verififcation or/and enable Debug mode
+		patch_t *kernel_patchset = ctxt.pkg1_id->kernel_patchset;
 		
-		if (secmon_patchset != NULL) {
-			for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
-				*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
+		if (secmon_patchset != NULL || (kernel_patchset != NULL && (ctxt.svcperm || ctxt.debugmode))) {
+			if (secmon_patchset != NULL)
+			{
+				gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+				for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
+					*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
+			}
 
-			DPRINTF("loaded warmboot.bin and secmon\n");
+			gfx_printf(&gfx_con, "Loaded warmboot.bin and secmon\n");
 			
 			//Read package2.
 			if (!_read_emmc_pkg2(&ctxt))
@@ -409,9 +440,19 @@ int hos_launch(ini_sec_t *cfg)
 			{
 				ctxt.kernel = pkg2_hdr->data;
 				ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
+
+				if (kernel_patchset != NULL && (ctxt.svcperm || ctxt.debugmode))
+				{
+					gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+					if (ctxt.svcperm && kernel_patchset[0].off != 0xFFFFFFFF)
+						*(vu32 *)(ctxt.kernel + kernel_patchset[0].off) = kernel_patchset[0].val;
+					if (ctxt.debugmode && kernel_patchset[1].off != 0xFFFFFFFF)
+						*(vu32 *)(ctxt.kernel + kernel_patchset[1].off) = kernel_patchset[1].val;
+				}
 			}
 
 			//Merge extra KIP1s into loaded ones.
+			gfx_printf(&gfx_con, "%kPatching kernel initial processes%k\n", 0xFF00BAFF, 0xFFCCCCCC);
 			LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 				pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
@@ -427,6 +468,8 @@ int hos_launch(ini_sec_t *cfg)
 			memcpy((void *)0xA9800000, ctxt.pkg2, ctxt.pkg2_size);
 		}
 	}
+
+	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF00FF96, 0xFFCCCCCC);
 
 	se_aes_key_clear(0x8);
 	se_aes_key_clear(0xB);
