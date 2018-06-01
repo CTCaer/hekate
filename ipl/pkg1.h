@@ -40,6 +40,7 @@ typedef struct _pkg1_id_t
 	u32 sec_map[3];
 	u32 secmon_base;
 	patch_t *secmon_patchset;
+	patch_t *kernel_patchset;
 } pkg1_id_t;
 
 typedef struct _pk11_hdr_t

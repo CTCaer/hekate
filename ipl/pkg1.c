@@ -24,9 +24,12 @@
 #define _BL(a, o) 0x94000000 | (((o) - (a)) >> 2) & 0x3FFFFFF
 #define _NOP() 0xD503201F
 
+//#define SM_100_ADR 0x40014020
+#define SM_100_ADR 0x4002B020
+
 PATCHSET_DEF(_secmon_1_patchset,
-	//Patch the relocator to be able to run from 0x4002D000.
-	//{ 0x1E0, _ADRP(0, 0x7C013000 - 0x4002D000) }
+	//Patch the relocator to be able to run from SM_100_ADR.
+	{ 0x1E0, _ADRP(0, 0x7C013000 - (SM_100_ADR - 0x40)) },
 	//Patch package2 decryption and signature/hash checks.
 	{ 0x9F0 + 0xADC, _NOP() }, //Header signature.
 	{ 0x9F0 + 0xB8C, _NOP() }, //Version.
@@ -103,7 +106,7 @@ PATCHSET_DEF(_kernel_5_patchset,
 */
 
 static const pkg1_id_t _pkg1_ids[] = {
-	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, 0x40014020, _secmon_1_patchset, _kernel_1_patchset }, //1.0.0
+	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, SM_100_ADR, _secmon_1_patchset, _kernel_1_patchset }, //1.0.0 (Patched relocator)
 	{ "20170210155124", 0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, _secmon_2_patchset, _kernel_2_patchset }, //2.0.0 - 2.3.0
 	{ "20170519101410", 1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, _secmon_3_patchset, _kernel_3_patchset }, //3.0.0
 	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, _secmon_3_patchset, _kernel_3_patchset }, //3.0.1 - 3.0.2
