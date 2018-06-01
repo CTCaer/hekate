@@ -90,7 +90,7 @@ PATCHSET_DEF(_kernel_4_patchset,
 );
 
 PATCHSET_DEF(_kernel_5_patchset,
-	{ 0xFFFFFFFF, 0xFFFFFFFF },  // TODO: MISSING
+	{ 0x45E6C, _NOP() },         // Disable SVC verifications
 	{ 0x5513C, _MOVZX(8, 1, 0) } // Enable Debug Patch
 );
 
