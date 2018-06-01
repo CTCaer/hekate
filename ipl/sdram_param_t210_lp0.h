@@ -262,7 +262,7 @@ struct sdram_params {
 	/* Specifies the value for EMC_PUTERM_WIDTH */
 	u32 EmcPutermWidth;
 	/* Specifies the value for EMC_PUTERM_ADJ */
-	u32 EmcPutermAdj;
+	////u32 EmcPutermAdj;
 
 	/* Specifies the value for EMC_QRST */
 	u32 EmcQRst;
@@ -647,7 +647,7 @@ struct sdram_params {
 	u32 EmcAcpdControl;
 
 	/* Specifies the value for EMC_SWIZZLE_RANK0_BYTE_CFG */
-	u32 EmcSwizzleRank0ByteCfg;
+	////u32 EmcSwizzleRank0ByteCfg;
 	/* Specifies the value for EMC_SWIZZLE_RANK0_BYTE0 */
 	u32 EmcSwizzleRank0Byte0;
 	/* Specifies the value for EMC_SWIZZLE_RANK0_BYTE1 */
@@ -657,7 +657,7 @@ struct sdram_params {
 	/* Specifies the value for EMC_SWIZZLE_RANK0_BYTE3 */
 	u32 EmcSwizzleRank0Byte3;
 	/* Specifies the value for EMC_SWIZZLE_RANK1_BYTE_CFG */
-	u32 EmcSwizzleRank1ByteCfg;
+	////u32 EmcSwizzleRank1ByteCfg;
 	/* Specifies the value for EMC_SWIZZLE_RANK1_BYTE0 */
 	u32 EmcSwizzleRank1Byte0;
 	/* Specifies the value for EMC_SWIZZLE_RANK1_BYTE1 */
