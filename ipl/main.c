@@ -658,6 +658,85 @@ void power_off()
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
 
+int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, u32 NUM_SECTORS_PER_ITER, emmc_part_t *part)
+{
+	FIL fp;
+	u32 prevPct = 200;
+
+	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
+	{
+		u8 *bufEm = (u8 *)malloc(NX_EMMC_BLOCKSIZE * NUM_SECTORS_PER_ITER);
+		u8 *bufSd = (u8 *)malloc(NX_EMMC_BLOCKSIZE * NUM_SECTORS_PER_ITER);
+
+		u32 totalSectorsVer = (u32)(f_size(&fp) >> 9);
+		u32 lbaCurrVer = lba_curr - totalSectorsVer;
+
+		u32 pct = (u64)((u64)(lbaCurrVer - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
+		tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF00FF96, 0xFF005515);
+
+		while (totalSectorsVer > 0)
+		{
+			u32 num = MIN(totalSectorsVer, NUM_SECTORS_PER_ITER);
+
+			if(!sdmmc_storage_read(storage, lbaCurrVer, num, bufEm))
+			{
+				gfx_con_setfontsz(&gfx_con, 16);
+				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
+				num, lbaCurrVer);
+
+				free(bufEm);
+				free(bufSd);
+				f_close(&fp);
+				return 1;
+			}
+			if (!(f_read(&fp, bufSd, num, NULL) == FR_OK))
+			{
+				gfx_con_setfontsz(&gfx_con, 16);
+				EPRINTFARGS("\nFailed to read %d blocks from sd card.\nVerification failed..\n", num);
+
+				free(bufEm);
+				free(bufSd);
+				f_close(&fp);
+				return 1;
+			}
+
+			if(!memcmp(bufEm, bufSd, num << 9))
+			{
+				gfx_con_setfontsz(&gfx_con, 16);
+				EPRINTFARGS("\nVerification failed.\nVerification failed..\n", num);
+
+				free(bufEm);
+				free(bufSd);
+				f_close(&fp);
+				return 1;
+			}
+
+			pct = (u64)((u64)(lbaCurrVer - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
+			if (pct != prevPct)
+			{
+				tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF00FF96, 0xFF005515);
+				prevPct = pct;
+			}
+
+			lbaCurrVer += num;
+			totalSectorsVer -= num;
+		}
+		free(bufEm);
+		free(bufSd);
+		f_close(&fp);
+
+		tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFFCCCCCC, 0xFF555555);
+
+		return 0;
+	}
+	else
+	{
+		EPRINTF("\nFile not found or could not be loaded.\nVerification failed..\n");
+		gfx_con_setfontsz(&gfx_con, 16);
+		return 1;
+	}
+}
+
 int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
@@ -793,6 +872,15 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			memset(&fp, 0, sizeof(fp));
 			currPartIdx++;
 
+			// Verify part
+			if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
+			{
+				EPRINTF("\nPress any key and try again.\n");
+
+				free(buf);
+				return 0;
+			}
+
 			if (numSplitParts >= 10 && currPartIdx < 10)
 			{
 				outFilename[sdPathLen] = '0';
@@ -875,7 +963,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		u32 pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
-			tui_pbar(&gfx_con, 0, gfx_con.y, pct);
+			tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFFCCCCCC, 0xFF555555);
 			prevPct = pct;
 		}
 
@@ -890,16 +978,28 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			bytesWritten = 0;
 		}
 	}
-	tui_pbar(&gfx_con, 0, gfx_con.y, 100);
+	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
 
-out:;
+	// Dumping process ended successfully
 	free(buf);
 	f_close(&fp);
+
+	// Verify last part or single file dump
+	if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
+	{
+		EPRINTF("\nPress any key and try again.\n");
+
+		free(buf);
+		return 0;
+	}
+	else
+		tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF00FF96, 0xFF005515);
+
 	// Remove partial dump index file if no fatal errors occurred.
 	if(isSmallSdCard)
 	{
 		f_unlink(partialIdxFilename);
-		gfx_printf(&gfx_con, "\n\nYou can now join the files and get the complete raw eMMC dump.");
+		gfx_printf(&gfx_con, "%k%K\n\nYou can now join the files and get the complete raw eMMC dump.", 0xFFCCCCCC, 0xFF1B1B1B);
 	}
 	gfx_puts(&gfx_con, "\n\n");
 
@@ -1004,7 +1104,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	gfx_printf(&gfx_con, "%kTime taken: %d seconds.%k\n", 0xFF00FF96, (get_tmr() - timer) / 1000000, 0xFFCCCCCC);
 	sdmmc_storage_end(&storage);
 	if (res)
-		gfx_puts(&gfx_con, "\nDone. Press any key.\n");
+		gfx_puts(&gfx_con, "\nFinished and verified!\nPress any key.\n");
 
 out:;
 	btn_wait();
