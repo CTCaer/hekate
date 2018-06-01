@@ -680,7 +680,6 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 			if(!sdmmc_storage_read(storage, lbaCurrVer, num, bufEm))
 			{
-				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
 				num, lbaCurrVer);
 
@@ -691,7 +690,6 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 			}
 			if (!(f_read(&fp, bufSd, num, NULL) == FR_OK))
 			{
-				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nFailed to read %d blocks from sd card.\nVerification failed..\n", num);
 
 				free(bufEm);
@@ -702,7 +700,6 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 			if(!memcmp(bufEm, bufSd, num << 9))
 			{
-				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nVerification failed.\nVerification failed..\n", num);
 
 				free(bufEm);
@@ -732,7 +729,6 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 	else
 	{
 		EPRINTF("\nFile not found or could not be loaded.\nVerification failed..\n");
-		gfx_con_setfontsz(&gfx_con, 16);
 		return 1;
 	}
 }
