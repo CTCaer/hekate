@@ -265,7 +265,7 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 				for(u32 j = 0; j < 0x10; j++)
 				{
 					u8 c = buf[i - 0x10 + j];
-					if(c >= 32 && c < 128)
+					if(c >= 32 && c <= 126)
 						gfx_putc(con, c);
 					else
 						gfx_putc(con, '.');
@@ -275,6 +275,27 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 			gfx_printf(con, "%08x: ", base + i);
 		}
 		gfx_printf(con, "%02x ", buf[i]);
+		if (i == len - 1)
+		{
+			int ln = len % 0x10 != 0;
+			u32 k = 0x10 - 1;
+			if (ln)
+			{
+				k = len & 0xF - 1;
+				for (u32 j = 0; j < 0x10 - k; j++)
+					gfx_puts(con, "   ");
+			}
+			gfx_puts(con, "| ");
+			for(u32 j = 0; j < (ln ? k : k + 1); j++)
+			{
+				u8 c = buf[i - k + j];
+				if(c >= 32 && c <= 126)
+					gfx_putc(con, c);
+				else
+					gfx_putc(con, '.');
+			}
+			gfx_putc(con, '\n');
+		}
 	}
 	gfx_putc(con, '\n');
 }
