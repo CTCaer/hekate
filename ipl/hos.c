@@ -386,7 +386,7 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
 	//Generate keys.
 	keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
-	DPRINTF("generated keys\n");
+	DPRINTF("Generated keys\n");
 	//Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
