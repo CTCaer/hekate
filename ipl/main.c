@@ -516,7 +516,7 @@ void print_mmc_info()
 				boot_size / 1024, boot_size / 1024 / 512);
 			gfx_printf(&gfx_con, " 3: %kRPMB       %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
 				rpmb_size / 1024, rpmb_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %05d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFCCCCCC,
 				storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
 			gfx_printf(&gfx_con, "%kGPP (eMMC USER) partition table:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
 
@@ -1287,12 +1287,12 @@ out:;
 void about()
 {
 	static const char octopus[] =
-	"hekate (c) 2018 naehrwert, st4rk\n\n"
+	"hekate (C) 2018 naehrwert, st4rk\n\n"
 	"Thanks to: %kderrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8%k\n\n"
 	"Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute\n\n"
 	"Open source and free packages used:\n"
-	" - FatFs R0.13a (Copyright (C) 2017, ChaN)\n"
-	" - bcl-1.2.0 (Copyright (c) 2003-2006 Marcus Geelnard)\n\n"
+	" - FatFs R0.13a, (Copyright (C) 2017, ChaN)\n"
+	" - bcl-1.2.0,    (Copyright (C) 2003-2006, Marcus Geelnard)\n\n"
 	"                         %k___\n"
 	"                      .-'   `'.\n"
 	"                     /         \\\n"

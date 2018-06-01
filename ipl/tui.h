@@ -57,7 +57,7 @@ typedef struct _menu_t
 #define MDEF_CAPTION(caption, color) { MENT_CAPTION, caption, color }
 #define MDEF_CHGLINE() {MENT_CHGLINE}
 
-void tui_pbar(gfx_con_t *con, int x, int y, u32 val);
+void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol);
 void *tui_do_menu(gfx_con_t *con, menu_t *menu);
 
 #endif

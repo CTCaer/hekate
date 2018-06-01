@@ -17,7 +17,7 @@
 #include "tui.h"
 #include "btn.h"
 
-void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
+void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 {
 	u32 cx, cy;
 
@@ -25,14 +25,14 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val)
 
 	gfx_con_setpos(con, x, y);
 
-	gfx_printf(con, "[%3d%%]", val);
+	gfx_printf(con, "%k[%3d%%]%k", fgcol, val, bgcol);
 
 	x += 7 * 8;
 	
 	for (int i = 0; i < 6; i++)
 	{
-		gfx_line(con->gfx_ctxt, x, y + i + 1, x + 3 * val, y + i + 1, 0xFFCCCCCC);
-		gfx_line(con->gfx_ctxt, x + 3 * val, y + i + 1, x + 3 * 100, y + i + 1, 0xFF555555);
+		gfx_line(con->gfx_ctxt, x, y + i + 1, x + 3 * val, y + i + 1, fgcol);
+		gfx_line(con->gfx_ctxt, x + 3 * val, y + i + 1, x + 3 * 100, y + i + 1, bgcol);
 	}
 
 	gfx_con_setpos(con, cx, cy);
