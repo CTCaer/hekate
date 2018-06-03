@@ -204,32 +204,34 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	case 1:
 	case 5:
 	case 6:
-		sdmmc->regs->hostctl &= 0xFB;
-		sdmmc->regs->hostctl2 &= 0xFFF7;
+		sdmmc->regs->hostctl  &= 0xFB; //Should this be 0xFFFB (~4) ?
+		sdmmc->regs->hostctl2 &= SDHCI_CTRL_VDD_330;
 		break;
 	case 2:
 	case 7:
-		sdmmc->regs->hostctl |= 4;
-		sdmmc->regs->hostctl2 &= 0xFFF7;
+		sdmmc->regs->hostctl  |= 4;
+		sdmmc->regs->hostctl2 &= SDHCI_CTRL_VDD_330;
 		break;
 	case 3:
 	case 11:
 	case 13:
 	case 14:
-		sdmmc->regs->hostctl2 = (sdmmc->regs->hostctl2 & 0xFFF8) | 3;
-		sdmmc->regs->hostctl2 |= 8;
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | UHS_SDR104_BUS_SPEED;
+		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 	case 4:
-		sdmmc->regs->hostctl2 = (sdmmc->regs->hostctl2 & 0xFFF8) | 5;
-		sdmmc->regs->hostctl2 |= 8;
+		 //Non standard
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | HS400_BUS_SPEED;
+		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 	case 8:
-		sdmmc->regs->hostctl2 = sdmmc->regs->hostctl2 & 0xFFF8;
-		sdmmc->regs->hostctl2 |= 8;
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | UHS_SDR12_BUS_SPEED;
+		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 	case 10:
-		sdmmc->regs->hostctl2 = (sdmmc->regs->hostctl2 & 0xFFF8) | 2;
-		sdmmc->regs->hostctl2 |= 8;
+		//T210 Errata for SDR50, the host must be set to SDR104.
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | UHS_SDR104_BUS_SPEED;
+		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 	}
 
@@ -551,16 +553,16 @@ int sdmmc_config_tuning(sdmmc_t *sdmmc, u32 type, u32 cmd)
 	sdmmc->regs->field_1C0 = (sdmmc->regs->field_1C0 & 0xFFFF1FFF) | flag;
 	sdmmc->regs->field_1C0 = (sdmmc->regs->field_1C0 & 0xFFFFE03F) | 0x40;
 	sdmmc->regs->field_1C0 |= 0x20000;
-	sdmmc->regs->hostctl2 |= 0x40;
+	sdmmc->regs->hostctl2  |= SDHCI_CTRL_EXEC_TUNING;
 
 	for (u32 i = 0; i < max; i++)
 	{
 		_sdmmc_config_tuning_once(sdmmc, cmd);
-		if (!(sdmmc->regs->hostctl2 & 0x40))
+		if (!(sdmmc->regs->hostctl2 & SDHCI_CTRL_EXEC_TUNING))
 			break;
 	}
 
-	if (sdmmc->regs->hostctl2 & 0x80)
+	if (sdmmc->regs->hostctl2 & SDHCI_CTRL_TUNED_CLK)
 		return 1;
 	return 0;
 }
@@ -577,14 +579,14 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 			return 0;
 	}
 
-	sdmmc->regs->hostctl2 &= 0x7FFF;
-	sdmmc->regs->clkcon &= ~TEGRA_MMC_CLKCON_CLKGEN_SELECT;
-	sdmmc->regs->hostctl2 |= 0x1000;
+	sdmmc->regs->hostctl2 &= ~SDHCI_CTRL_PRESET_VAL_EN;
+	sdmmc->regs->clkcon   &= ~TEGRA_MMC_CLKCON_CLKGEN_SELECT;
+	sdmmc->regs->hostctl2 |= SDHCI_HOST_VERSION_4_EN;
 
 	if (!(sdmmc->regs->capareg & 0x10000000))
 		return 0;
 
-	sdmmc->regs->hostctl2 |= 0x2000;
+	sdmmc->regs->hostctl2 |= SDHCI_ADDRESSING_64BIT_EN;
 	sdmmc->regs->hostctl &= 0xE7;
 	sdmmc->regs->timeoutcon = (sdmmc->regs->timeoutcon & 0xF0) | 0xE;
 
@@ -1076,7 +1078,7 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 	_sdmmc_get_clkcon(sdmmc);
 	sleep(5000);
 	
-	if (sdmmc->regs->hostctl2 & 8)
+	if (sdmmc->regs->hostctl2 & SDHCI_CTRL_VDD_180)
 	{
 		sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 		_sdmmc_get_clkcon(sdmmc);

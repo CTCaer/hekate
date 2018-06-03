@@ -378,8 +378,13 @@ int hos_launch(ini_sec_t *cfg)
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	list_init(&ctxt.kip1_list);
 
+	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
 	if (cfg && !_config(&ctxt, cfg))
 		return 0;
+        
+	gfx_printf(&gfx_con, "Initializing...\n\n");
 
 	//Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
@@ -497,7 +502,7 @@ int hos_launch(ini_sec_t *cfg)
 			break;
 	}
 
-	//Clear 'BootConfig'.
+	//Clear 'BootConfig' for retail systems.
 	memset((void *)0x4003D000, 0, 0x3000);
 
 	//pkg2_decrypt((void *)0xA9800000);
