@@ -25,7 +25,7 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 
 	gfx_con_setpos(con, x, y);
 
-	gfx_printf(con, "%k[%3d%%]%k", fgcol, val, bgcol);
+	gfx_printf(con, "%k[%3d%%]%k", fgcol, val, 0xFFCCCCCC);
 
 	x += 7 * 8;
 	

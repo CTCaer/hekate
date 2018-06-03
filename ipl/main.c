@@ -995,7 +995,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	if(isSmallSdCard)
 	{
 		f_unlink(partialIdxFilename);
-		gfx_printf(&gfx_con, "%k%K\n\nYou can now join the files and get the complete raw eMMC dump.", 0xFFCCCCCC, 0xFF1B1B1B);
+		gfx_printf(&gfx_con, "%k\n\nYou can now join the files\nand get the complete raw eMMC dump.", 0xFFCCCCCC);
 	}
 	gfx_puts(&gfx_con, "\n\n");
 
@@ -1097,10 +1097,10 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	}
 
 	gfx_putc(&gfx_con, '\n');
-	gfx_printf(&gfx_con, "%kTime taken: %d seconds.%k\n", 0xFF00FF96, (get_tmr() - timer) / 1000000, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", (get_tmr() - timer) / 1000000);
 	sdmmc_storage_end(&storage);
 	if (res)
-		gfx_puts(&gfx_con, "\nFinished and verified!\nPress any key.\n");
+		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key.\n",0xFF00FF96, 0xFFCCCCCC);
 
 out:;
 	btn_wait();

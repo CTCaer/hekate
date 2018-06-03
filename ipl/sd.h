@@ -86,6 +86,7 @@
 #define UHS_SDR50_BUS_SPEED		2
 #define UHS_SDR104_BUS_SPEED	3
 #define UHS_DDR50_BUS_SPEED		4
+#define HS400_BUS_SPEED 		5
 
 /*
 * SD_SWITCH mode
@@ -102,6 +103,6 @@
 * SD_SWITCH access modes
 */
 #define SD_SWITCH_ACCESS_DEF	0
-#define SD_SWITCH_ACCESS_HS	1
+#define SD_SWITCH_ACCESS_HS		1
 
 #endif /* LINUX_MMC_SD_H */
