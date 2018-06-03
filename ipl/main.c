@@ -38,6 +38,7 @@
 #include "gpio.h"
 #include "sdmmc.h"
 #include "ff.h"
+#include "ctc_logo2.h"
 #include "tui.h"
 #include "heap.h"
 #include "list.h"
@@ -47,6 +48,7 @@
 #include "hos.h"
 #include "pkg1.h"
 #include "mmc.h"
+#include "lz.h"
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -61,6 +63,7 @@ sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
 int sd_mounted;
+u8 *Kc_HEKATE_LOGO;
 
 int sd_mount()
 {
@@ -503,21 +506,29 @@ void print_mmc_info()
 				 Cmd Classes:   %02X\n\
 				 Capacity:      %s\n\
 				 Max Speed:     %d MB/s (%d MHz)\n\
-				 Type Support:  %s\n\n",
+				 Type Support:  ",
 				storage.csd.mmca_vsn, storage.ext_csd.rev, storage.ext_csd.dev_version, storage.csd.cmdclass,
-				storage.csd.capacity == (4096 * 512) ? "High" : "Low", speed & 0xFFFF, (speed >> 16) & 0xFFFF, card_type_support);
+				storage.csd.capacity == (4096 * 512) ? "High" : "Low", speed & 0xFFFF, (speed >> 16) & 0xFFFF);
+			gfx_con_setfontsz(&gfx_con, 8);
+			gfx_printf(&gfx_con, "%s", card_type_support);
+			gfx_con_setfontsz(&gfx_con, 16);
+			gfx_printf(&gfx_con, "\n\n", card_type_support);
 
 			u32 boot_size = storage.ext_csd.boot_mult << 17;
 			u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
 			gfx_printf(&gfx_con, "%keMMC Partitions:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
-			gfx_printf(&gfx_con, " 1: %kBOOT0      %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_printf(&gfx_con, " 1: %kBOOT0      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
 				boot_size / 1024, boot_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 2: %kBOOT1      %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_putsep(&gfx_con);
+			gfx_printf(&gfx_con, " 2: %kBOOT1      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
 				boot_size / 1024, boot_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 3: %kRPMB       %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_putsep(&gfx_con);
+			gfx_printf(&gfx_con, " 3: %kRPMB       %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
 				rpmb_size / 1024, rpmb_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_putsep(&gfx_con);
+			gfx_printf(&gfx_con, " 0: %kGPP (USER) %k\n    Size: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFCCCCCC,
 				storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
+			gfx_putsep(&gfx_con);
 			gfx_printf(&gfx_con, "%kGPP (eMMC USER) partition table:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, 0);
@@ -526,9 +537,10 @@ void print_mmc_info()
 			int gpp_idx = 0;
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
-				gfx_printf(&gfx_con, " %02d: %k%s%k\n     Size: % 5d MiB (LBA Sectors 0x%07X, LBA Range: %08X-%08X)\n",
+				gfx_printf(&gfx_con, " %02d: %k%s%k\n     Size: % 5d MiB (LBA Sectors 0x%07X)\n     LBA Range: %08X-%08X\n",
 					gpp_idx++, 0xFF14FDAE, part->name, 0xFFCCCCCC, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
+				gfx_putsep(&gfx_con);
 			}
 		}
 	}
@@ -607,6 +619,7 @@ void print_tsec_key()
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
+		gfx_con_setfontsz(&gfx_con, 8);
 		EPRINTFARGS("Could not identify package1 version to read TSEC firmware (= '%s').",
 			(char *)pkg1 + 0x10);
 		goto out;
@@ -639,12 +652,14 @@ out:;
 void reboot_normal()
 {
 	sd_unmount();
+	free(Kc_HEKATE_LOGO);
 	panic(0x21); //Bypass fuse programming in package1.
 }
 
 void reboot_rcm()
 {
 	sd_unmount();
+	free(Kc_HEKATE_LOGO);
 	PMC(APBDEV_PMC_SCRATCH0) = 2; //Reboot into rcm.
 	PMC(0) |= 0x10;
 	while (1)
@@ -654,6 +669,7 @@ void reboot_rcm()
 void power_off()
 {
 	sd_unmount();
+	free(Kc_HEKATE_LOGO);
 	//TODO: we should probably make sure all regulators are powered off properly.
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
@@ -680,6 +696,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 			if(!sdmmc_storage_read(storage, lbaCurrVer, num, bufEm))
 			{
+				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
 				num, lbaCurrVer);
 
@@ -690,6 +707,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 			}
 			if (!(f_read(&fp, bufSd, num, NULL) == FR_OK))
 			{
+				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nFailed to read %d blocks from sd card.\nVerification failed..\n", num);
 
 				free(bufEm);
@@ -700,6 +718,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 			if(!memcmp(bufEm, bufSd, num << 9))
 			{
+				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("\nVerification failed.\nVerification failed..\n", num);
 
 				free(bufEm);
@@ -728,6 +747,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 	}
 	else
 	{
+		gfx_con_setfontsz(&gfx_con, 16);
 		EPRINTF("\nFile not found or could not be loaded.\nVerification failed..\n");
 		return 1;
 	}
@@ -754,6 +774,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	memcpy(partialIdxFilename, "partial.idx", 11);
 	partialIdxFilename[11] = 0;
 
+	gfx_con_setfontsz(&gfx_con, 8);
 	gfx_printf(&gfx_con, "\nSD Card free space: %d MiB, Total dump size %d MiB\n\n",
 		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
 		totalSectors >> SECTORS_TO_MIB_COEFF);
@@ -773,6 +794,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		if (!maxSplitParts)
 		{
+			gfx_con_setfontsz(&gfx_con, 16);
 			EPRINTF("Not enough free space for partial dumping.");
 
 			return 0;
@@ -792,6 +814,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		if (!maxSplitParts)
 		{
+			gfx_con_setfontsz(&gfx_con, 16);
 			EPRINTF("Not enough free space for partial dumping.");
 
 			return 0;
@@ -840,6 +863,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	FIL fp;
 	if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 	{
+		gfx_con_setfontsz(&gfx_con, 16);
 		EPRINTFARGS("Error creating file %s.\n", outFilename);
 
 		return 0;
@@ -896,6 +920,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				}
 				else
 				{
+					gfx_con_setfontsz(&gfx_con, 16);
 					EPRINTF("\nError creating partial.idx file.\n");
 
 					free(buf);
@@ -910,6 +935,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 						   Don\'t move the partial.idx file!\n\
 						3. Unplug and re-plug USB while pressing Vol+.\n\
 						4. Run hekate - ipl again and press Dump RAW eMMC or eMMC USER to continue\n");
+					gfx_con_setfontsz(&gfx_con, 16);
 
 					free(buf);
 					return 1;
@@ -919,6 +945,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			// Create next part
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
+				gfx_con_setfontsz(&gfx_con, 16);
 				EPRINTFARGS("Error creating file %s.\n", outFilename);
 
 				free(buf);
@@ -937,7 +964,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			sleep(150000);
 			if (retryCount >= 3)
 			{
-				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..\n",
+				gfx_con_setfontsz(&gfx_con, 16);
+				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
 				num, lba_curr);
 				EPRINTF("\nPress any key and try again.\n");
 
@@ -949,6 +977,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		res = f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
 		if (res)
 		{
+			gfx_con_setfontsz(&gfx_con, 16);
 			EPRINTFARGS("\nFatal error (%d) when writing to SD Card", res);
 			EPRINTF("\nPress any key and try again.\n");
 
@@ -991,6 +1020,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	else
 		tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF00FF96, 0xFF005515);
 
+	gfx_con_setfontsz(&gfx_con, 16);
 	// Remove partial dump index file if no fatal errors occurred.
 	if(isSmallSdCard)
 	{
@@ -1048,7 +1078,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 
-			gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i,
+			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
@@ -1071,7 +1101,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
 					continue;
 
-				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
+				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
 				res = dump_emmc_part(part->name, &storage, part);
@@ -1088,7 +1118,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
 			strcpy(rawPart.name, "rawnand.bin");
 			{
-				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
+				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
 				res = dump_emmc_part(rawPart.name, &storage, &rawPart);
@@ -1138,6 +1168,7 @@ void dump_package1()
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 	if (!pkg1_id)
 	{
+		gfx_con_setfontsz(&gfx_con, 8);
 		EPRINTFARGS("Could not identify package1 version to read TSEC firmware (= '%s').", (char *)pkg1 + 0x10);
 		goto out;
 	}
@@ -1241,8 +1272,13 @@ void launch_firmware()
 		gfx_printf(&gfx_con, "Using default launch configuration...\n");
 	}
 
+	free(Kc_HEKATE_LOGO);
 	if (!hos_launch(cfg_sec))
+	{
+		Kc_HEKATE_LOGO = (u8 *)malloc(36864);
+		LZ_Uncompress(Kc_HEKATE_LOGOlz, Kc_HEKATE_LOGO, SZ_HEKATE_LOGOLZ);
 		EPRINTF("Failed to launch firmware.");
+	}
 
 	//TODO: free ini.
 
@@ -1282,6 +1318,7 @@ out:;
 
 void about()
 {
+	gfx_con_setfontsz(&gfx_con, 8);
 	static const char octopus[] =
 	"hekate (C) 2018 naehrwert, st4rk\n\n"
 	"Thanks to: %kderrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8%k\n\n"
@@ -1393,7 +1430,7 @@ ment_t ment_top[] = {
 };
 menu_t menu_top = {
 	ment_top,
-	"hekate - ipl", 0, 0
+	"hekate - ipl (CTCaer mod v2.2)", 0, 0
 };
 
 extern void pivot_stack(u32 stack_top);
@@ -1416,6 +1453,8 @@ void ipl_main()
 	u32 *fb = display_init_framebuffer();
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
 	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	Kc_HEKATE_LOGO = (u8 *)malloc(36864);
+	LZ_Uncompress(Kc_HEKATE_LOGOlz, Kc_HEKATE_LOGO, SZ_HEKATE_LOGOLZ);
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
 	while (1)
