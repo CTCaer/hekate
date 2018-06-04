@@ -74,6 +74,21 @@ static const u8 master_keyseed_4xx[0x10] =
 static const u8 console_keyseed_4xx[0x10] = 
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
+#define CRC32C_POLY 0x82f63b78
+
+u32 crc32c(const u8 *buf, u32 len)
+{
+    int i;
+    u32 crc = 0;
+
+    crc = ~crc;
+    while (len--) {
+        crc ^= *buf++;
+        for (i = 0; i < 8; i++)
+            crc = crc & 1 ? (crc >> 1) ^ CRC32C_POLY : crc >> 1;
+    }
+    return ~crc;
+}
 
 static void _se_lock()
 {
@@ -178,6 +193,7 @@ typedef struct _launch_ctxt_t
 
 	void *pkg1;
 	const pkg1_id_t *pkg1_id;
+	const pkg2_kernel_id_t *pkg2_kernel_id;
 
 	void *warmboot;
 	u32 warmboot_size;
@@ -413,18 +429,14 @@ int hos_launch(ini_sec_t *cfg)
 	}
 	else
 	{
-		//Else we patch it to allow for an unsigned package2.
+		//Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
-		//In case a kernel patch option is set. Allows to disable Svc Verififcation or/and enable Debug mode
-		patch_t *kernel_patchset = ctxt.pkg1_id->kernel_patchset;
-		
-		if (secmon_patchset != NULL || (kernel_patchset != NULL && (ctxt.svcperm || ctxt.debugmode))) {
-			if (secmon_patchset != NULL)
-			{
-				gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFF00BAFF, 0xFFCCCCCC);
-				for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
-					*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
-			}
+
+		if (secmon_patchset != NULL)
+		{
+			gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+			for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
+				*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 
 			gfx_printf(&gfx_con, "Loaded warmboot.bin and secmon\n");
 			
@@ -447,13 +459,22 @@ int hos_launch(ini_sec_t *cfg)
 				ctxt.kernel = pkg2_hdr->data;
 				ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
 
-				if (kernel_patchset != NULL && (ctxt.svcperm || ctxt.debugmode))
+				if (ctxt.svcperm || ctxt.debugmode)
 				{
-					gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFF00BAFF, 0xFFCCCCCC);
-					if (ctxt.svcperm && kernel_patchset[0].off != 0xFFFFFFFF)
-						*(vu32 *)(ctxt.kernel + kernel_patchset[0].off) = kernel_patchset[0].val;
-					if (ctxt.debugmode && kernel_patchset[1].off != 0xFFFFFFFF)
-						*(vu32 *)(ctxt.kernel + kernel_patchset[1].off) = kernel_patchset[1].val;
+					u32 kernel_crc32 = crc32c((u8 *)ctxt.kernel, ctxt.kernel_size);
+					ctxt.pkg2_kernel_id = pkg2_identify(kernel_crc32);
+
+					//In case a kernel patch option is set. Allows to disable Svc Verififcation or/and enable Debug mode
+					patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
+
+					if (kernel_patchset != NULL)
+					{
+						gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+						if (ctxt.svcperm && kernel_patchset[0].off != 0xFFFFFFFF)
+							*(vu32 *)(ctxt.kernel + kernel_patchset[0].off) = kernel_patchset[0].val;
+						if (ctxt.debugmode && kernel_patchset[1].off != 0xFFFFFFFF)
+							*(vu32 *)(ctxt.kernel + kernel_patchset[1].off) = kernel_patchset[1].val;
+					}
 				}
 			}
 

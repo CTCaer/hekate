@@ -34,4 +34,10 @@ typedef volatile unsigned char vu8;
 typedef volatile unsigned short vu16;
 typedef volatile unsigned int vu32;
 
+typedef struct _patch_t
+{
+	u32 off;
+	u32 val;
+} patch_t;
+
 #endif

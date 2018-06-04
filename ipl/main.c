@@ -792,7 +792,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		if (!maxSplitParts)
 		{
-			EPRINTF("Not enough free space for partial dumping.");
+			EPRINTF("Not enough free space for Partial Backup.");
 
 			return 0;
 		}

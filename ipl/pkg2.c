@@ -25,6 +25,58 @@ extern gfx_con_t gfx_con;
 #define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)*/
 #define DPRINTF(...)
 
+#define _MOVZX(r, i, s) 0xD2800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F)
+#define _NOP() 0xD503201F
+
+// Include kernel patches here, so we can utilize pkg1 id
+PATCHSET_DEF(_kernel_1_patchset,
+	{ 0x3764C, _NOP() },         // Disable SVC verifications
+	{ 0x44074, _MOVZX(8, 1, 0) } // Enable Debug Patch
+);
+
+PATCHSET_DEF(_kernel_2_patchset,
+	{ 0x54834, _NOP() },         // Disable SVC verifications
+	{ 0x6086C, _MOVZX(8, 1, 0) } // Enable Debug Patch
+);
+
+PATCHSET_DEF(_kernel_3_patchset,
+	{ 0x3BD24, _NOP() },         // Disable SVC verifications
+	{ 0x483FC, _MOVZX(8, 1, 0) } // Enable Debug Patch
+);
+
+PATCHSET_DEF(_kernel_302_patchset,
+	{ 0x3BD24, _NOP() },         // Disable SVC verifications
+	{ 0x48414, _MOVZX(8, 1, 0) } // Enable Debug Patch
+);
+
+PATCHSET_DEF(_kernel_4_patchset,
+	{ 0x41EB4, _NOP() },         // Disable SVC verifications
+	{ 0x4EBFC, _MOVZX(8, 1, 0) } // Enable Debug Patch
+);
+
+PATCHSET_DEF(_kernel_5_patchset,
+	{ 0x45E6C, _NOP() },         // Disable SVC verifications
+	{ 0x5513C, _MOVZX(8, 1, 0) } // Enable Debug Patch
+);
+
+static const pkg2_kernel_id_t _pkg2_kernel_ids[] = {
+	{ 0x427f2647, _kernel_1_patchset },   //1.0.0
+	{ 0xae19cf1b, _kernel_2_patchset },   //2.0.0 - 2.3.0
+	{ 0x73c9e274, _kernel_3_patchset },   //3.0.0 - 3.0.1
+	{ 0xe0e8cdc4, _kernel_302_patchset }, //3.0.2
+	{ 0x485d0157, _kernel_4_patchset },   //4.0.0 - 4.1.0
+	{ 0xf3c363f2, _kernel_5_patchset },   //5.0.0 - 5.1.0
+	{ 0, 0 } //End.
+};
+
+const pkg2_kernel_id_t *pkg2_identify(u32 id)
+{
+	for (u32 i = 0; _pkg2_kernel_ids[i].crc32c_id; i++)
+		if (id == _pkg2_kernel_ids[i].crc32c_id)
+			return &_pkg2_kernel_ids[i];
+	return NULL;
+}
+
 static u32 _pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 {
 	u32 size = sizeof(pkg2_kip1_t);

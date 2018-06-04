@@ -25,12 +25,6 @@
 		{ 0xFFFFFFFF, 0xFFFFFFFF } \
 	}
 
-typedef struct _patch_t
-{
-	u32 off;
-	u32 val;
-} patch_t;
-
 typedef struct _pkg1_id_t
 {
 	const char *id;
@@ -42,7 +36,6 @@ typedef struct _pkg1_id_t
 	u32 warmboot_base;
 	int set_warmboot;
 	patch_t *secmon_patchset;
-	patch_t *kernel_patchset;
 } pkg1_id_t;
 
 typedef struct _pk11_hdr_t

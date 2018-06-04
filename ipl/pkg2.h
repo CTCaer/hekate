@@ -27,6 +27,12 @@
 
 #define INI1_MAGIC 0x31494E49
 
+#define PATCHSET_DEF(name, ...) \
+	patch_t name[] = { \
+		__VA_ARGS__, \
+		{ 0xFFFFFFFF, 0xFFFFFFFF } \
+	}
+
 typedef struct _pkg2_hdr_t
 {
 	u8 ctr[0x10];
@@ -82,12 +88,19 @@ typedef struct _pkg2_kip1_info_t
 	link_t link;
 } pkg2_kip1_info_t;
 
+typedef struct _pkg2_kernel_id_t
+{
+	u32 crc32c_id;
+	patch_t *kernel_patchset;
+} pkg2_kernel_id_t;
+
 void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2);
 int pkg2_has_kip(link_t *info, u64 tid);
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1);
 void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
 
+const pkg2_kernel_id_t *pkg2_identify(u32 id);
 pkg2_hdr_t *pkg2_decrypt(void *data);
 void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info);
 
