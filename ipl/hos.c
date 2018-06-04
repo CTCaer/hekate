@@ -398,16 +398,15 @@ int hos_launch(ini_sec_t *cfg)
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
 		pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
-		pkg1_unpack((void *)0x8000D000, (void *)ctxt.pkg1_id->secmon_base, ctxt.pkg1_id, ctxt.pkg1);
-		//gfx_hexdump(&gfx_con, 0x8000D000, (void *)0x8000D000, 0x100);
-		//gfx_hexdump(&gfx_con, ctxt.pkg1_id->secmon_base, (void *)ctxt.pkg1_id->secmon_base, 0x100);
+		pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, ctxt.pkg1_id, ctxt.pkg1);
 		gfx_printf(&gfx_con, "Decrypted and unpacked package1\n");
 	}
 	//Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
-		memcpy((void *)0x8000D000, ctxt.warmboot, ctxt.warmboot_size);
-	//Set warmboot address in PMC.
-	PMC(APBDEV_PMC_SCRATCH1) = 0x8000D000;
+		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
+	//Set warmboot address in PMC if required.
+	if (ctxt.pkg1_id->set_warmboot)
+		PMC(APBDEV_PMC_SCRATCH1) = 0x8000D000;
 	//Replace 'SecureMonitor' if requested.
 	if (ctxt.secmon) {
 		memcpy((void *)ctxt.pkg1_id->secmon_base, ctxt.secmon, ctxt.secmon_size);
@@ -528,6 +527,7 @@ int hos_launch(ini_sec_t *cfg)
 	//*mb_in = 1;
 	//sleep(100);
 
+	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
 	/*PMC(0x4) = 0x7FFFF3;
 	PMC(0x2C4) = 0xFFFFFFFF;
 	PMC(0x2D8) = 0xFFAFFFFF;
