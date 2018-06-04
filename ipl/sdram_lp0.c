@@ -23,7 +23,7 @@
  */
 void sdram_lp0_save_params(const void *params)
 {
-	const struct sdram_params *sdram = (const struct sdram_params *)params;
+	struct sdram_params *sdram = (struct sdram_params *)params;
 	struct tegra_pmc_regs *pmc = (struct tegra_pmc_regs *)PMC_BASE;
 
 #define pack(src, src_bits, dst, dst_bits) { \
@@ -43,6 +43,78 @@ void sdram_lp0_save_params(const void *params)
 
 /* 32 bits version c macro */
 #define c32(value, pmcreg) pmc->pmcreg = value
+
+	//TODO: pkg1.1 reads them from MC.
+	sdram->McGeneralizedCarveout1Bom = 0;
+	sdram->McGeneralizedCarveout1BomHi = 0;
+	sdram->McGeneralizedCarveout1Size128kb = 0;
+	sdram->McGeneralizedCarveout1Access0 = 0;
+	sdram->McGeneralizedCarveout1Access1 = 0;
+	sdram->McGeneralizedCarveout1Access2 = 0;
+	sdram->McGeneralizedCarveout1Access3 = 0;
+	sdram->McGeneralizedCarveout1Access4 = 0;
+	sdram->McGeneralizedCarveout1ForceInternalAccess0 = 0;
+	sdram->McGeneralizedCarveout1ForceInternalAccess1 = 0;
+	sdram->McGeneralizedCarveout1ForceInternalAccess2 = 0;
+	sdram->McGeneralizedCarveout1ForceInternalAccess3 = 0;
+	sdram->McGeneralizedCarveout1ForceInternalAccess4 = 0;
+	sdram->McGeneralizedCarveout1Cfg0 = 0;
+	sdram->McGeneralizedCarveout2Bom = 0x80020000;
+	sdram->McGeneralizedCarveout2BomHi = 0;
+	sdram->McGeneralizedCarveout2Size128kb = 2;
+	sdram->McGeneralizedCarveout2Access0 = 0;
+	sdram->McGeneralizedCarveout2Access1 = 0;
+	sdram->McGeneralizedCarveout2Access2 = 0x3000000;
+	sdram->McGeneralizedCarveout2Access3 = 0;
+	sdram->McGeneralizedCarveout2Access4 = 0x300;
+	sdram->McGeneralizedCarveout2ForceInternalAccess0 = 0;
+	sdram->McGeneralizedCarveout2ForceInternalAccess1 = 0;
+	sdram->McGeneralizedCarveout2ForceInternalAccess2 = 0;
+	sdram->McGeneralizedCarveout2ForceInternalAccess3 = 0;
+	sdram->McGeneralizedCarveout2ForceInternalAccess4 = 0;
+	sdram->McGeneralizedCarveout2Cfg0 = 0x440167E;
+	sdram->McGeneralizedCarveout3Bom = 0;
+	sdram->McGeneralizedCarveout3BomHi = 0;
+	sdram->McGeneralizedCarveout3Size128kb = 0;
+	sdram->McGeneralizedCarveout3Access0 = 0;
+	sdram->McGeneralizedCarveout3Access1 = 0;
+	sdram->McGeneralizedCarveout3Access2 = 0x3000000;
+	sdram->McGeneralizedCarveout3Access3 = 0;
+	sdram->McGeneralizedCarveout3Access4 = 0x300;
+	sdram->McGeneralizedCarveout3ForceInternalAccess0 = 0;
+	sdram->McGeneralizedCarveout3ForceInternalAccess1 = 0;
+	sdram->McGeneralizedCarveout3ForceInternalAccess2 = 0;
+	sdram->McGeneralizedCarveout3ForceInternalAccess3 = 0;
+	sdram->McGeneralizedCarveout3ForceInternalAccess4 = 0;
+	sdram->McGeneralizedCarveout3Cfg0 = 0x4401E7E;
+	sdram->McGeneralizedCarveout4Bom = 0;
+	sdram->McGeneralizedCarveout4BomHi = 0;
+	sdram->McGeneralizedCarveout4Size128kb = 0;
+	sdram->McGeneralizedCarveout4Access0 = 0;
+	sdram->McGeneralizedCarveout4Access1 = 0;
+	sdram->McGeneralizedCarveout4Access2 = 0;
+	sdram->McGeneralizedCarveout4Access3 = 0;
+	sdram->McGeneralizedCarveout4Access4 = 0;
+	sdram->McGeneralizedCarveout4ForceInternalAccess0 = 0;
+	sdram->McGeneralizedCarveout4ForceInternalAccess1 = 0;
+	sdram->McGeneralizedCarveout4ForceInternalAccess2 = 0;
+	sdram->McGeneralizedCarveout4ForceInternalAccess3 = 0;
+	sdram->McGeneralizedCarveout4ForceInternalAccess4 = 0;
+	sdram->McGeneralizedCarveout4Cfg0 = 0x8F;
+	sdram->McGeneralizedCarveout5Bom = 0;
+	sdram->McGeneralizedCarveout5BomHi = 0;
+	sdram->McGeneralizedCarveout5Size128kb = 0;
+	sdram->McGeneralizedCarveout5Access0 = 0;
+	sdram->McGeneralizedCarveout5Access1 = 0;
+	sdram->McGeneralizedCarveout5Access2 = 0;
+	sdram->McGeneralizedCarveout5Access3 = 0;
+	sdram->McGeneralizedCarveout5Access4 = 0;
+	sdram->McGeneralizedCarveout5ForceInternalAccess0 = 0;
+	sdram->McGeneralizedCarveout5ForceInternalAccess1 = 0;
+	sdram->McGeneralizedCarveout5ForceInternalAccess2 = 0;
+	sdram->McGeneralizedCarveout5ForceInternalAccess3 = 0;
+	sdram->McGeneralizedCarveout5ForceInternalAccess4 = 0;
+	sdram->McGeneralizedCarveout5Cfg0 = 0x8F;
 
 	s(EmcClockSource, 7:0, scratch6, 15:8);
 	s(EmcClockSourceDll, 7:0, scratch6, 23:16);
@@ -715,7 +787,8 @@ void sdram_lp0_save_params(const void *params)
 	s32(EmcBctSpare5, scratch42);
 	s32(EmcBctSpare4, scratch44);
 	s32(SwizzleRankByteEncode, scratch45);
-	s32(EmcBctSpare2, scratch46);
+	//s32(EmcBctSpare2, scratch46);
+	pmc->scratch46 = 0x40000DD8;
 	s32(EmcBctSpare1, scratch47);
 	s32(EmcBctSpare0, scratch48);
 	s32(EmcBctSpare9, scratch50);
@@ -1003,11 +1076,6 @@ void sdram_lp0_save_params(const void *params)
 	s32(McGeneralizedCarveout5ForceInternalAccess1, secure_scratch105);
 	s32(McGeneralizedCarveout5ForceInternalAccess2, secure_scratch106);
 	s32(McGeneralizedCarveout5ForceInternalAccess3, secure_scratch107);
-
-	/* Locking PMC secure scratch register (8 ~ 15) for writing */
-	//c(0x5555, sec_disable2, 15:0);
-	/* Locking PMC secure scratch register (4~ 7) for both reading and writing */
-	//c(0xff, sec_disable, 19:12);
 
 	c32(0, scratch2);
 	s(PllMInputDivider, 7:0, scratch2, 7:0);
