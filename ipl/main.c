@@ -93,7 +93,7 @@ void sd_unmount()
 {
 	if (sd_mounted)
 	{
-		gfx_puts(&gfx_con, "Unmounting SD card...\n");
+		gfx_puts(&gfx_con, "\n\nUnmounting SD card...\n");
 		f_mount(NULL, "", 1);
 		sdmmc_storage_end(&sd_storage);
 	}
@@ -754,7 +754,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	memcpy(partialIdxFilename, "partial.idx", 11);
 	partialIdxFilename[11] = 0;
 
-	gfx_printf(&gfx_con, "\nSD Card free space: %d MiB, Total dump size %d MiB\n\n",
+	gfx_printf(&gfx_con, "\nSD Card free space: %d MiB, Total backup size %d MiB\n\n",
 		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
 		totalSectors >> SECTORS_TO_MIB_COEFF);
 
@@ -769,19 +769,19 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	{
 		isSmallSdCard = 1;
 
-		gfx_printf(&gfx_con, "%k\nSD card free space is smaller than dump total size.%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%k\nSD card free space is smaller than total backup size.%k\n", 0xFF00BAFF, 0xFFCCCCCC);
 
 		if (!maxSplitParts)
 		{
-			EPRINTF("Not enough free space for partial dumping.");
+			EPRINTF("Not enough free space for Partial Backup.");
 
 			return 0;
 		}
 	}
-	// Check if we continuing a previous raw eMMC dump in progress.
+	// Check if we continuing a previous raw eMMC backup in progress.
 	if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK)
 	{
-		gfx_printf(&gfx_con, "%kFound partial dump in progress. Continuing...%k\n\n", 0xFF14FDAE, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kFound Partial Backup in progress. Continuing...%k\n\n", 0xFF14FDAE, 0xFFCCCCCC);
 
 		partialDumpInProgress = 1;
 		// Force partial dumping, even if the card is larger.
@@ -797,13 +797,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			return 0;
 		}
 
-		// Increase maxSplitParts to accommodate previously dumped parts
+		// Increase maxSplitParts to accommodate previously backed up parts
 		maxSplitParts += currPartIdx;
 	}
 	else if (isSmallSdCard)
-		gfx_printf(&gfx_con, "%kPartial dumping enabled (with %d MiB parts)...%k\n\n", 0xFF00BAFF, multipartSplitSize >> 20, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kPartial Backup enabled (with %d MiB parts)...%k\n\n", 0xFF00BAFF, multipartSplitSize >> 20, 0xFFCCCCCC);
 
-	// Check if filesystem is FAT32 or the free space is smaller and dump in parts
+	// Check if filesystem is FAT32 or the free space is smaller and backup in parts
 	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
 	{
 		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
@@ -824,7 +824,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			else
 				outFilename[sdPathLen + 1] = 0;
 		}
-		// Continue from where we left, if partial dump in progress.
+		// Continue from where we left, if Partial Backup in progress.
 		else
 		{
 			if (numSplitParts >= 10 && currPartIdx < 10)
@@ -853,7 +853,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u32 prevPct = 200;
 	int retryCount = 0;
 
-	// Continue from where we left, if partial dump in progress.
+	// Continue from where we left, if Partial Backup in progress.
 	if (partialDumpInProgress)
 	{
 		lba_curr += currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
@@ -888,7 +888,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			// Always create partial.idx before next part, in case a fatal error occurs.
 			if (isSmallSdCard)
 			{
-				// Create partial dump index file
+				// Create partial backup index file
 				if (f_open(&partialIdxFp, partialIdxFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
 				{
 					f_write(&partialIdxFp, &currPartIdx, 4, NULL);
@@ -902,14 +902,14 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 					return 0;
 				}
 
-				// More parts to dump that do not currently fit the sd card free space or fatal error
+				// More parts to backup that do not currently fit the sd card free space or fatal error
 				if (currPartIdx >= maxSplitParts)
 				{
 					gfx_puts(&gfx_con, "\n\n1. Press any key and Power off Switch from the main menu.\n\
 						2. Move the files from SD card to free space.\n\
 						   Don\'t move the partial.idx file!\n\
 						3. Unplug and re-plug USB while pressing Vol+.\n\
-						4. Run hekate - ipl again and press Dump RAW eMMC or eMMC USER to continue\n");
+						4. Run hekate again and press Backup eMMC RAW GPP (or eMMC USER) to continue.\n");
 
 					free(buf);
 					return 1;
@@ -976,11 +976,11 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	}
 	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
 
-	// Dumping process ended successfully
+	// Backup operation ended successfully
 	free(buf);
 	f_close(&fp);
 
-	// Verify last part or single file dump
+	// Verify last part or single file backup
 	if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
 	{
 		EPRINTF("\nPress any key and try again.\n");
@@ -991,11 +991,11 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	else
 		tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF00FF96, 0xFF005515);
 
-	// Remove partial dump index file if no fatal errors occurred.
+	// Remove partial backup index file if no fatal errors occurred.
 	if(isSmallSdCard)
 	{
 		f_unlink(partialIdxFilename);
-		gfx_printf(&gfx_con, "%k\n\nYou can now join the files\nand get the complete raw eMMC dump.", 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%k\n\nYou can now join the files\nand get the complete eMMC RAW GPP backup.", 0xFFCCCCCC);
 	}
 	gfx_puts(&gfx_con, "\n\n");
 
@@ -1021,7 +1021,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		goto out;
 
 	gfx_puts(&gfx_con, "Checking for available free space...\n\n");
-	// Get SD Card free space for partial dumping
+	// Get SD Card free space for Partial Backup
 	f_getfree("", &sd_fs.free_clst, NULL);
 
 	sdmmc_storage_t storage;
@@ -1113,9 +1113,15 @@ void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
 
 void dump_package1()
 {
-	u8 * pkg1 = (u8 *)malloc(0x40000);
-	u8 * warmboot = (u8 *)malloc(0x40000);
-	u8 * secmon = (u8 *)malloc(0x40000);
+	u8 *pkg1 = (u8 *)malloc(0x40000);
+	u8 *warmboot = (u8 *)malloc(0x40000);
+	u8 *secmon = (u8 *)malloc(0x40000);
+	u8 *loader = (u8 *)malloc(0x40000);
+
+	memset(pkg1, 0, 0x40000);
+	memset(warmboot, 0, 0x40000);
+	memset(secmon, 0, 0x40000);
+	memset(loader, 0, 0x40000);
 
 	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -1142,7 +1148,6 @@ void dump_package1()
 		goto out;
 	}
 
-
 	// Read keyblob
 	u8 * keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
 	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
@@ -1151,29 +1156,43 @@ void dump_package1()
 	keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
 	pkg1_decrypt(pkg1_id, pkg1);
 
-	pkg1_unpack(warmboot, secmon, pkg1_id, pkg1);
+	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
 	// display info
-	gfx_printf(&gfx_con, "%kSecure monitor addr: %k%08X\n", 0xFF46EAC7, 0xFFCCCCCC, pkg1_id->secmon_base);
-	gfx_printf(&gfx_con, "%kSecure monitor size: %k%08X\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->sm_size);
-	gfx_printf(&gfx_con, "%kSecure monitor ofst: %k%08X\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->sm_off);
+	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_size);
+	gfx_printf(&gfx_con, "%kNX Bootloader ofst:  %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_off);
+
+	gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, pkg1_id->secmon_base);
+	gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->sm_size);
+	gfx_printf(&gfx_con, "%kSecure monitor ofst: %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->sm_off);
+
+	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, pkg1_id->warmboot_base);
+	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_size);
+	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_off);
 
 	// dump package1
-	if (sd_save_to_file(pkg1, 0x40000, "pkg_decr.bin")) {
-		EPRINTF("\nFailed to create pkg_decr.bin");
+	if (sd_save_to_file(pkg1, 0x40000, "pkg1_decr.bin")) {
+		EPRINTF("\nFailed to create pkg1_decr.bin");
 		goto out;
 	}
-	gfx_puts(&gfx_con, "\npackage1 dumped to pkg_decr.bin\n");
+	gfx_puts(&gfx_con, "\npackage1 dumped to pkg1_decr.bin\n");
 
-	// dump sm
-	if (sd_save_to_file(secmon, 0x40000, "sm.bin")) {
-		EPRINTF("\nFailed to create sm.bin");
+	// dump nxbootloader
+	if (sd_save_to_file(loader, hdr->ldr_size, "nxloader.bin")) {
+		EPRINTF("\nFailed to create nxloader.bin");
 		goto out;
 	}
-	gfx_puts(&gfx_con, "Secure Monitor dumped to sm.bin\n");
+	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
+
+	// dump secmon
+	if (sd_save_to_file(secmon, hdr->sm_size, "secmon.bin")) {
+		EPRINTF("\nFailed to create secmon.bin");
+		goto out;
+	}
+	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
 	// dump warmboot
-	if (sd_save_to_file(warmboot, 0x40000, "warmboot.bin")) {
+	if (sd_save_to_file(warmboot, hdr->wb_size, "warmboot.bin")) {
 		EPRINTF("\nFailed to create warmboot.bin");
 		goto out;
 	}
@@ -1187,6 +1206,7 @@ out:;
 	free(pkg1);
 	free(secmon);
 	free(warmboot);
+	free(loader);
 
 	btn_wait();
 }
@@ -1267,7 +1287,7 @@ void toggle_autorcm(){
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
 		sdmmc_storage_read(&storage, sect, 1, tempbuf);
-		tempbuf[0x10] ^= 0x77; //xor by arbitrary number to corrupt
+		tempbuf[0x10] ^= 0x77; // !IMPORTANT: DO NOT CHANGE! XOR by arbitrary number to corrupt
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
 	}
 	
@@ -1358,12 +1378,12 @@ ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Full --------", 0xFFE6B90A),
-	MDEF_HANDLER("Dump RAW eMMC", dump_emmc_rawnand),
-	MDEF_HANDLER("Dump eMMC BOOT", dump_emmc_boot),
+	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
+	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GP Partitions --", 0xFFE6B90A),
-	MDEF_HANDLER("Dump eMMC SYS", dump_emmc_system),
-	MDEF_HANDLER("Dump eMMC USER", dump_emmc_user),
+	MDEF_CAPTION("-- GPP Partitions --", 0xFFE6B90A),
+	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
+	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Misc -------", 0xFFE6B90A),
 	MDEF_HANDLER("Dump package1", dump_package1),

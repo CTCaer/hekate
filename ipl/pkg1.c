@@ -132,7 +132,7 @@ void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 	se_aes_crypt_ctr(11, pkg11 + 0x20, pkg11_size, pkg11 + 0x20, pkg11_size, pkg11 + 0x10);
 }
 
-void pkg1_unpack(void *warmboot_dst, void *secmon_dst, const pkg1_id_t *id, u8 *pkg1)
+void pkg1_unpack(void *warmboot_dst, void *secmon_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1)
 {
 	pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + id->pkg11_off + 0x20);
 
@@ -144,6 +144,8 @@ void pkg1_unpack(void *warmboot_dst, void *secmon_dst, const pkg1_id_t *id, u8 *
 	{
 		if (id->sec_map[i] == 0 && warmboot_dst)
 			memcpy(warmboot_dst, pdata, sec_size[id->sec_map[i]]);
+		else if (id->sec_map[i] == 1 && ldr_dst)
+			memcpy(ldr_dst, pdata, sec_size[id->sec_map[i]]);
 		else if (id->sec_map[i] == 2 && secmon_dst)
 			memcpy(secmon_dst, pdata, sec_size[id->sec_map[i]]);
 		pdata += sec_size[id->sec_map[i]];

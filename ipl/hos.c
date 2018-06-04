@@ -372,8 +372,8 @@ static int _config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
 
 int hos_launch(ini_sec_t *cfg)
 {
-	int bootStatePackage2;
-	int bootStateContinue;
+	int bootStateDramPkg2;
+	int bootStatePkg2Continue;
 	launch_ctxt_t ctxt;
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	list_init(&ctxt.kip1_list);
@@ -398,7 +398,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
 		pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
-		pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, ctxt.pkg1_id, ctxt.pkg1);
+		pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
 		gfx_printf(&gfx_con, "Decrypted and unpacked package1\n");
 	}
 	//Replace 'warmboot.bin' if requested.
@@ -488,20 +488,20 @@ int hos_launch(ini_sec_t *cfg)
 		case KB_FIRMWARE_VERSION_301:
 			se_key_acc_ctrl(0xC, 0xFF);
 			se_key_acc_ctrl(0xD, 0xFF);
-			bootStatePackage2 = 2;
-			bootStateContinue = 3;
+			bootStateDramPkg2 = 2;
+			bootStatePkg2Continue = 3;
 			break;
 		default:
 		case KB_FIRMWARE_VERSION_400:
 		case KB_FIRMWARE_VERSION_500:
 			se_key_acc_ctrl(0xC, 0xFF);
 			se_key_acc_ctrl(0xF, 0xFF);
-			bootStatePackage2 = 3;
-			bootStateContinue = 4;
+			bootStateDramPkg2 = 2;
+			bootStatePkg2Continue = 4;
 			break;
 	}
 
-	//Clear 'BootConfig' for retail systems.
+	//TODO: Don't Clear 'BootConfig' for retail >1.0.0.
 	memset((void *)0x4003D000, 0, 0x3000);
 
 	//pkg2_decrypt((void *)0xA9800000);
@@ -512,20 +512,20 @@ int hos_launch(ini_sec_t *cfg)
 	//Lock SE before starting 'SecureMonitor'.
 	_se_lock();
 
+	//< 4.0.0 Signals. 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot
+	//>=4.0.0 Signals. 0: Nothing ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot
 	vu32 *mb_in = (vu32 *)0x40002EF8;
+	//Non-zero: Secmon ready
 	vu32 *mb_out = (vu32 *)0x40002EFC;
 
-	*mb_in = bootStatePackage2;
+	//Start from DRAM ready signal
+	*mb_in = bootStateDramPkg2;
 	*mb_out = 0;
 
 	//Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
 		sleep(1);
-
-	//Signal 'BootConfig'.
-	//*mb_in = 1;
-	//sleep(100);
 
 	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
 	/*PMC(0x4) = 0x7FFFF3;
@@ -540,8 +540,8 @@ int hos_launch(ini_sec_t *cfg)
 	//TODO: Cleanup.
 	//display_end();
 
-	//Signal to continue boot.
-	*mb_in = bootStateContinue;
+	//Signal to pkg2 ready and continue boot.
+	*mb_in = bootStatePkg2Continue;
 
 	//Halt ourselves in waitevent state.
 	while (1)
