@@ -1430,7 +1430,7 @@ ment_t ment_top[] = {
 };
 menu_t menu_top = {
 	ment_top,
-	"hekate - ipl (CTCaer mod v2.2)", 0, 0
+	"hekate - ipl (CTCaer mod v2.3)", 0, 0
 };
 
 extern void pivot_stack(u32 stack_top);
