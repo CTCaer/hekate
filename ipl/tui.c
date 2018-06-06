@@ -43,7 +43,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 	int idx = 0, cnt;
 	int prev_idx = 0;
 
-	gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(con->gfx_ctxt, 0x1B);
 
 	while (1)
 	{
@@ -124,7 +124,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			default:
 				break;
 			}
-			gfx_clear(con->gfx_ctxt, 0xFF1B1B1B);
+			gfx_clear_grey(con->gfx_ctxt, 0x1B);
 		}
 	}
 

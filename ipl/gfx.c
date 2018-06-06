@@ -15,6 +15,7 @@
 */
 
 #include <stdarg.h>
+#include <string.h>
 #include "gfx.h"
 
 static const u8 _gfx_font[] = {
@@ -76,7 +77,12 @@ void gfx_init_ctxt(gfx_ctxt_t *ctxt, u32 *fb, u32 width, u32 height, u32 stride)
 	ctxt->stride = stride;
 }
 
-void gfx_clear(gfx_ctxt_t *ctxt, u32 color)
+void gfx_clear_grey(gfx_ctxt_t *ctxt, u8 color)
+{
+	memset(ctxt->fb, color, 0x400000);
+}
+
+void gfx_clear_color(gfx_ctxt_t *ctxt, u32 color)
 {
 	for (u32 i = 0; i < ctxt->height * ctxt->stride; i++)
 		ctxt->fb[i] = color;

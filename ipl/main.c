@@ -336,7 +336,7 @@ void config_hw()
 
 void print_fuseinfo()
 {
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFFFFDD00, 0xFFCCCCCC);
@@ -365,7 +365,7 @@ void print_fuseinfo()
 
 void print_kfuseinfo()
 {
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFFFFDD00, 0xFFCCCCCC);
@@ -398,7 +398,7 @@ void print_kfuseinfo()
 
 void print_mmc_info()
 {
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	static const u32 SECTORS_TO_MIB_COEFF  = 11;
@@ -541,7 +541,7 @@ out:
 
 void print_sdcard_info()
 {
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	static const u32 SECTORS_TO_MIB_COEFF  = 11;
@@ -592,7 +592,7 @@ void print_sdcard_info()
 
 void print_tsec_key()
 {
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	sdmmc_storage_t storage;
@@ -1014,7 +1014,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 {
 	int res = 0;
 	u32 timer = 0;
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sd_mount())
@@ -1123,7 +1123,7 @@ void dump_package1()
 	memset(secmon, 0, 0x40000);
 	memset(loader, 0, 0x40000);
 
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sd_mount())
@@ -1216,7 +1216,7 @@ void launch_firmware()
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (sd_mount())
@@ -1257,8 +1257,8 @@ void launch_firmware()
 
 	if (!cfg_sec)
 	{
+		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n");
 		sleep(3000000);
-		gfx_printf(&gfx_con, "Using default launch configuration...\n");
 	}
 
 	if (!hos_launch(cfg_sec))
@@ -1328,7 +1328,7 @@ void about()
 	"             (/`    ( (`          ) )  '-;   %k[switchbrew]%k\n"
 	"              `      '-;         (-'%k";
 
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	gfx_printf(&gfx_con, octopus, 0xFFFFCC00, 0xFFCCCCCC,
@@ -1435,8 +1435,11 @@ void ipl_main()
 	//display_color_screen(0xAABBCCDD);
 	u32 *fb = display_init_framebuffer();
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
-	gfx_clear(&gfx_ctxt, 0xFF1B1B1B);
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_init(&gfx_con, &gfx_ctxt);
+
+	//Enable backlight after initializing gfx
+	display_backlight(1);
 
 	while (1)
 		tui_do_menu(&gfx_con, &menu_top);

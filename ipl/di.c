@@ -14,6 +14,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
+
 #include "di.h"
 #include "t210.h"
 #include "util.h"
@@ -131,9 +133,14 @@ void display_init()
 	exec_cfg((u32 *)DISPLAY_A_BASE, _display_config_11, 113);
 }
 
+void display_backlight(u8 enable)
+{
+	GPIO_6(0x24) = (GPIO_6(0x24) & 0xFFFFFFFE) | (enable & 1);
+}
+
 void display_end()
 {
-	GPIO_6(0x24) &= 0xFFFFFFFE;
+	display_backlight(0);
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 1;
 	DSI(_DSIREG(DSI_WR_DATA)) = 0x2805;
 
@@ -197,17 +204,20 @@ void display_color_screen(u32 color)
 
 	sleep(35000);
 
-	GPIO_6(0x24) = GPIO_6(0x24) & 0xFFFFFFFE | 1;
+	display_backlight(1);
 }
 
 u32 *display_init_framebuffer(u32 *fb)
 {
+	//Sanitize framebuffer area. Aligned to 4MB.
+	memset((u32 *)0xC0000000, 0, 0x400000);
 	//This configures the framebuffer @ 0xC0000000 with a resolution of 1280x720 (line stride 768).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer, 32);
 
 	sleep(35000);
 
-	GPIO_6(0x24) = GPIO_6(0x24) & 0xFFFFFFFE | 1;
+	//Enable backlight
+	//display_backlight(1);
 
 	return (u32 *)0xC0000000;
 }

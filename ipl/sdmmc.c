@@ -174,8 +174,7 @@ static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 nu
 			else
 				retries--;
 
-			sleep(500000);
-
+			sleep(100000);
 		} while (retries);
 		return 0;
 

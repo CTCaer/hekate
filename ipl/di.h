@@ -341,6 +341,9 @@ void display_end();
 /*! Show one single color on the display. */
 void display_color_screen(u32 color);
 
+/*! Switches screen backlight ON/OFF. */
+void display_backlight(u8 enable);
+
 /*! Init display in full 1280x720 resolution (32bpp, line stride 768, framebuffer size = 1280*768*4 bytes). */
 u32 *display_init_framebuffer();
 
