@@ -268,7 +268,6 @@ void config_se_brom()
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
 	PMC(APBDEV_PMC_RST_STATUS_0) = 0x0;
-	PMC(APBDEV_PMC_SCRATCH49_0) = 0x0;
 }
 
 void config_hw()
