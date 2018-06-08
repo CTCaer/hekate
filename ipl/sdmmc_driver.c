@@ -129,7 +129,7 @@ static int _sdmmc_config_ven_ceata_clk(sdmmc_t *sdmmc, u32 id)
 		static const u32 tap_values[] = { 4, 0, 3, 0 };
 		tap_val = tap_values[sdmmc->id];
 	}
-	sdmmc->regs->venclkctl = sdmmc->regs->venclkctl & 0xFF00FFFF | (tap_val << 16);
+	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xFF00FFFF) | (tap_val << 16);
 
 	return 1;
 }
@@ -624,7 +624,7 @@ static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
 		break;
 	}
 
-	sdmmc->regs->autocalcfg = ((sdmmc->regs->autocalcfg & 0xFFFF80FF | (off_pd << 8)) >> 7 << 7) | off_pu;
+	sdmmc->regs->autocalcfg = (((sdmmc->regs->autocalcfg & 0xFFFF80FF) | (off_pd << 8)) >> 7 << 7) | off_pu;
 	return 1;
 }
 

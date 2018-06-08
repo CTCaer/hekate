@@ -184,6 +184,8 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	// Package2 key 
 	se_key_acc_ctrl(0x08, 0x15);
 	se_aes_unwrap_key(0x08, 0x0C, key8_keyseed);
+
+	return 1;
 }
 
 
@@ -207,8 +209,8 @@ typedef struct _launch_ctxt_t
 	u32 kernel_size;
 	link_t kip1_list;
 
-	u8 *svcperm;
-	u8 *debugmode;
+	int svcperm;
+	int debugmode;
 } launch_ctxt_t;
 
 typedef struct _merge_kip_t
@@ -345,9 +347,9 @@ static int _config_svcperm(launch_ctxt_t *ctxt, const char *value)
 	if (*(u8 *)value == '1')
 	{
 		DPRINTF("Disabled SVC verification\n");
-		ctxt->svcperm = malloc(1);
+		ctxt->svcperm = 1;
 	}
-		
+
 	return 1;
 }
 
@@ -356,8 +358,10 @@ static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
 	if (*(u8 *)value == '1')
 	{
 		DPRINTF("Enabled Debug mode\n");
-		ctxt->debugmode = malloc(1);
+		ctxt->debugmode = 1;
 	}
+
+	return 1;
 }
 
 typedef struct _cfg_handler_t

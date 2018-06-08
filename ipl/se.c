@@ -124,7 +124,7 @@ static void _se_aes_ctr_set(void *ctr)
 void se_rsa_acc_ctrl(u32 rs, u32 flags)
 {
 	if (flags & 0x7F)
-		SE(SE_RSA_KEYTABLE_ACCESS_REG_OFFSET + 4 * rs) = ((flags >> 4) & 4 | flags & 3) ^ 7;
+		SE(SE_RSA_KEYTABLE_ACCESS_REG_OFFSET + 4 * rs) = (((flags >> 4) & 4) | (flags & 3)) ^ 7;
 	if (flags & 0x80)
 		SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) &= ~(1 << rs);
 }

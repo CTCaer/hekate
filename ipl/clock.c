@@ -51,14 +51,14 @@ static clock_t _clock_coresight = { 0xC, 0x18, 0x1D4, 9, 0, 4};
 void clock_enable(const clock_t *clk)
 {
 	//Put clock into reset.
-	CLOCK(clk->reset) = CLOCK(clk->reset) & ~(1 << clk->index) | (1 << clk->index);
+	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~(1 << clk->index)) | (1 << clk->index);
 	//Disable.
 	CLOCK(clk->enable) &= ~(1 << clk->index);
 	//Configure clock source if required.
 	if (clk->source)
 		CLOCK(clk->source) = clk->clk_div | (clk->clk_src << 29);
 	//Enable.
-	CLOCK(clk->enable) = CLOCK(clk->enable) & ~(1 << clk->index) | (1 << clk->index);
+	CLOCK(clk->enable) = (CLOCK(clk->enable) & ~(1 << clk->index)) | (1 << clk->index);
 	//Take clock off reset.
 	CLOCK(clk->reset) &= ~(1 << clk->index);
 }
@@ -66,14 +66,14 @@ void clock_enable(const clock_t *clk)
 void clock_disable(const clock_t *clk)
 {
 	//Put clock into reset.
-	CLOCK(clk->reset) = CLOCK(clk->reset) & ~(1 << clk->index) | (1 << clk->index);
+	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~(1 << clk->index)) | (1 << clk->index);
 	//Disable.
 	CLOCK(clk->enable) &= ~(1 << clk->index);
 }
 
 void clock_enable_fuse(u32 enable)
 {
-	CLOCK(CLK_RST_CONTROLLER_MISC_CLK_ENB) = CLOCK(CLK_RST_CONTROLLER_MISC_CLK_ENB) & 0xEFFFFFFF | ((enable & 1) << 28) & 0x10000000;
+	CLOCK(CLK_RST_CONTROLLER_MISC_CLK_ENB) = (CLOCK(CLK_RST_CONTROLLER_MISC_CLK_ENB) & 0xEFFFFFFF) | ((enable & 1) << 28);
 }
 
 void clock_enable_uart(u32 idx)
@@ -144,9 +144,9 @@ void clock_disable_sor1()
 void clock_enable_kfuse()
 {
 	//clock_enable(&_clock_kfuse);
-	CLOCK(0x8) = CLOCK(0x8) & 0xFFFFFEFF | 0x100;
+	CLOCK(0x8) = (CLOCK(0x8) & 0xFFFFFEFF) | 0x100;
 	CLOCK(0x14) &= 0xFFFFFEFF;
-	CLOCK(0x14) = CLOCK(0x14) & 0xFFFFFEFF | 0x100;
+	CLOCK(0x14) = (CLOCK(0x14) & 0xFFFFFEFF) | 0x100;
 	sleep(10);
 	CLOCK(0x8) &= 0xFFFFFEFF;
 	sleep(20);
@@ -259,7 +259,7 @@ static int _clock_sdmmc_is_enabled(u32 id)
 	return 0;
 }
 
-static int _clock_sdmmc_set_enable(u32 id)
+static void _clock_sdmmc_set_enable(u32 id)
 {
 	switch (id)
 	{
@@ -274,7 +274,7 @@ static int _clock_sdmmc_set_enable(u32 id)
 	}
 }
 
-static int _clock_sdmmc_clear_enable(u32 id)
+static void _clock_sdmmc_clear_enable(u32 id)
 {
 	switch (id)
 	{

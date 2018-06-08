@@ -287,7 +287,7 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 			u32 k = 0x10 - 1;
 			if (ln)
 			{
-				k = len & 0xF - 1;
+				k = (len & 0xF) - 1;
 				for (u32 j = 0; j < 0x10 - k; j++)
 					gfx_puts(con, "   ");
 			}

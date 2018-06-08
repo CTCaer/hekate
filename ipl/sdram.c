@@ -64,7 +64,7 @@ static void _sdram_config(const sdram_params_t *params)
 	sleep(10);
 break_nosleep:
 
-	CLOCK(0x19C) = (params->mc_emem_arb_misc0 >> 11) & 0x10000 | params->emc_clock_source & 0xFFFEFFFF;
+	CLOCK(0x19C) = ((params->mc_emem_arb_misc0 >> 11) & 0x10000) | (params->emc_clock_source & 0xFFFEFFFF);
 	if (params->emc_clock_source_dll)
 		CLOCK(0x664) = params->emc_clock_source_dll;
 	if (params->clear_clock2_mc1)
@@ -97,7 +97,7 @@ break_nosleep:
 	EMC(EMC_PMACRO_BRICK_MAPPING_0) = params->emc_pmacro_brick_mapping0;
 	EMC(EMC_PMACRO_BRICK_MAPPING_1) = params->emc_pmacro_brick_mapping1;
 	EMC(EMC_PMACRO_BRICK_MAPPING_2) = params->emc_pmacro_brick_mapping2;
-	EMC(EMC_PMACRO_BRICK_CTRL_RFU1) = params->emc_pmacro_brick_ctrl_rfu1 & 0x1120112 | 0x1EED1EED;
+	EMC(EMC_PMACRO_BRICK_CTRL_RFU1) = (params->emc_pmacro_brick_ctrl_rfu1 & 0x1120112) | 0x1EED1EED;
 	EMC(EMC_CONFIG_SAMPLE_DELAY) = params->emc_config_sample_delay;
 	EMC(EMC_FBIO_CFG8) = params->emc_fbio_cfg8;
 	EMC(EMC_SWIZZLE_RANK0_BYTE0) = params->emc_swizzle_rank0_byte0;
@@ -142,7 +142,7 @@ break_nosleep:
 	EMC(EMC_QUSE_BRLSHFT_1) = params->emc_quse_brlshft1;
 	EMC(EMC_QUSE_BRLSHFT_2) = params->emc_quse_brlshft2;
 	EMC(EMC_QUSE_BRLSHFT_3) = params->emc_quse_brlshft3;
-	EMC(EMC_PMACRO_BRICK_CTRL_RFU1) = params->emc_pmacro_brick_ctrl_rfu1 & 0x1BF01BF | 0x1E401E40;
+	EMC(EMC_PMACRO_BRICK_CTRL_RFU1) = (params->emc_pmacro_brick_ctrl_rfu1 & 0x1BF01BF) | 0x1E401E40;
 	EMC(EMC_PMACRO_PAD_CFG_CTRL) = params->emc_pmacro_pad_cfg_ctrl;
 	EMC(EMC_PMACRO_CMD_BRICK_CTRL_FDPD) = params->emc_pmacro_cmd_brick_ctrl_fdpd;
 	EMC(EMC_PMACRO_BRICK_CTRL_RFU2) = params->emc_pmacro_brick_ctrl_rfu2 & 0xFF7FFF7F;
@@ -232,7 +232,7 @@ break_nosleep:
 	EMC(EMC_PMACRO_DDLL_SHORT_CMD_0) = params->emc_pmacro_ddll_short_cmd_0;
 	EMC(EMC_PMACRO_DDLL_SHORT_CMD_1) = params->emc_pmacro_ddll_short_cmd_1;
 	EMC(EMC_PMACRO_DDLL_SHORT_CMD_2) = params->emc_pmacro_ddll_short_cmd_2;
-	EMC(EMC_PMACRO_COMMON_PAD_TX_CTRL) = params->emc_pmacro_common_pad_tx_ctrl & 1 | 0xE;
+	EMC(EMC_PMACRO_COMMON_PAD_TX_CTRL) = (params->emc_pmacro_common_pad_tx_ctrl & 1) | 0xE;
 	if (params->emc_bct_spare4)
 		*(vu32 *)params->emc_bct_spare4 = params->emc_bct_spare5;
 	EMC(EMC_TIMING_CONTROL) = 1;
@@ -386,7 +386,7 @@ break_nosleep:
 	EMC(EMC_PMC_SCRATCH3) = params->emc_pmc_scratch3;
 	EMC(EMC_ACPD_CONTROL) = params->emc_acpd_control;
 	EMC(EMC_TXDSRVTTGEN) = params->emc_txdsrvttgen;
-	EMC(EMC_CFG) = params->emc_cfg & 0xE | 0x3C00000;
+	EMC(EMC_CFG) = (params->emc_cfg & 0xE) | 0x3C00000;
 	if (params->boot_rom_patch_control & 0x80000000)
 	{
 		*(vu32 *)(4 * (params->boot_rom_patch_control + 0x1C000000)) = params->boot_rom_patch_data;
@@ -481,7 +481,7 @@ break_nosleep:
 	EMC(EMC_TIMING_CONTROL) = 1;
 	EMC(EMC_CFG_PIPE_CLK) = params->emc_cfg_pipe_clk;
 	EMC(EMC_FDPD_CTRL_CMD_NO_RAMP) = params->emc_fdpd_ctrl_cmd_no_ramp;
-	SYSREG(AHB_ARBITRATION_XBAR_CTRL) = SYSREG(AHB_ARBITRATION_XBAR_CTRL) & 0xFFFEFFFF | ((params->ahb_arbitration_xbar_ctrl_meminit_done & 0xFFFF) << 16);
+	SYSREG(AHB_ARBITRATION_XBAR_CTRL) = (SYSREG(AHB_ARBITRATION_XBAR_CTRL) & 0xFFFEFFFF) | ((params->ahb_arbitration_xbar_ctrl_meminit_done & 0xFFFF) << 16);
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = params->mc_video_protect_write_access;
 	MC(MC_SEC_CARVEOUT_REG_CTRL) = params->mc_sec_carveout_protect_write_access;
 	MC(MC_MTS_CARVEOUT_REG_CTRL) = params->mc_mts_carveout_reg_ctrl;

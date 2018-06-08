@@ -59,7 +59,7 @@ typedef struct _emmc_part_t
 	u32 lba_start;
 	u32 lba_end;
 	u64 attrs;
-	u8 name[37];
+	s8 name[37];
 	link_t link;
 } emmc_part_t;
 

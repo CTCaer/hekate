@@ -307,7 +307,7 @@ static void _mmc_storage_parse_csd(sdmmc_storage_t *storage)
 	storage->csd.capacity = (1 + unstuff_bits(raw_csd, 62, 12)) << (unstuff_bits(raw_csd, 47, 3) + 2);
 }
 
-static int _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage, u8 *buf)
+static void _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage, u8 *buf)
 {
 	storage->ext_csd.rev = buf[EXT_CSD_REV];
 	storage->ext_csd.ext_struct = buf[EXT_CSD_STRUCTURE];
@@ -433,9 +433,9 @@ static int _mmc_storage_enable_highspeed(sdmmc_storage_t *storage, u32 card_type
 		return _mmc_storage_enable_HS400(storage);
 
 	if (sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 ||
-		sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_4
+		(sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_4
 		&& card_type & EXT_CSD_CARD_TYPE_HS200_1_8V
-		&& (type == 4 || type == 3))
+		&& (type == 4 || type == 3)))
 		return _mmc_storage_enable_HS200(storage);
 
 out:;
@@ -767,12 +767,12 @@ int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 	if (type_out != hs_type)
 		return 0;
 
-	if (((u16)buf[0] << 8) | buf[1] < 0x320)
+	if ((((u16)buf[0] << 8) | buf[1]) < 0x320)
 	{
 		if (!_sd_storage_switch(storage, buf, 1, hs_type))
 			return 0;
 
-		if (type_out != buf[16] & 0xF)
+		if (type_out != (buf[16] & 0xF))
 			return 0;
 	}
 
