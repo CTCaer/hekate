@@ -24,7 +24,6 @@
 #define _BL(a, o) 0x94000000 | (((o) - (a)) >> 2) & 0x3FFFFFF
 #define _NOP() 0xD503201F
 
-//#define SM_100_ADR 0x40014020
 #define SM_100_ADR 0x4002B020
 
 PATCHSET_DEF(_secmon_1_patchset,
@@ -45,27 +44,26 @@ PATCHSET_DEF(_secmon_2_patchset,
 
 PATCHSET_DEF(_secmon_3_patchset,
 	//Patch package2 decryption and signature/hash checks.
-	{ 0xAC8 + 0xAB4, _NOP() },
 	{ 0xAC8 + 0xA30, _NOP() }, //Header signature.
+	{ 0xAC8 + 0xAB4, _NOP() }, //package2 structure.
 	{ 0xAC8 + 0xAC0, _NOP() }, //Version.
 	{ 0xAC8 + 0xADC, _NOP() }  //Sections SHA2.
 );
 
 PATCHSET_DEF(_secmon_4_patchset,
 	//Patch package2 decryption and signature/hash checks.
-	{ 0x1218 + 0x6E68, _NOP() }, //Header signature.
-	{ 0x1218 + 0x6E74, _NOP() }, //Version.
-	{ 0x1218 + 0x6FE4, _NOP() }, //Sections SHA2.
-	{ 0x1218 + 0x2DC,  _NOP() }  //Unknown.
+	{ 0x2300 + 0x5D80, _NOP() }, //package2 structure.
+	{ 0x2300 + 0x5D8C, _NOP() }, //Version.
+	{ 0x2300 + 0x5EFC, _NOP() }, //Header signature.
+	{ 0xAC8 + 0xA2C, _NOP() } //Sections SHA2.
 );
 
 PATCHSET_DEF(_secmon_5_patchset,
 	//Patch package2 decryption and signature/hash checks.
-	{ 0x12b0 + 0x4d0, _NOP() },
-	{ 0x12b0 + 0x4dc, _NOP() },
-	{ 0x12b0 + 0x794, _NOP() },
-	{ 0x12b0 + 0xb30, _NOP() }//,
-	//{ 0x12b0 + 0xa18 , _NOP() } // BootConfig Retail Check
+	{ 0xDA8 + 0x9D8 , _NOP() }, //package2 structure.
+	{ 0xDA8 + 0x9E4 , _NOP() }, //Version.
+	{ 0xDA8 + 0xC9C , _NOP() }, //Header signature.
+	{ 0xDA8 + 0x1038 , _NOP() } //Sections SHA2.
 );
 
 /*

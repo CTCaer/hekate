@@ -44,9 +44,9 @@ void sdram_lp0_save_params(const void *params)
 /* 32 bits version c macro */
 #define c32(value, pmcreg) pmc->pmcreg = value
 
-	//TODO: pkg1.1 reads them from MC.
+	//TODO: pkg1.1 (1.X - 3.X) reads them from MC.
 	//Patch carveout parameters.
-	sdram->McGeneralizedCarveout1Bom = 0;
+	/*sdram->McGeneralizedCarveout1Bom = 0;
 	sdram->McGeneralizedCarveout1BomHi = 0;
 	sdram->McGeneralizedCarveout1Size128kb = 0;
 	sdram->McGeneralizedCarveout1Access0 = 0;
@@ -115,7 +115,15 @@ void sdram_lp0_save_params(const void *params)
 	sdram->McGeneralizedCarveout5ForceInternalAccess2 = 0;
 	sdram->McGeneralizedCarveout5ForceInternalAccess3 = 0;
 	sdram->McGeneralizedCarveout5ForceInternalAccess4 = 0;
-	sdram->McGeneralizedCarveout5Cfg0 = 0x8F;
+	sdram->McGeneralizedCarveout5Cfg0 = 0x8F;*/
+
+	//TODO: this is 4.X+ behaviour which seems to work fine for < 4.X.
+	//Patch carveout parameters.
+	sdram->McGeneralizedCarveout1Cfg0 = 0;
+	sdram->McGeneralizedCarveout2Cfg0 = 0;
+	sdram->McGeneralizedCarveout3Cfg0 = 0;
+	sdram->McGeneralizedCarveout4Cfg0 = 0;
+	sdram->McGeneralizedCarveout5Cfg0 = 0;
 
 	//Patch SDRAM parameters.
 	u32 t0 = sdram->EmcSwizzleRank0Byte0 << 5 >> 29 > sdram->EmcSwizzleRank0Byte0 << 1 >> 29;

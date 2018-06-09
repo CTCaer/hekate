@@ -460,7 +460,7 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (ctxt.svcperm || ctxt.debugmode)
 		{
-			u32 kernel_crc32 = crc32c((u8 *)ctxt.kernel, ctxt.kernel_size);
+			u32 kernel_crc32 = crc32c(ctxt.kernel, ctxt.kernel_size);
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_crc32);
 
 			//In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
