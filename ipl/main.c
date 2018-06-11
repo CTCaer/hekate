@@ -93,9 +93,9 @@ void sd_unmount()
 {
 	if (sd_mounted)
 	{
-		gfx_puts(&gfx_con, "\n\nUnmounting SD card...\n");
 		f_mount(NULL, "", 1);
 		sdmmc_storage_end(&sd_storage);
+		sd_mounted = 0;
 	}
 }
 
@@ -1271,6 +1271,10 @@ void launch_firmware()
 void toggle_autorcm(){
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
+
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
 	if(!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
 		EPRINTF("Failed to init eMMC.");
@@ -1292,9 +1296,83 @@ void toggle_autorcm(){
 	free(tempbuf);
 	sdmmc_storage_end(&storage);
 	
-	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n", 0xFF00EE2C, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n\nPress any key...\n", 0xFF00FF96, 0xFFCCCCCC);
 
 out:;
+	btn_wait();
+}
+
+int fix_attributes(char *path, u32 *total)
+{
+	FRESULT res;
+	DIR dir;
+	u32 i = 0;
+	u32 k = 0;
+	static FILINFO fno;
+
+	/* Open directory */
+	res = f_opendir(&dir, path);
+	if (res == FR_OK)
+	{
+		for (;;)
+		{
+			//Read a directory item.
+			res = f_readdir(&dir, &fno);
+			//Break on error or end of dir.
+			if (res != FR_OK || fno.fname[0] == 0)
+				break;
+
+			//Set new directory
+			i = strlen(path);
+			memcpy(&path[i], "/", 1);
+			for (k = 0; k < 256; k++)
+			{
+				if (fno.fname[k] == 0)
+					break;
+			}
+			memcpy(&path[i+1], fno.fname, k + 1);
+			path[i + k + 2] = 0;
+
+			//Check if archive bit is set
+			if (fno.fattrib & AM_ARC)
+			{
+				*(u32 *)total = *(u32 *)total + 1;
+				f_chmod(path, 0, AM_ARC);
+			}
+
+			/* Is it a directory? */
+			if (fno.fattrib & AM_DIR)
+			{
+				//Enter the directory.
+				res = fix_attributes(path, total);
+				if (res != FR_OK)
+					break;
+				
+			}
+			//Clear file or folder path.
+			path[i] = 0;
+		}
+		f_closedir(&dir);
+	}
+
+	return res;
+}
+
+void fix_sd_attr(){
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	char buff[256];
+
+	u32 total = 0;
+	if (sd_mount())
+	{
+		gfx_printf(&gfx_con, "Traversing all sd card files!\nThis may take some time, please wait...\n");
+		buff[0] = '/';
+		buff[1] = 0;
+		fix_attributes(buff, &total);
+		gfx_printf(&gfx_con, "\n%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF00FF96, total, 0xFFCCCCCC);
+	}
 	btn_wait();
 }
 
@@ -1385,6 +1463,7 @@ ment_t ment_tools[] = {
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Misc -------", 0xFFE6B90A),
 	MDEF_HANDLER("Dump package1", dump_package1),
+	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- Dangerous ----", 0xFF0000FF),
 	MDEF_MENU("AutoRCM", &menu_autorcm),
