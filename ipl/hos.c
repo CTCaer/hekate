@@ -422,7 +422,7 @@ int hos_launch(ini_sec_t *cfg)
 		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
 	//Set warmboot address in PMC if required.
 	if (ctxt.pkg1_id->set_warmboot)
-		PMC(APBDEV_PMC_SCRATCH1) = 0x8000D000;
+		PMC(APBDEV_PMC_SCRATCH1) = ctxt.pkg1_id->warmboot_base;
 
 	//Replace 'SecureMonitor' if requested.
 	if (ctxt.secmon)
