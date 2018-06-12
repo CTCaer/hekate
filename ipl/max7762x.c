@@ -73,8 +73,8 @@ int max77620_regulator_get_status(u32 id)
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
 	if (reg->type == REGULATOR_SD)
-		return i2c_recv_byte(I2C_5, 0x3C, MAX77620_REG_STATSD) & reg->status_mask ? 0 : 1;
-	return i2c_recv_byte(I2C_5, 0x3C, reg->cfg_addr) & 8 ? 1 : 0;
+		return (i2c_recv_byte(I2C_5, 0x3C, MAX77620_REG_STATSD) & reg->status_mask) ? 0 : 1;
+	return (i2c_recv_byte(I2C_5, 0x3C, reg->cfg_addr) & 8) ? 1 : 0;
 }
 
 int max77620_regulator_config_fps(u32 id)

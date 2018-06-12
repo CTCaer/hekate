@@ -90,5 +90,5 @@ void gpio_write(u32 port, u32 pins, int high)
 
 int gpio_read(u32 port, u32 pins)
 {
-	return GPIO(_gpio_in[port]) & pins ? 1 : 0;
+	return (GPIO(_gpio_in[port]) & pins) ? 1 : 0;
 }

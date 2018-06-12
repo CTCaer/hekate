@@ -97,6 +97,7 @@ static void _heap_free(heap_t *heap, u32 addr)
 	while (node)
 	{
 		if (!node->used)
+		{
 			if (node->prev && !node->prev->used)
 			{
 				node->prev->size += node->size + sizeof(hnode_t);
@@ -104,6 +105,7 @@ static void _heap_free(heap_t *heap, u32 addr)
 				if (node->next)
 					node->next->prev = node->prev;
 			}
+		}
 		node = node->next;
 	}
 }
@@ -129,5 +131,6 @@ void *calloc(u32 num, u32 size)
 
 void free(void *buf)
 {
-	_heap_free(&_heap, (u32)buf);
+	if (buf != NULL)
+		_heap_free(&_heap, (u32)buf);
 }

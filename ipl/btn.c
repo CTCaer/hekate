@@ -18,6 +18,7 @@
 #include "i2c.h"
 #include "gpio.h"
 #include "t210.h"
+#include "util.h"
 
 u32 btn_read()
 {
@@ -53,5 +54,22 @@ u32 btn_wait()
 		else if (pwr)
 			res &= 0xFFFFFFFE;
 	} while (btn == res);
+
+	return res;
+}
+
+u32 btn_wait_timeout(u32 time_ms)
+{
+	u32 timeout = get_tmr() + (time_ms * 1000);
+	u32 res = btn_read();
+	u32 btn = res;
+
+	do
+	{
+		//Keep the new value until timeout is reached
+		if (btn == res)
+			res = btn_read();
+	} while (get_tmr() < timeout);
+
 	return res;
 }

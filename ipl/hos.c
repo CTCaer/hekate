@@ -109,7 +109,7 @@ u32 crc32c(const u8 *buf, u32 len)
 	{
 		crc ^= *buf++;
 		for (int i = 0; i < 8; i++)
-			crc = crc & 1 ? (crc >> 1) ^ CRC32C_POLY : crc >> 1;
+			crc = (crc & 1) ? (crc >> 1) ^ CRC32C_POLY : crc >> 1;
 	}
 	return ~crc;
 }
