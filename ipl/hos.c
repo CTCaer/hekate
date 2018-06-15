@@ -31,6 +31,7 @@
 #include "pkg1.h"
 #include "pkg2.h"
 #include "ff.h"
+#include "di.h"
 
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
@@ -73,9 +74,9 @@ typedef struct _merge_kip_t
 #define KB_FIRMWARE_VERSION_301 2
 #define KB_FIRMWARE_VERSION_400 3
 #define KB_FIRMWARE_VERSION_500 4
+#define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_500
 
-#define NUM_KEYBLOB_KEYS 5
-static const u8 keyblob_keyseeds[NUM_KEYBLOB_KEYS][0x10] = {
+static const u8 keyblob_keyseeds[][0x10] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, //1.0.0
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, //3.0.0
 	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, //3.0.1
@@ -95,24 +96,12 @@ static const u8 console_keyseed[0x10] =
 static const u8 key8_keyseed[] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
-static const u8 master_keyseed_4xx[0x10] = 
+static const u8 master_keyseed_4xx_5xx[0x10] = 
 	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
 
-static const u8 console_keyseed_4xx[0x10] = 
+static const u8 console_keyseed_4xx_5xx[0x10] = 
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
-#define CRC32C_POLY 0x82F63B78
-u32 crc32c(const u8 *buf, u32 len)
-{
-	u32 crc = 0xFFFFFFFF;
-	while (len--)
-	{
-		crc ^= *buf++;
-		for (int i = 0; i < 8; i++)
-			crc = (crc & 1) ? (crc >> 1) ^ CRC32C_POLY : crc >> 1;
-	}
-	return ~crc;
-}
 
 static void _se_lock()
 {
@@ -145,23 +134,26 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 {
 	u8 tmp[0x10];
 
-	se_key_acc_ctrl(0x0D, 0x15);
-	se_key_acc_ctrl(0x0E, 0x15);
+	if (kb > KB_FIRMWARE_VERSION_MAX)
+		return 0;
+
+	se_key_acc_ctrl(13, 0x15);
+	se_key_acc_ctrl(14, 0x15);
 
 	//Get TSEC key.
 	if (tsec_query(tmp, 1, tsec_fw) < 0)
 		return 0;
 
-	se_aes_key_set(0x0D, tmp, 0x10);
+	se_aes_key_set(13, tmp, 0x10);
 
 	//Derive keyblob keys from TSEC+SBK.
-	se_aes_crypt_block_ecb(0x0D, 0x00, tmp, keyblob_keyseeds[0]);
-	se_aes_unwrap_key(0x0F, 0x0E, tmp);
-	se_aes_crypt_block_ecb(0xD, 0x00, tmp, keyblob_keyseeds[kb]);
-	se_aes_unwrap_key(0x0D, 0x0E, tmp);
+	se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[0]);
+	se_aes_unwrap_key(15, 14, tmp);
+	se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[kb]);
+	se_aes_unwrap_key(13, 14, tmp);
 
-	// Clear SBK
-	se_aes_key_clear(0x0E);
+	//Clear SBK.
+	se_aes_key_clear(14);
 
 	//TODO: verify keyblob CMAC.
 	//se_aes_unwrap_key(11, 13, cmac_keyseed);
@@ -169,45 +161,42 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	//if (!memcmp(keyblob, tmp, 0x10))
 	//	return 0;
 
-	se_aes_crypt_block_ecb(0x0D, 0, tmp, cmac_keyseed);
-	se_aes_unwrap_key(0x0B, 0x0D, cmac_keyseed);
+	se_aes_crypt_block_ecb(13, 0, tmp, cmac_keyseed);
+	se_aes_unwrap_key(11, 13, cmac_keyseed);
 
 	//Decrypt keyblob and set keyslots.
-	se_aes_crypt_ctr(0x0D, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-	se_aes_key_set(0x0B, keyblob + 0x20 + 0x80, 0x10); // package1 key
-	se_aes_key_set(0x0C, keyblob + 0x20, 0x10);
-	se_aes_key_set(0x0D, keyblob + 0x20, 0x10);
+	se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
+	se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); //Package1 key.
+	se_aes_key_set(12, keyblob + 0x20, 0x10);
+	se_aes_key_set(13, keyblob + 0x20, 0x10);
 
-	se_aes_crypt_block_ecb(0x0C, 0, tmp, master_keyseed_retail);
+	se_aes_crypt_block_ecb(12, 0, tmp, master_keyseed_retail);
 
 	switch (kb)
 	{
 		case KB_FIRMWARE_VERSION_100_200:
 		case KB_FIRMWARE_VERSION_300:
 		case KB_FIRMWARE_VERSION_301:
-			se_aes_unwrap_key(0x0D, 0x0F, console_keyseed);
-			se_aes_unwrap_key(0x0C, 0x0C, master_keyseed_retail);
+			se_aes_unwrap_key(13, 15, console_keyseed);
+			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 		break;
-
 		case KB_FIRMWARE_VERSION_400:
-			se_aes_unwrap_key(0x0D, 0x0F, console_keyseed_4xx);
-			se_aes_unwrap_key(0x0F, 0x0F, console_keyseed);
-			se_aes_unwrap_key(0x0E, 0x0C, master_keyseed_4xx);
-			se_aes_unwrap_key(0x0C, 0x0C, master_keyseed_retail);
+			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(15, 15, console_keyseed);
+			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
+			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 		break;
-
 		case KB_FIRMWARE_VERSION_500:
-		default:
-			se_aes_unwrap_key(0x0A, 0x0F, console_keyseed_4xx);
-			se_aes_unwrap_key(0x0F, 0x0F, console_keyseed);
-			se_aes_unwrap_key(0x0E, 0x0C, master_keyseed_4xx);
-			se_aes_unwrap_key(0x0C, 0x0C, master_keyseed_retail);
+			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(15, 15, console_keyseed);
+			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
+			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 		break;
 	}
 
 	//Package2 key.
-	se_key_acc_ctrl(0x08, 0x15);
-	se_aes_unwrap_key(0x08, 0x0C, key8_keyseed);
+	se_key_acc_ctrl(8, 0x15);
+	se_aes_unwrap_key(8, 12, key8_keyseed);
 
 	return 1;
 }
@@ -385,6 +374,7 @@ int hos_launch(ini_sec_t *cfg)
 {
 	int bootStateDramPkg2;
 	int bootStatePkg2Continue;
+	int end_di = 0;
 	launch_ctxt_t ctxt;
 
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
@@ -491,24 +481,25 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF00FF96, 0xFFCCCCCC);
 
-	se_aes_key_clear(0x8);
-	se_aes_key_clear(0xB);
+	se_aes_key_clear(8);
+	se_aes_key_clear(11);
 
 	switch (ctxt.pkg1_id->kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
 	case KB_FIRMWARE_VERSION_300:
 	case KB_FIRMWARE_VERSION_301:
-		se_key_acc_ctrl(0xC, 0xFF);
-		se_key_acc_ctrl(0xD, 0xFF);
+		se_key_acc_ctrl(12, 0xFF);
+		se_key_acc_ctrl(13, 0xFF);
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 3;
+		end_di = 1;
 		break;
 	default:
 	case KB_FIRMWARE_VERSION_400:
 	case KB_FIRMWARE_VERSION_500:
-		se_key_acc_ctrl(0xC, 0xFF);
-		se_key_acc_ctrl(0xF, 0xFF);
+		se_key_acc_ctrl(12, 0xFF);
+		se_key_acc_ctrl(15, 0xFF);
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 4;
 		break;
@@ -545,8 +536,9 @@ int hos_launch(ini_sec_t *cfg)
 	PMC(0x5BC) = 0xFFFFFFFF;
 	PMC(0x5C0) = 0xFFAAFFFF;*/
 
-	//TODO: Cleanup.
-	//display_end();
+	//Disable display.
+	if (end_di)
+		display_end();
 
 	//Signal to pkg2 ready and continue boot.
 	*mb_in = bootStatePkg2Continue;

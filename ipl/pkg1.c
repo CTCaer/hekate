@@ -16,19 +16,13 @@
 
 #include <string.h>
 #include "pkg1.h"
+#include "arm64.h"
 #include "se.h"
 
-#define _ADRP(r, o) 0x90000000 | ((((o) >> 12) & 0x3) << 29) | ((((o) >> 12) & 0x1FFFFC) << 3) | ((r) & 0x1F)
-#define _MOVZX(r, i, s) 0xD2800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F)
-#define _MOVKX(r, i, s) 0xF2800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F)
-#define _BL(a, o) 0x94000000 | (((o) - (a)) >> 2) & 0x3FFFFFF
-#define _NOP() 0xD503201F
-
 #define SM_100_ADR 0x4002B020
-
 PATCHSET_DEF(_secmon_1_patchset,
 	//Patch the relocator to be able to run from SM_100_ADR.
-	{ 0x1E0, _ADRP(0, 0x7C013000 - (SM_100_ADR - 0x40)) },
+	{ 0x1E0, _ADRP(0, 0x7C013000 - _PAGEOFF(SM_100_ADR)) },
 	//Patch package2 decryption and signature/hash checks.
 	{ 0x9F0 + 0xADC, _NOP() }, //Header signature.
 	{ 0x9F0 + 0xB8C, _NOP() }, //Version.

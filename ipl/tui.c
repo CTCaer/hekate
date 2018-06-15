@@ -50,11 +50,11 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		gfx_con_setpos(con, menu->x, menu->y);
 		gfx_printf(con, "[%s]\n\n", menu->caption);
 
-		// Skip caption or seperator lines selection
+		// Skip caption or seperator lines selection.
 		while (menu->ents[idx].type == MENT_CAPTION ||
 			menu->ents[idx].type == MENT_CHGLINE)
 		{
-			if (prev_idx <= idx || (!idx && prev_idx == cnt - 1))	
+			if (prev_idx <= idx || (!idx && prev_idx == cnt - 1))
 			{
 				idx++;
 				if (idx > (cnt - 1))
@@ -75,7 +75,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		}
 		prev_idx = idx;
 
-		// Draw the menu
+		//Draw the menu.
 		for (cnt = 0; menu->ents[cnt].type != MENT_END; cnt++)
 		{
 			if (cnt == idx)

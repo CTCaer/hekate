@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include "pkg2.h"
+#include "arm64.h"
 #include "heap.h"
 #include "se.h"
 
@@ -24,9 +25,6 @@ extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
 #define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)*/
 #define DPRINTF(...)
-
-#define _MOVZX(r, i, s) 0xD2800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F)
-#define _NOP() 0xD503201F
 
 // Include kernel patches here, so we can utilize pkg1 id
 PATCHSET_DEF(_kernel_1_patchset,
