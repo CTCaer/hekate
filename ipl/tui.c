@@ -40,8 +40,7 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 
 void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 {
-	int idx = 0, cnt = 0;
-	int prev_idx = 0;
+	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
 
 	gfx_clear_grey(con->gfx_ctxt, 0x1B);
 
@@ -51,12 +50,12 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		gfx_con_setpos(con, menu->x, menu->y);
 		gfx_printf(con, "[%s]\n\n", menu->caption);
 
-		// Skip caption or seperator lines selection
+		// Skip caption or seperator lines selection.
 		while (menu->ents[idx].type == MENT_CAPTION ||
 			menu->ents[idx].type == MENT_CHGLINE)
 		{
-			if (prev_idx <= idx || (!idx && prev_idx == cnt - 1))	
-			{				
+			if (prev_idx <= idx || (!idx && prev_idx == cnt - 1))
+			{
 				idx++;
 				if (idx > (cnt - 1))
 				{
@@ -76,16 +75,16 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		}
 		prev_idx = idx;
 
-		// Draw the menu
+		//Draw the menu.
 		for (cnt = 0; menu->ents[cnt].type != MENT_END; cnt++)
 		{
 			if (cnt == idx)
 				gfx_con_setcol(con, 0xFF1B1B1B, 1, 0xFFCCCCCC);
 			else
 				gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
-			if (cnt != idx && menu->ents[cnt].type == MENT_CAPTION)
+			if (menu->ents[cnt].type == MENT_CAPTION)
 				gfx_printf(con, "%k %s", menu->ents[cnt].color, menu->ents[cnt].caption);
-			else
+			else if (menu->ents[cnt].type != MENT_CHGLINE)
 				gfx_printf(con, " %s", menu->ents[cnt].caption);
 			if(menu->ents[cnt].type == MENT_MENU)
 				gfx_printf(con, "%k...", 0xFFEE9900);

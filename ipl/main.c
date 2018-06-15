@@ -870,7 +870,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			// Verify part
 			if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
 			{
-				EPRINTF("\nPress any key and try again.\n");
+				EPRINTF("\nPress any key and try again...\n");
 
 				free(buf);
 				return 0;
@@ -938,7 +938,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			{
 				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..\n",
 				num, lba_curr);
-				EPRINTF("\nPress any key and try again.\n");
+				EPRINTF("\nPress any key and try again...\n");
 
 				free(buf);
 				f_close(&fp);
@@ -949,7 +949,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		if (res)
 		{
 			EPRINTFARGS("\nFatal error (%d) when writing to SD Card", res);
-			EPRINTF("\nPress any key and try again.\n");
+			EPRINTF("\nPress any key and try again...\n");
 
 			free(buf);
 			f_close(&fp);
@@ -982,7 +982,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	// Verify last part or single file backup
 	if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
 	{
-		EPRINTF("\nPress any key and try again.\n");
+		EPRINTF("\nPress any key and try again...\n");
 
 		free(buf);
 		return 0;
@@ -1099,7 +1099,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", (get_tmr() - timer) / 1000000);
 	sdmmc_storage_end(&storage);
 	if (res)
-		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key.\n",0xFF00FF96, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF00FF96, 0xFFCCCCCC);
 
 out:;
 	btn_wait();
@@ -1112,15 +1112,10 @@ void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
 
 void dump_package1()
 {
-	u8 *pkg1 = (u8 *)malloc(0x40000);
-	u8 *warmboot = (u8 *)malloc(0x40000);
-	u8 *secmon = (u8 *)malloc(0x40000);
-	u8 *loader = (u8 *)malloc(0x40000);
-
-	memset(pkg1, 0, 0x40000);
-	memset(warmboot, 0, 0x40000);
-	memset(secmon, 0, 0x40000);
-	memset(loader, 0, 0x40000);
+	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
+	u8 *warmboot = (u8 *)calloc(1, 0x40000);
+	u8 *secmon = (u8 *)calloc(1, 0x40000);
+	u8 *loader = (u8 *)calloc(1, 0x40000);
 
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -1137,7 +1132,7 @@ void dump_package1()
 	}
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 
-	//Read package1.
+	// Read package1.
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
@@ -1151,13 +1146,13 @@ void dump_package1()
 	u8 * keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
 	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
 
-	// decrypt
+	// Decrypt
 	keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
 	pkg1_decrypt(pkg1_id, pkg1);
 
 	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
-	// display info
+	// Display info
 	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_size);
 	gfx_printf(&gfx_con, "%kNX Bootloader ofst:  %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_off);
 
@@ -1169,28 +1164,28 @@ void dump_package1()
 	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_size);
 	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_off);
 
-	// dump package1
+	// Dump package1
 	if (sd_save_to_file(pkg1, 0x40000, "pkg1_decr.bin")) {
 		EPRINTF("\nFailed to create pkg1_decr.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "\npackage1 dumped to pkg1_decr.bin\n");
 
-	// dump nxbootloader
+	// Dump nxbootloader
 	if (sd_save_to_file(loader, hdr->ldr_size, "nxloader.bin")) {
 		EPRINTF("\nFailed to create nxloader.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
 
-	// dump secmon
+	// Dump secmon
 	if (sd_save_to_file(secmon, hdr->sm_size, "secmon.bin")) {
 		EPRINTF("\nFailed to create secmon.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
-	// dump warmboot
+	// Dump warmboot
 	if (sd_save_to_file(warmboot, hdr->wb_size, "warmboot.bin")) {
 		EPRINTF("\nFailed to create warmboot.bin");
 		goto out;
@@ -1199,7 +1194,7 @@ void dump_package1()
 
 
 	sdmmc_storage_end(&storage);
-	gfx_puts(&gfx_con, "\nDone. Press any key.\n");
+	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
 out:;
 	free(pkg1);
@@ -1212,6 +1207,8 @@ out:;
 
 void launch_firmware()
 {
+	u8 max_entries = 16;
+
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 
@@ -1222,8 +1219,8 @@ void launch_firmware()
 	{
 		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
 		{
-			//Build configuration menu.
-			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 16);
+			// Build configuration menu.
+			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * max_entries);
 			ments[0].type = MENT_BACK;
 			ments[0].caption = "Back";
 			u32 i = 1;
@@ -1235,6 +1232,9 @@ void launch_firmware()
 				ments[i].caption = ini_sec->name;
 				ments[i].data = ini_sec;
 				i++;
+
+				if (i > max_entries)
+					break;
 			}
 			if (i > 1)
 			{
@@ -1242,13 +1242,18 @@ void launch_firmware()
 				menu_t menu = {
 					ments, "Launch configurations", 0, 0
 				};
-				cfg_sec = (ini_sec_t *)tui_do_menu(&gfx_con, &menu);
+				cfg_sec = ini_clone_section((ini_sec_t *)tui_do_menu(&gfx_con, &menu));
 				if (!cfg_sec)
+				{
+					free(ments);
+					ini_free(&ini_sections);
 					return;
+				}
 			}
 			else
 				EPRINTF("No launch configurations found.");
 			free(ments);
+			ini_free(&ini_sections);
 		}
 		else
 			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
@@ -1263,7 +1268,7 @@ void launch_firmware()
 	if (!hos_launch(cfg_sec))
 		EPRINTF("Failed to launch firmware.");
 
-	//TODO: free ini.
+	ini_free_section(cfg_sec);
 
 	btn_wait();
 }
@@ -1310,19 +1315,19 @@ int fix_attributes(char *path, u32 *total)
 	u32 k = 0;
 	static FILINFO fno;
 
-	/* Open directory */
+	// Open directory
 	res = f_opendir(&dir, path);
 	if (res == FR_OK)
 	{
 		for (;;)
 		{
-			//Read a directory item.
+			// Read a directory item.
 			res = f_readdir(&dir, &fno);
-			//Break on error or end of dir.
+			// Break on error or end of dir.
 			if (res != FR_OK || fno.fname[0] == 0)
 				break;
 
-			//Set new directory
+			// Set new directory
 			i = strlen(path);
 			memcpy(&path[i], "/", 1);
 			for (k = 0; k < 256; k++)
@@ -1333,23 +1338,23 @@ int fix_attributes(char *path, u32 *total)
 			memcpy(&path[i+1], fno.fname, k + 1);
 			path[i + k + 2] = 0;
 
-			//Check if archive bit is set
+			// Check if archive bit is set
 			if (fno.fattrib & AM_ARC)
 			{
 				*(u32 *)total = *(u32 *)total + 1;
 				f_chmod(path, 0, AM_ARC);
 			}
 
-			/* Is it a directory? */
+			// Is it a directory?
 			if (fno.fattrib & AM_DIR)
 			{
-				//Enter the directory.
+				// Enter the directory.
 				res = fix_attributes(path, total);
 				if (res != FR_OK)
 					break;
 				
 			}
-			//Clear file or folder path.
+			// Clear file or folder path.
 			path[i] = 0;
 		}
 		f_closedir(&dir);
@@ -1515,7 +1520,7 @@ void ipl_main()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
-	//Enable backlight after initializing gfx
+	// Enable backlight after initializing gfx
 	display_backlight(1);
 
 	while (1)

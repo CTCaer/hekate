@@ -14,17 +14,22 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _BTN_H_
-#define _BTN_H_
+#ifndef _ARM64_H_
+#define _ARM64_H_
 
 #include "types.h"
 
-#define BTN_POWER 0x1
-#define BTN_VOL_DOWN 0x2
-#define BTN_VOL_UP 0x4
+#define LSL0 0
+#define LSL16 16
+#define LSL32 32
 
-u32 btn_read();
-u32 btn_wait();
-u32 btn_wait_timeout(u32 time_ms);
+#define _PAGEOFF(x) ((x) & 0xFFFFF000)
+
+#define _ADRP(r, o) 0x90000000 | ((((o) >> 12) & 0x3) << 29) | ((((o) >> 12) & 0x1FFFFC) << 3) | ((r) & 0x1F)
+#define _BL(a, o) 0x94000000 | ((((o) - (a)) >> 2) & 0x3FFFFFF)
+#define _B(a, o) 0x94000000 | ((((o) - (a)) >> 2) & 0x3FFFFFF)
+#define _MOVKX(r, i, s) 0xF2800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F)
+#define _MOVZX(r, i, s) 0xD2800000 | (((s) & 0x30) << 17) | (((i) & 0xFFFF) << 5) | ((r) & 0x1F)
+#define _NOP() 0xD503201F
 
 #endif

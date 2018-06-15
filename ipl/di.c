@@ -22,6 +22,8 @@
 #include "i2c.h"
 #include "pmc.h"
 #include "max77620.h"
+#include "gpio.h"
+#include "pinmux.h"
 
 #include "di.inl"
 
@@ -56,25 +58,25 @@ void display_init()
 	PMC(APBDEV_PMC_IO_DPD2_REQ) = 0x40000000;
 
 	//Config pins.
-	PINMUX_AUX(0x1D0) &= 0xFFFFFFEF;
-	PINMUX_AUX(0x1D4) &= 0xFFFFFFEF;
-	PINMUX_AUX(0x1FC) &= 0xFFFFFFEF;
-	PINMUX_AUX(0x200) &= 0xFFFFFFEF;
-	PINMUX_AUX(0x204) &= 0xFFFFFFEF;
+	PINMUX_AUX(PINMUX_AUX_NFC_EN) &= 0xFFFFFFEF;
+	PINMUX_AUX(PINMUX_AUX_NFC_INT) &= 0xFFFFFFEF;
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) &= 0xFFFFFFEF;
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_EN) &= 0xFFFFFFEF;
+	PINMUX_AUX(PINMUX_AUX_LCD_RST) &= 0xFFFFFFEF;
 
-	GPIO_3(0x00) = (GPIO_3(0x00) & 0xFFFFFFFC) | 0x3;
-	GPIO_3(0x10) = (GPIO_3(0x10) & 0xFFFFFFFC) | 0x3;
-	GPIO_3(0x20) = (GPIO_3(0x20) & 0xFFFFFFFE) | 0x1;
-
-	sleep(10000u);
-
-	GPIO_3(0x20) = (GPIO_3(0x20) & 0xFFFFFFFD) | 0x2;
+	gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO); //Backlight +-5V.
+	gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE); //Backlight +-5V.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); //Backlight +5V enable.
 
 	sleep(10000);
 
-	GPIO_6(0x04) = (GPIO_6(0x04) & 0xFFFFFFF8) | 0x7;
-	GPIO_6(0x14) = (GPIO_6(0x14) & 0xFFFFFFF8) | 0x7;
-	GPIO_6(0x24) = (GPIO_6(0x24) & 0xFFFFFFFD) | 0x2;
+	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); //Backlight -5V enable.
+
+	sleep(10000);
+
+	gpio_config(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO); //Backlight PWM, Enable, Reset.
+	gpio_output_enable(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
+	gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH); //Backlight Enable enable.
 
 	//Config display interface and display.
 	MIPI_CAL(0x60) = 0;
@@ -85,7 +87,7 @@ void display_init()
 
 	sleep(10000);
 
-	GPIO_6(0x24) = (GPIO_6(0x24) & 0xFFFFFFFB) | 0x4;
+	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_HIGH); //Backlight Reset enable.
 
 	sleep(60000);
 
@@ -135,13 +137,16 @@ void display_init()
 
 void display_backlight(u8 enable)
 {
-	GPIO_6(0x24) = (GPIO_6(0x24) & 0xFFFFFFFE) | (enable & 1);
+	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); //Backlight PWM.
 }
 
 void display_end()
 {
 	display_backlight(0);
-	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 1;
+
+	//TODO: figure out why this freezes.
+
+	/*DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 1;
 	DSI(_DSIREG(DSI_WR_DATA)) = 0x2805;
 
 	u32 end = HOST1X(0x30A4) + 5;
@@ -164,17 +169,17 @@ void display_end()
 
 	sleep(50000);
 
-	GPIO_6(0x24) &= 0xFFFFFFFB;
+	//gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); //Backlight Reset disable.
 
-	sleep(10000);
+	//sleep(10000);
 
-	GPIO_3(0x20) &= 0xFFFFFFFD;
+	//gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); //Backlight -5V disable.
 
-	sleep(10000);
+	//sleep(10000);
 
-	GPIO_3(0x20) = (GPIO_3(0x20) >> 1) << 1;
+	//gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); //Backlight +5V disable.
 
-	sleep(10000);
+	//sleep(10000);
 
 	//Disable clocks.
 	CLOCK(0x308) = 0x1010000;
@@ -183,12 +188,12 @@ void display_end()
 	CLOCK(0x324) = 0x18000000;
 
 	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) | DSI_PAD_CONTROL_VS1_PDIO_CLK | DSI_PAD_CONTROL_VS1_PDIO(0xF);
-	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
+	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;*/
 
-	GPIO_6(0x04) &= 0xFFFFFFFE;
+	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); //Backlight PWM.
 
-	PINMUX_AUX(0x1FC) = (PINMUX_AUX(0x1FC) & 0xFFFFFFEF) | 0x10;
-	PINMUX_AUX(0x1FC) = (PINMUX_AUX(0x1FC) >> 2) << 2 | 1;
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & 0xFFFFFFEF) | 0x10;
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) >> 2) << 2 | 1;
 }
 
 void display_color_screen(u32 color)
