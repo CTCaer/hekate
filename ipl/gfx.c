@@ -322,7 +322,7 @@ void gfx_set_pixel(gfx_ctxt_t *ctxt, u32 x, u32 y, u32 color)
 void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
 {
 	int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-	int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1; 
+	int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
 	int err = (dx > dy ? dx : -dy) / 2, e2;
 
 	while (1)
@@ -341,5 +341,54 @@ void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
 			err += dx;
 			y0 += sy;
 		}
+	}
+}
+
+void gfx_set_rect_grey(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+{
+	u32 pos = 0;
+	for (u32 y = pos_y; y < (pos_y + size_y); y++)
+	{
+		for (u32 x = pos_x; x < (pos_x + size_x); x++)
+		{
+			memset(&ctxt->fb[x + y*ctxt->stride], buf[pos], 4);
+			pos++;
+		}
+	}
+}
+
+
+void gfx_set_rect_rgb(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+{
+	u32 pos = 0;
+	for (u32 y = pos_y; y < (pos_y + size_y); y++)
+	{
+		for (u32 x = pos_x; x < (pos_x + size_x); x++)
+		{
+			ctxt->fb[x + y*ctxt->stride] = buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16);
+			pos+=3;
+		}
+	}
+}
+
+void gfx_set_rect_rgba(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+{
+	u32 pos = 0;
+	for (u32 y = pos_y; y < (pos_y + size_y); y++)
+	{
+		for (u32 x = pos_x; x < (pos_x + size_x); x++)
+		{
+			ctxt->fb[x + y*ctxt->stride] = buf[pos];
+			pos+=1;
+		}
+	}
+}
+
+void gfx_render_bmp_rgba(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+{
+	for (u32 y = pos_y; y < (pos_y + size_y); y++)
+	{
+		for (u32 x = pos_x; x < (pos_x + size_x); x++)
+			ctxt->fb[x + y*ctxt->stride]  = buf[(size_y + pos_y - 1 - y ) * size_x + x - pos_x];
 	}
 }

@@ -26,6 +26,6 @@
 
 u32 btn_read();
 u32 btn_wait();
-u32 btn_wait_timeout(u32 time_ms);
+u32 btn_wait_timeout(u32 time_ms, u32 mask);
 
 #endif

@@ -213,7 +213,7 @@ void display_color_screen(u32 color)
 	display_backlight(1);
 }
 
-u32 *display_init_framebuffer(u32 *fb)
+u32 *display_init_framebuffer()
 {
 	//Sanitize framebuffer area. Aligned to 4MB.
 	memset((u32 *)0xC0000000, 0, 0x400000);
@@ -226,4 +226,9 @@ u32 *display_init_framebuffer(u32 *fb)
 	//display_backlight(1);
 
 	return (u32 *)0xC0000000;
+}
+
+void display_init_framebuffer_bgra()
+{
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer2, 32);
 }

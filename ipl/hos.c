@@ -182,19 +182,19 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 		case KB_FIRMWARE_VERSION_301:
 			se_aes_unwrap_key(13, 15, console_keyseed);
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-		break;
+			break;
 		case KB_FIRMWARE_VERSION_400:
 			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
 			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-		break;
+			break;
 		case KB_FIRMWARE_VERSION_500:
 			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
 			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-		break;
+			break;
 	}
 
 	//Package2 key.
@@ -219,10 +219,10 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package1 version (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
+		gfx_printf(&gfx_con, "%kCould not identify package1,\nVersion (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
 		goto out;
 	}
-	gfx_printf(&gfx_con, "Identified package1 ('%s'), Keyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
+	gfx_printf(&gfx_con, "Identified package1 ('%s'),\nKeyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
 
 	//Read the correct keyblob.
 	ctxt->keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);

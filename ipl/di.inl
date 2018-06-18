@@ -561,3 +561,39 @@ static const cfg_op_t cfg_display_framebuffer[32] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE}, //General update; window A update.
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ} //General activation request; window A activation request.
 };
+
+//Display A config.
+static const cfg_op_t cfg_display_framebuffer2[32] = {
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT}, //Enable window C.
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT}, //Enable window B.
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT}, //Enable window A.
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
+	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8}, //T_A8B8G8R8  //WIN_COLOR_DEPTH_R8G8B8A8
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_WIN_POSITION, 0}, //(0,0)
+	{DC_WIN_H_INITIAL_DDA, 0},
+	{DC_WIN_V_INITIAL_DDA, 0},
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(2880)}, //Pre-scaled size: 1280x2880 bytes.
+	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)},
+	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(720)}, //Window size: 1280 vertical lines x 720 horizontal pixels.
+	{DC_WIN_LINE_STRIDE, 0x6000C00}, //768*2x768*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_BUFFER_CONTROL, 0},
+	{DC_WINBUF_SURFACE_KIND, 0}, //Regular surface.
+	{DC_WINBUF_START_ADDR, 0xC0000000}, //Framebuffer address.
+	{DC_WINBUF_ADDR_H_OFFSET, 0},
+	{DC_WINBUF_ADDR_V_OFFSET, 0},
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
+	{DC_WIN_WIN_OPTIONS, WIN_ENABLE}, //Enable window AD.
+	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY}, //DISPLAY_CTRL_MODE: continuous display.
+	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE}, //General update; window A update.
+	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ} //General activation request; window A activation request.
+};

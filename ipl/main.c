@@ -42,6 +42,7 @@
 #include "gpio.h"
 #include "sdmmc.h"
 #include "ff.h"
+#include "hekate_logos.h"
 #include "tui.h"
 #include "heap.h"
 #include "list.h"
@@ -115,7 +116,7 @@ void *sd_file_read(char *path)
 	u8 *ptr = buf;
 	while (size > 0)
 	{
-		u32 rsize = MIN(size, 512);
+		u32 rsize = MIN(size, 512 * 512);
 		if (f_read(&fp, ptr, rsize, NULL) != FR_OK)
 		{
 			free(buf);
@@ -147,9 +148,9 @@ int sd_save_to_file(void * buf, u32 size, const char * filename)
 
 void panic(u32 val)
 {
-	//Set panic code.
+	// Set panic code.
 	PMC(APBDEV_PMC_SCRATCH200) = val;
-	//PMC(APBDEV_PMC_CRYPTO_OP) = 1; //Disable SE.
+	//PMC(APBDEV_PMC_CRYPTO_OP) = 1; // Disable SE.
 	TMR(0x18C) = 0xC45A;
 	TMR(0x80) = 0xC0000000;
 	TMR(0x180) = 0x8019;
@@ -197,7 +198,7 @@ void config_gpios()
 	pinmux_config_i2c(I2C_5);
 	pinmux_config_uart(UART_A);
 
-	//Configure volume up/down as inputs.
+	// Configure volume up/down as inputs.
 	gpio_config(GPIO_PORT_X, GPIO_PIN_6, GPIO_MODE_GPIO);
 	gpio_config(GPIO_PORT_X, GPIO_PIN_7, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_X, GPIO_PIN_6, GPIO_OUTPUT_DISABLE);
@@ -258,12 +259,12 @@ void mbist_workaround()
 
 void config_se_brom()
 {
-	//Bootrom part we skipped.
+	// Bootrom part we skipped.
 	u32 sbk[4] = { FUSE(0x1A4), FUSE(0x1A8), FUSE(0x1AC), FUSE(0x1B0) };
 	se_aes_key_set(14, sbk, 0x10);
-	//Lock SBK from being read.
+	// Lock SBK from being read.
 	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 14 * 4) = 0x7E;
-	//This memset needs to happen here, else TZRAM will behave weirdly later on.
+	// This memset needs to happen here, else TZRAM will behave weirdly later on.
 	memset((void *)0x7C010000, 0, 0x10000);
 	PMC(APBDEV_PMC_CRYPTO_OP) = 0;
 	SE(SE_INT_STATUS_REG_OFFSET) = 0x1F;
@@ -276,7 +277,7 @@ void config_se_brom()
 
 void config_hw()
 {
-	//Bootrom stuff we skipped by going through rcm.
+	// Bootrom stuff we skipped by going through rcm.
 	config_se_brom();
 	//FUSE(FUSE_PRIVATEKEYDISABLE) = 0x11;
 	SYSREG(0x110) &= 0xFFFFFF9F;
@@ -285,9 +286,9 @@ void config_hw()
 	mbist_workaround();
 	clock_enable_se();
 
-	//Enable fuse clock.
+	// Enable fuse clock.
 	clock_enable_fuse(1);
-	//Disable fuse programming.
+	// Disable fuse programming.
 	fuse_disable_program();
 
 	mc_enable();
@@ -603,7 +604,7 @@ void print_tsec_key()
 
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 
-	//Read package1.
+	// Read package1.
 	u8 *pkg1 = (u8 *)malloc(0x40000);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
@@ -642,13 +643,13 @@ out:;
 void reboot_normal()
 {
 	sd_unmount();
-	panic(0x21); //Bypass fuse programming in package1.
+	panic(0x21); // Bypass fuse programming in package1.
 }
 
 void reboot_rcm()
 {
 	sd_unmount();
-	PMC(APBDEV_PMC_SCRATCH0) = 2; //Reboot into rcm.
+	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
 	PMC(0) |= 0x10;
 	while (1)
 		sleep(1);
@@ -703,7 +704,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 			if(!memcmp(bufEm, bufSd, num << 9))
 			{
-				EPRINTFARGS("\nVerification failed.\nVerification failed..\n", num);
+				EPRINTFARGS("\nSD card and eMMC data do not match!\nVerification failed..\n", num);
 
 				free(bufEm);
 				free(bufSd);
@@ -761,13 +762,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
 		totalSectors >> SECTORS_TO_MIB_COEFF);
 
-	// 1GB parts for sd cards 8GB and less
+	// 1GB parts for sd cards 8GB and less.
 	if ((sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits)) <= 8192)
 		multipartSplitSize = (1u << 30);
-	// Maximum parts fitting the free space available
+	// Maximum parts fitting the free space available.
 	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (multipartSplitSize / 512);
 
-	// Check if the USER partition or the RAW eMMC fits the sd card free space
+	// Check if the USER partition or the RAW eMMC fits the sd card free space.
 	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
 	{
 		isSmallSdCard = 1;
@@ -800,13 +801,13 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			return 0;
 		}
 
-		// Increase maxSplitParts to accommodate previously backed up parts
+		// Increase maxSplitParts to accommodate previously backed up parts.
 		maxSplitParts += currPartIdx;
 	}
 	else if (isSmallSdCard)
 		gfx_printf(&gfx_con, "%kPartial Backup enabled (with %d MiB parts)...%k\n\n", 0xFF00BAFF, multipartSplitSize >> 20, 0xFFCCCCCC);
 
-	// Check if filesystem is FAT32 or the free space is smaller and backup in parts
+	// Check if filesystem is FAT32 or the free space is smaller and backup in parts.
 	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
 	{
 		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
@@ -871,7 +872,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			memset(&fp, 0, sizeof(fp));
 			currPartIdx++;
 
-			// Verify part
+			// Verify part.
 			if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
 			{
 				EPRINTF("\nPress any key and try again...\n");
@@ -891,7 +892,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			// Always create partial.idx before next part, in case a fatal error occurs.
 			if (isSmallSdCard)
 			{
-				// Create partial backup index file
+				// Create partial backup index file.
 				if (f_open(&partialIdxFp, partialIdxFilename, FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
 				{
 					f_write(&partialIdxFp, &currPartIdx, 4, NULL);
@@ -905,7 +906,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 					return 0;
 				}
 
-				// More parts to backup that do not currently fit the sd card free space or fatal error
+				// More parts to backup that do not currently fit the sd card free space or fatal error.
 				if (currPartIdx >= maxSplitParts)
 				{
 					gfx_puts(&gfx_con, "\n\n1. Press any key and Power off Switch from the main menu.\n\
@@ -919,7 +920,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				}
 			}
 
-			// Create next part
+			// Create next part.
 			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
 			{
 				EPRINTFARGS("Error creating file %s.\n", outFilename);
@@ -940,7 +941,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			sleep(150000);
 			if (retryCount >= 3)
 			{
-				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X from eMMC. Aborting..\n",
+				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
 				num, lba_curr);
 				EPRINTF("\nPress any key and try again...\n");
 
@@ -970,7 +971,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		totalSectors -= num;
 		bytesWritten += num * NX_EMMC_BLOCKSIZE;
 
-		// Force a flush after a lot of data if not splitting
+		// Force a flush after a lot of data if not splitting.
 		if (numSplitParts == 0 && bytesWritten >= multipartSplitSize)
 		{
 			f_sync(&fp);
@@ -979,11 +980,11 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	}
 	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
 
-	// Backup operation ended successfully
+	// Backup operation ended successfully.
 	free(buf);
 	f_close(&fp);
 
-	// Verify last part or single file backup
+	// Verify last part or single file backup.
 	if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
 	{
 		EPRINTF("\nPress any key and try again...\n");
@@ -1024,7 +1025,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		goto out;
 
 	gfx_puts(&gfx_con, "Checking for available free space...\n\n");
-	// Get SD Card free space for Partial Backup
+	// Get SD Card free space for Partial Backup.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
 	sdmmc_storage_t storage;
@@ -1051,7 +1052,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 
-			gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i,
+			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
@@ -1074,7 +1075,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
 					continue;
 
-				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
+				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
 				res = dump_emmc_part(part->name, &storage, part);
@@ -1091,7 +1092,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
 			strcpy(rawPart.name, "rawnand.bin");
 			{
-				gfx_printf(&gfx_con, "%k%02d: %s (%08X-%08X)%k\n", 0xFFFFDD00, i++,
+				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
 				res = dump_emmc_part(rawPart.name, &storage, &rawPart);
@@ -1146,17 +1147,17 @@ void dump_package1()
 		goto out;
 	}
 
-	// Read keyblob
+	// Read keyblob.
 	u8 * keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
 	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
 
-	// Decrypt
+	// Decrypt.
 	keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
 	pkg1_decrypt(pkg1_id, pkg1);
 
 	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
-	// Display info
+	// Display info.
 	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_size);
 	gfx_printf(&gfx_con, "%kNX Bootloader ofst:  %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_off);
 
@@ -1168,28 +1169,28 @@ void dump_package1()
 	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_size);
 	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_off);
 
-	// Dump package1
+	// Dump package1.
 	if (sd_save_to_file(pkg1, 0x40000, "pkg1_decr.bin")) {
 		EPRINTF("\nFailed to create pkg1_decr.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "\npackage1 dumped to pkg1_decr.bin\n");
 
-	// Dump nxbootloader
+	// Dump nxbootloader.
 	if (sd_save_to_file(loader, hdr->ldr_size, "nxloader.bin")) {
 		EPRINTF("\nFailed to create nxloader.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
 
-	// Dump secmon
+	// Dump secmon.
 	if (sd_save_to_file(secmon, hdr->sm_size, "secmon.bin")) {
 		EPRINTF("\nFailed to create secmon.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
-	// Dump warmboot
+	// Dump warmboot.
 	if (sd_save_to_file(warmboot, hdr->wb_size, "warmboot.bin")) {
 		EPRINTF("\nFailed to create warmboot.bin");
 		goto out;
@@ -1298,7 +1299,7 @@ void toggle_autorcm(){
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
 		sdmmc_storage_read(&storage, sect, 1, tempbuf);
-		tempbuf[0x10] ^= 0x77; // !IMPORTANT: DO NOT CHANGE! XOR by arbitrary number to corrupt
+		tempbuf[0x10] ^= 0x77; // !IMPORTANT: DO NOT CHANGE! XOR by arbitrary number to corrupt.
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
 	}
 	
@@ -1319,7 +1320,7 @@ int fix_attributes(char *path, u32 *total)
 	u32 k = 0;
 	static FILINFO fno;
 
-	// Open directory
+	// Open directory.
 	res = f_opendir(&dir, path);
 	if (res == FR_OK)
 	{
@@ -1331,7 +1332,7 @@ int fix_attributes(char *path, u32 *total)
 			if (res != FR_OK || fno.fname[0] == 0)
 				break;
 
-			// Set new directory
+			// Set new directory.
 			i = strlen(path);
 			memcpy(&path[i], "/", 1);
 			for (k = 0; k < 256; k++)
@@ -1342,7 +1343,7 @@ int fix_attributes(char *path, u32 *total)
 			memcpy(&path[i+1], fno.fname, k + 1);
 			path[i + k + 2] = 0;
 
-			// Check if archive bit is set
+			// Check if archive bit is set.
 			if (fno.fattrib & AM_ARC)
 			{
 				*(u32 *)total = *(u32 *)total + 1;
@@ -1443,6 +1444,9 @@ menu_t menu_cinfo = {
 
 ment_t ment_autorcm[] = {
 	MDEF_CAPTION("WARNING: This corrupts your BOOT0 partition!", 0xFF00FFE6),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("Do you want to continue?", 0xFFCCCCCC),
+	MDEF_CHGLINE(),
 	MDEF_BACK(),
 	MDEF_BACK(),
 	MDEF_BACK(),
