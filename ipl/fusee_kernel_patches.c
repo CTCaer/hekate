@@ -1,3 +1,4 @@
+// Fusee kernel_patches.c taken from https://github.com/Atmosphere-NX/Atmosphere/blob/master/fusee/fusee-secondary/src/kernel_patches.c
 #include <string.h>
 #include <stdbool.h>
 #include "fusee_kernel_patches.h"
