@@ -1,5 +1,8 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (c) 2018 st4rk
+* Copyright (c) 2018 Ced2911
+* Copyright (C) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,

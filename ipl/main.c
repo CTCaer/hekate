@@ -1,6 +1,10 @@
 /*
 * Copyright (c) 2018 naehrwert
 *
+* Copyright (c) 2018 Rajko Stojadinovic
+* Copyright (c) 2018 CTCaer
+* Copyright (c) 2018 Reisyukaku
+*
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
 * version 2, as published by the Free Software Foundation.
@@ -1384,7 +1388,8 @@ void fix_sd_attr(){
 void about()
 {
 	static const char octopus[] =
-	"hekate (C) 2018 naehrwert, st4rk\n\n"
+	"hekate (C) 2018 naehrwert, st4rk\n"
+	"Authored by: CTCaer\n\n"
 	"Thanks to: %kderrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8%k\n\n"
 	"Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute\n\n"
 	"Open source and free packages used:\n"
@@ -1495,7 +1500,7 @@ ment_t ment_top[] = {
 };
 menu_t menu_top = {
 	ment_top,
-	"hekate - ipl", 0, 0
+	"hekate - CTCaer mod v_._", 0, 0
 };
 
 extern void pivot_stack(u32 stack_top);

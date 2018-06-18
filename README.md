@@ -1,11 +1,15 @@
-# hekate
+# hekate - CTCaer mod
 
-![Image of Hekate](https://upload.wikimedia.org/wikipedia/commons/f/fc/H%C3%A9cate_-_Mallarm%C3%A9.png)
+![Image of Hekate](https://i.imgur.com/O3REoy5.png)
+
+
+The goddess that blesses your Nintendo Switch.
+
 
 Nintendo Switch bootloader, firmware patcher, and more.
 
 
-## ipl config
+## IPL configuration
 
 The ipl can be configured via 'hekate_ipl.ini' (if it is present on the SD card). Each ini section represents a boot entry, except for the special section 'config' that controls the global configuration.
 
@@ -23,7 +27,8 @@ The ipl can be configured via 'hekate_ipl.ini' (if it is present on the SD card)
 
 
 ```
-hekate (C) 2018 naehrwert, st4rk.
+hekate (C) 2018 naehrwert, st4rk
+Authored by: CTCaer.
 
 Thanks to: derrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8.
 Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
