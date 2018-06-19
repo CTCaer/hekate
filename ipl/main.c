@@ -58,8 +58,8 @@ gfx_ctxt_t gfx_ctxt;
 gfx_con_t gfx_con;
 
 //TODO: Create more macros (info, header, debug, etc) with different colors and utilize them for consistency.
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFF0000FF, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFF0000FF, args, 0xFFCCCCCC)
+#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
+#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
 
 //TODO: ugly.
 sdmmc_t sd_sdmmc;
@@ -343,7 +343,7 @@ void print_fuseinfo()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFFFFDD00, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 	gfx_hexdump(&gfx_con, 0x7000F900, (u8 *)0x7000F900, 0x2FC);
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
@@ -372,7 +372,7 @@ void print_kfuseinfo()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFFFFDD00, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 	u32 buf[KFUSE_NUM_WORDS];
 	if (!kfuse_read(buf))
 		EPRINTF("CRC fail.");
@@ -420,7 +420,7 @@ void print_mmc_info()
 		u16 card_type;
 		u32 speed;
 
-		gfx_printf(&gfx_con, "%kCard IDentification:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		switch (storage.csd.mmca_vsn)
 		{
 		case 0: /* MMC v1.0 - v1.2 */
@@ -464,7 +464,7 @@ void print_mmc_info()
 		else
 		{
 			gfx_printf(&gfx_con, "%kExtended Card-Specific Data V1.%d:%k\n",
-				0xFFFFDD00, storage.ext_csd.ext_struct, 0xFFCCCCCC);
+				0xFF00DDFF, storage.ext_csd.ext_struct, 0xFFCCCCCC);
 			card_type = storage.ext_csd.card_type;
 			u8 card_type_support[96];
 			u8 pos_type = 0;
@@ -513,16 +513,16 @@ void print_mmc_info()
 
 			u32 boot_size = storage.ext_csd.boot_mult << 17;
 			u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
-			gfx_printf(&gfx_con, "%keMMC Partitions:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
-			gfx_printf(&gfx_con, " 1: %kBOOT0      %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_printf(&gfx_con, "%keMMC Partitions:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
+			gfx_printf(&gfx_con, " 1: %kBOOT0      %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
 				boot_size / 1024, boot_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 2: %kBOOT1      %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_printf(&gfx_con, " 2: %kBOOT1      %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
 				boot_size / 1024, boot_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 3: %kRPMB       %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_printf(&gfx_con, " 3: %kRPMB       %kSize: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
 				rpmb_size / 1024, rpmb_size / 1024 / 512);
-			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF00FF96, 0xFFCCCCCC,
+			gfx_printf(&gfx_con, " 0: %kGPP (USER) %kSize: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF96FF00, 0xFFCCCCCC,
 				storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
-			gfx_printf(&gfx_con, "%kGPP (eMMC USER) partition table:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
+			gfx_printf(&gfx_con, "%kGPP (eMMC USER) partition table:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, 0);
 			LIST_INIT(gpt);
@@ -531,7 +531,7 @@ void print_mmc_info()
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
 				gfx_printf(&gfx_con, " %02d: %k%s%k\n     Size: % 5d MiB (LBA Sectors 0x%07X, LBA Range: %08X-%08X)\n",
-					gpp_idx++, 0xFF14FDAE, part->name, 0xFFCCCCCC, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
+					gpp_idx++, 0xFFAEFD14, part->name, 0xFFCCCCCC, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
 			}
 		}
@@ -554,7 +554,7 @@ void print_sdcard_info()
 	{
 		u32 capacity;
 
-		gfx_printf(&gfx_con, "%kCard IDentification:%k\n", 0xFFFFDD00, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		gfx_printf(&gfx_con,
 			" Vendor ID:  %02x\n\
 			 OEM ID:     %c%c\n\
@@ -569,7 +569,7 @@ void print_sdcard_info()
 			sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
 			sd_storage.cid.month, sd_storage.cid.year);
 
-		gfx_printf(&gfx_con, "%kCard-Specific Data V%d.0:%k\n", 0xFFFFDD00, sd_storage.csd.structure + 1, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kCard-Specific Data V%d.0:%k\n", 0xFF00DDFF, sd_storage.csd.structure + 1, 0xFFCCCCCC);
 		capacity = sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits);
 		gfx_printf(&gfx_con,
 			" Cmd Classes:    %02X\n\
@@ -587,7 +587,7 @@ void print_sdcard_info()
 		gfx_puts(&gfx_con, "Acquiring FAT volume info...\n\n");
 		f_getfree("", &sd_fs.free_clst, NULL);
 		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
-				0xFFFFDD00, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
+				0xFF00DDFF, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
 				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
 	}
 
@@ -621,7 +621,7 @@ void print_tsec_key()
 		u8 key[0x10];
 		int res = tsec_query(key, i, pkg1 + pkg1_id->tsec_off);
 
-		gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFFFFDD00, i, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFF00DDFF, i, 0xFFCCCCCC);
 		if (res >= 0)
 		{
 			for (u32 i = 0; i < 0x10; i++)
@@ -676,7 +676,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 		u32 lbaCurrVer = lba_curr - totalSectorsVer;
 
 		u32 pct = (u64)((u64)(lbaCurrVer - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
-		tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF00FF96, 0xFF005515);
+		tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF96FF00, 0xFF155500);
 
 		while (totalSectorsVer > 0)
 		{
@@ -715,7 +715,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 			pct = (u64)((u64)(lbaCurrVer - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 			if (pct != prevPct)
 			{
-				tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF00FF96, 0xFF005515);
+				tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF96FF00, 0xFF155500);
 				prevPct = pct;
 			}
 
@@ -773,7 +773,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	{
 		isSmallSdCard = 1;
 
-		gfx_printf(&gfx_con, "%k\nSD card free space is smaller than total backup size.%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%k\nSD card free space is smaller than total backup size.%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 
 		if (!maxSplitParts)
 		{
@@ -785,7 +785,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	// Check if we continuing a previous raw eMMC backup in progress.
 	if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK)
 	{
-		gfx_printf(&gfx_con, "%kFound Partial Backup in progress. Continuing...%k\n\n", 0xFF14FDAE, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kFound Partial Backup in progress. Continuing...%k\n\n", 0xFFAEFD14, 0xFFCCCCCC);
 
 		partialDumpInProgress = 1;
 		// Force partial dumping, even if the card is larger.
@@ -805,7 +805,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		maxSplitParts += currPartIdx;
 	}
 	else if (isSmallSdCard)
-		gfx_printf(&gfx_con, "%kPartial Backup enabled (with %d MiB parts)...%k\n\n", 0xFF00BAFF, multipartSplitSize >> 20, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kPartial Backup enabled (with %d MiB parts)...%k\n\n", 0xFFFFBA00, multipartSplitSize >> 20, 0xFFCCCCCC);
 
 	// Check if filesystem is FAT32 or the free space is smaller and backup in parts.
 	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
@@ -993,7 +993,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		return 0;
 	}
 	else
-		tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF00FF96, 0xFF005515);
+		tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF96FF00, 0xFF155500);
 
 	// Remove partial backup index file if no fatal errors occurred.
 	if(isSmallSdCard)
@@ -1052,7 +1052,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 
-			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i,
+			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
@@ -1075,7 +1075,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
 					continue;
 
-				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i++,
+				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
 				res = dump_emmc_part(part->name, &storage, part);
@@ -1092,7 +1092,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
 			strcpy(rawPart.name, "rawnand.bin");
 			{
-				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFFFFDD00, i++,
+				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
 				res = dump_emmc_part(rawPart.name, &storage, &rawPart);
@@ -1104,7 +1104,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", (get_tmr() - timer) / 1000000);
 	sdmmc_storage_end(&storage);
 	if (res)
-		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF00FF96, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
 
 out:;
 	btn_wait();
@@ -1158,16 +1158,16 @@ void dump_package1()
 	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
 	// Display info.
-	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_size);
-	gfx_printf(&gfx_con, "%kNX Bootloader ofst:  %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->ldr_off);
+	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
+	gfx_printf(&gfx_con, "%kNX Bootloader ofst:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_off);
 
-	gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, pkg1_id->secmon_base);
-	gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->sm_size);
-	gfx_printf(&gfx_con, "%kSecure monitor ofst: %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->sm_off);
+	gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
+	gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
+	gfx_printf(&gfx_con, "%kSecure monitor ofst: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_off);
 
-	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFF46EAC7, 0xFFCCCCCC, pkg1_id->warmboot_base);
-	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_size);
-	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFF46EAC7, 0xFFCCCCCC, hdr->wb_off);
+	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
+	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
+	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_off);
 
 	// Dump package1.
 	if (sd_save_to_file(pkg1, 0x40000, "pkg1_decr.bin")) {
@@ -1306,7 +1306,7 @@ void toggle_autorcm(){
 	free(tempbuf);
 	sdmmc_storage_end(&storage);
 	
-	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n\nPress any key...\n", 0xFF00FF96, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 
 out:;
 	btn_wait();
@@ -1381,7 +1381,7 @@ void fix_sd_attr(){
 		buff[0] = '/';
 		buff[1] = 0;
 		fix_attributes(buff, &total);
-		gfx_printf(&gfx_con, "\n%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF00FF96, total, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "\n%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
 	}
 	btn_wait();
 }
@@ -1418,8 +1418,8 @@ void about()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, octopus, 0xFFFFCC00, 0xFFCCCCCC,
-		0xFFFFCC00, 0xFFCCFF00, 0xFFFFCC00, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, octopus, 0xFF00CCFF, 0xFFCCCCCC,
+		0xFF00CCFF, 0xFF00FFCC, 0xFF00CCFF, 0xFFCCCCCC);
 
 	btn_wait();
 }
@@ -1427,12 +1427,12 @@ void about()
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("---- SoC Info ----", 0xFFE6B90A),
+	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
 	MDEF_HANDLER("Print fuse info", print_fuseinfo),
 	MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_HANDLER("Print TSEC keys", print_tsec_key),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- Storage Info --", 0xFFE6B90A),
+	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
 	MDEF_HANDLER("Print eMMC info", print_mmc_info),
 	MDEF_HANDLER("Print SD Card info", print_sdcard_info),
 	MDEF_END()
@@ -1443,7 +1443,7 @@ menu_t menu_cinfo = {
 };
 
 ment_t ment_autorcm[] = {
-	MDEF_CAPTION("WARNING: This corrupts your BOOT0 partition!", 0xFF00FFE6),
+	MDEF_CAPTION("WARNING: This corrupts your BOOT0 partition!", 0xFFE6FF00),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("Do you want to continue?", 0xFFCCCCCC),
 	MDEF_CHGLINE(),
@@ -1467,19 +1467,19 @@ menu_t menu_autorcm = {
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", 0xFFE6B90A),
+	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
 	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", 0xFFE6B90A),
+	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
 	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Misc -------", 0xFFE6B90A),
+	MDEF_CAPTION("------ Misc -------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("---- Dangerous ----", 0xFF0000FF),
+	MDEF_CAPTION("---- Dangerous ----", 0xFFFF0000),
 	MDEF_MENU("AutoRCM", &menu_autorcm),
 	MDEF_END()
 };

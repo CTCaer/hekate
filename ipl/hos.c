@@ -219,7 +219,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package1,\nVersion (= '%s').%k\n", 0xFF0000FF, (char *)ctxt->pkg1 + 0x10, 0xFFFFFFFF);
+		gfx_printf(&gfx_con, "%kCould not identify package1,\nVersion (= '%s').%k\n", 0xFFFF0000, (char *)ctxt->pkg1 + 0x10, 0xFFCCCCCC);
 		goto out;
 	}
 	gfx_printf(&gfx_con, "Identified package1 ('%s'),\nKeyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
@@ -424,7 +424,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		//Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
-		gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 		for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 	}
@@ -460,7 +460,7 @@ int hos_launch(ini_sec_t *cfg)
 			patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
 			if (kernel_patchset != NULL)
 			{
-				gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+				gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 				//TODO: this is a bit ugly, perhaps attach a 'key' to the patchset and pass it via ini.
 				if (ctxt.svcperm && kernel_patchset[0].off != 0xFFFFFFFF)
 					*(vu32 *)(ctxt.kernel + kernel_patchset[0].off) = kernel_patchset[0].val;
@@ -471,7 +471,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	//Merge extra KIP1s into loaded ones.
-	gfx_printf(&gfx_con, "%kPatching kernel initial processes%k\n", 0xFF00BAFF, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%kPatching kernel initial processes%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
@@ -482,7 +482,7 @@ int hos_launch(ini_sec_t *cfg)
 	//Unmount SD card.
 	f_mount(NULL, "", 1);
 
-	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF00FF96, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
 	se_aes_key_clear(8);
 	se_aes_key_clear(11);

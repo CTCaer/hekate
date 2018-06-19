@@ -365,13 +365,13 @@ void gfx_set_rect_rgb(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u
 	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
 		{
-			ctxt->fb[x + y*ctxt->stride] = buf[pos] | (buf[pos + 1] << 8) | (buf[pos + 2] << 16);
+			ctxt->fb[x + y*ctxt->stride] = buf[pos + 2] | (buf[pos + 1] << 8) | (buf[pos] << 16);
 			pos+=3;
 		}
 	}
 }
 
-void gfx_set_rect_rgba(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+void gfx_set_rect_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
 	u32 pos = 0;
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
@@ -384,7 +384,7 @@ void gfx_set_rect_rgba(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y,
 	}
 }
 
-void gfx_render_bmp_rgba(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+void gfx_render_bmp_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
 	{

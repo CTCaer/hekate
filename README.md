@@ -3,10 +3,7 @@
 ![Image of Hekate](https://i.imgur.com/O3REoy5.png)
 
 
-The goddess that blesses your Nintendo Switch.
-
-
-Nintendo Switch bootloader, firmware patcher, and more.
+Custom Nintendo Switch bootloader, firmware patcher, and more.
 
 
 ## IPL configuration

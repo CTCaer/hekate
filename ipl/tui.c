@@ -1,5 +1,6 @@
-/*{
+/*
 * Copyright (c) 2018 naehrwert
+* Copyright (c) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -75,7 +76,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		}
 		prev_idx = idx;
 
-		//Draw the menu.
+		// Draw the menu.
 		for (cnt = 0; menu->ents[cnt].type != MENT_END; cnt++)
 		{
 			if (cnt == idx)
@@ -87,12 +88,13 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			else if (menu->ents[cnt].type != MENT_CHGLINE)
 				gfx_printf(con, " %s", menu->ents[cnt].caption);
 			if(menu->ents[cnt].type == MENT_MENU)
-				gfx_printf(con, "%k...", 0xFFEE9900);
+				gfx_printf(con, "%k...", 0xFF0099EE);
 			gfx_printf(con, " \n");
 		}
 		gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
 		gfx_putc(con, '\n');
 
+		// Wait for user command.
 		u32 btn = btn_wait();
 
 		if (btn & BTN_VOL_DOWN && idx < (cnt - 1))

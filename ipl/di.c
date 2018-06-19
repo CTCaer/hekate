@@ -227,8 +227,3 @@ u32 *display_init_framebuffer()
 
 	return (u32 *)0xC0000000;
 }
-
-void display_init_framebuffer_bgra()
-{
-	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer2, 32);
-}
