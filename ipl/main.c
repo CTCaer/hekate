@@ -67,6 +67,10 @@ sdmmc_storage_t sd_storage;
 FATFS sd_fs;
 int sd_mounted;
 
+#ifdef MENU_LOGO_ENABLE
+u8 *Kc_MENU_LOGO;
+#endif //MENU_LOGO_ENABLE
+
 int sd_mount()
 {
 	if (sd_mounted)
@@ -643,12 +647,18 @@ out:;
 void reboot_normal()
 {
 	sd_unmount();
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 	panic(0x21); // Bypass fuse programming in package1.
 }
 
 void reboot_rcm()
 {
 	sd_unmount();
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
 	PMC(0) |= 0x10;
 	while (1)
@@ -658,6 +668,9 @@ void reboot_rcm()
 void power_off()
 {
 	sd_unmount();
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 	//TODO: we should probably make sure all regulators are powered off properly.
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
@@ -1269,9 +1282,17 @@ void launch_firmware()
 		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n");
 		sleep(3000000);
 	}
-
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 	if (!hos_launch(cfg_sec))
+	{
+#ifdef MENU_LOGO_ENABLE
+		Kc_MENU_LOGO = (u8 *)malloc(36864);
+		LZ_Uncompress(Kc_MENU_LOGOlz, Kc_MENU_LOGO, SZ_MENU_LOGOLZ);
+#endif //MENU_LOGO_ENABLE
 		EPRINTF("Failed to launch firmware.");
+	}
 
 	ini_free_section(cfg_sec);
 
@@ -1527,6 +1548,10 @@ void ipl_main()
 	u32 *fb = display_init_framebuffer();
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
+#ifdef MENU_LOGO_ENABLE
+	Kc_MENU_LOGO = (u8 *)malloc(36864);
+	LZ_Uncompress(Kc_MENU_LOGOlz, Kc_MENU_LOGO, SZ_MENU_LOGOLZ);
+#endif //MENU_LOGO_ENABLE
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
 	// Enable backlight after initializing gfx

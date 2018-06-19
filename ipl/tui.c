@@ -18,6 +18,14 @@
 #include "tui.h"
 #include "btn.h"
 
+#ifdef MENU_LOGO_ENABLE
+extern u8 *Kc_MENU_LOGO;
+#define X_MENU_LOGO       158
+#define Y_MENU_LOGO        76
+#define X_POS_MENU_LOGO   538
+#define Y_POS_MENU_LOGO  1180
+#endif //MENU_LOGO_ENABLE
+
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 {
 	u32 cx, cy;
@@ -44,6 +52,10 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
 
 	gfx_clear_grey(con->gfx_ctxt, 0x1B);
+#ifdef MENU_LOGO_ENABLE
+	gfx_set_rect_rgb(con->gfx_ctxt, Kc_MENU_LOGO,
+		X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 
 	while (1)
 	{
@@ -126,6 +138,10 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				break;
 			}
 			gfx_clear_grey(con->gfx_ctxt, 0x1B);
+#ifdef MENU_LOGO_ENABLE
+			gfx_set_rect_rgb(con->gfx_ctxt, Kc_MENU_LOGO,
+				X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 		}
 	}
 
