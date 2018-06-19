@@ -4,6 +4,7 @@
 /
 / Copyright (C) 2017, ChaN, all right reserved.
 / Copyright (c) 2018 naehrwert
+/ Copyright (C) 2018 CTCaer
 /
 / FatFs module is an open source software. Redistribution and use of FatFs in
 / source and binary forms, with or without modification, are permitted provided
@@ -26,7 +27,7 @@
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
-#define EFSPRINTF(text, ...) gfx_printf(&gfx_con, "\n\n\n%k[FatFS] Error: "text"%k\n", 0xFF00FFFF, 0xFFFFFFFF)
+#define EFSPRINTF(text, ...) gfx_printf(&gfx_con, "\n\n\n%k[FatFS] Error: "text"%k\n", 0xFFFFFF00, 0xFFFFFFFF)
 //#define EFSPRINTF(...)
 
 /*--------------------------------------------------------------------------
