@@ -761,7 +761,7 @@ int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int flag, u32 arg)
 
 int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
-	if (!_sd_storage_switch(storage, buf, 0, hs_type))
+	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, 0, hs_type))
 		return 0;
 
 	u32 type_out = buf[16] & 0xF;
@@ -770,7 +770,7 @@ int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 
 	if ((((u16)buf[0] << 8) | buf[1]) < 0x320)
 	{
-		if (!_sd_storage_switch(storage, buf, 1, hs_type))
+		if (!_sd_storage_switch(storage, buf, SD_SWITCH_SET, 0, hs_type))
 			return 0;
 
 		if (type_out != (buf[16] & 0xF))
@@ -787,12 +787,13 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
+	//gfx_hexdump(&gfx_con, 0, (u8 *)buf, 64);
 
 	u32 hs_type = 0;
 	switch (type)
 	{
 	case 11:
-		if (buf[13] & 8)
+		if (buf[13] & SD_MODE_UHS_SDR104)
 		{
 			type = 11;
 			hs_type = UHS_SDR104_BUS_SPEED;
@@ -800,7 +801,7 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 		}
 		//Fall through.
 	case 10:
-		if (!(buf[13] & 4))
+		if (!(buf[13] & SD_MODE_UHS_SDR50))
 			return 0;
 		type = 10;
 		hs_type = UHS_SDR50_BUS_SPEED;
@@ -823,7 +824,7 @@ int _sd_storage_enable_highspeed_high_volt(sdmmc_storage_t *storage, u8 *buf)
 {
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
-
+	//gfx_hexdump(&gfx_con, 0, (u8 *)buf, 64);
 	if (!(buf[13] & 2))
 		return 1;
 
