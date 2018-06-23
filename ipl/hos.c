@@ -39,6 +39,7 @@
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
+extern void sd_unmount();
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
 
@@ -480,7 +481,7 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "Rebuilt and loaded package2\n");
 
 	//Unmount SD card.
-	f_mount(NULL, "", 1);
+	sd_unmount();
 
 	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 

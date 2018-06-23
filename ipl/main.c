@@ -20,7 +20,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <alloca.h>
 
 #include "clock.h"
 #include "uart.h"
@@ -52,6 +51,7 @@
 #include "hos.h"
 #include "pkg1.h"
 #include "mmc.h"
+#include "lz.h"
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -139,7 +139,10 @@ void *sd_file_read(char *path)
 int sd_save_to_file(void * buf, u32 size, const char * filename)
 {
 	FIL fp;
-	if (f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+	u32 res = 0;
+	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK;
+	if (res) {
+		EPRINTFARGS("Error (%d) creating file %s.\n", res, filename);
 		return 1;
 	}
 
@@ -357,14 +360,15 @@ void print_fuseinfo()
 	{
 		if (sd_mount())
 		{
-			char fuseFilename[9];
-			memcpy(fuseFilename, "fuse.bin", 8);
-			fuseFilename[8] = 0;
+			char fuseFilename[23];
+			f_mkdir("Backup/Dumps");
+			memcpy(fuseFilename, "Backup/Dumps/fuses.bin\0", 23);
 
 			if (sd_save_to_file((u8 *)0x7000F900, 0x2FC, fuseFilename))
 				EPRINTF("\nError creating fuse.bin file.");
 			else
-				gfx_puts(&gfx_con, "\nDone!\n");				
+				gfx_puts(&gfx_con, "\nDone!\n");
+			sd_unmount();
 		}
 
 		btn_wait();
@@ -390,14 +394,15 @@ void print_kfuseinfo()
 	{
 		if (sd_mount())
 		{
-			char kfuseFilename[10];
-			memcpy(kfuseFilename, "kfuse.bin", 9);
-			kfuseFilename[9] = 0;
+			char kfuseFilename[24];
+			f_mkdir("Backup/Dumps");
+			memcpy(kfuseFilename, "Backup/Dumps/kfuses.bin\0", 24);
 
 			if (sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, kfuseFilename))
 				EPRINTF("\nError creating kfuse.bin file.");
 			else
 				gfx_puts(&gfx_con, "\nDone!\n");
+			sd_unmount();
 		}
 
 		btn_wait();
@@ -538,6 +543,7 @@ void print_mmc_info()
 					gpp_idx++, 0xFFAEFD14, part->name, 0xFFCCCCCC, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
 			}
+			nx_emmc_gpt_free(&gpt);
 		}
 	}
 
@@ -593,6 +599,7 @@ void print_sdcard_info()
 		gfx_printf(&gfx_con, "%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
 				0xFF00DDFF, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
 				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
+		sd_unmount();
 	}
 
 	btn_wait();
@@ -753,7 +760,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
-	static const u32 SECTORS_TO_MIB_COEFF  = 11;
+	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
 	u32 multipartSplitSize = (1u << 31);
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
@@ -763,13 +770,12 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	int isSmallSdCard = 0;
 	int partialDumpInProgress = 0;
 	int res = 0;
-	char* outFilename = sd_path;
+	char *outFilename = sd_path;
 	u32 sdPathLen = strlen(sd_path);
 
 	FIL partialIdxFp;
 	char partialIdxFilename[12];
-	memcpy(partialIdxFilename, "partial.idx", 11);
-	partialIdxFilename[11] = 0;
+	memcpy(partialIdxFilename, "partial.idx\0", 12);
 
 	gfx_printf(&gfx_con, "\nSD Card free space: %d MiB, Total backup size %d MiB\n\n",
 		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
@@ -795,8 +801,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			return 0;
 		}
 	}
-	// Check if we continuing a previous raw eMMC backup in progress.
-	if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK)
+	// Check if we are continuing a previous raw eMMC or USER partition backup in progress.
+	if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE))
 	{
 		gfx_printf(&gfx_con, "%kFound Partial Backup in progress. Continuing...%k\n\n", 0xFFAEFD14, 0xFFCCCCCC);
 
@@ -826,8 +832,6 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors + multipartSplitSectors - 1) / multipartSplitSectors;
 
-		outFilename = alloca(sdPathLen+4);
-		memcpy(outFilename, sd_path, sdPathLen);
 		outFilename[sdPathLen++] = '.';
 
 		if (!partialDumpInProgress)
@@ -855,15 +859,22 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	}
 
 	FIL fp;
-	if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+	gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
+	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK;
+	if (res)
 	{
-		EPRINTFARGS("Error creating file %s.\n", outFilename);
+		EPRINTFARGS("Error (%d) creating file %s.\n", res, outFilename);
 
 		return 0;
 	}
 
-	static const u32 NUM_SECTORS_PER_ITER = 512;
-	u8 *buf = (u8 *)malloc(NX_EMMC_BLOCKSIZE * NUM_SECTORS_PER_ITER);
+	u32 numSectorsPerIter = 0;
+	if (totalSectors > 0x200000)
+		numSectorsPerIter = 8192;
+	else
+		numSectorsPerIter = 512;
+	u8 *buf = (u8 *)malloc(NX_EMMC_BLOCKSIZE * numSectorsPerIter);
 
 	u32 lba_curr = part->lba_start;
 	u32 bytesWritten = 0;
@@ -877,6 +888,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		totalSectors -= currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
 	}
 
+	u32 num = 0;
 	while(totalSectors > 0)
 	{
 		if (numSplitParts != 0 && bytesWritten >= multipartSplitSize)
@@ -886,7 +898,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			currPartIdx++;
 
 			// Verify part.
-			if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
+			if (dump_emmc_verify(storage, lba_curr, outFilename, numSectorsPerIter, part))
 			{
 				EPRINTF("\nPress any key and try again...\n");
 
@@ -934,9 +946,12 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			}
 
 			// Create next part.
-			if (f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
+			gfx_con_setpos(&gfx_con, gfx_con.savedx,  gfx_con.savedy);
+			gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
+			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK;
+			if (res)
 			{
-				EPRINTFARGS("Error creating file %s.\n", outFilename);
+				EPRINTFARGS("Error (%d) creating file %s.\n", res, outFilename);
 
 				free(buf);
 				return 0;
@@ -945,7 +960,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		}
 
 		retryCount = 0;
-		u32 num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
+		num = MIN(totalSectors, numSectorsPerIter);
 		while(!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
 			EPRINTFARGS("Error reading %d blocks @ LBA %08X from eMMC (try %d), retrying...",
@@ -998,7 +1013,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	f_close(&fp);
 
 	// Verify last part or single file backup.
-	if (dump_emmc_verify(storage, lba_curr, outFilename, NUM_SECTORS_PER_ITER, part))
+	if (dump_emmc_verify(storage, lba_curr, outFilename, numSectorsPerIter, part))
 	{
 		EPRINTF("\nPress any key and try again...\n");
 
@@ -1050,7 +1065,15 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	}
 
 	int i = 0;
+	char sdPath[64];
+	memcpy(sdPath, "Backup/", 7);
 	timer = get_tmr();
+
+	// Create Backup/Restore folders, if they do not exist.
+	f_mkdir("Backup");
+	f_mkdir("Backup/Partitions");
+	f_mkdir("Backup/Restore");
+
 	if (dumpType & DUMP_BOOT)
 	{
 		static const u32 BOOT_PART_SIZE = 0x400000;
@@ -1069,7 +1092,9 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
-			res = dump_emmc_part(bootPart.name, &storage, &bootPart);
+
+			strcpy(sdPath + 7, bootPart.name);
+			res = dump_emmc_part(sdPath, &storage, &bootPart);
 		}
 	}
 
@@ -1091,13 +1116,20 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-				res = dump_emmc_part(part->name, &storage, part);
+				memcpy(sdPath, "Backup/Partitions/", 18);
+				strcpy(sdPath + 18, part->name);
+				res = dump_emmc_part(sdPath, &storage, part);
+				// If a part failed, don't continue.
+				if (!res)
+					break;
 			}
+			nx_emmc_gpt_free(&gpt);
 		}
 
 		if (dumpType & DUMP_RAW)
 		{
-			static const u32 RAW_AREA_NUM_SECTORS = 0x3A3E000;
+			// Get GP partition size dynamically. 
+			const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
 
 			emmc_part_t rawPart;
 			memset(&rawPart, 0, sizeof(rawPart));
@@ -1108,7 +1140,8 @@ static void dump_emmc_selected(dumpType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
-				res = dump_emmc_part(rawPart.name, &storage, &rawPart);
+				strcpy(sdPath + 7, rawPart.name);
+				res = dump_emmc_part(sdPath, &storage, &rawPart);
 			}
 		}
 	}
@@ -1120,6 +1153,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
 
 out:;
+	sd_unmount();
 	btn_wait();
 }
 
@@ -1183,28 +1217,29 @@ void dump_package1()
 	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_off);
 
 	// Dump package1.
-	if (sd_save_to_file(pkg1, 0x40000, "pkg1_decr.bin")) {
+	f_mkdir("Backup/pkg1");
+	if (sd_save_to_file(pkg1, 0x40000, "Backup/pkg1/pkg1_decr.bin")) {
 		EPRINTF("\nFailed to create pkg1_decr.bin");
 		goto out;
 	}
-	gfx_puts(&gfx_con, "\npackage1 dumped to pkg1_decr.bin\n");
+	gfx_puts(&gfx_con, "\nFull package1 dumped to pkg1_decr.bin\n");
 
 	// Dump nxbootloader.
-	if (sd_save_to_file(loader, hdr->ldr_size, "nxloader.bin")) {
+	if (sd_save_to_file(loader, hdr->ldr_size, "Backup/pkg1/nxloader.bin")) {
 		EPRINTF("\nFailed to create nxloader.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
 
 	// Dump secmon.
-	if (sd_save_to_file(secmon, hdr->sm_size, "secmon.bin")) {
+	if (sd_save_to_file(secmon, hdr->sm_size, "Backup/pkg1/secmon.bin")) {
 		EPRINTF("\nFailed to create secmon.bin");
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
 	// Dump warmboot.
-	if (sd_save_to_file(warmboot, hdr->wb_size, "warmboot.bin")) {
+	if (sd_save_to_file(warmboot, hdr->wb_size, "Backup/pkg1/warmboot.bin")) {
 		EPRINTF("\nFailed to create warmboot.bin");
 		goto out;
 	}
@@ -1212,6 +1247,7 @@ void dump_package1()
 
 
 	sdmmc_storage_end(&storage);
+	sd_unmount();
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
 out:;
@@ -1403,6 +1439,7 @@ void fix_sd_attr(){
 		buff[1] = 0;
 		fix_attributes(buff, &total);
 		gfx_printf(&gfx_con, "\n%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
+		sd_unmount();
 	}
 	btn_wait();
 }
@@ -1548,10 +1585,12 @@ void ipl_main()
 	u32 *fb = display_init_framebuffer();
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
+
 #ifdef MENU_LOGO_ENABLE
 	Kc_MENU_LOGO = (u8 *)malloc(36864);
 	LZ_Uncompress(Kc_MENU_LOGOlz, Kc_MENU_LOGO, SZ_MENU_LOGOLZ);
 #endif //MENU_LOGO_ENABLE
+
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
 	// Enable backlight after initializing gfx
