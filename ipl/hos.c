@@ -384,7 +384,8 @@ int hos_launch(ini_sec_t *cfg)
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	list_init(&ctxt.kip1_list);
 
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	if (!gfx_con.mute)
+		gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	//Try to parse config if present.

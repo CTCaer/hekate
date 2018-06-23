@@ -141,9 +141,12 @@ void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
 	con->gfx_ctxt = ctxt;
 	con->x = 0;
 	con->y = 0;
+	con->savedx = 0;
+	con->savedy = 0;
 	con->fgcol = 0xFFCCCCCC;
 	con->fillbg = 0;
 	con->bgcol = 0xFF1B1B1B;
+	con->mute = 0;
 }
 
 void gfx_con_setcol(gfx_con_t *con, u32 fgcol, int fillbg, u32 bgcol)
@@ -198,7 +201,7 @@ void gfx_putc(gfx_con_t *con, char c)
 
 void gfx_puts(gfx_con_t *con, const char *s)
 {
-	if (!s)
+	if (!s || con->mute)
 		return;
 
 	for (; *s; s++)
@@ -238,6 +241,9 @@ static void _gfx_putn(gfx_con_t *con, u32 v, int base, char fill, int fcnt)
 
 void gfx_printf(gfx_con_t *con, const char *fmt, ...)
 {
+	if (con->mute)
+		return;
+
 	va_list ap;
 	int fill, fcnt;
 
@@ -309,6 +315,9 @@ void gfx_printf(gfx_con_t *con, const char *fmt, ...)
 
 void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 {
+	if (con->mute)
+		return;
+
 	for(u32 i = 0; i < len; i++)
 	{
 		if(i % 0x10 == 0)

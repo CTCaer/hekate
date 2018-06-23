@@ -33,9 +33,12 @@ typedef struct _gfx_con_t
 	gfx_ctxt_t *gfx_ctxt;
 	u32 x;
 	u32 y;
+	u32 savedx;
+	u32 savedy;
 	u32 fgcol;
 	int fillbg;
 	u32 bgcol;
+	int mute;
 } gfx_con_t;
 
 void gfx_init_ctxt(gfx_ctxt_t *ctxt, u32 *fb, u32 width, u32 height, u32 stride);
