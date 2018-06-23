@@ -1019,7 +1019,16 @@ void sdmmc_end(sdmmc_t *sdmmc)
 	if (!sdmmc->clock_stopped)
 	{
 		_sdmmc_sd_clock_disable(sdmmc);
+		// Disable SDMMC power. 
 		_sdmmc_set_voltage(sdmmc, SDMMC_POWER_OFF);
+
+		// Disable SD card power.
+		if (sdmmc->id == SDMMC_1)
+		{
+			gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
+			sleep(1000); // To power cycle min 1ms without power is needed.
+		}
+
 		_sdmmc_get_clkcon(sdmmc);
 		clock_sdmmc_disable(sdmmc->id);
 		sdmmc->clock_stopped = 1;
