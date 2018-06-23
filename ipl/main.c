@@ -435,12 +435,12 @@ void print_mmc_info()
 		case 0: /* MMC v1.0 - v1.2 */
 		case 1: /* MMC v1.4 */
 			gfx_printf(&gfx_con,
-			" Vendor ID:  %03X\n\
-			 Model:      %c%c%c%c%c%c%c\n\
-			 HW rev:     %X\n\
-			 FW rev:     %X\n\
-			 S/N:        %03X\n\
-			 Month/Year: %02d/%04d\n\n",
+			" Vendor ID:  %03X\n"
+			" Model:      %c%c%c%c%c%c%c\n"
+			" HW rev:     %X\n"
+			" FW rev:     %X\n"
+			" S/N:        %03X\n"
+			" Month/Year: %02d/%04d\n\n",
 			storage.cid.manfid,
 			storage.cid.prod_name[0], storage.cid.prod_name[1],	storage.cid.prod_name[2],
 			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
@@ -451,13 +451,13 @@ void print_mmc_info()
 		case 3: /* MMC v3.1 - v3.3 */
 		case 4: /* MMC v4 */
 			gfx_printf(&gfx_con,
-			" Vendor ID:  %X\n\
-			 Card/BGA:   %X\n\
-			 OEM ID:     %02X\n\
-			 Model:      %c%c%c%c%c%c\n\
-			 Prd Rev:    %X\n\
-			 S/N:        %04X\n\
-			 Month/Year: %02d/%04d\n\n",
+			" Vendor ID:  %X\n"
+			" Card/BGA:   %X\n"
+			" OEM ID:     %02X\n"
+			" Model:      %c%c%c%c%c%c\n"
+			" Prd Rev:    %X\n"
+			" S/N:        %04X\n"
+			" Month/Year: %02d/%04d\n\n",
 			storage.cid.manfid, storage.cid.card_bga, storage.cid.oemid,
 			storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
 			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
@@ -510,15 +510,17 @@ void print_mmc_info()
 			card_type_support[pos_type] = 0;
 
 			gfx_printf(&gfx_con,
-				" Spec Version:  %02X\n\
-				 Extended Rev:  1.%d\n\
-				 Dev Version:   %d\n\
-				 Cmd Classes:   %02X\n\
-				 Capacity:      %s\n\
-				 Max Speed:     %d MB/s (%d MHz)\n\
-				 Type Support:  %s\n\n",
+				" Spec Version:  %02X\n"
+				" Extended Rev:  1.%d\n"
+				" Dev Version:   %d\n"
+				" Cmd Classes:   %02X\n"
+				" Capacity:      %s\n"
+				" Max Rate:      %d MB/s (%d MHz)\n"
+				" Current Rate:  %d MB/s\n"
+				" Type Support:  %s\n\n",
 				storage.csd.mmca_vsn, storage.ext_csd.rev, storage.ext_csd.dev_version, storage.csd.cmdclass,
-				storage.csd.capacity == (4096 * 512) ? "High" : "Low", speed & 0xFFFF, (speed >> 16) & 0xFFFF, card_type_support);
+				storage.csd.capacity == (4096 * 512) ? "High" : "Low", speed & 0xFFFF, (speed >> 16) & 0xFFFF,
+				storage.csd.busspeed, card_type_support);
 
 			u32 boot_size = storage.ext_csd.boot_mult << 17;
 			u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
@@ -566,13 +568,13 @@ void print_sdcard_info()
 
 		gfx_printf(&gfx_con, "%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		gfx_printf(&gfx_con,
-			" Vendor ID:  %02x\n\
-			 OEM ID:     %c%c\n\
-			 Model:      %c%c%c%c%c\n\
-			 HW rev:     %X\n\
-			 FW rev:     %X\n\
-			 S/N:        %08x\n\
-			 Month/Year: %02d/%04d\n\n",
+			" Vendor ID:  %02x\n"
+			" OEM ID:     %c%c\n"
+			" Model:      %c%c%c%c%c\n"
+			" HW rev:     %X\n"
+			" FW rev:     %X\n"
+			" S/N:        %08x\n"
+			" Month/Year: %02d/%04d\n\n",
 			sd_storage.cid.manfid, (sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF,
 			sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
 			sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
@@ -582,17 +584,19 @@ void print_sdcard_info()
 		gfx_printf(&gfx_con, "%kCard-Specific Data V%d.0:%k\n", 0xFF00DDFF, sd_storage.csd.structure + 1, 0xFFCCCCCC);
 		capacity = sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits);
 		gfx_printf(&gfx_con,
-			" Cmd Classes:    %02X\n\
-			 Capacity:       %d MiB\n\
-			 Bus Width:      %d\n\
-			 Speed Class:    %d\n\
-			 UHS Grade:      U%d\n\
-			 Video Class:    V%d\n\
-			 App perf class: A%d\n\
-			 Write Protect:  %d\n\n",
+			" Cmd Classes:    %02X\n"
+			" Capacity:       %d MiB\n"
+			" Bus Width:      %d\n"
+			" Current Rate:   %d MB/s (%d MHz)\n"
+			" Speed Class:    %d\n"
+			" UHS Grade:      U%d\n"
+			" Video Class:    V%d\n"
+			" App perf class: A%d\n"
+			" Write Protect:  %d\n\n",
 			sd_storage.csd.cmdclass, capacity,
-			sd_storage.ssr.bus_width, sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade,
-			sd_storage.ssr.video_class, sd_storage.ssr.app_class, sd_storage.csd.write_protect);
+			sd_storage.ssr.bus_width, sd_storage.csd.busspeed, sd_storage.csd.busspeed * 2,
+			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
+			sd_storage.ssr.app_class, sd_storage.csd.write_protect);
 
 		gfx_puts(&gfx_con, "Acquiring FAT volume info...\n\n");
 		f_getfree("", &sd_fs.free_clst, NULL);
