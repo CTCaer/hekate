@@ -39,7 +39,7 @@ OBJS = $(addprefix $(BUILD)/, \
 	uart.o \
 	ini.o \
 )
-OBJS += $(addprefix $(BUILD)/, diskio.o ff.o ffunicode.o)
+OBJS += $(addprefix $(BUILD)/, diskio.o ff.o ffunicode.o ffsystem.o)
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
 CUSTOMDEFINES = -DMENU_LOGO_ENABLE
