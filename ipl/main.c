@@ -52,6 +52,8 @@
 #include "pkg1.h"
 #include "mmc.h"
 #include "lz.h"
+#include "max17050.h"
+#include "bq24193.h"
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -1457,6 +1459,133 @@ void fix_sd_attr(){
 	btn_wait();
 }
 
+void print_fuel_gauge_regs()
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	u8 *buf = (u8 *)malloc(0x100 * 2);
+
+	gfx_printf(&gfx_con, "%kBattery Fuel Gauge Registers:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+
+	for (int i = 0; i < 0x200; i += 2)
+	{
+		i2c_recv_buf_small(buf + i, 2, I2C_1, 0x36, i >> 1);
+		sleep(5000);
+	}
+
+	gfx_hexdump(&gfx_con, 0, (u8 *)buf, 0x200);
+
+	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+
+	u32 btn = btn_wait();
+
+	if (btn & BTN_POWER)
+	{
+		if (sd_mount())
+		{
+			char fuelFilename[28];
+			f_mkdir("Backup/Dumps");
+			memcpy(fuelFilename, "Backup/Dumps/fuel_gauge.bin\0", 28);
+
+			if (sd_save_to_file((u8 *)buf, 0x200, fuelFilename))
+				EPRINTF("\nError creating fuel.bin file.");
+			else
+				gfx_puts(&gfx_con, "\nDone!\n");
+			sd_unmount();
+		}
+
+		btn_wait();
+	}
+	free(buf);
+}
+
+void fix_fuel_gauge_configuration()
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	int battVoltage, avgCurrent;
+
+	max17050_get_property(MAX17050_VCELL, &battVoltage);
+	max17050_get_property(MAX17050_AvgCurrent, &avgCurrent);
+
+	//Check if still charging. If not, check if battery is >= 95% (4.1V).
+	if (avgCurrent < 0 && battVoltage > 4100)
+	{
+		if ((avgCurrent / 1000) < -10)
+			EPRINTF("You need to be connected to a wall adapter,\nto apply this fix!");
+		else
+		{
+			gfx_printf(&gfx_con, "%kAre you really sure?\nThis will reset your fuel gauge completely!\n", 0xFFFFDD00);
+			gfx_printf(&gfx_con, "Additionally this will power off your console.\n%k", 0xFFCCCCCC);
+
+			gfx_puts(&gfx_con, "\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+
+			u32 btn = btn_wait();
+			if (btn & BTN_POWER)
+			{
+				max17050_fix_configuration();
+				sleep(1000000);
+				gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+				u16 value = 0;
+				gfx_printf(&gfx_con, "%kThe console will power off in 45 seconds.\n%k", 0xFFFFDD00, 0xFFCCCCCC);
+				while (value < 46)
+				{
+					gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+					gfx_printf(&gfx_con, "%2ds elapsed", value);
+					sleep(1000000);
+					value++;
+				}
+				sleep(2000000);
+
+				power_off();
+			}
+			return;
+		}
+	}
+	else
+		EPRINTF("You need a fully charged battery\nand connected to a wall adapter,\nto apply this fix!");
+
+	sleep(500000);
+	btn_wait();
+}
+
+void fix_battery_desync()
+{
+	int avgCurrent;
+
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	gfx_printf(&gfx_con, "%kAre you really sure?\nThis will wipe your battery stats completely!\n", 0xFFFFDD00);
+	gfx_printf(&gfx_con, "\nAdditionally you may need to reconfigure,\nyour time and date settings.\n%k", 0xFFCCCCCC);
+
+	gfx_puts(&gfx_con, "\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+	u32 btn = btn_wait();
+	if (btn & BTN_POWER)
+	{
+		gfx_clear_grey(&gfx_ctxt, 0x1B);
+		gfx_con_setpos(&gfx_con, 0, 0);
+		gfx_printf(&gfx_con, "%kDisconnect the USB cable and wait 30 seconds.\naAfter that press any key!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%k* After this process is done,\n  connect the USB cable to power-on.\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+		sleep(500000);
+		btn_wait();
+
+		//Check if still connected.
+		max17050_get_property(MAX17050_AvgCurrent, &avgCurrent);
+		if (avgCurrent < -100000)
+		{
+			bq24193_fake_battery_removal();
+			gfx_printf(&gfx_con, "If the device did not powered off,\ndo it from hekate menu");
+		}
+		else
+			EPRINTF("You need to be disconnected from USB,\nto apply this fix!");
+		sleep(500000);
+		btn_wait();
+	}
+}
+
 void about()
 {
 	static const char octopus[] =
@@ -1506,6 +1635,9 @@ ment_t ment_cinfo[] = {
 	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
 	MDEF_HANDLER("Print eMMC info", print_mmc_info),
 	MDEF_HANDLER("Print SD Card info", print_sdcard_info),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("------ Misc ------", 0xFF0AB9E6),
+	MDEF_HANDLER("Print fuel gauge info", print_fuel_gauge_regs),
 	MDEF_END()
 };
 menu_t menu_cinfo = {
@@ -1549,6 +1681,8 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("------ Misc -------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
+	MDEF_HANDLER("Fix battery de-sync", &fix_battery_desync),
+	//MDEF_MENU("Fix fuel gauge configuration", &fix_fuel_gauge_configuration),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- Dangerous ----", 0xFFFF0000),
 	MDEF_MENU("AutoRCM", &menu_autorcm),

@@ -17,6 +17,7 @@
 
 #include "tui.h"
 #include "btn.h"
+#include "max17050.h"
 
 #ifdef MENU_LOGO_ENABLE
 extern u8 *Kc_MENU_LOGO;
@@ -50,6 +51,8 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 {
 	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
+	u32 battPercent = 0;
+	int battVoltCurr = 0;
 
 	gfx_clear_grey(con->gfx_ctxt, 0x1B);
 #ifdef MENU_LOGO_ENABLE
@@ -105,6 +108,24 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		}
 		gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
 		gfx_putc(con, '\n');
+
+		// Print help and battery status.
+		gfx_con_getpos(con, &con->savedx,  &con->savedy);
+		gfx_con_setpos(con, 0,  74 * 16);
+		gfx_printf(con, "%k VOL: Move up/down\n PWR: Select option\n\n", 0xFF555555);
+			
+		max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
+		gfx_printf(con, " %d.%d%%", (battPercent >> 8) & 0xFF, (battPercent & 0xFF) / 26);
+		max17050_get_property(MAX17050_VCELL, &battVoltCurr);
+		gfx_printf(con, " (%d mV)         ", battVoltCurr);
+		max17050_get_property(MAX17050_AvgCurrent, &battVoltCurr);
+		if (battVoltCurr > 0)
+			gfx_printf(con, "\n %kCharging:%k %d mA         %k\n",
+				0xFF008000, 0xFF555555, battVoltCurr / 1000, 0xFFCCCCCC);
+		else
+			gfx_printf(con, "\n %kDischarging:%k -%d mA     %k\n",
+				0xFF800000, 0xFF555555, (~battVoltCurr) / 1000, 0xFFCCCCCC);
+		gfx_con_setpos(con, con->savedx,  con->savedy);
 
 		// Wait for user command.
 		u32 btn = btn_wait();
