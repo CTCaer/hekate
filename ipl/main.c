@@ -693,6 +693,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 {
 	FIL fp;
 	u32 prevPct = 200;
+	int res = 0;
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
@@ -734,8 +735,12 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 				f_close(&fp);
 				return 1;
 			}
-
-			if(memcmp(bufEm, bufSd, num << 9))
+			//TODO: Replace with the config check 2.
+			if (1)
+				res = memcmp32sparse((u32 *)bufEm, (u32 *)bufSd, num << 9);
+			else
+				res = memcmp((u32 *)bufEm, (u32 *)bufSd, num << 9);
+			if(res)
 			{
 				EPRINTFARGS("\nSD card and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", num, lba_curr);
 
@@ -911,13 +916,17 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			memset(&fp, 0, sizeof(fp));
 			currPartIdx++;
 
-			// Verify part.
-			if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
+			//TODO: Replace with the config check.
+			if (1)
 			{
-				EPRINTF("\nPress any key and try again...\n");
+				// Verify part.
+				if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
+				{
+					EPRINTF("\nPress any key and try again...\n");
 
-				free(buf);
-				return 0;
+					free(buf);
+					return 0;
+				}
 			}
 
 			if (numSplitParts >= 10 && currPartIdx < 10)
@@ -1027,16 +1036,20 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	free(buf);
 	f_close(&fp);
 
-	// Verify last part or single file backup.
-	if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
+	//TODO: Replace with the config check.
+	if (0)
 	{
-		EPRINTF("\nPress any key and try again...\n");
+		// Verify last part or single file backup.
+		if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
+		{
+			EPRINTF("\nPress any key and try again...\n");
 
-		free(buf);
-		return 0;
+			free(buf);
+			return 0;
+		}
+		else
+			tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF96FF00, 0xFF155500);
 	}
-	else
-		tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF96FF00, 0xFF155500);
 
 	// Remove partial backup index file if no fatal errors occurred.
 	if(isSmallSdCard)
@@ -1164,8 +1177,10 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	gfx_putc(&gfx_con, '\n');
 	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", (get_tmr() - timer) / 1000000);
 	sdmmc_storage_end(&storage);
-	if (res)
+	if (res && 0) //TODO: Replace with the config check.
 		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
+	else if (res)
+		gfx_printf(&gfx_con, "\nFinished! Press any key...\n");
 
 out:;
 	sd_unmount();

@@ -49,3 +49,31 @@ u32 crc32c(const void *buf, u32 len)
 	}
 	return ~crc;
 }
+
+u32 memcmp32sparse(const u32 *buf1, const u32 *buf2, u32 len)
+{
+	u32 len32 = len / 4;
+
+	if (!(len32 % 32))
+	{
+		while (len32)
+		{
+			len32 -= 32;
+			if(buf1[len32] != buf2[len32])
+				return 1;
+		}
+	}
+	else
+	{
+		while (len32)
+		{
+			len32 -= 32;
+			if(buf1[len32] != buf2[len32])
+				return 1;
+			if (len32 < 32)
+				return 0;
+		}
+	}
+
+	return 0;
+}
