@@ -20,7 +20,9 @@ OBJS = $(addprefix $(BUILD)/, \
 	i2c.o \
 	kfuse.o \
 	lz.o \
+	bq24193.o \
 	max7762x.o \
+	max17050.o \
 	mc.o \
 	nx_emmc.o \
 	sdmmc.o \
