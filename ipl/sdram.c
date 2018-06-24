@@ -23,6 +23,7 @@
 #include "fuse.h"
 #include "max77620.h"
 #include "sdram_param_t210.h"
+#include "clock.h"
 
 #define CONFIG_SDRAM_COMPRESS_CFG
 
@@ -51,12 +52,12 @@ static void _sdram_config(const sdram_params_t *params)
 	PMC(APBDEV_PMC_WEAK_BIAS) = 0;
 	sleep(1);
 
-	CLOCK(0x98) = params->pllm_setup_control;
-	CLOCK(0x9C) = 0;
-	CLOCK(0x90) = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | 0x40000000 | ((params->pllm_post_divider & 0xFFFF) << 20);
+	CLOCK(CLK_RST_CONTROLLER_PLLM_MISC1) = params->pllm_setup_control;
+	CLOCK(CLK_RST_CONTROLLER_PLLM_MISC2) = 0;
+	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | 0x40000000 | ((params->pllm_post_divider & 0xFFFF) << 20);
 
 	u32 wait_end = TMR(0x10) + 300;
-	while (!(CLOCK(0x90) & 0x8000000))
+	while (!(CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) & 0x8000000))
 	{
 		if (TMR(0x10) >= wait_end)
 			goto break_nosleep;
@@ -64,14 +65,14 @@ static void _sdram_config(const sdram_params_t *params)
 	sleep(10);
 break_nosleep:
 
-	CLOCK(0x19C) = ((params->mc_emem_arb_misc0 >> 11) & 0x10000) | (params->emc_clock_source & 0xFFFEFFFF);
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = ((params->mc_emem_arb_misc0 >> 11) & 0x10000) | (params->emc_clock_source & 0xFFFEFFFF);
 	if (params->emc_clock_source_dll)
-		CLOCK(0x664) = params->emc_clock_source_dll;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL) = params->emc_clock_source_dll;
 	if (params->clear_clock2_mc1)
-		CLOCK(0x44C) = 0x40000000;
-	CLOCK(0x328) = 0x2000001;
-	CLOCK(0x284) = 0x4000;
-	CLOCK(0x30C) = 0x2000001;
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = 0x40000000;
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = 0x2000001;
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = 0x4000;
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = 0x2000001;
 	EMC(EMC_PMACRO_VTTGEN_CTRL_0) = params->emc_pmacro_vttgen_ctrl0;
 	EMC(EMC_PMACRO_VTTGEN_CTRL_1) = params->emc_pmacro_vttgen_ctrl1;
 	EMC(EMC_PMACRO_VTTGEN_CTRL_2) = params->emc_pmacro_vttgen_ctrl2;

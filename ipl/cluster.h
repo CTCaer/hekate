@@ -20,6 +20,7 @@
 #include "types.h"
 
 /*! Flow controller registers. */
+#define FLOW_CTLR_HALT_COP_EVENTS 0x4
 #define FLOW_CTLR_RAM_REPAIR 0x40
 #define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
 

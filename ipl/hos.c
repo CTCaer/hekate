@@ -548,9 +548,9 @@ int hos_launch(ini_sec_t *cfg)
 	//Signal to pkg2 ready and continue boot.
 	*mb_in = bootStatePkg2Continue;
 
-	//Halt ourselves in waitevent state.
+	//Halt ourselves in waitevent state and resume if there's JTAG activity.
 	while (1)
-		FLOW_CTLR(0x4) = 0x50000000;
+		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = 0x50000000;
 
 	return 0;
 }
