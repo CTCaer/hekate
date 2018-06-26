@@ -1610,14 +1610,25 @@ void fix_battery_desync()
 
 void about()
 {
+	static const char credits[] =
+	"\nhekate     (C) 2018 naehrwert, st4rk\n\n"
+	"CTCaer mod (C) 2018 CTCaer\n"
+	" ___________________________________________\n\n"
+	"Thanks to: %kderrek, nedwill, plutoo,\n"
+	"           shuffle2, smea, thexyz, yellows8%k\n"
+	" ___________________________________________\n\n"
+	"Greetings to: fincs, hexkyz, SciresM,\n"
+	"              Shiny Quagsire, WinterMute\n"
+	" ___________________________________________\n\n"
+	"Open source and free packages used:\n\n"
+	" - FatFs R0.13b,\n"
+	"   Copyright (C) 2018, ChaN\n\n"
+	" - bcl-1.2.0,\n"
+	"   Copyright (C) 2003-2006, Marcus Geelnard\n\n"
+	" - Atmosphere (se_calculate_sha256),\n"
+	"   Copyright (C) 2018, Atmosphere-NX\n"
+	" ___________________________________________\n\n";
 	static const char octopus[] =
-	"hekate (C) 2018 naehrwert, st4rk\n"
-	"Authored by: CTCaer\n\n"
-	"Thanks to: %kderrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8%k\n\n"
-	"Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute\n\n"
-	"Open source and free packages used:\n"
-	" - FatFs R0.13a, (Copyright (C) 2017, ChaN)\n"
-	" - bcl-1.2.0,    (Copyright (C) 2003-2006, Marcus Geelnard)\n\n"
 	"                         %k___\n"
 	"                      .-'   `'.\n"
 	"                     /         \\\n"
@@ -1640,8 +1651,8 @@ void about()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, octopus, 0xFF00CCFF, 0xFFCCCCCC,
-		0xFF00CCFF, 0xFF00FFCC, 0xFF00CCFF, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, credits, 0xFF00CCFF, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, octopus, 0xFF00CCFF, 0xFF00FFCC, 0xFF00CCFF, 0xFFCCCCCC);
 
 	btn_wait();
 }
