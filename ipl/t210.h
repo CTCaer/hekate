@@ -43,6 +43,7 @@
 #define APB_MISC_BASE 0x70000000
 #define PINMUX_AUX_BASE 0x70003000
 #define UART_BASE 0x70006000
+#define RTC_BASE 0x7000E000
 #define PMC_BASE 0x7000E400
 #define SYSCTR0_BASE 0x7000F000
 #define FUSE_BASE 0x7000F800
@@ -78,6 +79,7 @@
 #define EXCP_VEC(off) _REG(EXCP_VEC_BASE, off)
 #define APB_MISC(off) _REG(APB_MISC_BASE, off)
 #define PINMUX_AUX(off) _REG(PINMUX_AUX_BASE, off)
+#define RTC(off) _REG(RTC_BASE, off)
 #define PMC(off) _REG(PMC_BASE, off)
 #define SYSCTR0(off) _REG(SYSCTR0_BASE, off)
 #define FUSE(off) _REG(FUSE_BASE, off)

@@ -142,7 +142,7 @@ int sd_save_to_file(void * buf, u32 size, const char * filename)
 {
 	FIL fp;
 	u32 res = 0;
-	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK;
+	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res) {
 		EPRINTFARGS("Error (%d) creating file %s.\n", res, filename);
 		return 1;
@@ -880,7 +880,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	FIL fp;
 	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
 	gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
-	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK;
+	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
 	{
 		EPRINTFARGS("Error (%d) creating file %s.\n", res, outFilename);
@@ -972,7 +972,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			gfx_con_setpos(&gfx_con, gfx_con.savedx,  gfx_con.savedy);
 			gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
 			lbaStartPart = lba_curr;
-			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE) != FR_OK;
+			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 			if (res)
 			{
 				EPRINTFARGS("Error (%d) creating file %s.\n", res, outFilename);
@@ -1095,13 +1095,12 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	int i = 0;
 	char sdPath[64];
 	memcpy(sdPath, "Backup/", 7);
-	timer = get_tmr();
-
 	// Create Backup/Restore folders, if they do not exist.
 	f_mkdir("Backup");
 	f_mkdir("Backup/Partitions");
 	f_mkdir("Backup/Restore");
 
+	timer = get_tmr_s();
 	if (dumpType & DUMP_BOOT)
 	{
 		static const u32 BOOT_PART_SIZE = 0x400000;
@@ -1175,7 +1174,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	}
 
 	gfx_putc(&gfx_con, '\n');
-	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", (get_tmr() - timer) / 1000000);
+	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", get_tmr_s() - timer);
 	sdmmc_storage_end(&storage);
 	if (res && 0) //TODO: Replace with the config check.
 		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
@@ -1444,7 +1443,6 @@ int fix_attributes(char *path, u32 *total)
 				res = fix_attributes(path, total);
 				if (res != FR_OK)
 					break;
-				
 			}
 			// Clear file or folder path.
 			path[i] = 0;

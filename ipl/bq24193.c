@@ -34,7 +34,7 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 			*value += ((data >> 3) & 1) ? 640 : 0;
 			*value += 3880;
 			break;
-		case BQ24193_IputCurrentLimit: // Input current limit (mA).
+		case BQ24193_InputCurrentLimit: // Input current limit (mA).
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_InputSource);
 			data &= BQ24193_INCONFIG_INLIMIT_MASK;
 			switch (data)

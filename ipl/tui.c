@@ -30,6 +30,8 @@ extern u8 *Kc_MENU_LOGO;
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 {
 	u32 cx, cy;
+	if (val > 200)
+		val = 200;
 
 	gfx_con_getpos(con, &cx, &cy);
 

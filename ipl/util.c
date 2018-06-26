@@ -18,9 +18,14 @@
 #include "util.h"
 #include "t210.h"
 
-u32 get_tmr()
+u32 get_tmr_s()
 {
-	return TMR(0x10);
+	return RTC(0x8); //APBDEV_RTC_SECONDS
+}
+
+u32 get_tmr_us()
+{
+	return TMR(0x10); //TMRUS
 }
 
 void sleep(u32 ticks)

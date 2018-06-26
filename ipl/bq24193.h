@@ -101,7 +101,7 @@ enum BQ24193_reg {
 
 enum BQ24193_reg_prop {
 	BQ24193_InputVoltageLimit, // REG 0.
-	BQ24193_IputCurrentLimit,  // REG 0.
+	BQ24193_InputCurrentLimit,  // REG 0.
 	BQ24193_SystemMinimumVoltage, // REG 1.
 	BQ24193_FastChargeCurrentLimit, // REG 2.
 	BQ24193_ChargeVoltageLimit, // REG 4.
