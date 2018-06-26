@@ -1,5 +1,7 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (c) 2018 CTCaer
+* Copyright (c) 2018 Atmosphère-NX
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -19,6 +21,7 @@
 #include "heap.h"
 #include "t210.h"
 #include "se_t210.h"
+#include "util.h"
 
 typedef struct _se_ll_t
 {
@@ -253,4 +256,30 @@ int se_aes_xts_crypt(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u
 			return 0;
 
 	return 1;
+}
+
+// se_calc_sha256() was derived from Atmosphère's se_calculate_sha256.
+int se_calc_sha256(void *dst, const void *src, u32 src_size) {
+	int res;
+	// Setup config for SHA256, size = BITS(src_size).
+	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_SHA256) | SE_CONFIG_ENC_ALG(ALG_SHA) | SE_CONFIG_DST(DST_HASHREG);
+	SE(SE_SHA_CONFIG_REG_OFFSET) = 1;
+	SE(SE_SHA_MSG_LENGTH_REG_OFFSET) = (u32)(src_size << 3);
+	SE(0x208) = 0;
+	SE(0x20C) = 0;
+	SE(0x210) = 0;
+	SE(SE_SHA_MSG_LEFT_REG_OFFSET) = (u32)(src_size << 3);
+	SE(0x218) = 0;
+   	SE(0x21C) = 0;
+	SE(0x220) = 0;
+
+	// Trigger the operation.
+	res = _se_execute(OP_START, NULL, 0, src, src_size);
+
+	// Copy output hash.
+	u32 *dst32 = (u32 *)dst;
+	for (u32 i = 0; i < 8; i++)
+		dst32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)));
+
+	return res;
 }

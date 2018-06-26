@@ -688,12 +688,14 @@ void power_off()
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
 
-//TODO: Make it faster!!
 int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, emmc_part_t *part)
 {
 	FIL fp;
 	u32 prevPct = 200;
 	int res = 0;
+
+	u8 hashEm[0x20];
+	u8 hashSd[0x20];
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
@@ -735,11 +737,18 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 				f_close(&fp);
 				return 1;
 			}
-			//TODO: Replace with the config check 2.
-			if (1)
+			//TODO: Replace 2 with config variable
+			switch (2)
+			{
+			case 1:
 				res = memcmp32sparse((u32 *)bufEm, (u32 *)bufSd, num << 9);
-			else
-				res = memcmp((u32 *)bufEm, (u32 *)bufSd, num << 9);
+				break;
+			case 2:
+				se_calc_sha256(&hashEm, bufEm, num << 9);
+				se_calc_sha256(&hashSd, bufSd, num << 9);
+				res = memcmp(hashEm, hashSd, 0x20);
+				break;
+			}
 			if(res)
 			{
 				EPRINTFARGS("\nSD card and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", num, lba_curr);
@@ -1037,7 +1046,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	f_close(&fp);
 
 	//TODO: Replace with the config check.
-	if (0)
+	if (1)
 	{
 		// Verify last part or single file backup.
 		if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
@@ -1176,7 +1185,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	gfx_putc(&gfx_con, '\n');
 	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", get_tmr_s() - timer);
 	sdmmc_storage_end(&storage);
-	if (res && 0) //TODO: Replace with the config check.
+	if (res && 1) //TODO: Replace with the config check.
 		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
 	else if (res)
 		gfx_printf(&gfx_con, "\nFinished! Press any key...\n");
@@ -1694,7 +1703,7 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("------ Misc -------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
-	MDEF_HANDLER("Fix battery de-sync", &fix_battery_desync),
+	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	//MDEF_MENU("Fix fuel gauge configuration", &fix_fuel_gauge_configuration),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- Dangerous ----", 0xFFFF0000),
