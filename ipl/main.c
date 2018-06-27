@@ -1099,13 +1099,14 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 typedef enum
 {
-	DUMP_BOOT = 1,
-	DUMP_SYSTEM = 2,
-	DUMP_USER = 4,
-	DUMP_RAW = 8
-} dumpType_t;
+	PART_BOOT =   (1 << 0),
+	PART_SYSTEM = (1 << 1),
+	PART_USER =   (1 << 2),
+	PART_RAW =    (1 << 3),
+	PART_GP_ALL = (1 << 7)
+} emmcPartType_t;
 
-static void dump_emmc_selected(dumpType_t dumpType)
+static void dump_emmc_selected(emmcPartType_t dumpType)
 {
 	int res = 0;
 	u32 timer = 0;
@@ -1134,11 +1135,12 @@ static void dump_emmc_selected(dumpType_t dumpType)
 	f_mkdir("Backup");
 	f_mkdir("Backup/Partitions");
 	f_mkdir("Backup/Restore");
+	f_mkdir("Backup/Restore/Partitions");
 
 	timer = get_tmr_s();
-	if (dumpType & DUMP_BOOT)
+	if (dumpType & PART_BOOT)
 	{
-		static const u32 BOOT_PART_SIZE = 0x400000;
+		const u32 BOOT_PART_SIZE = storage.ext_csd.boot_mult << 17;
 
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
@@ -1160,19 +1162,19 @@ static void dump_emmc_selected(dumpType_t dumpType)
 		}
 	}
 
-	if ((dumpType & DUMP_SYSTEM) || (dumpType & DUMP_USER) || (dumpType & DUMP_RAW))
+	if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER) || (dumpType & PART_RAW))
 	{
 		sdmmc_storage_set_mmc_partition(&storage, 0);
 
-		if ((dumpType & DUMP_SYSTEM) || (dumpType & DUMP_USER))
+		if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER))
 		{
 			LIST_INIT(gpt);
 			nx_emmc_gpt_parse(&gpt, &storage);
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
-				if ((dumpType & DUMP_USER) == 0 && !strcmp(part->name, "USER"))
+				if ((dumpType & PART_USER) == 0 && !strcmp(part->name, "USER"))
 					continue;
-				if ((dumpType & DUMP_SYSTEM) == 0 && strcmp(part->name, "USER"))
+				if ((dumpType & PART_SYSTEM) == 0 && strcmp(part->name, "USER"))
 					continue;
 
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
@@ -1188,7 +1190,7 @@ static void dump_emmc_selected(dumpType_t dumpType)
 			nx_emmc_gpt_free(&gpt);
 		}
 
-		if (dumpType & DUMP_RAW)
+		if (dumpType & PART_RAW)
 		{
 			// Get GP partition size dynamically. 
 			const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
@@ -1221,10 +1223,10 @@ out:;
 	btn_wait();
 }
 
-void dump_emmc_system() { dump_emmc_selected(DUMP_SYSTEM); }
-void dump_emmc_user() { dump_emmc_selected(DUMP_USER); }
-void dump_emmc_boot() { dump_emmc_selected(DUMP_BOOT); }
-void dump_emmc_rawnand() { dump_emmc_selected(DUMP_RAW); }
+void dump_emmc_system() { dump_emmc_selected(PART_SYSTEM); }
+void dump_emmc_user() { dump_emmc_selected(PART_USER); }
+void dump_emmc_boot() { dump_emmc_selected(PART_BOOT); }
+void dump_emmc_rawnand() { dump_emmc_selected(PART_RAW); }
 
 void dump_package1()
 {
@@ -1685,6 +1687,20 @@ void about()
 	btn_wait();
 }
 
+/*ment_t ment_options[] = {
+	MDEF_BACK(),
+	MDEF_CHGLINE(),
+	MDEF_HANDLER("Auto boot", config_autoboot),
+	MDEF_HANDLER("Boot time delay", config_bootdelay),
+	MDEF_HANDLER("Custom boot logo", config_customlogo),
+	MDEF_END()
+};*/
+
+menu_t menu_options = {
+	ment_options,
+	"Launch options", 0, 0
+};
+
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
@@ -1725,27 +1741,59 @@ ment_t ment_autorcm[] = {
 
 menu_t menu_autorcm = {
 	ment_autorcm,
-	"AutoRCM", 0, 0
+	"Toggle AutoRCM ON/OFF", 0, 0
+};
+
+/*ment_t ment_restore[] = {
+	MDEF_BACK(),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
+	MDEF_HANDLER("Restore eMMC BOOT0/1", restore_emmc_boot),
+	MDEF_HANDLER("Restore eMMC RAW GPP (exFAT only)", restore_emmc_rawnand),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
+	MDEF_HANDLER("Restore GPP partitions", restore_emmc_gpp_parts),
+	MDEF_END()
+};
+
+menu_t menu_restore = {
+	ment_restore,
+	"Restore options", 0, 0
+};*/
+
+ment_t ment_backup[] = {
+	MDEF_BACK(),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
+	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
+	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
+	MDEF_CHGLINE(),
+	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
+	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
+	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
+	MDEF_END()
+};
+
+menu_t menu_backup = {
+	ment_backup,
+	"Backup options", 0, 0
 };
 
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
-	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
-	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
+	MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
+	MDEF_MENU("Backup", &menu_backup),
+	//MDEF_MENU("Restore", &menu_restore),
+	//MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
-	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
-	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
-	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Misc -------", 0xFF0AB9E6),
+	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	//MDEF_MENU("Fix fuel gauge configuration", &fix_fuel_gauge_configuration),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("---- Dangerous ----", 0xFFFF0000),
+	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
 	MDEF_MENU("AutoRCM", &menu_autorcm),
 	MDEF_END()
 };
@@ -1757,6 +1805,7 @@ menu_t menu_tools = {
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch firmware", launch_firmware),
+	//MDEF_MENU("Launch options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
