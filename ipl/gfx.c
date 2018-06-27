@@ -139,6 +139,7 @@ void gfx_clear_color(gfx_ctxt_t *ctxt, u32 color)
 void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
 {
 	con->gfx_ctxt = ctxt;
+	con->fntsz = 16;
 	con->x = 0;
 	con->y = 0;
 	con->savedx = 0;
@@ -170,33 +171,84 @@ void gfx_con_setpos(gfx_con_t *con, u32 x, u32 y)
 
 void gfx_putc(gfx_con_t *con, char c)
 {
-	if (c >= 32 && c <= 126)
+	// Duplicate code for performance reasons.
+	switch (con->fntsz)
 	{
-		u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
-		u32 *fb = con->gfx_ctxt->fb + con->x + con->y * con->gfx_ctxt->stride;
-		for (u32 i = 0; i < 8; i++)
+	case 16:
+		if (c >= 32 && c <= 126)
 		{
-			u8 v = *cbuf++;
-			for (u32 j = 0; j < 8; j++)
+			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
+			u32 *fb = con->gfx_ctxt->fb + con->x + con->y * con->gfx_ctxt->stride;
+
+			for (u32 i = 0; i < 16; i+=2)
 			{
-				if (v & 1)
-					*fb = con->fgcol;
-				else if (con->fillbg)
-					*fb = con->bgcol;
-				v >>= 1;
-				fb++;
+				u8 v = *cbuf++;
+				for (u32 k = 0; k < 2; k++)
+				{
+					for (u32 j = 0; j < 8; j++)
+					{
+						if (v & 1)
+						{
+							*fb = con->fgcol;
+							fb++;
+							*fb = con->fgcol;
+						}
+						else if (con->fillbg)
+						{
+							*fb = con->bgcol;
+							fb++;
+							*fb = con->bgcol;
+						}
+						else
+							fb++;
+						v >>= 1;
+						fb++;
+					}
+					fb += con->gfx_ctxt->stride - 16;
+					v = *cbuf;
+				}
 			}
-			fb += con->gfx_ctxt->stride - 8;
+			con->x += 16;
 		}
-		con->x += 8;
+		else if (c == '\n')
+		{
+			con->x = 0;
+			con->y +=16;
+			if (con->y > con->gfx_ctxt->height - 16)
+				con->y = 0;
+		}
+		break;
+	case  8:
+		if (c >= 32 && c <= 126)
+		{
+			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
+			u32 *fb = con->gfx_ctxt->fb + con->x + con->y * con->gfx_ctxt->stride;
+			for (u32 i = 0; i < 8; i++)
+			{
+				u8 v = *cbuf++;
+				for (u32 j = 0; j < 8; j++)
+				{
+					if (v & 1)
+						*fb = con->fgcol;
+					else if (con->fillbg)
+						*fb = con->bgcol;
+					v >>= 1;
+					fb++;
+				}
+				fb += con->gfx_ctxt->stride - 8;
+			}
+			con->x += 8;
+		}
+		else if (c == '\n')
+		{
+			con->x = 0;
+			con->y += 8;
+			if (con->y > con->gfx_ctxt->height - 8)
+				con->y = 0;
+		}
+		break;
 	}
-	else if (c == '\n')
-	{
-		con->x = 0;
-		con->y += 8;
-		if (con->y > con->gfx_ctxt->height - 8)
-			con->y = 0;
-	}
+	
 }
 
 void gfx_puts(gfx_con_t *con, const char *s)
@@ -237,6 +289,22 @@ static void _gfx_putn(gfx_con_t *con, u32 v, int base, char fill, int fcnt)
 	}
 
 	gfx_puts(con, p);
+}
+
+void gfx_put_small_sep(gfx_con_t *con)
+{
+	u8 prevFontSize = con->fntsz;
+	con->fntsz = 8;
+	gfx_putc(con, '\n');
+	con->fntsz = prevFontSize;
+}
+
+void gfx_put_big_sep(gfx_con_t *con)
+{
+	u8 prevFontSize = con->fntsz;
+	con->fntsz = 16;
+	gfx_putc(con, '\n');
+	con->fntsz = prevFontSize;
 }
 
 void gfx_printf(gfx_con_t *con, const char *fmt, ...)
@@ -318,6 +386,8 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 	if (con->mute)
 		return;
 
+	u8 prevFontSize = con->fntsz;
+	con->fntsz = 8;
 	for(u32 i = 0; i < len; i++)
 	{
 		if(i % 0x10 == 0)
@@ -361,6 +431,7 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 		}
 	}
 	gfx_putc(con, '\n');
+	con->fntsz = prevFontSize;
 }
 
 static int abs(int x)

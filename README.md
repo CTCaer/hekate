@@ -24,15 +24,16 @@ The ipl can be configured via 'hekate_ipl.ini' (if it is present on the SD card)
 
 
 ```
-hekate (C) 2018 naehrwert, st4rk
-Authored by: CTCaer.
+hekate     (C) 2018 naehrwert, st4rk
+CTCaer mod (C) 2018 CTCaer.
 
 Thanks to: derrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8.
 Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
 
 Open source and free packages used:
  - FatFs R0.13a, Copyright (C) 2017, ChaN
- - bcl-1.2.0,    Copyright (C) 2003-2006, Marcus Geelnard
+ - bcl-1.2.0, Copyright (C) 2003-2006, Marcus Geelnard
+ - Atmosphere (se_calculate_sha256), Copyright (C) 2018, Atmosphere-NX
 
                          ___
                       .-'   `'.
