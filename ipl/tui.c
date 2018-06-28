@@ -121,7 +121,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		max17050_get_property(MAX17050_VCELL, &battVoltCurr);
 		gfx_printf(con, " (%d mV)         ", battVoltCurr);
 		max17050_get_property(MAX17050_AvgCurrent, &battVoltCurr);
-		if (battVoltCurr > 0)
+		if (battVoltCurr >= 0)
 			gfx_printf(con, "\n %kCharging:%k %d mA         %k\n",
 				0xFF008000, 0xFF555555, battVoltCurr / 1000, 0xFFCCCCCC);
 		else

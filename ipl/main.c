@@ -365,6 +365,7 @@ void print_fuseinfo()
 		if (sd_mount())
 		{
 			char fuseFilename[23];
+			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
 			memcpy(fuseFilename, "Backup/Dumps/fuses.bin\0", 23);
 
@@ -399,6 +400,7 @@ void print_kfuseinfo()
 		if (sd_mount())
 		{
 			char kfuseFilename[24];
+			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
 			memcpy(kfuseFilename, "Backup/Dumps/kfuses.bin\0", 24);
 
@@ -757,6 +759,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 				res = memcmp32sparse((u32 *)bufEm, (u32 *)bufSd, num << 9);
 				break;
 			case 2:
+			default:
 				se_calc_sha256(&hashEm, bufEm, num << 9);
 				se_calc_sha256(&hashSd, bufSd, num << 9);
 				res = memcmp(hashEm, hashSd, 0x20);
@@ -1284,6 +1287,7 @@ void dump_package1()
 	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_off);
 
 	// Dump package1.
+	f_mkdir("Backup");
 	f_mkdir("Backup/pkg1");
 	if (sd_save_to_file(pkg1, 0x40000, "Backup/pkg1/pkg1_decr.bin")) {
 		EPRINTF("\nFailed to create pkg1_decr.bin");
@@ -1510,19 +1514,150 @@ void fix_sd_attr(){
 	btn_wait();
 }
 
-void print_fuel_gauge_regs()
+void print_fuel_gauge_info()
+{
+	int value = 0;
+
+	gfx_printf(&gfx_con, "%kFuel Gauge IC Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+
+	max17050_get_property(MAX17050_Age, &value);
+	gfx_printf(&gfx_con, "Age:                    %3d%\n", value);
+
+	max17050_get_property(MAX17050_Cycles, &value);
+	gfx_printf(&gfx_con, "Charge cycle count:     %4d\n", value);
+
+	max17050_get_property(MAX17050_TEMP, &value);
+	if (value >= 0)
+		gfx_printf(&gfx_con, "Battery temperature:    %d.%d oC\n", value / 10, value % 10);
+	else
+		gfx_printf(&gfx_con, "Battery temperature:    -%d.%d oC\n", ~value / 10, (~value) % 10);
+
+	max17050_get_property(MAX17050_Current, &value);
+	if (value >= 0)
+		gfx_printf(&gfx_con, "Current now:            %d mA\n", value / 1000);
+	else
+		gfx_printf(&gfx_con, "Current now:            -%d mA\n", ~value / 1000);
+
+	max17050_get_property(MAX17050_AvgCurrent, &value);
+	if (value >= 0)
+		gfx_printf(&gfx_con, "Current average:        %d mA\n", value / 1000);
+	else
+		gfx_printf(&gfx_con, "Current average:        -%d mA\n", ~value / 1000);
+
+	max17050_get_property(MAX17050_MinVolt, &value);
+	gfx_printf(&gfx_con, "Min voltage reached:    %4d mV\n", value);
+
+	max17050_get_property(MAX17050_MaxVolt, &value);
+	gfx_printf(&gfx_con, "Max voltage reached:    %4d mV\n", value);
+
+	max17050_get_property(MAX17050_V_empty, &value);
+	gfx_printf(&gfx_con, "Empty voltage (design): %4d mV\n", value);
+
+	max17050_get_property(MAX17050_VCELL, &value);
+	gfx_printf(&gfx_con, "Voltage now:            %4d mV\n", value);
+
+	max17050_get_property(MAX17050_OCVInternal, &value);
+	gfx_printf(&gfx_con, "Voltage open-circuit:   %4d mV\n", value);
+
+	max17050_get_property(MAX17050_RepSOC, &value);
+	gfx_printf(&gfx_con, "Capacity now:           %3d%\n", value >> 8);
+
+	max17050_get_property(MAX17050_RepCap, &value);
+	gfx_printf(&gfx_con, "Capacity now:           %4d mAh\n", value);
+
+	max17050_get_property(MAX17050_FullCAP, &value);
+	gfx_printf(&gfx_con, "Capacity full:          %4d mAh\n", value);
+
+	max17050_get_property(MAX17050_DesignCap, &value);
+	gfx_printf(&gfx_con, "Capacity (design):      %4d mAh\n", value);
+}
+
+void print_battery_charger_info()
+{
+	int value = 0;
+
+	gfx_printf(&gfx_con, "%k\n\nBattery Charger IC Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+
+	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
+	gfx_printf(&gfx_con, "Input voltage limit:       %4d mV\n", value);
+
+	bq24193_get_property(BQ24193_InputCurrentLimit, &value);
+	gfx_printf(&gfx_con, "Input current limit:       %4d mA\n", value);
+
+	bq24193_get_property(BQ24193_SystemMinimumVoltage, &value);
+	gfx_printf(&gfx_con, "Min voltage limit:         %4d mV\n", value);
+
+	bq24193_get_property(BQ24193_FastChargeCurrentLimit, &value);
+	gfx_printf(&gfx_con, "Fast charge current limit: %4d mA\n", value);
+
+	bq24193_get_property(BQ24193_ChargeVoltageLimit, &value);
+	gfx_printf(&gfx_con, "Charge voltage limit:      %4d mV\n", value);
+
+	bq24193_get_property(BQ24193_ThermalRegulation, &value);
+	gfx_printf(&gfx_con, "Thermal threshold:         %4d oC\n", value);
+
+	bq24193_get_property(BQ24193_ChargeStatus, &value);
+	gfx_printf(&gfx_con, "Charge status:              ");
+	switch (value)
+	{
+	case 0:
+		gfx_printf(&gfx_con, "Not charging\n");
+		break;
+	case 1:
+		gfx_printf(&gfx_con, "Pre-charging\n");
+		break;
+	case 2:
+		gfx_printf(&gfx_con, "Fast charging\n");
+		break;
+	case 3:
+		gfx_printf(&gfx_con, "Charge terminated\n");
+		break;
+	default:
+		gfx_printf(&gfx_con, "Unknown (%d)\n", value);
+		break;
+	}
+	bq24193_get_property(BQ24193_TempStatus, &value);
+	gfx_printf(&gfx_con, "Temperature status:         ");
+	switch (value)
+	{
+	case 0:
+		gfx_printf(&gfx_con, "Normal\n");
+		break;
+	case 2:
+		gfx_printf(&gfx_con, "Warm\n");
+		break;
+	case 3:
+		gfx_printf(&gfx_con, "Cool\n");
+		break;
+	case 5:
+		gfx_printf(&gfx_con, "Cold\n");
+		break;
+	case 6:
+		gfx_printf(&gfx_con, "Hot\n");
+		break;
+	default:
+		gfx_printf(&gfx_con, "Unknown (%d)\n", value);
+		break;
+	}
+}
+
+void print_battery_info()
 {
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
+	print_fuel_gauge_info();
+
+	print_battery_charger_info();
+
 	u8 *buf = (u8 *)malloc(0x100 * 2);
 
-	gfx_printf(&gfx_con, "%kBattery Fuel Gauge Registers:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%k\n\nBattery Fuel Gauge Registers:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 
 	for (int i = 0; i < 0x200; i += 2)
 	{
 		i2c_recv_buf_small(buf + i, 2, I2C_1, 0x36, i >> 1);
-		sleep(5000);
+		sleep(2500);
 	}
 
 	gfx_hexdump(&gfx_con, 0, (u8 *)buf, 0x200);
@@ -1536,6 +1671,7 @@ void print_fuel_gauge_regs()
 		if (sd_mount())
 		{
 			char fuelFilename[28];
+			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
 			memcpy(fuelFilename, "Backup/Dumps/fuel_gauge.bin\0", 28);
 
@@ -1714,7 +1850,7 @@ ment_t ment_cinfo[] = {
 	MDEF_HANDLER("Print SD Card info", print_sdcard_info),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Misc ------", 0xFF0AB9E6),
-	MDEF_HANDLER("Print fuel gauge info", print_fuel_gauge_regs),
+	MDEF_HANDLER("Print battery info", print_battery_info),
 	MDEF_END()
 };
 menu_t menu_cinfo = {
@@ -1791,7 +1927,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
-	//MDEF_MENU("Fix fuel gauge configuration", &fix_fuel_gauge_configuration),
+	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
 	MDEF_MENU("AutoRCM", &menu_autorcm),

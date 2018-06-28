@@ -25,12 +25,7 @@
 #define __MAX17050_H_
 
 #define MAX17050_STATUS_BattAbsent    (1 << 3)
-#define MAX17050_BATTERY_FULL         95    /* Recommend. FullSOCThr value */
 #define MAX17050_DEFAULT_SNS_RESISTOR 10000
-#define MAX17050_DEFAULT_VMIN         3200
-#define MAX17050_DEFAULT_VMAX         4200  /* LiHV cell max */
-#define MAX17050_DEFAULT_TEMP_MIN     5     /* For sys without temp sensor */
-#define MAX17050_DEFAULT_TEMP_MAX     650   /* 65 degrees Celcius */
 
 /* Consider RepCap which is less then 10 units below FullCAP full */
 #define MAX17050_FULL_THRESHOLD 10
@@ -112,6 +107,9 @@ enum MAX17050_reg {
 	MAX17050_QH			= 0x4D,
 	MAX17050_QL			= 0x4E,
 
+	MAX17050_MinVolt	= 0x50, // Custom ID. Not to be sent to i2c.
+	MAX17050_MaxVolt	= 0x51, // Custom ID. Not to be sent to i2c.
+
 	MAX17050_VFSOC0Enable	= 0x60,
 
 	MAX17050_MODELChrTbl	= 0x80,
@@ -121,15 +119,6 @@ enum MAX17050_reg {
 	MAX17050_OCVInternal	= 0xFB,
 
 	MAX17050_VFSOC			= 0xFF,
-};
-
-enum {
-	HEALTH_UNKNOWN = 0,
-	HEALTH_GOOD,
-	HEALTH_OVERHEAT,
-	HEALTH_DEAD,
-	HEALTH_OVERVOLTAGE,
-	HEALTH_COLD,
 };
 
 int max17050_get_property(enum MAX17050_reg reg, int *value);

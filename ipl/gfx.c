@@ -218,7 +218,8 @@ void gfx_putc(gfx_con_t *con, char c)
 				con->y = 0;
 		}
 		break;
-	case  8:
+	case 8:
+	default:
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
