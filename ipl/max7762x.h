@@ -64,5 +64,6 @@ int max77620_regulator_config_fps(u32 id);
 int max77620_regulator_set_voltage(u32 id, u32 mv);
 int max77620_regulator_enable(u32 id, int enable);
 void max77620_config_default();
+void max77620_low_battery_monitor_config();
 
 #endif
