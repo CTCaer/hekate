@@ -1233,6 +1233,256 @@ void dump_emmc_user() { dump_emmc_selected(PART_USER); }
 void dump_emmc_boot() { dump_emmc_selected(PART_BOOT); }
 void dump_emmc_rawnand() { dump_emmc_selected(PART_RAW); }
 
+int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
+{
+	static const u32 SECTORS_TO_MIB_COEFF = 11;
+
+	u32 totalSectors = part->lba_end - part->lba_start + 1;
+	u32 lbaStartPart = part->lba_start;
+	int res = 0;
+	char *outFilename = sd_path;
+
+	gfx_con.fntsz = 8;
+
+	FIL fp;
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+	gfx_printf(&gfx_con, "\nFilename: %s\n", outFilename);
+
+	res = f_open(&fp, outFilename, FA_READ);
+	if (res)
+	{
+		WPRINTFARGS("Error (%d) while opening backup. Continuing...\n", res);
+		gfx_con.fntsz = 16;
+
+		return 0;
+	}
+	//TODO: Should we keep this check?
+	else if ((f_size(&fp) >> 9) != totalSectors)
+	{
+		gfx_con.fntsz = 16;
+		EPRINTF("Size of sd card backup does not match,\neMMC's selected part size.\n");
+		f_close(&fp);
+
+		return 0;
+	}
+	else
+		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", (f_size(&fp) >> 9) >> SECTORS_TO_MIB_COEFF);
+
+	u32 numSectorsPerIter = 0;
+	if (totalSectors > 0x200000)
+		numSectorsPerIter = 8192; //4MB Cache
+	else
+		numSectorsPerIter = 512;  //256KB Cache
+
+	u8 *buf = (u8 *)calloc(numSectorsPerIter, NX_EMMC_BLOCKSIZE);
+
+	u32 lba_curr = part->lba_start;
+	u32 bytesWritten = 0;
+	u32 prevPct = 200;
+	int retryCount = 0;
+
+	u32 num = 0;
+	u32 pct = 0;
+	while (totalSectors > 0)
+	{
+		retryCount = 0;
+		num = MIN(totalSectors, numSectorsPerIter);
+
+		res = f_read(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
+		if (res)
+		{
+			gfx_con.fntsz = 16;
+			EPRINTFARGS("\nFatal error (%d) when reading from SD Card", res);
+			EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again now...\n");
+
+			free(buf);
+			f_close(&fp);
+			return 0;
+		}
+		while (!sdmmc_storage_write(storage, lba_curr, num, buf))
+		{
+			EPRINTFARGS("Error writing %d blocks @ LBA %08X\nto eMMC (try %d), retrying...",
+				num, lba_curr, ++retryCount);
+
+			sleep(150000);
+			if (retryCount >= 3)
+			{
+				gfx_con.fntsz = 16;
+				EPRINTFARGS("\nFailed to write %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
+				num, lba_curr);
+				EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again...\n");
+
+				free(buf);
+				f_close(&fp);
+				return 0;
+			}
+		}
+		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
+		if (pct != prevPct)
+		{
+			tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFFCCCCCC, 0xFF555555);
+			prevPct = pct;
+		}
+
+		lba_curr += num;
+		totalSectors -= num;
+		bytesWritten += num * NX_EMMC_BLOCKSIZE;
+	}
+	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
+
+	// Restore operation ended successfully.
+	free(buf);
+	f_close(&fp);
+
+	if (h_cfg.verification)
+	{
+		// Verify restored data.
+		if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
+		{
+			EPRINTF("\nPress any key and try again...\n");
+
+			free(buf);
+			return 0;
+		}
+		else
+			tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFF96FF00, 0xFF155500);
+	}
+
+	gfx_con.fntsz = 16;
+	gfx_puts(&gfx_con, "\n\n");
+
+	return 1;
+}
+
+static void restore_emmc_selected(emmcPartType_t restoreType)
+{
+	int res = 0;
+	u32 timer = 0;
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	gfx_printf(&gfx_con, "%kThis is a dangerous operation\nand may render your device inoperative!\n\n", 0xFFFFDD00);
+	gfx_printf(&gfx_con, "Are you really sure?\n\n%k", 0xFFCCCCCC);
+	if ((restoreType & PART_BOOT) || (restoreType & PART_GP_ALL))
+	{
+		gfx_puts(&gfx_con, "The mode you selected will only restore\nthe partitions that it can find.\n");
+		gfx_puts(&gfx_con, "If the appropriate named file is not found,\nit will skip it and continue with the next.\n\n");
+	}
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+
+	u8 value = 10;
+	while (value > 0)
+	{
+		gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+		gfx_printf(&gfx_con, "%kWait... (%ds)    %k", 0xFF888888, value, 0xFFCCCCCC);
+		sleep(1000000);
+		value--;
+	}
+	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+
+	gfx_puts(&gfx_con, "Press POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+
+	u32 btn = btn_wait();
+	if (!(btn & BTN_POWER))
+		goto out;
+
+	if (!sd_mount())
+		goto out;
+
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		EPRINTF("Failed to init eMMC.");
+		goto out;
+	}
+
+	int i = 0;
+	char sdPath[64];
+	memcpy(sdPath, "Backup/Restore/", 15);
+
+	timer = get_tmr_s();
+	if (restoreType & PART_BOOT)
+	{
+		const u32 BOOT_PART_SIZE = storage.ext_csd.boot_mult << 17;
+
+		emmc_part_t bootPart;
+		memset(&bootPart, 0, sizeof(bootPart));
+		bootPart.lba_start = 0;
+		bootPart.lba_end = (BOOT_PART_SIZE/NX_EMMC_BLOCKSIZE)-1;
+		for (i = 0; i < 2; i++)
+		{
+			memcpy(bootPart.name, "BOOT", 4);
+			bootPart.name[4] = (u8)('0' + i);
+			bootPart.name[5] = 0;
+
+			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i,
+				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
+
+			sdmmc_storage_set_mmc_partition(&storage, i+1);
+
+			strcpy(sdPath + 15, bootPart.name);
+			res = restore_emmc_part(sdPath, &storage, &bootPart);
+		}
+	}
+
+	if (restoreType & PART_GP_ALL)
+	{
+		sdmmc_storage_set_mmc_partition(&storage, 0);
+
+		LIST_INIT(gpt);
+		nx_emmc_gpt_parse(&gpt, &storage);
+		LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
+		{
+			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
+				part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
+
+			memcpy(sdPath, "Backup/Restore/Partitions/", 26);
+			strcpy(sdPath + 26, part->name);
+			res = restore_emmc_part(sdPath, &storage, part);
+		}
+		nx_emmc_gpt_free(&gpt);
+	}
+
+	if (restoreType & PART_RAW)
+	{
+		// Get GP partition size dynamically. 
+		const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
+
+		emmc_part_t rawPart;
+		memset(&rawPart, 0, sizeof(rawPart));
+		rawPart.lba_start = 0;
+		rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
+		strcpy(rawPart.name, "rawnand.bin");
+		{
+			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
+				rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
+
+			strcpy(sdPath + 15, rawPart.name);
+			res = restore_emmc_part(sdPath, &storage, &rawPart);
+		}
+	}
+
+	gfx_putc(&gfx_con, '\n');
+	timer = get_tmr_s() - timer;
+	gfx_printf(&gfx_con, "Time taken: %dm %ds.\n", timer / 60, timer % 60);
+	sdmmc_storage_end(&storage);
+	if (res && h_cfg.verification)
+		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
+	else if (res)
+		gfx_printf(&gfx_con, "\nFinished! Press any key...\n");
+
+out:;
+	sd_unmount();
+	btn_wait();
+}
+
+void restore_emmc_boot() { restore_emmc_selected(PART_BOOT); }
+void restore_emmc_rawnand() { restore_emmc_selected(PART_RAW); }
+void restore_emmc_gpp_parts() { restore_emmc_selected(PART_GP_ALL); }
+
+//TODO: dump_package2
+
 void dump_package1()
 {
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
@@ -2098,7 +2348,7 @@ menu_t menu_autorcm = {
 	"Toggle AutoRCM ON/OFF", 0, 0
 };
 
-/*ment_t ment_restore[] = {
+ment_t ment_restore[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
@@ -2113,7 +2363,7 @@ menu_t menu_autorcm = {
 menu_t menu_restore = {
 	ment_restore,
 	"Restore options", 0, 0
-};*/
+};
 
 ment_t ment_backup[] = {
 	MDEF_BACK(),
@@ -2138,7 +2388,7 @@ ment_t ment_tools[] = {
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
 	MDEF_MENU("Backup", &menu_backup),
-	//MDEF_MENU("Restore", &menu_restore),
+	MDEF_MENU("Restore", &menu_restore),
 	MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
