@@ -10,6 +10,7 @@ SOURCEDIR := ipl
 OBJS = $(addprefix $(BUILD)/, \
 	start.o \
 	main.o \
+	config.o \
 	btn.o \
 	clock.o \
 	cluster.o \

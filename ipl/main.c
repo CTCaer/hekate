@@ -54,6 +54,7 @@
 #include "lz.h"
 #include "max17050.h"
 #include "bq24193.h"
+#include "config.h"
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -74,6 +75,8 @@ int sd_mounted;
 #ifdef MENU_LOGO_ENABLE
 u8 *Kc_MENU_LOGO;
 #endif //MENU_LOGO_ENABLE
+
+hekate_config h_cfg;
 
 int sd_mount()
 {
@@ -752,8 +755,8 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 				f_close(&fp);
 				return 1;
 			}
-			//TODO: Replace 2 with config variable
-			switch (2)
+
+			switch (h_cfg.verification)
 			{
 			case 1:
 				res = memcmp32sparse((u32 *)bufEm, (u32 *)bufSd, num << 9);
@@ -948,8 +951,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			memset(&fp, 0, sizeof(fp));
 			currPartIdx++;
 
-			//TODO: Replace with the config check.
-			if (1)
+			if (h_cfg.verification)
 			{
 				// Verify part.
 				if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
@@ -1073,8 +1075,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	free(buf);
 	f_close(&fp);
 
-	//TODO: Replace with the config check.
-	if (1)
+	if (h_cfg.verification)
 	{
 		// Verify last part or single file backup.
 		if (dump_emmc_verify(storage, lbaStartPart, outFilename, part))
@@ -1217,7 +1218,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 	timer = get_tmr_s() - timer;
 	gfx_printf(&gfx_con, "Time taken: %dm %ds.\n", timer / 60, timer % 60);
 	sdmmc_storage_end(&storage);
-	if (res && 1) //TODO: Replace with the config check.
+	if (res && h_cfg.verification)
 		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
 	else if (res)
 		gfx_printf(&gfx_con, "\nFinished! Press any key...\n");
@@ -1855,7 +1856,7 @@ void about()
 	btn_wait();
 }
 
-/*ment_t ment_options[] = {
+ment_t ment_options[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_HANDLER("Auto boot", config_autoboot),
@@ -1867,7 +1868,7 @@ void about()
 menu_t menu_options = {
 	ment_options,
 	"Launch options", 0, 0
-};*/
+};
 
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
@@ -1953,7 +1954,7 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
 	MDEF_MENU("Backup", &menu_backup),
 	//MDEF_MENU("Restore", &menu_restore),
-	//MDEF_HANDLER("Verification options", config_verification),
+	MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
@@ -1974,7 +1975,7 @@ menu_t menu_tools = {
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch firmware", launch_firmware),
-	//MDEF_MENU("Launch options", &menu_options),
+	MDEF_MENU("Launch options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
@@ -2021,6 +2022,7 @@ void ipl_main()
 
 	// Enable backlight after initializing gfx
 	display_backlight(1);
+	set_default_configuration();
 
 	while (1)
 		tui_do_menu(&gfx_con, &menu_top);
