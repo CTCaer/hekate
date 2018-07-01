@@ -132,11 +132,11 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_FaultReg);
 			*value = data & BQ24193_FAULT_THERM_MASK;
 			break;
-		case BQ24193_DevID: //Current now.
+		case BQ24193_DevID: // Dev ID.
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_VendorPart);
 			*value = data & BQ24193_VENDORPART_DEV_MASK;
 			break;
-		case BQ24193_ProductNumber: //Current avg.
+		case BQ24193_ProductNumber: // Product number.
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_VendorPart);
 			*value = (data & BQ24193_VENDORPART_PN_MASK) >> 3;
 			break;
@@ -146,24 +146,6 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 	return 0;
 }
 
-static int _bq24193_write_verify_reg(u8 reg, u8 value)
-{
-	int retries = 8;
-	int ret;
-	u8 read_value;
-
-	do {
-		ret = i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, reg, value);
-		read_value = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, reg);
-		if (read_value != value) {
-			ret = -1;
-			retries--;
-		}
-	} while (retries && read_value != value);
-
-	return ret;
-}
-
 void bq24193_fake_battery_removal()
 {
 	u8  value;
@@ -171,10 +153,10 @@ void bq24193_fake_battery_removal()
 	// Disable watchdog to keep BATFET disabled.
 	value = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_ChrgTermTimer);
 	value &= ~BQ24193_CHRGTERM_WATCHDOG_MASK;
-	_bq24193_write_verify_reg(BQ24193_ChrgTermTimer, value);
+	i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_ChrgTermTimer, value);
 
 	// Force BATFET to disabled state. This disconnects the battery from the system.
 	value = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_Misc);
 	value |= BQ24193_MISC_BATFET_DI_MASK;
-	_bq24193_write_verify_reg(BQ24193_Misc, value);
+	i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_Misc, value);
 }

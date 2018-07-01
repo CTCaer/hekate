@@ -1746,8 +1746,9 @@ void fix_battery_desync()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, "%kAre you really sure?\nThis will wipe your battery stats completely!\n", 0xFFFFDD00);
-	gfx_printf(&gfx_con, "\nAdditionally you may need to reconfigure,\nyour time and date settings.\n%k", 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "%k\nThis will wipe your battery stats completely!\n"
+		"%kAnd it may not power on without physically\nremoving and re-inserting the battery.\n%k"
+		"\nAre you really sure?%k\n", 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
 
 	gfx_puts(&gfx_con, "\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
 	u32 btn = btn_wait();
@@ -1755,20 +1756,32 @@ void fix_battery_desync()
 	{
 		gfx_clear_grey(&gfx_ctxt, 0x1B);
 		gfx_con_setpos(&gfx_con, 0, 0);
-		gfx_printf(&gfx_con, "%kDisconnect the USB cable and wait 30 seconds.\naAfter that press any key!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
-		gfx_printf(&gfx_con, "%k* After this process is done,\n  connect the USB cable to power-on.\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
-		sleep(500000);
-		btn_wait();
+		gfx_printf(&gfx_con, "%kKeep the USB cable connected!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
+		gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+
+		u8 value = 30;
+		while (value > 0)
+		{
+			gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+			gfx_printf(&gfx_con, "%kWait... (%ds)   %k", 0xFF888888, value, 0xFFCCCCCC);
+			sleep(1000000);
+			value--;
+		}
+		gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 
 		//Check if still connected.
 		max17050_get_property(MAX17050_AvgCurrent, &avgCurrent);
-		if (avgCurrent < -100000)
-		{
-			bq24193_fake_battery_removal();
-			gfx_printf(&gfx_con, "If the device did not powered off,\ndo it from hekate menu");
-		}
+		if ((avgCurrent / 1000) < -10)
+			EPRINTF("You need to be connected to a wall adapter\nor PC to apply this fix!");
 		else
-			EPRINTF("You need to be disconnected from USB,\nto apply this fix!");
+		{
+			// Apply fix.
+			bq24193_fake_battery_removal();
+			gfx_printf(&gfx_con, "Done!               \n"
+				"%k1. Remove the USB cable\n"
+				"2. Press POWER for 15s.\n"
+				"3. Reconnect the USB to power-on!%k\n", 0xFFFFDD00, 0xFFCCCCCC);
+		}
 		sleep(500000);
 		btn_wait();
 	}
