@@ -37,6 +37,8 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | debugmode=1        | Enables Debug mode                                         |
 
 
+You can find a template [Here](./res/hekate_ipl_template.ini)
+
 
 ```
 hekate     (C) 2018 naehrwert, st4rk
