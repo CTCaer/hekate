@@ -1804,7 +1804,7 @@ void about()
 	"   Copyright (C) 2018, ChaN\n\n"
 	" - bcl-1.2.0,\n"
 	"   Copyright (C) 2003-2006, Marcus Geelnard\n\n"
-	" - Atmosphere (se_calculate_sha256),\n"
+	" - Atmosphere (SE sha256, prc id patches),\n"
 	"   Copyright (C) 2018, Atmosphere-NX\n"
 	" ___________________________________________\n\n";
 	static const char octopus[] =

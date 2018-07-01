@@ -19,6 +19,12 @@
 
 #include "types.h"
 
+typedef struct _patch_t
+{
+	u32 off;
+	u32 val;
+} patch_t;
+
 #define PATCHSET_DEF(name, ...) \
 	patch_t name[] = { \
 		__VA_ARGS__, \

@@ -33,7 +33,7 @@ Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
 Open source and free packages used:
  - FatFs R0.13a, Copyright (C) 2017, ChaN
  - bcl-1.2.0, Copyright (C) 2003-2006, Marcus Geelnard
- - Atmosphère (se_calculate_sha256), Copyright (C) 2018, Atmosphère-NX
+ - Atmosphère (SE sha256, prc id kernel patches), Copyright (C) 2018, Atmosphère-NX
 
                          ___
                       .-'   `'.

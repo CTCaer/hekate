@@ -65,6 +65,7 @@ typedef struct _launch_ctxt_t
 
 	int svcperm;
 	int debugmode;
+	int atmosphere;
 } launch_ctxt_t;
 
 typedef struct _merge_kip_t
@@ -79,6 +80,9 @@ typedef struct _merge_kip_t
 #define KB_FIRMWARE_VERSION_400 3
 #define KB_FIRMWARE_VERSION_500 4
 #define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_500
+
+// Exosphere magic "XBC0"
+#define MAGIC_EXOSPHERE 0x30434258
 
 static const u8 keyblob_keyseeds[][0x10] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, //1.0.0
@@ -203,6 +207,23 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	se_aes_unwrap_key(8, 12, key8_keyseed);
 
 	return 1;
+}
+
+static void _copy_bootconfig(launch_ctxt_t *ctxt)
+{
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+
+	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+
+	//Read BCT.
+	u8 *buf = (u8 *)0x4003D000;
+	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_read(&storage, 0, 0x3000 / NX_EMMC_BLOCKSIZE, buf);
+
+	gfx_printf(&gfx_con, "Copied BCT to 0x4003D000\n");
+
+	sdmmc_storage_end(&storage);
 }
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
@@ -348,6 +369,16 @@ static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Enabled atmosphere patching\n");
+		ctxt->atmosphere = 1;
+	}
+	return 1;
+}
+
 typedef struct _cfg_handler_t
 {
 	const char *key;
@@ -361,6 +392,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "kip1", _config_kip1 },
 	{ "fullsvcperm", _config_svcperm },
 	{ "debugmode", _config_debugmode },
+	{ "atmosphere", _config_atmosphere },
 	{ NULL, NULL },
 };
 
@@ -376,8 +408,9 @@ static int _config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
 
 int hos_launch(ini_sec_t *cfg)
 {
-	int bootStateDramPkg2;
-	int bootStatePkg2Continue;
+	int bootStateDramPkg2 = 0;
+	int bootStatePkg2Continue = 0;
+	int exoFwNumber = 0;
 	int end_di = 0;
 	launch_ctxt_t ctxt;
 
@@ -388,23 +421,23 @@ int hos_launch(ini_sec_t *cfg)
 		gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	//Try to parse config if present.
+	// Try to parse config if present.
 	if (cfg && !_config(&ctxt, cfg))
 		return 0;
 
 	gfx_printf(&gfx_con, "Initializing...\n\n");
 
-	//Read package1 and the correct keyblob.
+	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
 		return 0;
 
 	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
 
-	//Generate keys.
+	// Generate keys.
 	keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
 	DPRINTF("Generated keys\n");
 
-	//Decrypt and unpack package1 if we require parts of it.
+	// Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
 		pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
@@ -412,19 +445,19 @@ int hos_launch(ini_sec_t *cfg)
 		gfx_printf(&gfx_con, "Decrypted and unpacked package1\n");
 	}
 
-	//Replace 'warmboot.bin' if requested.
+	// Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
 		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
-	//Set warmboot address in PMC if required.
+	// Set warmboot address in PMC if required.
 	if (ctxt.pkg1_id->set_warmboot)
 		PMC(APBDEV_PMC_SCRATCH1) = ctxt.pkg1_id->warmboot_base;
 
-	//Replace 'SecureMonitor' if requested.
+	// Replace 'SecureMonitor' if requested.
 	if (ctxt.secmon)
 		memcpy((void *)ctxt.pkg1_id->secmon_base, ctxt.secmon, ctxt.secmon_size);
 	else
 	{
-		//Else we patch it to allow for an unsigned package2 and patched kernel.
+		// Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
 		gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 		for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
@@ -433,13 +466,13 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf(&gfx_con, "Loaded warmboot.bin and secmon\n");
 
-	//Read package2.
+	// Read package2.
 	if (!_read_emmc_pkg2(&ctxt))
 		return 0;
 
 	gfx_printf(&gfx_con, "Read package2\n");
 
-	//Decrypt package2 and parse KIP1 blobs in INI1 section.
+	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
 
 	LIST_INIT(kip1_info);
@@ -447,41 +480,50 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf(&gfx_con, "Parsed ini1\n");
 
-	//Use the kernel included in package2 in case we didn't load one already.
+	// Use the kernel included in package2 in case we didn't load one already.
 	if (!ctxt.kernel)
 	{
 		ctxt.kernel = pkg2_hdr->data;
 		ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
 
-		if (ctxt.svcperm || ctxt.debugmode)
+		if (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere)
 		{
 			u32 kernel_crc32 = crc32c(ctxt.kernel, ctxt.kernel_size);
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_crc32);
 
-			//In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
-			patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
+			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
+			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
 			if (kernel_patchset != NULL)
 			{
 				gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFFFFBA00, 0xFFCCCCCC);
-				//TODO: this is a bit ugly, perhaps attach a 'key' to the patchset and pass it via ini.
-				if (ctxt.svcperm && kernel_patchset[0].off != 0xFFFFFFFF)
-					*(vu32 *)(ctxt.kernel + kernel_patchset[0].off) = kernel_patchset[0].val;
-				if (ctxt.debugmode && kernel_patchset[1].off != 0xFFFFFFFF)
-					*(vu32 *)(ctxt.kernel + kernel_patchset[1].off) = kernel_patchset[1].val;
+				u32 *temp;
+				for (u32 i = 0; kernel_patchset[i].id != 0xFFFFFFFF; i++)
+				{
+					if ((ctxt.svcperm && kernel_patchset[i].id == SVC_VERIFY_DS)
+					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_MODE_EN)
+					|| (ctxt.atmosphere && kernel_patchset[i].id == ATM_GEN_PATCH))
+						*(vu32 *)(ctxt.kernel + kernel_patchset[i].off) = kernel_patchset[i].val;
+					else if (ctxt.atmosphere && kernel_patchset[i].id == ATM_ARR_PATCH)
+					{
+						temp = (u32 *)kernel_patchset[i].ptr;
+						for (u32 j = 0; j < kernel_patchset[i].val; j++)
+							*(vu32 *)(ctxt.kernel + kernel_patchset[i].off + (j << 2)) = temp[j];
+					}
+				}
 			}
 		}
 	}
 
-	//Merge extra KIP1s into loaded ones.
+	// Merge extra KIP1s into loaded ones.
 	gfx_printf(&gfx_con, "%kPatching kernel initial processes%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
-	//Rebuild and encrypt package2.
+	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
 	gfx_printf(&gfx_con, "Rebuilt and loaded package2\n");
 
-	//Unmount SD card.
+	// Unmount SD card.
 	sd_unmount();
 
 	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
@@ -489,9 +531,17 @@ int hos_launch(ini_sec_t *cfg)
 	se_aes_key_clear(8);
 	se_aes_key_clear(11);
 
+	// Final per firmware configuration.
 	switch (ctxt.pkg1_id->kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
+		if (!exoFwNumber)
+		{
+			if(!strcmp(ctxt.pkg1_id->id, "20161121183008"))
+				exoFwNumber = 1;
+			else
+				exoFwNumber = 2;
+		}
 	case KB_FIRMWARE_VERSION_300:
 	case KB_FIRMWARE_VERSION_301:
 		se_key_acc_ctrl(12, 0xFF);
@@ -499,21 +549,39 @@ int hos_launch(ini_sec_t *cfg)
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 3;
 		end_di = 1;
+		if (!exoFwNumber)
+			exoFwNumber = 3;
 		break;
 	default:
 	case KB_FIRMWARE_VERSION_400:
+		if (!exoFwNumber)
+			exoFwNumber = 4;
 	case KB_FIRMWARE_VERSION_500:
 		se_key_acc_ctrl(12, 0xFF);
 		se_key_acc_ctrl(15, 0xFF);
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 4;
+		if (!exoFwNumber)
+			exoFwNumber = 5;
 		break;
 	}
 
-	//TODO: Don't Clear 'BootConfig' for retail >1.0.0.
+	// Copy BCT if debug mode is enabled.
 	memset((void *)0x4003D000, 0, 0x3000);
+	if(ctxt.debugmode)
+		_copy_bootconfig(&ctxt);
 
-	//Lock SE before starting 'SecureMonitor'.
+	// Config Exosphere if booting Atmosphere.
+	if (ctxt.atmosphere)
+	{
+		vu32 *mb_exo_magic = (vu32 *)0x40002E40;
+		vu32 *mb_exo_fw_no = (vu32 *)0x40002E44;
+
+		*mb_exo_magic = MAGIC_EXOSPHERE;
+		*mb_exo_fw_no = exoFwNumber;
+	}
+
+	// Lock SE before starting 'SecureMonitor'.
 	_se_lock();
 
 	//< 4.0.0 Signals. 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot

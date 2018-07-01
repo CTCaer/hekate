@@ -28,11 +28,29 @@
 
 #define INI1_MAGIC 0x31494E49
 
-#define PATCHSET_DEF(name, ...) \
-	patch_t name[] = { \
+typedef struct _kernel_patch_t
+{
+	u32 id;
+	u32 off;
+	u32 val;
+	u32 *ptr;
+} kernel_patch_t;
+
+#define KERNEL_PATCHSET_DEF(name, ...) \
+	kernel_patch_t name[] = { \
 		__VA_ARGS__, \
-		{ 0xFFFFFFFF, 0xFFFFFFFF } \
+		{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, (u32 *)0xFFFFFFFF} \
 	}
+
+enum
+{
+	// Generic instruction patches
+	SVC_VERIFY_DS = 0x10, // 0x0-0xF are RESERVED.
+	DEBUG_MODE_EN,
+	ATM_GEN_PATCH,
+	// >4 bytes patches. Value is a pointer of a u32 array.
+	ATM_ARR_PATCH,
+};
 
 typedef struct _pkg2_hdr_t
 {
@@ -92,7 +110,7 @@ typedef struct _pkg2_kip1_info_t
 typedef struct _pkg2_kernel_id_t
 {
 	u32 crc32c_id;
-	patch_t *kernel_patchset;
+	kernel_patch_t *kernel_patchset;
 } pkg2_kernel_id_t;
 
 void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2);
