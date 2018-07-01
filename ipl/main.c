@@ -1214,7 +1214,8 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 	}
 
 	gfx_putc(&gfx_con, '\n');
-	gfx_printf(&gfx_con, "Time taken: %d seconds.\n", get_tmr_s() - timer);
+	timer = get_tmr_s() - timer;
+	gfx_printf(&gfx_con, "Time taken: %dm %ds.\n", timer / 60, timer % 60);
 	sdmmc_storage_end(&storage);
 	if (res && 1) //TODO: Replace with the config check.
 		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
@@ -1739,7 +1740,7 @@ void print_battery_info()
 	btn_wait();
 } */
 
-void fix_battery_desync()
+/*void reset_pmic_fuel_gauge_charger_config()
 {
 	int avgCurrent;
 
@@ -1785,6 +1786,18 @@ void fix_battery_desync()
 		sleep(500000);
 		btn_wait();
 	}
+}*/
+
+void fix_battery_desync()
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	max77620_low_battery_monitor_config();
+
+	gfx_puts(&gfx_con, "\nDone!\n");
+
+	btn_wait();
 }
 
 void about()
@@ -1942,6 +1955,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
+	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
 	MDEF_MENU("AutoRCM", &menu_autorcm),
