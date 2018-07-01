@@ -27,7 +27,7 @@
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
-#define EFSPRINTF(text, ...) gfx_printf(&gfx_con, "\n\n\n%k[FatFS] Error: "text"%k\n", 0xFFFFFF00, 0xFFFFFFFF)
+#define EFSPRINTF(text, ...) print_error(); gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);\
 //#define EFSPRINTF(...)
 
 /*--------------------------------------------------------------------------
@@ -568,6 +568,15 @@ static const BYTE DbcTbl[] = MKCVTBL(TBL_DC, FF_CODE_PAGE);
    Module Private Functions
 
 ---------------------------------------------------------------------------*/
+
+/*-----------------------------------------------------------------------*/
+/* Print error header                                                    */
+/*-----------------------------------------------------------------------*/
+
+void print_error()
+{
+	gfx_printf(&gfx_con, "\n\n\n%k[FatFS] Error: %k", 0xFFFFFF00, 0xFFFFFFFF);
+}
 
 
 /*-----------------------------------------------------------------------*/

@@ -21,10 +21,10 @@
 
 #ifdef MENU_LOGO_ENABLE
 extern u8 *Kc_MENU_LOGO;
-#define X_MENU_LOGO       158
-#define Y_MENU_LOGO        76
-#define X_POS_MENU_LOGO   538
-#define Y_POS_MENU_LOGO  1180
+#define X_MENU_LOGO       119
+#define Y_MENU_LOGO        57
+#define X_POS_MENU_LOGO   577
+#define Y_POS_MENU_LOGO  1199
 #endif //MENU_LOGO_ENABLE
 
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)

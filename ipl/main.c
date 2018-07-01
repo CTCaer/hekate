@@ -146,7 +146,7 @@ int sd_save_to_file(void * buf, u32 size, const char * filename)
 	u32 res = 0;
 	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res) {
-		EPRINTFARGS("Error (%d) creating file %s.\n", res, filename);
+		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
 		return 1;
 	}
 
@@ -1395,13 +1395,14 @@ void launch_firmware()
 	if (!hos_launch(cfg_sec))
 	{
 #ifdef MENU_LOGO_ENABLE
-		Kc_MENU_LOGO = (u8 *)malloc(36864);
+		Kc_MENU_LOGO = (u8 *)malloc(0x6000);
 		LZ_Uncompress(Kc_MENU_LOGOlz, Kc_MENU_LOGO, SZ_MENU_LOGOLZ);
 #endif //MENU_LOGO_ENABLE
 		EPRINTF("Failed to launch firmware.");
 	}
 
 	ini_free_section(cfg_sec);
+	sd_unmount();
 
 	btn_wait();
 }
@@ -1524,7 +1525,7 @@ void print_fuel_gauge_info()
 	gfx_printf(&gfx_con, "Age:                    %3d%\n", value);
 
 	max17050_get_property(MAX17050_Cycles, &value);
-	gfx_printf(&gfx_con, "Charge cycle count:     %4d\n", value);
+	gfx_printf(&gfx_con, "Charge cycle count:     %3d%\n", value);
 
 	max17050_get_property(MAX17050_TEMP, &value);
 	if (value >= 0)
@@ -1687,7 +1688,7 @@ void print_battery_info()
 	free(buf);
 }
 
-void fix_fuel_gauge_configuration()
+/* void fix_fuel_gauge_configuration()
 {
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -1697,7 +1698,7 @@ void fix_fuel_gauge_configuration()
 	max17050_get_property(MAX17050_VCELL, &battVoltage);
 	max17050_get_property(MAX17050_AvgCurrent, &avgCurrent);
 
-	//Check if still charging. If not, check if battery is >= 95% (4.1V).
+	// Check if still charging. If not, check if battery is >= 95% (4.1V).
 	if (avgCurrent < 0 && battVoltage > 4100)
 	{
 		if ((avgCurrent / 1000) < -10)
@@ -1736,7 +1737,7 @@ void fix_fuel_gauge_configuration()
 
 	sleep(500000);
 	btn_wait();
-}
+} */
 
 void fix_battery_desync()
 {
@@ -1980,7 +1981,7 @@ void ipl_main()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 
 #ifdef MENU_LOGO_ENABLE
-	Kc_MENU_LOGO = (u8 *)malloc(36864);
+	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
 	LZ_Uncompress(Kc_MENU_LOGOlz, Kc_MENU_LOGO, SZ_MENU_LOGOLZ);
 #endif //MENU_LOGO_ENABLE
 
