@@ -1414,6 +1414,191 @@ void launch_firmware()
 	btn_wait();
 }
 
+void auto_launch_firmware()
+{
+	u8 *BOOTLOGO = NULL;
+	struct _bmp_data
+	{
+		u32 size;
+		u32 size_x;
+		u32 size_y;
+		u32 offset;
+		u32 pos_x;
+		u32 pos_y;
+	};
+
+	struct _bmp_data bmpData;
+	int ini_freed = 1;
+	int backlightEnabled = 0;
+	int bootlogoFound = 0;
+	char *bootlogoCustomEntry = NULL;
+
+	ini_sec_t *cfg_sec = NULL;
+	LIST_INIT(ini_sections);
+
+	gfx_con.mute = 1;
+
+	if (sd_mount())
+	{
+		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
+		{
+			ini_freed = 0;
+			u32 configEntry = 0;
+			u32 boot_entry_id = 0;
+
+			// Load configuration.
+			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+			{
+				// Skip other ini entries for autoboot.
+				if (ini_sec->type == INI_CHOICE)
+				{
+					if (!strcmp(ini_sec->name, "config"))
+					{
+						configEntry = 1;
+						LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+						{
+							if (!strcmp("autoboot", kv->key))
+								h_cfg.autoboot = atoi(kv->val);
+							else if (!strcmp("bootwait", kv->key))
+								h_cfg.bootwait = atoi(kv->val);
+							else if (!strcmp("customlogo", kv->key))
+								h_cfg.customlogo = atoi(kv->val);
+							else if (!strcmp("verification", kv->key))
+								h_cfg.verification = atoi(kv->val);
+						}
+						boot_entry_id++;
+						continue;
+					}
+
+					if (h_cfg.autoboot == boot_entry_id && configEntry)
+					{
+						cfg_sec = ini_clone_section(ini_sec);
+						LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+						{
+							if (!strcmp("logopath", kv->key))
+								bootlogoCustomEntry = kv->val;
+						}	
+						break;	
+					}
+					boot_entry_id++;
+				}
+			}
+
+			// Add missing configuration entry.
+			if (!configEntry)
+				create_config_entry();
+
+			if (!h_cfg.autoboot)
+				goto out; // Auto boot is disabled.
+
+			if (!cfg_sec)
+				goto out; // No configurations.
+		}
+		else
+			goto out; // Can't load hekate_ipl.ini.
+	}
+	else
+		goto out;
+
+	if (h_cfg.customlogo)
+	{
+		u8 *bitmap = NULL;
+		if (bootlogoCustomEntry != NULL) // Check if user set custom logo path at the boot entry.
+		{
+			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry);
+			if (bitmap == NULL) // Custom entry bootlogo not found, trying default custom one.
+				bitmap = (u8 *)sd_file_read("bootlogo.bmp");
+		}
+		else // User has not set a custom logo path.
+			bitmap = (u8 *)sd_file_read("bootlogo.bmp");
+
+		if (bitmap != NULL)
+		{
+			// Get values manually to avoid unaligned access.
+			bmpData.size = bitmap[2] | bitmap[3] << 8 |
+				bitmap[4] << 16 | bitmap[5] << 24;
+			bmpData.offset = bitmap[10] | bitmap[11] << 8 |
+				bitmap[12] << 16 | bitmap[13] << 24;
+			bmpData.size_x = bitmap[18] | bitmap[19] << 8 |
+				bitmap[20] << 16 | bitmap[21] << 24;
+			bmpData.size_y = bitmap[22] | bitmap[23] << 8 |
+				bitmap[24] << 16 | bitmap[25] << 24;
+			// Sanity check.
+			if (bitmap[0] == 'B' &&
+				bitmap[1] == 'M' &&
+				bitmap[28] == 32 && //
+				bmpData.size_x <= 720 &&
+				bmpData.size_y <= 1280)
+			{
+				if ((bmpData.size - bmpData.offset) <= 0x400000)
+				{
+					// Avoid unaligned access from BM 2-byte MAGIC and remove header.
+					BOOTLOGO = (u8 *)malloc(0x400000);
+					memcpy(BOOTLOGO, bitmap + bmpData.offset, bmpData.size - bmpData.offset);
+					free(bitmap);
+					// Center logo if res < 720x1280.
+					bmpData.pos_x = (720  - bmpData.size_x) >> 1;
+					bmpData.pos_y = (1280 - bmpData.size_y) >> 1;
+
+					bootlogoFound = 1;
+				}
+			}
+			else
+				free(bitmap);
+		}
+	}
+
+	// Render boot logo.
+	if (bootlogoFound)
+	{
+		gfx_render_bmp_argb(&gfx_ctxt, (u32 *)BOOTLOGO, bmpData.size_x, bmpData.size_y,
+			bmpData.pos_x, bmpData.pos_y);
+	}
+	else
+	{
+		BOOTLOGO = (void *)malloc(0x4000);
+		LZ_Uncompress(BOOTLOGO_LZ, BOOTLOGO, SZ_BOOTLOGO_LZ);
+		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+		free(BOOTLOGO);
+	}
+	free(BOOTLOGO);
+
+	display_backlight(1);
+	backlightEnabled = 1;
+
+	// Wait before booting. If VOL- is pressed go into bootloader menu.
+	u32 btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
+
+	if (btn & BTN_VOL_DOWN)
+		goto out;
+
+	ini_free(&ini_sections);
+	ini_freed = 1;
+
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+	if (!hos_launch(cfg_sec))
+	{
+		// Failed to launch firmware.
+#ifdef MENU_LOGO_ENABLE
+		Kc_MENU_LOGO = (u8 *)malloc(ALIGN(SZ_MENU_LOGO, 0x10));
+		LZ_Uncompress(Kc_MENU_LOGOlz, Kc_MENU_LOGO, SZ_MENU_LOGOLZ);
+#endif //MENU_LOGO_ENABLE
+	}
+
+out:;
+	if (!ini_freed)
+		ini_free(&ini_sections);
+	ini_free_section(cfg_sec);
+
+	sd_unmount();
+	gfx_con.mute = 0;
+
+	if (!backlightEnabled)
+		display_backlight(1);
+}
+
 void toggle_autorcm(){
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -2021,8 +2206,10 @@ void ipl_main()
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
 	// Enable backlight after initializing gfx
-	display_backlight(1);
+	//display_backlight(1);
 	set_default_configuration();
+	// Load saved configuration and auto boot if enabled.
+	auto_launch_firmware();
 
 	while (1)
 		tui_do_menu(&gfx_con, &menu_top);
