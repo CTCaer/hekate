@@ -1844,12 +1844,12 @@ void about()
 	MDEF_HANDLER("Boot time delay", config_bootdelay),
 	MDEF_HANDLER("Custom boot logo", config_customlogo),
 	MDEF_END()
-};*/
+};
 
 menu_t menu_options = {
 	ment_options,
 	"Launch options", 0, 0
-};
+};*/
 
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
