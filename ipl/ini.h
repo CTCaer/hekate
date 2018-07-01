@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (C) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -20,6 +21,12 @@
 #include "types.h"
 #include "list.h"
 
+#define INI_CHOICE  3
+#define INI_CAPTION 5
+#define INI_CHGLINE 6
+#define INI_NEWLINE 0xFE
+#define INI_COMMENT 0xFF
+
 typedef struct _ini_kv_t
 {
 	char *key;
@@ -32,6 +39,8 @@ typedef struct _ini_sec_t
 	char *name;
 	link_t kvs;
 	link_t link;
+	u32 type;
+	u32 color;
 } ini_sec_t;
 
 int ini_parse(link_t *dst, char *ini_path);

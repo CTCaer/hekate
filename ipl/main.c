@@ -1333,7 +1333,7 @@ out:;
 
 void launch_firmware()
 {
-	u8 max_entries = 16;
+	u8 max_entries = 61;
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
@@ -1346,23 +1346,28 @@ void launch_firmware()
 		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
 		{
 			// Build configuration menu.
-			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * max_entries);
+			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 			ments[0].type = MENT_BACK;
 			ments[0].caption = "Back";
-			u32 i = 1;
+			ments[1].type = MENT_CHGLINE;
+
+			u32 i = 2;
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 			{
-				if (!strcmp(ini_sec->name, "config"))
+				if (!strcmp(ini_sec->name, "config") ||
+					ini_sec->type == INI_COMMENT || ini_sec->type == INI_NEWLINE)
 					continue;
-				ments[i].type = MENT_CHOICE;
+				ments[i].type = ini_sec->type;
 				ments[i].caption = ini_sec->name;
 				ments[i].data = ini_sec;
+				if (ini_sec->type == MENT_CAPTION)
+					ments[i].color = ini_sec->color;
 				i++;
 
 				if (i > max_entries)
 					break;
 			}
-			if (i > 1)
+			if (i > 2)
 			{
 				memset(&ments[i], 0, sizeof(ment_t));
 				menu_t menu = {

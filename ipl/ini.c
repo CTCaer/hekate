@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (C) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -45,10 +46,6 @@ int ini_parse(link_t *dst, char *ini_path)
 		f_gets(lbuf, 512, &fp);
 		lblen = strlen(lbuf);
 
-		//Skip empty lines and comments.
-		if (lblen <= 1 || lbuf[0] == '#')
-			continue;
-
 		//Remove trailing newline.
 		if (lbuf[lblen - 1] == '\n')
 			lbuf[lblen - 1] = 0;
@@ -68,9 +65,58 @@ int ini_parse(link_t *dst, char *ini_path)
 
 			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
 			csec->name = _strdup(&lbuf[1]);
+			csec->type = INI_CHOICE;
 			list_init(&csec->kvs);
 		}
-		else if (csec) //Extract key/value.
+		else if (lblen > 2 && lbuf[0] == '{') //Create new caption.
+		{
+			if (csec)
+			{
+				list_append(dst, &csec->link);
+				csec = NULL;
+			}
+
+			u32 i;
+			for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '}'; i++)
+				;
+			lbuf[i] = 0;
+
+			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+			csec->name = _strdup(&lbuf[1]);
+			csec->type = INI_CAPTION;
+			csec->color = 0xFF0AB9E6;
+		}
+		else if (lblen > 2 && lbuf[0] == '#') //Create empty lines and comments.
+		{
+			if (csec)
+			{
+				list_append(dst, &csec->link);
+				csec = NULL;
+			}
+
+			u32 i;
+			for (i = 0; i < lblen && lbuf[i] != '\n'; i++)
+				;
+			lbuf[i] = 0;
+
+			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+			csec->name = _strdup(&lbuf[1]);
+			csec->type = INI_COMMENT;
+				
+		}
+		else if (lblen <= 1)
+		{
+			if (csec)
+			{
+				list_append(dst, &csec->link);
+				csec = NULL;
+			}
+
+			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+			csec->name = NULL;
+			csec->type = INI_NEWLINE;
+		}
+		else if (csec->type == INI_CHOICE) //Extract key/value.
 		{
 			u32 i;
 			for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '='; i++)
@@ -94,13 +140,19 @@ int ini_parse(link_t *dst, char *ini_path)
 
 void ini_free(link_t *dst)
 {
+	if (dst == NULL)
+		return;
+
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, dst, link)
 	{
-		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+		if (ini_sec->type == INI_CHOICE)
 		{
-			free(kv->key);
-			free(kv->val);
-			free(kv);
+			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+			{
+				free(kv->key);
+				free(kv->val);
+				free(kv);
+			}
 		}
 		free(ini_sec->name);
 		free(ini_sec);
