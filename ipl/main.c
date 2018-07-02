@@ -1938,7 +1938,8 @@ int fix_attributes(char *path, u32 *total)
 	return res;
 }
 
-void fix_sd_attr(){
+void fix_sd_attr(u32 type)
+{
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
@@ -1947,15 +1948,28 @@ void fix_sd_attr(){
 	u32 total = 0;
 	if (sd_mount())
 	{
-		gfx_printf(&gfx_con, "Traversing all sd card files!\nThis may take some time, please wait...\n");
-		buff[0] = '/';
-		buff[1] = 0;
+		switch (type)
+		{
+		case 0:
+			gfx_printf(&gfx_con, "Traversing all switch folder files!\nThis may take some time, please wait...\n");
+			memcpy(buff, "/switch\0", 8);
+			break;
+		case 1:
+		default:
+			gfx_printf(&gfx_con, "Traversing all sd card files!\nThis may take some time, please wait...\n");
+			memcpy(buff, "/\0", 2);
+			break;
+		}
+		
 		fix_attributes(buff, &total);
 		gfx_printf(&gfx_con, "\n%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
 		sd_unmount();
 	}
 	btn_wait();
 }
+
+void fix_sd_switch_attr() { fix_sd_attr(0); }
+void fix_sd_all_attr() { fix_sd_attr(1); }
 
 void print_fuel_gauge_info()
 {
@@ -2393,8 +2407,9 @@ ment_t ment_tools[] = {
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
-	MDEF_HANDLER("Fix SD files attributes", fix_sd_attr),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
+	MDEF_HANDLER("Remove archive bit (switch folder)", fix_sd_switch_attr),
+	MDEF_HANDLER("Remove archive bit (all sd files)", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
