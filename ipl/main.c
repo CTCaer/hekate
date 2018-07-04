@@ -357,10 +357,32 @@ void print_fuseinfo()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
+	u32 burntFuses = 0;
+	for (u32 i = 0; i < 32; i++)
+	{
+		if ((fuse_read_odm(7) >> i) & 1)
+			burntFuses++;
+	}
+
+	gfx_printf(&gfx_con, "\nSKU:         %X - ", FUSE(0x110));
+	switch (fuse_read_odm(4) & 3)
+	{
+	case 0:
+		gfx_printf(&gfx_con, "Retail\n");
+		break;
+	case 3:
+		gfx_printf(&gfx_con, "Dev\n");
+		break;
+	}
+	gfx_printf(&gfx_con, "Sdram ID:    %d\n", (fuse_read_odm(4) >> 3) & 0x1F);
+	gfx_printf(&gfx_con, "Burnt fuses: %d\n", burntFuses);
+	gfx_printf(&gfx_con, "Secure key:  %08X%08X%08X%08X\n\n\n",
+		byte_swap_32(FUSE(0x1A4)), byte_swap_32(FUSE(0x1A8)), byte_swap_32(FUSE(0x1AC)), byte_swap_32(FUSE(0x1B0)));
+
 	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 	gfx_hexdump(&gfx_con, 0x7000F900, (u8 *)0x7000F900, 0x2FC);
 
-	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+	gfx_puts(&gfx_con, "Press POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
@@ -2054,11 +2076,8 @@ void print_battery_charger_info()
 	bq24193_get_property(BQ24193_ChargeVoltageLimit, &value);
 	gfx_printf(&gfx_con, "Charge voltage limit:      %4d mV\n", value);
 
-	bq24193_get_property(BQ24193_ThermalRegulation, &value);
-	gfx_printf(&gfx_con, "Thermal threshold:         %4d oC\n", value);
-
 	bq24193_get_property(BQ24193_ChargeStatus, &value);
-	gfx_printf(&gfx_con, "Charge status:              ");
+	gfx_printf(&gfx_con, "Charge status:             ");
 	switch (value)
 	{
 	case 0:
@@ -2078,7 +2097,7 @@ void print_battery_charger_info()
 		break;
 	}
 	bq24193_get_property(BQ24193_TempStatus, &value);
-	gfx_printf(&gfx_con, "Temperature status:         ");
+	gfx_printf(&gfx_con, "Temperature status:        ");
 	switch (value)
 	{
 	case 0:

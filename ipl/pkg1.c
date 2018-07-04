@@ -51,7 +51,7 @@ PATCHSET_DEF(_secmon_4_patchset,
 	{ 0x2300 + 0x5D80, _NOP() }, //package2 structure.
 	{ 0x2300 + 0x5D8C, _NOP() }, //Version.
 	{ 0x2300 + 0x5EFC, _NOP() }, //Header signature.
-	{ 0xAC8 + 0xA2C, _NOP() }    //Sections SHA2.
+	{ 0xAC8 + 0xA2C,   _NOP() }  //Sections SHA2.
 );
 
 PATCHSET_DEF(_secmon_5_patchset,

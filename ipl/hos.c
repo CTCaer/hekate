@@ -81,7 +81,7 @@ typedef struct _merge_kip_t
 #define KB_FIRMWARE_VERSION_500 4
 #define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_500
 
-// Exosphere magic "XBC0"
+// Exosphère magic "XBC0"
 #define MAGIC_EXOSPHERE 0x30434258
 
 static const u8 keyblob_keyseeds[][0x10] = {
@@ -571,7 +571,7 @@ int hos_launch(ini_sec_t *cfg)
 	if(ctxt.debugmode)
 		_copy_bootconfig(&ctxt);
 
-	// Config Exosphere if booting Atmosphere.
+	// Config Exosphère if booting Atmosphère.
 	if (ctxt.atmosphere)
 	{
 		vu32 *mb_exo_magic = (vu32 *)0x40002E40;
