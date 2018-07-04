@@ -147,9 +147,9 @@ void clock_enable_kfuse()
 	CLOCK(0x8) = (CLOCK(0x8) & 0xFFFFFEFF) | 0x100;
 	CLOCK(0x14) &= 0xFFFFFEFF;
 	CLOCK(0x14) = (CLOCK(0x14) & 0xFFFFFEFF) | 0x100;
-	sleep(10);
+	usleep(10);
 	CLOCK(0x8) &= 0xFFFFFEFF;
-	sleep(20);
+	usleep(20);
 }
 
 void clock_disable_kfuse()
@@ -436,7 +436,7 @@ void clock_sdmmc_enable(u32 id, u32 val)
 	_clock_sdmmc_config_clock_source_inner(&div, id, val);
 	_clock_sdmmc_set_enable(id);
 	_clock_sdmmc_is_reset(id);
-	sleep((100000 + div - 1) / div);
+	usleep((100000 + div - 1) / div);
 	_clock_sdmmc_clear_reset(id);
 	_clock_sdmmc_is_reset(id);
 }

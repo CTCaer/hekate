@@ -20,7 +20,14 @@
 
 u32 get_tmr_s()
 {
-	return RTC(0x8); //APBDEV_RTC_SECONDS
+	return RTC(0x8); //RTC_SECONDS
+}
+
+u32 get_tmr_ms()
+{
+	// The registers must be read with the following order:
+	// -> RTC_MILLI_SECONDS (0x10) -> RTC_SHADOW_SECONDS (0x8)
+	return (RTC(0x10) | (RTC(0xC)<< 10));
 }
 
 u32 get_tmr_us()
@@ -28,10 +35,17 @@ u32 get_tmr_us()
 	return TMR(0x10); //TMRUS
 }
 
-void sleep(u32 ticks)
+void msleep(u32 milliseconds)
 {
-	u32 start = TMR(0x10);
-	while (TMR(0x10) - start <= ticks)
+	u32 start = get_tmr_ms();
+	while ((get_tmr_ms() - start) <= milliseconds)
+		;
+}
+
+void usleep(u32 microseconds)
+{
+	u32 start = get_tmr_us();
+	while ((get_tmr_us() - start) <= microseconds)
 		;
 }
 

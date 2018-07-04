@@ -161,20 +161,20 @@ static int _sdmmc_wait_type4(sdmmc_t *sdmmc)
 	sdmmc->regs->field_1B0 |= 0x80000000;
 	_sdmmc_get_clkcon(sdmmc);
 
-	u32 timeout = get_tmr_us() + 5000;
+	u32 timeout = get_tmr_ms() + 5;
 	while (sdmmc->regs->field_1B0 & 0x80000000)
 	{
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 		{
 			res = 0;
 			goto out;
 		}
 	}
 
-	timeout = get_tmr_us() + 10000;
+	timeout = get_tmr_ms() + 10;
 	while (sdmmc->regs->field_1BC & 0x80000000)
 	{
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 		{
 			res = 0;
 			goto out;
@@ -376,8 +376,8 @@ static void _sdmmc_reset(sdmmc_t *sdmmc)
 	sdmmc->regs->swrst |= 
 		TEGRA_MMC_SWRST_SW_RESET_FOR_CMD_LINE | TEGRA_MMC_SWRST_SW_RESET_FOR_DAT_LINE;
 	_sdmmc_get_clkcon(sdmmc);
-	u32 timeout = get_tmr_us() + 2000000;
-	while (sdmmc->regs->swrst << 29 >> 30 && get_tmr_us() < timeout)
+	u32 timeout = get_tmr_ms() + 2000;
+	while (sdmmc->regs->swrst << 29 >> 30 && get_tmr_ms() < timeout)
 		;
 }
 
@@ -385,9 +385,9 @@ static int _sdmmc_wait_prnsts_type0(sdmmc_t *sdmmc, u32 wait_dat)
 {
 	_sdmmc_get_clkcon(sdmmc);
 
-	u32 timeout = get_tmr_us() + 2000000;
+	u32 timeout = get_tmr_ms() + 2000;
 	while(sdmmc->regs->prnsts & 1) //CMD inhibit.
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset(sdmmc);
 			return 0;
@@ -395,9 +395,9 @@ static int _sdmmc_wait_prnsts_type0(sdmmc_t *sdmmc, u32 wait_dat)
 
 	if (wait_dat)
 	{
-		timeout = get_tmr_us() + 2000000;
+		timeout = get_tmr_ms() + 2000;
 		while (sdmmc->regs->prnsts & 2) //DAT inhibit.
-			if (get_tmr_us() > timeout)
+			if (get_tmr_ms() > timeout)
 			{
 				_sdmmc_reset(sdmmc);
 				return 0;
@@ -411,9 +411,9 @@ static int _sdmmc_wait_prnsts_type1(sdmmc_t *sdmmc)
 {
 	_sdmmc_get_clkcon(sdmmc);
 
-	u32 timeout = get_tmr_us() + 2000000;
+	u32 timeout = get_tmr_ms() + 2000;
 	while (!(sdmmc->regs->prnsts & 0x100000)) //DAT0 line level.
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset(sdmmc);
 			return 0;
@@ -504,7 +504,7 @@ static int _sdmmc_config_tuning_once(sdmmc_t *sdmmc, u32 cmd)
 	sdmmc->regs->clkcon &= ~TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 	_sdmmc_parse_cmd_48(sdmmc, cmd);
 	_sdmmc_get_clkcon(sdmmc);
-	sleep(1);
+	usleep(1);
 	_sdmmc_reset(sdmmc);
 	sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 	_sdmmc_get_clkcon(sdmmc);
@@ -517,14 +517,14 @@ static int _sdmmc_config_tuning_once(sdmmc_t *sdmmc, u32 cmd)
 			sdmmc->regs->norintsts = 0x20;
 			sdmmc->regs->norintstsen &= 0xFFDF;
 			_sdmmc_get_clkcon(sdmmc);
-			sleep((1000 * 8 + sdmmc->divisor - 1) / sdmmc->divisor);
+			usleep((1000 * 8 + sdmmc->divisor - 1) / sdmmc->divisor);
 			return 1;
 		}
 	}
 	_sdmmc_reset(sdmmc);
 	sdmmc->regs->norintstsen &= 0xFFDF;
 	_sdmmc_get_clkcon(sdmmc);
-	sleep((1000 * 8 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep((1000 * 8 + sdmmc->divisor - 1) / sdmmc->divisor);
 	return 0;
 }
 
@@ -573,10 +573,10 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 	//Enable internal clock and wait till it is stable.
 	sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_INTERNAL_CLOCK_ENABLE;
 	_sdmmc_get_clkcon(sdmmc);
-	u32 timeout = get_tmr_us() + 2000000;
+	u32 timeout = get_tmr_ms() + 2000;
 	while (!(sdmmc->regs->clkcon & TEGRA_MMC_CLKCON_INTERNAL_CLOCK_STABLE))
 	{
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 			return 0;
 	}
 
@@ -642,17 +642,17 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 	{
 		sdmmc->regs->sdmemcmppadctl |= 0x80000000;
 		_sdmmc_get_clkcon(sdmmc);
-		sleep(1);
+		usleep(1);
 	}
 
 	sdmmc->regs->autocalcfg |= 0xA0000000;
 	_sdmmc_get_clkcon(sdmmc);
-	sleep(1);
+	usleep(1);
 
-	u32 timeout = get_tmr_us() + 10000;
+	u32 timeout = get_tmr_ms() + 10;
 	while (sdmmc->regs->autocalcfg & 0x80000000)
 	{
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 		{
 			//In case autocalibration fails, we load suggested standard values.
 			_sdmmc_pad_config_fallback(sdmmc, power);
@@ -710,13 +710,13 @@ static int _sdmmc_wait_request(sdmmc_t *sdmmc)
 {
 	_sdmmc_get_clkcon(sdmmc);
 
-	u32 timeout = get_tmr_us() + 2000000;
+	u32 timeout = get_tmr_ms() + 2000;
 	while (1)
 	{
 		int res = _sdmmc_check_mask_interrupt(sdmmc, 0, TEGRA_MMC_NORINTSTS_CMD_COMPLETE);
 		if (res == SDMMC_MASKINT_MASKED)
 			break;
-		if (res != SDMMC_MASKINT_NOERROR || get_tmr_us() > timeout)
+		if (res != SDMMC_MASKINT_NOERROR || get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset(sdmmc);
 			return 0;
@@ -760,11 +760,11 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 		should_disable_sd_clock = 1;
 		sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 		_sdmmc_get_clkcon(sdmmc);
-		sleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 	}
 
 	int res = _sdmmc_stop_transmission_inner(sdmmc, rsp);
-	sleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 
@@ -817,7 +817,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 	do
 	{
 		blkcnt = sdmmc->regs->blkcnt;
-		u32 timeout = get_tmr_us() + 1500000;
+		u32 timeout = get_tmr_ms() + 1500;
 		do
 		{
 			int res = 0;
@@ -843,7 +843,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 				_sdmmc_reset(sdmmc);
 				return 0;
 			}
-		} while (get_tmr_us() < timeout);
+		} while (get_tmr_ms() < timeout);
 	} while (sdmmc->regs->blkcnt != blkcnt);
 
 	_sdmmc_reset(sdmmc);
@@ -912,7 +912,7 @@ static int _sdmmc_config_sdmmc1()
 	APB_MISC(APB_MISC_GP_VGPIO_GPIO_MUX_SEL) = 0;
 	gpio_config(GPIO_PORT_Z, GPIO_PIN_1, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_Z, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
-	sleep(100);
+	usleep(100);
 	if(!!gpio_read(GPIO_PORT_Z, GPIO_PIN_1))
 		return 0;
 
@@ -945,18 +945,18 @@ static int _sdmmc_config_sdmmc1()
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
 	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
 
-	sleep(1000);
+	usleep(1000);
 
 	//Enable SD card power.
 	max77620_regulator_set_voltage(REGULATOR_LDO2, 3300000);
 	max77620_regulator_enable(REGULATOR_LDO2, 1);
 
-	sleep(1000);
+	usleep(1000);
 
 	//For good measure.
 	APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = 0x10000000;
 
-	sleep(1000);
+	usleep(1000);
 
 	return 1;
 }
@@ -1026,7 +1026,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 		if (sdmmc->id == SDMMC_1)
 		{
 			gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
-			sleep(1000); // To power cycle min 1ms without power is needed.
+			msleep(1); // To power cycle min 1ms without power is needed.
 		}
 
 		_sdmmc_get_clkcon(sdmmc);
@@ -1058,11 +1058,11 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 		should_disable_sd_clock = 1;
 		sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 		_sdmmc_get_clkcon(sdmmc);
-		sleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 	}
 
 	int res = _sdmmc_execute_cmd_inner(sdmmc, cmd, req, blkcnt_out);
-	sleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 
@@ -1086,13 +1086,13 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 	_sdmmc_autocal_execute(sdmmc, SDMMC_POWER_1_8);
 	_sdmmc_set_voltage(sdmmc, SDMMC_POWER_1_8);
 	_sdmmc_get_clkcon(sdmmc);
-	sleep(5000);
+	msleep(5);
 	
 	if (sdmmc->regs->hostctl2 & SDHCI_CTRL_VDD_180)
 	{
 		sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 		_sdmmc_get_clkcon(sdmmc);
-		sleep(1000u);
+		msleep(1);
 		if ((sdmmc->regs->prnsts & 0xF00000) == 0xF00000)
 			return 1;
 	}

@@ -103,7 +103,7 @@ int max77620_regulator_set_voltage(u32 id, u32 mv)
 	u8 val = i2c_recv_byte(I2C_5, 0x3C, reg->volt_addr);
 	val = (val & ~reg->volt_mask) | (mult & reg->volt_mask);
 	i2c_send_byte(I2C_5, 0x3C, reg->volt_addr, val);
-	sleep(1000);
+	usleep(1000);
 
 	return 1;
 }
@@ -122,7 +122,7 @@ int max77620_regulator_enable(u32 id, int enable)
 	else
 		val &= ~reg->enable_mask;
 	i2c_send_byte(I2C_5, 0x3C, addr, val);
-	sleep(1000);
+	usleep(1000);
 
 	return 1;
 }

@@ -236,7 +236,7 @@ int max17050_fix_configuration()
 	/* After Power up, the MAX17050 requires 500ms in order
 	 * to perform signal debouncing and initial SOC reporting
 	 */
-	sleep(500000);
+	msleep(500);
 
 	/* Initialize configaration */
 	_max17050_write_config_regs();
@@ -248,7 +248,7 @@ int max17050_fix_configuration()
 	/* delay must be atleast 350mS to allow VFSOC
 	 * to be calculated from the new configuration
 	 */
-	sleep(350000);
+	msleep(350);
 
 	/* reset vfsoc0 reg */
 	_max17050_reset_vfsoc0_reg();

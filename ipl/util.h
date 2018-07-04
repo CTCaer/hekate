@@ -30,8 +30,10 @@ typedef struct _cfg_op_t
 } cfg_op_t;
 
 u32 get_tmr_us();
+u32 get_tmr_ms();
 u32 get_tmr_s();
-void sleep(u32 ticks);
+void usleep(u32 ticks);
+void msleep(u32 milliseconds);
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops);
 u32 crc32c(const void *buf, u32 len);
 

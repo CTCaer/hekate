@@ -597,7 +597,7 @@ int hos_launch(ini_sec_t *cfg)
 	//Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
-		sleep(1);
+		usleep(1);
 
 	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
 	/*PMC(0x4) = 0x7FFFF3;

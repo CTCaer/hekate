@@ -233,7 +233,7 @@ void mbist_workaround()
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_CLR) = 0x40;
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_X_CLR) = 0x40000;
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = 0x18000000;
-	sleep(2);
+	usleep(2);
 
 	I2S(0x0A0) |= 0x400;
 	I2S(0x088) &= 0xFFFFFFFE;
@@ -247,7 +247,7 @@ void mbist_workaround()
 	I2S(0x488) &= 0xFFFFFFFE;
 	DISPLAY_A(0xCF8) |= 4;
 	VIC(0x8C) = 0xFFFFFFFF;
-	sleep(2);
+	usleep(2);
 
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_SET) = 0x40;
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = 0x18000000;
@@ -691,7 +691,7 @@ void reboot_rcm()
 	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
 	PMC(0) |= 0x10;
 	while (1)
-		sleep(1);
+		usleep(1);
 }
 
 void power_off()
@@ -1028,7 +1028,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			EPRINTFARGS("Error reading %d blocks @ LBA %08X,\nfrom eMMC (try %d), retrying...",
 				num, lba_curr, ++retryCount);
 
-			sleep(150000);
+			msleep(150);
 			if (retryCount >= 3)
 			{
 				gfx_con.fntsz = 16;
@@ -1305,7 +1305,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 			EPRINTFARGS("Error writing %d blocks @ LBA %08X\nto eMMC (try %d), retrying...",
 				num, lba_curr, ++retryCount);
 
-			sleep(150000);
+			msleep(150);
 			if (retryCount >= 3)
 			{
 				gfx_con.fntsz = 16;
@@ -1376,7 +1376,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 	{
 		gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 		gfx_printf(&gfx_con, "%kWait... (%ds)    %k", 0xFF888888, value, 0xFFCCCCCC);
-		sleep(1000000);
+		msleep(1000);
 		value--;
 	}
 	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
@@ -1645,7 +1645,7 @@ void launch_firmware()
 	if (!cfg_sec)
 	{
 		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n");
-		sleep(3000000);
+		msleep(3000);
 	}
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
@@ -2118,7 +2118,7 @@ void print_battery_info()
 	for (int i = 0; i < 0x200; i += 2)
 	{
 		i2c_recv_buf_small(buf + i, 2, I2C_1, 0x36, i >> 1);
-		sleep(2500);
+		usleep(2500);
 	}
 
 	gfx_hexdump(&gfx_con, 0, (u8 *)buf, 0x200);
@@ -2174,7 +2174,7 @@ void print_battery_info()
 			if (btn & BTN_POWER)
 			{
 				max17050_fix_configuration();
-				sleep(1000000);
+				msleep(1000);
 				gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
 				u16 value = 0;
 				gfx_printf(&gfx_con, "%kThe console will power off in 45 seconds.\n%k", 0xFFFFDD00, 0xFFCCCCCC);
@@ -2182,10 +2182,10 @@ void print_battery_info()
 				{
 					gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 					gfx_printf(&gfx_con, "%2ds elapsed", value);
-					sleep(1000000);
+					msleep(1000);
 					value++;
 				}
-				sleep(2000000);
+				msleep(2000);
 
 				power_off();
 			}
@@ -2195,7 +2195,7 @@ void print_battery_info()
 	else
 		EPRINTF("You need a fully charged battery\nand connected to a wall adapter,\nto apply this fix!");
 
-	sleep(500000);
+	msleep(500);
 	btn_wait();
 } */
 
@@ -2224,7 +2224,7 @@ void print_battery_info()
 		{
 			gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 			gfx_printf(&gfx_con, "%kWait... (%ds)   %k", 0xFF888888, value, 0xFFCCCCCC);
-			sleep(1000000);
+			msleep(1000);
 			value--;
 		}
 		gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
@@ -2242,7 +2242,7 @@ void print_battery_info()
 				"2. Press POWER for 15s.\n"
 				"3. Reconnect the USB to power-on!%k\n", 0xFFFFDD00, 0xFFCCCCCC);
 		}
-		sleep(500000);
+		msleep(500);
 		btn_wait();
 	}
 }*/

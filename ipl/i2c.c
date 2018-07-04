@@ -26,7 +26,7 @@ static void _i2c_wait(vu32 *base)
 	base[0x23] = 0x25;
 	for (u32 i = 0; i < 20; i++)
 	{
-		sleep(1);
+		usleep(1);
 		if (!(base[0x23] & 1))
 			break;
 	}
@@ -89,7 +89,7 @@ void i2c_init(u32 idx)
 
 	for (u32 i = 0; i < 10; i++)
 	{
-		sleep(20000);
+		usleep(20000);
 		if (base[0x1A] & 0x800)
 			break;
 	}

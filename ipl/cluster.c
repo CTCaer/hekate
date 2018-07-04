@@ -44,7 +44,7 @@ int _cluster_pmc_enable_partition(u32 part, u32 toggle)
 	u32 i = 5001;
 	while (PMC(APBDEV_PMC_PWRGATE_TOGGLE) & 0x100)
 	{
-		sleep(1);
+		usleep(1);
 		i--;
 		if (i < 1)
 			return 0;
@@ -57,7 +57,7 @@ int _cluster_pmc_enable_partition(u32 part, u32 toggle)
 	{
 		if (PMC(APBDEV_PMC_PWRGATE_STATUS) & part)
 			break;
-		sleep(1);
+		usleep(1);
 		i--;
 	}
 
@@ -74,7 +74,7 @@ void cluster_boot_cpu0(u32 entry)
 	if (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & 0x40000000))
 	{
 		CLOCK(CLK_RST_CONTROLLER_PLLX_MISC_3) &= 0xFFFFFFF7;
-		sleep(2);
+		usleep(2);
 		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = 0x80404E02;
 		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = 0x404E02;
 		CLOCK(CLK_RST_CONTROLLER_PLLX_MISC) = (CLOCK(CLK_RST_CONTROLLER_PLLX_MISC) & 0xFFFBFFFF) | 0x40000;

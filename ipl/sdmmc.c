@@ -175,7 +175,7 @@ static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 nu
 			else
 				retries--;
 
-			sleep(100000);
+			msleep(100);
 		} while (retries);
 		return 0;
 
@@ -228,7 +228,7 @@ static int _mmc_storage_get_op_cond_inner(sdmmc_storage_t *storage, u32 *pout, u
 
 static int _mmc_storage_get_op_cond(sdmmc_storage_t *storage, u32 power)
 {
-	u32 timeout = get_tmr_us() + 1500000;
+	u32 timeout = get_tmr_ms() + 1500;
 
 	while (1)
 	{
@@ -241,9 +241,9 @@ static int _mmc_storage_get_op_cond(sdmmc_storage_t *storage, u32 power)
 				storage->has_sector_access = 1;
 			return 1;
 		}
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 			break;
-		sleep(1000);
+		usleep(1000);
 	}
 
 	return 0;
@@ -465,7 +465,7 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32
 		return 0;
 	DPRINTF("[MMC] after init\n");
 
-	sleep(1000 + (74000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep(1000 + (74000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
 	if (!_sdmmc_storage_go_idle_state(storage))
 		return 0;
@@ -605,7 +605,7 @@ static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int
 
 static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, int supports_low_voltage)
 {
-	u32 timeout = get_tmr_us() + 1500000;
+	u32 timeout = get_tmr_ms() + 1500;
 
 	while (1)
 	{
@@ -633,9 +633,9 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 
 			return 1;
 		}
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 			break;
-		sleep(10000); // Needs to be at least 10ms for some SD Cards
+		msleep(10); // Needs to be at least 10ms for some SD Cards
 	}
 
 	return 0;
@@ -646,7 +646,7 @@ static int _sd_storage_get_rca(sdmmc_storage_t *storage)
 	sdmmc_cmd_t cmdbuf;
 	sdmmc_init_cmd(&cmdbuf, SD_SEND_RELATIVE_ADDR, 0, SDMMC_RSP_TYPE_4, 0);
 
-	u32 timeout = get_tmr_us() + 1500000;
+	u32 timeout = get_tmr_ms() + 1500;
 
 	while (1)
 	{
@@ -663,9 +663,9 @@ static int _sd_storage_get_rca(sdmmc_storage_t *storage)
 			return 1;
 		}
 
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 			break;
-		sleep(1000);
+		usleep(1000);
 	}
 
 	return 0;
@@ -1019,7 +1019,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 		return 0;
 	DPRINTF("[SD] after init\n");
 
-	sleep(1000 + (74000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep(1000 + (74000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
 	if (!_sdmmc_storage_go_idle_state(storage))
 		return 0;
@@ -1172,7 +1172,7 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 		return 0;
 	DPRINTF("[gc] after init\n");
 
-	sleep(1000 + (10000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep(1000 + (10000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
 	if (!sdmmc_config_tuning(storage->sdmmc, 14, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
