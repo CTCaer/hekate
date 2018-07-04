@@ -37,15 +37,15 @@ u32 get_tmr_us()
 
 void msleep(u32 milliseconds)
 {
-	u32 start = get_tmr_ms();
-	while ((get_tmr_ms() - start) <= milliseconds)
+	u32 start = RTC(0x10) | (RTC(0xC)<< 10);
+	while (((RTC(0x10) | (RTC(0xC)<< 10)) - start) <= milliseconds)
 		;
 }
 
 void usleep(u32 microseconds)
 {
-	u32 start = get_tmr_us();
-	while ((get_tmr_us() - start) <= microseconds)
+	u32 start = TMR(0x10);
+	while ((TMR(0x10) - start) <= microseconds)
 		;
 }
 
