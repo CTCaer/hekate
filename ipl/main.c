@@ -715,7 +715,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
-		u32 totalSectorsVer = (u32)(f_size(&fp) >> 9);
+		u32 totalSectorsVer = (u32)((u64)f_size(&fp)>>(u64)9);
 		
 		u32 numSectorsPerIter = 0;
 		if (totalSectorsVer > 0x200000)
@@ -771,7 +771,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 			if (res)
 			{
 				gfx_con.fntsz = 16;
-				EPRINTFARGS("\nSD card and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", num, lba_curr);
+				EPRINTFARGS("\nSD card and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", lba_curr);
 
 				free(bufEm);
 				free(bufSd);
@@ -812,7 +812,6 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 	u32 multipartSplitSize = (1u << 31);
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
-	u32 lbaStartPart = part->lba_start;
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
 	u32 maxSplitParts = 0;
@@ -930,6 +929,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u8 *buf = (u8 *)calloc(numSectorsPerIter, NX_EMMC_BLOCKSIZE);
 
 	u32 lba_curr = part->lba_start;
+	u32 lbaStartPart = part->lba_start;
 	u32 bytesWritten = 0;
 	u32 prevPct = 200;
 	int retryCount = 0;
@@ -939,6 +939,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	{
 		lba_curr += currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
 		totalSectors -= currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
+		lbaStartPart = lba_curr; // Update the start LBA for verification.
 	}
 
 	u32 num = 0;
@@ -1257,7 +1258,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 		return 0;
 	}
 	//TODO: Should we keep this check?
-	else if ((f_size(&fp) >> 9) != totalSectors)
+	else if (((u32)((u64)f_size(&fp)>>(u64)9)) != totalSectors)
 	{
 		gfx_con.fntsz = 16;
 		EPRINTF("Size of sd card backup does not match,\neMMC's selected part size.\n");
@@ -1266,7 +1267,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 		return 0;
 	}
 	else
-		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", (f_size(&fp) >> 9) >> SECTORS_TO_MIB_COEFF);
+		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", ((u32)((u64)f_size(&fp)>>(u64)9)) >> SECTORS_TO_MIB_COEFF);
 
 	u32 numSectorsPerIter = 0;
 	if (totalSectors > 0x200000)
@@ -1891,6 +1892,9 @@ int fix_attributes(char *path, u32 *total)
 	u32 k = 0;
 	static FILINFO fno;
 
+	// Remove archive bit for selected "root" path.
+	f_chmod(path, 0, AM_ARC);
+
 	// Open directory.
 	res = f_opendir(&dir, path);
 	if (res == FR_OK)
@@ -2409,7 +2413,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	MDEF_HANDLER("Remove archive bit (switch folder)", fix_sd_switch_attr),
-	MDEF_HANDLER("Remove archive bit (all sd files)", fix_sd_all_attr),
+	//MDEF_HANDLER("Remove archive bit (all sd files)", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
