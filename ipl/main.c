@@ -1910,8 +1910,8 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 {
 	FRESULT res;
 	DIR dir;
-	u32 i = 0;
-	u32 k = 0;
+	u32 dirLength = 0;
+	u32 fileLength = 0;
 	static FILINFO fno;
 
 	if (check_first_run)
@@ -1942,20 +1942,20 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 
 			if (is_root && !strcmp(fno.fname, "Nintendo"))
 			{
-				path[i] = 0;
+				path[dirLength] = 0;
 				continue;
 			}
 
 			// Set new directory.
-			i = strlen(path);
-			memcpy(&path[i], "/", 1);
-			for (k = 0; k < 256; k++)
+			dirLength = strlen(path);
+			memcpy(&path[dirLength], "/", 1);
+			for (fileLength = 0; fileLength < 256; fileLength++)
 			{
-				if (fno.fname[k] == 0)
+				if (fno.fname[fileLength] == 0)
 					break;
 			}
-			memcpy(&path[i+1], fno.fname, k + 1);
-			path[i + k + 2] = 0;
+			memcpy(&path[dirLength+1], fno.fname, fileLength + 1);
+			path[dirLength + fileLength + 2] = 0;
 
 			// Check if archive bit is set.
 			if (fno.fattrib & AM_ARC)
@@ -1973,7 +1973,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 					break;
 			}
 			// Clear file or folder path.
-			path[i] = 0;
+			path[dirLength] = 0;
 		}
 		f_closedir(&dir);
 	}
