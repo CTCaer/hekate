@@ -1951,7 +1951,6 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 			memcpy(&path[dirLength], "/", 1);
 			fileLength = strlen(fno.fname);
 			memcpy(&path[dirLength+1], fno.fname, fileLength + 1);
-			path[dirLength + fileLength + 2] = 0;
 
 			// Check if archive bit is set.
 			if (fno.fattrib & AM_ARC)
