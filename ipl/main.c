@@ -1932,6 +1932,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 	res = f_opendir(&dir, path);
 	if (res == FR_OK)
 	{
+		dirLength = strlen(path);
 		for (;;)
 		{
 			// Read a directory item.
@@ -1947,7 +1948,6 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 			}
 
 			// Set new directory.
-			dirLength = strlen(path);
 			memcpy(&path[dirLength], "/", 1);
 			for (fileLength = 0; fileLength < 256; fileLength++)
 			{
