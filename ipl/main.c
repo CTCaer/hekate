@@ -1911,7 +1911,6 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 	FRESULT res;
 	DIR dir;
 	u32 dirLength = 0;
-	u32 fileLength = 0;
 	static FILINFO fno;
 
 	// Should we set the bit of the entry directory?
@@ -1954,8 +1953,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 
 		// Set new directory or file.
 		memcpy(&path[dirLength], "/", 1);
-		fileLength = strlen(fno.fname);
-		memcpy(&path[dirLength+1], fno.fname, fileLength + 1);
+		memcpy(&path[dirLength+1], fno.fname, strlen(fno.fname) + 1);
 
 		// Check if archive bit is set.
 		if (fno.fattrib & AM_ARC)
