@@ -1906,60 +1906,73 @@ out:;
 	btn_wait();
 }
 
-int fix_attributes(char *path, u32 *total)
+int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 {
 	FRESULT res;
 	DIR dir;
-	u32 i = 0;
-	u32 k = 0;
+	u32 dirLength = 0;
 	static FILINFO fno;
 
-	// Remove archive bit for selected "root" path.
-	f_chmod(path, 0, AM_ARC);
+	// Should we set the bit of the entry directory?
+	if (check_first_run)
+	{
+		// Read file attributes.
+		res = f_stat(path, &fno);
+		if (res != FR_OK)
+			return res;
 
+		// Check if archive bit is set.
+		if (fno.fattrib & AM_ARC)
+		{
+			*(u32 *)total = *(u32 *)total + 1;
+			f_chmod(path, 0, AM_ARC);
+		}
+	}
+	
 	// Open directory.
 	res = f_opendir(&dir, path);
-	if (res == FR_OK)
+	if (res != FR_OK)
+		return res;
+
+	dirLength = strlen(path);
+	for (;;)
 	{
-		for (;;)
+		// Clear file or folder path.
+		path[dirLength] = 0;
+
+		// Read a directory item.
+		res = f_readdir(&dir, &fno);
+
+		// Break on error or end of dir.
+		if (res != FR_OK || fno.fname[0] == 0)
+			break;
+
+		// Skip official Nintendo dir.
+		if (is_root && !strcmp(fno.fname, "Nintendo"))
+			continue;
+
+		// Set new directory or file.
+		memcpy(&path[dirLength], "/", 1);
+		memcpy(&path[dirLength+1], fno.fname, strlen(fno.fname) + 1);
+
+		// Check if archive bit is set.
+		if (fno.fattrib & AM_ARC)
 		{
-			// Read a directory item.
-			res = f_readdir(&dir, &fno);
-			// Break on error or end of dir.
-			if (res != FR_OK || fno.fname[0] == 0)
-				break;
-
-			// Set new directory.
-			i = strlen(path);
-			memcpy(&path[i], "/", 1);
-			for (k = 0; k < 256; k++)
-			{
-				if (fno.fname[k] == 0)
-					break;
-			}
-			memcpy(&path[i+1], fno.fname, k + 1);
-			path[i + k + 2] = 0;
-
-			// Check if archive bit is set.
-			if (fno.fattrib & AM_ARC)
-			{
-				*(u32 *)total = *(u32 *)total + 1;
-				f_chmod(path, 0, AM_ARC);
-			}
-
-			// Is it a directory?
-			if (fno.fattrib & AM_DIR)
-			{
-				// Enter the directory.
-				res = fix_attributes(path, total);
-				if (res != FR_OK)
-					break;
-			}
-			// Clear file or folder path.
-			path[i] = 0;
+			*(u32 *)total = *(u32 *)total + 1;
+			f_chmod(path, 0, AM_ARC);
 		}
-		f_closedir(&dir);
+
+		// Is it a directory?
+		if (fno.fattrib & AM_DIR)
+		{
+			// Enter the directory.
+			res = fix_attributes(path, total, 0, 0);
+			if (res != FR_OK)
+				break;
+		}
 	}
+
+	f_closedir(&dir);
 
 	return res;
 }
@@ -1969,7 +1982,8 @@ void fix_sd_attr(u32 type)
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	char buff[256];
+	char path[256];
+	char label[14];
 
 	u32 total = 0;
 	if (sd_mount())
@@ -1977,25 +1991,26 @@ void fix_sd_attr(u32 type)
 		switch (type)
 		{
 		case 0:
-			gfx_printf(&gfx_con, "Traversing all switch folder files!\nThis may take some time, please wait...\n");
-			memcpy(buff, "/switch\0", 8);
+			memcpy(path, "/", 2);
+			memcpy(label, "sd card", 8);
 			break;
 		case 1:
 		default:
-			gfx_printf(&gfx_con, "Traversing all sd card files!\nThis may take some time, please wait...\n");
-			memcpy(buff, "/\0", 2);
+			memcpy(path, "/switch", 8);
+			memcpy(label, "switch folder", 14);
 			break;
 		}
 		
-		fix_attributes(buff, &total);
-		gfx_printf(&gfx_con, "\n%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "Traversing all %s files!\nThis may take some time, please wait...\n\n", label);
+		fix_attributes(path, &total, !type, type);
+		gfx_printf(&gfx_con, "%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
 		sd_unmount();
 	}
 	btn_wait();
 }
 
-void fix_sd_switch_attr() { fix_sd_attr(0); }
-void fix_sd_all_attr() { fix_sd_attr(1); }
+void fix_sd_all_attr() { fix_sd_attr(0); }
+void fix_sd_switch_attr() { fix_sd_attr(1); }
 
 void print_fuel_gauge_info()
 {
@@ -2431,8 +2446,8 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
-	MDEF_HANDLER("Remove archive bit (switch folder)", fix_sd_switch_attr),
-	//MDEF_HANDLER("Remove archive bit (all sd files)", fix_sd_all_attr),
+	MDEF_HANDLER("Unset switch archive attributes", fix_sd_switch_attr),
+	MDEF_HANDLER("Unset all archive attributes", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
