@@ -1949,11 +1949,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 
 			// Set new directory.
 			memcpy(&path[dirLength], "/", 1);
-			for (fileLength = 0; fileLength < 256; fileLength++)
-			{
-				if (fno.fname[fileLength] == 0)
-					break;
-			}
+			fileLength = strlen(fno.fname);
 			memcpy(&path[dirLength+1], fno.fname, fileLength + 1);
 			path[dirLength + fileLength + 2] = 0;
 
