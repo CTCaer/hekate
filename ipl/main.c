@@ -1938,6 +1938,9 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 	dirLength = strlen(path);
 	for (;;)
 	{
+		// Clear file or folder path.
+		path[dirLength] = 0;
+
 		// Read a directory item.
 		res = f_readdir(&dir, &fno);
 
@@ -1947,10 +1950,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 
 		// Skip official Nintendo dir.
 		if (is_root && !strcmp(fno.fname, "Nintendo"))
-		{
-			path[dirLength] = 0;
 			continue;
-		}
 
 		// Set new directory or file.
 		memcpy(&path[dirLength], "/", 1);
@@ -1972,9 +1972,6 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 			if (res != FR_OK)
 				break;
 		}
-
-		// Clear file or folder path.
-		path[dirLength] = 0;
 	}
 
 	f_closedir(&dir);
