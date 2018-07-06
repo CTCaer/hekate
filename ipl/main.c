@@ -1932,52 +1932,52 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 	
 	// Open directory.
 	res = f_opendir(&dir, path);
-	if (res == FR_OK)
+	if (res != FR_OK)
+		return res;
+
+	dirLength = strlen(path);
+	for (;;)
 	{
-		dirLength = strlen(path);
-		for (;;)
+		// Read a directory item.
+		res = f_readdir(&dir, &fno);
+
+		// Break on error or end of dir.
+		if (res != FR_OK || fno.fname[0] == 0)
+			break;
+
+		// Skip official Nintendo dir.
+		if (is_root && !strcmp(fno.fname, "Nintendo"))
 		{
-			// Read a directory item.
-			res = f_readdir(&dir, &fno);
-
-			// Break on error or end of dir.
-			if (res != FR_OK || fno.fname[0] == 0)
-				break;
-
-			// Skip official Nintendo dir.
-			if (is_root && !strcmp(fno.fname, "Nintendo"))
-			{
-				path[dirLength] = 0;
-				continue;
-			}
-
-			// Set new directory or file.
-			memcpy(&path[dirLength], "/", 1);
-			fileLength = strlen(fno.fname);
-			memcpy(&path[dirLength+1], fno.fname, fileLength + 1);
-
-			// Check if archive bit is set.
-			if (fno.fattrib & AM_ARC)
-			{
-				*(u32 *)total = *(u32 *)total + 1;
-				f_chmod(path, 0, AM_ARC);
-			}
-
-			// Is it a directory?
-			if (fno.fattrib & AM_DIR)
-			{
-				// Enter the directory.
-				res = fix_attributes(path, total, 0, 0);
-				if (res != FR_OK)
-					break;
-			}
-
-			// Clear file or folder path.
 			path[dirLength] = 0;
+			continue;
 		}
 
-		f_closedir(&dir);
+		// Set new directory or file.
+		memcpy(&path[dirLength], "/", 1);
+		fileLength = strlen(fno.fname);
+		memcpy(&path[dirLength+1], fno.fname, fileLength + 1);
+
+		// Check if archive bit is set.
+		if (fno.fattrib & AM_ARC)
+		{
+			*(u32 *)total = *(u32 *)total + 1;
+			f_chmod(path, 0, AM_ARC);
+		}
+
+		// Is it a directory?
+		if (fno.fattrib & AM_DIR)
+		{
+			// Enter the directory.
+			res = fix_attributes(path, total, 0, 0);
+			if (res != FR_OK)
+				break;
+		}
+
+		// Clear file or folder path.
+		path[dirLength] = 0;
 	}
+
+	f_closedir(&dir);
 
 	return res;
 }
