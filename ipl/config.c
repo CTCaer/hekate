@@ -272,7 +272,7 @@ void config_bootdelay()
 		else
 			delay_text[i * 32] = '*';
 		delay_text[i * 32 + 1] = i + '0';
-		memcpy(delay_text + i * 32 + 2, " seconds\0", 9);
+		memcpy(delay_text + i * 32 + 2, " seconds", 9);
 		
 		ments[i + 2].type = MENT_CHOICE;
 		ments[i + 2].caption = delay_text + i * 32;
@@ -389,9 +389,9 @@ void config_verification()
 
 	ments[1].type = MENT_CHGLINE;
 
-	memcpy(vr_text,       " Disable\0", 9);
-	memcpy(vr_text + 64,  " Sparse (Fast - Not  reliable)\0", 31);
-	memcpy(vr_text + 128, " Full   (Slow - 100% reliable)\0", 31);
+	memcpy(vr_text,       " Disable", 9);
+	memcpy(vr_text + 64,  " Sparse (Fast - Not  reliable)", 31);
+	memcpy(vr_text + 128, " Full   (Slow - 100% reliable)", 31);
 
 	for (u32 i = 0; i < 3; i++)
 	{

@@ -392,7 +392,7 @@ void print_fuseinfo()
 			char fuseFilename[23];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(fuseFilename, "Backup/Dumps/fuses.bin\0", 23);
+			memcpy(fuseFilename, "Backup/Dumps/fuses.bin", 23);
 
 			if (sd_save_to_file((u8 *)0x7000F900, 0x2FC, fuseFilename))
 				EPRINTF("\nError creating fuse.bin file.");
@@ -427,7 +427,7 @@ void print_kfuseinfo()
 			char kfuseFilename[24];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(kfuseFilename, "Backup/Dumps/kfuses.bin\0", 24);
+			memcpy(kfuseFilename, "Backup/Dumps/kfuses.bin", 24);
 
 			if (sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, kfuseFilename))
 				EPRINTF("\nError creating kfuse.bin file.");
@@ -845,7 +845,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 	FIL partialIdxFp;
 	char partialIdxFilename[12];
-	memcpy(partialIdxFilename, "partial.idx\0", 12);
+	memcpy(partialIdxFilename, "partial.idx", 12);
 
 	gfx_con.fntsz = 8;
 	gfx_printf(&gfx_con, "\nSD Card free space: %d MiB, Total backup size %d MiB\n\n",
@@ -2168,7 +2168,7 @@ void print_battery_info()
 			char fuelFilename[28];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(fuelFilename, "Backup/Dumps/fuel_gauge.bin\0", 28);
+			memcpy(fuelFilename, "Backup/Dumps/fuel_gauge.bin", 28);
 
 			if (sd_save_to_file((u8 *)buf, 0x200, fuelFilename))
 				EPRINTF("\nError creating fuel.bin file.");
@@ -2446,8 +2446,8 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1", dump_package1),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
-	MDEF_HANDLER("Unset switch archive attributes", fix_sd_switch_attr),
-	MDEF_HANDLER("Unset all archive attributes", fix_sd_all_attr),
+	MDEF_HANDLER("Unset archive bit (switch folder)", fix_sd_switch_attr),
+	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),

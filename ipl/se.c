@@ -259,7 +259,8 @@ int se_aes_xts_crypt(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u
 }
 
 // se_calc_sha256() was derived from Atmosphère's se_calculate_sha256.
-int se_calc_sha256(void *dst, const void *src, u32 src_size) {
+int se_calc_sha256(void *dst, const void *src, u32 src_size)
+{
 	int res;
 	// Setup config for SHA256, size = BITS(src_size).
 	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_SHA256) | SE_CONFIG_ENC_ALG(ALG_SHA) | SE_CONFIG_DST(DST_HASHREG);
