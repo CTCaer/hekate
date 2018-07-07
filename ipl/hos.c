@@ -43,6 +43,8 @@ extern void sd_unmount();
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
 
+extern int se_keygen_done;
+
 typedef struct _launch_ctxt_t
 {
 	void *keyblob;
@@ -209,7 +211,7 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	return 1;
 }
 
-static void _copy_bootconfig(launch_ctxt_t *ctxt)
+static void _copy_bootconfig()
 {
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -247,7 +249,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	gfx_printf(&gfx_con, "Identified package1 ('%s'),\nKeyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
 
 	//Read the correct keyblob.
-	ctxt->keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
+	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
 	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 
 	res = 1;
@@ -406,6 +408,16 @@ static int _config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
 	return 1;
 }
 
+static void _free_launch_components(launch_ctxt_t *ctxt)
+{
+	free(ctxt->keyblob);
+	free(ctxt->pkg1);
+	free(ctxt->pkg2);
+	free(ctxt->warmboot);
+	free(ctxt->secmon);
+	free(ctxt->kernel);
+}
+
 int hos_launch(ini_sec_t *cfg)
 {
 	int bootStateDramPkg2 = 0;
@@ -434,8 +446,11 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
 
 	// Generate keys.
-	keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
-	DPRINTF("Generated keys\n");
+	if (!se_keygen_done)
+	{
+		keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
+		DPRINTF("Generated keys\n");
+	}
 
 	// Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
@@ -552,11 +567,11 @@ int hos_launch(ini_sec_t *cfg)
 		if (!exoFwNumber)
 			exoFwNumber = 3;
 		break;
-	default:
 	case KB_FIRMWARE_VERSION_400:
 		if (!exoFwNumber)
 			exoFwNumber = 4;
 	case KB_FIRMWARE_VERSION_500:
+	default:
 		se_key_acc_ctrl(12, 0xFF);
 		se_key_acc_ctrl(15, 0xFF);
 		bootStateDramPkg2 = 2;
@@ -565,6 +580,10 @@ int hos_launch(ini_sec_t *cfg)
 			exoFwNumber = 5;
 		break;
 	}
+
+	// Free allocated memory.
+	ini_free_section(cfg);
+	_free_launch_components(&ctxt);
 
 	// Copy BCT if debug mode is enabled.
 	memset((void *)0x4003D000, 0, 0x3000);

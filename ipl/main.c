@@ -78,6 +78,8 @@ u8 *Kc_MENU_LOGO;
 
 hekate_config h_cfg;
 
+int se_keygen_done = 0;
+
 int sd_mount()
 {
 	if (sd_mounted)
@@ -1539,12 +1541,18 @@ void dump_package1()
 		goto out;
 	}
 
-	// Read keyblob.
-	u8 * keyblob = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
-	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
+	if (!se_keygen_done)
+	{
+		// Read keyblob.
+		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
+		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
 
-	// Decrypt.
-	keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
+		// Decrypt.
+		keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
+
+		se_keygen_done = 1;
+		free(keyblob);
+	}
 	pkg1_decrypt(pkg1_id, pkg1);
 
 	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
@@ -1587,10 +1595,7 @@ void dump_package1()
 		goto out;
 	}
 	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n");
-
-
-	sdmmc_storage_end(&storage);
-	sd_unmount();
+	
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
 out:;
@@ -1598,6 +1603,8 @@ out:;
 	free(secmon);
 	free(warmboot);
 	free(loader);
+	sdmmc_storage_end(&storage);
+	sd_unmount();
 
 	btn_wait();
 }
