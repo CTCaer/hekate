@@ -1551,15 +1551,12 @@ void dump_package1()
 
 	// Display info.
 	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
-	gfx_printf(&gfx_con, "%kNX Bootloader ofst:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_off);
 
 	gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
 	gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
-	gfx_printf(&gfx_con, "%kSecure monitor ofst: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_off);
 
 	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
 	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
-	gfx_printf(&gfx_con, "%kWarmboot ofst:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_off);
 
 	// Dump package1.
 	f_mkdir("Backup");
@@ -1913,7 +1910,6 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 	u32 dirLength = 0;
 	static FILINFO fno;
 
-	// Should we set the bit of the entry directory?
 	if (check_first_run)
 	{
 		// Read file attributes.

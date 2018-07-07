@@ -3305,15 +3305,11 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		QWORD maxlba;
 
 		for (i = BPB_ZeroedEx; i < BPB_ZeroedEx + 53 && fs->win[i] == 0; i++) ;	/* Check zero filler */
-		if (i < BPB_ZeroedEx + 53) {
-			EFSPRINTF("exFAT - Zero filler check failed!");
+		if (i < BPB_ZeroedEx + 53)
 			return FR_NO_FILESYSTEM;
-		}
 
-		if (ld_word(fs->win + BPB_FSVerEx) != 0x100) {
-			EFSPRINTF("exFAT - Version check failed!");
+		if (ld_word(fs->win + BPB_FSVerEx) != 0x100)
 			return FR_NO_FILESYSTEM;	/* Check exFAT version (must be version 1.0) */
-		}
 
 		if (1 << fs->win[BPB_BytsPerSecEx] != SS(fs)) {	/* (BPB_BytsPerSecEx must be equal to the physical sector size) */
 			EFSPRINTF("exFAT - Bytes per sector does not match physical sector size!");
@@ -3321,10 +3317,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		}
 
 		maxlba = ld_qword(fs->win + BPB_TotSecEx) + bsect;	/* Last LBA + 1 of the volume */
-		if (maxlba >= 0x100000000) {
-			EFSPRINTF("exFAT - Cannot handle volume LBA with 32-bit LBA!");
+		if (maxlba >= 0x100000000)
 			return FR_NO_FILESYSTEM;	/* (It cannot be handled in 32-bit LBA) */
-		}
 
 		fs->fsize = ld_dword(fs->win + BPB_FatSzEx);	/* Number of sectors per FAT */
 
@@ -3351,10 +3345,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		fs->volbase = bsect;
 		fs->database = bsect + ld_dword(fs->win + BPB_DataOfsEx);
 		fs->fatbase = bsect + ld_dword(fs->win + BPB_FatOfsEx);
-		if (maxlba < (QWORD)fs->database + nclst * fs->csize) {
-			EFSPRINTF("exFAT - Volume size is lower than required!");
+		if (maxlba < (QWORD)fs->database + nclst * fs->csize)
 			return FR_NO_FILESYSTEM;	/* (Volume size must not be smaller than the size required) */
-		}
 		fs->dirbase = ld_dword(fs->win + BPB_RootClusEx);
 
 		/* Check if bitmap location is in assumption (at the first cluster) */
@@ -3393,10 +3385,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		fasize *= fs->n_fats;							/* Number of sectors for FAT area */
 
 		fs->csize = fs->win[BPB_SecPerClus];			/* Cluster size */
-		if (fs->csize == 0 || (fs->csize & (fs->csize - 1))) {
-			EFSPRINTF("FAT - Cluster size is not a power of 2!");
+		if (fs->csize == 0 || (fs->csize & (fs->csize - 1)))
 			return FR_NO_FILESYSTEM;	/* (Must be power of 2) */
-		}
 
 		fs->n_rootdir = ld_word(fs->win + BPB_RootEntCnt);	/* Number of root directory entries */
 		if (fs->n_rootdir % (SS(fs) / SZDIRE)) {
@@ -3408,10 +3398,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (tsect == 0) tsect = ld_dword(fs->win + BPB_TotSec32);
 
 		nrsv = ld_word(fs->win + BPB_RsvdSecCnt);		/* Number of reserved sectors */
-		if (nrsv == 0) {
-			EFSPRINTF("FAT - Zero reserved sectors!");
+		if (nrsv == 0)
 			return FR_NO_FILESYSTEM;			/* (Must not be 0) */
-		}
 
 		/* Determine the FAT sub type */
 		sysect = nrsv + fasize + fs->n_rootdir / (SS(fs) / SZDIRE);	/* RSV + FAT + DIR */
@@ -3439,10 +3427,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		fs->fatbase = bsect + nrsv; 					/* FAT start sector */
 		fs->database = bsect + sysect;					/* Data start sector */
 		if (fmt == FS_FAT32) {
-			if (ld_word(fs->win + BPB_FSVer32) != 0) {
-				EFSPRINTF("FAT32 - Not a 0.0 revision!");
+			if (ld_word(fs->win + BPB_FSVer32) != 0)
 				return FR_NO_FILESYSTEM;	/* (Must be FAT32 revision 0.0) */
-			}
 			if (fs->n_rootdir != 0) {
 				EFSPRINTF("FAT32 - Root entry sector is not 0!");
 				return FR_NO_FILESYSTEM;	/* (BPB_RootEntCnt must be 0) */
