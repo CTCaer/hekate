@@ -1503,9 +1503,7 @@ void restore_emmc_boot() { restore_emmc_selected(PART_BOOT); }
 void restore_emmc_rawnand() { restore_emmc_selected(PART_RAW); }
 void restore_emmc_gpp_parts() { restore_emmc_selected(PART_GP_ALL); }
 
-//TODO: dump_package2
-
-void dump_package1()
+void dump_packages12()
 {
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
 	u8 *warmboot = (u8 *)calloc(1, 0x40000);
@@ -2492,7 +2490,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
-	MDEF_HANDLER("Dump pkg1.1 & pkg2.1", dump_package1),
+	MDEF_HANDLER("Dump package1/2", dump_packages12),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	MDEF_HANDLER("Unset archive bit (switch folder)", fix_sd_switch_attr),
 	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),

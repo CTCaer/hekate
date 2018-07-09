@@ -561,6 +561,10 @@ int hos_launch(ini_sec_t *cfg)
 		}
 	case KB_FIRMWARE_VERSION_300:
 	case KB_FIRMWARE_VERSION_301:
+		if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_300)
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 security check.
+		else if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_301)
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 security check.
 		se_key_acc_ctrl(12, 0xFF);
 		se_key_acc_ctrl(13, 0xFF);
 		bootStateDramPkg2 = 2;
