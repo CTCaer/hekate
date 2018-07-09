@@ -78,8 +78,6 @@ u8 *Kc_MENU_LOGO;
 
 hekate_config h_cfg;
 
-int se_keygen_done = 0;
-
 int sd_mount()
 {
 	if (sd_mounted)
@@ -1017,11 +1015,11 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				// More parts to backup that do not currently fit the sd card free space or fatal error.
 				if (currPartIdx >= maxSplitParts)
 				{
-					gfx_puts(&gfx_con, "\n\n1. Press any key and Power off Switch from the main menu.\n\
-						2. Move the files from SD card to free space.\n\
+					gfx_puts(&gfx_con, "\n\n1. Press any key to unmount SD Card.\n\
+						2. Remove SD Card and move files to free space.\n\
 						   Don\'t move the partial.idx file!\n\
-						3. Unplug and re-plug USB while pressing Vol+.\n\
-						4. Run hekate again and press Backup eMMC RAW GPP (or eMMC USER) to continue.\n");
+						3. Re-insert SD Card.\n\
+						4. Select the SAME option again to continue.\n");
 					gfx_con.fntsz = 16;
 
 					free(buf);
@@ -1285,7 +1283,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 	else if (((u32)((u64)f_size(&fp)>>(u64)9)) != totalSectors)
 	{
 		gfx_con.fntsz = 16;
-		EPRINTF("Size of sd card backup does not match,\neMMC's selected part size.\n");
+		EPRINTF("Size of the SD Card backup does not match,\neMMC's selected part size.\n");
 		f_close(&fp);
 
 		return 0;
@@ -1541,7 +1539,7 @@ void dump_package1()
 		goto out;
 	}
 
-	if (!se_keygen_done)
+	if (!h_cfg.se_keygen_done)
 	{
 		// Read keyblob.
 		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
@@ -1550,7 +1548,7 @@ void dump_package1()
 		// Decrypt.
 		keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
 
-		se_keygen_done = 1;
+		h_cfg.se_keygen_done = 1;
 		free(keyblob);
 	}
 	pkg1_decrypt(pkg1_id, pkg1);
@@ -1558,7 +1556,7 @@ void dump_package1()
 	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
 	// Display info.
-	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
+	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
 
 	gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
 	gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
@@ -1999,7 +1997,7 @@ void fix_sd_attr(u32 type)
 		{
 		case 0:
 			memcpy(path, "/", 2);
-			memcpy(label, "sd card", 8);
+			memcpy(label, "SD Card", 8);
 			break;
 		case 1:
 		default:
@@ -2361,7 +2359,7 @@ ment_t ment_options[] = {
 
 menu_t menu_options = {
 	ment_options,
-	"Launch options", 0, 0
+	"Launch Options", 0, 0
 };
 
 ment_t ment_cinfo[] = {
@@ -2382,7 +2380,7 @@ ment_t ment_cinfo[] = {
 };
 menu_t menu_cinfo = {
 	ment_cinfo,
-	"Console info", 0, 0
+	"Console Info", 0, 0
 };
 
 ment_t ment_autorcm[] = {
@@ -2421,7 +2419,7 @@ ment_t ment_restore[] = {
 
 menu_t menu_restore = {
 	ment_restore,
-	"Restore options", 0, 0
+	"Restore Options", 0, 0
 };
 
 ment_t ment_backup[] = {
@@ -2439,7 +2437,7 @@ ment_t ment_backup[] = {
 
 menu_t menu_backup = {
 	ment_backup,
-	"Backup options", 0, 0
+	"Backup Options", 0, 0
 };
 
 ment_t ment_tools[] = {

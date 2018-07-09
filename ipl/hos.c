@@ -35,6 +35,7 @@
 #include "pkg2.h"
 #include "ff.h"
 #include "di.h"
+#include "config.h"
 
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
@@ -43,7 +44,7 @@ extern void sd_unmount();
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
 
-extern int se_keygen_done;
+extern hekate_config h_cfg;
 
 typedef struct _launch_ctxt_t
 {
@@ -446,9 +447,10 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
 
 	// Generate keys.
-	if (!se_keygen_done)
+	if (!h_cfg.se_keygen_done)
 	{
 		keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
+		h_cfg.se_keygen_done = 1;
 		DPRINTF("Generated keys\n");
 	}
 

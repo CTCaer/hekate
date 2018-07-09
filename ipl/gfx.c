@@ -360,7 +360,7 @@ void gfx_printf(gfx_con_t *con, const char *fmt, ...)
 				break;
 			case 'K':
 				con->bgcol = va_arg(ap, u32);
-				con->fillbg = fcnt;
+				con->fillbg = 1;
 				break;
 			case '%':
 				gfx_putc(con, '%');

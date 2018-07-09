@@ -26,13 +26,13 @@ u32 get_tmr_s()
 u32 get_tmr_ms()
 {
 	// The registers must be read with the following order:
-	// -> RTC_MILLI_SECONDS (0x10) -> RTC_SHADOW_SECONDS (0x8)
+	// -> RTC_MILLI_SECONDS (0x10) -> RTC_SHADOW_SECONDS (0xC)
 	return (RTC(0x10) | (RTC(0xC)<< 10));
 }
 
 u32 get_tmr_us()
 {
-	return TMR(0x10); //TMRUS
+	return TMR(0x10); //TIMERUS_CNTR_1US
 }
 
 void msleep(u32 milliseconds)

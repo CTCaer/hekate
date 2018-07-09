@@ -284,3 +284,4 @@ int se_calc_sha256(void *dst, const void *src, u32 src_size)
 
 	return res;
 }
+
