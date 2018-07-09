@@ -1816,6 +1816,9 @@ void auto_launch_firmware()
 					// Center logo if res < 720x1280.
 					bmpData.pos_x = (720  - bmpData.size_x) >> 1;
 					bmpData.pos_y = (1280 - bmpData.size_y) >> 1;
+					// Get background color from 1st pixel.
+					if (bmpData.size_x < 720 || bmpData.size_y < 1280)
+						gfx_clear_color(&gfx_ctxt, *(u32 *)BOOTLOGO);
 
 					bootlogoFound = 1;
 				}
@@ -1865,6 +1868,7 @@ void auto_launch_firmware()
 	}
 
 out:;
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	if (!ini_freed)
 		ini_free(&ini_sections);
 	ini_free_section(cfg_sec);
@@ -2502,7 +2506,6 @@ void ipl_main()
 	//display_color_screen(0xAABBCCDD);
 	u32 *fb = display_init_framebuffer();
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
 
 #ifdef MENU_LOGO_ENABLE
 	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
