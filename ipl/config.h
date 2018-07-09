@@ -27,6 +27,7 @@ typedef struct _hekate_config
 	u32 verification;
 	// Global temporary config.
 	int se_keygen_done;
+	u32 sbar_time_keeping;
 }hekate_config;
 
 void set_default_configuration();

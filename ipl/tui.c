@@ -18,14 +18,54 @@
 #include "tui.h"
 #include "btn.h"
 #include "max17050.h"
+#include "config.h"
+#include "util.h"
 
 #ifdef MENU_LOGO_ENABLE
 extern u8 *Kc_MENU_LOGO;
 #define X_MENU_LOGO       119
 #define Y_MENU_LOGO        57
 #define X_POS_MENU_LOGO   577
-#define Y_POS_MENU_LOGO  1199
+#define Y_POS_MENU_LOGO  1179
 #endif //MENU_LOGO_ENABLE
+
+extern hekate_config h_cfg;
+
+void tui_sbar(gfx_con_t *con, int force_update)
+{
+	u32 timePassed = get_tmr_s() - h_cfg.sbar_time_keeping;
+	if (!force_update)
+		if (timePassed < 5)
+			return;
+
+	u8 prevFontSize = con->fntsz;
+	con->fntsz = 16;
+	h_cfg.sbar_time_keeping = get_tmr_s();
+
+	u32 battPercent = 0;
+	int battVoltCurr = 0;
+
+	gfx_con_getpos(con, &con->savedx,  &con->savedy);
+	gfx_con_setpos(con, 0,  1260);
+
+	max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
+	max17050_get_property(MAX17050_VCELL, &battVoltCurr);
+
+	gfx_clear_partial_grey(con->gfx_ctxt, 0x30, 1256, 24);
+	gfx_printf(con, "%K%k Battery: %d.%d%% (%d mV) - Charge:", 0xFF303030, 0xFF888888,
+		(battPercent >> 8) & 0xFF, (battPercent & 0xFF) / 26, battVoltCurr);
+
+	max17050_get_property(MAX17050_AvgCurrent, &battVoltCurr);
+
+	if (battVoltCurr >= 0)
+		gfx_printf(con, " %k+%d mA     %k%K\n",
+			0xFF008000, battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+	else
+		gfx_printf(con, " %k-%d mA     %k%K\n",
+			0xFF800000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+	con->fntsz = prevFontSize;
+	gfx_con_setpos(con, con->savedx,  con->savedy);
+}
 
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 {
@@ -48,15 +88,18 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 	}
 
 	gfx_con_setpos(con, cx, cy);
+
+	// Update status bar.
+	tui_sbar(con, 0);
 }
 
 void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 {
 	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
-	u32 battPercent = 0;
-	int battVoltCurr = 0;
 
-	gfx_clear_grey(con->gfx_ctxt, 0x1B);
+	gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, 1256);
+	tui_sbar(con, 1);
+
 #ifdef MENU_LOGO_ENABLE
 	gfx_set_rect_rgb(con->gfx_ctxt, Kc_MENU_LOGO,
 		X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
@@ -113,21 +156,8 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 
 		// Print help and battery status.
 		gfx_con_getpos(con, &con->savedx,  &con->savedy);
-		gfx_con_setpos(con, 0,  74 * 16);
-		gfx_printf(con, "%k VOL: Move up/down\n PWR: Select option\n\n", 0xFF555555);
-			
-		max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
-		gfx_printf(con, " %d.%d%%", (battPercent >> 8) & 0xFF, (battPercent & 0xFF) / 26);
-		max17050_get_property(MAX17050_VCELL, &battVoltCurr);
-		gfx_printf(con, " (%d mV)         ", battVoltCurr);
-		max17050_get_property(MAX17050_AvgCurrent, &battVoltCurr);
-		if (battVoltCurr >= 0)
-			gfx_printf(con, "\n %kCharging:%k %d mA         %k\n",
-				0xFF008000, 0xFF555555, battVoltCurr / 1000, 0xFFCCCCCC);
-		else
-			gfx_printf(con, "\n %kDischarging:%k -%d mA     %k\n",
-				0xFF800000, 0xFF555555, (~battVoltCurr) / 1000, 0xFFCCCCCC);
-		gfx_con_setpos(con, con->savedx,  con->savedy);
+		gfx_con_setpos(con, 0,  1191);
+		gfx_printf(con, "%k VOL: Move up/down\n PWR: Select option%k", 0xFF555555, 0xFFCCCCCC);
 
 		// Wait for user command.
 		u32 btn = btn_wait();
@@ -161,12 +191,13 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				break;
 			}
 			con->fntsz = 16;
-			gfx_clear_grey(con->gfx_ctxt, 0x1B);
+			gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, 1256);
 #ifdef MENU_LOGO_ENABLE
 			gfx_set_rect_rgb(con->gfx_ctxt, Kc_MENU_LOGO,
 				X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
 		}
+		tui_sbar(con, 0);
 	}
 
 	return NULL;

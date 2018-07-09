@@ -136,6 +136,11 @@ void gfx_clear_color(gfx_ctxt_t *ctxt, u32 color)
 		ctxt->fb[i] = color;
 }
 
+void gfx_clear_partial_grey(gfx_ctxt_t *ctxt, u8 color, u32 pos_x, u32 height)
+{
+	memset(ctxt->fb + pos_x * ctxt->stride , color, height * 4 * ctxt->stride);
+}
+
 void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
 {
 	con->gfx_ctxt = ctxt;

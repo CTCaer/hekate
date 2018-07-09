@@ -43,6 +43,7 @@ void set_default_configuration()
 	h_cfg.customlogo = 0;
 	h_cfg.verification = 2;
 	h_cfg.se_keygen_done = 0;
+	h_cfg.sbar_time_keeping = 0;
 }
 
 int create_config_entry()
