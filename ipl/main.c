@@ -665,31 +665,52 @@ void print_tsec_key()
 	{
 		EPRINTFARGS("Could not identify package1 version\nto read TSEC firmware (= '%s').",
 			(char *)pkg1 + 0x10);
+		
+		gfx_puts(&gfx_con, "\nPress any key...\n");
+		btn_wait();
 		goto out;
 	}
 
+	u8 keys[0x10 * 3];
 	for(u32 i = 1; i <= 3; i++)
 	{
-		u8 key[0x10];
-		int res = tsec_query(key, i, pkg1 + pkg1_id->tsec_off);
+		int res = tsec_query(keys + ((i - 1) * 0x10), i, pkg1 + pkg1_id->tsec_off);
 
 		gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFF00DDFF, i, 0xFFCCCCCC);
 		if (res >= 0)
 		{
-			for (u32 i = 0; i < 0x10; i++)
-				gfx_printf(&gfx_con, "%02X", key[i]);
+			for (u32 j = 0; j < 0x10; j++)
+				gfx_printf(&gfx_con, "%02X", keys[((i - 1) * 0x10) + j]);
 		}
 		else
 			EPRINTFARGS("ERROR %X", res);
 		gfx_putc(&gfx_con, '\n');
 	}
+	
+		free(pkg1);
+	sdmmc_storage_end(&storage);
+
+	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+	
+	u32 btn = btn_wait();
+	if (btn & BTN_POWER)
+	{
+		if (sd_mount())
+		{
+			char tsec_keyFilename[26];
+			f_mkdir("Backup");
+			f_mkdir("Backup/Dumps");
+			memcpy(tsec_keyFilename, "Backup/Dumps/tsec_key.bin", 26);
+
+			if (!sd_save_to_file(keys, 0x10 * 3, tsec_keyFilename))
+				gfx_puts(&gfx_con, "\nDone!\n");
+			sd_unmount();
+		}
+	}
 
 out:;
 	free(pkg1);
 	sdmmc_storage_end(&storage);
-
-	gfx_puts(&gfx_con, "\nPress any key...\n");
-	btn_wait();
 }
 
 void reboot_normal()
