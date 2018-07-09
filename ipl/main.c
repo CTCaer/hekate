@@ -394,9 +394,7 @@ void print_fuseinfo()
 			f_mkdir("Backup/Dumps");
 			memcpy(fuseFilename, "Backup/Dumps/fuses.bin", 23);
 
-			if (sd_save_to_file((u8 *)0x7000F900, 0x2FC, fuseFilename))
-				EPRINTF("\nError creating fuse.bin file.");
-			else
+			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, fuseFilename))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -429,9 +427,7 @@ void print_kfuseinfo()
 			f_mkdir("Backup/Dumps");
 			memcpy(kfuseFilename, "Backup/Dumps/kfuses.bin", 24);
 
-			if (sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, kfuseFilename))
-				EPRINTF("\nError creating kfuse.bin file.");
-			else
+			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, kfuseFilename))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -1566,34 +1562,28 @@ void dump_package1()
 	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
 	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
 
-	// Dump package1.
+	// Create folders if they do not exist.
 	f_mkdir("Backup");
 	f_mkdir("Backup/pkg1");
-	if (sd_save_to_file(pkg1, 0x40000, "Backup/pkg1/pkg1_decr.bin")) {
-		EPRINTF("\nFailed to create pkg1_decr.bin");
+
+	// Dump package1.1.
+	if (sd_save_to_file(pkg1, 0x40000, "Backup/pkg1/pkg1_decr.bin"))
 		goto out;
-	}
 	gfx_puts(&gfx_con, "\nFull package1 dumped to pkg1_decr.bin\n");
 
 	// Dump nxbootloader.
-	if (sd_save_to_file(loader, hdr->ldr_size, "Backup/pkg1/nxloader.bin")) {
-		EPRINTF("\nFailed to create nxloader.bin");
+	if (sd_save_to_file(loader, hdr->ldr_size, "Backup/pkg1/nxloader.bin"))
 		goto out;
-	}
 	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
 
 	// Dump secmon.
-	if (sd_save_to_file(secmon, hdr->sm_size, "Backup/pkg1/secmon.bin")) {
-		EPRINTF("\nFailed to create secmon.bin");
+	if (sd_save_to_file(secmon, hdr->sm_size, "Backup/pkg1/secmon.bin"))
 		goto out;
-	}
 	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
 	// Dump warmboot.
-	if (sd_save_to_file(warmboot, hdr->wb_size, "Backup/pkg1/warmboot.bin")) {
-		EPRINTF("\nFailed to create warmboot.bin");
+	if (sd_save_to_file(warmboot, hdr->wb_size, "Backup/pkg1/warmboot.bin"))
 		goto out;
-	}
 	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n");
 	
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");

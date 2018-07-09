@@ -605,17 +605,17 @@ int hos_launch(ini_sec_t *cfg)
 	// Lock SE before starting 'SecureMonitor'.
 	_se_lock();
 
-	//< 4.0.0 Signals. 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot
-	//>=4.0.0 Signals. 0: Nothing ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot
+	//  < 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
+	// >= 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot.
 	vu32 *mb_in = (vu32 *)0x40002EF8;
 	//Non-zero: Secmon ready
 	vu32 *mb_out = (vu32 *)0x40002EFC;
 
-	//Start from DRAM ready signal
+	// Start from DRAM ready signal.
 	*mb_in = bootStateDramPkg2;
 	*mb_out = 0;
 
-	//Wait for secmon to get ready.
+	// Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
 		usleep(1);
@@ -634,10 +634,10 @@ int hos_launch(ini_sec_t *cfg)
 	if (end_di)
 		display_end();
 
-	//Signal to pkg2 ready and continue boot.
+	// Signal pkg2 ready and continue boot.
 	*mb_in = bootStatePkg2Continue;
 
-	//Halt ourselves in waitevent state and resume if there's JTAG activity.
+	// Halt ourselves in waitevent state and resume if there's JTAG activity.
 	while (1)
 		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = 0x50000000;
 

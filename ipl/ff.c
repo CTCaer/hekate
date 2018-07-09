@@ -3290,11 +3290,11 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		} while (LD2PT(vol) == 0 && fmt >= 2 && ++i < 4);
 	}
 	if (fmt == 4) {
-		EFSPRINTF("Disk I/O error - Could not load boot record!");
+		EFSPRINTF("Could not load boot record!");
 		return FR_DISK_ERR;		/* An error occured in the disk I/O layer */
 	}
 	if (fmt >= 2) {
-		EFSPRINTF("No FAT/FAT32/exFAT filesystem found!");
+		EFSPRINTF("No FAT/FAT32/exFAT found!");
 		return FR_NO_FILESYSTEM;	/* No FAT volume is found */
 	}
 
@@ -3312,7 +3312,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 			return FR_NO_FILESYSTEM;	/* Check exFAT version (must be version 1.0) */
 
 		if (1 << fs->win[BPB_BytsPerSecEx] != SS(fs)) {	/* (BPB_BytsPerSecEx must be equal to the physical sector size) */
-			EFSPRINTF("exFAT - Bytes per sector does not match physical sector size!");
+			EFSPRINTF("exFAT - Sector size does not match physical sector size!");
 			return FR_NO_FILESYSTEM;
 		}
 
@@ -3330,15 +3330,13 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		fs->csize = 1 << fs->win[BPB_SecPerClusEx];		/* Cluster size */
 		if (fs->csize == 0)	{
-			EFSPRINTF("exFAT - Cluster size is not between 1KB - 32KB!");
+			EFSPRINTF("exFAT - Sectors per clusters!");
 			return FR_NO_FILESYSTEM;	/* (Must be 1..32768) */
 		}
 
 		nclst = ld_dword(fs->win + BPB_NumClusEx);		/* Number of clusters */
-		if (nclst > MAX_EXFAT) {
-			EFSPRINTF("exFAT - Total clusters exceed allowed!");
+		if (nclst > MAX_EXFAT)
 			return FR_NO_FILESYSTEM;	/* (Too many clusters) */
-		}
 		fs->n_fatent = nclst + 2;
 
 		/* Boundaries and Limits */
@@ -3351,7 +3349,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		/* Check if bitmap location is in assumption (at the first cluster) */
 		if (move_window(fs, clst2sect(fs, fs->dirbase)) != FR_OK) {
-			EFSPRINTF("exFAT - Bitmap location not at first cluster!");
+			EFSPRINTF("exFAT - Bitmap location not at 1st cluster!");
 			return FR_DISK_ERR;
 		}
 		for (i = 0; i < SS(fs); i += SZDIRE) {
@@ -3369,7 +3367,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #endif	/* FF_FS_EXFAT */
 	{
 		if (ld_word(fs->win + BPB_BytsPerSec) != SS(fs)) {
-			EFSPRINTF("FAT - Bytes per sector does not match physical sector size!");
+			EFSPRINTF("FAT - Sector size does not match physical sector size!");
 			return FR_NO_FILESYSTEM;	/* (BPB_BytsPerSec must be equal to the physical sector size) */
 		}
 
@@ -3378,10 +3376,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		fs->fsize = fasize;
 
 		fs->n_fats = fs->win[BPB_NumFATs];				/* Number of FATs */
-		if (fs->n_fats != 1 && fs->n_fats != 2) {
-			EFSPRINTF("FAT - No or more than 2 file allocation tables found!");
+		if (fs->n_fats != 1 && fs->n_fats != 2)
 			return FR_NO_FILESYSTEM;	/* (Must be 1 or 2) */
-		}
 		fasize *= fs->n_fats;							/* Number of sectors for FAT area */
 
 		fs->csize = fs->win[BPB_SecPerClus];			/* Cluster size */
@@ -3389,10 +3385,8 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 			return FR_NO_FILESYSTEM;	/* (Must be power of 2) */
 
 		fs->n_rootdir = ld_word(fs->win + BPB_RootEntCnt);	/* Number of root directory entries */
-		if (fs->n_rootdir % (SS(fs) / SZDIRE)) {
-			EFSPRINTF("FAT - Root directory entries are not sector aligned!");
+		if (fs->n_rootdir % (SS(fs) / SZDIRE))
 			return FR_NO_FILESYSTEM;	/* (Must be sector aligned) */
-		}
 
 		tsect = ld_word(fs->win + BPB_TotSec16);		/* Number of sectors on the volume */
 		if (tsect == 0) tsect = ld_dword(fs->win + BPB_TotSec32);
@@ -3403,23 +3397,17 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		/* Determine the FAT sub type */
 		sysect = nrsv + fasize + fs->n_rootdir / (SS(fs) / SZDIRE);	/* RSV + FAT + DIR */
-		if (tsect < sysect) {
-			EFSPRINTF("FAT - Invalid volume size!");
+		if (tsect < sysect)
 			return FR_NO_FILESYSTEM;	/* (Invalid volume size) */
-		}
 		nclst = (tsect - sysect) / fs->csize;			/* Number of clusters */
-		if (nclst == 0) {
-			EFSPRINTF("FAT - Invalid volume size!");
+		if (nclst == 0)
 			return FR_NO_FILESYSTEM;		/* (Invalid volume size) */
-		}
 		fmt = 0;
 		if (nclst <= MAX_FAT32) fmt = FS_FAT32;
 		if (nclst <= MAX_FAT16) fmt = FS_FAT16;
 		if (nclst <= MAX_FAT12) fmt = FS_FAT12;
-		if (fmt == 0) {
-			EFSPRINTF("FAT - Not compatible FAT12/16/32 filesystem!");
+		if (fmt == 0)
 			return FR_NO_FILESYSTEM;
-		}
 
 		/* Boundaries and Limits */
 		fs->n_fatent = nclst + 2;						/* Number of FAT entries */
@@ -3429,25 +3417,19 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (fmt == FS_FAT32) {
 			if (ld_word(fs->win + BPB_FSVer32) != 0)
 				return FR_NO_FILESYSTEM;	/* (Must be FAT32 revision 0.0) */
-			if (fs->n_rootdir != 0) {
-				EFSPRINTF("FAT32 - Root entry sector is not 0!");
+			if (fs->n_rootdir != 0)
 				return FR_NO_FILESYSTEM;	/* (BPB_RootEntCnt must be 0) */
-			}
 			fs->dirbase = ld_dword(fs->win + BPB_RootClus32);	/* Root directory start cluster */
 			szbfat = fs->n_fatent * 4;					/* (Needed FAT size) */
 		} else {
-			if (fs->n_rootdir == 0)	{
-				EFSPRINTF("FAT - Root entry sector is 0!");
+			if (fs->n_rootdir == 0)
 				return FR_NO_FILESYSTEM;	/* (BPB_RootEntCnt must not be 0) */
-			}
 			fs->dirbase = fs->fatbase + fasize;			/* Root directory start sector */
 			szbfat = (fmt == FS_FAT16) ?				/* (Needed FAT size) */
 				fs->n_fatent * 2 : fs->n_fatent * 3 / 2 + (fs->n_fatent & 1);
 		}
-		if (fs->fsize < (szbfat + (SS(fs) - 1)) / SS(fs)) {
-			EFSPRINTF("FAT - FAT size is not the required size!");
+		if (fs->fsize < (szbfat + (SS(fs) - 1)) / SS(fs))
 			return FR_NO_FILESYSTEM;	/* (BPB_FATSz must not be less than the size needed) */
-		}
 
 #if !FF_FS_READONLY
 		/* Get FSInfo if available */
@@ -3880,7 +3862,7 @@ FRESULT f_read (
 				}
 #endif
 				if (disk_read(fs->pdrv, fp->buf, sect, 1) != RES_OK) {
-					EFSPRINTF("Read - Low level disk I/O!\n(fill sector cache)");
+					EFSPRINTF("Read - Fill sector cache");
 					ABORT(fs, FR_DISK_ERR);	/* Fill sector cache */
 				}
 			}
@@ -3977,10 +3959,8 @@ FRESULT f_write (
 			if (fs->winsect == fp->sect && sync_window(fs) != FR_OK) ABORT(fs, FR_DISK_ERR);	/* Write-back sector cache */
 #else
 			if (fp->flag & FA_DIRTY) {		/* Write-back sector cache */
-				if (disk_write(fs->pdrv, fp->buf, fp->sect, 1) != RES_OK) {
-					EFSPRINTF("Write-back sector cache!");
+				if (disk_write(fs->pdrv, fp->buf, fp->sect, 1) != RES_OK)
 					ABORT(fs, FR_DISK_ERR);
-				}
 				fp->flag &= (BYTE)~FA_DIRTY;
 			}
 #endif
@@ -4023,10 +4003,8 @@ FRESULT f_write (
 #else
 			if (fp->sect != sect && 		/* Fill sector cache with file data */
 				fp->fptr < fp->obj.objsize &&
-				disk_read(fs->pdrv, fp->buf, sect, 1) != RES_OK) {
-					EFSPRINTF("Read - Low level disk I/O!\n(Could not fill sector cache with file data)");
+				disk_read(fs->pdrv, fp->buf, sect, 1) != RES_OK)
 					ABORT(fs, FR_DISK_ERR);
-			}
 #endif
 			fp->sect = sect;
 		}
