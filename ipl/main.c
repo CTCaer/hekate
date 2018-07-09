@@ -50,6 +50,7 @@
 #include "se_t210.h"
 #include "hos.h"
 #include "pkg1.h"
+#include "pkg2.h"
 #include "mmc.h"
 #include "lz.h"
 #include "max17050.h"
@@ -1510,6 +1511,7 @@ void dump_package1()
 	u8 *warmboot = (u8 *)calloc(1, 0x40000);
 	u8 *secmon = (u8 *)calloc(1, 0x40000);
 	u8 *loader = (u8 *)calloc(1, 0x40000);
+	u8 *pkg2 = NULL;
 
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -1565,6 +1567,7 @@ void dump_package1()
 	// Create folders if they do not exist.
 	f_mkdir("Backup");
 	f_mkdir("Backup/pkg1");
+	f_mkdir("Backup/pkg2");
 
 	// Dump package1.1.
 	if (sd_save_to_file(pkg1, 0x40000, "Backup/pkg1/pkg1_decr.bin"))
@@ -1584,7 +1587,53 @@ void dump_package1()
 	// Dump warmboot.
 	if (sd_save_to_file(warmboot, hdr->wb_size, "Backup/pkg1/warmboot.bin"))
 		goto out;
-	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n");
+	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
+
+	// Dump package2.1
+	sdmmc_storage_set_mmc_partition(&storage, 0);
+	//Parse eMMC GPT.
+	LIST_INIT(gpt);
+	nx_emmc_gpt_parse(&gpt, &storage);
+	//Find package2 partition.
+	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
+	if (!pkg2_part)
+		goto out;
+
+	//Read in package2 header and get package2 real size.
+	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
+	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
+	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
+	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
+	free(tmp);
+	//Read in package2.
+	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
+	pkg2 = malloc(pkg2_size_aligned);
+	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
+		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
+	// Decrypt package2 and parse KIP1 blobs in INI1 section.
+	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2);
+
+	// Display info.
+	u32 kernel_crc32 = crc32c(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
+	gfx_printf(&gfx_con, "\n%kKernel CRC32C: %k0x%08X\n\n",0xFFC7EA46, 0xFFCCCCCC, kernel_crc32);
+	gfx_printf(&gfx_con, "%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
+	gfx_printf(&gfx_con, "%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
+	// Dump pkg2.1.
+	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1],
+		"Backup/pkg2/pkg2_decr.bin"))
+		goto out;
+	gfx_puts(&gfx_con, "\nFull package2 dumped to pkg2_decr.bin\n");
+
+	// Dump kernel.
+	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], "Backup/pkg2/kernel.bin"))
+		goto out;
+	gfx_puts(&gfx_con, "Kernel dumped to kernel.bin\n");
+
+	// Dump INI1.
+	if (sd_save_to_file(pkg2_hdr->data + pkg2_hdr->sec_size[PKG2_SEC_KERNEL],
+		pkg2_hdr->sec_size[PKG2_SEC_INI1], "Backup/pkg2/ini1.bin"))
+		goto out;
+	gfx_puts(&gfx_con, "INI1 kip1 package dumped to ini1.bin\n");
 	
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
@@ -1593,6 +1642,8 @@ out:;
 	free(secmon);
 	free(warmboot);
 	free(loader);
+	free(pkg2);
+	nx_emmc_gpt_free(&gpt);
 	sdmmc_storage_end(&storage);
 	sd_unmount();
 
@@ -2441,7 +2492,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
-	MDEF_HANDLER("Dump package1", dump_package1),
+	MDEF_HANDLER("Dump pkg1.1 & pkg2.1", dump_package1),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	MDEF_HANDLER("Unset archive bit (switch folder)", fix_sd_switch_attr),
 	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
