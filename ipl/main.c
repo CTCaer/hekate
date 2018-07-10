@@ -660,16 +660,15 @@ void print_tsec_key()
 	u8 *pkg1 = (u8 *)malloc(0x40000);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_end(&storage);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
 		EPRINTFARGS("Could not identify package1 version\nto read TSEC firmware (= '%s').",
 			(char *)pkg1 + 0x10);
-		
-		gfx_puts(&gfx_con, "\nPress any key...\n");
-		btn_wait();
-		goto out;
+		goto out_wait;
 	}
+	
 
 	u8 keys[0x10 * 3];
 	for(u32 i = 1; i <= 3; i++)
@@ -686,9 +685,6 @@ void print_tsec_key()
 			EPRINTFARGS("ERROR %X", res);
 		gfx_putc(&gfx_con, '\n');
 	}
-	
-		free(pkg1);
-	sdmmc_storage_end(&storage);
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 	
@@ -707,10 +703,16 @@ void print_tsec_key()
 			sd_unmount();
 		}
 	}
-
+	else
+	{
+		goto out;
+	}
+	
+out_wait:;
+	btn_wait();
+	
 out:;
 	free(pkg1);
-	sdmmc_storage_end(&storage);
 }
 
 void reboot_normal()
