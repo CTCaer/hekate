@@ -84,7 +84,7 @@ typedef struct _merge_kip_t
 #define KB_FIRMWARE_VERSION_500 4
 #define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_500
 
-// Exosphère magic "XBC0"
+// Exosphère magic "XBC0".
 #define MAGIC_EXOSPHERE 0x30434258
 
 static const u8 keyblob_keyseeds[][0x10] = {
@@ -122,12 +122,12 @@ static void _se_lock()
 	for (u32 i = 0; i < 2; i++)
 		se_rsa_acc_ctrl(i, 1);
 
-	SE(0x4) = 0; //Make this reg secure only.
-	SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; //Make all key access regs secure only.
-	SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; //Make all rsa access regs secure only.
-	SE(SE_SECURITY_0) &= 0xFFFFFFFB; //Make access lock regs secure only.
+	SE(0x4) = 0; // Make this reg secure only.
+	SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; // Make all key access regs secure only.
+	SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; // Make all RSA access regs secure only.
+	SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
 
-	//This is useful for documenting the bits in the SE config registers, so we can keep it around.
+	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
 	/*gfx_printf(&gfx_con, "SE(SE_SECURITY_0) = %08X\n", SE(SE_SECURITY_0));
 	gfx_printf(&gfx_con, "SE(0x4) = %08X\n", SE(0x4));
 	gfx_printf(&gfx_con, "SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = %08X\n", SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET));
@@ -151,19 +151,19 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	se_key_acc_ctrl(13, 0x15);
 	se_key_acc_ctrl(14, 0x15);
 
-	//Get TSEC key.
+	// Get TSEC key.
 	if (tsec_query(tmp, 1, tsec_fw) < 0)
 		return 0;
 
 	se_aes_key_set(13, tmp, 0x10);
 
-	//Derive keyblob keys from TSEC+SBK.
+	// Derive keyblob keys from TSEC+SBK.
 	se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[0]);
 	se_aes_unwrap_key(15, 14, tmp);
 	se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[kb]);
 	se_aes_unwrap_key(13, 14, tmp);
 
-	//Clear SBK.
+	// Clear SBK.
 	se_aes_key_clear(14);
 
 	//TODO: verify keyblob CMAC.
@@ -175,7 +175,7 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	se_aes_crypt_block_ecb(13, 0, tmp, cmac_keyseed);
 	se_aes_unwrap_key(11, 13, cmac_keyseed);
 
-	//Decrypt keyblob and set keyslots.
+	// Decrypt keyblob and set keyslots.
 	se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
 	se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); //Package1 key.
 	se_aes_key_set(12, keyblob + 0x20, 0x10);
@@ -205,7 +205,7 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 			break;
 	}
 
-	//Package2 key.
+	// Package2 key.
 	se_key_acc_ctrl(8, 0x15);
 	se_aes_unwrap_key(8, 12, key8_keyseed);
 
@@ -219,7 +219,7 @@ static void _copy_bootconfig()
 
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 
-	//Read BCT.
+	// Read BCT.
 	u8 *buf = (u8 *)0x4003D000;
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0, 0x3000 / NX_EMMC_BLOCKSIZE, buf);
@@ -237,19 +237,19 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 
-	//Read package1.
+	// Read package1.
 	ctxt->pkg1 = (u8 *)malloc(0x40000);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kCould not identify package1,\nVersion (= '%s').%k\n", 0xFFFF0000, (char *)ctxt->pkg1 + 0x10, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kUnknown package1,\nVersion (= '%s').%k\n", 0xFFFF0000, (char *)ctxt->pkg1 + 0x10, 0xFFCCCCCC);
 		goto out;
 	}
 	gfx_printf(&gfx_con, "Identified package1 ('%s'),\nKeyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
 
-	//Read the correct keyblob.
+	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
 	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 
@@ -269,16 +269,16 @@ static int _read_emmc_pkg2(launch_ctxt_t *ctxt)
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 	sdmmc_storage_set_mmc_partition(&storage, 0);
 
-	//Parse eMMC GPT.
+	// Parse eMMC GPT.
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &storage);
 	DPRINTF("Parsed GPT\n");
-	//Find package2 partition.
+	// Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
 		goto out;
 
-	//Read in package2 header and get package2 real size.
+	// Read in package2 header and get package2 real size.
 	//TODO: implement memalign for DMA buffers.
 	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
 	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);

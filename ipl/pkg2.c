@@ -296,15 +296,15 @@ pkg2_hdr_t *pkg2_decrypt(void *data)
 {
 	u8 *pdata = (u8 *)data;
 	
-	//Skip signature.
+	// Skip signature.
 	pdata += 0x100;
 
 	pkg2_hdr_t *hdr = (pkg2_hdr_t *)pdata;
 
-	//Skip header.
+	// Skip header.
 	pdata += sizeof(pkg2_hdr_t);
 
-	//Decrypt header.
+	// Decrypt header.
 	se_aes_crypt_ctr(8, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	//gfx_hexdump(&gfx_con, (u32)hdr, hdr, 0x100);
 
@@ -330,11 +330,11 @@ void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_i
 {
 	u8 *pdst = (u8 *)dst;
 
-	//Signature.
+	// Signature.
 	memset(pdst, 0, 0x100);
 	pdst += 0x100;
 
-	//Header.
+	// Header.
 	pkg2_hdr_t *hdr = (pkg2_hdr_t *)pdst;
 	memset(hdr, 0, sizeof(pkg2_hdr_t));
 	pdst += sizeof(pkg2_hdr_t);
@@ -342,7 +342,7 @@ void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_i
 	hdr->base = 0x10000000;
 DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
 
-	//Kernel.
+	// Kernel.
 	memcpy(pdst, kernel, kernel_size);
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
 	hdr->sec_off[PKG2_SEC_KERNEL] = 0x10000000;
@@ -350,7 +350,7 @@ DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
 	pdst += kernel_size;
 DPRINTF("kernel encrypted\n");
 
-	//INI1.
+	// INI1.
 	u32 ini1_size = sizeof(pkg2_ini1_t);
 	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)pdst;
 	memset(ini1, 0, sizeof(pkg2_ini1_t));

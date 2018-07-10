@@ -99,7 +99,7 @@ int sd_mount()
 		}
 		else
 		{
-			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\n(make sure that a FAT type partition exists)", res);
+			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\nMake sure that a FAT partition exists..", res);
 		}
 	}
 
@@ -390,12 +390,9 @@ void print_fuseinfo()
 	{
 		if (sd_mount())
 		{
-			char fuseFilename[23];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(fuseFilename, "Backup/Dumps/fuses.bin", 23);
-
-			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, fuseFilename))
+			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, "Backup/Dumps/fuses.bin"))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -423,12 +420,9 @@ void print_kfuseinfo()
 	{
 		if (sd_mount())
 		{
-			char kfuseFilename[24];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(kfuseFilename, "Backup/Dumps/kfuses.bin", 24);
-
-			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, kfuseFilename))
+			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, "Backup/Dumps/kfuses.bin"))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -457,7 +451,7 @@ void print_mmc_info()
 		u16 card_type;
 		u32 speed;
 
-		gfx_printf(&gfx_con, "%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kCID:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		switch (storage.csd.mmca_vsn)
 		{
 		case 0: /* MMC v1.0 - v1.2 */
@@ -500,7 +494,7 @@ void print_mmc_info()
 			EPRINTF("Unknown CSD structure.");
 		else
 		{
-			gfx_printf(&gfx_con, "%kExtended Card-Specific Data V1.%d:%k\n",
+			gfx_printf(&gfx_con, "%kExtended CSD V1.%d:%k\n",
 				0xFF00DDFF, storage.ext_csd.ext_struct, 0xFFCCCCCC);
 			card_type = storage.ext_csd.card_type;
 			u8 card_type_support[96];
@@ -664,7 +658,7 @@ void print_tsec_key()
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
-		EPRINTFARGS("Could not identify package1 version\nto read TSEC firmware (= '%s').",
+		EPRINTFARGS("Unknown package1 version for reading\nTSEC firmware (= '%s').",
 			(char *)pkg1 + 0x10);
 		goto out_wait;
 	}
@@ -693,20 +687,15 @@ void print_tsec_key()
 	{
 		if (sd_mount())
 		{
-			char tsec_keyFilename[26];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(tsec_keyFilename, "Backup/Dumps/tsec_key.bin", 26);
-
-			if (!sd_save_to_file(keys, 0x10 * 3, tsec_keyFilename))
+			if (!sd_save_to_file(keys, 0x10 * 3, "Backup/Dumps/tsec_key.bin"))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
 	}
 	else
-	{
 		goto out;
-	}
 	
 out_wait:;
 	btn_wait();
@@ -1556,7 +1545,7 @@ void dump_packages12()
 	if (!pkg1_id)
 	{
 		gfx_con.fntsz = 8;
-		EPRINTFARGS("Could not identify package1 version to read TSEC firmware (= '%s').", (char *)pkg1 + 0x10);
+		EPRINTFARGS("Unknown package1 version for reading\nTSEC firmware (= '%s').", (char *)pkg1 + 0x10);
 		goto out;
 	}
 
@@ -1610,23 +1599,23 @@ void dump_packages12()
 		goto out;
 	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
 
-	// Dump package2.1
+	// Dump package2.1.
 	sdmmc_storage_set_mmc_partition(&storage, 0);
-	//Parse eMMC GPT.
+	// Parse eMMC GPT.
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &storage);
-	//Find package2 partition.
+	// Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
 		goto out;
 
-	//Read in package2 header and get package2 real size.
+	// Read in package2 header and get package2 real size.
 	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
 	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
 	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
 	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
 	free(tmp);
-	//Read in package2.
+	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
 	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
@@ -2234,12 +2223,9 @@ void print_battery_info()
 	{
 		if (sd_mount())
 		{
-			char fuelFilename[28];
 			f_mkdir("Backup");
 			f_mkdir("Backup/Dumps");
-			memcpy(fuelFilename, "Backup/Dumps/fuel_gauge.bin", 28);
-
-			if (sd_save_to_file((u8 *)buf, 0x200, fuelFilename))
+			if (sd_save_to_file((u8 *)buf, 0x200, "Backup/Dumps/fuel_gauge.bin"))
 				EPRINTF("\nError creating fuel.bin file.");
 			else
 				gfx_puts(&gfx_con, "\nDone!\n");
