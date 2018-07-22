@@ -59,10 +59,10 @@ void tui_sbar(gfx_con_t *con, int force_update)
 
 	if (battVoltCurr >= 0)
 		gfx_printf(con, " %k+%d mA     %k%K\n",
-			0xFF008000, battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+			0xFF008800, battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
 	else
 		gfx_printf(con, " %k-%d mA     %k%K\n",
-			0xFF800000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+			0xFF880000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
 	con->fntsz = prevFontSize;
 	gfx_con_setpos(con, con->savedx,  con->savedy);
 }

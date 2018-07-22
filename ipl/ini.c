@@ -21,7 +21,6 @@
 #include "ff.h"
 #include "heap.h"
 
-
 static char *_strdup(char *str)
 {
 	char *res = malloc(strlen(str) + 1);
@@ -157,6 +156,8 @@ void ini_free(link_t *dst)
 		free(ini_sec->name);
 		free(ini_sec);
 	}
+
+	dst = NULL;
 }
 
 ini_sec_t *ini_clone_section(ini_sec_t *cfg)
@@ -190,4 +191,6 @@ void ini_free_section(ini_sec_t *cfg)
 		free(kv);
 	}
 	free(cfg);
+
+	cfg = NULL;
 }

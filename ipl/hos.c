@@ -619,6 +619,8 @@ int hos_launch(ini_sec_t *cfg)
 	*mb_in = bootStateDramPkg2;
 	*mb_out = 0;
 
+	display_backlight(0);
+
 	// Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)

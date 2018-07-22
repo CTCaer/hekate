@@ -246,7 +246,7 @@ void mbist_workaround()
 	I2S(0x388) &= 0xFFFFFFFE;
 	I2S(0x4A0) |= 0x400;
 	I2S(0x488) &= 0xFFFFFFFE;
-	DISPLAY_A(0xCF8) |= 4;
+	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= 4;
 	VIC(0x8C) = 0xFFFFFFFF;
 	usleep(2);
 
@@ -287,7 +287,7 @@ void config_se_brom()
 	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
-	PMC(APBDEV_PMC_RST_STATUS_0) = 0x0;
+	PMC(APBDEV_PMC_RST_STATUS) = 0x0;
 }
 
 void config_hw()
@@ -295,8 +295,8 @@ void config_hw()
 	// Bootrom stuff we skipped by going through rcm.
 	config_se_brom();
 	//FUSE(FUSE_PRIVATEKEYDISABLE) = 0x11;
-	SYSREG(0x110) &= 0xFFFFFF9F;
-	PMC(0x244) = ((PMC(0x244) >> 1) << 1) & 0xFFFFFFFD;
+	SYSREG(AHB_AHB_SPARE_REG) &= 0xFFFFFF9F;
+	PMC(APBDEV_PMC_SCRATCH49) = ((PMC(APBDEV_PMC_SCRATCH49) >> 1) << 1) & 0xFFFFFFFD;
 
 	mbist_workaround();
 	clock_enable_se();
@@ -309,7 +309,7 @@ void config_hw()
 	mc_enable();
 
 	config_oscillators();
-	APB_MISC(0x40) = 0;
+	APB_MISC(APB_MISC_PP_PINMUX_GLOBAL) = 0;
 	config_gpios();
 
 	//clock_enable_uart(UART_C);
@@ -349,7 +349,7 @@ void config_hw()
 	mc_config_carveout();
 
 	sdram_init();
-	//TODO: test this with LP0 wakeup.
+
 	sdram_lp0_save_params(sdram_get_params());
 }
 
@@ -776,7 +776,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 				f_close(&fp);
 				return 1;
 			}
-			if (f_read(&fp, bufSd, num << 9, NULL) != FR_OK)
+			if (f_read(&fp, bufSd, num << 9, NULL))
 			{
 				gfx_con.fntsz = 16;
 				EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom sd card!\n\nVerification failed..\n", num, lba_curr);
@@ -1399,8 +1399,11 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 	gfx_printf(&gfx_con, "Are you really sure?\n\n%k", 0xFFCCCCCC);
 	if ((restoreType & PART_BOOT) || (restoreType & PART_GP_ALL))
 	{
-		gfx_puts(&gfx_con, "The mode you selected will only restore\nthe partitions that it can find.\n");
-		gfx_puts(&gfx_con, "If the appropriate named file is not found,\nit will skip it and continue with the next.\n\n");
+		gfx_puts(&gfx_con, "The mode you selected will only restore\nthe ");
+		if (restoreType & PART_BOOT)
+			gfx_puts(&gfx_con, "boot ");
+		gfx_puts(&gfx_con, "partitions that it can find.\n");
+		gfx_puts(&gfx_con, "If it is not found, it will be skipped\nand continue with the next.\n\n");
 	}
 	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
 
@@ -1628,6 +1631,7 @@ void dump_packages12()
 	gfx_printf(&gfx_con, "\n%kKernel CRC32C: %k0x%08X\n\n",0xFFC7EA46, 0xFFCCCCCC, kernel_crc32);
 	gfx_printf(&gfx_con, "%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
 	gfx_printf(&gfx_con, "%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
+
 	// Dump pkg2.1.
 	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1],
 		"Backup/pkg2/pkg2_decr.bin"))
@@ -1707,6 +1711,7 @@ void launch_firmware()
 				{
 					free(ments);
 					ini_free(&ini_sections);
+					sd_unmount();
 					return;
 				}
 			}
@@ -1756,7 +1761,6 @@ void auto_launch_firmware()
 	};
 
 	struct _bmp_data bmpData;
-	int ini_freed = 1;
 	int backlightEnabled = 0;
 	int bootlogoFound = 0;
 	char *bootlogoCustomEntry = NULL;
@@ -1770,7 +1774,6 @@ void auto_launch_firmware()
 	{
 		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
 		{
-			ini_freed = 0;
 			u32 configEntry = 0;
 			u32 boot_entry_id = 0;
 
@@ -1904,7 +1907,6 @@ void auto_launch_firmware()
 		goto out;
 
 	ini_free(&ini_sections);
-	ini_freed = 1;
 
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
@@ -1920,8 +1922,7 @@ void auto_launch_firmware()
 
 out:;
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	if (!ini_freed)
-		ini_free(&ini_sections);
+	ini_free(&ini_sections);
 	ini_free_section(cfg_sec);
 
 	sd_unmount();
@@ -2079,14 +2080,17 @@ void print_fuel_gauge_info()
 	max17050_get_property(MAX17050_Age, &value);
 	gfx_printf(&gfx_con, "Age:                    %3d%\n", value);
 
-	max17050_get_property(MAX17050_Cycles, &value);
-	gfx_printf(&gfx_con, "Charge cycle count:     %3d%\n", value);
+	max17050_get_property(MAX17050_RepSOC, &value);
+	gfx_printf(&gfx_con, "Capacity now:           %3d%\n", value >> 8);
 
-	max17050_get_property(MAX17050_TEMP, &value);
-	if (value >= 0)
-		gfx_printf(&gfx_con, "Battery temperature:    %d.%d oC\n", value / 10, value % 10);
-	else
-		gfx_printf(&gfx_con, "Battery temperature:    -%d.%d oC\n", ~value / 10, (~value) % 10);
+	max17050_get_property(MAX17050_RepCap, &value);
+	gfx_printf(&gfx_con, "Capacity now:           %4d mAh\n", value);
+
+	max17050_get_property(MAX17050_FullCAP, &value);
+	gfx_printf(&gfx_con, "Capacity full:          %4d mAh\n", value);
+
+	max17050_get_property(MAX17050_DesignCap, &value);
+	gfx_printf(&gfx_con, "Capacity (design):      %4d mAh\n", value);
 
 	max17050_get_property(MAX17050_Current, &value);
 	if (value >= 0)
@@ -2100,6 +2104,12 @@ void print_fuel_gauge_info()
 	else
 		gfx_printf(&gfx_con, "Current average:        -%d mA\n", ~value / 1000);
 
+	max17050_get_property(MAX17050_VCELL, &value);
+	gfx_printf(&gfx_con, "Voltage now:            %4d mV\n", value);
+
+	max17050_get_property(MAX17050_OCVInternal, &value);
+	gfx_printf(&gfx_con, "Voltage open-circuit:   %4d mV\n", value);
+
 	max17050_get_property(MAX17050_MinVolt, &value);
 	gfx_printf(&gfx_con, "Min voltage reached:    %4d mV\n", value);
 
@@ -2109,23 +2119,11 @@ void print_fuel_gauge_info()
 	max17050_get_property(MAX17050_V_empty, &value);
 	gfx_printf(&gfx_con, "Empty voltage (design): %4d mV\n", value);
 
-	max17050_get_property(MAX17050_VCELL, &value);
-	gfx_printf(&gfx_con, "Voltage now:            %4d mV\n", value);
-
-	max17050_get_property(MAX17050_OCVInternal, &value);
-	gfx_printf(&gfx_con, "Voltage open-circuit:   %4d mV\n", value);
-
-	max17050_get_property(MAX17050_RepSOC, &value);
-	gfx_printf(&gfx_con, "Capacity now:           %3d%\n", value >> 8);
-
-	max17050_get_property(MAX17050_RepCap, &value);
-	gfx_printf(&gfx_con, "Capacity now:           %4d mAh\n", value);
-
-	max17050_get_property(MAX17050_FullCAP, &value);
-	gfx_printf(&gfx_con, "Capacity full:          %4d mAh\n", value);
-
-	max17050_get_property(MAX17050_DesignCap, &value);
-	gfx_printf(&gfx_con, "Capacity (design):      %4d mAh\n", value);
+	max17050_get_property(MAX17050_TEMP, &value);
+	if (value >= 0)
+		gfx_printf(&gfx_con, "Battery temperature:    %d.%d oC\n", value / 10, value % 10);
+	else
+		gfx_printf(&gfx_con, "Battery temperature:    -%d.%d oC\n", ~value / 10, (~value) % 10);
 }
 
 void print_battery_charger_info()

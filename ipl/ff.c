@@ -27,7 +27,7 @@
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
-#define EFSPRINTF(text, ...) print_error(); gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);\
+#define EFSPRINTF(text, ...) print_error(); gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);
 //#define EFSPRINTF(...)
 
 /*--------------------------------------------------------------------------
@@ -3248,7 +3248,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		stat = disk_status(fs->pdrv);
 		if (!(stat & STA_NOINIT)) {		/* and the physical drive is kept initialized */
 			if (!FF_FS_READONLY && mode && (stat & STA_PROTECT)) {	/* Check write protection if needed */
-				EFSPRINTF("Write protected!");
+				EFSPRINTF("WPEN1");
 				return FR_WRITE_PROTECTED;
 			}
 			return FR_OK;				/* The filesystem object is valid */
@@ -3262,11 +3262,11 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	fs->pdrv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
 	stat = disk_initialize(fs->pdrv);	/* Initialize the physical drive */
 	if (stat & STA_NOINIT) { 			/* Check if the initialization succeeded */
-		EFSPRINTF("Medium not ready or hard error!");
+		EFSPRINTF("MDNR");
 		return FR_NOT_READY;			/* Failed to initialize due to no medium or hard error */
 	}
 	if (!FF_FS_READONLY && mode && (stat & STA_PROTECT)) { /* Check disk write protection if needed */
-		EFSPRINTF("Write protected!");
+		EFSPRINTF("WPEN2");
 		return FR_WRITE_PROTECTED;
 	}
 #if FF_MAX_SS != FF_MIN_SS				/* Get sector size (multiple sector size cfg only) */
@@ -3290,11 +3290,11 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		} while (LD2PT(vol) == 0 && fmt >= 2 && ++i < 4);
 	}
 	if (fmt == 4) {
-		EFSPRINTF("Could not load boot record!");
+		EFSPRINTF("BRNL");
 		return FR_DISK_ERR;		/* An error occured in the disk I/O layer */
 	}
 	if (fmt >= 2) {
-		EFSPRINTF("No FAT/FAT32/exFAT found!");
+		EFSPRINTF("NOFAT");
 		return FR_NO_FILESYSTEM;	/* No FAT volume is found */
 	}
 
@@ -3312,7 +3312,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 			return FR_NO_FILESYSTEM;	/* Check exFAT version (must be version 1.0) */
 
 		if (1 << fs->win[BPB_BytsPerSecEx] != SS(fs)) {	/* (BPB_BytsPerSecEx must be equal to the physical sector size) */
-			EFSPRINTF("exFAT - Sector size does not match physical sector size!");
+			EFSPRINTF("EX_SPS");
 			return FR_NO_FILESYSTEM;
 		}
 
@@ -3324,13 +3324,12 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		fs->n_fats = fs->win[BPB_NumFATsEx];			/* Number of FATs */
 		if (fs->n_fats != 1) {
-			EFSPRINTF("exFAT - Multiple or no file allocation tables found!");
+			EFSPRINTF("EX_FNF");
 			return FR_NO_FILESYSTEM;	/* (Supports only 1 FAT) */
 		}
 
 		fs->csize = 1 << fs->win[BPB_SecPerClusEx];		/* Cluster size */
 		if (fs->csize == 0)	{
-			EFSPRINTF("exFAT - Sectors per clusters!");
 			return FR_NO_FILESYSTEM;	/* (Must be 1..32768) */
 		}
 
@@ -3349,14 +3348,14 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		/* Check if bitmap location is in assumption (at the first cluster) */
 		if (move_window(fs, clst2sect(fs, fs->dirbase)) != FR_OK) {
-			EFSPRINTF("exFAT - Bitmap location not at 1st cluster!");
+			EFSPRINTF("EX_BM1C");
 			return FR_DISK_ERR;
 		}
 		for (i = 0; i < SS(fs); i += SZDIRE) {
 			if (fs->win[i] == 0x81 && ld_dword(fs->win + i + 20) == 2) break;	/* 81 entry with cluster #2? */
 		}
 		if (i == SS(fs)) {
-			EFSPRINTF("exFAT - Bitmap allocation is missing!");
+			EFSPRINTF("EX_BMM");
 			return FR_NO_FILESYSTEM;
 		}
 #if !FF_FS_READONLY
@@ -3367,7 +3366,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #endif	/* FF_FS_EXFAT */
 	{
 		if (ld_word(fs->win + BPB_BytsPerSec) != SS(fs)) {
-			EFSPRINTF("FAT - Sector size does not match physical sector size!");
+			EFSPRINTF("32_SPS");
 			return FR_NO_FILESYSTEM;	/* (BPB_BytsPerSec must be equal to the physical sector size) */
 		}
 
@@ -3540,7 +3539,7 @@ FRESULT f_mount (
 	/* Get logical drive number */
 	vol = get_ldnumber(&rp);
 	if (vol < 0) {
-		EFSPRINTF("Invalid drive!");
+		EFSPRINTF("IDRIVE!");
 		return FR_INVALID_DRIVE;
 	}
 	cfs = FatFs[vol];					/* Pointer to fs object */
@@ -3784,11 +3783,11 @@ FRESULT f_read (
 	*br = 0;	/* Clear read byte counter */
 	res = validate(&fp->obj, &fs);				/* Check validity of the file object */
 	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) {
-		EFSPRINTF("File object Validation!");
+		EFSPRINTF("FOV");
 		LEAVE_FF(fs, res);	/* Check validity */
 	}
 	if (!(fp->flag & FA_READ)) {
-		EFSPRINTF("Access denied!");
+		EFSPRINTF("NOACCESS");
 		LEAVE_FF(fs, FR_DENIED);	/* Check access mode */
 	}
 	remain = fp->obj.objsize - fp->fptr;
@@ -3812,18 +3811,17 @@ FRESULT f_read (
 					}
 				}
 				if (clst < 2) {
-					EFSPRINTF("Cluster status check or Internal error!");
+					EFSPRINTF("CCHK");
 					ABORT(fs, FR_INT_ERR);
 				}
 				if (clst == 0xFFFFFFFF) {
-					EFSPRINTF("Disk error (cluster hard error)!");
+					EFSPRINTF("DSKC");
 					ABORT(fs, FR_DISK_ERR);
 				}
 				fp->clust = clst;				/* Update current cluster */
 			}
 			sect = clst2sect(fs, fp->clust);	/* Get current sector */
 			if (sect == 0) {
-				EFSPRINTF("Get current sector error!");
 				ABORT(fs, FR_INT_ERR);
 			}
 			sect += csect;
@@ -3833,7 +3831,7 @@ FRESULT f_read (
 					cc = fs->csize - csect;
 				}
 				if (disk_read(fs->pdrv, rbuff, sect, cc) != RES_OK) {
-					EFSPRINTF("Read - Low level disk I/O!");
+					EFSPRINTF("RLIO");
 					ABORT(fs, FR_DISK_ERR);
 				}
 #if !FF_FS_READONLY && FF_FS_MINIMIZE <= 2		/* Replace one of the read sectors with cached data if it contains a dirty sector */
@@ -3855,14 +3853,14 @@ FRESULT f_read (
 #if !FF_FS_READONLY
 				if (fp->flag & FA_DIRTY) {		/* Write-back dirty sector cache */
 					if (disk_write(fs->pdrv, fp->buf, fp->sect, 1) != RES_OK) {
-						EFSPRINTF("Write-back dirty sector cache!");
+						EFSPRINTF("RDC");
 						ABORT(fs, FR_DISK_ERR);
 					}
 					fp->flag &= (BYTE)~FA_DIRTY;
 				}
 #endif
 				if (disk_read(fs->pdrv, fp->buf, sect, 1) != RES_OK) {
-					EFSPRINTF("Read - Fill sector cache");
+					EFSPRINTF("RSC");
 					ABORT(fs, FR_DISK_ERR);	/* Fill sector cache */
 				}
 			}
@@ -3907,11 +3905,11 @@ FRESULT f_write (
 	*bw = 0;	/* Clear write byte counter */
 	res = validate(&fp->obj, &fs);			/* Check validity of the file object */
 	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) {
-		EFSPRINTF("File object Validation!");
+		EFSPRINTF("FOV");
 		LEAVE_FF(fs, res);	/* Check validity */
 	}
 	if (!(fp->flag & FA_WRITE)) {
-		EFSPRINTF("Access denied!");
+		EFSPRINTF("NOACCESS");
 		LEAVE_FF(fs, FR_DENIED);	/* Check access mode */
 	}
 
@@ -3941,15 +3939,15 @@ FRESULT f_write (
 					}
 				}
 				if (clst == 0) {
-					EFSPRINTF("Could not allocate a new cluster\n(disk full or low level disk I/O error)!");
+					EFSPRINTF("DSKFULL");
 					break;		/* Could not allocate a new cluster (disk full) */
 				}
 				if (clst == 1) {
-					EFSPRINTF("Cluster status check or Internal error!");
+					EFSPRINTF("CCHK");
 					ABORT(fs, FR_INT_ERR);
 				}
 				if (clst == 0xFFFFFFFF) {
-					EFSPRINTF("Disk error (cluster hard error)!");
+					EFSPRINTF("DERR");
 					ABORT(fs, FR_DISK_ERR);
 				}
 				fp->clust = clst;			/* Update current cluster */
@@ -3966,7 +3964,6 @@ FRESULT f_write (
 #endif
 			sect = clst2sect(fs, fp->clust);	/* Get current sector */
 			if (sect == 0) {
-				EFSPRINTF("Get current sector error!");
 				ABORT(fs, FR_INT_ERR);
 			}
 			sect += csect;
@@ -3976,7 +3973,7 @@ FRESULT f_write (
 					cc = fs->csize - csect;
 				}
 				if (disk_write(fs->pdrv, wbuff, sect, cc) != RES_OK) {
-					EFSPRINTF("Write - Low level disk I/O!");
+					EFSPRINTF("WLIO");
 					ABORT(fs, FR_DISK_ERR);
 				}
 #if FF_FS_MINIMIZE <= 2

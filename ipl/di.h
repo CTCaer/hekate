@@ -80,6 +80,8 @@
 #define DC_COM_PIN_OUTPUT_ENABLE(x) (0x302 + (x))
 #define DC_COM_PIN_OUTPUT_POLARITY(x) (0x306 + (x))
 
+#define DC_COM_DSC_TOP_CTL 0x33E
+
 #define DC_DISP_DISP_WIN_OPTIONS 0x402
 #define  HDMI_ENABLE     (1 << 30)
 #define  DSI_ENABLE      (1 << 29)

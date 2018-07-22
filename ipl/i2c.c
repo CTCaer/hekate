@@ -130,3 +130,4 @@ u8 i2c_recv_byte(u32 idx, u32 x, u32 y)
 	i2c_recv_buf_small(&tmp, 1, idx, x, y);
 	return tmp;
 }
+
