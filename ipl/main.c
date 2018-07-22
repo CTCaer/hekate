@@ -161,6 +161,46 @@ int sd_save_to_file(void * buf, u32 size, const char * filename)
 	return 0;
 }
 
+void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
+{
+	sdmmc_storage_t storage2;
+	sdmmc_t sdmmc;
+	char emmcSN[9];
+	int init_done = 0;
+
+	memcpy(path, "Backup", 7);
+	f_mkdir(path);
+
+	if (!storage)
+	{
+		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+			memcpy(emmcSN, "00000000", 9);
+		else
+		{
+			init_done = 1;
+			itoa(storage2.cid.serial, emmcSN, 16);
+		}
+	}
+	else
+		itoa(storage->cid.serial, emmcSN, 16);
+	
+
+	u32 sub_dir_len = strlen(sub_dir);    // Can be a null-terminator.
+ 	u32 filename_len = strlen(filename);  // Can be a null-terminator.
+
+ 	memcpy(path + strlen(path), "/", 2);
+	memcpy(path + strlen(path), emmcSN, 9);
+	f_mkdir(path);
+	memcpy(path + strlen(path), sub_dir, sub_dir_len + 1);
+	if (sub_dir_len)
+		f_mkdir(path);
+	memcpy(path + strlen(path), "/", 2);
+	memcpy(path + strlen(path), filename, filename_len + 1);
+
+	if (init_done)
+		sdmmc_storage_end(&storage2);
+}
+
 void panic(u32 val)
 {
 	// Set panic code.
@@ -390,9 +430,9 @@ void print_fuseinfo()
 	{
 		if (sd_mount())
 		{
-			f_mkdir("Backup");
-			f_mkdir("Backup/Dumps");
-			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, "Backup/Dumps/fuses.bin"))
+			char path[64];
+			emmcsn_path_impl(path, "/Dumps", "fuses.bin", NULL);
+			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -420,9 +460,9 @@ void print_kfuseinfo()
 	{
 		if (sd_mount())
 		{
-			f_mkdir("Backup");
-			f_mkdir("Backup/Dumps");
-			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, "Backup/Dumps/kfuses.bin"))
+			char path[64];
+			emmcsn_path_impl(path, "/Dumps", "kfuses.bin", NULL);
+			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -687,9 +727,9 @@ void print_tsec_key()
 	{
 		if (sd_mount())
 		{
-			f_mkdir("Backup");
-			f_mkdir("Backup/Dumps");
-			if (!sd_save_to_file(keys, 0x10 * 3, "Backup/Dumps/tsec_key.bin"))
+			char path[64];
+			emmcsn_path_impl(path, "/Dumps", "tsec_keys.bin", NULL);
+			if (!sd_save_to_file(keys, 0x10 * 3, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -1166,13 +1206,10 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 	}
 
 	int i = 0;
-	char sdPath[64];
-	memcpy(sdPath, "Backup/", 7);
-	// Create Backup/Restore folders, if they do not exist.
-	f_mkdir("Backup");
-	f_mkdir("Backup/Partitions");
-	f_mkdir("Backup/Restore");
-	f_mkdir("Backup/Restore/Partitions");
+	char sdPath[80];
+	// Create Restore folders, if they do not exist.
+	emmcsn_path_impl(sdPath, "/Restore", "", &storage);
+	emmcsn_path_impl(sdPath, "/Restore/Partitions", "", &storage);
 
 	timer = get_tmr_s();
 	if (dumpType & PART_BOOT)
@@ -1185,7 +1222,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 		bootPart.lba_end = (BOOT_PART_SIZE/NX_EMMC_BLOCKSIZE)-1;
 		for (i = 0; i < 2; i++)
 		{
-			memcpy(bootPart.name, "BOOT", 4);
+			memcpy(bootPart.name, "BOOT", 5);
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 
@@ -1194,7 +1231,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
 
-			strcpy(sdPath + 7, bootPart.name);
+			emmcsn_path_impl(sdPath, "", bootPart.name, &storage);
 			res = dump_emmc_part(sdPath, &storage, &bootPart);
 		}
 	}
@@ -1217,8 +1254,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-				memcpy(sdPath, "Backup/Partitions/", 18);
-				strcpy(sdPath + 18, part->name);
+				emmcsn_path_impl(sdPath, "/Partitions", part->name, &storage);
 				res = dump_emmc_part(sdPath, &storage, part);
 				// If a part failed, don't continue.
 				if (!res)
@@ -1241,7 +1277,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
-				strcpy(sdPath + 7, rawPart.name);
+				emmcsn_path_impl(sdPath, "", rawPart.name, &storage);
 				res = dump_emmc_part(sdPath, &storage, &rawPart);
 			}
 		}
@@ -1435,8 +1471,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 	}
 
 	int i = 0;
-	char sdPath[64];
-	memcpy(sdPath, "Backup/Restore/", 15);
+	char sdPath[80];
 
 	timer = get_tmr_s();
 	if (restoreType & PART_BOOT)
@@ -1458,7 +1493,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 
 			sdmmc_storage_set_mmc_partition(&storage, i+1);
 
-			strcpy(sdPath + 15, bootPart.name);
+			emmcsn_path_impl(sdPath, "/Restore", bootPart.name, &storage);
 			res = restore_emmc_part(sdPath, &storage, &bootPart);
 		}
 	}
@@ -1474,8 +1509,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 				part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-			memcpy(sdPath, "Backup/Restore/Partitions/", 26);
-			strcpy(sdPath + 26, part->name);
+			emmcsn_path_impl(sdPath, "/Restore/Partitions/", part->name, &storage);
 			res = restore_emmc_part(sdPath, &storage, part);
 		}
 		nx_emmc_gpt_free(&gpt);
@@ -1495,7 +1529,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 				rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
-			strcpy(sdPath + 15, rawPart.name);
+			emmcsn_path_impl(sdPath, "/Restore", rawPart.name, &storage);
 			res = restore_emmc_part(sdPath, &storage, &rawPart);
 		}
 	}
@@ -1577,28 +1611,29 @@ void dump_packages12()
 	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
 	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
 
-	// Create folders if they do not exist.
-	f_mkdir("Backup");
-	f_mkdir("Backup/pkg1");
-	f_mkdir("Backup/pkg2");
 
+	char path[64];
 	// Dump package1.1.
-	if (sd_save_to_file(pkg1, 0x40000, "Backup/pkg1/pkg1_decr.bin"))
+	emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
+	if (sd_save_to_file(pkg1, 0x40000, path))
 		goto out;
 	gfx_puts(&gfx_con, "\nFull package1 dumped to pkg1_decr.bin\n");
 
 	// Dump nxbootloader.
-	if (sd_save_to_file(loader, hdr->ldr_size, "Backup/pkg1/nxloader.bin"))
+	emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
+	if (sd_save_to_file(loader, hdr->ldr_size, path))
 		goto out;
 	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
 
 	// Dump secmon.
-	if (sd_save_to_file(secmon, hdr->sm_size, "Backup/pkg1/secmon.bin"))
+	emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
+	if (sd_save_to_file(secmon, hdr->sm_size, path))
 		goto out;
 	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
 	// Dump warmboot.
-	if (sd_save_to_file(warmboot, hdr->wb_size, "Backup/pkg1/warmboot.bin"))
+	emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
+	if (sd_save_to_file(warmboot, hdr->wb_size, path))
 		goto out;
 	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
 
@@ -1633,19 +1668,21 @@ void dump_packages12()
 	gfx_printf(&gfx_con, "%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
 	// Dump pkg2.1.
-	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1],
-		"Backup/pkg2/pkg2_decr.bin"))
+	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &storage);
+	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
 	gfx_puts(&gfx_con, "\nFull package2 dumped to pkg2_decr.bin\n");
 
 	// Dump kernel.
-	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], "Backup/pkg2/kernel.bin"))
+	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &storage);
+	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
 		goto out;
 	gfx_puts(&gfx_con, "Kernel dumped to kernel.bin\n");
 
 	// Dump INI1.
+	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);
 	if (sd_save_to_file(pkg2_hdr->data + pkg2_hdr->sec_size[PKG2_SEC_KERNEL],
-		pkg2_hdr->sec_size[PKG2_SEC_INI1], "Backup/pkg2/ini1.bin"))
+		pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
 	gfx_puts(&gfx_con, "INI1 kip1 package dumped to ini1.bin\n");
 	
@@ -1726,8 +1763,12 @@ void launch_firmware()
 
 	if (!cfg_sec)
 	{
-		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n");
-		msleep(3000);
+		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n\n");
+		gfx_puts(&gfx_con, "Press POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+
+		u32 btn = btn_wait();
+		if (!(btn & BTN_POWER))
+			goto out;
 	}
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
@@ -1741,6 +1782,7 @@ void launch_firmware()
 		EPRINTF("Failed to launch firmware.");
 	}
 
+out:;
 	ini_free_section(cfg_sec);
 	sd_unmount();
 
@@ -2221,9 +2263,9 @@ void print_battery_info()
 	{
 		if (sd_mount())
 		{
-			f_mkdir("Backup");
-			f_mkdir("Backup/Dumps");
-			if (sd_save_to_file((u8 *)buf, 0x200, "Backup/Dumps/fuel_gauge.bin"))
+			char path[64];
+			emmcsn_path_impl(path, "/Dumps", "fuel_gauge.bin", NULL);
+			if (sd_save_to_file((u8 *)buf, 0x200, path))
 				EPRINTF("\nError creating fuel.bin file.");
 			else
 				gfx_puts(&gfx_con, "\nDone!\n");
