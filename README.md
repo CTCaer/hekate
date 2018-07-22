@@ -33,6 +33,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | secmon={SD path}   | Replaces the security monitor binary                       |
 | kernel={SD path}   | Replaces the kernel binary                                 |
 | kip1={SD path}     | Replaces/Adds kernel initial process. Multiple can be set. |
+| kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Implemented patches right now are nosigchk,nogc |
 | fullsvcperm=1      | Disables SVC verification                                  |
 | debugmode=1        | Enables Debug mode                                         |
 
