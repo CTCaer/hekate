@@ -12,6 +12,7 @@ OBJS = $(addprefix $(BUILD)/, \
 	main.o \
 	config.o \
 	btn.o \
+	blz.o \
 	clock.o \
 	cluster.o \
 	fuse.o \

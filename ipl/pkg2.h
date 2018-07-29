@@ -113,11 +113,33 @@ typedef struct _pkg2_kernel_id_t
 	kernel_patch_t *kernel_patchset;
 } pkg2_kernel_id_t;
 
+typedef struct _kip1_patch_t
+{
+	u32 offset; //section+offset of patch to apply
+	u32 length; //in bytes, 0 means last patch
+	const char* srcData; //that must match
+	const char* dstData; //that it gets replaced by
+} kip1_patch_t;
+
+typedef struct _kip1_patchset_t
+{
+	const char* name; //NULL means end
+	kip1_patch_t* patches; //NULL means not necessary
+} kip1_patchset_t;
+
+typedef struct _kip1_id_t
+{
+	const char* name;
+	u8 hash[16];
+	kip1_patchset_t* patchset;
+} kip1_id_t;
+
 void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2);
 int pkg2_has_kip(link_t *info, u64 tid);
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1);
 void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
+const char* pkg2_patch_kips(link_t *info, char* patchNames);
 
 const pkg2_kernel_id_t *pkg2_identify(u32 id);
 pkg2_hdr_t *pkg2_decrypt(void *data);

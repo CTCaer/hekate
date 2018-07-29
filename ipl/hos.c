@@ -65,6 +65,7 @@ typedef struct _launch_ctxt_t
 	void *kernel;
 	u32 kernel_size;
 	link_t kip1_list;
+	char* kip1_patches;
 
 	int svcperm;
 	int debugmode;
@@ -382,6 +383,35 @@ static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_kip1patch(launch_ctxt_t *ctxt, const char *value)
+{
+	if (value == NULL)
+		return 0;
+
+	int valueLen = strlen(value);
+	if (valueLen == 0)
+		return 0;
+		
+	if (ctxt->kip1_patches == NULL)
+	{
+		ctxt->kip1_patches = malloc(valueLen+1);
+		memcpy(ctxt->kip1_patches, value, valueLen);
+		ctxt->kip1_patches[valueLen] = 0;
+	}
+	else
+	{
+		char* oldAlloc = ctxt->kip1_patches;
+		int oldSize = strlen(oldAlloc);
+		ctxt->kip1_patches = malloc(oldSize+1+valueLen+1);
+		memcpy(ctxt->kip1_patches, oldAlloc, oldSize);
+		free(oldAlloc); oldAlloc = NULL;
+		ctxt->kip1_patches[oldSize++] = ',';
+		memcpy(&ctxt->kip1_patches[oldSize], value, valueLen);
+		ctxt->kip1_patches[oldSize+valueLen] = 0;
+	}
+	return 1;
+}
+
 typedef struct _cfg_handler_t
 {
 	const char *key;
@@ -393,6 +423,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "secmon", _config_secmon },
 	{ "kernel", _config_kernel },
 	{ "kip1", _config_kip1 },
+	{ "kip1patch", _config_kip1patch },
 	{ "fullsvcperm", _config_svcperm },
 	{ "debugmode", _config_debugmode },
 	{ "atmosphere", _config_atmosphere },
@@ -417,6 +448,7 @@ static void _free_launch_components(launch_ctxt_t *ctxt)
 	free(ctxt->warmboot);
 	free(ctxt->secmon);
 	free(ctxt->kernel);
+	free(ctxt->kip1_patches);
 }
 
 int hos_launch(ini_sec_t *cfg)
@@ -535,6 +567,15 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "%kPatching kernel initial processes%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
+
+	// Patch kip1s in memory if needed
+	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
+	if (unappliedPatch != NULL)
+	{
+		gfx_printf(&gfx_con, "%kREQUESTED PATCH '%s' NOT APPLIED!%k\n", 0xFFFF0000, unappliedPatch, 0xFFCCCCCC);
+		sd_unmount(); //just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it
+		while(1) {} //MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
+	}
 
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
