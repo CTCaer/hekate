@@ -1,20 +1,20 @@
 /*
-* Battery charger driver for Nintendo Switch's TI BQ24193
-*
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Battery charger driver for Nintendo Switch's TI BQ24193
+ *
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef __BQ24193_H_
 #define __BQ24193_H_
@@ -100,17 +100,17 @@ enum BQ24193_reg {
 };
 
 enum BQ24193_reg_prop {
-	BQ24193_InputVoltageLimit, // REG 0.
-	BQ24193_InputCurrentLimit,  // REG 0.
-	BQ24193_SystemMinimumVoltage, // REG 1.
+	BQ24193_InputVoltageLimit,      // REG 0.
+	BQ24193_InputCurrentLimit,      // REG 0.
+	BQ24193_SystemMinimumVoltage,   // REG 1.
 	BQ24193_FastChargeCurrentLimit, // REG 2.
-	BQ24193_ChargeVoltageLimit, // REG 4.
-	BQ24193_RechargeThreshold,  // REG 4.
-	BQ24193_ThermalRegulation, // REG 6.
-	BQ24193_ChargeStatus, // REG 8.
-	BQ24193_TempStatus, // REG 9.
-	BQ24193_DevID,         // REG A.
-	BQ24193_ProductNumber, // REG A.
+	BQ24193_ChargeVoltageLimit,     // REG 4.
+	BQ24193_RechargeThreshold,      // REG 4.
+	BQ24193_ThermalRegulation,      // REG 6.
+	BQ24193_ChargeStatus,           // REG 8.
+	BQ24193_TempStatus,             // REG 9.
+	BQ24193_DevID,                  // REG A.
+	BQ24193_ProductNumber,          // REG A.
 };
 
 int bq24193_get_property(enum BQ24193_reg_prop prop, int *value);

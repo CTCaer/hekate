@@ -1,19 +1,19 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 
@@ -41,11 +41,11 @@ static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 
 void display_init()
 {
-	//Power on.
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_LDO0_CFG, 0xD0); //Configure to 1.2V.
+	// Power on.
+	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_LDO0_CFG, 0xD0); // Configure to 1.2V.
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_GPIO7, 0x09);
 
-	//Enable MIPI CAL, DSI, DISP1, HOST1X, UART_FST_MIPI_CAL, DSIA LP clocks.
+	// Enable MIPI CAL, DSI, DISP1, HOST1X, UART_FST_MIPI_CAL, DSIA LP clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = 0x1010000;
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = 0x1010000;
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = 0x18000000;
@@ -55,32 +55,32 @@ void display_init()
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = 0x80000;
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = 0xA;
 
-	//DPD idle.
+	// DPD idle.
 	PMC(APBDEV_PMC_IO_DPD_REQ) = 0x40000000;
 	PMC(APBDEV_PMC_IO_DPD2_REQ) = 0x40000000;
 
-	//Config pins.
+	// Config pins.
 	PINMUX_AUX(PINMUX_AUX_NFC_EN) &= ~PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_NFC_INT) &= ~PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) &= ~PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_EN) &= ~PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_LCD_RST) &= ~PINMUX_TRISTATE;
 
-	gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO); //Backlight +-5V.
-	gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE); //Backlight +-5V.
-	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); //Backlight +5V enable.
+	gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO); // Backlight +-5V.
+	gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE); // Backlight +-5V.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // Backlight +5V enable.
 
 	usleep(10000);
 
-	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); //Backlight -5V enable.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // Backlight -5V enable.
 
 	usleep(10000);
 
-	gpio_config(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO); //Backlight PWM, Enable, Reset.
+	gpio_config(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO); // Backlight PWM, Enable, Reset.
 	gpio_output_enable(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
-	gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH); //Backlight Enable enable.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH); // Backlight Enable enable.
 
-	//Config display interface and display.
+	// Config display interface and display.
 	MIPI_CAL(0x60) = 0;
 
 	exec_cfg((u32 *)CLOCK_BASE, _display_config_1, 4);
@@ -89,7 +89,7 @@ void display_init()
 
 	usleep(10000);
 
-	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_HIGH); //Backlight Reset enable.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_HIGH); // Backlight Reset enable.
 
 	usleep(60000);
 
@@ -139,7 +139,7 @@ void display_init()
 
 void display_backlight(u8 enable)
 {
-	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); //Backlight PWM.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); // Backlight PWM.
 }
 
 void display_end()
@@ -192,7 +192,7 @@ void display_end()
 	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) | DSI_PAD_CONTROL_VS1_PDIO_CLK | DSI_PAD_CONTROL_VS1_PDIO(0xF);
 	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;*/
 
-	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); //Backlight PWM.
+	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
 
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_TRISTATE) | PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) >> 2) << 2 | 1;
@@ -202,7 +202,7 @@ void display_color_screen(u32 color)
 {
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_one_color, 8);
 
-	//Configure display to show single color.
+	// Configure display to show single color.
 	DISPLAY_A(_DIREG(DC_WIN_AD_WIN_OPTIONS)) = 0;
 	DISPLAY_A(_DIREG(DC_WIN_BD_WIN_OPTIONS)) = 0;
 	DISPLAY_A(_DIREG(DC_WIN_CD_WIN_OPTIONS)) = 0;
@@ -216,15 +216,12 @@ void display_color_screen(u32 color)
 
 u32 *display_init_framebuffer()
 {
-	//Sanitize framebuffer area.
+	// Sanitize framebuffer area.
 	memset((u32 *)0xC0000000, 0, 0x3C0000);
-	//This configures the framebuffer @ 0xC0000000 with a resolution of 1280x720 (line stride 768).
+	// This configures the framebuffer @ 0xC0000000 with a resolution of 1280x720 (line stride 768).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer, 32);
 
 	usleep(35000);
-
-	//Enable backlight
-	//display_backlight(1);
 
 	return (u32 *)0xC0000000;
 }

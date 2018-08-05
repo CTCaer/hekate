@@ -1,19 +1,19 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (c) 2018 st4rk
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018 st4rk
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _PMC_H_
 #define _PMC_H_
@@ -42,6 +42,8 @@
 #define APBDEV_PMC_SECURE_SCRATCH49 0x3A4
 #define APBDEV_PMC_CNTRL2 0x440
 #define APBDEV_PMC_IO_DPD4_REQ 0x464
+#define APBDEV_PMC_UTMIP_PAD_CFG1 0x4C4
+#define APBDEV_PMC_UTMIP_PAD_CFG3 0x4CC
 #define APBDEV_PMC_DDR_CNTRL 0x4E4
 #define APBDEV_PMC_SCRATCH188 0x810
 #define APBDEV_PMC_SCRATCH190 0x818

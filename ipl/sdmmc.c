@@ -1,19 +1,19 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 #include "sdmmc.h"
@@ -945,7 +945,8 @@ static int _sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
 	reqbuf.is_multi_block = 0;
 	reqbuf.is_auto_cmd12 = 0;
 
-	if (!(storage->csd.cmdclass & CCC_APP_SPEC)) {
+	if (!(storage->csd.cmdclass & CCC_APP_SPEC))
+	{
 		DPRINTF("[SD] ssr: Card lacks mandatory SD Status function\n");
 		return 0;
 	}
@@ -1124,7 +1125,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 
 	sdmmc_sd_clock_ctrl(sdmmc, 1);
 
-    // Parse additional card info from sd status
+	// Parse additional card info from sd status.
 	if (_sd_storage_get_ssr(storage, buf))
 		DPRINTF("[SD] got sd status\n");
 

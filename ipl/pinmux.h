@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2018 naehrwert
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _PINMUX_H_
 #define _PINMUX_H_
@@ -41,6 +41,8 @@
 #define PINMUX_AUX_DMIC3_CLK   0xB4
 #define PINMUX_AUX_UART2_TX    0xF4
 #define PINMUX_AUX_UART3_TX    0x104
+#define PINMUX_AUX_WIFI_EN     0x1B4
+#define PINMUX_AUX_WIFI_RST    0x1B8
 #define PINMUX_AUX_NFC_EN      0x1D0
 #define PINMUX_AUX_NFC_INT     0x1D4
 #define PINMUX_AUX_LCD_BL_PWM  0x1FC

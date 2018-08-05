@@ -47,7 +47,7 @@ void sdram_lp0_save_params(const void *params)
 #define c32(value, pmcreg) pmc->pmcreg = value
 
 	//TODO: pkg1.1 (1.X - 3.X) reads them from MC.
-	//Patch carveout parameters.
+	// Patch carveout parameters.
 	/*sdram->McGeneralizedCarveout1Bom = 0;
 	sdram->McGeneralizedCarveout1BomHi = 0;
 	sdram->McGeneralizedCarveout1Size128kb = 0;
@@ -120,14 +120,14 @@ void sdram_lp0_save_params(const void *params)
 	sdram->McGeneralizedCarveout5Cfg0 = 0x8F;*/
 
 	//TODO: this is 4.X+ behaviour which seems to work fine for < 4.X.
-	//Patch carveout parameters.
+	// Patch carveout parameters.
 	sdram->McGeneralizedCarveout1Cfg0 = 0;
 	sdram->McGeneralizedCarveout2Cfg0 = 0;
 	sdram->McGeneralizedCarveout3Cfg0 = 0;
 	sdram->McGeneralizedCarveout4Cfg0 = 0;
 	sdram->McGeneralizedCarveout5Cfg0 = 0;
 
-	//Patch SDRAM parameters.
+	// Patch SDRAM parameters.
 	u32 t0 = sdram->EmcSwizzleRank0Byte0 << 5 >> 29 > sdram->EmcSwizzleRank0Byte0 << 1 >> 29;
 	u32 t1 = (t0 & 0xFFFFFFEF) | ((sdram->EmcSwizzleRank1Byte0 << 5 >> 29 > sdram->EmcSwizzleRank1Byte0 << 1 >> 29) << 4);
 	u32 t2 = (t1 & 0xFFFFFFFD) | ((sdram->EmcSwizzleRank0Byte1 << 5 >> 29 > sdram->EmcSwizzleRank0Byte1 << 1 >> 29) << 1);
@@ -837,7 +837,8 @@ void sdram_lp0_save_params(const void *params)
 	s(EmcAutoCalWait, 9:0, scratch101, 31:22);
 	s(SwizzleRankByteEncode, 15:0, scratch190, 15:0);
 
-	switch (sdram->MemoryType) {
+	switch (sdram->MemoryType)
+	{
 	case NvBootMemoryType_LpDdr2:
 	case NvBootMemoryType_LpDdr4:
 		s(EmcMrwLpddr2ZcalWarmBoot, 23:16, scratch5, 7:0);

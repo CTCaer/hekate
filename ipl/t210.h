@@ -92,6 +92,8 @@
 
 /*! Misc registers. */
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
+#define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64
+#define APB_MISC_GP_WIFI_RST_CFGPADCTRL 0xB68
 
 /*! System registers. */
 #define AHB_ARBITRATION_XBAR_CTRL 0xE0

@@ -1,22 +1,22 @@
 /*
-* Copyright (c) 2018 naehrwert
-*
-* Copyright (c) 2018 Rajko Stojadinovic
-* Copyright (c) 2018 CTCaer
-* Copyright (c) 2018 Reisyukaku
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ *
+ * Copyright (c) 2018 Rajko Stojadinovic
+ * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018 Reisyukaku
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -144,12 +144,13 @@ void *sd_file_read(char *path)
 	return buf;
 }
 
-int sd_save_to_file(void * buf, u32 size, const char * filename)
+int sd_save_to_file(void *buf, u32 size, const char *filename)
 {
 	FIL fp;
 	u32 res = 0;
 	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
-	if (res) {
+	if (res)
+	{
 		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
 		return 1;
 	}
@@ -183,12 +184,11 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	}
 	else
 		itoa(storage->cid.serial, emmcSN, 16);
-	
 
-	u32 sub_dir_len = strlen(sub_dir);    // Can be a null-terminator.
- 	u32 filename_len = strlen(filename);  // Can be a null-terminator.
+	u32 sub_dir_len = strlen(sub_dir);   // Can be a null-terminator.
+	u32 filename_len = strlen(filename); // Can be a null-terminator.
 
- 	memcpy(path + strlen(path), "/", 2);
+	memcpy(path + strlen(path), "/", 2);
 	memcpy(path + strlen(path), emmcSN, 9);
 	f_mkdir(path);
 	memcpy(path + strlen(path), sub_dir, sub_dir_len + 1);
@@ -323,7 +323,7 @@ void config_se_brom()
 	memset((void *)0x7C010000, 0, 0x10000);
 	PMC(APBDEV_PMC_CRYPTO_OP) = 0;
 	SE(SE_INT_STATUS_REG_OFFSET) = 0x1F;
-	//Lock SSK (although it's not set and unused anyways).
+	// Lock SSK (although it's not set and unused anyways).
 	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
@@ -391,6 +391,27 @@ void config_hw()
 	sdram_init();
 
 	sdram_lp0_save_params(sdram_get_params());
+}
+
+void reconfig_hw_workaround(int extra_reconfig)
+{
+	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= 0x400; // Enable AHUB clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= 0x40;  // Enable APE clock.
+
+	if (extra_reconfig)
+	{
+		PMC(APBDEV_PMC_PWR_DET_VAL) |= (1 << 12);
+
+		clock_disable_cl_dvfs();
+
+		// Disable Joy-con GPIOs.
+		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
+		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
+		gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_SPIO);
+		gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_SPIO);  
+	}
+
 }
 
 void print_fuseinfo()
@@ -476,7 +497,7 @@ void print_mmc_info()
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	static const u32 SECTORS_TO_MIB_COEFF  = 11;
+	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -497,33 +518,33 @@ void print_mmc_info()
 		case 0: /* MMC v1.0 - v1.2 */
 		case 1: /* MMC v1.4 */
 			gfx_printf(&gfx_con,
-			" Vendor ID:  %03X\n"
-			" Model:      %c%c%c%c%c%c%c\n"
-			" HW rev:     %X\n"
-			" FW rev:     %X\n"
-			" S/N:        %03X\n"
-			" Month/Year: %02d/%04d\n\n",
-			storage.cid.manfid,
-			storage.cid.prod_name[0], storage.cid.prod_name[1],	storage.cid.prod_name[2],
-			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
-			storage.cid.prod_name[6], storage.cid.hwrev, storage.cid.fwrev,
-			storage.cid.serial, storage.cid.month, storage.cid.year);
+				" Vendor ID:  %03X\n"
+				" Model:      %c%c%c%c%c%c%c\n"
+				" HW rev:     %X\n"
+				" FW rev:     %X\n"
+				" S/N:        %03X\n"
+				" Month/Year: %02d/%04d\n\n",
+				storage.cid.manfid,
+				storage.cid.prod_name[0], storage.cid.prod_name[1],	storage.cid.prod_name[2],
+				storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
+				storage.cid.prod_name[6], storage.cid.hwrev, storage.cid.fwrev,
+				storage.cid.serial, storage.cid.month, storage.cid.year);
 			break;
 		case 2: /* MMC v2.0 - v2.2 */
 		case 3: /* MMC v3.1 - v3.3 */
 		case 4: /* MMC v4 */
 			gfx_printf(&gfx_con,
-			" Vendor ID:  %X\n"
-			" Card/BGA:   %X\n"
-			" OEM ID:     %02X\n"
-			" Model:      %c%c%c%c%c%c\n"
-			" Prd Rev:    %X\n"
-			" S/N:        %04X\n"
-			" Month/Year: %02d/%04d\n\n",
-			storage.cid.manfid, storage.cid.card_bga, storage.cid.oemid,
-			storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
-			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
-			storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
+				" Vendor ID:  %X\n"
+				" Card/BGA:   %X\n"
+				" OEM ID:     %02X\n"
+				" Model:      %c%c%c%c%c%c\n"
+				" Prd Rev:    %X\n"
+				" S/N:        %04X\n"
+				" Month/Year: %02d/%04d\n\n",
+				storage.cid.manfid, storage.cid.card_bga, storage.cid.oemid,
+				storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
+				storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
+				storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
 			break;
 		default:
 			EPRINTFARGS("eMMC has unknown MMCA version %d", storage.csd.mmca_vsn);
@@ -628,8 +649,8 @@ out:
 
 void print_sdcard_info()
 {
-	static const u32 SECTORS_TO_MIB_COEFF  = 11;
-	
+	static const u32 SECTORS_TO_MIB_COEFF = 11;
+
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
@@ -702,10 +723,9 @@ void print_tsec_key()
 			(char *)pkg1 + 0x10);
 		goto out_wait;
 	}
-	
 
 	u8 keys[0x10 * 3];
-	for(u32 i = 1; i <= 3; i++)
+	for (u32 i = 1; i <= 3; i++)
 	{
 		int res = tsec_query(keys + ((i - 1) * 0x10), i, pkg1 + pkg1_id->tsec_off);
 
@@ -721,7 +741,7 @@ void print_tsec_key()
 	}
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
-	
+
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
@@ -736,11 +756,11 @@ void print_tsec_key()
 	}
 	else
 		goto out;
-	
-out_wait:;
+
+out_wait:
 	btn_wait();
-	
-out:;
+
+out:
 	free(pkg1);
 }
 
@@ -775,7 +795,7 @@ void power_off()
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
 
-int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, emmc_part_t *part)
+int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
 	FIL fp;
 	u32 prevPct = 200;
@@ -786,8 +806,8 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
-		u32 totalSectorsVer = (u32)((u64)f_size(&fp)>>(u64)9);
-		
+		u32 totalSectorsVer = (u32)((u64)f_size(&fp) >> (u64)9);
+
 		u32 numSectorsPerIter = 0;
 		if (totalSectorsVer > 0x200000)
 			numSectorsPerIter = 8192; //4MB Cache
@@ -809,7 +829,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char* outFilename, 
 			{
 				gfx_con.fntsz = 16;
 				EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom eMMC!\n\nVerification failed..\n",
-				num, lba_curr);
+					num, lba_curr);
 
 				free(bufEm);
 				free(bufSd);
@@ -981,7 +1001,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	}
 
 	FIL fp;
-	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
 	gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
 	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
@@ -1077,7 +1097,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			}
 
 			// Create next part.
-			gfx_con_setpos(&gfx_con, gfx_con.savedx,  gfx_con.savedy);
+			gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 			gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
 			lbaStartPart = lba_curr;
 			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
@@ -1104,7 +1124,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 			{
 				gfx_con.fntsz = 16;
 				EPRINTFARGS("\nFailed to read %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
-				num, lba_curr);
+					num, lba_curr);
 				EPRINTF("\nPress any key and try again...\n");
 
 				free(buf);
@@ -1219,7 +1239,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
-		bootPart.lba_end = (BOOT_PART_SIZE/NX_EMMC_BLOCKSIZE)-1;
+		bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 		for (i = 0; i < 2; i++)
 		{
 			memcpy(bootPart.name, "BOOT", 5);
@@ -1229,7 +1249,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
-			sdmmc_storage_set_mmc_partition(&storage, i+1);
+			sdmmc_storage_set_mmc_partition(&storage, i + 1);
 
 			emmcsn_path_impl(sdPath, "", bootPart.name, &storage);
 			res = dump_emmc_part(sdPath, &storage, &bootPart);
@@ -1265,13 +1285,13 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 
 		if (dumpType & PART_RAW)
 		{
-			// Get GP partition size dynamically. 
+			// Get GP partition size dynamically.
 			const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
 
 			emmc_part_t rawPart;
 			memset(&rawPart, 0, sizeof(rawPart));
 			rawPart.lba_start = 0;
-			rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
+			rawPart.lba_end = RAW_AREA_NUM_SECTORS - 1;
 			strcpy(rawPart.name, "rawnand.bin");
 			{
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
@@ -1288,11 +1308,11 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 	gfx_printf(&gfx_con, "Time taken: %dm %ds.\n", timer / 60, timer % 60);
 	sdmmc_storage_end(&storage);
 	if (res && h_cfg.verification)
-		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 	else if (res)
 		gfx_printf(&gfx_con, "\nFinished! Press any key...\n");
 
-out:;
+out:
 	sd_unmount();
 	btn_wait();
 }
@@ -1314,7 +1334,6 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 	gfx_con.fntsz = 8;
 
 	FIL fp;
-	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
 	gfx_printf(&gfx_con, "\nFilename: %s\n", outFilename);
 
 	res = f_open(&fp, outFilename, FA_READ);
@@ -1326,7 +1345,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 		return 0;
 	}
 	//TODO: Should we keep this check?
-	else if (((u32)((u64)f_size(&fp)>>(u64)9)) != totalSectors)
+	else if (((u32)((u64)f_size(&fp) >> (u64)9)) != totalSectors)
 	{
 		gfx_con.fntsz = 16;
 		EPRINTF("Size of the SD Card backup does not match,\neMMC's selected part size.\n");
@@ -1335,7 +1354,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 		return 0;
 	}
 	else
-		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", ((u32)((u64)f_size(&fp)>>(u64)9)) >> SECTORS_TO_MIB_COEFF);
+		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", ((u32)((u64)f_size(&fp) >> (u64)9)) >> SECTORS_TO_MIB_COEFF);
 
 	u32 numSectorsPerIter = 0;
 	if (totalSectors > 0x200000)
@@ -1378,7 +1397,7 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 			{
 				gfx_con.fntsz = 16;
 				EPRINTFARGS("\nFailed to write %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
-				num, lba_curr);
+					num, lba_curr);
 				EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again...\n");
 
 				free(buf);
@@ -1441,7 +1460,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 		gfx_puts(&gfx_con, "partitions that it can find.\n");
 		gfx_puts(&gfx_con, "If it is not found, it will be skipped\nand continue with the next.\n\n");
 	}
-	gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
 
 	u8 value = 10;
 	while (value > 0)
@@ -1481,7 +1500,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
-		bootPart.lba_end = (BOOT_PART_SIZE/NX_EMMC_BLOCKSIZE)-1;
+		bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 		for (i = 0; i < 2; i++)
 		{
 			memcpy(bootPart.name, "BOOT", 4);
@@ -1491,7 +1510,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
-			sdmmc_storage_set_mmc_partition(&storage, i+1);
+			sdmmc_storage_set_mmc_partition(&storage, i + 1);
 
 			emmcsn_path_impl(sdPath, "/Restore", bootPart.name, &storage);
 			res = restore_emmc_part(sdPath, &storage, &bootPart);
@@ -1517,13 +1536,13 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 
 	if (restoreType & PART_RAW)
 	{
-		// Get GP partition size dynamically. 
+		// Get GP partition size dynamically.
 		const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
 
 		emmc_part_t rawPart;
 		memset(&rawPart, 0, sizeof(rawPart));
 		rawPart.lba_start = 0;
-		rawPart.lba_end = RAW_AREA_NUM_SECTORS-1;
+		rawPart.lba_end = RAW_AREA_NUM_SECTORS - 1;
 		strcpy(rawPart.name, "rawnand.bin");
 		{
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
@@ -1539,11 +1558,11 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 	gfx_printf(&gfx_con, "Time taken: %dm %ds.\n", timer / 60, timer % 60);
 	sdmmc_storage_end(&storage);
 	if (res && h_cfg.verification)
-		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n",0xFF96FF00, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "\n%kFinished and verified!%k\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 	else if (res)
 		gfx_printf(&gfx_con, "\nFinished! Press any key...\n");
 
-out:;
+out:
 	sd_unmount();
 	btn_wait();
 }
@@ -1611,7 +1630,6 @@ void dump_packages12()
 	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
 	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
 
-
 	char path[64];
 	// Dump package1.1.
 	emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
@@ -1663,7 +1681,7 @@ void dump_packages12()
 
 	// Display info.
 	u32 kernel_crc32 = crc32c(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
-	gfx_printf(&gfx_con, "\n%kKernel CRC32C: %k0x%08X\n\n",0xFFC7EA46, 0xFFCCCCCC, kernel_crc32);
+	gfx_printf(&gfx_con, "\n%kKernel CRC32C: %k0x%08X\n\n", 0xFFC7EA46, 0xFFCCCCCC, kernel_crc32);
 	gfx_printf(&gfx_con, "%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
 	gfx_printf(&gfx_con, "%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
@@ -1685,10 +1703,10 @@ void dump_packages12()
 		pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
 	gfx_puts(&gfx_con, "INI1 kip1 package dumped to ini1.bin\n");
-	
+
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
-out:;
+out:
 	free(pkg1);
 	free(secmon);
 	free(warmboot);
@@ -1850,8 +1868,8 @@ void auto_launch_firmware()
 						{
 							if (!strcmp("logopath", kv->key))
 								bootlogoCustomEntry = kv->val;
-						}	
-						break;	
+						}
+						break;
 					}
 					boot_entry_id++;
 				}
@@ -1962,7 +1980,7 @@ void auto_launch_firmware()
 #endif //MENU_LOGO_ENABLE
 	}
 
-out:;
+out:
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	ini_free(&ini_sections);
 	ini_free_section(cfg_sec);
@@ -1974,7 +1992,8 @@ out:;
 		display_backlight(1);
 }
 
-void toggle_autorcm(){
+void toggle_autorcm()
+{
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
@@ -1989,7 +2008,7 @@ void toggle_autorcm(){
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
-	
+
 	int i, sect = 0;
 	for (i = 0; i < 4; i++)
 	{
@@ -1998,13 +2017,13 @@ void toggle_autorcm(){
 		tempbuf[0x10] ^= 0x77; // !IMPORTANT: DO NOT CHANGE! XOR by arbitrary number to corrupt.
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
 	}
-	
+
 	free(tempbuf);
 	sdmmc_storage_end(&storage);
-	
+
 	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 
-out:;
+out:
 	btn_wait();
 }
 
@@ -2029,7 +2048,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 			f_chmod(path, 0, AM_ARC);
 		}
 	}
-	
+
 	// Open directory.
 	res = f_opendir(&dir, path);
 	if (res != FR_OK)
@@ -2054,7 +2073,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 
 		// Set new directory or file.
 		memcpy(&path[dirLength], "/", 1);
-		memcpy(&path[dirLength+1], fno.fname, strlen(fno.fname) + 1);
+		memcpy(&path[dirLength + 1], fno.fname, strlen(fno.fname) + 1);
 
 		// Check if archive bit is set.
 		if (fno.fattrib & AM_ARC)
@@ -2101,7 +2120,7 @@ void fix_sd_attr(u32 type)
 			memcpy(label, "switch folder", 14);
 			break;
 		}
-		
+
 		gfx_printf(&gfx_con, "Traversing all %s files!\nThis may take some time, please wait...\n\n", label);
 		fix_attributes(path, &total, !type, type);
 		gfx_printf(&gfx_con, "%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
@@ -2391,42 +2410,42 @@ void fix_battery_desync()
 void about()
 {
 	static const char credits[] =
-	"\nhekate     (C) 2018 naehrwert, st4rk\n\n"
-	"CTCaer mod (C) 2018 CTCaer\n"
-	" ___________________________________________\n\n"
-	"Thanks to: %kderrek, nedwill, plutoo,\n"
-	"           shuffle2, smea, thexyz, yellows8%k\n"
-	" ___________________________________________\n\n"
-	"Greetings to: fincs, hexkyz, SciresM,\n"
-	"              Shiny Quagsire, WinterMute\n"
-	" ___________________________________________\n\n"
-	"Open source and free packages used:\n\n"
-	" - FatFs R0.13b,\n"
-	"   Copyright (C) 2018, ChaN\n\n"
-	" - bcl-1.2.0,\n"
-	"   Copyright (C) 2003-2006, Marcus Geelnard\n\n"
-	" - Atmosphere (SE sha256, prc id patches),\n"
-	"   Copyright (C) 2018, Atmosphere-NX\n"
-	" ___________________________________________\n\n";
+		"\nhekate     (C) 2018 naehrwert, st4rk\n\n"
+		"CTCaer mod (C) 2018 CTCaer\n"
+		" ___________________________________________\n\n"
+		"Thanks to: %kderrek, nedwill, plutoo,\n"
+		"           shuffle2, smea, thexyz, yellows8%k\n"
+		" ___________________________________________\n\n"
+		"Greetings to: fincs, hexkyz, SciresM,\n"
+		"              Shiny Quagsire, WinterMute\n"
+		" ___________________________________________\n\n"
+		"Open source and free packages used:\n\n"
+		" - FatFs R0.13b,\n"
+		"   Copyright (C) 2018, ChaN\n\n"
+		" - bcl-1.2.0,\n"
+		"   Copyright (C) 2003-2006, Marcus Geelnard\n\n"
+		" - Atmosphere (SE sha256, prc id patches),\n"
+		"   Copyright (C) 2018, Atmosphere-NX\n"
+		" ___________________________________________\n\n";
 	static const char octopus[] =
-	"                         %k___\n"
-	"                      .-'   `'.\n"
-	"                     /         \\\n"
-	"                     |         ;\n"
-	"                     |         |           ___.--,\n"
-	"            _.._     |0) = (0) |    _.---'`__.-( (_.\n"
-	"     __.--'`_.. '.__.\\    '--. \\_.-' ,.--'`     `\"\"`\n"
-	"    ( ,.--'`   ',__ /./;   ;, '.__.'`    __\n"
-	"    _`) )  .---.__.' / |   |\\   \\__..--\"\"  \"\"\"--.,_\n"
-	"   `---' .'.''-._.-'`_./  /\\ '.  \\ _.--''````'''--._`-.__.'\n"
-	"         | |  .' _.-' |  |  \\  \\  '.               `----`\n"
-	"          \\ \\/ .'     \\  \\   '. '-._)\n"
-	"           \\/ /        \\  \\    `=.__`'-.\n"
-	"           / /\\         `) )    / / `\"\".`\\\n"
-	"     , _.-'.'\\ \\        / /    ( (     / /\n"
-	"      `--'`   ) )    .-'.'      '.'.  | (\n"
-	"             (/`    ( (`          ) )  '-;   %k[switchbrew]%k\n"
-	"              `      '-;         (-'%k";
+		"                         %k___\n"
+		"                      .-'   `'.\n"
+		"                     /         \\\n"
+		"                     |         ;\n"
+		"                     |         |           ___.--,\n"
+		"            _.._     |0) = (0) |    _.---'`__.-( (_.\n"
+		"     __.--'`_.. '.__.\\    '--. \\_.-' ,.--'`     `\"\"`\n"
+		"    ( ,.--'`   ',__ /./;   ;, '.__.'`    __\n"
+		"    _`) )  .---.__.' / |   |\\   \\__..--\"\"  \"\"\"--.,_\n"
+		"   `---' .'.''-._.-'`_./  /\\ '.  \\ _.--''````'''--._`-.__.'\n"
+		"         | |  .' _.-' |  |  \\  \\  '.               `----`\n"
+		"          \\ \\/ .'     \\  \\   '. '-._)\n"
+		"           \\/ /        \\  \\    `=.__`'-.\n"
+		"           / /\\         `) )    / / `\"\".`\\\n"
+		"     , _.-'.'\\ \\        / /    ( (     / /\n"
+		"      `--'`   ) )    .-'.'      '.'.  | (\n"
+		"             (/`    ( (`          ) )  '-;   %k[switchbrew]%k\n"
+		"              `      '-;         (-'%k";
 
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);

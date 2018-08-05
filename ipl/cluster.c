@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2018 naehrwert
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "cluster.h"
 #include "i2c.h"
@@ -28,7 +28,7 @@ void _cluster_enable_power()
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_AME_GPIO, tmp & 0xDF);
 	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_GPIO5, 0x09);
 
-	//Enable cores power.
+	// Enable cores power.
 	i2c_send_byte(I2C_5, 0x1B, 0x2, 0x20);
 	i2c_send_byte(I2C_5, 0x1B, 0x3, 0x8D);
 	i2c_send_byte(I2C_5, 0x1B, 0x0, 0xB7);
@@ -37,7 +37,7 @@ void _cluster_enable_power()
 
 int _cluster_pmc_enable_partition(u32 part, u32 toggle)
 {
-	//Check if the partition has already been turned on.
+	// Check if the partition has already been turned on.
 	if (PMC(APBDEV_PMC_PWRGATE_STATUS) & part)
 		return 1;
 
@@ -66,7 +66,7 @@ int _cluster_pmc_enable_partition(u32 part, u32 toggle)
 
 void cluster_boot_cpu0(u32 entry)
 {
-	//Set ACTIVE_CLUSER to FAST.
+	// Set ACTIVE_CLUSER to FAST.
 	FLOW_CTLR(FLOW_CTLR_BPMP_CLUSTER_CONTROL) &= 0xFFFFFFFE;
 
 	_cluster_enable_power();
@@ -83,45 +83,45 @@ void cluster_boot_cpu0(u32 entry)
 	while (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & 0x8000000))
 		;
 
-	//Configure MSELECT source and enable clock.
+	// Configure MSELECT source and enable clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_MSELECT) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_MSELECT) & 0x1FFFFF00) | 6;
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) = (CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) & 0xFFFFFFF7) | 8;
 
-	//Configure initial CPU clock frequency and enable clock.
+	// Configure initial CPU clock frequency and enable clock.
 	CLOCK(CLK_RST_CONTROLLER_CCLK_BURST_POLICY) = 0x20008888;
 	CLOCK(CLK_RST_CONTROLLER_SUPER_CCLK_DIVIDER) = 0x80000000;
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_SET) = 1;
 
 	clock_enable_coresight();
 
-	//CAR2PMC_CPU_ACK_WIDTH should be set to 0.
+	// CAR2PMC_CPU_ACK_WIDTH should be set to 0.
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
-	//Enable CPU rail.
+	// Enable CPU rail.
 	_cluster_pmc_enable_partition(1, 0);
 	//Enable cluster 0 non-CPU.
 	_cluster_pmc_enable_partition(0x8000, 15);
-	//Enable CE0.
+	// Enable CE0.
 	_cluster_pmc_enable_partition(0x4000, 14);
 
-	//Request and wait for RAM repair.
+	// Request and wait for RAM repair.
 	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = 1;
 	while (!(FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) & 2))
 		;
 
 	EXCP_VEC(0x100) = 0;
 
-	//Set reset vector.
+	// Set reset vector.
 	SB(SB_AA64_RESET_LOW) = entry | 1;
 	SB(SB_AA64_RESET_HIGH) = 0;
-	//Non-secure reset vector write disable.
+	// Non-secure reset vector write disable.
 	SB(SB_CSR) = 2;
 	(void)SB(SB_CSR);
 
-	//Clear MSELECT reset.
+	// Clear MSELECT reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_V) &= 0xFFFFFFF7;
-	//Clear NONCPU reset.
+	// Clear NONCPU reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_CPUG_CMPLX_CLR) = 0x20000000;
-	//Clear CPU{0,1,2,3} POR and CORE, CX0, L2, and DBG reset.
+	// Clear CPU{0,1,2,3} POR and CORE, CX0, L2, and DBG reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_CPUG_CMPLX_CLR) = 0x411F000F;
 }

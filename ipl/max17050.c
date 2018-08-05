@@ -49,66 +49,66 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 
 	switch (reg)
 	{
-	case MAX17050_Age: //Age (percent). Based on 100% x (FullCAP Register/DesignCap).
+	case MAX17050_Age: // Age (percent). Based on 100% x (FullCAP Register/DesignCap).
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_Age);
 		*value = data >> 8; /* Show MSB. 1% increments */
 		break;
-	case MAX17050_Cycles: //Cycle count.
+	case MAX17050_Cycles: // Cycle count.
 		i2c_recv_buf_small((u8 *)value, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_Cycles);
 		break;
-	case MAX17050_MinVolt: //Voltage max/min
+	case MAX17050_MinVolt: // Voltage max/min
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MinMaxVolt);
 		*value = (data & 0xff) * 20; /* Voltage MIN. Units of 20mV */
 		break;
-	case MAX17050_MaxVolt: //Voltage max/min
+	case MAX17050_MaxVolt: // Voltage max/min
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MinMaxVolt);
 		*value = (data >> 8) * 20; /* Voltage MAX. Units of LSB = 20mV */
 		break;
-	case MAX17050_V_empty: //Voltage min design.
+	case MAX17050_V_empty: // Voltage min design.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_V_empty);
 		*value = (data >> 7) * 10; /* Units of LSB = 10mV */
 		break;
-	case MAX17050_VCELL: //Voltage now.
+	case MAX17050_VCELL: // Voltage now.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_VCELL);
 		*value = data * 625 / 8 / 1000;
 		break;
-	case MAX17050_AvgVCELL: //Voltage avg.
+	case MAX17050_AvgVCELL: // Voltage avg.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_AvgVCELL);
 		*value = data * 625 / 8 / 1000;
 		break;
-	case MAX17050_OCVInternal: //Voltage ocv.
+	case MAX17050_OCVInternal: // Voltage ocv.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_OCVInternal);
 		*value = data * 625 / 8 / 1000;
 		break;
-	case MAX17050_RepSOC: //Capacity %.
+	case MAX17050_RepSOC: // Capacity %.
 		i2c_recv_buf_small((u8 *)value, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_RepSOC);
 		break;
-	case MAX17050_DesignCap: //Charge full design.
+	case MAX17050_DesignCap: // Charge full design.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_DesignCap);
 		data = data * 5 / 10;
 		*value = data;
 		break;
-	case MAX17050_FullCAP: //Charge full.
+	case MAX17050_FullCAP: // Charge full.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_FullCAP);
 		data = data * 5 / 10;
 		*value = data;
 		break;
-	case MAX17050_RepCap: //Charge now.
+	case MAX17050_RepCap: // Charge now.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_RepCap);
 		data = data * 5 / 10;
 		*value = data;
 		break;
-	case MAX17050_TEMP: //Temp.
+	case MAX17050_TEMP: // Temp.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_TEMP);
 		*value = (s16)data;
 		*value = *value * 10 / 256;
 		break;
-	case MAX17050_Current: //Current now.
+	case MAX17050_Current: // Current now.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_Current);
 		*value = (s16)data;
 		*value *= 1562500 / MAX17050_DEFAULT_SNS_RESISTOR;
 		break;
-	case MAX17050_AvgCurrent: //Current avg.
+	case MAX17050_AvgCurrent: // Current avg.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_AvgCurrent);
 		*value = (s16)data;
 		*value *= 1562500 / MAX17050_DEFAULT_SNS_RESISTOR;
@@ -125,10 +125,12 @@ static int _max17050_write_verify_reg(u8 reg, u16 value)
 	int ret;
 	u16 read_value;
 
-	do {
+	do
+	{
 		ret = i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, reg, (u8 *)&value, 2);
 		i2c_recv_buf_small((u8 *)&read_value, 2, I2C_1, MAXIM17050_I2C_ADDR, reg);
-		if (read_value != value) {
+		if (read_value != value)
+		{
 			ret = -1;
 			retries--;
 		}
@@ -151,7 +153,6 @@ static void _max17050_load_new_capacity_params()
 	dq_acc = 0x10bc;  // From a healthy fuel gauge.
 	dp_acc = 0x5e09;  //          =||=
 	repSoc = 0x6400;  // 100%.
-
 
 	_max17050_write_verify_reg(MAX17050_RemCap, fullcap);
 	_max17050_write_verify_reg(MAX17050_RepCap, fullcap);
@@ -182,7 +183,7 @@ static void _max17050_reset_vfsoc0_reg()
 
 static void _max17050_update_capacity_regs()
 {
-	u16 value = 0x2476; //Set to 4667mAh design capacity.
+	u16 value = 0x2476; // Set to 4667mAh design capacity.
 	_max17050_write_verify_reg(MAX17050_FullCAP, value);
 	_max17050_write_verify_reg(MAX17050_FullCAPNom, value);
 	//i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_DesignCap, config->design_cap, 2);
@@ -210,7 +211,7 @@ static void _max17050_override_por_values()
 {
 	u16 dq_acc = 0x10bc; // From a healthy fuel gauge.
 	u16 dp_acc = 0x5e09; //           =||=
-	
+
 	_max17050_override_por(MAX17050_dQacc, dq_acc);
 	_max17050_override_por(MAX17050_dPacc, dp_acc);
 
@@ -218,7 +219,7 @@ static void _max17050_override_por_values()
 	//_max17050_override_por(MAX17050_TempCo, config->tcompc0); //0x1b22
 
 	//u16 k_empty0 = 0x439;
-	//_max17050_override_por(map, MAX17050_K_empty0, k_empty0); // unknown cell data
+	//_max17050_override_por(map, MAX17050_K_empty0, k_empty0); // Unknown cell data
 }
 
 static void _max17050_set_por_bit(u16 value)
@@ -240,7 +241,6 @@ int max17050_fix_configuration()
 
 	/* Initialize configaration */
 	_max17050_write_config_regs();
-
 
 	/* update capacity params */
 	_max17050_update_capacity_regs();

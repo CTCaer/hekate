@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2018 naehrwert
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _MAX7762X_H_
 #define _MAX7762X_H_
@@ -24,11 +24,11 @@
 * Name  | Usage         | uV step | uV min | uV default | uV max  | Init
 *-------+---------------+---------+--------+------------+---------+------------------
 *  sd0  | core          | 12500   | 600000 |  625000    | 1400000 | 1.125V (pkg1.1)
-*  sd1  | SDRAM         | 12500   | 600000 | 1125000    | 1125000 | 1.1V (pkg1.1)
+*  sd1  | SDRAM         | 12500   | 600000 | 1125000    | 1125000 | 1.1V   (pkg1.1)
 *  sd2  | ldo{0-1, 7-8} | 12500   | 600000 | 1325000    | 1350000 | 1.325V (pcv)
 *  sd3  | 1.8V general  | 12500   | 600000 | 1800000    | 1800000 |
-*  ldo0 | Display Panel | 25000   | 800000 | 1200000    | 1200000 | 1.2V (pkg1.1)
-*  ldo1 | XUSB          | 25000   | 800000 | 1050000    | 1050000 | 1.05V (pcv)
+*  ldo0 | Display Panel | 25000   | 800000 | 1200000    | 1200000 | 1.2V   (pkg1.1)
+*  ldo1 | XUSB, PCIE    | 25000   | 800000 | 1050000    | 1050000 | 1.05V  (pcv)
 *  ldo2 | SDMMC1        | 50000   | 800000 | 1800000    | 3300000 |
 *  ldo3 |               | 50000   | 800000 | 3100000    | 3100000 |
 *  ldo4 | RTC           | 12500   | 800000 |  850000    |  850000 |

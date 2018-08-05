@@ -1,22 +1,23 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (c) 2018 CTCaer
-* Copyright (c) 2018 Atmosphère-NX
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018 Atmosphère-NX
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
+
 #include "pkg2.h"
 #include "arm64.h"
 #include "heap.h"
@@ -486,7 +487,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 {
 	u32 compClearMask = ~sectsToDecomp;
 	if ((ki->kip1->flags & compClearMask) == ki->kip1->flags)
-		return 0; //already decompressed, nothing to do
+		return 0; // Already decompressed, nothing to do.
 
 	pkg2_kip1_t hdr;
 	memcpy(&hdr, ki->kip1, sizeof(hdr));
@@ -495,7 +496,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	for (u32 sectIdx=0; sectIdx<KIP1_NUM_SECTIONS; sectIdx++)
 	{
 		u32 sectCompBit = 1u << sectIdx;
-		//for compressed, cant get actual decompressed size without doing it, so use safe "output size"
+		// For compressed, cant get actual decompressed size without doing it, so use safe "output size".
 		if (sectIdx < 3 && (sectsToDecomp & sectCompBit) && (hdr.flags & sectCompBit)) 
 			newKipSize += hdr.sections[sectIdx].size_decomp;
 		else
@@ -508,7 +509,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	for (u32 sectIdx=0; sectIdx<KIP1_NUM_SECTIONS; sectIdx++)
 	{
 		u32 sectCompBit = 1u << sectIdx;
-		//easy copy path for uncompressed or ones we dont want to uncompress
+		// Easy copy path for uncompressed or ones we dont want to uncompress.
 		if (sectIdx >= 3 || !(sectsToDecomp & sectCompBit) || !(hdr.flags & sectCompBit))
 		{
 			unsigned int dataSize = hdr.sections[sectIdx].size_comp;
@@ -528,6 +529,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 		{
 			gfx_printf(&gfx_con, "%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);			
 			free(newKip);
+
 			return 1;
 		}
 		else
@@ -546,6 +548,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	free(ki->kip1);
 	ki->kip1 = newKip;
 	ki->size = newKipSize;
+
 	return 0;
 }
 
@@ -574,10 +577,10 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		}
 	}
 
-	u32 patchesApplied = 0; //bitset over patches
+	u32 patchesApplied = 0; // Bitset over patches.
 	for (u32 i=0; i<numPatches; i++)
 	{
-		//eliminate leading spaces
+		// Eliminate leading spaces.
 		for (const char* p=patches[i]; *p!=0; p++)
 		{
 			if (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
@@ -589,7 +592,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		if (valueLen == 0)
 			continue;
 
-		//eliminate trailing spaces
+		// Eliminate trailing spaces.
 		for (int chIdx=valueLen-1; chIdx>=0; chIdx--)
 		{
 			const char* p = patches[i] + chIdx;
@@ -606,7 +609,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	u32 shaBuf[32/sizeof(u32)];
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 	{
-		shaBuf[0] = 0; //sha256 for this kip not yet calculated
+		shaBuf[0] = 0; // sha256 for this kip not yet calculated.
 		for (u32 currKipIdx=0; currKipIdx<(sizeof(_kip_ids)/sizeof(_kip_ids[0])); currKipIdx++)
 		{
 			if (strncmp((const char*)ki->kip1->name, _kip_ids[currKipIdx].name, sizeof(ki->kip1->name)) != 0)
@@ -620,14 +623,14 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				{
 					if (strcmp(currPatchset->name, patches[i]) != 0)
 					{
-						bitsAffected = i+1;
+						bitsAffected = i + 1;
 						break;
 					}
 				}
 				currPatchset++;
 			}
 
-			// dont bother even hashing this KIP if we dont have any patches enabled for it
+			// Dont bother even hashing this KIP if we dont have any patches enabled for it.
 			if (bitsAffected == 0)
 				continue;
 
@@ -640,7 +643,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			if (memcmp(shaBuf, _kip_ids[currKipIdx].hash, sizeof(_kip_ids[0].hash)) != 0)
 				continue;
 
-			//find out which sections are affected by the enabled patches, to know which to decompress
+			// Find out which sections are affected by the enabled patches, to know which to decompress.
 			bitsAffected = 0;
 			currPatchset = _kip_ids[currKipIdx].patchset;
 			while (currPatchset != NULL && currPatchset->name != NULL)
@@ -659,12 +662,12 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				currPatchset++;
 			}
 
-			// got patches to apply to this kip, have to decompress it
+			// Got patches to apply to this kip, have to decompress it.
 #ifdef DEBUG_PRINTING
 			u32 preDecompTime = get_tmr_us();
 #endif
 			if (pkg2_decompress_kip(ki, bitsAffected))
-				return (const char*)ki->kip1->name; //failed to decompress
+				return (const char*)ki->kip1->name; // Failed to decompress.
 
 #ifdef DEBUG_PRINTING
 			u32 postDecompTime = get_tmr_us();
@@ -705,7 +708,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 								if (memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0)
 								{
 									gfx_printf(&gfx_con, "%kDATA MISMATCH FOR PATCH AT OFFSET 0x%x!!!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
-									return currPatchset->name; //MUST stop here as kip is likely corrupt
+									return currPatchset->name; // MUST stop here as kip is likely corrupt.
 								}
 								else
 								{

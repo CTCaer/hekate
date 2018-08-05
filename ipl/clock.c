@@ -1,25 +1,25 @@
 /*
-* Copyright (c) 2018 naehrwert
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "clock.h"
 #include "t210.h"
 #include "util.h"
 #include "sdmmc.h"
 
-static const clock_t _clock_uart[] =  {
+static const clock_t _clock_uart[] = {
 	/* UART A */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_UARTA, 6, 0, 0 },
 	/* UART B */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_UARTB, 7, 0, 0 },
 	/* UART C */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_UARTC, 0x17, 0, 0 },
@@ -50,24 +50,24 @@ static clock_t _clock_coresight = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CO
 
 void clock_enable(const clock_t *clk)
 {
-	//Put clock into reset.
+	// Put clock into reset.
 	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~(1 << clk->index)) | (1 << clk->index);
-	//Disable.
+	// Disable.
 	CLOCK(clk->enable) &= ~(1 << clk->index);
-	//Configure clock source if required.
+	// Configure clock source if required.
 	if (clk->source)
 		CLOCK(clk->source) = clk->clk_div | (clk->clk_src << 29);
-	//Enable.
+	// Enable.
 	CLOCK(clk->enable) = (CLOCK(clk->enable) & ~(1 << clk->index)) | (1 << clk->index);
-	//Take clock off reset.
+	// Take clock off reset.
 	CLOCK(clk->reset) &= ~(1 << clk->index);
 }
 
 void clock_disable(const clock_t *clk)
 {
-	//Put clock into reset.
+	// Put clock into reset.
 	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~(1 << clk->index)) | (1 << clk->index);
-	//Disable.
+	// Disable.
 	CLOCK(clk->enable) &= ~(1 << clk->index);
 }
 
@@ -162,40 +162,45 @@ void clock_enable_cl_dvfs()
 	clock_enable(&_clock_cl_dvfs);
 }
 
+void clock_disable_cl_dvfs()
+{
+	clock_disable(&_clock_cl_dvfs);
+}
+
 void clock_enable_coresight()
 {
 	clock_enable(&_clock_coresight);
 }
 
-#define L_SWR_SDMMC1_RST (1<<14)
-#define L_SWR_SDMMC2_RST (1<<9)
-#define L_SWR_SDMMC4_RST (1<<15)
-#define U_SWR_SDMMC3_RST (1<<5)
+#define L_SWR_SDMMC1_RST (1 << 14)
+#define L_SWR_SDMMC2_RST (1 << 9)
+#define L_SWR_SDMMC4_RST (1 << 15)
+#define U_SWR_SDMMC3_RST (1 << 5)
 
-#define L_CLK_ENB_SDMMC1 (1<<14)
-#define L_CLK_ENB_SDMMC2 (1<<9)
-#define L_CLK_ENB_SDMMC4 (1<<15)
-#define U_CLK_ENB_SDMMC3 (1<<5)
+#define L_CLK_ENB_SDMMC1 (1 << 14)
+#define L_CLK_ENB_SDMMC2 (1 << 9)
+#define L_CLK_ENB_SDMMC4 (1 << 15)
+#define U_CLK_ENB_SDMMC3 (1 << 5)
 
-#define L_SET_SDMMC1_RST (1<<14)
-#define L_SET_SDMMC2_RST (1<<9)
-#define L_SET_SDMMC4_RST (1<<15)
-#define U_SET_SDMMC3_RST (1<<5)
+#define L_SET_SDMMC1_RST (1 << 14)
+#define L_SET_SDMMC2_RST (1 << 9)
+#define L_SET_SDMMC4_RST (1 << 15)
+#define U_SET_SDMMC3_RST (1 << 5)
 
-#define L_CLR_SDMMC1_RST (1<<14)
-#define L_CLR_SDMMC2_RST (1<<9)
-#define L_CLR_SDMMC4_RST (1<<15)
-#define U_CLR_SDMMC3_RST (1<<5)
+#define L_CLR_SDMMC1_RST (1 << 14)
+#define L_CLR_SDMMC2_RST (1 << 9)
+#define L_CLR_SDMMC4_RST (1 << 15)
+#define U_CLR_SDMMC3_RST (1 << 5)
 
-#define L_SET_CLK_ENB_SDMMC1 (1<<14)
-#define L_SET_CLK_ENB_SDMMC2 (1<<9)
-#define L_SET_CLK_ENB_SDMMC4 (1<<15)
-#define U_SET_CLK_ENB_SDMMC3 (1<<5)
+#define L_SET_CLK_ENB_SDMMC1 (1 << 14)
+#define L_SET_CLK_ENB_SDMMC2 (1 << 9)
+#define L_SET_CLK_ENB_SDMMC4 (1 << 15)
+#define U_SET_CLK_ENB_SDMMC3 (1 << 5)
 
-#define L_CLR_CLK_ENB_SDMMC1 (1<<14)
-#define L_CLR_CLK_ENB_SDMMC2 (1<<9)
-#define L_CLR_CLK_ENB_SDMMC4 (1<<15)
-#define U_CLR_CLK_ENB_SDMMC3 (1<<5)
+#define L_CLR_CLK_ENB_SDMMC1 (1 << 14)
+#define L_CLR_CLK_ENB_SDMMC2 (1 << 9)
+#define L_CLR_CLK_ENB_SDMMC4 (1 << 15)
+#define U_CLR_CLK_ENB_SDMMC3 (1 << 5)
 
 static int _clock_sdmmc_is_reset(u32 id)
 {

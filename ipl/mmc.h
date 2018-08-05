@@ -1,25 +1,25 @@
 /*
-* Header for MultiMediaCard (MMC)
-*
-* Copyright 2002 Hewlett-Packard Company
-*
-* Use consistent with the GNU GPL is permitted,
-* provided that this copyright notice is
-* preserved in its entirety in all copies and derived works.
-*
-* HEWLETT-PACKARD COMPANY MAKES NO WARRANTIES, EXPRESSED OR IMPLIED,
-* AS TO THE USEFULNESS OR CORRECTNESS OF THIS CODE OR ITS
-* FITNESS FOR ANY PARTICULAR PURPOSE.
-*
-* Many thanks to Alessandro Rubini and Jonathan Corbet!
-*
-* Based strongly on code by:
-*
-* Author: Yong-iL Joh <tolkien@mizi.com>
-*
-* Author:  Andrew Christian
-*          15 May 2002
-*/
+ * Header for MultiMediaCard (MMC)
+ *
+ * Copyright 2002 Hewlett-Packard Company
+ *
+ * Use consistent with the GNU GPL is permitted,
+ * provided that this copyright notice is
+ * preserved in its entirety in all copies and derived works.
+ *
+ * HEWLETT-PACKARD COMPANY MAKES NO WARRANTIES, EXPRESSED OR IMPLIED,
+ * AS TO THE USEFULNESS OR CORRECTNESS OF THIS CODE OR ITS
+ * FITNESS FOR ANY PARTICULAR PURPOSE.
+ *
+ * Many thanks to Alessandro Rubini and Jonathan Corbet!
+ *
+ * Based strongly on code by:
+ *
+ * Author: Yong-iL Joh <tolkien@mizi.com>
+ *
+ * Author:  Andrew Christian
+ *          15 May 2002
+ */
 
 #ifndef LINUX_MMC_MMC_H
 #define LINUX_MMC_MMC_H

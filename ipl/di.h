@@ -1,19 +1,19 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _DI_H_
 #define _DI_H_
@@ -175,7 +175,7 @@
 #define DC_WIN_BD_WIN_OPTIONS 0xD80
 #define DC_WIN_CD_WIN_OPTIONS 0xF80
 
-//The following registers are A/B/C shadows of the 0xB80/0xD80/0xF80 registers (see DISPLAY_WINDOW_HEADER).
+// The following registers are A/B/C shadows of the 0xB80/0xD80/0xF80 registers (see DISPLAY_WINDOW_HEADER).
 #define DC_WIN_WIN_OPTIONS 0x700
 #define  H_DIRECTION  (1 <<  0)
 #define  V_DIRECTION  (1 <<  2)
@@ -228,7 +228,7 @@
 #define DC_WIN_LINE_STRIDE 0x70A
 #define DC_WIN_DV_CONTROL 0x70E
 
-//The following registers are A/B/C shadows of the 0xBC0/0xDC0/0xFC0 registers (see DISPLAY_WINDOW_HEADER).
+// The following registers are A/B/C shadows of the 0xBC0/0xDC0/0xFC0 registers (see DISPLAY_WINDOW_HEADER).
 #define DC_WINBUF_START_ADDR 0x800
 #define DC_WINBUF_ADDR_H_OFFSET 0x806
 #define DC_WINBUF_ADDR_V_OFFSET 0x808

@@ -37,7 +37,8 @@
 /**
  * Defines the SDRAM parameter structure
  */
-typedef struct _sdram_params {
+typedef struct _sdram_params
+{
 	/* Specifies the type of memory device */
 	u32 memory_type;
 

@@ -1,23 +1,24 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (c) 2018 st4rk
-* Copyright (c) 2018 Ced2911
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018 st4rk
+ * Copyright (c) 2018 Ced2911
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
+
 #include "hos.h"
 #include "sdmmc.h"
 #include "nx_emmc.h"
@@ -36,6 +37,7 @@
 #include "ff.h"
 #include "di.h"
 #include "config.h"
+#include "mc.h"
 
 #include "gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
@@ -178,7 +180,7 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 
 	// Decrypt keyblob and set keyslots.
 	se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-	se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); //Package1 key.
+	se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); // Package1 key.
 	se_aes_key_set(12, keyblob + 0x20, 0x10);
 	se_aes_key_set(13, keyblob + 0x20, 0x10);
 
@@ -186,24 +188,24 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 
 	switch (kb)
 	{
-		case KB_FIRMWARE_VERSION_100_200:
-		case KB_FIRMWARE_VERSION_300:
-		case KB_FIRMWARE_VERSION_301:
-			se_aes_unwrap_key(13, 15, console_keyseed);
-			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-			break;
-		case KB_FIRMWARE_VERSION_400:
-			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
-			se_aes_unwrap_key(15, 15, console_keyseed);
-			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
-			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-			break;
-		case KB_FIRMWARE_VERSION_500:
-			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
-			se_aes_unwrap_key(15, 15, console_keyseed);
-			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
-			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-			break;
+	case KB_FIRMWARE_VERSION_100_200:
+	case KB_FIRMWARE_VERSION_300:
+	case KB_FIRMWARE_VERSION_301:
+		se_aes_unwrap_key(13, 15, console_keyseed);
+		se_aes_unwrap_key(12, 12, master_keyseed_retail);
+		break;
+	case KB_FIRMWARE_VERSION_400:
+		se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
+		se_aes_unwrap_key(15, 15, console_keyseed);
+		se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
+		se_aes_unwrap_key(12, 12, master_keyseed_retail);
+		break;
+	case KB_FIRMWARE_VERSION_500:
+		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+		se_aes_unwrap_key(15, 15, console_keyseed);
+		se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
+		se_aes_unwrap_key(12, 12, master_keyseed_retail);
+		break;
 	}
 
 	// Package2 key.
@@ -287,7 +289,7 @@ static int _read_emmc_pkg2(launch_ctxt_t *ctxt)
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
 	free(tmp);
 	DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
-	//Read in package2.
+	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
@@ -391,23 +393,24 @@ static int _config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 	int valueLen = strlen(value);
 	if (valueLen == 0)
 		return 0;
-		
+
 	if (ctxt->kip1_patches == NULL)
 	{
-		ctxt->kip1_patches = malloc(valueLen+1);
+		ctxt->kip1_patches = malloc(valueLen + 1);
 		memcpy(ctxt->kip1_patches, value, valueLen);
 		ctxt->kip1_patches[valueLen] = 0;
 	}
 	else
 	{
-		char* oldAlloc = ctxt->kip1_patches;
+		char *oldAlloc = ctxt->kip1_patches;
 		int oldSize = strlen(oldAlloc);
-		ctxt->kip1_patches = malloc(oldSize+1+valueLen+1);
+		ctxt->kip1_patches = malloc(oldSize + 1 + valueLen + 1);
 		memcpy(ctxt->kip1_patches, oldAlloc, oldSize);
-		free(oldAlloc); oldAlloc = NULL;
+		free(oldAlloc);
+		oldAlloc = NULL;
 		ctxt->kip1_patches[oldSize++] = ',';
 		memcpy(&ctxt->kip1_patches[oldSize], value, valueLen);
-		ctxt->kip1_patches[oldSize+valueLen] = 0;
+		ctxt->kip1_patches[oldSize + valueLen] = 0;
 	}
 	return 1;
 }
@@ -568,13 +571,13 @@ int hos_launch(ini_sec_t *cfg)
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
-	// Patch kip1s in memory if needed
+	// Patch kip1s in memory if needed.
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
 		gfx_printf(&gfx_con, "%kREQUESTED PATCH '%s' NOT APPLIED!%k\n", 0xFFFF0000, unappliedPatch, 0xFFCCCCCC);
-		sd_unmount(); //just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it
-		while(1) {} //MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
+		sd_unmount(); // Just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it.
+		while(1) {} // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
 	}
 
 	// Rebuild and encrypt package2.
@@ -595,7 +598,7 @@ int hos_launch(ini_sec_t *cfg)
 	case KB_FIRMWARE_VERSION_100_200:
 		if (!exoFwNumber)
 		{
-			if(!strcmp(ctxt.pkg1_id->id, "20161121183008"))
+			if (!strcmp(ctxt.pkg1_id->id, "20161121183008"))
 				exoFwNumber = 1;
 			else
 				exoFwNumber = 2;
@@ -634,7 +637,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Copy BCT if debug mode is enabled.
 	memset((void *)0x4003D000, 0, 0x3000);
-	if(ctxt.debugmode)
+	if (ctxt.debugmode)
 		_copy_bootconfig(&ctxt);
 
 	// Config Exosphère if booting Atmosphère.
@@ -647,13 +650,14 @@ int hos_launch(ini_sec_t *cfg)
 		*mb_exo_fw_no = exoFwNumber;
 	}
 
-	// Lock SE before starting 'SecureMonitor'.
+	// Finalize MC carveout and lock SE before starting 'SecureMonitor'.
+	mc_config_carveout_finalize();
 	_se_lock();
 
 	//  < 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
 	// >= 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot.
 	vu32 *mb_in = (vu32 *)0x40002EF8;
-	//Non-zero: Secmon ready
+	// Non-zero: Secmon ready.
 	vu32 *mb_out = (vu32 *)0x40002EFC;
 
 	// Start from DRAM ready signal.
@@ -677,7 +681,7 @@ int hos_launch(ini_sec_t *cfg)
 	PMC(0x5BC) = 0xFFFFFFFF;
 	PMC(0x5C0) = 0xFFAAFFFF;*/
 
-	//Disable display.
+	// Disable display.
 	if (end_di)
 		display_end();
 

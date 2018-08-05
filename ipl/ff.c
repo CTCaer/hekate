@@ -3312,7 +3312,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 			return FR_NO_FILESYSTEM;	/* Check exFAT version (must be version 1.0) */
 
 		if (1 << fs->win[BPB_BytsPerSecEx] != SS(fs)) {	/* (BPB_BytsPerSecEx must be equal to the physical sector size) */
-			EFSPRINTF("EX_SPS");
+			EFSPRINTF("EXSPS");
 			return FR_NO_FILESYSTEM;
 		}
 
@@ -3324,7 +3324,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		fs->n_fats = fs->win[BPB_NumFATsEx];			/* Number of FATs */
 		if (fs->n_fats != 1) {
-			EFSPRINTF("EX_FNF");
+			EFSPRINTF("EXFNF");
 			return FR_NO_FILESYSTEM;	/* (Supports only 1 FAT) */
 		}
 
@@ -3348,14 +3348,14 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		/* Check if bitmap location is in assumption (at the first cluster) */
 		if (move_window(fs, clst2sect(fs, fs->dirbase)) != FR_OK) {
-			EFSPRINTF("EX_BM1C");
+			EFSPRINTF("EXBM1C");
 			return FR_DISK_ERR;
 		}
 		for (i = 0; i < SS(fs); i += SZDIRE) {
 			if (fs->win[i] == 0x81 && ld_dword(fs->win + i + 20) == 2) break;	/* 81 entry with cluster #2? */
 		}
 		if (i == SS(fs)) {
-			EFSPRINTF("EX_BMM");
+			EFSPRINTF("EXBMM");
 			return FR_NO_FILESYSTEM;
 		}
 #if !FF_FS_READONLY
@@ -3366,7 +3366,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #endif	/* FF_FS_EXFAT */
 	{
 		if (ld_word(fs->win + BPB_BytsPerSec) != SS(fs)) {
-			EFSPRINTF("32_SPS");
+			EFSPRINTF("32SPS");
 			return FR_NO_FILESYSTEM;	/* (BPB_BytsPerSec must be equal to the physical sector size) */
 		}
 

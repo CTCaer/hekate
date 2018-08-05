@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -71,7 +71,7 @@ int create_config_entry()
 		itoa(h_cfg.customlogo, lbuf, 10);
 		f_puts(lbuf, &fp);
 		f_puts("\nverification=", &fp);
-		itoa(h_cfg.verification, lbuf, 10);   
+		itoa(h_cfg.verification, lbuf, 10);
 		f_puts(lbuf, &fp);
 		f_puts("\n", &fp);
 
@@ -198,9 +198,7 @@ void config_autoboot()
 			}
 
 			memset(&ments[i], 0, sizeof(ment_t));
-			menu_t menu = {
-				ments, "Disable or select entry to auto boot", 0, 0
-			};
+			menu_t menu = {ments, "Disable or select entry to auto boot", 0, 0};
 			temp_autoboot = (u32 *)tui_do_menu(&gfx_con, &menu);
 			if (temp_autoboot != NULL)
 			{
@@ -275,16 +273,14 @@ void config_bootdelay()
 			delay_text[i * 32] = '*';
 		delay_text[i * 32 + 1] = i + '0';
 		memcpy(delay_text + i * 32 + 2, " seconds", 9);
-		
+
 		ments[i + 2].type = MENT_CHOICE;
 		ments[i + 2].caption = delay_text + i * 32;
 		ments[i + 2].data = &delay_values[i];
 	}
 
 	memset(&ments[i + 2], 0, sizeof(ment_t));
-	menu_t menu = {
-		ments, "Time delay for entering bootloader menu", 0, 0
-	};
+	menu_t menu = {ments, "Time delay for entering bootloader menu", 0, 0};
 
 	u32 *temp_bootwait = (u32 *)tui_do_menu(&gfx_con, &menu);
 	if (temp_bootwait != NULL)
@@ -341,11 +337,9 @@ void config_customlogo()
 		ments[2].caption = "*Disable";
 		ments[3].caption = " Enable";
 	}
-		
+
 	memset(&ments[4], 0, sizeof(ment_t));
-	menu_t menu = {
-		ments, "Custom bootlogo", 0, 0
-	};
+	menu_t menu = {ments, "Custom bootlogo", 0, 0};
 
 	u32 *temp_customlogo = (u32 *)tui_do_menu(&gfx_con, &menu);
 	if (temp_customlogo != NULL)
@@ -408,11 +402,9 @@ void config_verification()
 			ments[2 + i].caption = vr_text + (i * 64);
 		}
 	}
-		
+
 	memset(&ments[5], 0, sizeof(ment_t));
-	menu_t menu = {
-		ments, "Backup & Restore verification", 0, 0
-	};
+	menu_t menu = {ments, "Backup & Restore verification", 0, 0};
 
 	u32 *temp_verification = (u32 *)tui_do_menu(&gfx_con, &menu);
 	if (temp_verification != NULL)

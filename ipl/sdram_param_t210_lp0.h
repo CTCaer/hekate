@@ -25,7 +25,8 @@
 
 #include "types.h"
 
-enum {
+enum
+{
 	/* Specifies the memory type to be undefined */
 	NvBootMemoryType_None = 0,
 
@@ -56,7 +57,8 @@ enum {
 /**
  * Defines the SDRAM parameter structure
  */
-struct sdram_params {
+struct sdram_params
+{
 
 	/* Specifies the type of memory device */
 	u32 MemoryType;

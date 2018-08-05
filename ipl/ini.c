@@ -1,19 +1,19 @@
 /*
-* Copyright (c) 2018 naehrwert
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <string.h>
 
@@ -40,16 +40,16 @@ int ini_parse(link_t *dst, char *ini_path)
 
 	do
 	{
-		//Fetch one line.
+		// Fetch one line.
 		lbuf[0] = 0;
 		f_gets(lbuf, 512, &fp);
 		lblen = strlen(lbuf);
 
-		//Remove trailing newline.
+		// Remove trailing newline.
 		if (lbuf[lblen - 1] == '\n')
 			lbuf[lblen - 1] = 0;
 
-		if (lblen > 2 && lbuf[0] == '[') //Create new section.
+		if (lblen > 2 && lbuf[0] == '[') // Create new section.
 		{
 			if (csec)
 			{
@@ -101,7 +101,6 @@ int ini_parse(link_t *dst, char *ini_path)
 			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
 			csec->name = _strdup(&lbuf[1]);
 			csec->type = INI_COMMENT;
-				
 		}
 		else if (lblen <= 1)
 		{

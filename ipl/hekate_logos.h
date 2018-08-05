@@ -1,28 +1,27 @@
 /*
-* Copyright (C) 2018 CTCaer
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (C) 2018 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _HEKATE_LOGOS_H_
 #define _HEKATE_LOGOS_H_
 
 #ifdef MENU_LOGO_ENABLE
-//119 x 57 @24bpp RGB RAW positioned at 577 x 1199
-#define	SZ_MENU_LOGO    20349
-#define	SZ_MENU_LOGO_BLZ 7592
-static unsigned char Kc_MENU_LOGO_blz[SZ_MENU_LOGO_BLZ] =
-{
+// 119 x 57 @24bpp RGB RAW positioned at 577 x 1199
+#define SZ_MENU_LOGO 20349
+#define SZ_MENU_LOGO_BLZ 7592
+static unsigned char Kc_MENU_LOGO_blz[SZ_MENU_LOGO_BLZ] = {
     0x01, 0x10, 0x80, 0x2D, 0xF0, 0x99, 0x30, 0x84, 0xB0, 0x1C, 0x6C, 0x60, 0x51, 0xF0, 0x59, 0x31, 
     0x03, 0x30, 0xF7, 0x0F, 0xF0, 0x0F, 0xF0, 0x42, 0xF0, 0xFE, 0xF4, 0x15, 0x6C, 0xCF, 0x30, 0xCC, 
     0x20, 0x1D, 0x7F, 0x1F, 0x52, 0x6D, 0xD8, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 0xF0, 0x0F, 
@@ -502,13 +501,12 @@ static unsigned char Kc_MENU_LOGO_blz[SZ_MENU_LOGO_BLZ] =
 
 #endif //MENU_LOGO_ENABLE
 
-//68 x 192 @8bpp Grayscale RAW
+// 68 x 192 @8bpp Grayscale RAW.
 #define X_BOOTLOGO	       68
 #define Y_BOOTLOGO	      192
 #define SZ_BOOTLOGO	    13056
 #define SZ_BOOTLOGO_BLZ	 6704
-static u8 BOOTLOGO_BLZ[SZ_BOOTLOGO_BLZ] =
-{
+static u8 BOOTLOGO_BLZ[SZ_BOOTLOGO_BLZ] = {
     0x0F, 0xF0, 0x80, 0x1B, 0x1B, 0x77, 0xF0, 0x6A, 0x08, 0x41, 0x80, 0x0F, 0x4D, 0x21, 0x40, 0x29, 
     0xF0, 0xFC, 0x34, 0xED, 0x34, 0x10, 0x23, 0x26, 0x27, 0x23, 0x76, 0x30, 0x0F, 0xF0, 0xC3, 0xC9, 
     0xF0, 0x3F, 0x7F, 0xC6, 0x53, 0x80, 0x2E, 0x33, 0xDB, 0x2D, 0xBA, 0x20, 0x8F, 0x1C, 0xE7, 0x76, 

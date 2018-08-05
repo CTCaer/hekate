@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2018 naehrwert
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms and conditions of the GNU General Public License,
-* version 2, as published by the Free Software Foundation.
-*
-* This program is distributed in the hope it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (c) 2018 naehrwert
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _CLOCK_H_
 #define _CLOCK_H_
@@ -42,6 +42,8 @@
 #define CLK_RST_CONTROLLER_PLLD_BASE 0xD0
 #define CLK_RST_CONTROLLER_PLLX_BASE 0xE0
 #define CLK_RST_CONTROLLER_PLLX_MISC 0xE4
+#define CLK_RST_CONTROLLER_PLLE_BASE 0xE8
+#define CLK_RST_CONTROLLER_PLLE_MISC 0xEC
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRA 0xF8
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRB 0xFC
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C1 0x124
@@ -96,6 +98,7 @@
 #define CLK_RST_CONTROLLER_CLK_ENB_W_CLR 0x44C
 #define CLK_RST_CONTROLLER_RST_CPUG_CMPLX_CLR 0x454
 #define CLK_RST_CONTROLLER_UTMIP_PLL_CFG2 0x488
+#define CLK_RST_CONTROLLER_PLLE_AUX 0x48C
 #define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S0 0x4A0
 #define CLK_RST_CONTROLLER_PLLX_MISC_3 0x518
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRE 0x554
@@ -141,6 +144,7 @@ void clock_disable_sor1();
 void clock_enable_kfuse();
 void clock_disable_kfuse();
 void clock_enable_cl_dvfs();
+void clock_disable_cl_dvfs();
 void clock_enable_coresight();
 void clock_sdmmc_config_clock_source(u32 *pout, u32 id, u32 val);
 void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type);
