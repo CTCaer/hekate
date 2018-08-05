@@ -322,7 +322,7 @@ static kip1_patch_t _fs_nosigchk_4xx[] =
 static kip1_patch_t _fs_nogc_40x[] = 
 {
 	{ KPS(KIP_TEXT) | 0xA3458, 4, "\x14\x40\x80\x72", "\x14\x80\x80\x72" },
-	{ KPS(KIP_TEXT) | 0xAAC98, 8, "\x80\x02\xA0\x52\x40\x40\x91\x72", "\xE0\x03\x1F\x2A\x1F\x20\x03\xD5" },
+	{ KPS(KIP_TEXT) | 0xAAB44, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -336,7 +336,7 @@ static kip1_patchset_t _fs_patches_40x[] =
 static kip1_patch_t _fs_nogc_410[] = 
 {
 	{ KPS(KIP_TEXT) | 0xA34BC, 4, "\x14\x40\x80\x72", "\x14\x80\x80\x72" },
-	{ KPS(KIP_TEXT) | 0xAACFC, 8, "\x80\x02\xA0\x52\x40\x40\x91\x72", "\xE0\x03\x1F\x2A\x1F\x20\x03\xD5" },
+	{ KPS(KIP_TEXT) | 0xAABA8, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -357,7 +357,7 @@ static kip1_patch_t _fs_nosigchk_50x[] =
 static kip1_patch_t _fs_nogc_50x[] = 
 {
 	{ KPS(KIP_TEXT) | 0xCF3C4, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0xD74FC, 8, "\x40\x40\x91\x52\x80\x02\xA0\x72", "\xE0\x03\x1F\x2A\x1F\x20\x03\xD5" },
+	{ KPS(KIP_TEXT) | 0xD73A0, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -378,7 +378,7 @@ static kip1_patch_t _fs_nosigchk_510[] =
 static kip1_patch_t _fs_nogc_510[] = 
 {
 	{ KPS(KIP_TEXT) | 0xCF794, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0xD78CC, 8, "\x40\x40\x91\x52\x80\x02\xA0\x72", "\xE0\x03\x1F\x2A\x1F\x20\x03\xD5" },
+	{ KPS(KIP_TEXT) | 0xD7770, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
 	{ 0, 0, NULL, NULL }
 };
 
