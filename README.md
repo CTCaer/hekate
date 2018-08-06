@@ -36,6 +36,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Implemented patches right now are nosigchk,nogc |
 | fullsvcperm=1      | Disables SVC verification                                  |
 | debugmode=1        | Enables Debug mode                                         |
+| atmosphere=1       | Enables Atmosphère patching                                |
 
 
 You can find a template [Here](./res/hekate_ipl_template.ini)
