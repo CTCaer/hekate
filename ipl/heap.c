@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018 M4xw
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -16,20 +17,7 @@
 
 #include <string.h>
 #include "heap.h"
-
-typedef struct _hnode
-{
-	int used;
-	u32 size;
-	struct _hnode *prev;
-	struct _hnode *next;
-} hnode_t;
-
-typedef struct _heap
-{
-	u32 start;
-	hnode_t *first;
-} heap_t;
+#include "../common/common_heap.h"
 
 static void _heap_create(heap_t *heap, u32 start)
 {
@@ -110,7 +98,7 @@ static void _heap_free(heap_t *heap, u32 addr)
 	}
 }
 
-static heap_t _heap;
+heap_t _heap;
 
 void heap_init(u32 base)
 {
@@ -120,6 +108,11 @@ void heap_init(u32 base)
 void *malloc(u32 size)
 {
 	return (void *)_heap_alloc(&_heap, size, 0x10);
+}
+
+void *memalign(u32 align, u32 size)
+{
+	return (void *)_heap_alloc(&_heap, size, align);
 }
 
 void *calloc(u32 num, u32 size)

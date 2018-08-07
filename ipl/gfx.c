@@ -356,6 +356,8 @@ void gfx_printf(gfx_con_t *con, const char *fmt, ...)
 			case 'd':
 				_gfx_putn(con, va_arg(ap, u32), 10, fill, fcnt);
 				break;
+			case 'p':
+			case 'P':
 			case 'x':
 			case 'X':
 				_gfx_putn(con, va_arg(ap, u32), 16, fill, fcnt);

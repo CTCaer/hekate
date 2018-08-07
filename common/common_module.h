@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018 naehrwert
- *
+ * Common Module Header
+ * Copyright (C) 2018 M4xw
+ * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
@@ -12,17 +13,26 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+*/
 
-#ifndef _HEAP_H_
-#define _HEAP_H_
+#pragma once
+#include <stddef.h>
+#include "common_gfx.h"
+#include "common_heap.h"
 
-#include "types.h"
+// Module Callback
+typedef void (*cbMainModule_t)(const char *s);
+typedef void (*memcpy_t)(void *, void *, size_t);
+typedef void (*memset_t)(void *test, int, size_t);
 
-void heap_init(u32 base);
-void *malloc(u32 size);
-void *calloc(u32 num, u32 size);
-void free(void *buf);
-void *memalign(u32 align, u32 size);
+typedef struct moduleConfiguration_t
+{
+	gfx_con_t *gfxCon;
+	gfx_ctxt_t *gfxCtx;
+	heap_t *sharedHeap;
+	memcpy_t memcpy;
+	memset_t memset;
+} *pmoduleConfiguration_t;
 
-#endif
+// Module Entrypoint
+typedef void (*moduleEntrypoint_t)(cbMainModule_t, pmoduleConfiguration_t);
