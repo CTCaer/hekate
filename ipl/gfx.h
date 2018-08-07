@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (C) 2018 CTCaer
+ * Copyright (C) 2018 M4xw
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,29 +19,7 @@
 #ifndef _GFX_H_
 #define _GFX_H_
 
-#include "types.h"
-
-typedef struct _gfx_ctxt_t
-{
-	u32 *fb;
-	u32 width;
-	u32 height;
-	u32 stride;
-} gfx_ctxt_t;
-
-typedef struct _gfx_con_t
-{
-	gfx_ctxt_t *gfx_ctxt;
-	u32 fntsz;
-	u32 x;
-	u32 y;
-	u32 savedx;
-	u32 savedy;
-	u32 fgcol;
-	int fillbg;
-	u32 bgcol;
-	int mute;
-} gfx_con_t;
+#include "../common/common_gfx.h"
 
 void gfx_init_ctxt(gfx_ctxt_t *ctxt, u32 *fb, u32 width, u32 height, u32 stride);
 void gfx_clear_grey(gfx_ctxt_t *ctxt, u8 color);
