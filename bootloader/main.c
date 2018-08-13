@@ -79,7 +79,7 @@ gfx_con_t gfx_con;
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
-int sd_mounted;
+bool sd_mounted;
 
 #ifdef MENU_LOGO_ENABLE
 u8 *Kc_MENU_LOGO;
@@ -87,10 +87,10 @@ u8 *Kc_MENU_LOGO;
 
 hekate_config h_cfg;
 
-int sd_mount()
+bool sd_mount()
 {
 	if (sd_mounted)
-		return 1;
+		return true;
 
 	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
 	{
@@ -103,7 +103,7 @@ int sd_mount()
 		if (res == FR_OK)
 		{
 			sd_mounted = 1;
-			return 1;
+			return true;
 		}
 		else
 		{
@@ -111,7 +111,7 @@ int sd_mount()
 		}
 	}
 
-	return 0;
+	return false;
 }
 
 void sd_unmount()
@@ -120,7 +120,7 @@ void sd_unmount()
 	{
 		f_mount(NULL, "", 1);
 		sdmmc_storage_end(&sd_storage);
-		sd_mounted = 0;
+		sd_mounted = false;
 	}
 }
 
@@ -175,7 +175,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	sdmmc_storage_t storage2;
 	sdmmc_t sdmmc;
 	char emmcSN[9];
-	int init_done = 0;
+	bool init_done = false;
 
 	memcpy(path, "Backup", 7);
 	f_mkdir(path);
@@ -186,7 +186,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 			memcpy(emmcSN, "00000000", 9);
 		else
 		{
-			init_done = 1;
+			init_done = true;
 			itoa(storage2.cid.serial, emmcSN, 16);
 		}
 	}
@@ -401,7 +401,7 @@ void config_hw()
 	sdram_lp0_save_params(sdram_get_params());
 }
 
-void reconfig_hw_workaround(int extra_reconfig)
+void reconfig_hw_workaround(bool extra_reconfig)
 {
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= 0x400; // Enable AHUB clock.
@@ -789,7 +789,7 @@ void reboot_rcm()
 #endif //MENU_LOGO_ENABLE
 	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
 	PMC(0) |= 0x10;
-	while (1)
+	while (true)
 		usleep(1);
 }
 
@@ -914,8 +914,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
 	u32 maxSplitParts = 0;
-	int isSmallSdCard = 0;
-	int partialDumpInProgress = 0;
+	bool isSmallSdCard = false;
+	bool partialDumpInProgress = false;
 	int res = 0;
 	char *outFilename = sd_path;
 	u32 sdPathLen = strlen(sd_path);
@@ -938,7 +938,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	// Check if the USER partition or the RAW eMMC fits the sd card free space.
 	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
 	{
-		isSmallSdCard = 1;
+		isSmallSdCard = true;
 
 		gfx_printf(&gfx_con, "%k\nSD card free space is smaller than total backup size.%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 
@@ -955,9 +955,9 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	{
 		gfx_printf(&gfx_con, "%kFound Partial Backup in progress. Continuing...%k\n\n", 0xFFAEFD14, 0xFFCCCCCC);
 
-		partialDumpInProgress = 1;
+		partialDumpInProgress = true;
 		// Force partial dumping, even if the card is larger.
-		isSmallSdCard = 1;
+		isSmallSdCard = true;
 
 		f_read(&partialIdxFp, &currPartIdx, 4, NULL);
 		f_close(&partialIdxFp);
@@ -1215,7 +1215,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 	int res = 0;
 	u32 timer = 0;
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	tui_sbar(&gfx_con, 1);
+	tui_sbar(&gfx_con, true);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sd_mount())
@@ -1455,7 +1455,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 	int res = 0;
 	u32 timer = 0;
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	tui_sbar(&gfx_con, 1);
+	tui_sbar(&gfx_con, true);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	gfx_printf(&gfx_con, "%kThis is a dangerous operation\nand may render your device inoperative!\n\n", 0xFFFFDD00);
@@ -1936,14 +1936,14 @@ void auto_launch_firmware()
 	};
 
 	struct _bmp_data bmpData;
-	int backlightEnabled = 0;
-	int bootlogoFound = 0;
+	bool backlightEnabled = false;
+	bool bootlogoFound = false;
 	char *bootlogoCustomEntry = NULL;
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 
-	gfx_con.mute = 1;
+	gfx_con.mute = true;
 
 	if (sd_mount())
 	{
@@ -2049,7 +2049,7 @@ void auto_launch_firmware()
 					if (bmpData.size_x < 720 || bmpData.size_y < 1280)
 						gfx_clear_color(&gfx_ctxt, *(u32 *)BOOTLOGO);
 
-					bootlogoFound = 1;
+					bootlogoFound = true;
 				}
 			}
 			else
@@ -2072,7 +2072,7 @@ void auto_launch_firmware()
 	}
 	free(BOOTLOGO);
 
-	display_backlight(1);
+	display_backlight(true);
 	backlightEnabled = 1;
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
@@ -2101,10 +2101,10 @@ out:
 	ini_free_section(cfg_sec);
 
 	sd_unmount();
-	gfx_con.mute = 0;
+	gfx_con.mute = false;
 
 	if (!backlightEnabled)
-		display_backlight(1);
+		display_backlight(true);
 }
 
 void toggle_autorcm()
@@ -2741,7 +2741,7 @@ void ipl_main()
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
 	// Enable backlight after initializing gfx
-	//display_backlight(1);
+	//display_backlight(true);
 	set_default_configuration();
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();

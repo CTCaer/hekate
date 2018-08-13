@@ -137,18 +137,16 @@ void display_init()
 	exec_cfg((u32 *)DISPLAY_A_BASE, _display_config_11, 113);
 }
 
-void display_backlight(u8 enable)
+void display_backlight(bool enable)
 {
 	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); // Backlight PWM.
 }
 
 void display_end()
 {
-	display_backlight(0);
+	display_backlight(false);
 
-	//TODO: figure out why this freezes.
-
-	/*DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 1;
+	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 1;
 	DSI(_DSIREG(DSI_WR_DATA)) = 0x2805;
 
 	u32 end = HOST1X(0x30A4) + 5;
@@ -171,17 +169,17 @@ void display_end()
 
 	usleep(50000);
 
-	//gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); //Backlight Reset disable.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); //Backlight Reset disable.
 
-	//usleep(10000);
+	usleep(10000);
 
-	//gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); //Backlight -5V disable.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); //Backlight -5V disable.
 
-	//usleep(10000);
+	usleep(10000);
 
-	//gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); //Backlight +5V disable.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); //Backlight +5V disable.
 
-	//usleep(10000);
+	usleep(10000);
 
 	//Disable clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = 0x1010000;
@@ -190,7 +188,7 @@ void display_end()
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = 0x18000000;
 
 	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) | DSI_PAD_CONTROL_VS1_PDIO_CLK | DSI_PAD_CONTROL_VS1_PDIO(0xF);
-	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;*/
+	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
 
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
 
@@ -211,7 +209,7 @@ void display_color_screen(u32 color)
 
 	usleep(35000);
 
-	display_backlight(1);
+	display_backlight(true);
 }
 
 u32 *display_init_framebuffer()

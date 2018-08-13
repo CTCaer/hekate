@@ -47,4 +47,8 @@ typedef volatile unsigned char vu8;
 typedef volatile unsigned short vu16;
 typedef volatile unsigned int vu32;
 
+typedef int bool;
+#define true  1
+#define false 0
+
 #endif

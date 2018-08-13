@@ -40,7 +40,7 @@ typedef struct _pkg1_id_t
 	u32 sec_map[3];
 	u32 secmon_base;
 	u32 warmboot_base;
-	int set_warmboot;
+	bool set_warmboot;
 	patch_t *secmon_patchset;
 } pkg1_id_t;
 

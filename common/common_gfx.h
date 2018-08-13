@@ -40,5 +40,5 @@ typedef struct _gfx_con_t
 	u32 fgcol;
 	int fillbg;
 	u32 bgcol;
-	int mute;
+	bool mute;
 } gfx_con_t;

@@ -3,7 +3,7 @@
 #include "../soc/clock.h"
 #include "../utils/util.h"
 
-void mc_config_tsec_carveout(u32 bom, u32 size1mb, int lock)
+void mc_config_tsec_carveout(u32 bom, u32 size1mb, bool lock)
 {
 	MC(MC_SEC_CARVEOUT_BOM) = bom;
 	MC(MC_SEC_CARVEOUT_SIZE_MB) = size1mb;
@@ -21,8 +21,8 @@ void mc_config_carveout()
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = 1;
 
 	// Configure TSEC carveout @ 0x90000000, 1MB.
-	//mc_config_tsec_carveout(0x90000000, 1, 0);
-	mc_config_tsec_carveout(0, 0, 1);
+	//mc_config_tsec_carveout(0x90000000, 1, false);
+	mc_config_tsec_carveout(0, 0, true);
 
 	MC(MC_MTS_CARVEOUT_BOM) = 0;
 	MC(MC_MTS_CARVEOUT_SIZE_MB) = 0;

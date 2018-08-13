@@ -190,10 +190,10 @@ out:;
 int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 {
 	//Disable the SD clock if it was enabled, and reenable it later.
-	int should_enable_sd_clock = 0;
+	bool should_enable_sd_clock = false;
 	if (sdmmc->regs->clkcon & TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE)
 	{
-		should_enable_sd_clock = 1;
+		should_enable_sd_clock = true;
 		sdmmc->regs->clkcon &= ~TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 	}
 
@@ -441,7 +441,7 @@ static int _sdmmc_setup_read_small_block(sdmmc_t *sdmmc)
 	return 1;
 }
 
-static int _sdmmc_parse_cmdbuf(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, int is_data_present)
+static int _sdmmc_parse_cmdbuf(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, bool is_data_present)
 {
 	u16 cmdflags = 0;
 	
@@ -488,7 +488,7 @@ static void _sdmmc_parse_cmd_48(sdmmc_t *sdmmc, u32 cmd)
 	cmdbuf.arg = 0;
 	cmdbuf.rsp_type = SDMMC_RSP_TYPE_1;
 	cmdbuf.check_busy = 0;
-	_sdmmc_parse_cmdbuf(sdmmc, &cmdbuf, 1);
+	_sdmmc_parse_cmdbuf(sdmmc, &cmdbuf, true);
 }
 
 static int _sdmmc_config_tuning_once(sdmmc_t *sdmmc, u32 cmd)
@@ -631,10 +631,10 @@ static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
 
 static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 {
-	int should_enable_sd_clock = 0;
+	bool should_enable_sd_clock = false;
 	if (sdmmc->regs->clkcon & TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE)
 	{
-		should_enable_sd_clock = 1;
+		should_enable_sd_clock = true;
 		sdmmc->regs->clkcon &= ~TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 	}
 
@@ -738,7 +738,7 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 	cmd.arg = 0;
 	cmd.rsp_type = SDMMC_RSP_TYPE_1;
 	cmd.check_busy = 1;
-	_sdmmc_parse_cmdbuf(sdmmc, &cmd, 0);
+	_sdmmc_parse_cmdbuf(sdmmc, &cmd, false);
 	int res = _sdmmc_wait_request(sdmmc);
 	_sdmmc_mask_interrupts(sdmmc);
 
@@ -754,10 +754,10 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 	if (!sdmmc->sd_clock_enabled)
 		return 0;
 
-	int should_disable_sd_clock = 0;
+	bool should_disable_sd_clock = false;
 	if (!(sdmmc->regs->clkcon & TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE))
 	{
-		should_disable_sd_clock = 1;
+		should_disable_sd_clock = true;
 		sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;
 		_sdmmc_get_clkcon(sdmmc);
 		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
@@ -857,17 +857,17 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		return 0;
 
 	u32 blkcnt = 0;
-	int is_data_present = 0;
+	bool is_data_present = false;
 	if (req)
 	{
 		_sdmmc_config_dma(sdmmc, &blkcnt, req);
 		_sdmmc_enable_interrupts(sdmmc);
-		is_data_present = 1;
+		is_data_present = true;
 	}
 	else
 	{
 		_sdmmc_enable_interrupts(sdmmc);
-		is_data_present = 0;
+		is_data_present = false;
 	}
 
 	_sdmmc_parse_cmdbuf(sdmmc, cmd, is_data_present);

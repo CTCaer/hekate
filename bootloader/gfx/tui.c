@@ -31,7 +31,7 @@ extern u8 *Kc_MENU_LOGO;
 
 extern hekate_config h_cfg;
 
-void tui_sbar(gfx_con_t *con, int force_update)
+void tui_sbar(gfx_con_t *con, bool force_update)
 {
 	u32 timePassed = get_tmr_s() - h_cfg.sbar_time_keeping;
 	if (!force_update)
@@ -90,7 +90,7 @@ void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
 	gfx_con_setpos(con, cx, cy);
 
 	// Update status bar.
-	tui_sbar(con, 0);
+	tui_sbar(con, false);
 }
 
 void *tui_do_menu(gfx_con_t *con, menu_t *menu)
@@ -98,7 +98,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
 
 	gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, 1256);
-	tui_sbar(con, 1);
+	tui_sbar(con, true);
 
 #ifdef MENU_LOGO_ENABLE
 	gfx_set_rect_rgb(con->gfx_ctxt, Kc_MENU_LOGO,
@@ -197,7 +197,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
 		}
-		tui_sbar(con, 0);
+		tui_sbar(con, false);
 	}
 
 	return NULL;

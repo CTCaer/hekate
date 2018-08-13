@@ -133,7 +133,7 @@ void config_autoboot()
 	LIST_INIT(ini_sections);
 
 	u8 max_entries = 29;
-	int ini_freed = 1;
+	bool ini_freed = true;
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 	u32 *boot_values = (u32 *)malloc(sizeof(u32) * max_entries);
@@ -146,7 +146,7 @@ void config_autoboot()
 	{
 		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
 		{
-			ini_freed = 0;
+			ini_freed = false;
 
 			// Build configuration menu.
 			ments[0].type = MENT_BACK;
