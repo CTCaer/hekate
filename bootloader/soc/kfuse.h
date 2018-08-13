@@ -1,9 +1,6 @@
 /*
- * Common Gfx Header
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018 CTCaer
- * Copyright (C) 2018 M4xw
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
@@ -15,30 +12,30 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-#pragma once
-//TODO: Move it to BDK
-#include "../bootloader/utils/types.h"
+#ifndef _KFUSE_H_
+#define _KFUSE_H_
 
-typedef struct _gfx_ctxt_t
-{
-	u32 *fb;
-	u32 width;
-	u32 height;
-	u32 stride;
-} gfx_ctxt_t;
+#include "../utils/types.h"
 
-typedef struct _gfx_con_t
-{
-	gfx_ctxt_t *gfx_ctxt;
-	u32 fntsz;
-	u32 x;
-	u32 y;
-	u32 savedx;
-	u32 savedy;
-	u32 fgcol;
-	int fillbg;
-	u32 bgcol;
-	int mute;
-} gfx_con_t;
+#define KFUSE_STATE_SOFTRESET      (1 << 31)
+#define KFUSE_STATE_STOP           (1 << 25)
+#define KFUSE_STATE_RESTART        (1 << 24)
+#define KFUSE_STATE_CRCPASS        (1 << 17)
+#define KFUSE_STATE_DONE           (1 << 16)
+#define KFUSE_STATE_ERRBLOCK_MASK  0x3F00
+#define KFUSE_STATE_ERRBLOCK_SHIFT 8
+#define KFUSE_STATE_CURBLOCK_MASK  0x3F
+
+#define KFUSE_KEYADDR_AUTOINC (1<<16)
+
+#define KFUSE_STATE 0x80
+#define KFUSE_KEYADDR 0x88
+#define KFUSE_KEYS 0x8C
+
+#define KFUSE_NUM_WORDS 144
+
+int kfuse_read(u32 *buf);
+
+#endif

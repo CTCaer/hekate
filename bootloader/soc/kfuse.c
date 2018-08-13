@@ -1,9 +1,6 @@
 /*
- * Common Gfx Header
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018 CTCaer
- * Copyright (C) 2018 M4xw
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
@@ -15,30 +12,31 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-#pragma once
-//TODO: Move it to BDK
-#include "../bootloader/utils/types.h"
+#include "../soc/kfuse.h"
+#include "../soc/clock.h"
+#include "../soc/t210.h"
 
-typedef struct _gfx_ctxt_t
+int kfuse_read(u32 *buf)
 {
-	u32 *fb;
-	u32 width;
-	u32 height;
-	u32 stride;
-} gfx_ctxt_t;
+	int res = 0;
 
-typedef struct _gfx_con_t
-{
-	gfx_ctxt_t *gfx_ctxt;
-	u32 fntsz;
-	u32 x;
-	u32 y;
-	u32 savedx;
-	u32 savedy;
-	u32 fgcol;
-	int fillbg;
-	u32 bgcol;
-	int mute;
-} gfx_con_t;
+	clock_enable_kfuse();
+
+	while (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_DONE))
+		;
+
+	if (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_CRCPASS))
+		goto out;
+
+	KFUSE(KFUSE_KEYADDR) = KFUSE_KEYADDR_AUTOINC;
+	for (int i = 0; i < KFUSE_NUM_WORDS; i++)
+		buf[i] = KFUSE(KFUSE_KEYS);
+
+	res = 1;
+
+out:;
+	clock_disable_kfuse();
+	return res;
+}

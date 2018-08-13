@@ -1,9 +1,6 @@
 /*
- * Common Gfx Header
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018 CTCaer
- * Copyright (C) 2018 M4xw
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
@@ -15,30 +12,17 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-#pragma once
-//TODO: Move it to BDK
-#include "../bootloader/utils/types.h"
+#include "../soc/fuse.h"
+#include "../soc/t210.h"
 
-typedef struct _gfx_ctxt_t
+void fuse_disable_program()
 {
-	u32 *fb;
-	u32 width;
-	u32 height;
-	u32 stride;
-} gfx_ctxt_t;
+	FUSE(FUSE_DISABLEREGPROGRAM) = 1;
+}
 
-typedef struct _gfx_con_t
+u32 fuse_read_odm(u32 idx)
 {
-	gfx_ctxt_t *gfx_ctxt;
-	u32 fntsz;
-	u32 x;
-	u32 y;
-	u32 savedx;
-	u32 savedy;
-	u32 fgcol;
-	int fillbg;
-	u32 bgcol;
-	int mute;
-} gfx_con_t;
+	return FUSE(FUSE_RESERVED_ODMX(idx));
+}

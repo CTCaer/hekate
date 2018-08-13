@@ -4,17 +4,17 @@ endif
 
 include $(DEVKITARM)/base_rules
 
-TARGET := ipl
-BUILD := build_ipl
+TARGET := hekate
+BUILD := build
 OUTPUT := output
-SOURCEDIR := ipl
+SOURCEDIR = bootloader
+VPATH = $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
 
-OBJS = $(addprefix $(BUILD)/, \
+OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	start.o \
 	main.o \
 	config.o \
 	btn.o \
-	blz.o \
 	clock.o \
 	cluster.o \
 	fuse.o \
@@ -23,7 +23,6 @@ OBJS = $(addprefix $(BUILD)/, \
 	hos.o \
 	i2c.o \
 	kfuse.o \
-	lz.o \
 	bq24193.o \
 	max7762x.o \
 	max17050.o \
@@ -46,12 +45,15 @@ OBJS = $(addprefix $(BUILD)/, \
 	ini.o \
 )
 
-OBJS += $(addprefix $(BUILD)/, diskio.o ff.o ffunicode.o ffsystem.o)
-OBJS += $(addprefix $(BUILD)/elfloader/, elfload.o elfreloc_arm.o)
+OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
+	lz.o blz.o \
+	diskio.o ff.o ffunicode.o ffsystem.o \
+	elfload.o elfreloc_arm.o \
+)
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
 CUSTOMDEFINES := -DMENU_LOGO_ENABLE #-DDEBUG
-CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
+CFLAGS = $(ARCH) -O2 -nostdlib -flto -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
 
 MODULEDIRS := $(wildcard modules/*)
@@ -71,17 +73,17 @@ clean:
 $(MODULEDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-$(TARGET).bin: $(BUILD)/$(TARGET).elf $(MODULEDIRS)
+$(TARGET).bin: $(BUILD)/$(TARGET)/$(TARGET).elf $(MODULEDIRS)
 	$(OBJCOPY) -S -O binary $< $(OUTPUT)/$@
 
-$(BUILD)/$(TARGET).elf: $(OBJS)
-	$(CC) $(LDFLAGS) -T ipl/link.ld $^ -o $@
+$(BUILD)/$(TARGET)/$(TARGET).elf: $(OBJS)
+	$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
 
-$(BUILD)/%.o: $(SOURCEDIR)/%.c
+$(BUILD)/$(TARGET)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/%.o: $(SOURCEDIR)/%.S
+$(BUILD)/$(TARGET)/%.o: %.S
 	@mkdir -p "$(BUILD)"
-	@mkdir -p "$(BUILD)/elfloader"
+	@mkdir -p "$(BUILD)/$(TARGET)"
 	@mkdir -p "$(OUTPUT)"
 	$(CC) $(CFLAGS) -c $< -o $@

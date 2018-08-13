@@ -1,4 +1,4 @@
 .vs
 .vscode
-build_ipl/*
+build/*
 output/*

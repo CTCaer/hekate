@@ -16,7 +16,8 @@
 */
 
 #pragma once
-#include "../ipl/types.h"
+//TODO: Move it to BDK
+#include "../bootloader/utils/types.h"
 
 typedef struct _hnode
 {

@@ -1,9 +1,7 @@
 /*
- * Common Gfx Header
  * Copyright (c) 2018 naehrwert
  * Copyright (C) 2018 CTCaer
- * Copyright (C) 2018 M4xw
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
@@ -15,30 +13,40 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-#pragma once
-//TODO: Move it to BDK
-#include "../bootloader/utils/types.h"
+#ifndef _INI_H_
+#define _INI_H_
 
-typedef struct _gfx_ctxt_t
+#include "../utils/types.h"
+#include "../utils/list.h"
+
+#define INI_CHOICE  3
+#define INI_CAPTION 5
+#define INI_CHGLINE 6
+#define INI_NEWLINE 0xFE
+#define INI_COMMENT 0xFF
+
+typedef struct _ini_kv_t
 {
-	u32 *fb;
-	u32 width;
-	u32 height;
-	u32 stride;
-} gfx_ctxt_t;
+	char *key;
+	char *val;
+	link_t link;
+} ini_kv_t;
 
-typedef struct _gfx_con_t
+typedef struct _ini_sec_t
 {
-	gfx_ctxt_t *gfx_ctxt;
-	u32 fntsz;
-	u32 x;
-	u32 y;
-	u32 savedx;
-	u32 savedy;
-	u32 fgcol;
-	int fillbg;
-	u32 bgcol;
-	int mute;
-} gfx_con_t;
+	char *name;
+	link_t kvs;
+	link_t link;
+	u32 type;
+	u32 color;
+} ini_sec_t;
+
+int ini_parse(link_t *dst, char *ini_path);
+void ini_free(link_t *dst);
+ini_sec_t *ini_clone_section(ini_sec_t *cfg);
+void ini_free_section(ini_sec_t *cfg);
+
+#endif
+

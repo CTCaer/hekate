@@ -17,6 +17,7 @@
 
 #pragma once
 #include <stddef.h>
+//TODO: Move it to BDK
 #include "common_gfx.h"
 #include "common_heap.h"
 

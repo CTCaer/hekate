@@ -1,9 +1,6 @@
 /*
- * Common Gfx Header
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018 CTCaer
- * Copyright (C) 2018 M4xw
- * 
+ *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
@@ -15,30 +12,24 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-#pragma once
-//TODO: Move it to BDK
-#include "../bootloader/utils/types.h"
+#ifndef _I2C_H_
+#define _I2C_H_
 
-typedef struct _gfx_ctxt_t
-{
-	u32 *fb;
-	u32 width;
-	u32 height;
-	u32 stride;
-} gfx_ctxt_t;
+#include "../utils/types.h"
 
-typedef struct _gfx_con_t
-{
-	gfx_ctxt_t *gfx_ctxt;
-	u32 fntsz;
-	u32 x;
-	u32 y;
-	u32 savedx;
-	u32 savedy;
-	u32 fgcol;
-	int fillbg;
-	u32 bgcol;
-	int mute;
-} gfx_con_t;
+#define I2C_1 0
+#define I2C_2 1
+#define I2C_3 2
+#define I2C_4 3
+#define I2C_5 4
+#define I2C_6 5
+
+void i2c_init(u32 idx);
+int i2c_send_buf_small(u32 idx, u32 x, u32 y, u8 *buf, u32 size);
+int i2c_recv_buf_small(u8 *buf, u32 size, u32 idx, u32 x, u32 y);
+int i2c_send_byte(u32 idx, u32 x, u32 y, u8 b);
+u8 i2c_recv_byte(u32 idx, u32 x, u32 y);
+
+#endif
