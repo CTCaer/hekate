@@ -16,7 +16,8 @@
 
 #include "../utils/types.h"
 
-struct tegra_pmc_regs {
+struct tegra_pmc_regs
+{
 	u32 cntrl;
 	u32 sec_disable;
 	u32 pmc_swrst;

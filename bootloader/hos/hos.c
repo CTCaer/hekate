@@ -40,11 +40,12 @@
 #include "../gfx/gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
+extern hekate_config h_cfg;
+
 extern void sd_unmount();
+
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
-
-extern hekate_config h_cfg;
 
 typedef struct _launch_ctxt_t
 {
@@ -666,7 +667,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
-		usleep(1);
+		;
 
 	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
 	/*PMC(0x4) = 0x7FFFF3;
