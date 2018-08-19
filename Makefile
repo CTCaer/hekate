@@ -52,7 +52,7 @@ OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
 )
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
-CUSTOMDEFINES := -DMENU_LOGO_ENABLE #-DDEBUG
+CUSTOMDEFINES := #-DSPLASH_ENABLE #-DMENU_LOGO_ENABLE #-DDEBUG
 CFLAGS = $(ARCH) -O2 -nostdlib -flto -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
 
