@@ -2063,7 +2063,7 @@ void auto_launch_firmware()
 		gfx_render_bmp_argb(&gfx_ctxt, (u32 *)BOOTLOGO, bmpData.size_x, bmpData.size_y,
 			bmpData.pos_x, bmpData.pos_y);
 	}
-    #ifdef SPLASH_ENABLE
+	#ifdef SPLASH_ENABLE
 	else
 	{
 		BOOTLOGO = (void *)malloc(0x4000);
@@ -2071,7 +2071,7 @@ void auto_launch_firmware()
 		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
 		free(BOOTLOGO);
 	}
-    #endif
+	#endif
 	free(BOOTLOGO);
 
 	display_backlight(true);
