@@ -14,9 +14,9 @@
 // Taken from http://infocenter.arm.com/help/topic/com.arm.doc.ihi0044f/IHI0044F_aaelf.pdf
 #define R_ARM_NONE 0
 #define R_ARM_ABS32 2
-#define R_ARM_RELATIVE 23
 #define R_ARM_JUMP_SLOT 22
 #define R_ARM_GLOB_DAT 21
+#define R_ARM_RELATIVE 23
 
 el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel)
 {

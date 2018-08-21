@@ -20,6 +20,7 @@
 #include "../utils/types.h"
 
 #define HOST1X_BASE 0x50000000
+#define BPMP_CACHE_BASE 0x50040000
 #define DISPLAY_A_BASE 0x54200000
 #define DSI_BASE 0x54300000
 #define VIC_BASE 0x54340000
@@ -57,6 +58,7 @@
 #define _REG(base, off) *(vu32 *)((base) + (off))
 
 #define HOST1X(off) _REG(HOST1X_BASE, off)
+#define BPMP_CACHE_CTRL(off) _REG(BPMP_CACHE_BASE, off)
 #define DISPLAY_A(off) _REG(DISPLAY_A_BASE, off)
 #define DSI(off) _REG(DSI_BASE, off)
 #define VIC(off) _REG(VIC_BASE, off)

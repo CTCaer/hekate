@@ -57,7 +57,6 @@
 #include "power/bq24193.h"
 #include "config/config.h"
 #include "ianos/ianos.h"
-#include "libs/elfload/elfload.h"
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -1834,7 +1833,7 @@ void auto_launch_firmware()
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
+		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
 		{
 			u32 configEntry = 0;
 			u32 boot_entry_id = 0;
@@ -1900,10 +1899,10 @@ void auto_launch_firmware()
 		{
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry);
 			if (bitmap == NULL) // Custom entry bootlogo not found, trying default custom one.
-				bitmap = (u8 *)sd_file_read("bootlogo.bmp");
+				bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp");
 		}
 		else // User has not set a custom logo path.
-			bitmap = (u8 *)sd_file_read("bootlogo.bmp");
+			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp");
 
 		if (bitmap != NULL)
 		{
@@ -1952,6 +1951,7 @@ void auto_launch_firmware()
 	}
 	else
 	{
+		gfx_clear_grey(&gfx_ctxt, 0x1B);
 		BOOTLOGO = (void *)malloc(0x4000);
 		blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
 		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
@@ -2285,7 +2285,7 @@ void print_battery_info()
 		if (sd_mount())
 		{
 			char path[64];
-			emmcsn_path_impl(path, "/Dumps", "fuel_gauge.bin", NULL);
+			emmcsn_path_impl(path, "/dumps", "fuel_gauge.bin", NULL);
 			if (sd_save_to_file((u8 *)buf, 0x200, path))
 				EPRINTF("\nError creating fuel.bin file.");
 			else
@@ -2582,7 +2582,6 @@ menu_t menu_tools = {
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch firmware", launch_firmware),
-	MDEF_HANDLER("Launch ELF", launch_elf),
 	MDEF_MENU("Launch options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),
@@ -2619,7 +2618,7 @@ void ipl_main()
 	ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params());
 
 	display_init();
-	//display_color_screen(0xAABBCCDD);
+
 	u32 *fb = display_init_framebuffer();
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
 
@@ -2632,6 +2631,7 @@ void ipl_main()
 
 	// Enable backlight after initializing gfx
 	//display_backlight(true);
+
 	set_default_configuration();
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();

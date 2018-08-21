@@ -28,6 +28,7 @@
 #define MENT_BACK    4
 #define MENT_CAPTION 5
 #define MENT_CHGLINE 6
+#define MENT_HDLR_RE 7
 
 typedef struct _ment_t
 {

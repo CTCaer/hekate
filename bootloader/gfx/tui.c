@@ -33,6 +33,8 @@ extern hekate_config h_cfg;
 
 void tui_sbar(gfx_con_t *con, bool force_update)
 {
+	u32 cx, cy;
+
 	u32 timePassed = get_tmr_s() - h_cfg.sbar_time_keeping;
 	if (!force_update)
 		if (timePassed < 5)
@@ -45,7 +47,7 @@ void tui_sbar(gfx_con_t *con, bool force_update)
 	u32 battPercent = 0;
 	int battVoltCurr = 0;
 
-	gfx_con_getpos(con, &con->savedx,  &con->savedy);
+	gfx_con_getpos(con, &cx, &cy);
 	gfx_con_setpos(con, 0,  1260);
 
 	max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
@@ -64,7 +66,7 @@ void tui_sbar(gfx_con_t *con, bool force_update)
 		gfx_printf(con, " %k-%d mA     %k%K\n",
 			0xFF880000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
 	con->fntsz = prevFontSize;
-	gfx_con_setpos(con, con->savedx,  con->savedy);
+	gfx_con_setpos(con, cx, cy);
 }
 
 void tui_pbar(gfx_con_t *con, int x, int y, u32 val, u32 fgcol, u32 bgcol)
@@ -187,6 +189,9 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			case MENT_BACK:
 				return NULL;
 				break;
+			case MENT_HDLR_RE:
+				ent->handler(ent->data);
+				return NULL;
 			default:
 				break;
 			}
