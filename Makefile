@@ -5,6 +5,8 @@ endif
 include $(DEVKITARM)/base_rules
 
 TARGET := hekate
+BLVERSION_MAJOR := 3
+BLVERSION_MINOR := 3
 BUILD := build
 OUTPUT := output
 SOURCEDIR = bootloader
@@ -53,6 +55,7 @@ OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
 )
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
+CUSTOMDEFINES := -DBLVERSIONMJ=$(BLVERSION_MAJOR) -DBLVERSIONMN=$(BLVERSION_MINOR)
 CUSTOMDEFINES := -DMENU_LOGO_ENABLE #-DDEBUG
 CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
@@ -76,6 +79,7 @@ $(MODULEDIRS):
 
 $(TARGET).bin: $(BUILD)/$(TARGET)/$(TARGET).elf $(MODULEDIRS)
 	$(OBJCOPY) -S -O binary $< $(OUTPUT)/$@
+	@printf ICTC$(BLVERSION_MAJOR)$(BLVERSION_MINOR) >> $(OUTPUT)/$@
 
 $(BUILD)/$(TARGET)/$(TARGET).elf: $(OBJS)
 	$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@

@@ -24,16 +24,16 @@
 // Module Callback
 typedef void (*cbMainModule_t)(const char *s);
 typedef void (*memcpy_t)(void *, void *, size_t);
-typedef void (*memset_t)(void *test, int, size_t);
+typedef void (*memset_t)(void *, int, size_t);
 
-typedef struct moduleConfiguration_t
+typedef struct _bdkParams_t
 {
 	gfx_con_t *gfxCon;
 	gfx_ctxt_t *gfxCtx;
 	heap_t *sharedHeap;
 	memcpy_t memcpy;
 	memset_t memset;
-} *pmoduleConfiguration_t;
+} *bdkParams_t;
 
 // Module Entrypoint
-typedef void (*moduleEntrypoint_t)(cbMainModule_t, pmoduleConfiguration_t);
+typedef void (*moduleEntrypoint_t)(void *, bdkParams_t);

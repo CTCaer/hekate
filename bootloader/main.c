@@ -59,6 +59,16 @@
 #include "ianos/ianos.h"
 #include "utils/dirlist.h"
 
+#ifndef BLVERSIONMJ
+	#define BLVERSIONMJ 9
+#endif
+#ifndef BLVERSIONMN
+	#define BLVERSIONMN 9
+#endif
+
+#define BOOTLOADER_UPDATED_MAGIC_ADDR 0x4003E000
+#define BOOTLOADER_UPDATED_MAGIC 0x424f4f54
+
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
 gfx_con_t gfx_con;
@@ -1721,6 +1731,28 @@ out:
 	btn_wait();
 }
 
+void auto_launch_update()
+{
+	FIL fp;
+	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR == BOOTLOADER_UPDATED_MAGIC)
+		*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = 0;
+	else
+	{
+		if (sd_mount())
+		{
+			if (f_open(&fp, "bootloader/update.bin", FA_READ))
+				return;
+			else
+			{
+				f_close(&fp);
+				*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = BOOTLOADER_UPDATED_MAGIC;
+				//launch_payload("bootloader/update.bin", true);
+			}
+
+		}
+	}
+}
+
 void ini_list_launcher()
 {
 	u8 max_entries = 61;
@@ -2753,7 +2785,9 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
-	config_hw();
+	// Skip config if we just updated the bootloader.
+	if (*(u32 *)BOOTLOADER_UPDATED_MAGIC_ADDR != BOOTLOADER_UPDATED_MAGIC)
+		config_hw();
 
 	//Pivot the stack so we have enough space.
 	pivot_stack(0x90010000);
