@@ -14,28 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
-
 #include "../utils/types.h"
 
-typedef struct _hekate_config
-{
-	u32 autoboot;
-	u32 autoboot_list;
-	u32 bootwait;
-	u32 customlogo;
-	u32 verification;
-	// Global temporary config.
-	int se_keygen_done;
-	u32 sbar_time_keeping;
-} hekate_config;
-
-void set_default_configuration();
-int create_config_entry();
-void config_autoboot();
-void config_bootdelay();
-void config_customlogo();
-void config_verification();
-
-#endif /* _CONFIG_H_ */
+char *dirlist(char *directory);

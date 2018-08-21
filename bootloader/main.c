@@ -57,6 +57,7 @@
 #include "power/bq24193.h"
 #include "config/config.h"
 #include "ianos/ianos.h"
+#include "utils/dirlist.h"
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -1720,6 +1721,102 @@ out:
 	btn_wait();
 }
 
+void ini_list_launcher()
+{
+	u8 max_entries = 61;
+	char *payload_path = NULL;
+
+	ini_sec_t *cfg_sec = NULL;
+	LIST_INIT(ini_list_sections);
+
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (sd_mount())
+	{
+		if (ini_parse(&ini_list_sections, "bootloader/ini", true))
+		{
+			// Build configuration menu.
+			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
+			ments[0].type = MENT_BACK;
+			ments[0].caption = "Back";
+			ments[1].type = MENT_CHGLINE;
+
+			u32 i = 2;
+			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_list_sections, link)
+			{
+				if (!strcmp(ini_sec->name, "config") ||
+					ini_sec->type == INI_COMMENT || ini_sec->type == INI_NEWLINE)
+					continue;
+				ments[i].type = ini_sec->type;
+				ments[i].caption = ini_sec->name;
+				ments[i].data = ini_sec;
+				if (ini_sec->type == MENT_CAPTION)
+					ments[i].color = ini_sec->color;
+				i++;
+
+				if ((i - 1) > max_entries)
+					break;
+			}
+			if (i > 2)
+			{
+				memset(&ments[i], 0, sizeof(ment_t));
+				menu_t menu = {
+					ments, "Launch ini configurations", 0, 0
+				};
+				cfg_sec = ini_clone_section((ini_sec_t *)tui_do_menu(&gfx_con, &menu));
+				if (!cfg_sec)
+				{
+					free(ments);
+					ini_free(&ini_list_sections);
+
+					return;
+				}
+			}
+			else
+				EPRINTF("No ini configurations found.");
+			free(ments);
+			//ini_free(&ini_list_sections); // This breaks hos_launch config parsing.
+		}
+		else
+			EPRINTF("Could not find any ini\nin bootloader/ini folder!");
+	}
+
+	if (!cfg_sec)
+		goto out;
+
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+
+	payload_path = ini_check_payload_section(cfg_sec);
+
+	if (payload_path)
+	{
+		ini_free_section(cfg_sec);
+		//if (launch_payload(payload_path, false))
+		//{
+			EPRINTF("Failed to launch payload.");
+			free(payload_path);
+		//}
+	}
+	else if (!hos_launch(cfg_sec))
+	{
+		EPRINTF("Failed to launch firmware.");
+		btn_wait();
+	}
+
+#ifdef MENU_LOGO_ENABLE
+	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
+	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+
+out:
+	ini_free_section(cfg_sec);
+
+	btn_wait();
+}
+
 void launch_firmware()
 {
 	u8 max_entries = 61;
@@ -1732,15 +1829,21 @@ void launch_firmware()
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
+		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			// Build configuration menu.
-			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
+			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 5));
 			ments[0].type = MENT_BACK;
 			ments[0].caption = "Back";
 			ments[1].type = MENT_CHGLINE;
 
-			u32 i = 2;
+			ments[2].type = MENT_HANDLER;
+			ments[2].caption = "More configs...";
+			ments[2].handler = ini_list_launcher;
+
+			ments[3].type = MENT_CHGLINE;
+
+			u32 i = 4;
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 			{
 				if (!strcmp(ini_sec->name, "config") ||
@@ -1753,10 +1856,10 @@ void launch_firmware()
 					ments[i].color = ini_sec->color;
 				i++;
 
-				if (i > max_entries)
+				if ((i - 3) > max_entries)
 					break;
 			}
-			if (i > 2)
+			if (i > 4)
 			{
 				memset(&ments[i], 0, sizeof(ment_t));
 				menu_t menu = {
@@ -1828,12 +1931,15 @@ void auto_launch_firmware()
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
+	LIST_INIT(ini_list_sections);
 
 	gfx_con.mute = true;
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
+		auto_launch_update();
+
+		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			u32 configEntry = 0;
 			u32 boot_entry_id = 0;
@@ -1851,6 +1957,8 @@ void auto_launch_firmware()
 						{
 							if (!strcmp("autoboot", kv->key))
 								h_cfg.autoboot = atoi(kv->val);
+							else if (!strcmp("autoboot_list", kv->key))
+								h_cfg.autoboot_list = atoi(kv->val);
 							else if (!strcmp("bootwait", kv->key))
 								h_cfg.bootwait = atoi(kv->val);
 							else if (!strcmp("customlogo", kv->key))
@@ -1869,11 +1977,49 @@ void auto_launch_firmware()
 						{
 							if (!strcmp("logopath", kv->key))
 								bootlogoCustomEntry = kv->val;
+							gfx_printf(&gfx_con, "\n%s=%s\n\n", kv->key, kv->val);
 						}
 						break;
 					}
 					boot_entry_id++;
 				}
+			}
+
+			if (h_cfg.autoboot_list)
+			{
+				ini_free(&ini_sections);
+				list_init(&ini_sections);
+				ini_free_section(cfg_sec);
+				boot_entry_id = 1;
+				bootlogoCustomEntry = NULL;
+
+				if (ini_parse(&ini_list_sections, "bootloader/ini", true))
+				{
+					LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
+					{
+						if (ini_sec_list->type == INI_CHOICE)
+						{
+							if (!strcmp(ini_sec_list->name, "config"))
+								continue;
+
+							if (h_cfg.autoboot == boot_entry_id)
+							{
+								cfg_sec = ini_clone_section(ini_sec_list);
+								LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+								{
+									if (!strcmp("logopath", kv->key))
+										bootlogoCustomEntry = kv->val;
+									gfx_printf(&gfx_con, "\n%s=%s\n\n", kv->key, kv->val);
+								}
+								break;
+							}
+							boot_entry_id++;
+						}
+						
+					}
+
+				}
+
 			}
 
 			// Add missing configuration entry.
@@ -1969,6 +2115,8 @@ void auto_launch_firmware()
 		goto out;
 
 	ini_free(&ini_sections);
+	if (h_cfg.autoboot_list)
+		ini_free(&ini_list_sections);
 
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
@@ -1985,6 +2133,8 @@ void auto_launch_firmware()
 out:
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	ini_free(&ini_sections);
+	if (h_cfg.autoboot_list)
+		ini_free(&ini_list_sections);
 	ini_free_section(cfg_sec);
 
 	sd_unmount();
@@ -2581,7 +2731,7 @@ menu_t menu_tools = {
 };
 
 ment_t ment_top[] = {
-	MDEF_HANDLER("Launch firmware", launch_firmware),
+	MDEF_HANDLER("Launch", launch_firmware),
 	MDEF_MENU("Launch options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),

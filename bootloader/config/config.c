@@ -39,6 +39,7 @@ extern int sd_unmount();
 void set_default_configuration()
 {
 	h_cfg.autoboot = 0;
+	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait = 3;
 	h_cfg.customlogo = 0;
 	h_cfg.verification = 2;
@@ -56,13 +57,16 @@ int create_config_entry()
 
 	LIST_INIT(ini_sections);
 
-	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
+	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 	{
 		if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 			return 0;
 		// Add config entry.
 		f_puts("[config]\nautoboot=", &fp);
 		itoa(h_cfg.autoboot, lbuf, 10);
+		f_puts(lbuf, &fp);
+		f_puts("\nautoboot_list=", &fp);
+		itoa(h_cfg.autoboot_list, lbuf, 10);
 		f_puts(lbuf, &fp);
 		f_puts("\nbootwait=", &fp);
 		itoa(h_cfg.bootwait, lbuf, 10);
@@ -123,7 +127,7 @@ int create_config_entry()
 	return 0;
 }
 
-void config_autoboot()
+void _config_autoboot_list()
 {
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -143,7 +147,112 @@ void config_autoboot()
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
+		if (ini_parse(&ini_sections, "bootloader/ini", true))
+		{
+			// Build configuration menu.
+			ments[0].type = MENT_BACK;
+			ments[0].caption = "Back";
+
+			ments[1].type = MENT_CHGLINE;
+
+			u32 i = 2;
+			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+			{
+				// Skip other ini entries for autoboot.
+				if (ini_sec->type == INI_CHOICE)
+				{
+					if (!strcmp(ini_sec->name, "config"))
+						continue;
+
+					if (strlen(ini_sec->name) > 510)
+						ments[i].caption = ini_sec->name;
+					else
+					{
+						if (h_cfg.autoboot != (i - 1) || !h_cfg.autoboot_list)
+							boot_text[(i - 1) * 512] = ' ';
+
+						else
+							boot_text[(i - 1) * 512] = '*';
+						memcpy(boot_text + (i - 1) * 512 + 1, ini_sec->name, strlen(ini_sec->name));
+						boot_text[strlen(ini_sec->name) + (i - 1) * 512 + 1] = 0;
+						ments[i].caption = &boot_text[(i - 1) * 512];
+					}
+					ments[i].type = ini_sec->type;
+					ments[i].data = &boot_values[i - 1];
+					i++;
+
+					if ((i - 1) > max_entries)
+						break;
+				}
+			}
+			if (i < 3)
+			{
+				EPRINTF("No launch configurations found.");
+				goto out;
+			}
+
+			memset(&ments[i], 0, sizeof(ment_t));
+			menu_t menu = {ments, "Select a list entry to auto boot", 0, 0};
+			temp_autoboot = (u32 *)tui_do_menu(&gfx_con, &menu);
+			if (temp_autoboot != NULL)
+			{
+				gfx_clear_grey(&gfx_ctxt, 0x1B);
+				gfx_con_setpos(&gfx_con, 0, 0);
+
+				h_cfg.autoboot = *(u32 *)temp_autoboot;
+				h_cfg.autoboot_list = 1;
+				// Save choice to ini file.
+				if (!create_config_entry())
+					gfx_puts(&gfx_con, "\nConfiguration was saved!\n");
+				else
+					EPRINTF("\nConfiguration saving failed!");
+				gfx_puts(&gfx_con, "\nPress any key...");
+			}
+			else
+				goto out2;
+		}
+		else
+		{
+			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
+			goto out;
+		}
+	}
+
+out:;
+	btn_wait();
+out2:;
+	free(ments);
+	free(boot_values);
+	free(boot_text);
+	ini_free(&ini_sections);
+
+	sd_unmount();
+
+	if (temp_autoboot == NULL)
+		return;
+}
+
+void config_autoboot()
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	u32 *temp_autoboot = NULL;
+
+	LIST_INIT(ini_sections);
+
+	u8 max_entries = 30;
+
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 5));
+	u32 *boot_values = (u32 *)malloc(sizeof(u32) * max_entries);
+	char *boot_text = (char *)malloc(512 * max_entries);
+
+	for (u32 j = 0; j < max_entries; j++)
+		boot_values[j] = j;
+
+	if (sd_mount())
+	{
+		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			// Build configuration menu.
 			ments[0].type = MENT_BACK;
@@ -158,7 +267,17 @@ void config_autoboot()
 				ments[2].caption = " Disable";
 			ments[2].data = &boot_values[0];
 
-			u32 i = 3;
+			ments[3].type = MENT_HANDLER;
+			if (h_cfg.autoboot_list)
+				ments[3].caption = "*More configs...";
+			else
+				ments[3].caption = " More configs...";
+			ments[3].handler = _config_autoboot_list;
+			ments[3].data = NULL;
+
+			ments[4].type = MENT_CHGLINE;
+
+			u32 i = 5;
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 			{
 				// Skip other ini entries for autoboot.
@@ -171,24 +290,24 @@ void config_autoboot()
 						ments[i].caption = ini_sec->name;
 					else
 					{
-						if (h_cfg.autoboot != (i - 2))
-							boot_text[(i - 2) * 512] = ' ';
+						if (h_cfg.autoboot != (i - 4) || h_cfg.autoboot_list)
+							boot_text[(i - 4) * 512] = ' ';
 
 						else
-							boot_text[(i - 2) * 512] = '*';
-						memcpy(boot_text + (i - 2) * 512 + 1, ini_sec->name, strlen(ini_sec->name));
-						boot_text[strlen(ini_sec->name) + (i - 2) * 512 + 1] = 0;
-						ments[i].caption = &boot_text[(i - 2) * 512];
+							boot_text[(i - 4) * 512] = '*';
+						memcpy(boot_text + (i - 4) * 512 + 1, ini_sec->name, strlen(ini_sec->name));
+						boot_text[strlen(ini_sec->name) + (i - 4) * 512 + 1] = 0;
+						ments[i].caption = &boot_text[(i - 4) * 512];
 					}
 					ments[i].type = ini_sec->type;
-					ments[i].data = &boot_values[i - 2];
+					ments[i].data = &boot_values[i - 4];
 					i++;
 
-					if (i > max_entries)
+					if ((i - 4) > max_entries)
 						break;
 				}
 			}
-			if (i < 4)
+			if (i < 6 && !h_cfg.autoboot_list)
 			{
 				EPRINTF("No launch configurations found.");
 				goto out;
@@ -203,6 +322,7 @@ void config_autoboot()
 				gfx_con_setpos(&gfx_con, 0, 0);
 
 				h_cfg.autoboot = *(u32 *)temp_autoboot;
+				h_cfg.autoboot_list = 0;
 				// Save choice to ini file.
 				if (!create_config_entry())
 					gfx_puts(&gfx_con, "\nConfiguration was saved!\n");

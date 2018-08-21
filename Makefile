@@ -41,6 +41,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	se.o \
 	tsec.o \
 	uart.o \
+	dirlist.o \
 	ini.o \
 	ianos.o \
 )

@@ -20,118 +20,161 @@
 #include "ini.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
+#include "../utils/dirlist.h"
 
 static char *_strdup(char *str)
 {
-	char *res = malloc(strlen(str) + 1);
+	char *res = (char *)malloc(strlen(str) + 1);
 	strcpy(res, str);
 	return res;
 }
 
-int ini_parse(link_t *dst, char *ini_path)
+int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 {
 	u32 lblen;
+	u32 pathlen = strlen(ini_path);
+	u32 k = 0;
 	char lbuf[512];
+	char *filelist = NULL;
 	FIL fp;
 	ini_sec_t *csec = NULL;
 
-	if (f_open(&fp, ini_path, FA_READ) != FR_OK)
-		return 0;
+	char *filename = (char *)malloc(256);
+
+	memcpy(filename, ini_path, pathlen + 1);
+
+	if (is_dir)
+	{
+		filelist = dirlist(filename);
+		if (!filelist)
+		{
+			free(filename);
+			return 0;
+		}
+		memcpy(filename + pathlen, "/", 2);
+		pathlen++;
+	}
 
 	do
 	{
-		// Fetch one line.
-		lbuf[0] = 0;
-		f_gets(lbuf, 512, &fp);
-		lblen = strlen(lbuf);
-
-		// Remove trailing newline.
-		if (lbuf[lblen - 1] == '\n')
-			lbuf[lblen - 1] = 0;
-
-		if (lblen > 2 && lbuf[0] == '[') // Create new section.
+		if (is_dir)
 		{
-			if (csec)
+			if (filelist[k * 256])
 			{
-				list_append(dst, &csec->link);
-				csec = NULL;
+				memcpy(filename + pathlen, &filelist[k * 256], strlen(&filelist[k * 256]) + 1);
+				k++;
 			}
-
-			u32 i;
-			for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != ']'; i++)
-				;
-			lbuf[i] = 0;
-
-			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-			csec->name = _strdup(&lbuf[1]);
-			csec->type = INI_CHOICE;
-			list_init(&csec->kvs);
+			else
+				break;
 		}
-		else if (lblen > 2 && lbuf[0] == '{') //Create new caption.
+
+		if (f_open(&fp, filename, FA_READ) != FR_OK)
 		{
-			if (csec)
+			free(filelist);
+			free(filename);
+
+			return 0;
+		}
+
+		do
+		{
+			// Fetch one line.
+			lbuf[0] = 0;
+			f_gets(lbuf, 512, &fp);
+			lblen = strlen(lbuf);
+
+			// Remove trailing newline.
+			if (lbuf[lblen - 1] == '\n')
+				lbuf[lblen - 1] = 0;
+
+			if (lblen > 2 && lbuf[0] == '[') // Create new section.
 			{
-				list_append(dst, &csec->link);
-				csec = NULL;
+				if (csec)
+				{
+					list_append(dst, &csec->link);
+					csec = NULL;
+				}
+
+				u32 i;
+				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != ']'; i++)
+					;
+				lbuf[i] = 0;
+
+				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+				csec->name = _strdup(&lbuf[1]);
+				csec->type = INI_CHOICE;
+				list_init(&csec->kvs);
 			}
-
-			u32 i;
-			for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '}'; i++)
-				;
-			lbuf[i] = 0;
-
-			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-			csec->name = _strdup(&lbuf[1]);
-			csec->type = INI_CAPTION;
-			csec->color = 0xFF0AB9E6;
-		}
-		else if (lblen > 2 && lbuf[0] == '#') //Create empty lines and comments.
-		{
-			if (csec)
+			else if (lblen > 2 && lbuf[0] == '{') //Create new caption.
 			{
-				list_append(dst, &csec->link);
-				csec = NULL;
+				if (csec)
+				{
+					list_append(dst, &csec->link);
+					csec = NULL;
+				}
+
+				u32 i;
+				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '}'; i++)
+					;
+				lbuf[i] = 0;
+
+				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+				csec->name = _strdup(&lbuf[1]);
+				csec->type = INI_CAPTION;
+				csec->color = 0xFF0AB9E6;
 			}
-
-			u32 i;
-			for (i = 0; i < lblen && lbuf[i] != '\n'; i++)
-				;
-			lbuf[i] = 0;
-
-			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-			csec->name = _strdup(&lbuf[1]);
-			csec->type = INI_COMMENT;
-		}
-		else if (lblen <= 1)
-		{
-			if (csec)
+			else if (lblen > 2 && lbuf[0] == '#') //Create empty lines and comments.
 			{
-				list_append(dst, &csec->link);
-				csec = NULL;
+				if (csec)
+				{
+					list_append(dst, &csec->link);
+					csec = NULL;
+				}
+
+				u32 i;
+				for (i = 0; i < lblen && lbuf[i] != '\n'; i++)
+					;
+				lbuf[i] = 0;
+
+				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+				csec->name = _strdup(&lbuf[1]);
+				csec->type = INI_COMMENT;
 			}
+			else if (lblen < 2)
+			{
+				if (csec)
+				{
+					list_append(dst, &csec->link);
+					csec = NULL;
+				}
 
-			csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-			csec->name = NULL;
-			csec->type = INI_NEWLINE;
-		}
-		else if (csec->type == INI_CHOICE) //Extract key/value.
-		{
-			u32 i;
-			for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '='; i++)
-				;
-			lbuf[i] = 0;
+				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+				csec->name = NULL;
+				csec->type = INI_NEWLINE;
+			}
+			else if (csec->type == INI_CHOICE) //Extract key/value.
+			{
+				u32 i;
+				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '='; i++)
+					;
+				lbuf[i] = 0;
 
-			ini_kv_t *kv = (ini_kv_t *)malloc(sizeof(ini_kv_t));
-			kv->key = _strdup(&lbuf[0]);
-			kv->val = _strdup(&lbuf[i + 1]);
-			list_append(&csec->kvs, &kv->link);
-		}
-	} while (!f_eof(&fp));
+				ini_kv_t *kv = (ini_kv_t *)malloc(sizeof(ini_kv_t));
+				kv->key = _strdup(&lbuf[0]);
+				kv->val = _strdup(&lbuf[i + 1]);
+				list_append(&csec->kvs, &kv->link);
+			}
+		} while (!f_eof(&fp));
 
-	f_close(&fp);
+		f_close(&fp);
+
+	} while (is_dir);
 
 	if (csec)
 		list_append(dst, &csec->link);
+
+	free(filename);
+	free(filelist);
 
 	return 1;
 }

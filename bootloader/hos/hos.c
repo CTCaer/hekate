@@ -390,7 +390,7 @@ static int _config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 		return 0;
 
 	int valueLen = strlen(value);
-	if (valueLen == 0)
+	if (!valueLen)
 		return 0;
 
 	if (ctxt->kip1_patches == NULL)
@@ -435,10 +435,15 @@ static const cfg_handler_t _config_handlers[] = {
 static int _config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
 {
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
+	{
 		for(u32 i = 0; _config_handlers[i].key; i++)
-			if (!strcmp(_config_handlers[i].key, kv->key) &&
-				!_config_handlers[i].handler(ctxt, kv->val))
-				return 0;
+		{
+			if (!strcmp(_config_handlers[i].key, kv->key))
+				if (!_config_handlers[i].handler(ctxt, kv->val))
+					return 0;
+		}
+	}
+
 	return 1;
 }
 
@@ -667,7 +672,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
-		;
+		usleep(1); // This only works when in IRAM or with a trained DRAM. 
 
 	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
 	/*PMC(0x4) = 0x7FFFF3;
