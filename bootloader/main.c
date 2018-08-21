@@ -171,7 +171,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	char emmcSN[9];
 	bool init_done = false;
 
-	memcpy(path, "Backup", 7);
+	memcpy(path, "backup", 7);
 	f_mkdir(path);
 
 	if (!storage)
@@ -409,9 +409,11 @@ void reconfig_hw_workaround(bool extra_reconfig)
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_SPIO);  
+		gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_SPIO);
 	}
 
+	// Power off display.
+	display_end();
 }
 
 void print_fuseinfo()
@@ -452,7 +454,7 @@ void print_fuseinfo()
 		if (sd_mount())
 		{
 			char path[64];
-			emmcsn_path_impl(path, "/Dumps", "fuses.bin", NULL);
+			emmcsn_path_impl(path, "/dumps", "fuses.bin", NULL);
 			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
@@ -482,7 +484,7 @@ void print_kfuseinfo()
 		if (sd_mount())
 		{
 			char path[64];
-			emmcsn_path_impl(path, "/Dumps", "kfuses.bin", NULL);
+			emmcsn_path_impl(path, "/dumps", "kfuses.bin", NULL);
 			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
@@ -748,7 +750,7 @@ void print_tsec_key()
 		if (sd_mount())
 		{
 			char path[64];
-			emmcsn_path_impl(path, "/Dumps", "tsec_keys.bin", NULL);
+			emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
 			if (!sd_save_to_file(keys, 0x10 * 3, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
@@ -1228,8 +1230,8 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 	int i = 0;
 	char sdPath[80];
 	// Create Restore folders, if they do not exist.
-	emmcsn_path_impl(sdPath, "/Restore", "", &storage);
-	emmcsn_path_impl(sdPath, "/Restore/Partitions", "", &storage);
+	emmcsn_path_impl(sdPath, "/restore", "", &storage);
+	emmcsn_path_impl(sdPath, "/restore/partitions", "", &storage);
 
 	timer = get_tmr_s();
 	if (dumpType & PART_BOOT)
@@ -1274,7 +1276,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 				gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-				emmcsn_path_impl(sdPath, "/Partitions", part->name, &storage);
+				emmcsn_path_impl(sdPath, "/partitions", part->name, &storage);
 				res = dump_emmc_part(sdPath, &storage, part);
 				// If a part failed, don't continue.
 				if (!res)
@@ -1512,7 +1514,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 
 			sdmmc_storage_set_mmc_partition(&storage, i + 1);
 
-			emmcsn_path_impl(sdPath, "/Restore", bootPart.name, &storage);
+			emmcsn_path_impl(sdPath, "/restore", bootPart.name, &storage);
 			res = restore_emmc_part(sdPath, &storage, &bootPart);
 		}
 	}
@@ -1528,7 +1530,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 				part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-			emmcsn_path_impl(sdPath, "/Restore/Partitions/", part->name, &storage);
+			emmcsn_path_impl(sdPath, "/restore/partitions/", part->name, &storage);
 			res = restore_emmc_part(sdPath, &storage, part);
 		}
 		nx_emmc_gpt_free(&gpt);
@@ -1548,7 +1550,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf(&gfx_con, "%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 				rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
-			emmcsn_path_impl(sdPath, "/Restore", rawPart.name, &storage);
+			emmcsn_path_impl(sdPath, "/restore", rawPart.name, &storage);
 			res = restore_emmc_part(sdPath, &storage, &rawPart);
 		}
 	}
@@ -1731,7 +1733,7 @@ void launch_firmware()
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
+		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
 		{
 			// Build configuration menu.
 			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
@@ -1776,7 +1778,7 @@ void launch_firmware()
 			ini_free(&ini_sections);
 		}
 		else
-			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
+			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!");
 	}
 
 	if (!cfg_sec)
@@ -1800,7 +1802,7 @@ void launch_firmware()
 		EPRINTF("Failed to launch firmware.");
 	}
 
-out:;
+out:
 	ini_free_section(cfg_sec);
 	sd_unmount();
 

@@ -56,9 +56,9 @@ int create_config_entry()
 
 	LIST_INIT(ini_sections);
 
-	if (ini_parse(&ini_sections, "hekate_ipl.ini"))
+	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
 	{
-		if (f_open(&fp, "hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+		if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 			return 0;
 		// Add config entry.
 		f_puts("[config]\nautoboot=", &fp);
@@ -144,7 +144,7 @@ void config_autoboot()
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_sections, "hekate_ipl.ini"))
+		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini"))
 		{
 			ini_freed = false;
 
