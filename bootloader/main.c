@@ -1753,6 +1753,107 @@ void auto_launch_update()
 	}
 }
 
+void launch_tools(u8 type)
+{
+	u8 max_entries = 61;
+	char *filelist = NULL;
+	char *file_sec = NULL;
+	char *dir;
+
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
+
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	if (sd_mount())
+	{
+		dir = (char *)malloc(256);
+
+		if (!type)
+			memcpy(dir, "bootloader/payloads", 20);
+		else
+			memcpy(dir, "bootloader/libtools", 20);
+
+		filelist = dirlist(dir);
+
+		u32 i = 0;
+
+		if (filelist)
+		{
+			// Build configuration menu.
+			ments[0].type = MENT_BACK;
+			ments[0].caption = "Back";
+			ments[1].type = MENT_CHGLINE;
+
+			while (true)
+			{
+				if (i > max_entries || !filelist[i * 256])
+					break;
+				ments[i + 2].type = INI_CHOICE;
+				ments[i + 2].caption = &filelist[i * 256];
+				ments[i + 2].data = &filelist[i * 256];
+
+				i++;
+			}
+		}
+					
+		if (i > 0)
+		{
+			memset(&ments[i + 2], 0, sizeof(ment_t));
+			menu_t menu = {
+					ments,
+					"Choose a file to launch", 0, 0
+			};
+			
+			file_sec = (char *)tui_do_menu(&gfx_con, &menu);
+
+			if (!file_sec)
+			{
+				free(ments);
+				free(filelist);
+				sd_unmount();
+				return;
+			}
+		}
+		else
+			EPRINTF("No payloads or libraries found.");
+
+		free(ments);
+		free(filelist);
+	}
+	else
+		goto out;
+
+	if (file_sec)
+	{
+#ifdef MENU_LOGO_ENABLE
+		free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+		memcpy(dir + strlen(dir), "/", 2);
+		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
+
+		if (!type)
+		{
+			//if (launch_payload(dir, false))
+				EPRINTF("Failed to launch payload.");
+		}
+		else
+			ianos_loader(true, dir, DRAM_LIB, NULL);
+#ifdef MENU_LOGO_ENABLE
+		Kc_MENU_LOGO = (u8 *)malloc(0x6000);
+		blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+	}
+
+out:
+	sd_unmount();
+
+	btn_wait();
+}
+
+void launch_tools_payload() { launch_tools(0); }
+void launch_tools_library() { launch_tools(1); }
+
 void ini_list_launcher()
 {
 	u8 max_entries = 61;
@@ -1852,6 +1953,7 @@ out:
 void launch_firmware()
 {
 	u8 max_entries = 61;
+	char *payload_path = NULL;
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
@@ -1864,18 +1966,21 @@ void launch_firmware()
 		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			// Build configuration menu.
-			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 5));
+			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
 			ments[0].type = MENT_BACK;
 			ments[0].caption = "Back";
 			ments[1].type = MENT_CHGLINE;
 
 			ments[2].type = MENT_HANDLER;
-			ments[2].caption = "More configs...";
-			ments[2].handler = ini_list_launcher;
+			ments[2].caption = "Payloads...";
+			ments[2].handler = launch_tools_payload;
+			ments[3].type = MENT_HANDLER;
+			ments[3].caption = "More configs...";
+			ments[3].handler = ini_list_launcher;
 
-			ments[3].type = MENT_CHGLINE;
+			ments[4].type = MENT_CHGLINE;
 
-			u32 i = 4;
+			u32 i = 5;
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 			{
 				if (!strcmp(ini_sec->name, "config") ||
@@ -1888,10 +1993,10 @@ void launch_firmware()
 					ments[i].color = ini_sec->color;
 				i++;
 
-				if ((i - 3) > max_entries)
+				if ((i - 4) > max_entries)
 					break;
 			}
-			if (i > 4)
+			if (i > 5)
 			{
 				memset(&ments[i], 0, sizeof(ment_t));
 				menu_t menu = {
@@ -1927,14 +2032,25 @@ void launch_firmware()
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
-	if (!hos_launch(cfg_sec))
+
+	payload_path = ini_check_payload_section(cfg_sec);
+
+	if (payload_path)
 	{
-#ifdef MENU_LOGO_ENABLE
-		Kc_MENU_LOGO = (u8 *)malloc(0x6000);
-		blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-		EPRINTF("Failed to launch firmware.");
+		ini_free_section(cfg_sec);
+		//if (launch_payload(payload_path, false))
+		//{
+			EPRINTF("Failed to launch payload.");
+			free(payload_path);
+		//}
 	}
+	else if (!hos_launch(cfg_sec))
+		EPRINTF("Failed to launch firmware.");
+
+#ifdef MENU_LOGO_ENABLE
+	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
+	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 
 out:
 	ini_free_section(cfg_sec);
@@ -1946,6 +2062,8 @@ out:
 void auto_launch_firmware()
 {
 	u8 *BOOTLOGO = NULL;
+	char *payload_path = NULL;
+
 	struct _bmp_data
 	{
 		u32 size;
@@ -2153,14 +2271,22 @@ void auto_launch_firmware()
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
-	if (!hos_launch(cfg_sec))
+
+	payload_path = ini_check_payload_section(cfg_sec);
+
+	if (payload_path)
 	{
-		// Failed to launch firmware.
-#ifdef MENU_LOGO_ENABLE
-		Kc_MENU_LOGO = (u8 *)malloc(ALIGN(SZ_MENU_LOGO, 0x10));
-		blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
+		ini_free_section(cfg_sec);
+		//if (launch_payload(payload_path, false))
+			free(payload_path);
 	}
+	else
+		hos_launch(cfg_sec);
+
+#ifdef MENU_LOGO_ENABLE
+	Kc_MENU_LOGO = (u8 *)malloc(ALIGN(SZ_MENU_LOGO, 0x10));
+	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
 
 out:
 	gfx_clear_grey(&gfx_ctxt, 0x1B);

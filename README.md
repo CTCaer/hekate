@@ -37,6 +37,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | fullsvcperm=1      | Disables SVC verification                                  |
 | debugmode=1        | Enables Debug mode                                         |
 | atmosphere=1       | Enables Atmosphère patching                                |
+| payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
 
 
 You can find a template [Here](./res/hekate_ipl_template.ini)

@@ -236,3 +236,33 @@ void ini_free_section(ini_sec_t *cfg)
 
 	cfg = NULL;
 }
+
+char *ini_check_payload_section(ini_sec_t *cfg)
+{
+	char *path = NULL;
+
+	if (cfg == NULL)
+		return NULL;
+
+	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
+	{
+		if (!strcmp("payload", kv->key))
+		{
+			if (!path)
+				path = _strdup(kv->val);
+		}
+	}
+
+	if (path)
+	{
+		if (strlen(path) > 1)
+			return path;
+		else
+		{
+			free(path);
+			return NULL;
+		}
+	}
+	else
+		return NULL;
+}
