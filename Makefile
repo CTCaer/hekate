@@ -31,7 +31,6 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	sdmmc.o \
 	sdmmc_driver.o \
 	sdram.o \
-	sdram_lp0.o \
 	tui.o \
 	util.o \
 	di.o \
@@ -43,6 +42,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	tsec.o \
 	uart.o \
 	ini.o \
+	ianos.o \
 )
 
 OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
@@ -53,7 +53,7 @@ OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
 CUSTOMDEFINES := -DMENU_LOGO_ENABLE #-DDEBUG
-CFLAGS = $(ARCH) -O2 -nostdlib -flto -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
+CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
 
 MODULEDIRS := $(wildcard modules/*)

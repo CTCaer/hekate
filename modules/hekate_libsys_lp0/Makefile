@@ -4,14 +4,13 @@ endif
 
 include $(DEVKITARM)/base_rules
 
-TARGET := module_sample
+TARGET := libsys_lp0
 BUILD := ../../build/$(TARGET)
 OUTPUT := ../../output
 VPATH = $(dir $(wildcard ./*/)) $(dir $(wildcard ./*/*/))
 
 OBJS = $(addprefix $(BUILD)/,\
-	module_sample.o \
-	gfx.o \
+	sys_sdramlp0.o \
 )
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork

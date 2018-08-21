@@ -391,8 +391,6 @@ void config_hw()
 	mc_config_carveout();
 
 	sdram_init();
-
-	sdram_lp0_save_params(sdram_get_params());
 }
 
 void reconfig_hw_workaround(bool extra_reconfig)
@@ -2614,6 +2612,9 @@ void ipl_main()
 
 	//uart_send(UART_C, (u8 *)0x40000000, 0x10000);
 	//uart_wait_idle(UART_C, UART_TX_IDLE);
+
+	// Save sdram lp0 config.
+	ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params());
 
 	display_init();
 	//display_color_screen(0xAABBCCDD);

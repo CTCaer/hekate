@@ -3,8 +3,10 @@
 */
 
 #include "../../common/common_module.h"
+#include "../../common/common_gfx.h"
+#include "gfx/gfx.h"
 
-void _modInit(cbMainModule_t cb, pmoduleConfiguration_t mc)
+void _modInit(void *moduleConfig, bdkParams_t bp)
 {
-	cb("Hello World!");
+	gfx_puts(bp->gfxCon, "Hello World!");
 }
