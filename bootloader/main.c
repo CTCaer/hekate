@@ -2176,7 +2176,7 @@ out:
 		display_backlight(true);
 }
 
-void toggle_autorcm()
+void toggle_autorcm(bool enable)
 {
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -2198,17 +2198,87 @@ void toggle_autorcm()
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
 		sdmmc_storage_read(&storage, sect, 1, tempbuf);
-		tempbuf[0x10] ^= 0x77; // !IMPORTANT: DO NOT CHANGE! XOR by arbitrary number to corrupt.
+		if (enable)
+			tempbuf[0x10] ^= get_tmr_us() & 0xFF; // Bricmii style of bricking.
+		else
+			tempbuf[0x10] = 0xF7;
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
 	}
 
 	free(tempbuf);
 	sdmmc_storage_end(&storage);
 
-	gfx_printf(&gfx_con, "%kAutoRCM mode toggled!%k\n\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
+	if (enable)
+		gfx_printf(&gfx_con, "%kAutoRCM mode enabled!%k", 0xFFFFBA00, 0xFFCCCCCC);
+	else
+		gfx_printf(&gfx_con, "%kAutoRCM mode disabled!%k", 0xFF96FF00, 0xFFCCCCCC);
+	gfx_printf(&gfx_con, "\n\nPress any key...\n");
 
 out:
 	btn_wait();
+}
+
+void enable_autorcm() { toggle_autorcm(true); }
+void disable_autorcm() { toggle_autorcm(false); }
+
+void menu_autorcm()
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	// Do a simple check on the main BCT.
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+	bool disabled = true;
+
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	{
+		EPRINTF("Failed to init eMMC.");
+		btn_wait();
+
+		return;
+	}
+
+	u8 *tempbuf = (u8 *)malloc(0x200);
+	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
+
+	if (tempbuf[0x10] != 0xF7)
+		disabled = false;
+
+	free(tempbuf);
+	sdmmc_storage_end(&storage);
+
+	// Create AutoRCM menu.
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
+
+	ments[0].type = MENT_BACK;
+	ments[0].caption = "Back";
+
+	ments[1].type = MENT_CHGLINE;
+
+	ments[2].type = MENT_CAPTION;
+	ments[3].type = MENT_CHGLINE;
+	if (disabled)
+	{
+		ments[2].caption = "Status: Disabled!";
+		ments[2].color = 0xFF96FF00;
+		ments[4].caption = "Enable AutoRCM";
+		ments[4].handler = enable_autorcm;
+	}
+	else
+	{
+		ments[2].caption = "Status: Enabled!";
+		ments[2].color = 0xFFFFBA00;
+		ments[4].caption = "Disable AutoRCM";
+		ments[4].handler = disable_autorcm;
+	}
+	ments[4].type = MENT_HDLR_RE;
+
+	memset(&ments[5], 0, sizeof(ment_t));
+	menu_t menu = {ments, "This corrupts your BOOT0!", 0, 0};
+
+	tui_do_menu(&gfx_con, &menu);
 }
 
 int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
@@ -2679,28 +2749,6 @@ menu_t menu_cinfo = {
 	"Console Info", 0, 0
 };
 
-ment_t ment_autorcm[] = {
-	MDEF_CAPTION("WARNING: This corrupts your BOOT0 partition!", 0xFFE6FF00),
-	MDEF_CHGLINE(),
-	MDEF_CAPTION("Do you want to continue?", 0xFFCCCCCC),
-	MDEF_CHGLINE(),
-	MDEF_BACK(),
-	MDEF_BACK(),
-	MDEF_BACK(),
-	MDEF_BACK(),
-	MDEF_HANDLER("Toggle AutoRCM", toggle_autorcm),
-	MDEF_BACK(),
-	MDEF_BACK(),
-	MDEF_BACK(),
-	MDEF_BACK(),
-	MDEF_END()
-};
-
-menu_t menu_autorcm = {
-	ment_autorcm,
-	"Toggle AutoRCM ON/OFF", 0, 0
-};
-
 ment_t ment_restore[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
@@ -2753,7 +2801,7 @@ ment_t ment_tools[] = {
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
-	MDEF_MENU("AutoRCM", &menu_autorcm),
+	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()
 };
 
