@@ -4,7 +4,6 @@
  * Copyright (c) 2018 Rajko Stojadinovic
  * Copyright (c) 2018 CTCaer
  * Copyright (c) 2018 Reisyukaku
- * Copyright (c) 2018 M4xw
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -57,13 +56,8 @@
 #include "power/max17050.h"
 #include "power/bq24193.h"
 #include "config/config.h"
-
+#include "ianos/ianos.h"
 #include "libs/elfload/elfload.h"
-#include "../common/common_module.h"
-
-// TODO: Make it not suck
-FIL globalElfFile;
-void *elfBuff;
 
 //TODO: ugly.
 gfx_ctxt_t gfx_ctxt;
@@ -1725,113 +1719,6 @@ out:
 	sd_unmount();
 
 	btn_wait();
-}
-
-void mainApplicationCb(const char *test)
-{
-	gfx_printf(&gfx_con, "\n%s\n\n", test);
-	//btn_wait();
-
-	return;
-}
-
-extern heap_t _heap;
-static void call_elf_ep(moduleEntrypoint_t entrypoint)
-{
-	pmoduleConfiguration_t moduleConfig = (pmoduleConfiguration_t)malloc(sizeof(struct moduleConfiguration_t));
-	moduleConfig->gfxCon = &gfx_con;
-	moduleConfig->gfxCtx = &gfx_ctxt;
-	moduleConfig->memcpy = (memcpy_t)&memcpy;
-	moduleConfig->memset = (memset_t)&memset;
-	moduleConfig->sharedHeap = &_heap;
-	
-	entrypoint(mainApplicationCb, moduleConfig);
-}
-
-static void *elfAllocationCallback(
-	el_ctx *ctx,
-	Elf_Addr phys,
-	Elf_Addr virt,
-	Elf_Addr size)
-{
-	(void)ctx;
-	(void)phys;
-	(void)size;
-	return (void *)virt;
-}
-
-void *buffteg = NULL;
-static bool elfReadCallback(el_ctx *ctx, void *dest, size_t numberBytes, size_t offset)
-{
-	(void)ctx;
-
-	memcpy(dest, buffteg + offset, numberBytes);
-
-	return true;
-}
-
-// TODO: ??? Add more modules!
-void launch_elf()
-{
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
-
-	if (sd_mount())
-	{
-		gfx_printf(&gfx_con, "Attempting to execute: %s\n", "module_sample.so");
-
-		buffteg = sd_file_read("module_sample.so");
-
-		sd_unmount();
-
-		el_ctx ctx;
-		ctx.pread = elfReadCallback;
-
-		if (el_init(&ctx))
-		{
-			gfx_printf(&gfx_con, "%s\n", "Cant init ELF context");
-			goto elfLoadFinalOut;
-		}
-
-		elfBuff = memalign(ctx.align, ctx.memsz);
-		if (!elfBuff)
-		{
-			gfx_printf(&gfx_con, "%s\n", "Cant alloc memory");
-			goto elfLoadFinalOut;
-		}
-
-		ctx.base_load_vaddr = ctx.base_load_paddr = (uintptr_t)elfBuff;
-		if (el_load(&ctx, elfAllocationCallback))
-		{
-			gfx_printf(&gfx_con, "%s\n", "el_load");
-			goto elfFreeOut;
-		}
-
-		if (el_relocate(&ctx))
-		{
-			gfx_printf(&gfx_con, "%s\n", "el_relocate");
-			goto elfFreeOut;
-		}
-
-		uintptr_t epaddr = ctx.ehdr.e_entry + (uintptr_t)elfBuff;
-		moduleEntrypoint_t ep = (moduleEntrypoint_t)epaddr;
-
-		call_elf_ep(ep);
-
-	elfFreeOut:
-		free(elfBuff);
-		elfBuff = NULL;
-	}
-	else
-	{
-		gfx_printf(&gfx_con, "%s\n", "Cant mount SD");
-		goto elfLoadFinalOut;
-	}
-
-elfLoadFinalOut:
-	btn_wait();
-
-	return;
 }
 
 void launch_firmware()
