@@ -168,10 +168,10 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 		f_close(&fp);
 
-	} while (is_dir);
+		if (csec)
+			list_append(dst, &csec->link);
 
-	if (csec)
-		list_append(dst, &csec->link);
+	} while (is_dir);
 
 	free(filename);
 	free(filelist);

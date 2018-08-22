@@ -30,8 +30,6 @@
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
 extern heap_t _heap;
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
 
 extern void *sd_file_read(char *path);
 extern bool sd_mount();
@@ -48,8 +46,6 @@ static void _ianos_call_ep(moduleEntrypoint_t entrypoint, void *moduleConfig)
 	bdkParameters->memcpy = (memcpy_t)&memcpy;
 	bdkParameters->memset = (memset_t)&memset;
 	bdkParameters->sharedHeap = &_heap;
-	bdkParameters->sdSdmmc = &sd_sdmmc;
-	bdkParameters->sdStorage = &sd_storage;
 
 	entrypoint(moduleConfig, bdkParameters);
 }
