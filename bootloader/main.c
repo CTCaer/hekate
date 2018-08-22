@@ -1023,6 +1023,12 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		return 0;
 	}
+	u64 totalSize = (u64)((u64)totalSectors << 9);
+	if (!isSmallSdCard && sd_fs.fs_type == FS_EXFAT)
+		f_lseek(&fp, totalSize);
+	else
+		f_lseek(&fp, MIN(totalSize, multipartSplitSize));
+	f_lseek(&fp, 0);
 
 	u32 numSectorsPerIter = 0;
 	if (totalSectors > 0x200000)
@@ -1122,6 +1128,10 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 				return 0;
 			}
 			bytesWritten = 0;
+
+			totalSize = (u64)((u64)totalSectors << 9);
+			f_lseek(&fp, MIN(totalSize, multipartSplitSize));
+			f_lseek(&fp, 0);
 		}
 
 		retryCount = 0;
@@ -1141,6 +1151,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 				free(buf);
 				f_close(&fp);
+				f_unlink(outFilename);
+
 				return 0;
 			}
 		}
@@ -1153,6 +1165,8 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 			free(buf);
 			f_close(&fp);
+			f_unlink(outFilename);
+
 			return 0;
 		}
 		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
