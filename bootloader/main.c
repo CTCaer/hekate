@@ -59,12 +59,8 @@
 #include "ianos/ianos.h"
 #include "utils/dirlist.h"
 
-#ifndef BLVERSIONMJ
-	#define BLVERSIONMJ 9
-#endif
-#ifndef BLVERSIONMN
-	#define BLVERSIONMN 9
-#endif
+#define BLVERSIONMJ 4
+#define BLVERSIONMN 0
 
 #define BOOTLOADER_UPDATED_MAGIC_ADDR 0x4003E000
 #define BOOTLOADER_UPDATED_MAGIC 0x424f4f54
@@ -1759,7 +1755,6 @@ void auto_launch_update()
 			else
 			{
 				f_close(&fp);
-				*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = BOOTLOADER_UPDATED_MAGIC;
 				//launch_payload("bootloader/update.bin", true);
 			}
 
@@ -2075,6 +2070,8 @@ out:
 
 void auto_launch_firmware()
 {
+	auto_launch_update();
+
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
 
@@ -2101,8 +2098,6 @@ void auto_launch_firmware()
 
 	if (sd_mount())
 	{
-		auto_launch_update();
-
 		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			u32 configEntry = 0;

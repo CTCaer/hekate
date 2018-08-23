@@ -6,9 +6,24 @@
 Custom Nintendo Switch bootloader, firmware patcher, and more.
 
 
-## IPL configuration
+## Bootloader folders and files
 
-The ipl can be configured via 'hekate_ipl.ini' (if it is present on the SD card). Each ini section represents a boot entry, except for the special section 'config' that controls the global configuration.
+| Folder/File          | Description                                                           |
+| -------------------- | --------------------------------------------------------------------- |
+| bootloader           | Main folder.                                                          |
+|  \|__ bootlogo.bmp   | It is used when custom is on and no logopath found. Can be skipped.   |
+|  \|__ hekate_ipl.ini | Main bootloader configuration and boot entries.                       |
+|  \|__ update.bin     | If newer, it is loaded at boot. For modchips. Can be skipped.         |
+| bootloader/ini/      | For individual inis. 'More configs...' menu. Autoboot is supported.   |
+| bootloader/sys/      | For system modules.                                                   |
+|  \|__ libsys_lp0.bso | LP0 (sleep mode) module. Important!                                   |
+| bootloader/payloads/ | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
+| bootloader/libtools/ | Future reserved                                                       |
+
+
+## Bootloader configuration
+
+The bootloader can be configured via 'bootloader/hekate_ipl.ini' (if it is present on the SD card). Each ini section represents a boot entry, except for the special section 'config' that controls the global configuration.
 
 
 There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Caption, "**#**": Comment, "*newline*": .ini cosmetic newline.
