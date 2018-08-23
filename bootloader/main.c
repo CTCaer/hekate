@@ -568,6 +568,7 @@ void print_mmc_info()
 			card_type = storage.ext_csd.card_type;
 			u8 card_type_support[96];
 			u8 pos_type = 0;
+			card_type_support[0] = 0;
 			if (card_type & EXT_CSD_CARD_TYPE_HS_26)
 			{
 				memcpy(card_type_support, "HS26", 4);
@@ -1196,7 +1197,6 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		{
 			EPRINTF("\nPress any key and try again...\n");
 
-			free(buf);
 			return 0;
 		}
 		else
@@ -1451,7 +1451,6 @@ int restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part
 		{
 			EPRINTF("\nPress any key and try again...\n");
 
-			free(buf);
 			return 0;
 		}
 		else
@@ -1831,7 +1830,11 @@ void launch_tools(u8 type)
 		free(filelist);
 	}
 	else
+	{
+		free(ments);
 		goto out;
+	}
+		
 
 	if (file_sec)
 	{
@@ -1918,7 +1921,7 @@ void ini_list_launcher()
 			else
 				EPRINTF("No ini configurations found.");
 			free(ments);
-			//ini_free(&ini_list_sections); // This breaks hos_launch config parsing.
+			ini_free(&ini_list_sections);
 		}
 		else
 			EPRINTF("Could not find any ini\nin bootloader/ini folder!");
@@ -2026,7 +2029,7 @@ void launch_firmware()
 			ini_free(&ini_sections);
 		}
 		else
-			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!");
+			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists in SD Card!");
 	}
 
 	if (!cfg_sec)
@@ -2047,11 +2050,11 @@ void launch_firmware()
 	if (payload_path)
 	{
 		ini_free_section(cfg_sec);
-		//if (launch_payload(payload_path, false))
-		//{
+		if (launch_payload(payload_path, false))
+		{
 			EPRINTF("Failed to launch payload.");
 			free(payload_path);
-		//}
+		}
 	}
 	else if (!hos_launch(cfg_sec))
 		EPRINTF("Failed to launch firmware.");
@@ -2260,7 +2263,6 @@ void auto_launch_firmware()
 		BOOTLOGO = (void *)malloc(0x4000);
 		blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
 		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-		free(BOOTLOGO);
 	}
 	free(BOOTLOGO);
 

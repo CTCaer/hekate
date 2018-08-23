@@ -152,7 +152,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				csec->name = NULL;
 				csec->type = INI_NEWLINE;
 			}
-			else if (csec->type == INI_CHOICE) //Extract key/value.
+			else if (csec && csec->type == INI_CHOICE) //Extract key/value.
 			{
 				u32 i;
 				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '='; i++)
@@ -181,7 +181,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 void ini_free(link_t *dst)
 {
-	if (dst == NULL)
+	if (!dst->prev || !dst->next)
 		return;
 
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, dst, link)
@@ -196,10 +196,11 @@ void ini_free(link_t *dst)
 			}
 		}
 		free(ini_sec->name);
-		free(ini_sec);
+		//TODO: Free section structs.
+		//free(ini_sec);
 	}
 
-	dst = NULL;
+	list_init(dst);
 }
 
 ini_sec_t *ini_clone_section(ini_sec_t *cfg)

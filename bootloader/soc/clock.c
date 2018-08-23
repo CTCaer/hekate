@@ -336,7 +336,8 @@ static int _clock_sdmmc_config_clock_source_inner(u32 *pout, u32 id, u32 val)
 		divisor = 2;
 		break;
 	default:
-		return 0;
+		*pout = 24728;
+		divisor = 31;
 	}
 
 	_clock_sdmmc_table[2 * id] = val;

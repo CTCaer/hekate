@@ -213,7 +213,7 @@ void _config_autoboot_list()
 		}
 		else
 		{
-			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
+			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
 			goto out;
 		}
 	}
@@ -335,7 +335,7 @@ void config_autoboot()
 		}
 		else
 		{
-			EPRINTF("Could not find or open 'hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
+			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists in SD Card!.");
 			goto out;
 		}
 	}

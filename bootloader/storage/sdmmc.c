@@ -1085,7 +1085,11 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 
 	u8 *buf = (u8 *)malloc(512);
 	if (!_sd_storage_get_scr(storage, buf))
+	{
+		free(buf);
 		return 0;
+	}
+		
 	//gfx_hexdump(&gfx_con, 0, storage->raw_scr, 8);
 	DPRINTF("[SD] got scr\n");
 

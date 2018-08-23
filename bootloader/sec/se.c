@@ -105,6 +105,9 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 
 static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
+	if (!src || !dst)
+		return 0;
+
 	u8 *block = (u8 *)malloc(0x10);
 	memset(block, 0, 0x10);
 

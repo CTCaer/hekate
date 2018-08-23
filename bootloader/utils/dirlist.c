@@ -53,7 +53,11 @@ char *dirlist(char *directory)
 		f_closedir(&dir);
 	}
 	else
+	{
+		free(temp);
+		free(dir_entries);
 		return NULL;
+	}
 
 	for (i = 0; i < k - 1 ; i++)
 	{
