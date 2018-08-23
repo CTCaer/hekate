@@ -1740,6 +1740,116 @@ out:
 	btn_wait();
 }
 
+// This is a safe and unused DRAM region for our payloads.
+#define IPL_START 0x40008000
+#define EXT_PAYLOAD_ADDR 0xC03C0000
+#define PATCHED_RELOC_SZ 0x94
+#define RCM_PAYLOAD_ADDR (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
+#define PAYLOAD_ENTRY 0x40010000
+#define CBFS_SDRAM_EN_ADDR 0x4003e000
+#define COREBOOT_ADDR (0xD0000000 - 0x100000)
+
+void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+
+void reloc_patcher(u32 payload_size)
+{
+	const u32 START_OFF = 0x7C;
+	const u32 PAYLOAD_END_OFF = 0x84;
+	const u32 IPL_START_OFF = 0x88;
+
+	memcpy((u8 *)EXT_PAYLOAD_ADDR, (u8 *)IPL_START, PATCHED_RELOC_SZ);
+
+	*(vu32 *)(EXT_PAYLOAD_ADDR + START_OFF) = PAYLOAD_ENTRY - ALIGN(PATCHED_RELOC_SZ, 0x10);
+	*(vu32 *)(EXT_PAYLOAD_ADDR + PAYLOAD_END_OFF) = PAYLOAD_ENTRY + payload_size;
+	*(vu32 *)(EXT_PAYLOAD_ADDR + IPL_START_OFF) = PAYLOAD_ENTRY;
+
+	if (payload_size == 0x7000)
+	{
+		memcpy((u8 *)(EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10)), (u8 *)COREBOOT_ADDR, 0x7000); //Bootblock
+		*(vu32 *)CBFS_SDRAM_EN_ADDR = 0x4452414D;
+	}
+}
+
+int launch_payload(char *path, bool update)
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+	if (!path)
+		return 1;
+
+	if (sd_mount())
+	{
+		FIL fp;
+		if (f_open(&fp, path, FA_READ))
+		{
+			EPRINTFARGS("Payload file is missing!\n(%s)", path);
+			sd_unmount();
+
+			return 1;
+		}
+
+		// Read and copy the payload to our chosen address
+		void *buf;
+		u32 size = f_size(&fp);
+
+		if (size < 0x30000)
+			buf = (void *)RCM_PAYLOAD_ADDR;
+		else
+			buf = (void *)COREBOOT_ADDR;
+
+		if (f_read(&fp, buf, size, NULL))
+		{
+			f_close(&fp);
+			sd_unmount();
+
+			return 1;
+		}
+
+		f_close(&fp);
+		free(path);
+
+		if (update)
+		{
+			u8 *update_ft = calloc(1, 6);
+			memcpy(update_ft, buf + size - 6, 6);
+			update_ft[4] -= '0';
+			update_ft[5] -= '0';
+			if (*(u32 *)update_ft == 0x43544349)
+			{
+				if (update_ft[4] < BLVERSIONMJ || (update_ft[4] == BLVERSIONMJ && update_ft[5] <= BLVERSIONMN))
+				{
+					free(update_ft);
+					return 1;
+				}
+				*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = BOOTLOADER_UPDATED_MAGIC;
+			}
+			else
+				return 1;
+			free(update_ft);
+		}
+		sd_unmount();
+
+		if (size < 0x30000)
+		{
+			if (!update)
+				reloc_patcher(ALIGN(size, 0x10));
+			reconfig_hw_workaround(0);
+		}
+		else
+		{
+			reloc_patcher(0x7000);
+			if (*(vu32 *)CBFS_SDRAM_EN_ADDR != 0x4452414D)
+				return 1;
+			reconfig_hw_workaround(1);
+		}
+
+		// Launch our payload.
+		(*ext_payload_ptr)();
+	}
+
+	return 1;
+}
+
 void auto_launch_update()
 {
 	FIL fp;
@@ -1754,7 +1864,7 @@ void auto_launch_update()
 			else
 			{
 				f_close(&fp);
-				//launch_payload("bootloader/update.bin", true);
+				launch_payload("bootloader/update.bin", true);
 			}
 
 		}
@@ -1846,7 +1956,7 @@ void launch_tools(u8 type)
 
 		if (!type)
 		{
-			//if (launch_payload(dir, false))
+			if (launch_payload(dir, false))
 				EPRINTF("Failed to launch payload.");
 		}
 		else
@@ -1939,11 +2049,11 @@ void ini_list_launcher()
 	if (payload_path)
 	{
 		ini_free_section(cfg_sec);
-		//if (launch_payload(payload_path, false))
-		//{
+		if (launch_payload(payload_path, false))
+		{
 			EPRINTF("Failed to launch payload.");
 			free(payload_path);
-		//}
+		}
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -2288,7 +2398,7 @@ void auto_launch_firmware()
 	if (payload_path)
 	{
 		ini_free_section(cfg_sec);
-		//if (launch_payload(payload_path, false))
+		if (launch_payload(payload_path, false))
 			free(payload_path);
 	}
 	else
