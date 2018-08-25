@@ -27,6 +27,7 @@ typedef struct _gfx_ctxt_t
 	u32 width;
 	u32 height;
 	u32 stride;
+	bool landscape;
 } gfx_ctxt_t;
 
 typedef struct _gfx_con_t

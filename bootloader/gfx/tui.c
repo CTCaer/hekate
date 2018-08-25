@@ -25,8 +25,8 @@
 extern u8 *Kc_MENU_LOGO;
 #define X_MENU_LOGO       119
 #define Y_MENU_LOGO        57
-#define X_POS_MENU_LOGO   577
-#define Y_POS_MENU_LOGO  1179
+#define X_POS_MENU_LOGO   (con->gfx_ctxt->width - 143)
+#define Y_POS_MENU_LOGO   (con->gfx_ctxt->height - 101)
 #endif //MENU_LOGO_ENABLE
 
 extern hekate_config h_cfg;
@@ -48,12 +48,12 @@ void tui_sbar(gfx_con_t *con, bool force_update)
 	int battVoltCurr = 0;
 
 	gfx_con_getpos(con, &cx, &cy);
-	gfx_con_setpos(con, 0,  1260);
+	gfx_con_setpos(con, 0,  con->gfx_ctxt->height - 20);
 
 	max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
 	max17050_get_property(MAX17050_VCELL, &battVoltCurr);
 
-	gfx_clear_partial_grey(con->gfx_ctxt, 0x30, 1256, 24);
+	gfx_clear_partial_grey(con->gfx_ctxt, 0x30, con->gfx_ctxt->height - 24, 24);
 	gfx_printf(con, "%K%k Battery: %d.%d%% (%d mV) - Charge:", 0xFF303030, 0xFF888888,
 		(battPercent >> 8) & 0xFF, (battPercent & 0xFF) / 26, battVoltCurr);
 
@@ -99,7 +99,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 {
 	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
 
-	gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, con->gfx_ctxt->height - 24);
 	tui_sbar(con, true);
 
 #ifdef MENU_LOGO_ENABLE
@@ -158,7 +158,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 
 		// Print help and battery status.
 		gfx_con_getpos(con, &con->savedx,  &con->savedy);
-		gfx_con_setpos(con, 0,  1191);
+		gfx_con_setpos(con, 0, con->gfx_ctxt->height - 89);
 		gfx_printf(con, "%k VOL: Move up/down\n PWR: Select option%k", 0xFF555555, 0xFFCCCCCC);
 
 		// Wait for user command.
@@ -196,7 +196,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				break;
 			}
 			con->fntsz = 16;
-			gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, 1256);
+			gfx_clear_partial_grey(con->gfx_ctxt, 0x1B, 0, con->gfx_ctxt->height - 24);
 #ifdef MENU_LOGO_ENABLE
 			gfx_set_rect_rgb(con->gfx_ctxt, Kc_MENU_LOGO,
 				X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);

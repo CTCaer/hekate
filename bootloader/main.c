@@ -424,7 +424,7 @@ void reconfig_hw_workaround(bool extra_reconfig)
 
 void print_fuseinfo()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	u32 burntFuses = 0;
@@ -472,7 +472,7 @@ void print_fuseinfo()
 
 void print_kfuseinfo()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	gfx_printf(&gfx_con, "%kKFuse contents:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
@@ -502,7 +502,7 @@ void print_kfuseinfo()
 
 void print_mmc_info()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
@@ -660,7 +660,7 @@ void print_sdcard_info()
 {
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (sd_mount())
@@ -712,7 +712,7 @@ void print_sdcard_info()
 
 void print_tsec_key()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	sdmmc_storage_t storage;
@@ -1228,7 +1228,7 @@ static void dump_emmc_selected(emmcPartType_t dumpType)
 {
 	int res = 0;
 	u32 timer = 0;
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	tui_sbar(&gfx_con, true);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
@@ -1467,7 +1467,7 @@ static void restore_emmc_selected(emmcPartType_t restoreType)
 {
 	int res = 0;
 	u32 timer = 0;
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	tui_sbar(&gfx_con, true);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
@@ -1600,7 +1600,7 @@ void dump_packages12()
 	u8 *loader = (u8 *)calloc(1, 0x40000);
 	u8 *pkg2 = NULL;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sd_mount())
@@ -2428,7 +2428,7 @@ void toggle_autorcm(bool enable)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
@@ -2600,7 +2600,7 @@ int fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 
 void fix_sd_attr(u32 type)
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	char path[256];
@@ -2756,7 +2756,7 @@ void print_battery_charger_info()
 
 void print_battery_info()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	print_fuel_gauge_info();
@@ -2799,7 +2799,7 @@ void print_battery_info()
 
 /* void fix_fuel_gauge_configuration()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	int battVoltage, avgCurrent;
@@ -2852,7 +2852,7 @@ void print_battery_info()
 {
 	int avgCurrent;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	gfx_printf(&gfx_con, "%k\nThis will wipe your battery stats completely!\n"
@@ -2863,7 +2863,7 @@ void print_battery_info()
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
-		gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+		gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 		gfx_con_setpos(&gfx_con, 0, 0);
 		gfx_printf(&gfx_con, "%kKeep the USB cable connected!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
 		gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
@@ -2898,7 +2898,7 @@ void print_battery_info()
 
 void fix_battery_desync()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, gfx_ctxt.height - 24);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	max77620_low_battery_monitor_config();
@@ -3099,7 +3099,7 @@ void ipl_main()
 	display_init();
 
 	u32 *fb = display_init_framebuffer();
-	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
+	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768, true);
 
 #ifdef MENU_LOGO_ENABLE
 	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
