@@ -140,9 +140,13 @@ void gfx_clear_color(gfx_ctxt_t *ctxt, u32 color)
 
 void gfx_clear_partial_grey(gfx_ctxt_t *ctxt, u8 color, u32 pos_x, u32 height)
 {
-	for (u32 x = 0; x < ctxt->width; x++)
-		for (u32 y = 0; y < height; y++)
-			gfx_set_pixel(ctxt, x, pos_x + y, color << 24 | color << 16 | color << 8 | color);
+	if (ctxt->landscape)
+	{
+		for (u32 x = 0; x < ctxt->width; x++)
+			memset(&ctxt->fb[pos_x + x * ctxt->stride], color, 4 * height);
+	}
+	else
+		memset(&ctxt->fb[pos_x * ctxt->stride], color, 4 * height * ctxt->stride);
 }
 
 void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
