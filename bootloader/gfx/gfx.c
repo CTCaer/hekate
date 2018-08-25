@@ -519,6 +519,6 @@ void gfx_render_bmp_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
 	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
-			gfx_set_pixel(ctxt, x, y, buf[(size_y + pos_y - 1 - y ) * size_x + x - pos_x]);
+			ctxt->fb[x + y * ctxt->stride] = buf[x - pos_x + (size_y + pos_y - 1 - y ) * size_x];
 	}
 }
