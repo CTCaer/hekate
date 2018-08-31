@@ -63,6 +63,14 @@ PATCHSET_DEF(_secmon_5_patchset,
 	{ 0xDA8 + 0x1038 , _NOP() } //Sections SHA2.
 );
 
+PATCHSET_DEF(_secmon_6_patchset,
+	// Patch package2 decryption and signature/hash checks.
+	{ 0xDC8 + 0x820 , _NOP() }, //package2 structure.
+	{ 0xDC8 + 0x82C , _NOP() }, //Version.
+	{ 0xDC8 + 0xE90 , _NOP() }, //Header signature.
+	{ 0xDC8 + 0x112C , _NOP() } //Sections SHA2.
+);
+
 /*
  * package1.1 header: <wb, ldr, sm>
  * package1.1 layout:
@@ -72,6 +80,7 @@ PATCHSET_DEF(_secmon_5_patchset,
  * 3.1: {wb, ldr, sm} { 0, 1, 2 }
  * 4.0: {ldr, sm, wb} { 1, 2, 0 }
  * 5.0: {ldr, sm, wb} { 1, 2, 0 }
+ * 6.0: {ldr, sm, wb} { 1, 2, 0 }
  */
 
 static const pkg1_id_t _pkg1_ids[] = {
@@ -81,6 +90,7 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true, _secmon_3_patchset }, //3.0.1 - 3.0.2
 	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_4_patchset }, //4.0.0 - 4.1.0
 	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_5_patchset }, //5.0.0 - 5.1.0
+	{ "20180802162753", 5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_6_patchset }, //6.0.0 - 6.0.0
 	{ NULL } //End.
 };
 
