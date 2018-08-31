@@ -626,9 +626,8 @@ int hos_launch(ini_sec_t *cfg)
 		if (!exoFwNumber)
 			exoFwNumber = 4;
 	case KB_FIRMWARE_VERSION_500:
-		if (!exoFwNumber) {
+		if (!exoFwNumber)
 			exoFwNumber = 4;
-		}
 	case KB_FIRMWARE_VERSION_600:
 	default:
 		se_key_acc_ctrl(12, 0xFF);
