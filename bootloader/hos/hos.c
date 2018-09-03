@@ -644,7 +644,7 @@ int hos_launch(ini_sec_t *cfg)
 	_free_launch_components(&ctxt);
 
 	// Copy BCT if debug mode is enabled.
-	if (ctxt.pkg1_id->kb != KB_FIRMWARE_VERSION_600)
+	if (ctxt.pkg1_id->kb < KB_FIRMWARE_VERSION_600)
 		memset((void *)0x4003D000, 0, 0x3000);
 	if (ctxt.debugmode)
 		_copy_bootconfig(&ctxt);
