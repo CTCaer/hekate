@@ -390,6 +390,43 @@ static kip1_patchset_t _fs_patches_510[] =
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nosigchk_600[] = 
+{
+	{ KPS(KIP_TEXT) | 0x712A8, 4, "\x85\x3E\x00\x94", "\xE0\x03\x1F\x2A" },
+	{ KPS(KIP_TEXT) | 0xEB08C, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
+	{ 0, 0, NULL, NULL }
+};
+static kip1_patch_t _fs_nosigchk_600_exfat[] = 
+{
+	{ KPS(KIP_TEXT) | 0x7C9A8, 4, "\x85\x3E\x00\x94", "\xE0\x03\x1F\x2A" },
+	{ KPS(KIP_TEXT) | 0xF678C, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
+	{ 0, 0, NULL, NULL }
+};
+static kip1_patch_t _fs_nogc_600[] = 
+{
+	{ KPS(KIP_TEXT) | 0x12CC20, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x1538F4, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+static kip1_patch_t _fs_nogc_600_exfat[] = 
+{
+	{ KPS(KIP_TEXT) | 0x138320, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x15EFF4, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+static kip1_patchset_t _fs_patches_600[] = 
+{
+	{ "nosigchk", _fs_nosigchk_600 },
+	{ "nogc",     _fs_nogc_600 },
+	{ NULL, NULL }
+};
+static kip1_patchset_t _fs_patches_600_exfat[] = 
+{
+	{ "nosigchk", _fs_nosigchk_600_exfat },
+	{ "nogc",     _fs_nogc_600_exfat },
+	{ NULL, NULL }
+};
+
 static kip1_id_t _kip_ids[] = 
 {
 	{ "FS", "\xde\x9f\xdd\xa4\x08\x5d\xd5\xfe\x68\xdc\xb2\x0b\x41\x09\x5b\xb4", _fs_patches_100 }, // FS 1.0.0
@@ -410,6 +447,8 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\xce\x3e\xcb\xa2\xf2\xf0\x62\xf5\x75\xf8\xf3\x60\x84\x2b\x32\xb4", _fs_patches_50x }, // FS 5.0.0 exfat
 	{ "FS", "\x76\xf8\x74\x02\xc9\x38\x7c\x0f\x0a\x2f\xab\x1b\x45\xce\xbb\x93", _fs_patches_510 }, // FS 5.1.0
 	{ "FS", "\x10\xb2\xd8\x16\x05\x48\x85\x99\xdf\x22\x42\xcb\x6b\xac\x2d\xf1", _fs_patches_510 }, // FS 5.1.0 exfat
+	{ "FS", "\x1b\x82\xcb\x22\x18\x67\xcb\x52\xc4\x4a\x86\x9e\xa9\x1a\x1a\xdd", _fs_patches_600 }, 		// FS 6.0.0
+	{ "FS", "\x96\x6a\xdd\x3d\x20\xb6\x27\x13\x2c\x5a\x8d\xa4\x9a\xc9\xd8\xdd", _fs_patches_600_exfat } // FS 6.0.0 exfat
 };
 
 const pkg2_kernel_id_t *pkg2_identify(u32 id)
