@@ -647,7 +647,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (ctxt.pkg1_id->kb < KB_FIRMWARE_VERSION_600)
 		memset((void *)0x4003D000, 0, 0x3000);
 	else
-		memset((void *)0x4003F800, 0, 0x800)
+		memset((void *)0x4003F000, 0, 0x1000)
 	
 	if (ctxt.debugmode)
 		_copy_bootconfig(&ctxt);
