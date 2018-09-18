@@ -51,6 +51,13 @@ char *dirlist(char *directory)
 				continue;
 		}
 		f_closedir(&dir);
+
+		if (!k)
+		{
+			free(temp);
+			free(dir_entries);
+			return NULL;
+		}
 	}
 	else
 	{

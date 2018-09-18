@@ -80,7 +80,7 @@ gfx_con_t gfx_con;
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
-bool sd_mounted;
+static bool sd_mounted;
 
 #ifdef MENU_LOGO_ENABLE
 u8 *Kc_MENU_LOGO;
@@ -95,7 +95,7 @@ bool sd_mount()
 
 	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
 	{
-		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.");
+		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.\nOr that SD reader is properly seated!");
 	}
 	else
 	{
@@ -2124,23 +2124,26 @@ void launch_firmware()
 				if ((i - 4) > max_entries)
 					break;
 			}
-			if (i > 5)
+			if (i < 6)
 			{
-				memset(&ments[i], 0, sizeof(ment_t));
-				menu_t menu = {
-					ments, "Launch configurations", 0, 0
-				};
-				cfg_sec = ini_clone_section((ini_sec_t *)tui_do_menu(&gfx_con, &menu));
-				if (!cfg_sec)
-				{
-					free(ments);
-					ini_free(&ini_sections);
-					sd_unmount();
-					return;
-				}
+				ments[i].type = MENT_CAPTION;
+				ments[i].caption = "No main configurations found...";
+				ments[i].color = 0xFFFFDD00;
+				i++;
 			}
-			else
-				EPRINTF("No launch configurations found.");
+			memset(&ments[i], 0, sizeof(ment_t));
+			menu_t menu = {
+				ments, "Launch configurations", 0, 0
+			};
+			cfg_sec = ini_clone_section((ini_sec_t *)tui_do_menu(&gfx_con, &menu));
+			if (!cfg_sec)
+			{
+				free(ments);
+				ini_free(&ini_sections);
+				sd_unmount();
+				return;
+			}
+
 			free(ments);
 			ini_free(&ini_sections);
 		}
@@ -2193,6 +2196,7 @@ void auto_launch_firmware()
 
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
+	FIL fp;
 
 	struct _bmp_data
 	{
@@ -2217,6 +2221,11 @@ void auto_launch_firmware()
 
 	if (sd_mount())
 	{
+		if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_READ))
+			create_config_entry();
+		else
+			f_close(&fp);
+
 		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			u32 configEntry = 0;

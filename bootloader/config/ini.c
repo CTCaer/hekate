@@ -254,15 +254,7 @@ char *ini_check_payload_section(ini_sec_t *cfg)
 	}
 
 	if (path)
-	{
-		if (strlen(path) > 1)
-			return path;
-		else
-		{
-			free(path);
-			return NULL;
-		}
-	}
+		return path;
 	else
 		return NULL;
 }

@@ -54,31 +54,52 @@ int create_config_entry()
 
 	char lbuf[16];
 	FIL fp;
+	bool mainIniFound = false;
 
 	LIST_INIT(ini_sections);
 
 	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+		mainIniFound = true;
+	else
 	{
-		if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
-			return 0;
-		// Add config entry.
-		f_puts("[config]\nautoboot=", &fp);
-		itoa(h_cfg.autoboot, lbuf, 10);
-		f_puts(lbuf, &fp);
-		f_puts("\nautoboot_list=", &fp);
-		itoa(h_cfg.autoboot_list, lbuf, 10);
-		f_puts(lbuf, &fp);
-		f_puts("\nbootwait=", &fp);
-		itoa(h_cfg.bootwait, lbuf, 10);
-		f_puts(lbuf, &fp);
-		f_puts("\ncustomlogo=", &fp);
-		itoa(h_cfg.customlogo, lbuf, 10);
-		f_puts(lbuf, &fp);
-		f_puts("\nverification=", &fp);
-		itoa(h_cfg.verification, lbuf, 10);
-		f_puts(lbuf, &fp);
-		f_puts("\n", &fp);
+		u8 res = f_open(&fp, "bootloader/hekate_ipl.ini", FA_READ);
+		if (res == FR_NO_FILE || res == FR_NO_PATH)
+		{
+			f_mkdir("bootloader");
+			f_mkdir("bootloader/ini");
+			f_mkdir("bootloader/payloads");
+			f_mkdir("bootloader/sys");
+		}
+		else
+		{
+			if (!res)
+				f_close(&fp);
+			return 1;
+		}
+	}
 
+	if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+		return 1;
+	// Add config entry.
+	f_puts("[config]\nautoboot=", &fp);
+	itoa(h_cfg.autoboot, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\nautoboot_list=", &fp);
+	itoa(h_cfg.autoboot_list, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\nbootwait=", &fp);
+	itoa(h_cfg.bootwait, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\ncustomlogo=", &fp);
+	itoa(h_cfg.customlogo, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\nverification=", &fp);
+	itoa(h_cfg.verification, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\n", &fp);
+
+	if (mainIniFound)
+	{
 		// Re-construct existing entries.
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 		{
@@ -115,14 +136,13 @@ int create_config_entry()
 				break;
 			}
 		}
-
-		f_close(&fp);
-		sd_unmount();
 	}
-	else
-		return 1;
 
-	ini_free(&ini_sections);
+	f_close(&fp);
+	sd_unmount();
+
+	if (mainIniFound)
+		ini_free(&ini_sections);
 
 	return 0;
 }
@@ -184,11 +204,6 @@ void _config_autoboot_list()
 					if ((i - 1) > max_entries)
 						break;
 				}
-			}
-			if (i < 3)
-			{
-				EPRINTF("No launch configurations found.");
-				goto out;
 			}
 
 			memset(&ments[i], 0, sizeof(ment_t));
@@ -309,8 +324,10 @@ void config_autoboot()
 			}
 			if (i < 6 && !h_cfg.autoboot_list)
 			{
-				EPRINTF("No launch configurations found.");
-				goto out;
+				ments[i].type = MENT_CAPTION;
+				ments[i].caption = "No main configurations found...";
+				ments[i].color = 0xFFFFDD00;
+				i++;
 			}
 
 			memset(&ments[i], 0, sizeof(ment_t));
