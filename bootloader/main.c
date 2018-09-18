@@ -60,9 +60,6 @@
 #include "ianos/ianos.h"
 #include "utils/dirlist.h"
 
-#define BLVERSIONMJ 4
-#define BLVERSIONMN 0
-
 #define BOOTLOADER_UPDATED_MAGIC_ADDR 0x4003E000
 #define BOOTLOADER_UPDATED_MAGIC 0x424f4f54
 
@@ -3212,7 +3209,7 @@ void ipl_main()
 	display_init();
 
 	u32 *fb = display_init_framebuffer();
-	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 768);
+	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 720);
 
 #ifdef MENU_LOGO_ENABLE
 	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
