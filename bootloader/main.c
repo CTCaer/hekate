@@ -943,6 +943,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
 	u32 maxSplitParts = 0;
+	u32 btn = 0;
 	bool isSmallSdCard = false;
 	bool partialDumpInProgress = false;
 	int res = 0;
@@ -1039,6 +1040,24 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 	FIL fp;
 	gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
+	if (!f_open(&fp, outFilename, FA_READ))
+	{
+		f_close(&fp);
+		gfx_con.fntsz = 16;
+		
+		WPRINTF("An existing backup has been detected!");
+		WPRINTF("Press POWER to Continue.\nPress VOL to go to the menu.\n");
+		msleep(500);
+
+		u32 btn = btn_wait();
+		if (btn & BTN_POWER)
+			btn = 0;
+		else
+			return 0;
+		gfx_con.fntsz = 8;
+		gfx_clear_partial_grey(&gfx_ctxt, 0x1B, gfx_con.savedy, 48);
+	}
+	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 	gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
 	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
@@ -1048,12 +1067,6 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 
 		return 0;
 	}
-	u64 totalSize = (u64)((u64)totalSectors << 9);
-	if (!isSmallSdCard && sd_fs.fs_type == FS_EXFAT)
-		f_lseek(&fp, totalSize);
-	else
-		f_lseek(&fp, MIN(totalSize, multipartSplitSize));
-	f_lseek(&fp, 0);
 
 	u32 numSectorsPerIter = 0;
 	if (totalSectors > 0x200000)
@@ -1075,6 +1088,12 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		totalSectors -= currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
 		lbaStartPart = lba_curr; // Update the start LBA for verification.
 	}
+	u64 totalSize = (u64)((u64)totalSectors << 9);
+	if (!isSmallSdCard && sd_fs.fs_type == FS_EXFAT)
+		f_lseek(&fp, totalSize);
+	else
+		f_lseek(&fp, MIN(totalSize, multipartSplitSize));
+	f_lseek(&fp, 0);
 
 	u32 num = 0;
 	u32 pct = 0;
@@ -1210,6 +1229,21 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		{
 			f_sync(&fp);
 			bytesWritten = 0;
+		}
+
+		btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
+		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		{
+			gfx_con.fntsz = 16;
+			WPRINTF("\n\nThe backup was cancelled!");
+			EPRINTF("\nPress any key and try again...\n");
+			msleep(1500);
+
+			free(buf);
+			f_close(&fp);
+			f_unlink(outFilename);
+
+			return 0;
 		}
 	}
 	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
