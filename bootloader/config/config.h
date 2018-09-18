@@ -30,7 +30,13 @@ typedef struct _hekate_config
 	int se_keygen_done;
 	u32 sbar_time_keeping;
 	u32 backlight;
+	u32 errors;
 } hekate_config;
+
+typedef enum
+{
+	ERR_LIBSYS_LP0 = (1 << 0),
+} hsysmodule_t;
 
 void set_default_configuration();
 int create_config_entry();

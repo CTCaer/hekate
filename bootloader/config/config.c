@@ -46,6 +46,7 @@ void set_default_configuration()
 	h_cfg.se_keygen_done = 0;
 	h_cfg.sbar_time_keeping = 0;
 	h_cfg.backlight = 100;
+	h_cfg.errors = 0;
 }
 
 int create_config_entry()

@@ -159,7 +159,13 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		gfx_putc(con, '\n');
 
 		// Print help and battery status.
-		gfx_con_getpos(con, &con->savedx,  &con->savedy);
+		gfx_con_setpos(con, 0,  1127);
+		if (h_cfg.errors)
+		{
+			gfx_printf(con, "%k Warning: %k", 0xFF800000, 0xFF555555);
+			if (h_cfg.errors & ERR_LIBSYS_LP0)
+				gfx_printf(con, "Sleep mode library is missing!\n");
+		}
 		gfx_con_setpos(con, 0,  1191);
 		gfx_printf(con, "%k VOL: Move up/down\n PWR: Select option%k", 0xFF555555, 0xFFCCCCCC);
 

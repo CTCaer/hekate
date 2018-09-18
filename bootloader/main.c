@@ -223,6 +223,39 @@ void panic(u32 val)
 		;
 }
 
+void reboot_normal()
+{
+	sd_unmount();
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+	display_end();
+	panic(0x21); // Bypass fuse programming in package1.
+}
+
+void reboot_rcm()
+{
+	sd_unmount();
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+	display_end();
+	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
+	PMC(0) |= 0x10;
+	while (true)
+		usleep(1);
+}
+
+void power_off()
+{
+	sd_unmount();
+#ifdef MENU_LOGO_ENABLE
+	free(Kc_MENU_LOGO);
+#endif //MENU_LOGO_ENABLE
+	//TODO: we should probably make sure all regulators are powered off properly.
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
+}
+
 void config_oscillators()
 {
 	CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) = (CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) & 0xFFFFFFF3) | 4;
@@ -769,37 +802,6 @@ out_wait:
 
 out:
 	free(pkg1);
-}
-
-void reboot_normal()
-{
-	sd_unmount();
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-	panic(0x21); // Bypass fuse programming in package1.
-}
-
-void reboot_rcm()
-{
-	sd_unmount();
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
-	PMC(0) |= 0x10;
-	while (true)
-		usleep(1);
-}
-
-void power_off()
-{
-	sd_unmount();
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-	//TODO: we should probably make sure all regulators are powered off properly.
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
 
 int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
@@ -3182,7 +3184,8 @@ void ipl_main()
 	set_default_configuration();
 
 	// Save sdram lp0 config.
-	ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params());
+	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
+		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	display_init();
 
