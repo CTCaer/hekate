@@ -84,7 +84,8 @@ typedef struct _merge_kip_t
 #define KB_FIRMWARE_VERSION_301 2
 #define KB_FIRMWARE_VERSION_400 3
 #define KB_FIRMWARE_VERSION_500 4
-#define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_500
+#define KB_FIRMWARE_VERSION_600 5
+#define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_600
 
 // Exosphère magic "XBC0".
 #define MAGIC_EXOSPHERE 0x30434258
@@ -94,7 +95,8 @@ static const u8 keyblob_keyseeds[][0x10] = {
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, //3.0.0
 	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, //3.0.1
 	{ 0x2D, 0x1F, 0x48, 0x80, 0xED, 0xEC, 0xED, 0x3E, 0x3C, 0xF2, 0x48, 0xB5, 0x65, 0x7D, 0xF7, 0xBE }, //4.0.0
-	{ 0xBB, 0x5A, 0x01, 0xF9, 0x88, 0xAF, 0xF5, 0xFC, 0x6C, 0xFF, 0x07, 0x9E, 0x13, 0x3C, 0x39, 0x80 }  //5.0.0
+	{ 0xBB, 0x5A, 0x01, 0xF9, 0x88, 0xAF, 0xF5, 0xFC, 0x6C, 0xFF, 0x07, 0x9E, 0x13, 0x3C, 0x39, 0x80 }, //5.0.0
+	{ 0xD8, 0xCC, 0xE1, 0x26, 0x6A, 0x35, 0x3F, 0xCC, 0x20, 0xF3, 0x2D, 0x3B, 0x51, 0x7D, 0xE9, 0xC0 }  //6.0.0
 };
 
 static const u8 cmac_keyseed[0x10] =
@@ -200,6 +202,7 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 		se_aes_unwrap_key(12, 12, master_keyseed_retail);
 		break;
 	case KB_FIRMWARE_VERSION_500:
+	case KB_FIRMWARE_VERSION_600:
 		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 		se_aes_unwrap_key(15, 15, console_keyseed);
 		se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
@@ -623,13 +626,16 @@ int hos_launch(ini_sec_t *cfg)
 		if (!exoFwNumber)
 			exoFwNumber = 4;
 	case KB_FIRMWARE_VERSION_500:
+		if (!exoFwNumber)
+			exoFwNumber = 5;
+	case KB_FIRMWARE_VERSION_600:
 	default:
 		se_key_acc_ctrl(12, 0xFF);
 		se_key_acc_ctrl(15, 0xFF);
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 4;
 		if (!exoFwNumber)
-			exoFwNumber = 5;
+			exoFwNumber = 6;
 		break;
 	}
 
@@ -638,7 +644,11 @@ int hos_launch(ini_sec_t *cfg)
 	_free_launch_components(&ctxt);
 
 	// Copy BCT if debug mode is enabled.
-	memset((void *)0x4003D000, 0, 0x3000);
+	if (ctxt.pkg1_id->kb < KB_FIRMWARE_VERSION_600)
+		memset((void *)0x4003D000, 0, 0x3000);
+	else
+		memset((void *)0x4003F000, 0, 0x1000);
+	
 	if (ctxt.debugmode)
 		_copy_bootconfig(&ctxt);
 
