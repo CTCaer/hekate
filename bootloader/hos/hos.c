@@ -37,6 +37,7 @@
 #include "../gfx/di.h"
 #include "../config/config.h"
 #include "../mem/mc.h"
+#include "../soc/fuse.h"
 
 #include "../gfx/gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
@@ -206,6 +207,7 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 		break;
 	case KB_FIRMWARE_VERSION_500:
 	case KB_FIRMWARE_VERSION_600:
+	default:
 		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 		se_aes_unwrap_key(15, 15, console_keyseed);
 		se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
@@ -218,23 +220,6 @@ int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 	se_aes_unwrap_key(8, 12, key8_keyseed);
 
 	return 1;
-}
-
-static void _copy_bootconfig()
-{
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
-
-	// Read BCT.
-	u8 *buf = (u8 *)0x4003D000;
-	sdmmc_storage_set_mmc_partition(&storage, 1);
-	sdmmc_storage_read(&storage, 0, 0x3000 / NX_EMMC_BLOCKSIZE, buf);
-
-	gfx_printf(&gfx_con, "Copied BCT to 0x4003D000\n");
-
-	sdmmc_storage_end(&storage);
 }
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
@@ -268,13 +253,14 @@ out:;
 	return res;
 }
 
-static int _read_emmc_pkg2(launch_ctxt_t *ctxt)
+static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 {
-	int res = 0;
+	u8 *bctBuf = NULL;
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+		return NULL;
 	sdmmc_storage_set_mmc_partition(&storage, 0);
 
 	// Parse eMMC GPT.
@@ -288,26 +274,28 @@ static int _read_emmc_pkg2(launch_ctxt_t *ctxt)
 
 	// Read in package2 header and get package2 real size.
 	//TODO: implement memalign for DMA buffers.
-	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
-	u32 *hdr = (u32 *)(tmp + 0x100);
+	static const u32 BCT_SIZE = 0x4000;
+	bctBuf = (u8 *)malloc(BCT_SIZE);
+	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
+	u32 *hdr = (u32 *)(bctBuf + 0x100);
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
-	free(tmp);
 	DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
+
+	// Read in Boot Config.
+	memset(bctBuf, 0, BCT_SIZE);
+	nx_emmc_part_read(&storage, pkg2_part, 0, BCT_SIZE / NX_EMMC_BLOCKSIZE, bctBuf);
+
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
+	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, ctxt->pkg2);
-
-	res = 1;
-
 out:;
 	nx_emmc_gpt_free(&gpt);
 	sdmmc_storage_end(&storage);
-	return res;
+	return bctBuf;
 }
 
 static int _config_warmboot(launch_ctxt_t *ctxt, const char *value)
@@ -528,7 +516,8 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "Loaded warmboot.bin and secmon\n");
 
 	// Read package2.
-	if (!_read_emmc_pkg2(&ctxt))
+	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
+	if (!bootConfigBuf)
 		return 0;
 
 	gfx_printf(&gfx_con, "Read package2\n");
@@ -646,14 +635,20 @@ int hos_launch(ini_sec_t *cfg)
 	ini_free_section(cfg);
 	_free_launch_components(&ctxt);
 
-	// Copy BCT if debug mode is enabled.
+	// Clear BCT area for retail units and copy it over if dev unit.
 	if (ctxt.pkg1_id->kb < KB_FIRMWARE_VERSION_600)
+	{
 		memset((void *)0x4003D000, 0, 0x3000);
+		if ((fuse_read_odm(4) & 3) == 3)
+			memcpy((void *)0x4003D000, bootConfigBuf, 0x1000);
+	}
 	else
+	{
 		memset((void *)0x4003F000, 0, 0x1000);
-	
-	if (ctxt.debugmode)
-		_copy_bootconfig(&ctxt);
+		if ((fuse_read_odm(4) & 3) == 3)
+			memcpy((void *)0x4003F800, bootConfigBuf, 0x800);
+	}
+	free(bootConfigBuf);
 
 	// Config Exosphère if booting Atmosphère.
 	if (ctxt.atmosphere)
