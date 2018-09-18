@@ -131,7 +131,7 @@ static void _se_lock()
 	SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; // Make all key access regs secure only.
 	SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; // Make all RSA access regs secure only.
 	SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
-	memset((void *) IPATCH_BASE, 0, 13);
+	memset((void *)IPATCH_BASE, 0, 13);
 	SB(SB_CSR) = 0x10; // Protected IROM enable.
 
 	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
@@ -685,7 +685,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Wait for secmon to get ready.
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
-		usleep(1); // This only works when in IRAM or with a trained DRAM. 
+		usleep(1); // This only works when in IRAM or with a trained DRAM.
 
 	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
 	/*PMC(0x4) = 0x7FFFF3;

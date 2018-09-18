@@ -508,15 +508,10 @@ void gfx_set_rect_rgb(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u
 
 void gfx_set_rect_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
-	u32 pos = 0;
+	u32 *ptr = (u32 *)buf;
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
-	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
-		{
-			ctxt->fb[x + y*ctxt->stride] = buf[pos];
-			pos+=1;
-		}
-	}
+			ctxt->fb[x + y * ctxt->stride] = *ptr++;
 }
 
 void gfx_render_bmp_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
@@ -524,6 +519,6 @@ void gfx_render_bmp_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
 	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
-			ctxt->fb[x + y*ctxt->stride]  = buf[(size_y + pos_y - 1 - y ) * size_x + x - pos_x];
+			ctxt->fb[x + y * ctxt->stride] = buf[(size_y + pos_y - 1 - y ) * size_x + x - pos_x];
 	}
 }

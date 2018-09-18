@@ -36,7 +36,8 @@ static const clock_t _clock_i2c[] = {
 	/* I2C6 */ { 0 }
 };
 
-static clock_t _clock_se = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, 0x42C, 0x1F, 0, 0 };
+static clock_t _clock_se = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE, 0x1F, 0, 0 };
+static clock_t _clock_unk2 = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_RST_SOURCE, 0x1E, 0, 0 };
 
 static clock_t _clock_host1x = { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X, 0x1C, 4, 3 };
 static clock_t _clock_tsec = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC, 0x13, 0, 2 };
@@ -71,7 +72,7 @@ void clock_disable(const clock_t *clk)
 	CLOCK(clk->enable) &= ~(1 << clk->index);
 }
 
-void clock_enable_fuse(u32 enable)
+void clock_enable_fuse(bool enable)
 {
 	CLOCK(CLK_RST_CONTROLLER_MISC_CLK_ENB) = (CLOCK(CLK_RST_CONTROLLER_MISC_CLK_ENB) & 0xEFFFFFFF) | ((enable & 1) << 28);
 }
@@ -86,9 +87,19 @@ void clock_enable_i2c(u32 idx)
 	clock_enable(&_clock_i2c[idx]);
 }
 
+void clock_disable_i2c(u32 idx)
+{
+	clock_disable(&_clock_i2c[idx]);
+}
+
 void clock_enable_se()
 {
 	clock_enable(&_clock_se);
+}
+
+void clock_enable_unk2()
+{
+	clock_enable(&_clock_unk2);
 }
 
 void clock_enable_host1x()
@@ -170,6 +181,11 @@ void clock_disable_cl_dvfs()
 void clock_enable_coresight()
 {
 	clock_enable(&_clock_coresight);
+}
+
+void clock_disable_coresight()
+{
+	clock_disable(&_clock_coresight);
 }
 
 #define L_SWR_SDMMC1_RST (1 << 14)

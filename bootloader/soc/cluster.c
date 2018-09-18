@@ -21,24 +21,25 @@
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
 #include "../power/max77620.h"
+#include "../power/max7762x.h"
 
 void _cluster_enable_power()
 {
-	u8 tmp = i2c_recv_byte(I2C_5, 0x3C, MAX77620_REG_AME_GPIO);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_AME_GPIO, tmp & 0xDF);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_GPIO5, 0x09);
+	u8 tmp = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO, tmp & 0xDF);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO5, 0x09);
 
 	// Enable cores power.
-	i2c_send_byte(I2C_5, 0x1B, 0x2, 0x20);
-	i2c_send_byte(I2C_5, 0x1B, 0x3, 0x8D);
-	i2c_send_byte(I2C_5, 0x1B, 0x0, 0xB7);
-	i2c_send_byte(I2C_5, 0x1B, 0x1, 0xB7);
+	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CONTROL1_REG, MAX77621_NFSR_ENABLE);
+	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CONTROL2_REG, MAX77621_T_JUNCTION_120 | MAX77621_CKKADV_TRIP_DISABLE | MAX77621_INDUCTOR_NOMINAL);
+	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_REG, MAX77621_VOUT_ENABLE | 0x37);
+	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_DVC_REG, MAX77621_VOUT_ENABLE | 0x37);
 }
 
-int _cluster_pmc_enable_partition(u32 part, u32 toggle)
+int _cluster_pmc_enable_partition(u32 part, u32 toggle, bool enable)
 {
 	// Check if the partition has already been turned on.
-	if (PMC(APBDEV_PMC_PWRGATE_STATUS) & part)
+	if (enable && PMC(APBDEV_PMC_PWRGATE_STATUS) & part)
 		return 1;
 
 	u32 i = 5001;
@@ -50,7 +51,7 @@ int _cluster_pmc_enable_partition(u32 part, u32 toggle)
 			return 0;
 	}
 
-	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = toggle | 0x100;
+	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = toggle | (enable ? 0x100 : 0);
 
 	i = 5001;
 	while (i > 0)
@@ -98,9 +99,9 @@ void cluster_boot_cpu0(u32 entry)
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
 	// Enable CPU rail.
-	_cluster_pmc_enable_partition(1, 0);
-	//Enable cluster 0 non-CPU.
-	_cluster_pmc_enable_partition(0x8000, 15);
+	_cluster_pmc_enable_partition(1, 0, true);
+	// Enable cluster 0 non-CPU.
+	_cluster_pmc_enable_partition(0x8000, 15, true);
 	// Enable CE0.
 	_cluster_pmc_enable_partition(0x4000, 14);
 

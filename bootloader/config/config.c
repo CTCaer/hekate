@@ -173,7 +173,7 @@ void _config_autoboot_list()
 
 						else
 							boot_text[(i - 1) * 512] = '*';
-						memcpy(boot_text + (i - 1) * 512 + 1, ini_sec->name, strlen(ini_sec->name));
+						memcpy(boot_text + (i - 1) * 512 + 1, ini_sec->name, strlen(ini_sec->name) + 1);
 						boot_text[strlen(ini_sec->name) + (i - 1) * 512 + 1] = 0;
 						ments[i].caption = &boot_text[(i - 1) * 512];
 					}
@@ -295,7 +295,7 @@ void config_autoboot()
 
 						else
 							boot_text[(i - 4) * 512] = '*';
-						memcpy(boot_text + (i - 4) * 512 + 1, ini_sec->name, strlen(ini_sec->name));
+						memcpy(boot_text + (i - 4) * 512 + 1, ini_sec->name, strlen(ini_sec->name) + 1);
 						boot_text[strlen(ini_sec->name) + (i - 4) * 512 + 1] = 0;
 						ments[i].caption = &boot_text[(i - 4) * 512];
 					}
@@ -501,9 +501,9 @@ void config_verification()
 
 	ments[1].type = MENT_CHGLINE;
 
-	memcpy(vr_text,       " Disable", 9);
-	memcpy(vr_text + 64,  " Sparse (Fast - Not  reliable)", 31);
-	memcpy(vr_text + 128, " Full   (Slow - 100% reliable)", 31);
+	memcpy(vr_text,       " Disable (Fastest)", 19);
+	memcpy(vr_text + 64,  " Sparse  (Fast - Not  reliable)", 32);
+	memcpy(vr_text + 128, " Full    (Slow - 100% reliable)", 32);
 
 	for (u32 i = 0; i < 3; i++)
 	{

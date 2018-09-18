@@ -351,7 +351,7 @@ void config_hw()
 	clock_enable_se();
 
 	// Enable fuse clock.
-	clock_enable_fuse(1);
+	clock_enable_fuse(true);
 	// Disable fuse programming.
 	fuse_disable_program();
 
@@ -369,33 +369,30 @@ void config_hw()
 	clock_enable_i2c(I2C_1);
 	clock_enable_i2c(I2C_5);
 
-	static const clock_t clock_unk1 = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, 0x42C, 0x1F, 0, 0 };
-	static const clock_t clock_unk2 = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, 0, 0x1E, 0, 0 };
-	clock_enable(&clock_unk1);
-	clock_enable(&clock_unk2);
+	clock_enable_unk2();
 
 	i2c_init(I2C_1);
 	i2c_init(I2C_5);
 
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_CNFGBBC, 0x40);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_ONOFFCNFG1, 0x78);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGBBC, 0x40);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, 0x78);
 
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_CFG0, 0x38);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_CFG1, 0x3A);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_CFG2, 0x38);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_LDO4, 0xF);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_LDO8, 0xC7);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_SD0, 0x4F);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_SD1, 0x29);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_FPS_SD3, 0x1B);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG0, 0x38);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG1, 0x3A);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG2, 0x38);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_LDO4, 0xF);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_LDO8, 0xC7);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_SD0, 0x4F);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_SD1, 0x29);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_SD3, 0x1B);
 
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_SD0, 42); //42 = (1125000 - 600000) / 12500 -> 1.125V
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD0, 42); //42 = (1125000 - 600000) / 12500 -> 1.125V
 
-	config_pmc_scratch();
+	config_pmc_scratch(); // Missing from 4.x+
 
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = (CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) & 0xFFFF8888) | 0x3333;
 
-	mc_config_carveout();
+	mc_config_carveout(); // Missing from 4.x+
 
 	sdram_init();
 }
@@ -1754,9 +1751,9 @@ void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 
 void reloc_patcher(u32 payload_size)
 {
-	const u32 START_OFF = 0x7C;
-	const u32 PAYLOAD_END_OFF = 0x84;
-	const u32 IPL_START_OFF = 0x88;
+	static const u32 START_OFF = 0x7C;
+	static const u32 PAYLOAD_END_OFF = 0x84;
+	static const u32 IPL_START_OFF = 0x88;
 
 	memcpy((u8 *)EXT_PAYLOAD_ADDR, (u8 *)IPL_START, PATCHED_RELOC_SZ);
 
@@ -1807,7 +1804,12 @@ int launch_payload(char *path, bool update)
 		}
 
 		f_close(&fp);
-		free(path);
+		if (!update)
+		{
+			free(path);
+			path = NULL;
+		}
+			
 
 		if (update)
 		{
@@ -1834,14 +1836,14 @@ int launch_payload(char *path, bool update)
 		{
 			if (!update)
 				reloc_patcher(ALIGN(size, 0x10));
-			reconfig_hw_workaround(0);
+			reconfig_hw_workaround(false);
 		}
 		else
 		{
 			reloc_patcher(0x7000);
 			if (*(vu32 *)CBFS_SDRAM_EN_ADDR != 0x4452414D)
 				return 1;
-			reconfig_hw_workaround(1);
+			reconfig_hw_workaround(true);
 		}
 
 		// Launch our payload.
@@ -1958,7 +1960,10 @@ void launch_tools(u8 type)
 		if (!type)
 		{
 			if (launch_payload(dir, false))
+			{
 				EPRINTF("Failed to launch payload.");
+				free(dir);
+			}
 		}
 		else
 			ianos_loader(true, dir, DRAM_LIB, NULL);
@@ -2145,8 +2150,8 @@ void launch_firmware()
 
 	if (!cfg_sec)
 	{
-		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n\n");
-		gfx_puts(&gfx_con, "Press POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+		gfx_puts(&gfx_con, "\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n");
+		gfx_printf(&gfx_con, "\nUsing default launch configuration...\n\n\n");
 
 		u32 btn = btn_wait();
 		if (!(btn & BTN_POWER))
@@ -2261,7 +2266,6 @@ void auto_launch_firmware()
 			if (h_cfg.autoboot_list)
 			{
 				ini_free(&ini_sections);
-				list_init(&ini_sections);
 				ini_free_section(cfg_sec);
 				boot_entry_id = 1;
 				bootlogoCustomEntry = NULL;
@@ -3052,6 +3056,7 @@ ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
+	MDEF_HANDLER("Ipatches & bootrom info", bootrom_ipatches_info),
 	MDEF_HANDLER("Print fuse info", print_fuseinfo),
 	MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_HANDLER("Print TSEC keys", print_tsec_key),
@@ -3117,7 +3122,6 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	MDEF_HANDLER("Unset archive bit (switch folder)", fix_sd_switch_attr),
 	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
-	MDEF_HANDLER("Ipatches & bootrom info", bootrom_ipatches_info),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
@@ -3155,7 +3159,7 @@ extern void pivot_stack(u32 stack_top);
 void ipl_main()
 {
 	// Skip config if we just updated the bootloader.
-	if (*(u32 *)BOOTLOADER_UPDATED_MAGIC_ADDR != BOOTLOADER_UPDATED_MAGIC)
+	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR != BOOTLOADER_UPDATED_MAGIC)
 		config_hw();
 
 	//Pivot the stack so we have enough space.
@@ -3166,6 +3170,9 @@ void ipl_main()
 
 	//uart_send(UART_C, (u8 *)0x40000000, 0x10000);
 	//uart_wait_idle(UART_C, UART_TX_IDLE);
+
+	// Set bootloader's default configuration.
+	set_default_configuration();
 
 	// Save sdram lp0 config.
 	ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params());
@@ -3185,13 +3192,12 @@ void ipl_main()
 	// Enable backlight after initializing gfx
 	//display_backlight(true);
 
-	set_default_configuration();
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();
 
-	while (1)
+	while (true)
 		tui_do_menu(&gfx_con, &menu_top);
 
-	while (1)
+	while (true)
 		;
 }

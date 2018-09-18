@@ -95,8 +95,13 @@ int ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
 	int res = 0;
 
 	if (sdmount)
+	{
 		if (!sd_mount())
-			goto elfLoadFinalOut;	
+		{
+			res = 0xFFFF;
+			goto elfLoadFinalOut;
+		}
+	}
 
 	fileBuf = sd_file_read(path);
 

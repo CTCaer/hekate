@@ -60,10 +60,10 @@ void tui_sbar(gfx_con_t *con, bool force_update)
 	max17050_get_property(MAX17050_AvgCurrent, &battVoltCurr);
 
 	if (battVoltCurr >= 0)
-		gfx_printf(con, " %k+%d mA     %k%K\n",
+		gfx_printf(con, " %k+%d mA%k%K\n",
 			0xFF008800, battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
 	else
-		gfx_printf(con, " %k-%d mA     %k%K\n",
+		gfx_printf(con, " %k-%d mA%k%K\n",
 			0xFF880000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
 	con->fntsz = prevFontSize;
 	gfx_con_setpos(con, cx, cy);
@@ -107,7 +107,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
 
-	while (1)
+	while (true)
 	{
 		gfx_con_setcol(con, 0xFFCCCCCC, 1, 0xFF1B1B1B);
 		gfx_con_setpos(con, menu->x, menu->y);

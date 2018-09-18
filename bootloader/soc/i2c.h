@@ -26,6 +26,17 @@
 #define I2C_5 4
 #define I2C_6 5
 
+#define I2C_CNFG        0x00
+#define I2C_CMD_ADDR0   0x01
+#define I2C_CMD_DATA1   0x03
+#define I2C_CMD_DATA2   0x04
+#define I2C_STATUS 0x07
+#define INTERRUPT_STATUS_REGISTER 0x1A
+#define I2C_CLK_DIVISOR_REGISTER 0x1B
+#define I2C_BUS_CLEAR_CONFIG 0x21
+#define I2C_BUS_CLEAR_STATUS 0x22
+#define I2C_CONFIG_LOAD 0x23
+
 void i2c_init(u32 idx);
 int i2c_send_buf_small(u32 idx, u32 x, u32 y, u8 *buf, u32 size);
 int i2c_recv_buf_small(u8 *buf, u32 size, u32 idx, u32 x, u32 y);

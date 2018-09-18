@@ -192,11 +192,10 @@ void ini_free(link_t *dst)
 			{
 				free(kv->key);
 				free(kv->val);
-				free(kv);
+				//free(kv);
 			}
 		}
 		free(ini_sec->name);
-		//TODO: Free section structs.
 		//free(ini_sec);
 	}
 

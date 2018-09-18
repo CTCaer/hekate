@@ -507,8 +507,8 @@ void sdram_init()
 	//TODO: sdram_id should be in [0,4].
 	const sdram_params_t *params = (const sdram_params_t *)sdram_get_params();
 
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_SD_CFG2, 0x05);
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_SD1, 40); //40 = (1000 * 1100 - 600000) / 12500 -> 1.1V
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD_CFG2, 0x05);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD1, 40); //40 = (1000 * 1100 - 600000) / 12500 -> 1.1V
 
 	PMC(APBDEV_PMC_VDDP_SEL) = params->pmc_vddp_sel;
 	usleep(params->pmc_vddp_sel_wait);

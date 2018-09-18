@@ -68,8 +68,8 @@ int max77620_regulator_get_status(u32 id)
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
 	if (reg->type == REGULATOR_SD)
-		return (i2c_recv_byte(I2C_5, 0x3C, MAX77620_REG_STATSD) & reg->status_mask) ? 0 : 1;
-	return (i2c_recv_byte(I2C_5, 0x3C, reg->cfg_addr) & 8) ? 1 : 0;
+		return (i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_STATSD) & reg->status_mask) ? 0 : 1;
+	return (i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, reg->cfg_addr) & 8) ? 1 : 0;
 }
 
 int max77620_regulator_config_fps(u32 id)
@@ -79,7 +79,7 @@ int max77620_regulator_config_fps(u32 id)
 
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
-	i2c_send_byte(I2C_5, 0x3C, reg->fps_addr, (reg->fps_src << 6) | (reg->pu_period << 3) | (reg->pd_period));
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, reg->fps_addr, (reg->fps_src << 6) | (reg->pu_period << 3) | (reg->pd_period));
 
 	return 1;
 }
@@ -95,9 +95,9 @@ int max77620_regulator_set_voltage(u32 id, u32 mv)
 		return 0;
 
 	u32 mult = (mv + reg->mv_step - 1 - reg->mv_min) / reg->mv_step;
-	u8 val = i2c_recv_byte(I2C_5, 0x3C, reg->volt_addr);
+	u8 val = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, reg->volt_addr);
 	val = (val & ~reg->volt_mask) | (mult & reg->volt_mask);
-	i2c_send_byte(I2C_5, 0x3C, reg->volt_addr, val);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, reg->volt_addr, val);
 	usleep(1000);
 
 	return 1;
@@ -111,12 +111,12 @@ int max77620_regulator_enable(u32 id, int enable)
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
 	u32 addr = reg->type == REGULATOR_SD ? reg->cfg_addr : reg->volt_addr;
-	u8 val = i2c_recv_byte(I2C_5, 0x3C, addr);
+	u8 val = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, addr);
 	if (enable)
 		val = (val & ~reg->enable_mask) | ((3 << reg->enable_shift) & reg->enable_mask);
 	else
 		val &= ~reg->enable_mask;
-	i2c_send_byte(I2C_5, 0x3C, addr, val);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, addr, val);
 	usleep(1000);
 
 	return 1;
@@ -126,16 +126,17 @@ void max77620_config_default()
 {
 	for (u32 i = 1; i <= REGULATOR_MAX; i++)
 	{
-		i2c_recv_byte(I2C_5, 0x3C, MAX77620_REG_CID4);
+		i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID4);
 		max77620_regulator_config_fps(i);
 		max77620_regulator_set_voltage(i, _pmic_regulators[i].mv_default);
 		if (_pmic_regulators[i].fps_src != MAX77620_FPS_SRC_NONE)
 			max77620_regulator_enable(i, 1);
 	}
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_SD_CFG2, 4);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD_CFG2, 4);
 }
 
 void max77620_low_battery_monitor_config()
 {
-	i2c_send_byte(I2C_5, 0x3C, MAX77620_REG_CNFGGLBL1, MAX77620_CNFGGLBL1_LBDAC_EN | MAX77620_CNFGGLBL1_LBHYST_N | MAX77620_CNFGGLBL1_LBDAC_N);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGGLBL1,
+		MAX77620_CNFGGLBL1_LBDAC_EN | MAX77620_CNFGGLBL1_LBHYST_N | MAX77620_CNFGGLBL1_LBDAC_N);
 }

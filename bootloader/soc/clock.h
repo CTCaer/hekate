@@ -57,6 +57,7 @@
 #define CLK_RST_CONTROLLER_CLK_SOURCE_UARTB 0x17C
 #define CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X 0x180
 #define CLK_RST_CONTROLLER_CLK_SOURCE_UARTC 0x1A0
+#define CLK_RST_CONTROLLER_CLK_SOURCE_I2C3 0x1B8
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3 0x1BC
 #define CLK_RST_CONTROLLER_CLK_SOURCE_CSITE 0x1D4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EMC 0x19C
@@ -94,9 +95,11 @@
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD 0x3A4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_MSELECT 0x3B4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SOR1 0x410
+#define CLK_RST_CONTROLLER_CLK_SOURCE_SE 0x42C
 #define CLK_RST_CONTROLLER_CLK_ENB_V_SET 0x440
 #define CLK_RST_CONTROLLER_CLK_ENB_W_SET 0x448
 #define CLK_RST_CONTROLLER_CLK_ENB_W_CLR 0x44C
+#define CLK_RST_CONTROLLER_RST_CPUG_CMPLX_SET 0x450
 #define CLK_RST_CONTROLLER_RST_CPUG_CMPLX_CLR 0x454
 #define CLK_RST_CONTROLLER_UTMIP_PLL_CFG2 0x488
 #define CLK_RST_CONTROLLER_PLLE_AUX 0x48C
@@ -128,10 +131,12 @@ void clock_enable(const clock_t *clk);
 void clock_disable(const clock_t *clk);
 
 /*! Clock control for specific hardware portions. */
-void clock_enable_fuse(u32 enable);
+void clock_enable_fuse(bool enable);
 void clock_enable_uart(u32 idx);
 void clock_enable_i2c(u32 idx);
+void clock_disable_i2c(u32 idx);
 void clock_enable_se();
+void clock_enable_unk2();
 void clock_enable_host1x();
 void clock_disable_host1x();
 void clock_enable_tsec();
@@ -147,6 +152,7 @@ void clock_disable_kfuse();
 void clock_enable_cl_dvfs();
 void clock_disable_cl_dvfs();
 void clock_enable_coresight();
+void clock_disable_coresight();
 void clock_sdmmc_config_clock_source(u32 *pout, u32 id, u32 val);
 void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type);
 int clock_sdmmc_is_not_reset_and_enabled(u32 id);
