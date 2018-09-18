@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018 shuffle2
+ * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -34,11 +36,22 @@
 #define FUSE_DISABLEREGPROGRAM 0x2C
 #define FUSE_WRITE_ACCESS_SW 0x30
 #define FUSE_PWR_GOOD_SW 0x34
+#define FUSE_FIRST_BOOTROM_PATCH_SIZE 0x19c
+
+/*! Fuse commands. */
+#define FUSE_READ 0x1
+#define FUSE_WRITE 0x2
+#define FUSE_SENSE 0x3
+#define FUSE_CMD_MASK 0x3
 
 /*! Fuse cache registers. */
 #define FUSE_RESERVED_ODMX(x) (0x1C8 + 4 * (x))
 
 void fuse_disable_program();
 u32 fuse_read_odm(u32 idx);
+void fuse_wait_idle();
+int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
+int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);
+void read_raw_ipatch_fuses(u32 *words);
 
 #endif

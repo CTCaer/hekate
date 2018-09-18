@@ -4,6 +4,7 @@
  * Copyright (c) 2018 Rajko Stojadinovic
  * Copyright (c) 2018 CTCaer
  * Copyright (c) 2018 Reisyukaku
+ * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -2908,6 +2909,78 @@ void fix_battery_desync()
 	btn_wait();
 }
 
+void ipatch_process(u32 offset, u32 value)
+{
+	gfx_printf(&gfx_con, "%8x %8x", BOOTROM_BASE + offset, value);
+	u8 lo = value & 0xff;
+	switch (value >> 8)
+	{
+	case 0xdf:
+		gfx_printf(&gfx_con, "    svc #0x%02x", lo);
+		break;
+	case 0x20:
+		gfx_printf(&gfx_con, "    movs r0, #0x%02x", lo);
+		break;
+	}
+	gfx_puts(&gfx_con, "\n");
+}
+
+void bootrom_ipatches_info()
+{
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_con_setpos(&gfx_con, 0, 0);
+	
+	u32 res = fuse_read_ipatch(ipatch_process);
+	if (res != 0)
+		EPRINTFARGS("Failed to read ipatches. Error: %d", res);
+	
+	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+	
+	u32 btn = btn_wait();
+	if (btn & BTN_POWER)
+	{
+		if (sd_mount())
+		{
+			char path[64];
+			u32 iram_evp_thunks[0x200];
+			u32 iram_evp_thunks_len = sizeof(iram_evp_thunks);
+			res = fuse_read_evp_thunk(iram_evp_thunks, &iram_evp_thunks_len);
+			if (res == 0)
+			{
+				emmcsn_path_impl(path, "/dumps", "evp_thunks.bin", NULL);
+				if (!sd_save_to_file((u8 *)iram_evp_thunks, iram_evp_thunks_len, path))
+					gfx_puts(&gfx_con, "\nevp_thunks.bin saved!\n");
+			}
+			else
+				EPRINTFARGS("Failed to read evp_thunks. Error: %d", res);
+			
+			u32 words[0x100];
+			read_raw_ipatch_fuses(words);
+			emmcsn_path_impl(path, "/dumps", "ipatches.bin", NULL);
+			if (!sd_save_to_file((u8 *)words, sizeof(words), path))
+				gfx_puts(&gfx_con, "\nipatches.bin saved!\n");
+			
+			emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
+			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
+				gfx_puts(&gfx_con, "\nbootrom_patched.bin saved!\n");
+			
+			u8 ipatch_backup[13];
+			memcpy(ipatch_backup, (void *) IPATCH_BASE, 13);
+			memset((void*)IPATCH_BASE, 0, 13);
+			
+			emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
+			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
+				gfx_puts(&gfx_con, "\nbootrom_unpatched.bin saved!\n");
+			
+			memcpy((void*)IPATCH_BASE, ipatch_backup, 13);
+			
+			sd_unmount();
+		}
+
+		btn_wait();
+	}
+}
+
 void about()
 {
 	static const char credits[] =
@@ -3044,6 +3117,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
 	MDEF_HANDLER("Unset archive bit (switch folder)", fix_sd_switch_attr),
 	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
+	MDEF_HANDLER("Ipatches & bootrom info", bootrom_ipatches_info),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),

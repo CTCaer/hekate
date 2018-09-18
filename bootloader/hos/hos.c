@@ -3,6 +3,7 @@
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
  * Copyright (C) 2018 CTCaer
+ * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -130,6 +131,8 @@ static void _se_lock()
 	SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; // Make all key access regs secure only.
 	SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; // Make all RSA access regs secure only.
 	SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
+	memset((void *) IPATCH_BASE, 0, 13);
+	SB(SB_CSR) = 0x10; // Protected IROM enable.
 
 	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
 	/*gfx_printf(&gfx_con, "SE(SE_SECURITY_0) = %08X\n", SE(SE_SECURITY_0));
