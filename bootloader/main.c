@@ -256,6 +256,25 @@ void power_off()
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
 
+void check_power_off_from_hos()
+{
+	// Power off on AutoRCM wakeup from HOS shutdown. For modchips/dongles.
+	u8 hosWakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
+	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
+	{
+		gfx_clear_grey(&gfx_ctxt, 0x1B);
+		u8 *BOOTLOGO = (void *)malloc(0x4000);
+		blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
+		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+		usleep(2000000);
+		display_backlight_brightness(10, 5000);
+		display_backlight_brightness(100, 25000);
+		usleep(600000);
+		display_backlight_brightness(0, 20000);
+		power_off();
+	}
+}
+
 void config_oscillators()
 {
 	CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) = (CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) & 0xFFFFFFF3) | 4;
@@ -3204,6 +3223,8 @@ void ipl_main()
 
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
+
+	check_power_off_from_hos();
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();
