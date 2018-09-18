@@ -449,7 +449,7 @@ void config_hw()
 	sdram_init();
 }
 
-void reconfig_hw_workaround(bool extra_reconfig)
+void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= 0x400; // Enable AHUB clock.
@@ -470,6 +470,15 @@ void reconfig_hw_workaround(bool extra_reconfig)
 
 	// Power off display.
 	display_end();
+
+	// Enable clock to USBD and init SDMMC1 to avoid hangs with bad hw inits.
+	if (magic == 0xBAADF00D)
+	{
+		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) |= (1 << 22);
+		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, 5, 0);
+
+		msleep(500);
+	}
 }
 
 void print_fuseinfo()
@@ -1857,14 +1866,14 @@ int launch_payload(char *path, bool update)
 		{
 			if (!update)
 				reloc_patcher(ALIGN(size, 0x10));
-			reconfig_hw_workaround(false);
+			reconfig_hw_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 		}
 		else
 		{
 			reloc_patcher(0x7000);
 			if (*(vu32 *)CBFS_SDRAM_EN_ADDR != 0x4452414D)
 				return 1;
-			reconfig_hw_workaround(true);
+			reconfig_hw_workaround(true, 0);
 		}
 
 		// Launch our payload.
