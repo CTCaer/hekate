@@ -101,6 +101,7 @@
 #define TEST_REG(off) _REG(0x0, off)
 
 /*! Misc registers. */
+#define APB_MISC_PP_STRAPPING_OPT_A 0x08
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
 #define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL 0xA34
 #define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64

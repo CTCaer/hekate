@@ -85,7 +85,7 @@ void display_init()
 
 	exec_cfg((u32 *)CLOCK_BASE, _display_config_1, 4);
 	exec_cfg((u32 *)DISPLAY_A_BASE, _display_config_2, 94);
-	exec_cfg((u32 *)DSI_BASE, _display_config_3, 60);
+	exec_cfg((u32 *)DSI_BASE, _display_config_3, 61);
 
 	usleep(10000);
 
@@ -121,8 +121,8 @@ void display_init()
 
 	usleep(20000);
 
-	exec_cfg((u32 *)DSI_BASE, _display_config_5, 21);
 	exec_cfg((u32 *)CLOCK_BASE, _display_config_6, 3);
+	exec_cfg((u32 *)DSI_BASE, _display_config_5, 21);
 	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = 4;
 	exec_cfg((u32 *)DSI_BASE, _display_config_7, 10);
 

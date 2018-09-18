@@ -61,7 +61,7 @@ static int _i2c_send_pkt(u32 idx, u32 x, u8 *buf, u32 size)
 
 static int _i2c_recv_pkt(u32 idx, u8 *buf, u32 size, u32 x)
 {
-	if (size > 4)
+	if (size > 8)
 		return 0;
 
 	vu32 *base = (vu32 *)i2c_addrs[idx];
@@ -77,7 +77,14 @@ static int _i2c_recv_pkt(u32 idx, u8 *buf, u32 size, u32 x)
 		return 0;
 
 	u32 tmp = base[I2C_CMD_DATA1]; // Get LS value.
-	memcpy(buf, &tmp, size);
+	if (size > 4)
+	{
+		memcpy(buf, &tmp, 4);
+		tmp = base[I2C_CMD_DATA2]; // Get MS value.
+		memcpy(buf + 4, &tmp, size - 4);
+	}
+	else
+		memcpy(buf, &tmp, size);
 
 	return 1;
 }
