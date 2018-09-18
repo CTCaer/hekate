@@ -47,6 +47,7 @@
 #define CLK_RST_CONTROLLER_PLLE_MISC 0xEC
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRA 0xF8
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRB 0xFC
+#define CLK_RST_CONTROLLER_CLK_SOURCE_PWM 0x110
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C1 0x124
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C5 0x128
 #define CLK_RST_CONTROLLER_CLK_SOURCE_VI 0x148
@@ -153,6 +154,8 @@ void clock_enable_cl_dvfs();
 void clock_disable_cl_dvfs();
 void clock_enable_coresight();
 void clock_disable_coresight();
+void clock_enable_pwm();
+void clock_disable_pwm();
 void clock_sdmmc_config_clock_source(u32 *pout, u32 id, u32 val);
 void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type);
 int clock_sdmmc_is_not_reset_and_enabled(u32 id);

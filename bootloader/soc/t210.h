@@ -86,6 +86,7 @@
 #define EXCP_VEC(off) _REG(EXCP_VEC_BASE, off)
 #define APB_MISC(off) _REG(APB_MISC_BASE, off)
 #define PINMUX_AUX(off) _REG(PINMUX_AUX_BASE, off)
+#define PWM(off) _REG(PWM_BASE, off)
 #define RTC(off) _REG(RTC_BASE, off)
 #define PMC(off) _REG(PMC_BASE, off)
 #define SYSCTR0(off) _REG(SYSCTR0_BASE, off)
@@ -101,6 +102,7 @@
 
 /*! Misc registers. */
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
+#define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL 0xA34
 #define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64
 #define APB_MISC_GP_WIFI_RST_CFGPADCTRL 0xB68
 

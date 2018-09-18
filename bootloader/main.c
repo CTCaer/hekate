@@ -2209,7 +2209,6 @@ void auto_launch_firmware()
 	};
 
 	struct _bmp_data bmpData;
-	bool backlightEnabled = false;
 	bool bootlogoFound = false;
 	char *bootlogoCustomEntry = NULL;
 
@@ -2252,6 +2251,8 @@ void auto_launch_firmware()
 								h_cfg.customlogo = atoi(kv->val);
 							else if (!strcmp("verification", kv->key))
 								h_cfg.verification = atoi(kv->val);
+							else if (!strcmp("backlight", kv->key))
+								h_cfg.backlight = atoi(kv->val);
 						}
 						boot_entry_id++;
 						continue;
@@ -2390,8 +2391,7 @@ void auto_launch_firmware()
 	}
 	free(BOOTLOGO);
 
-	display_backlight(true);
-	backlightEnabled = 1;
+	display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
 	u32 btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
@@ -2432,9 +2432,6 @@ out:
 
 	sd_unmount();
 	gfx_con.mute = false;
-
-	if (!backlightEnabled)
-		display_backlight(true);
 }
 
 void toggle_autorcm(bool enable)
@@ -3053,6 +3050,7 @@ ment_t ment_options[] = {
 	MDEF_HANDLER("Auto boot", config_autoboot),
 	MDEF_HANDLER("Boot time delay", config_bootdelay),
 	MDEF_HANDLER("Custom boot logo", config_customlogo),
+	MDEF_HANDLER("Backlight", config_backlight),
 	MDEF_END()
 };
 
@@ -3146,7 +3144,7 @@ menu_t menu_tools = {
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
-	MDEF_MENU("Launch options", &menu_options),
+	MDEF_MENU("Options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
@@ -3198,8 +3196,8 @@ void ipl_main()
 
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 
-	// Enable backlight after initializing gfx
-	//display_backlight(true);
+	display_backlight_pwm_init();
+	//display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();

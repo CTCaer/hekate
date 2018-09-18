@@ -20,6 +20,8 @@
 #include "../config/config.h"
 #include "../power/max17050.h"
 #include "../utils/util.h"
+#include "../config/config.h"
+#include "di.h"
 
 #ifdef MENU_LOGO_ENABLE
 extern u8 *Kc_MENU_LOGO;
@@ -160,6 +162,8 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		gfx_con_getpos(con, &con->savedx,  &con->savedy);
 		gfx_con_setpos(con, 0,  1191);
 		gfx_printf(con, "%k VOL: Move up/down\n PWR: Select option%k", 0xFF555555, 0xFFCCCCCC);
+
+		display_backlight_brightness(h_cfg.backlight, 1000);
 
 		// Wait for user command.
 		u32 btn = btn_wait();

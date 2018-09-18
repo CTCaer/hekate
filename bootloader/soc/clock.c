@@ -49,6 +49,8 @@ static clock_t _clock_kfuse = { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTRO
 static clock_t _clock_cl_dvfs = { CLK_RST_CONTROLLER_RST_DEVICES_W, CLK_RST_CONTROLLER_CLK_OUT_ENB_W, CLK_RST_CONTROLLER_RST_SOURCE, 0x1B, 0, 0 };
 static clock_t _clock_coresight = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_CSITE, 9, 0, 4};
 
+static clock_t _clock_pwm = { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM, 0x11, 6, 4};
+
 void clock_enable(const clock_t *clk)
 {
 	// Put clock into reset.
@@ -186,6 +188,16 @@ void clock_enable_coresight()
 void clock_disable_coresight()
 {
 	clock_disable(&_clock_coresight);
+}
+
+void clock_enable_pwm()
+{
+	clock_enable(&_clock_pwm);
+}
+
+void clock_disable_pwm()
+{
+	clock_disable(&_clock_pwm);
 }
 
 #define L_SWR_SDMMC1_RST (1 << 14)

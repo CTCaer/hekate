@@ -29,6 +29,7 @@ typedef struct _hekate_config
 	// Global temporary config.
 	int se_keygen_done;
 	u32 sbar_time_keeping;
+	u32 backlight;
 } hekate_config;
 
 void set_default_configuration();
@@ -37,5 +38,6 @@ void config_autoboot();
 void config_bootdelay();
 void config_customlogo();
 void config_verification();
+void config_backlight();
 
 #endif /* _CONFIG_H_ */

@@ -161,6 +161,8 @@
 #define  DE_CONTROL_ACTIVE_BLANK (4 << 2)
 
 #define DC_DISP_DC_MCCIF_FIFOCTRL 0x480
+#define DC_DISP_SD_BL_PARAMETERS 0x4D7
+#define DC_DISP_SD_BL_CONTROL 0x4DC
 #define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
 
 #define DC_WIN_CSC_YOF 0x611
@@ -338,7 +340,11 @@
 
 #define DSI_PAD_CONTROL_4 0x52
 
+/*! Display backlight related PWM registers. */
+#define PWM_CONTROLLER_PWM_CSR 0x00
+
 void display_init();
+void display_backlight_pwm_init();
 void display_end();
 
 /*! Show one single color on the display. */
@@ -346,6 +352,7 @@ void display_color_screen(u32 color);
 
 /*! Switches screen backlight ON/OFF. */
 void display_backlight(bool enable);
+void display_backlight_brightness(u32 brightness, u32 step_delay);
 
 /*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
 u32 *display_init_framebuffer();

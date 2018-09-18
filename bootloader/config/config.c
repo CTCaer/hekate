@@ -45,6 +45,7 @@ void set_default_configuration()
 	h_cfg.verification = 2;
 	h_cfg.se_keygen_done = 0;
 	h_cfg.sbar_time_keeping = 0;
+	h_cfg.backlight = 100;
 }
 
 int create_config_entry()
@@ -95,6 +96,9 @@ int create_config_entry()
 	f_puts(lbuf, &fp);
 	f_puts("\nverification=", &fp);
 	itoa(h_cfg.verification, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\nbacklight=", &fp);
+	itoa(h_cfg.backlight, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\n", &fp);
 
@@ -559,6 +563,74 @@ void config_verification()
 	free(vr_text);
 
 	if (temp_verification == NULL)
+		return;
+	btn_wait();
+}
+
+void config_backlight()
+{
+	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	u32 bri_entries = 11;
+
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (bri_entries + 3));
+	u32 *bri_values = (u32 *)malloc(sizeof(u32) * bri_entries);
+	char *bri_text = (char *)malloc(8 * bri_entries);
+
+	for (u32 j = 1; j < bri_entries; j++)
+		bri_values[j] = j * 10;
+
+	ments[0].type = MENT_BACK;
+	ments[0].caption = "Back";
+
+	ments[1].type = MENT_CHGLINE;
+
+	u32 i = 0;
+	for (i = 1; i < bri_entries; i++)
+	{
+		if ((h_cfg.backlight / 20) != i)
+			bri_text[i * 32] = ' ';
+		else
+			bri_text[i * 32] = '*';
+		
+		if (i < 10)
+		{
+			bri_text[i * 32 + 1] = i + '0';
+			memcpy(bri_text + i * 32 + 2, "0%", 3);
+		}
+			
+		else
+			memcpy(bri_text + i * 32 + 1, "100%", 5);
+
+		ments[i + 1].type = MENT_CHOICE;
+		ments[i + 1].caption = bri_text + i * 32;
+		ments[i + 1].data = &bri_values[i];
+	}
+
+	memset(&ments[i + 1], 0, sizeof(ment_t));
+	menu_t menu = {ments, "Backlight brightness", 0, 0};
+
+	u32 *temp_backlight = (u32 *)tui_do_menu(&gfx_con, &menu);
+	if (temp_backlight != NULL)
+	{
+		gfx_clear_grey(&gfx_ctxt, 0x1B);
+		gfx_con_setpos(&gfx_con, 0, 0);
+
+		h_cfg.backlight = (*(u32 *)temp_backlight) * 2;
+		//Save choice to ini file.
+		if (!create_config_entry())
+			gfx_puts(&gfx_con, "\nConfiguration was saved!\n");
+		else
+			EPRINTF("\nConfiguration saving failed!");
+		gfx_puts(&gfx_con, "\nPress any key...");
+	}
+
+	free(ments);
+	free(bri_values);
+	free(bri_text);
+
+	if (temp_backlight == NULL)
 		return;
 	btn_wait();
 }

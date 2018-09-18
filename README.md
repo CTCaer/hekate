@@ -34,9 +34,10 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
 | autoboot=0         | 0: Disable, #: Boot entry number to auto boot.             |
-| bootwait=3         | 0: Disable (Having VOL- pressed since injection goes to menu. It also disables bootlogo.), #: Time to wait for **VOL-** to enter menu. |
+| bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
 | customlogo=0       | 0: Use default hekate bootlogo, 1: Use bootlogo.bmp.       |
 | verification=2     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and not 100% reliable), 2: Full (sha256 based, slow and 100% reliable). |
+| backlight=100      | Screen backlight level. 0-255.                             |
 
 
 ### Possible boot entry key/value combinations:
@@ -49,13 +50,15 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | kernel={SD path}   | Replaces the kernel binary                                 |
 | kip1={SD path}     | Replaces/Adds kernel initial process. Multiple can be set. |
 | kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Implemented patches right now are nosigchk,nogc |
-| fullsvcperm=1      | Disables SVC verification                                  |
+| fullsvcperm=1      | Disables SVC verification (full services permission)       |
 | debugmode=1        | Enables Debug mode                                         |
 | atmosphere=1       | Enables Atmosphère patching                                |
 | payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
 
 
 You can find a template [Here](./res/hekate_ipl_template.ini)
+
+If the main .ini is not found, it is created on the first hekate boot.
 
 
 ```
