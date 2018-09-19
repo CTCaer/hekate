@@ -6,7 +6,7 @@ include $(DEVKITARM)/base_rules
 
 TARGET := hekate
 BLVERSION_MAJOR := 4
-BLVERSION_MINOR := 0
+BLVERSION_MINOR := 1
 BUILD := build
 OUTPUT := output
 SOURCEDIR = bootloader
