@@ -19,7 +19,7 @@
 #include "../utils/util.h"
 #include "../storage/sdmmc.h"
 
-static const clock_t _clock_uart[] = {
+static const clk_desc_t _clock_uart[] = {
 	/* UART A */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_UARTA, 6, 0, 0 },
 	/* UART B */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_UARTB, 7, 0, 0 },
 	/* UART C */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_UARTC, 0x17, 0, 0 },
@@ -27,7 +27,7 @@ static const clock_t _clock_uart[] = {
 	/* UART E */ { 0 }
 };
 
-static const clock_t _clock_i2c[] = {
+static const clk_desc_t _clock_i2c[] = {
 	/* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 0xC, 6, 0 },
 	/* I2C2 */ { 0 },
 	/* I2C3 */ { 0 },
@@ -36,22 +36,22 @@ static const clock_t _clock_i2c[] = {
 	/* I2C6 */ { 0 }
 };
 
-static clock_t _clock_se = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE, 0x1F, 0, 0 };
-static clock_t _clock_unk2 = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_RST_SOURCE, 0x1E, 0, 0 };
+static clk_desc_t _clock_se = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE, 0x1F, 0, 0 };
+static clk_desc_t _clock_unk2 = { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_RST_SOURCE, 0x1E, 0, 0 };
 
-static clock_t _clock_host1x = { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X, 0x1C, 4, 3 };
-static clock_t _clock_tsec = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC, 0x13, 0, 2 };
-static clock_t _clock_sor_safe = { CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_RST_SOURCE, 0x1E, 0, 0 };
-static clock_t _clock_sor0 = { CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_RST_SOURCE, 0x16, 0, 0 };
-static clock_t _clock_sor1 = { CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_SOR1, 0x17, 0, 2 };
-static clock_t _clock_kfuse = { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_RST_SOURCE, 8, 0, 0 };
+static clk_desc_t _clock_host1x = { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X, 0x1C, 4, 3 };
+static clk_desc_t _clk_desc_tsec = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC, 0x13, 0, 2 };
+static clk_desc_t _clock_sor_safe = { CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_RST_SOURCE, 0x1E, 0, 0 };
+static clk_desc_t _clock_sor0 = { CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_RST_SOURCE, 0x16, 0, 0 };
+static clk_desc_t _clock_sor1 = { CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_SOR1, 0x17, 0, 2 };
+static clk_desc_t _clock_kfuse = { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_RST_SOURCE, 8, 0, 0 };
 
-static clock_t _clock_cl_dvfs = { CLK_RST_CONTROLLER_RST_DEVICES_W, CLK_RST_CONTROLLER_CLK_OUT_ENB_W, CLK_RST_CONTROLLER_RST_SOURCE, 0x1B, 0, 0 };
-static clock_t _clock_coresight = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_CSITE, 9, 0, 4};
+static clk_desc_t _clock_cl_dvfs = { CLK_RST_CONTROLLER_RST_DEVICES_W, CLK_RST_CONTROLLER_CLK_OUT_ENB_W, CLK_RST_CONTROLLER_RST_SOURCE, 0x1B, 0, 0 };
+static clk_desc_t _clock_coresight = { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_CSITE, 9, 0, 4};
 
-static clock_t _clock_pwm = { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM, 0x11, 6, 4};
+static clk_desc_t _clock_pwm = { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM, 0x11, 6, 4};
 
-void clock_enable(const clock_t *clk)
+void clock_enable(const clk_desc_t *clk)
 {
 	// Put clock into reset.
 	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~(1 << clk->index)) | (1 << clk->index);
@@ -66,7 +66,7 @@ void clock_enable(const clock_t *clk)
 	CLOCK(clk->reset) &= ~(1 << clk->index);
 }
 
-void clock_disable(const clock_t *clk)
+void clock_disable(const clk_desc_t *clk)
 {
 	// Put clock into reset.
 	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~(1 << clk->index)) | (1 << clk->index);
@@ -116,12 +116,12 @@ void clock_disable_host1x()
 
 void clock_enable_tsec()
 {
-	clock_enable(&_clock_tsec);
+	clock_enable(&_clk_desc_tsec);
 }
 
 void clock_disable_tsec()
 {
-	clock_disable(&_clock_tsec);
+	clock_disable(&_clk_desc_tsec);
 }
 
 void clock_enable_sor_safe()

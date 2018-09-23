@@ -93,8 +93,8 @@ typedef struct _sdmmc_storage_t
 	u32 partition;
 	u8  raw_cid[0x10];
 	u8  raw_csd[0x10];
-	u8  raw_scr[8];
-	u8  raw_ssr[0x40];
+	u32 raw_scr[2];
+	u32 raw_ssr[16];
 	mmc_cid_t     cid;
 	mmc_csd_t     csd;
 	mmc_ext_csd_t ext_csd;

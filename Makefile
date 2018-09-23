@@ -1,8 +1,4 @@
-ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
-endif
-
-include $(DEVKITARM)/base_rules
+include rules/dkarm_compat
 
 TARGET := hekate
 BLVERSION_MAJOR := 4
@@ -54,11 +50,11 @@ OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
 	elfload.o elfreloc_arm.o \
 )
 
-ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork
-CUSTOMDEFINES := -DBLVERSIONMJ=$(BLVERSION_MAJOR) -DBLVERSIONMN=$(BLVERSION_MINOR)
-CUSTOMDEFINES += -DMENU_LOGO_ENABLE #-DDEBUG
-CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
-LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections
+CFLAGS += -mthumb
+LDFLAGS += -mthumb
+CFLAGS += -DBLVERSIONMJ=$(BLVERSION_MAJOR) -DBLVERSIONMN=$(BLVERSION_MINOR)
+CFLAGS += -DMENU_LOGO_ENABLE
+#CFLAGS += -DDEBUG
 
 MODULEDIRS := $(wildcard modules/*)
 

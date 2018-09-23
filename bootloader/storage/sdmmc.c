@@ -676,8 +676,8 @@ static void _sd_storage_parse_scr(sdmmc_storage_t *storage)
 	// unstuff_bits can parse only 4 u32
 	u32 resp[4];
 
-	resp[3] = *(u32 *)&storage->raw_scr[4];
-	resp[2] = *(u32 *)&storage->raw_scr[0];
+	resp[3] = storage->raw_scr[1];
+	resp[2] = storage->raw_scr[0];
 
 	storage->scr.sda_vsn = unstuff_bits(resp, 56, 4);
 	storage->scr.bus_widths = unstuff_bits(resp, 48, 4);
@@ -707,15 +707,10 @@ int _sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
 	u32 tmp = 0;
 	sdmmc_get_rsp(storage->sdmmc, &tmp, 4, SDMMC_RSP_TYPE_1);
     //Prepare buffer for unstuff_bits
-	for (int i = 0; i < 8; i+=4)
-	{
-		storage->raw_scr[i + 3] = buf[i];
-		storage->raw_scr[i + 2] = buf[i + 1];
-		storage->raw_scr[i + 1] = buf[i + 2];
-		storage->raw_scr[i]     = buf[i + 3];
-	}
+	for (int i = 0; i < 2; i++)
+		storage->raw_scr[i] = byte_swap_32(*(u32 *)&buf[i * sizeof(u32)]);
 	_sd_storage_parse_scr(storage);
-	//gfx_hexdump(&gfx_con, 0, storage->raw_scr, 8);
+	//gfx_hexdump(&gfx_con, 0, storage->raw_scr, sizeof(storage->raw_scr));
 
 	return _sdmmc_storage_check_result(tmp);
 }
@@ -894,15 +889,15 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 	u32 raw_ssr1[4];
 	u32 raw_ssr2[4];
 
-	raw_ssr1[3] = *(u32 *)&storage->raw_ssr[12];
-	raw_ssr1[2] = *(u32 *)&storage->raw_ssr[8];
-	raw_ssr1[1] = *(u32 *)&storage->raw_ssr[4];
-	raw_ssr1[0] = *(u32 *)&storage->raw_ssr[0];
+	raw_ssr1[3] = storage->raw_ssr[3];
+	raw_ssr1[2] = storage->raw_ssr[2];
+	raw_ssr1[1] = storage->raw_ssr[1];
+	raw_ssr1[0] = storage->raw_ssr[0];
 
-	raw_ssr2[3] = *(u32 *)&storage->raw_ssr[28];
-	raw_ssr2[2] = *(u32 *)&storage->raw_ssr[24];
-	raw_ssr2[1] = *(u32 *)&storage->raw_ssr[20];
-	raw_ssr2[0] = *(u32 *)&storage->raw_ssr[16];
+	raw_ssr2[3] = storage->raw_ssr[7];
+	raw_ssr2[2] = storage->raw_ssr[6];
+	raw_ssr2[1] = storage->raw_ssr[5];
+	raw_ssr2[0] = storage->raw_ssr[4];
 
 	storage->ssr.bus_width = (unstuff_bits(raw_ssr1, 510 - 384, 2) & SD_BUS_WIDTH_4) ? 4 : 1;
 	switch(unstuff_bits(raw_ssr1, 440 - 384, 8))
@@ -957,15 +952,10 @@ static int _sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
 	u32 tmp = 0;
 	sdmmc_get_rsp(storage->sdmmc, &tmp, 4, SDMMC_RSP_TYPE_1);
     //Prepare buffer for unstuff_bits
-	for (int i = 0; i < 64; i+=4)
-	{
-		storage->raw_ssr[i + 3] = buf[i];
-		storage->raw_ssr[i + 2] = buf[i + 1];
-		storage->raw_ssr[i + 1] = buf[i + 2];
-		storage->raw_ssr[i]     = buf[i + 3];
-	}
+	for (int i = 0; i < 0x10; i++)
+		storage->raw_ssr[i] = byte_swap_32(*(u32 *)&buf[i * sizeof(u32)]);
 	_sd_storage_parse_ssr(storage);
-	//gfx_hexdump(&gfx_con, 0, storage->raw_ssr, 64);
+	//gfx_hexdump(&gfx_con, 0, storage->raw_ssr, sizeof(storage->raw_ssr));
 
 	return _sdmmc_storage_check_result(tmp);
 }
@@ -1090,7 +1080,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 		return 0;
 	}
 		
-	//gfx_hexdump(&gfx_con, 0, storage->raw_scr, 8);
+	//gfx_hexdump(&gfx_con, 0, storage->raw_scr, sizeof(storage->raw_scr));
 	DPRINTF("[SD] got scr\n");
 
 	// Check if card supports a wider bus and if it's not SD Version 1.X
