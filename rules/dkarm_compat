@@ -17,7 +17,7 @@ export RANLIB	:=	$(PREFIX)gcc-ranlib
 endif
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
-CFLAGS = $(ARCH) -Os -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall
+CFLAGS = $(ARCH) -Os -flto -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall
 LDFLAGS = $(ARCH) -nostartfiles -Wl,--nmagic,--gc-sections
 
 SO_CFLAGS = $(CFLAGS) -fpie -marm
