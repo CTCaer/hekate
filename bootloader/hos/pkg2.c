@@ -752,7 +752,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			if (!se_calc_sha256(shaBuf, ki->kip1, ki->size))
 				memset(shaBuf, 0, sizeof(shaBuf));
 
-			DPRINTF("%dms %s KIP1 size %d hash %08X\n", (postDecompTime-preDecompTime)/1000, ki->kip1->name, (int)ki->size, __builtin_bswap32(shaBuf[0]));
+			DPRINTF("%dms %s KIP1 size %d hash %08X\n", (postDecompTime-preDecompTime)/1000, ki->kip1->name, (int)ki->size, byte_swap_32(shaBuf[0]));
 #endif
 
 			currPatchset = _kip_ids[currKipIdx].patchset;
@@ -852,6 +852,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info)
 {
 	u8 *pdst = (u8 *)dst;
+	u32 ctr;
 
 	// Signature.
 	memset(pdst, 0, 0x100);
@@ -894,9 +895,10 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 DPRINTF("INI1 encrypted\n");
 
 	//Encrypt header.
-	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
+	ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
+	memcpy(hdr->ctr, &ctr, sizeof(ctr));
 	se_aes_crypt_ctr(8, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	memset(hdr->ctr, 0 , 0x10);
-	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
+	memcpy(hdr->ctr, &ctr, sizeof(ctr));
 }
 

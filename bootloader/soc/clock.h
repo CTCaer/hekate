@@ -117,7 +117,7 @@
 #define CLK_RST_CONTROLLER_SE_SUPER_CLK_DIVIDER 0x704
 
 /*! Generic clock descriptor. */
-typedef struct _clock_t
+typedef struct _clk_desc_t
 {
 	u32 reset;
 	u32 enable;
@@ -125,11 +125,11 @@ typedef struct _clock_t
 	u8 index;
 	u8 clk_src;
 	u8 clk_div;
-} clock_t;
+} clk_desc_t;
 
 /*! Generic clock enable/disable. */
-void clock_enable(const clock_t *clk);
-void clock_disable(const clock_t *clk);
+void clock_enable(const clk_desc_t *clk);
+void clock_disable(const clk_desc_t *clk);
 
 /*! Clock control for specific hardware portions. */
 void clock_enable_fuse(bool enable);

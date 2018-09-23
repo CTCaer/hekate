@@ -96,3 +96,34 @@ u32 memcmp32sparse(const u32 *buf1, const u32 *buf2, u32 len)
 
 	return 0;
 }
+
+char *itoa(int value, char *str, int base)
+{
+	char *p = str;
+	const char lut[] = "0123456789abcdef";
+	bool negative = false;
+
+	if (base < 2 || base > 16)
+	{
+		*p = '\0';
+		return str;
+	}
+
+	if (value < 0)
+	{
+		value = -value;
+		negative = true;
+	}
+
+	if (negative)
+		p++;
+	for (int v = value; v; v /= base)
+		p++;
+	*p-- = '\0';
+	for (int v = value; v; v /= base)
+		*p-- = lut[v % base];
+	if (negative)
+		*p-- = '-';
+
+	return str;
+}

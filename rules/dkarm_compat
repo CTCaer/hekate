@@ -1,0 +1,24 @@
+ifneq ($(strip $(DEVKITARM)),)
+
+include $(DEVKITARM)/base_rules
+
+else
+
+PREFIX		:=	arm-none-eabi-
+export CC	:=	$(PREFIX)gcc
+export CXX	:=	$(PREFIX)g++
+export AS	:=	$(PREFIX)as
+export AR	:=	$(PREFIX)gcc-ar
+export OBJCOPY	:=	$(PREFIX)objcopy
+export STRIP	:=	$(PREFIX)strip
+export NM	:=	$(PREFIX)gcc-nm
+export RANLIB	:=	$(PREFIX)gcc-ranlib
+
+endif
+
+ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
+CFLAGS = $(ARCH) -Os -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall
+LDFLAGS = $(ARCH) -nostartfiles -Wl,--nmagic,--gc-sections
+
+SO_CFLAGS = $(CFLAGS) -fpie -marm
+SO_LDFLAGS = $(LDFLAGS) -fpie -pie -marm
