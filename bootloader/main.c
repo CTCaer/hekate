@@ -259,15 +259,18 @@ void check_power_off_from_hos()
 	u8 hosWakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
 	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
+		sd_unmount();
+
 		gfx_clear_grey(&gfx_ctxt, 0x1B);
 		u8 *BOOTLOGO = (void *)malloc(0x4000);
 		blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
 		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-		usleep(2000000);
+
 		display_backlight_brightness(10, 5000);
 		display_backlight_brightness(100, 25000);
 		usleep(600000);
 		display_backlight_brightness(0, 20000);
+
 		power_off();
 	}
 }
@@ -457,6 +460,7 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 
 	if (extra_reconfig)
 	{
+		msleep(10);
 		PMC(APBDEV_PMC_PWR_DET_VAL) |= (1 << 12);
 
 		clock_disable_cl_dvfs();
@@ -2322,6 +2326,8 @@ void auto_launch_firmware()
 								h_cfg.verification = atoi(kv->val);
 							else if (!strcmp("backlight", kv->key))
 								h_cfg.backlight = atoi(kv->val);
+							else if (!strcmp("autohosoff", kv->key))
+								h_cfg.autohosoff = atoi(kv->val);
 						}
 						boot_entry_id++;
 						continue;
@@ -2341,6 +2347,9 @@ void auto_launch_firmware()
 					boot_entry_id++;
 				}
 			}
+
+			if (h_cfg.autohosoff)
+				check_power_off_from_hos();
 
 			if (h_cfg.autoboot_list)
 			{
@@ -3131,6 +3140,7 @@ ment_t ment_options[] = {
 	MDEF_HANDLER("Auto boot", config_autoboot),
 	MDEF_HANDLER("Boot time delay", config_bootdelay),
 	MDEF_HANDLER("Custom boot logo", config_customlogo),
+	MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
 	MDEF_HANDLER("Backlight", config_backlight),
 	MDEF_END()
 };
@@ -3280,8 +3290,6 @@ void ipl_main()
 
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
-
-	check_power_off_from_hos();
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();
