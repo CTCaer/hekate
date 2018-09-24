@@ -149,6 +149,36 @@ static void _se_lock()
 	gfx_hexdump(&gfx_con, SE_BASE, (void *)SE_BASE, 0x400);*/
 }
 
+void _pmc_scratch_lock(u32 kb)
+{
+	switch (kb)
+	{
+	case KB_FIRMWARE_VERSION_100_200:
+	case KB_FIRMWARE_VERSION_300:
+	case KB_FIRMWARE_VERSION_301:
+		PMC(APBDEV_PMC_SEC_DISABLE) = 0x7FFFF3;
+		PMC(APBDEV_PMC_SEC_DISABLE2) = 0xFFFFFFFF;
+		PMC(APBDEV_PMC_SEC_DISABLE3) = 0xFFAFFFFF;
+		PMC(APBDEV_PMC_SEC_DISABLE4) = 0xFFFFFFFF;
+		PMC(APBDEV_PMC_SEC_DISABLE5) = 0xFFFFFFFF;
+		PMC(APBDEV_PMC_SEC_DISABLE6) = 0xFFFFFFFF;
+		PMC(APBDEV_PMC_SEC_DISABLE7) = 0xFFFFFFFF;
+		PMC(APBDEV_PMC_SEC_DISABLE8) = 0xFFAAFFFF;
+		break;
+	case KB_FIRMWARE_VERSION_400:
+	case KB_FIRMWARE_VERSION_500:
+	case KB_FIRMWARE_VERSION_600:
+	default:
+		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x3FCFFFF;
+	    PMC(APBDEV_PMC_SEC_DISABLE4) |= 0x3F3FFFFF;
+	    PMC(APBDEV_PMC_SEC_DISABLE5)  = 0xFFFFFFFF;
+	    PMC(APBDEV_PMC_SEC_DISABLE6) |= 0xF3FFC00F;
+	    PMC(APBDEV_PMC_SEC_DISABLE7) |= 0x3FFFFF;
+	    PMC(APBDEV_PMC_SEC_DISABLE8) |= 0xFF;
+		break;
+	}
+}
+
 int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
 {
 	u8 tmp[0x10];
@@ -604,9 +634,9 @@ int hos_launch(ini_sec_t *cfg)
 	case KB_FIRMWARE_VERSION_300:
 	case KB_FIRMWARE_VERSION_301:
 		if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_300)
-			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 security check.
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
 		else if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_301)
-			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 security check.
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 		se_key_acc_ctrl(12, 0xFF);
 		se_key_acc_ctrl(13, 0xFF);
 		bootStateDramPkg2 = 2;
@@ -664,6 +694,9 @@ int hos_launch(ini_sec_t *cfg)
 	mc_config_carveout_finalize();
 	_se_lock();
 
+	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point. For <4.0.0 after secmon?
+	//_pmc_scratch_lock(ctxt.pkg1_id->kb);
+
 	//  < 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
 	// >= 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot.
 	vu32 *mb_in = (vu32 *)0x40002EF8;
@@ -681,16 +714,6 @@ int hos_launch(ini_sec_t *cfg)
 	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
 		usleep(1); // This only works when in IRAM or with a trained DRAM.
-
-	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point.
-	/*PMC(0x4) = 0x7FFFF3;
-	PMC(0x2C4) = 0xFFFFFFFF;
-	PMC(0x2D8) = 0xFFAFFFFF;
-	PMC(0x5B0) = 0xFFFFFFFF;
-	PMC(0x5B4) = 0xFFFFFFFF;
-	PMC(0x5B8) = 0xFFFFFFFF;
-	PMC(0x5BC) = 0xFFFFFFFF;
-	PMC(0x5C0) = 0xFFAAFFFF;*/
 
 	// Signal pkg2 ready and continue boot.
 	*mb_in = bootStatePkg2Continue;

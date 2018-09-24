@@ -177,11 +177,17 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 		if (btn & BTN_VOL_DOWN && idx < (cnt - 1))
 			idx++;
 		else if (btn & BTN_VOL_DOWN && idx == (cnt - 1))
+		{
 			idx = 0;
+			prev_idx = -1;
+		}
 		if (btn & BTN_VOL_UP && idx > 0)
 			idx--;
 		else if (btn & BTN_VOL_UP && idx == 0)
+		{
 			idx = cnt - 1;
+			prev_idx = cnt;
+		}
 		if (btn & BTN_POWER)
 		{
 			ment_t *ent = &menu->ents[idx];
@@ -193,7 +199,7 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 			case MENT_MENU:
 				return tui_do_menu(con, ent->menu);
 				break;
-			case MENT_CHOICE:
+			case MENT_DATA:
 				return ent->data;
 				break;
 			case MENT_BACK:

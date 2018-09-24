@@ -24,7 +24,7 @@
 #define MENT_END     0
 #define MENT_HANDLER 1
 #define MENT_MENU    2
-#define MENT_CHOICE  3
+#define MENT_DATA    3
 #define MENT_BACK    4
 #define MENT_CAPTION 5
 #define MENT_CHGLINE 6

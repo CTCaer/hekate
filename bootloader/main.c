@@ -476,8 +476,9 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 	{
 		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) |= (1 << 22);
 		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, 5, 0);
+		clock_disable_cl_dvfs();
 
-		msleep(500);
+		msleep(200);
 	}
 }
 
@@ -1236,7 +1237,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		{
 			gfx_con.fntsz = 16;
 			WPRINTF("\n\nThe backup was cancelled!");
-			EPRINTF("\nPress any key and try again...\n");
+			EPRINTF("\nPress any key...\n");
 			msleep(1500);
 
 			free(buf);
@@ -1891,7 +1892,11 @@ int launch_payload(char *path, bool update)
 				*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = BOOTLOADER_UPDATED_MAGIC;
 			}
 			else
+			{
+				free(update_ft);
 				return 1;
+			}
+				
 			free(update_ft);
 		}
 		sd_unmount();
@@ -2503,6 +2508,8 @@ void toggle_autorcm(bool enable)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
+	u8 randomXor = 0;
+
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
@@ -2520,8 +2527,16 @@ void toggle_autorcm(bool enable)
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
 		sdmmc_storage_read(&storage, sect, 1, tempbuf);
+
 		if (enable)
-			tempbuf[0x10] ^= get_tmr_us() & 0xFF; // Bricmii style of bricking.
+		{
+			do
+			{
+				randomXor = get_tmr_us() & 0xFF; // Bricmii style of bricking.
+			} while (!randomXor); // Avoid the lottery.
+
+			tempbuf[0x10] ^= randomXor;
+		}
 		else
 			tempbuf[0x10] = 0xF7;
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
@@ -3003,6 +3018,8 @@ void bootrom_ipatches_info()
 {
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
+
+	static const u32 BOOTROM_SIZE = 0x18000;
 	
 	u32 res = fuse_read_ipatch(ipatch_process);
 	if (res != 0)

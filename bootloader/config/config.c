@@ -280,7 +280,7 @@ void config_autoboot()
 
 			ments[1].type = MENT_CHGLINE;
 
-			ments[2].type = MENT_CHOICE;
+			ments[2].type = MENT_DATA;
 			if (!h_cfg.autoboot)
 				ments[2].caption = "*Disable";
 			else
@@ -395,7 +395,7 @@ void config_bootdelay()
 
 	ments[1].type = MENT_CHGLINE;
 
-	ments[2].type = MENT_CHOICE;
+	ments[2].type = MENT_DATA;
 	if (h_cfg.bootwait)
 		ments[2].caption = " 0 seconds (Bootlogo disabled)";
 	else
@@ -412,7 +412,7 @@ void config_bootdelay()
 		delay_text[i * 32 + 1] = i + '0';
 		memcpy(delay_text + i * 32 + 2, " seconds", 9);
 
-		ments[i + 2].type = MENT_CHOICE;
+		ments[i + 2].type = MENT_DATA;
 		ments[i + 2].caption = delay_text + i * 32;
 		ments[i + 2].data = &delay_values[i];
 	}
@@ -455,7 +455,7 @@ void config_customlogo()
 	for (u32 j = 0; j < 2; j++)
 	{
 		cb_values[j] = j;
-		ments[j + 2].type = MENT_CHOICE;
+		ments[j + 2].type = MENT_DATA;
 		ments[j + 2].data = &cb_values[j];
 	}
 
@@ -514,7 +514,7 @@ void config_verification()
 	for (u32 j = 0; j < 3; j++)
 	{
 		vr_values[j] = j;
-		ments[j + 2].type = MENT_CHOICE;
+		ments[j + 2].type = MENT_DATA;
 		ments[j + 2].data = &vr_values[j];
 	}
 
@@ -604,7 +604,7 @@ void config_backlight()
 		else
 			memcpy(bri_text + i * 32 + 1, "100%", 5);
 
-		ments[i + 1].type = MENT_CHOICE;
+		ments[i + 1].type = MENT_DATA;
 		ments[i + 1].caption = bri_text + i * 32;
 		ments[i + 1].data = &bri_values[i];
 	}

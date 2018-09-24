@@ -19,7 +19,6 @@
 
 #include "../utils/types.h"
 
-#define BOOTROM_SIZE 0x18000
 #define BOOTROM_BASE 0x100000
 #define HOST1X_BASE 0x50000000
 #define BPMP_CACHE_BASE 0x50040000

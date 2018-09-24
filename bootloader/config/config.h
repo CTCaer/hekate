@@ -21,16 +21,17 @@
 
 typedef struct _hekate_config
 {
+	// Non-volatile config.
 	u32 autoboot;
 	u32 autoboot_list;
 	u32 bootwait;
 	u32 customlogo;
 	u32 verification;
+	u32 backlight;
+	u32 errors;
 	// Global temporary config.
 	int se_keygen_done;
 	u32 sbar_time_keeping;
-	u32 backlight;
-	u32 errors;
 } hekate_config;
 
 typedef enum
