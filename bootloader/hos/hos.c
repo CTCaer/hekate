@@ -38,6 +38,7 @@
 #include "../config/config.h"
 #include "../mem/mc.h"
 #include "../soc/fuse.h"
+#include "../utils/dirlist.h"
 
 #include "../gfx/gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
@@ -367,14 +368,61 @@ static int _config_kernel(launch_ctxt_t *ctxt, const char *value)
 static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 {
 	FIL fp;
-	if (f_open(&fp, value, FA_READ) != FR_OK)
-		return 0;
-	merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
-	mkip1->kip1 = malloc(f_size(&fp));
-	f_read(&fp, mkip1->kip1, f_size(&fp), NULL);
-	DPRINTF("Loaded kip1 from SD (size %08X)\n", f_size(&fp));
-	f_close(&fp);
-	list_append(&ctxt->kip1_list, &mkip1->link);
+
+	if (!memcmp(value + strlen(value) - 1, "*", 1))
+	{
+		char *dir = (char *)malloc(256);
+		memcpy(dir, value, strlen(value) + 1);
+
+		u32 dirlen = 0;
+		dir[strlen(dir) - 2] = 0;
+		char *filelist = dirlist(dir, "*.kip*");
+
+		memcpy(dir + strlen(dir), "/", 2);
+		dirlen = strlen(dir);
+
+		u32 i = 0;
+		if (filelist)
+		{
+			while (true)
+			{
+				if (!filelist[i * 256])
+					break;
+
+				memcpy(dir + dirlen, &filelist[i * 256], strlen(&filelist[i * 256]) + 1);
+				if (f_open(&fp, dir, FA_READ))
+				{
+					free(dir);
+					free(filelist);
+
+					return 0;
+				}
+				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
+				mkip1->kip1 = malloc(f_size(&fp));
+				f_read(&fp, mkip1->kip1, f_size(&fp), NULL);
+				DPRINTF("Loaded kip1 from SD (size %08X)\n", f_size(&fp));
+				f_close(&fp);
+				list_append(&ctxt->kip1_list, &mkip1->link);
+
+				i++;
+			}
+		}
+
+		free(dir);
+		free(filelist);
+	}
+	else
+	{
+		if (f_open(&fp, value, FA_READ))
+			return 0;
+		merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
+		mkip1->kip1 = malloc(f_size(&fp));
+		f_read(&fp, mkip1->kip1, f_size(&fp), NULL);
+		DPRINTF("Loaded kip1 from SD (size %08X)\n", f_size(&fp));
+		f_close(&fp);
+		list_append(&ctxt->kip1_list, &mkip1->link);
+	}
+
 	return 1;
 }
 

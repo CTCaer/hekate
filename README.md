@@ -37,6 +37,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
 | customlogo=0       | 0: Use default hekate bootlogo, 1: Use bootlogo.bmp.       |
 | verification=2     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and not 100% reliable), 2: Full (sha256 based, slow and 100% reliable). |
+| autohosoff=1       | If woke up from HOS via an rtc alarm, power off completely.|
 | backlight=100      | Screen backlight level. 0-255.                             |
 
 
@@ -49,6 +50,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | secmon={SD path}   | Replaces the security monitor binary                       |
 | kernel={SD path}   | Replaces the kernel binary                                 |
 | kip1={SD path}     | Replaces/Adds kernel initial process. Multiple can be set. |
+| kip1={SD folder}/* | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
 | kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Implemented patches right now are nosigchk,nogc |
 | fullsvcperm=1      | Disables SVC verification (full services permission)       |
 | debugmode=1        | Enables Debug mode                                         |

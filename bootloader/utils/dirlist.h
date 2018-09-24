@@ -16,4 +16,4 @@
 
 #include "../utils/types.h"
 
-char *dirlist(char *directory);
+char *dirlist(const char *directory, const char *pattern);

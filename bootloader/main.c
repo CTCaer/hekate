@@ -1968,7 +1968,7 @@ void launch_tools(u8 type)
 		else
 			memcpy(dir, "bootloader/libtools", 20);
 
-		filelist = dirlist(dir);
+		filelist = dirlist(dir, NULL);
 
 		u32 i = 0;
 

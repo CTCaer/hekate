@@ -45,7 +45,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 	if (is_dir)
 	{
-		filelist = dirlist(filename);
+		filelist = dirlist(filename, "*.ini");
 		if (!filelist)
 		{
 			free(filename);
