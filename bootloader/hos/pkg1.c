@@ -57,18 +57,18 @@ PATCHSET_DEF(_secmon_4_patchset,
 
 PATCHSET_DEF(_secmon_5_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xDA8 + 0x9D8 , _NOP() }, //package2 structure.
-	{ 0xDA8 + 0x9E4 , _NOP() }, //Version.
-	{ 0xDA8 + 0xC9C , _NOP() }, //Header signature.
-	{ 0xDA8 + 0x1038 , _NOP() } //Sections SHA2.
+	{ 0xDA8 + 0x9D8, _NOP() }, //package2 structure.
+	{ 0xDA8 + 0x9E4, _NOP() }, //Version.
+	{ 0xDA8 + 0xC9C, _NOP() }, //Header signature.
+	{ 0xDA8 + 0x1038, _NOP() } //Sections SHA2.
 );
 
 PATCHSET_DEF(_secmon_6_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xDC8 + 0x820 , _NOP() }, //package2 structure.
-	{ 0xDC8 + 0x82C , _NOP() }, //Version.
-	{ 0xDC8 + 0xE90 , _NOP() }, //Header signature.
-	{ 0xDC8 + 0x112C , _NOP() } //Sections SHA2.
+	{ 0xDC8 + 0x820, _NOP() }, //package2 structure.
+	{ 0xDC8 + 0x82C, _NOP() }, //Version.
+	{ 0xDC8 + 0xE90, _NOP() }, //Header signature.
+	{ 0xDC8 + 0x112C, _NOP() } //Sections SHA2.
 );
 
 /*

@@ -840,6 +840,7 @@ out:
 int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
 	FIL fp;
+	u32 btn = 0;
 	u32 prevPct = 200;
 	int res = 0;
 
@@ -898,7 +899,7 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, 
 			default:
 				se_calc_sha256(&hashEm, bufEm, num << 9);
 				se_calc_sha256(&hashSd, bufSd, num << 9);
-				res = memcmp(hashEm, hashSd, 0x20);
+				res = memcmp(hashEm, hashSd, 0x10);
 				break;
 			}
 			if (res)
@@ -921,6 +922,21 @@ int dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, 
 
 			lba_curr += num;
 			totalSectorsVer -= num;
+
+			btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
+			if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+			{
+				gfx_con.fntsz = 16;
+				WPRINTF("\n\nThe verification was cancelled!");
+				EPRINTF("\nPress any key...\n");
+				msleep(1500);
+
+				free(bufEm);
+				free(bufSd);
+				f_close(&fp);
+
+				return 0;
+			}
 		}
 		free(bufEm);
 		free(bufSd);
