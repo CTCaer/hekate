@@ -37,7 +37,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
 | customlogo=0       | 0: Use default hekate bootlogo, 1: Use bootlogo.bmp.       |
 | verification=2     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and not 100% reliable), 2: Full (sha256 based, slow and 100% reliable). |
-| autohosoff=1       | If woke up from HOS via an rtc alarm, power off completely.|
+| autohosoff=1       | 0: Disable, 1: If woke up from HOS via an RTC alarm, shows logo, then powers off completely, 2: No logo, immediately powers off.|
 | backlight=100      | Screen backlight level. 0-255.                             |
 
 
