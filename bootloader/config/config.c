@@ -645,10 +645,10 @@ void config_auto_hos_poweroff()
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 5);
-	u32 *hp_values = (u32 *)malloc(sizeof(u32) * 2);
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
+	u32 *hp_values = (u32 *)malloc(sizeof(u32) * 3);
 
-	for (u32 j = 0; j < 2; j++)
+	for (u32 j = 0; j < 3; j++)
 	{
 		hp_values[j] = j;
 		ments[j + 2].type = MENT_DATA;
@@ -660,19 +660,26 @@ void config_auto_hos_poweroff()
 
 	ments[1].type = MENT_CHGLINE;
 
-	if (h_cfg.autohosoff)
+	if (h_cfg.autohosoff == 1)
 	{
 		ments[2].caption = " Disable";
 		ments[3].caption = "*Enable";
-
+		ments[4].caption = " Enable (No logo)";
+	}
+	else if (h_cfg.autohosoff >= 2)
+	{
+		ments[2].caption = " Disable";
+		ments[3].caption = " Enable";
+		ments[4].caption = "*Enable (No logo)";
 	}
 	else
 	{
 		ments[2].caption = "*Disable";
 		ments[3].caption = " Enable";
+		ments[4].caption = " Enable (No logo)";
 	}
 
-	memset(&ments[4], 0, sizeof(ment_t));
+	memset(&ments[5], 0, sizeof(ment_t));
 	menu_t menu = {ments, "Power off if woke up from HOS", 0, 0};
 
 	u32 *temp_autohosoff = (u32 *)tui_do_menu(&gfx_con, &menu);

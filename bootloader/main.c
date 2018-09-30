@@ -260,17 +260,18 @@ void check_power_off_from_hos()
 	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
 		sd_unmount();
+		if (h_cfg.autohosoff == 1)
+		{
+			gfx_clear_grey(&gfx_ctxt, 0x1B);
+			u8 *BOOTLOGO = (void *)malloc(0x4000);
+			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
+			gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
 
-		gfx_clear_grey(&gfx_ctxt, 0x1B);
-		u8 *BOOTLOGO = (void *)malloc(0x4000);
-		blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-
-		display_backlight_brightness(10, 5000);
-		display_backlight_brightness(100, 25000);
-		usleep(600000);
-		display_backlight_brightness(0, 20000);
-
+			display_backlight_brightness(10, 5000);
+			display_backlight_brightness(100, 25000);
+			usleep(600000);
+			display_backlight_brightness(0, 20000);
+		}
 		power_off();
 	}
 }
