@@ -3098,6 +3098,56 @@ void bootrom_ipatches_info()
 	}
 }
 
+/*
+void minerva()
+{
+	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
+	gfx_con_setpos(&gfx_con, 0, 0);
+
+	u32 curr_ram_idx = 0;
+	mtc_config_t mtc_cfg;
+
+	if (!sd_mount())
+		return;
+
+	gfx_printf(&gfx_con, "-- Minerva Training Cell --\n\n");
+
+	// Set table to ram.
+	mtc_cfg.mtc_table = NULL;
+	mtc_cfg.sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
+	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
+
+	gfx_printf(&gfx_con, "\nStarting training process..\n\n");
+
+	// Get current frequency
+	for (curr_ram_idx = 0; curr_ram_idx < 10; curr_ram_idx++)
+	{
+		if (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) == mtc_cfg.mtc_table[curr_ram_idx].clk_src_emc)
+			break;
+	}
+
+	mtc_cfg.rate_from = mtc_cfg.mtc_table[curr_ram_idx].rate_khz;
+	mtc_cfg.rate_to = 800000;
+	mtc_cfg.train_mode = OP_TRAIN_SWITCH;
+	gfx_printf(&gfx_con, "Training and switching %7d -> %7d\n\n", mtc_cfg.mtc_table[curr_ram_idx].rate_khz, 800000);
+	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
+
+	mtc_cfg.rate_to = 1600000;
+	gfx_printf(&gfx_con, "Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
+	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
+	
+	msleep(100);
+	mtc_cfg.train_mode = OP_PERIODIC_TRAIN;
+	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
+
+	gfx_printf(&gfx_con, "Finished!");
+
+	sd_unmount();
+
+	btn_wait();
+}
+*/
+
 void about()
 {
 	static const char credits[] =
@@ -3239,6 +3289,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
+	//MDEF_HANDLER("Minerva", minerva),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
