@@ -3695,15 +3695,15 @@ void _minerva_get_table(mtc_config_t *mtc_cfg)
 	mtc_cfg->mtc_table = (emc_table_t *)MTC_TABLE;
 
 	mtc_cfg->table_entries = 10;
-	mtc_cfg.rate_to = 0;
-	mtc_cfg.rate_from = 0;
-	mtc_cfg.train_mode = 0;
-	mtc_cfg.current_emc_table = NULL;
+	mtc_cfg->rate_to = 0;
+	mtc_cfg->rate_from = 0;
+	mtc_cfg->train_mode = 0;
+	mtc_cfg->current_emc_table = NULL;
 
 	// Important!
-	mtc_cfg.emc_2X_clk_src_is_pllmb = false;
-	mtc_cfg.fsp_for_src_freq = false;
-	mtc_cfg.train_ram_patterns = true;
+	mtc_cfg->emc_2X_clk_src_is_pllmb = false;
+	mtc_cfg->fsp_for_src_freq = false;
+	mtc_cfg->train_ram_patterns = true;
 }
 
 void _minerva_init(mtc_config_t *mtc_cfg, void* bp)

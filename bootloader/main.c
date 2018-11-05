@@ -3099,6 +3099,10 @@ void bootrom_ipatches_info()
 }
 
 /*
+//TODO: Don't depend on module folder.
+#include "../modules/hekate_libsys_minerva/mtc.h"
+#include "../modules/hekate_libsys_minerva/mtc_table.h"
+
 void minerva()
 {
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
@@ -3289,7 +3293,7 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
-	//MDEF_HANDLER("Minerva", minerva),
+	//MDEF_HANDLER("Minerva", minerva), // Uncomment for testing Minerva Training Cell
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
