@@ -21,7 +21,7 @@
 #include "../mem/heap.h"
 #include "../utils/types.h"
 
-char *dirlist(const char *directory, const char *pattern)
+char *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles)
 {
 	u8 max_entries = 61;
 
@@ -40,7 +40,7 @@ char *dirlist(const char *directory, const char *pattern)
 			res = f_readdir(&dir, &fno);
 			if (res || !fno.fname[0])
 				break;
-			if (!(fno.fattrib & AM_DIR))
+			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != '.') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
 			{
 				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
 				k++;
@@ -54,7 +54,7 @@ char *dirlist(const char *directory, const char *pattern)
 	{
 		do
 		{
-			if (!(fno.fattrib & AM_DIR))
+			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != '.') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
 			{
 				memcpy(dir_entries + (k * 256), fno.fname, strlen(fno.fname) + 1);
 				k++;
