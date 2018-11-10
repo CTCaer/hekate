@@ -3099,9 +3099,8 @@ void bootrom_ipatches_info()
 }
 
 /*
-//TODO: Don't depend on module folder.
-#include "../modules/hekate_libsys_minerva/mtc.h"
-#include "../modules/hekate_libsys_minerva/mtc_table.h"
+//#include "../modules/hekate_libsys_minerva/mtc.h"
+//mtc_config_t mtc_cfg;
 
 void minerva()
 {
@@ -3109,7 +3108,6 @@ void minerva()
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	u32 curr_ram_idx = 0;
-	mtc_config_t mtc_cfg;
 
 	if (!sd_mount())
 		return;
@@ -3135,18 +3133,19 @@ void minerva()
 	mtc_cfg.train_mode = OP_TRAIN_SWITCH;
 	gfx_printf(&gfx_con, "Training and switching %7d -> %7d\n\n", mtc_cfg.mtc_table[curr_ram_idx].rate_khz, 800000);
 	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
-
-	mtc_cfg.rate_to = 1600000;
-	gfx_printf(&gfx_con, "Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
-	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
 	
-	msleep(100);
-	mtc_cfg.train_mode = OP_PERIODIC_TRAIN;
-	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
+	// Thefollowing frequency needs periodic training every 100ms.
+	//msleep(200);
+	
+	//mtc_cfg.rate_to = 1600000;
+	//gfx_printf(&gfx_con, "Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
+	//ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
 
-	gfx_printf(&gfx_con, "Finished!");
-
+	//mtc_cfg.train_mode = OP_PERIODIC_TRAIN;
+	
 	sd_unmount();
+	
+	gfx_printf(&gfx_con, "Finished!");
 
 	btn_wait();
 }
