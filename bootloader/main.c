@@ -212,10 +212,10 @@ void panic(u32 val)
 	// Set panic code.
 	PMC(APBDEV_PMC_SCRATCH200) = val;
 	//PMC(APBDEV_PMC_CRYPTO_OP) = 1; // Disable SE.
-	TMR(0x18C) = 0xC45A;
-	TMR(0x80) = 0xC0000000;
-	TMR(0x180) = 0x8019;
-	TMR(0x188) = 1;
+	TMR(TIMER_WDT4_UNLOCK_PATTERN) = TIMER_MAGIC_PTRN;
+	TMR(TIMER_TMR9_TMR_PTV) = TIMER_EN | TIMER_PER_EN;
+	TMR(TIMER_WDT4_CONFIG)  = TIMER_SRC(9) | TIMER_PER(1) | TIMER_PMCRESET_EN;
+	TMR(TIMER_WDT4_COMMAND) = TIMER_START_CNT;
 	while (1)
 		;
 }
@@ -238,7 +238,7 @@ void reboot_rcm()
 #endif //MENU_LOGO_ENABLE
 	display_end();
 	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
-	PMC(0) |= 0x10;
+	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
 	while (true)
 		usleep(1);
 }
@@ -280,7 +280,7 @@ void config_oscillators()
 {
 	CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) = (CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) & 0xFFFFFFF3) | 4;
 	SYSCTR0(SYSCTR0_CNTFID0) = 19200000;
-	TMR(0x14) = 0x45F;
+	TMR(TIMERUS_USEC_CFG) = 0x45F; // For 19.2MHz clk_m.
 	CLOCK(CLK_RST_CONTROLLER_OSC_CTRL) = 0x50000071;
 	PMC(APBDEV_PMC_OSC_EDPD_OVER) = (PMC(APBDEV_PMC_OSC_EDPD_OVER) & 0xFFFFFF81) | 0xE;
 	PMC(APBDEV_PMC_OSC_EDPD_OVER) = (PMC(APBDEV_PMC_OSC_EDPD_OVER) & 0xFFBFFFFF) | 0x400000;
@@ -338,16 +338,16 @@ void mbist_workaround()
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = 0x18000000;
 	usleep(2);
 
-	I2S(0x0A0) |= 0x400;
-	I2S(0x088) &= 0xFFFFFFFE;
-	I2S(0x1A0) |= 0x400;
-	I2S(0x188) &= 0xFFFFFFFE;
-	I2S(0x2A0) |= 0x400;
-	I2S(0x288) &= 0xFFFFFFFE;
-	I2S(0x3A0) |= 0x400;
-	I2S(0x388) &= 0xFFFFFFFE;
-	I2S(0x4A0) |= 0x400;
-	I2S(0x488) &= 0xFFFFFFFE;
+	I2S(I2S1_CTRL) |= I2S_CTRL_MASTER_EN;
+	I2S(I2S1_CG)   &= ~I2S_CG_SLCG_ENABLE;
+	I2S(I2S2_CTRL) |= I2S_CTRL_MASTER_EN;
+	I2S(I2S2_CG)   &= ~I2S_CG_SLCG_ENABLE;
+	I2S(I2S3_CTRL) |= I2S_CTRL_MASTER_EN;
+	I2S(I2S3_CG)   &= ~I2S_CG_SLCG_ENABLE;
+	I2S(I2S4_CTRL) |= I2S_CTRL_MASTER_EN;
+	I2S(I2S4_CG)   &= ~I2S_CG_SLCG_ENABLE;
+	I2S(I2S5_CTRL) |= I2S_CTRL_MASTER_EN;
+	I2S(I2S5_CG)   &= ~I2S_CG_SLCG_ENABLE;
 	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= 4;
 	VIC(0x8C) = 0xFFFFFFFF;
 	usleep(2);
@@ -377,20 +377,30 @@ void mbist_workaround()
 void config_se_brom()
 {
 	// Bootrom part we skipped.
-	u32 sbk[4] = { FUSE(0x1A4), FUSE(0x1A8), FUSE(0x1AC), FUSE(0x1B0) };
+	u32 sbk[4] = { 
+		FUSE(FUSE_PRIVATE_KEY0),
+		FUSE(FUSE_PRIVATE_KEY1),
+		FUSE(FUSE_PRIVATE_KEY2),
+		FUSE(FUSE_PRIVATE_KEY3)
+	};
+	// Set SBK to slot 14.
 	se_aes_key_set(14, sbk, 0x10);
+
 	// Lock SBK from being read.
 	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 14 * 4) = 0x7E;
+
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
-	memset((void *)0x7C010000, 0, 0x10000);
+	memset((void *)TZRAM_BASE, 0, 0x10000);
 	PMC(APBDEV_PMC_CRYPTO_OP) = 0;
 	SE(SE_INT_STATUS_REG_OFFSET) = 0x1F;
+
 	// Lock SSK (although it's not set and unused anyways).
 	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
+
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
 	PMC(APBDEV_PMC_RST_STATUS) = 0x0;
-	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) = 0x1C00;
+	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) |= (7 << 10);
 }
 
 void config_hw()
@@ -456,13 +466,13 @@ void config_hw()
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= 0x400; // Enable AHUB clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= 0x40;  // Enable APE clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= (1 << 10); // Enable AHUB clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= (1 <<  6);  // Enable APE clock.
 
 	if (extra_reconfig)
 	{
 		msleep(10);
-		PMC(APBDEV_PMC_PWR_DET_VAL) |= (1 << 12);
+		PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
 
 		clock_disable_cl_dvfs();
 
@@ -499,7 +509,7 @@ void print_fuseinfo()
 			burntFuses++;
 	}
 
-	gfx_printf(&gfx_con, "\nSKU:         %X - ", FUSE(0x110));
+	gfx_printf(&gfx_con, "\nSKU:         %X - ", FUSE(FUSE_SKU_INFO));
 	switch (fuse_read_odm(4) & 3)
 	{
 	case 0:
@@ -512,7 +522,8 @@ void print_fuseinfo()
 	gfx_printf(&gfx_con, "Sdram ID:    %d\n", (fuse_read_odm(4) >> 3) & 0x1F);
 	gfx_printf(&gfx_con, "Burnt fuses: %d\n", burntFuses);
 	gfx_printf(&gfx_con, "Secure key:  %08X%08X%08X%08X\n\n\n",
-		byte_swap_32(FUSE(0x1A4)), byte_swap_32(FUSE(0x1A8)), byte_swap_32(FUSE(0x1AC)), byte_swap_32(FUSE(0x1B0)));
+		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
+		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)));
 
 	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 	gfx_hexdump(&gfx_con, 0x7000F900, (u8 *)0x7000F900, 0x2FC);

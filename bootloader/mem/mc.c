@@ -107,6 +107,7 @@ void mc_config_carveout_finalize()
 
 void mc_enable_ahb_redirect()
 {
+	// Enable ARC_CLK_OVR_ON.
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) = (CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) & 0xFFF7FFFF) | 0x80000;
 	//MC(MC_IRAM_REG_CTRL) &= 0xFFFFFFFE;
 	MC(MC_IRAM_BOM) = 0x40000000;
@@ -119,7 +120,8 @@ void mc_disable_ahb_redirect()
 	MC(MC_IRAM_TOM) = 0;
 	// Disable IRAM_CFG_WRITE_ACCESS (sticky).
 	//MC(MC_IRAM_REG_CTRL) = MC(MC_IRAM_REG_CTRL) & 0xFFFFFFFE | 1;
-	CLOCK(0x3A4) &= 0xFFF7FFFF;
+	// Disable ARC_CLK_OVR_ON.
+	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) &= 0xFFF7FFFF;
 }
 
 void mc_enable()

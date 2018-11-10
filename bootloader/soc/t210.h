@@ -56,8 +56,9 @@
 #define MC_BASE 0x70019000
 #define EMC_BASE 0x7001B000
 #define MIPI_CAL_BASE 0x700E3000
-#define I2S_BASE 0x702D1000
 #define CL_DVFS_BASE 0x70110000
+#define I2S_BASE 0x702D1000
+#define TZRAM_BASE 0x7C010000
 
 #define _REG(base, off) *(vu32 *)((base) + (off))
 
@@ -99,6 +100,9 @@
 #define CL_DVFS(off) _REG(CL_DVFS_BASE, off)
 #define TEST_REG(off) _REG(0x0, off)
 
+/*! EVP registers. */
+#define EVP_CPU_RESET_VECTOR 0x100
+
 /*! Misc registers. */
 #define APB_MISC_PP_STRAPPING_OPT_A 0x08
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
@@ -112,10 +116,43 @@
 
 /*! Secure boot registers. */
 #define SB_CSR 0x0
-#define SB_AA64_RESET_LOW 0x30
+#define SB_AA64_RESET_LOW  0x30
 #define SB_AA64_RESET_HIGH 0x34
 
-/*! SYSCTR0 registers. */
-#define SYSCTR0_CNTFID0 0x20
+/*! RTC registers. */
+#define APBDEV_RTC_SECONDS        0x8
+#define APBDEV_RTC_SHADOW_SECONDS 0xC
+#define APBDEV_RTC_MILLI_SECONDS  0x10
+
+/*! TMR registers. */
+#define TIMERUS_CNTR_1US          (0x10 + 0x0)
+#define TIMERUS_USEC_CFG          (0x10 + 0x4)
+#define TIMER_TMR9_TMR_PTV        0x80
+#define  TIMER_EN     (1 << 31)
+#define  TIMER_PER_EN (1 << 30)
+#define TIMER_WDT4_CONFIG         (0x100 + 0x80)
+#define  TIMER_SRC(TMR) (TMR & 0xF)
+#define  TIMER_PER(PER) ((PER & 0xFF) << 4)
+#define  TIMER_SYSRESET_EN (1 << 14)
+#define  TIMER_PMCRESET_EN (1 << 15)
+#define TIMER_WDT4_COMMAND        (0x108 + 0x80)
+#define  TIMER_START_CNT   (1 << 0)
+#define  TIMER_CNT_DISABLE (1 << 1)
+#define TIMER_WDT4_UNLOCK_PATTERN (0x10C + 0x80)
+#define  TIMER_MAGIC_PTRN 0xC45A
+
+/*! I2S registers. */
+#define I2S1_CG   0x88
+#define I2S1_CTRL 0xA0
+#define I2S2_CG   0x188
+#define I2S2_CTRL 0x1A0
+#define I2S3_CG   0x288
+#define I2S3_CTRL 0x2A0
+#define I2S4_CG   0x388
+#define I2S4_CTRL 0x3A0
+#define I2S5_CG   0x488
+#define I2S5_CTRL 0x4A0
+#define  I2S_CG_SLCG_ENABLE (1 << 0)
+#define  I2S_CTRL_MASTER_EN (1 << 10)
 
 #endif

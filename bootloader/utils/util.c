@@ -20,32 +20,33 @@
 
 u32 get_tmr_s()
 {
-	return RTC(0x8); //RTC_SECONDS
+	return RTC(APBDEV_RTC_SECONDS);
 }
 
 u32 get_tmr_ms()
 {
 	// The registers must be read with the following order:
 	// -> RTC_MILLI_SECONDS (0x10) -> RTC_SHADOW_SECONDS (0xC)
-	return (RTC(0x10) | (RTC(0xC)<< 10));
+	return (RTC(APBDEV_RTC_MILLI_SECONDS) | (RTC(APBDEV_RTC_SHADOW_SECONDS)<< 10));
 }
 
 u32 get_tmr_us()
 {
-	return TMR(0x10); //TIMERUS_CNTR_1US
+	return TMR(TIMERUS_CNTR_1US); //TIMERUS_CNTR_1US
 }
 
 void msleep(u32 milliseconds)
 {
-	u32 start = RTC(0x10) | (RTC(0xC)<< 10);
-	while (((RTC(0x10) | (RTC(0xC)<< 10)) - start) <= milliseconds)
+	u32 start = RTC(APBDEV_RTC_MILLI_SECONDS) | (RTC(APBDEV_RTC_SHADOW_SECONDS)<< 10);
+	while (((RTC(APBDEV_RTC_MILLI_SECONDS) | (RTC(APBDEV_RTC_SHADOW_SECONDS)<< 10)) - start) <= milliseconds)
 		;
 }
 
 void usleep(u32 microseconds)
 {
-	u32 start = TMR(0x10);
-	while ((TMR(0x10) - start) <= microseconds)
+	u32 start = TMR(TIMERUS_CNTR_1US);
+	// Casting to u32 is important!
+	while ((u32)(TMR(TIMERUS_CNTR_1US) - start) <= microseconds)
 		;
 }
 

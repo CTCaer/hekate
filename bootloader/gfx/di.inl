@@ -287,12 +287,12 @@ static const cfg_op_t _display_config_7[10] = {
 
 //MIPI CAL config.
 static const cfg_op_t _display_config_8[6] = {
-	{0x18, 0},
-	{2, 0xF3F10000},
-	{0x16, 0},
-	{0x18, 0},
-	{0x18, 0x10010},
-	{0x17, 0x300}
+	{0x18, 0},          // MIPI_CAL_MIPI_BIAS_PAD_CFG2
+	{0x02, 0xF3F10000}, // MIPI_CAL_CIL_MIPI_CAL_STATUS
+	{0x16, 0},          // MIPI_CAL_MIPI_BIAS_PAD_CFG0
+	{0x18, 0},          // MIPI_CAL_MIPI_BIAS_PAD_CFG2
+	{0x18, 0x10010},    // MIPI_CAL_MIPI_BIAS_PAD_CFG2
+	{0x17, 0x300}       // MIPI_CAL_MIPI_BIAS_PAD_CFG1
 };
 
 //DSI config.
@@ -305,22 +305,22 @@ static const cfg_op_t _display_config_9[4] = {
 
 //MIPI CAL config.
 static const cfg_op_t _display_config_10[16] = {
-	{0xE, 0x200200},
-	{0xF, 0x200200},
-	{0x19, 0x200002},
-	{0x1A, 0x200002},
-	{5, 0},
-	{6, 0},
-	{7, 0},
-	{8, 0},
-	{9, 0},
-	{0xA, 0},
-	{0x10, 0},
-	{0x11, 0},
-	{0x1A, 0},
-	{0x1C, 0},
-	{0x1D, 0},
-	{0, 0x2A000001}
+	{0x0E, 0x200200}, // MIPI_CAL_DSIA_MIPI_CAL_CONFIG
+	{0x0F, 0x200200}, // MIPI_CAL_DSIB_MIPI_CAL_CONFIG
+	{0x19, 0x200002}, // MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2
+	{0x1A, 0x200002}, // MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2
+	{0x05, 0},        // MIPI_CAL_CILA_MIPI_CAL_CONFIG
+	{0x06, 0},        // MIPI_CAL_CILB_MIPI_CAL_CONFIG
+	{0x07, 0},        // MIPI_CAL_CILC_MIPI_CAL_CONFIG
+	{0x08, 0},        // MIPI_CAL_CILD_MIPI_CAL_CONFIG
+	{0x09, 0},        // MIPI_CAL_CILE_MIPI_CAL_CONFIG
+	{0x0A, 0},        // MIPI_CAL_CILF_MIPI_CAL_CONFIG
+	{0x10, 0},        // MIPI_CAL_DSIC_MIPI_CAL_CONFIG
+	{0x11, 0},        // MIPI_CAL_DSID_MIPI_CAL_CONFIG
+	{0x1A, 0},        // MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2
+	{0x1C, 0},        // MIPI_CAL_DSIC_MIPI_CAL_CONFIG_2
+	{0x1D, 0},        // MIPI_CAL_DSID_MIPI_CAL_CONFIG_2
+	{0, 0x2A000001}   // MIPI_CAL_DSIA_MIPI_CAL_CONFIG
 };
 
 //Display A config.

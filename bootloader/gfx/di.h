@@ -342,8 +342,9 @@
 #define  DSI_PAD_PREEMP_PU(x)     (((x) & 0x3) << 0)
 
 #define DSI_PAD_CONTROL_4 0x52
-
 #define DSI_INIT_SEQ_DATA_15 0x5F
+
+#define MIPI_CAL_MIPI_BIAS_PAD_CFG2 0x60
 
 /*! Display backlight related PWM registers. */
 #define PWM_CONTROLLER_PWM_CSR 0x00

@@ -116,6 +116,8 @@
 #define CLK_RST_CONTROLLER_CLK_SOURCE_NVENC 0x6A0
 #define CLK_RST_CONTROLLER_SE_SUPER_CLK_DIVIDER 0x704
 
+#define CLK_NO_SOURCE 0x0
+
 /*! Generic clock descriptor. */
 typedef struct _clock_t
 {
