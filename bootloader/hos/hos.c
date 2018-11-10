@@ -376,7 +376,7 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 
 		u32 dirlen = 0;
 		dir[strlen(dir) - 2] = 0;
-		char *filelist = dirlist(dir, "*.kip*");
+		char *filelist = dirlist(dir, "*.kip*", false);
 
 		memcpy(dir + strlen(dir), "/", 2);
 		dirlen = strlen(dir);

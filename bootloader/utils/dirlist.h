@@ -16,4 +16,4 @@
 
 #include "../utils/types.h"
 
-char *dirlist(const char *directory, const char *pattern);
+char *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles);
