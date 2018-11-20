@@ -230,9 +230,9 @@ void ini_free_section(ini_sec_t *cfg)
 	{
 		free(kv->key);
 		free(kv->val);
-		free(kv);
+		//free(kv);
 	}
-	free(cfg);
+	//free(cfg);
 
 	cfg = NULL;
 }

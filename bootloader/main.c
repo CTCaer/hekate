@@ -452,13 +452,11 @@ void config_hw()
 
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_GPIO3, 0x22); // 3.x+
 
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD0, 42); //42 = (1125000 - 600000) / 12500 -> 1.125V
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD0, 42); //42 = (1125000uV - 600000) / 12500 -> 1.125V
 
 	config_pmc_scratch(); // Missing from 4.x+
 
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = (CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) & 0xFFFF8888) | 0x3333;
-
-	mc_config_carveout(); // Missing from 4.x+
 
 	sdram_init();
 }
@@ -594,7 +592,7 @@ void print_mmc_info()
 	else
 	{
 		u16 card_type;
-		u32 speed;
+		u32 speed = 0;
 
 		gfx_printf(&gfx_con, "%kCID:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		switch (storage.csd.mmca_vsn)
@@ -1082,10 +1080,7 @@ int dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 		WPRINTF("Press POWER to Continue.\nPress VOL to go to the menu.\n");
 		msleep(500);
 
-		u32 btn = btn_wait();
-		if (btn & BTN_POWER)
-			btn = 0;
-		else
+		if (!(btn_wait() & BTN_POWER))
 			return 0;
 		gfx_con.fntsz = 8;
 		gfx_clear_partial_grey(&gfx_ctxt, 0x1B, gfx_con.savedy, 48);
@@ -1689,6 +1684,9 @@ void restore_emmc_gpp_parts() { restore_emmc_selected(PART_GP_ALL); }
 
 void dump_packages12()
 {
+	if (!sd_mount())
+		return;
+
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
 	u8 *warmboot = (u8 *)calloc(1, 0x40000);
 	u8 *secmon = (u8 *)calloc(1, 0x40000);
@@ -1698,15 +1696,12 @@ void dump_packages12()
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	if (!sd_mount())
-		goto out;
-
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
 		EPRINTF("Failed to init eMMC.");
-		goto out;
+		goto out_free;
 	}
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 
@@ -1718,7 +1713,7 @@ void dump_packages12()
 	{
 		gfx_con.fntsz = 8;
 		EPRINTFARGS("Unknown package1 version for reading\nTSEC firmware (= '%s').", (char *)pkg1 + 0x10);
-		goto out;
+		goto out_free;
 	}
 
 	if (!h_cfg.se_keygen_done)
@@ -1750,25 +1745,25 @@ void dump_packages12()
 	// Dump package1.1.
 	emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
 	if (sd_save_to_file(pkg1, 0x40000, path))
-		goto out;
+		goto out_free;
 	gfx_puts(&gfx_con, "\nFull package1 dumped to pkg1_decr.bin\n");
 
 	// Dump nxbootloader.
 	emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
 	if (sd_save_to_file(loader, hdr->ldr_size, path))
-		goto out;
+		goto out_free;
 	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
 
 	// Dump secmon.
 	emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
 	if (sd_save_to_file(secmon, hdr->sm_size, path))
-		goto out;
+		goto out_free;
 	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
 
 	// Dump warmboot.
 	emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
 	if (sd_save_to_file(warmboot, hdr->wb_size, path))
-		goto out;
+		goto out_free;
 	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
 
 	// Dump package2.1.
@@ -1823,12 +1818,13 @@ void dump_packages12()
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
 out:
+	nx_emmc_gpt_free(&gpt);
+out_free:
 	free(pkg1);
 	free(secmon);
 	free(warmboot);
 	free(loader);
 	free(pkg2);
-	nx_emmc_gpt_free(&gpt);
 	sdmmc_storage_end(&storage);
 	sd_unmount();
 
@@ -1980,7 +1976,7 @@ void launch_tools(u8 type)
 	u8 max_entries = 61;
 	char *filelist = NULL;
 	char *file_sec = NULL;
-	char *dir;
+	char *dir = NULL;
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 
@@ -2032,6 +2028,7 @@ void launch_tools(u8 type)
 			if (!file_sec)
 			{
 				free(ments);
+				free(dir);
 				free(filelist);
 				sd_unmount();
 				return;
@@ -2076,6 +2073,7 @@ void launch_tools(u8 type)
 
 out:
 	sd_unmount();
+	free(dir);
 
 	btn_wait();
 }

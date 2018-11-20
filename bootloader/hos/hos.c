@@ -262,7 +262,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 
 	// Read package1.
-	ctxt->pkg1 = (u8 *)malloc(0x40000);
+	ctxt->pkg1 = (void *)malloc(0x40000);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
@@ -326,6 +326,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 out:;
 	nx_emmc_gpt_free(&gpt);
 	sdmmc_storage_end(&storage);
+
 	return bctBuf;
 }
 
@@ -738,8 +739,11 @@ int hos_launch(ini_sec_t *cfg)
 		*mb_exo_fw_no = exoFwNumber;
 	}
 
-	// Finalize MC carveout and lock SE before starting 'SecureMonitor'.
-	mc_config_carveout_finalize();
+	// Finalize MC carveout.
+	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)
+		mc_config_carveout();
+
+	// Lock SE before starting 'SecureMonitor'.
 	_se_lock();
 
 	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point. For <4.0.0 after secmon?

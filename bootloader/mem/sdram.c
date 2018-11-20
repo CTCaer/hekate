@@ -41,7 +41,7 @@ static u32 _get_sdram_id()
 
 static void _sdram_config(const sdram_params_t *params)
 {
-	PMC(0x45C) = (((4 * params->emc_pmc_scratch1 >> 2) + 0x80000000) ^ 0xFFFF) & 0xC000FFFF;
+	PMC(APBDEV_PMC_IO_DPD3_REQ) = (((4 * params->emc_pmc_scratch1 >> 2) + 0x80000000) ^ 0xFFFF) & 0xC000FFFF;
 	usleep(params->pmc_io_dpd3_req_wait);
 
 	u32 req = (4 * params->emc_pmc_scratch2 >> 2) + 0x80000000;
@@ -393,7 +393,7 @@ break_nosleep:
 		*(vu32 *)(4 * (params->boot_rom_patch_control + 0x1C000000)) = params->boot_rom_patch_data;
 		MC(MC_TIMING_CONTROL) = 1;
 	}
-	PMC(0x45C) = ((4 * params->emc_pmc_scratch1 >> 2) + 0x40000000) & 0xCFFF0000;
+	PMC(APBDEV_PMC_IO_DPD3_REQ) = ((4 * params->emc_pmc_scratch1 >> 2) + 0x40000000) & 0xCFFF0000;
 	usleep(params->pmc_io_dpd3_req_wait);
 	if (!params->emc_auto_cal_interval)
 		EMC(EMC_AUTO_CAL_CONFIG) = params->emc_auto_cal_config | 0x200;
@@ -410,7 +410,7 @@ break_nosleep:
 	}
 	EMC(EMC_TIMING_CONTROL) = 1;
 	usleep(params->emc_timing_control_wait);
-	PMC(0x4E4) &= 0xFFF8007F;
+	PMC(APBDEV_PMC_DDR_CNTRL) &= 0xFFF8007F;
 	usleep(params->pmc_ddr_ctrl_wait);
 	if (params->memory_type == 2)
 	{
@@ -459,7 +459,7 @@ break_nosleep:
 			}
 		}
 	}
-	PMC(0x1D0) = params->pmc_ddr_cfg;
+	PMC(APBDEV_PMC_DDR_CFG) = params->pmc_ddr_cfg;
 	if (params->memory_type - 1 <= 2)
 	{
 		EMC(EMC_ZCAL_INTERVAL) = params->emc_zcal_interval;
@@ -486,7 +486,7 @@ break_nosleep:
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = params->mc_video_protect_write_access;
 	MC(MC_SEC_CARVEOUT_REG_CTRL) = params->mc_sec_carveout_protect_write_access;
 	MC(MC_MTS_CARVEOUT_REG_CTRL) = params->mc_mts_carveout_reg_ctrl;
-	MC(MC_EMEM_CFG_ACCESS_CTRL) = 1; //Disable write access to a bunch of MC registers.
+	MC(MC_EMEM_CFG_ACCESS_CTRL) = 1; //Disable write access to a bunch of EMC registers.
 }
 
 const void *sdram_get_params()
