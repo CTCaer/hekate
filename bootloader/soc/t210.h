@@ -124,6 +124,9 @@
 #define APBDEV_RTC_SHADOW_SECONDS 0xC
 #define APBDEV_RTC_MILLI_SECONDS  0x10
 
+/*! SYSCTR0 registers. */
+#define SYSCTR0_CNTFID0     0x20
+
 /*! TMR registers. */
 #define TIMERUS_CNTR_1US          (0x10 + 0x0)
 #define TIMERUS_USEC_CFG          (0x10 + 0x4)

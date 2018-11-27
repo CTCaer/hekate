@@ -15,6 +15,9 @@ VPATH = $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*
 OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	start.o \
 	main.o \
+	fe_emmc_tools.o \
+	fe_info.o \
+	fe_tools.o \
 	config.o \
 	btn.o \
 	clock.o \
@@ -43,6 +46,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	se.o \
 	tsec.o \
 	uart.o \
+	hw_init.o \
 	dirlist.o \
 	ini.o \
 	ianos.o \
