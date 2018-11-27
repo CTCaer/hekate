@@ -2493,6 +2493,9 @@ void auto_launch_firmware()
 
 	if (btn & BTN_VOL_DOWN)
 		goto out;
+	
+	if (btn & BTN_VOL_UP)
+		power_off();
 
 	ini_free(&ini_sections);
 	if (h_cfg.autoboot_list)
