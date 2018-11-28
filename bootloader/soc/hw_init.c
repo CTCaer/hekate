@@ -162,7 +162,7 @@ void _config_se_brom()
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
 	PMC(APBDEV_PMC_RST_STATUS) = 0x0;
-	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) |= (7 << 10);
+	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) = (APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) & 0xF0) | (7 << 10);
 }
 
 void config_hw()

@@ -26,6 +26,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	gpio.o \
 	heap.o \
 	hos.o \
+	hos_config.o \
 	i2c.o \
 	kfuse.o \
 	bq24193.o \

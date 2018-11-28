@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (C) 2018 CTCaer
+ * Copyright (c) 2018 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -21,24 +21,21 @@
 #include <string.h>
 
 #include "hos.h"
-#include "../storage/sdmmc.h"
-#include "../storage/nx_emmc.h"
-#include "../soc/t210.h"
+#include "hos_config.h"
+#include "../config/config.h"
+#include "../gfx/di.h"
+#include "../mem/heap.h"
+#include "../mem/mc.h"
 #include "../sec/se.h"
 #include "../sec/se_t210.h"
-#include "../soc/pmc.h"
-#include "../soc/cluster.h"
-#include "../mem/heap.h"
 #include "../sec/tsec.h"
-#include "../utils/util.h"
-#include "pkg1.h"
-#include "pkg2.h"
-#include "../libs/fatfs/ff.h"
-#include "../gfx/di.h"
-#include "../config/config.h"
-#include "../mem/mc.h"
+#include "../soc/cluster.h"
 #include "../soc/fuse.h"
-#include "../utils/dirlist.h"
+#include "../soc/pmc.h"
+#include "../soc/t210.h"
+#include "../storage/nx_emmc.h"
+#include "../storage/sdmmc.h"
+#include "../utils/util.h"
 
 #include "../gfx/gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
@@ -49,38 +46,6 @@ extern void sd_unmount();
 
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
-
-typedef struct _launch_ctxt_t
-{
-	void *keyblob;
-
-	void *pkg1;
-	const pkg1_id_t *pkg1_id;
-	const pkg2_kernel_id_t *pkg2_kernel_id;
-
-	void *warmboot;
-	u32 warmboot_size;
-	void *secmon;
-	u32 secmon_size;
-
-	void *pkg2;
-	u32 pkg2_size;
-
-	void *kernel;
-	u32 kernel_size;
-	link_t kip1_list;
-	char* kip1_patches;
-
-	bool svcperm;
-	bool debugmode;
-	bool atmosphere;
-} launch_ctxt_t;
-
-typedef struct _merge_kip_t
-{
-	void *kip1;
-	link_t link;
-} merge_kip_t;
 
 #define KB_FIRMWARE_VERSION_100_200 0
 #define KB_FIRMWARE_VERSION_300 1
@@ -330,196 +295,6 @@ out:;
 	return bctBuf;
 }
 
-static int _config_warmboot(launch_ctxt_t *ctxt, const char *value)
-{
-	FIL fp;
-	if (f_open(&fp, value, FA_READ) != FR_OK)
-		return 0;
-	ctxt->warmboot_size = f_size(&fp);
-	ctxt->warmboot = malloc(ctxt->warmboot_size);
-	f_read(&fp, ctxt->warmboot, ctxt->warmboot_size, NULL);
-	f_close(&fp);
-	return 1;
-}
-
-static int _config_secmon(launch_ctxt_t *ctxt, const char *value)
-{
-	FIL fp;
-	if (f_open(&fp, value, FA_READ) != FR_OK)
-		return 0;
-	ctxt->secmon_size = f_size(&fp);
-	ctxt->secmon = malloc(ctxt->secmon_size);
-	f_read(&fp, ctxt->secmon, ctxt->secmon_size, NULL);
-	f_close(&fp);
-	return 1;
-}
-
-static int _config_kernel(launch_ctxt_t *ctxt, const char *value)
-{
-	FIL fp;
-	if (f_open(&fp, value, FA_READ) != FR_OK)
-		return 0;
-	ctxt->kernel_size = f_size(&fp);
-	ctxt->kernel = malloc(ctxt->kernel_size);
-	f_read(&fp, ctxt->kernel, ctxt->kernel_size, NULL);
-	f_close(&fp);
-	return 1;
-}
-
-static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
-{
-	FIL fp;
-
-	if (!memcmp(value + strlen(value) - 1, "*", 1))
-	{
-		char *dir = (char *)malloc(256);
-		memcpy(dir, value, strlen(value) + 1);
-
-		u32 dirlen = 0;
-		dir[strlen(dir) - 2] = 0;
-		char *filelist = dirlist(dir, "*.kip*", false);
-
-		memcpy(dir + strlen(dir), "/", 2);
-		dirlen = strlen(dir);
-
-		u32 i = 0;
-		if (filelist)
-		{
-			while (true)
-			{
-				if (!filelist[i * 256])
-					break;
-
-				memcpy(dir + dirlen, &filelist[i * 256], strlen(&filelist[i * 256]) + 1);
-				if (f_open(&fp, dir, FA_READ))
-				{
-					free(dir);
-					free(filelist);
-
-					return 0;
-				}
-				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
-				mkip1->kip1 = malloc(f_size(&fp));
-				f_read(&fp, mkip1->kip1, f_size(&fp), NULL);
-				DPRINTF("Loaded kip1 from SD (size %08X)\n", f_size(&fp));
-				f_close(&fp);
-				list_append(&ctxt->kip1_list, &mkip1->link);
-
-				i++;
-			}
-		}
-
-		free(dir);
-		free(filelist);
-	}
-	else
-	{
-		if (f_open(&fp, value, FA_READ))
-			return 0;
-		merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
-		mkip1->kip1 = malloc(f_size(&fp));
-		f_read(&fp, mkip1->kip1, f_size(&fp), NULL);
-		DPRINTF("Loaded kip1 from SD (size %08X)\n", f_size(&fp));
-		f_close(&fp);
-		list_append(&ctxt->kip1_list, &mkip1->link);
-	}
-
-	return 1;
-}
-
-static int _config_svcperm(launch_ctxt_t *ctxt, const char *value)
-{
-	if (*value == '1')
-	{
-		DPRINTF("Disabled SVC verification\n");
-		ctxt->svcperm = true;
-	}
-	return 1;
-}
-
-static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
-{
-	if (*value == '1')
-	{
-		DPRINTF("Enabled Debug mode\n");
-		ctxt->debugmode = true;
-	}
-	return 1;
-}
-
-static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
-{
-	if (*value == '1')
-	{
-		DPRINTF("Enabled atmosphere patching\n");
-		ctxt->atmosphere = true;
-	}
-	return 1;
-}
-
-static int _config_kip1patch(launch_ctxt_t *ctxt, const char *value)
-{
-	if (value == NULL)
-		return 0;
-
-	int valueLen = strlen(value);
-	if (!valueLen)
-		return 0;
-
-	if (ctxt->kip1_patches == NULL)
-	{
-		ctxt->kip1_patches = malloc(valueLen + 1);
-		memcpy(ctxt->kip1_patches, value, valueLen);
-		ctxt->kip1_patches[valueLen] = 0;
-	}
-	else
-	{
-		char *oldAlloc = ctxt->kip1_patches;
-		int oldSize = strlen(oldAlloc);
-		ctxt->kip1_patches = malloc(oldSize + 1 + valueLen + 1);
-		memcpy(ctxt->kip1_patches, oldAlloc, oldSize);
-		free(oldAlloc);
-		oldAlloc = NULL;
-		ctxt->kip1_patches[oldSize++] = ',';
-		memcpy(&ctxt->kip1_patches[oldSize], value, valueLen);
-		ctxt->kip1_patches[oldSize + valueLen] = 0;
-	}
-	return 1;
-}
-
-typedef struct _cfg_handler_t
-{
-	const char *key;
-	int (*handler)(launch_ctxt_t *ctxt, const char *value);
-} cfg_handler_t;
-
-static const cfg_handler_t _config_handlers[] = {
-	{ "warmboot", _config_warmboot },
-	{ "secmon", _config_secmon },
-	{ "kernel", _config_kernel },
-	{ "kip1", _config_kip1 },
-	{ "kip1patch", _config_kip1patch },
-	{ "fullsvcperm", _config_svcperm },
-	{ "debugmode", _config_debugmode },
-	{ "atmosphere", _config_atmosphere },
-	{ NULL, NULL },
-};
-
-static int _config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
-{
-	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
-	{
-		for(u32 i = 0; _config_handlers[i].key; i++)
-		{
-			if (!strcmp(_config_handlers[i].key, kv->key))
-				if (!_config_handlers[i].handler(ctxt, kv->val))
-					return 0;
-		}
-	}
-
-	return 1;
-}
-
 static void _free_launch_components(launch_ctxt_t *ctxt)
 {
 	free(ctxt->keyblob);
@@ -546,7 +321,7 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	// Try to parse config if present.
-	if (cfg && !_config(&ctxt, cfg))
+	if (cfg && !_parse_boot_config(&ctxt, cfg))
 		return 0;
 
 	gfx_printf(&gfx_con, "Initializing...\n\n");
@@ -710,10 +485,6 @@ int hos_launch(ini_sec_t *cfg)
 		break;
 	}
 
-	// Free allocated memory.
-	ini_free_section(cfg);
-	_free_launch_components(&ctxt);
-
 	// Clear BCT area for retail units and copy it over if dev unit.
 	if (ctxt.pkg1_id->kb < KB_FIRMWARE_VERSION_600)
 	{
@@ -746,11 +517,15 @@ int hos_launch(ini_sec_t *cfg)
 	// Lock SE before starting 'SecureMonitor'.
 	_se_lock();
 
-	//TODO: pkg1.1 locks PMC scratches, we can do that too at some point. For <4.0.0 after secmon?
+	// Free allocated memory.
+	ini_free_section(cfg);
+	_free_launch_components(&ctxt);
+
+	// < 4.0.0 pkg1.1 locks PMC scratches.
 	//_pmc_scratch_lock(ctxt.pkg1_id->kb);
 
-	//  < 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
-	// >= 4.0.0 Signals - 0: Nothing ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot.
+	//  < 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
+	// >= 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot.
 	vu32 *mb_in = (vu32 *)0x40002EF8;
 	// Non-zero: Secmon ready.
 	vu32 *mb_out = (vu32 *)0x40002EFC;

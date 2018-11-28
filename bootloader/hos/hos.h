@@ -17,8 +17,42 @@
 #ifndef _HOS_H_
 #define _HOS_H_
 
+#include "pkg1.h"
+#include "pkg2.h"
 #include "../utils/types.h"
 #include "../config/ini.h"
+
+typedef struct _launch_ctxt_t
+{
+	void *keyblob;
+
+	void *pkg1;
+	const pkg1_id_t *pkg1_id;
+	const pkg2_kernel_id_t *pkg2_kernel_id;
+
+	void *warmboot;
+	u32   warmboot_size;
+	void *secmon;
+	u32   secmon_size;
+
+	void *pkg2;
+	u32   pkg2_size;
+
+	void  *kernel;
+	u32    kernel_size;
+	link_t kip1_list;
+	char*  kip1_patches;
+
+	bool svcperm;
+	bool debugmode;
+	bool atmosphere;
+} launch_ctxt_t;
+
+typedef struct _merge_kip_t
+{
+	void *kip1;
+	link_t link;
+} merge_kip_t;
 
 int hos_launch(ini_sec_t *cfg);
 int keygen(u8 *keyblob, u32 kb, void *tsec_fw);
