@@ -2490,10 +2490,11 @@ void auto_launch_firmware()
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
 	u32 btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
+	u32 btn2 = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_UP);
 
 	if (btn & BTN_VOL_DOWN)
 		goto out;
-	if (btn & BTN_VOL_UP)
+	if (btn2 & BTN_VOL_UP)
 		power_off();
 
 	ini_free(&ini_sections);
