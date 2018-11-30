@@ -51,6 +51,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	dirlist.o \
 	ini.o \
 	ianos.o \
+	smmu.o \
 )
 
 OBJS += $(addprefix $(BUILD)/$(TARGET)/, \

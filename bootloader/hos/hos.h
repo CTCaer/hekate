@@ -21,6 +21,16 @@
 #include "pkg2.h"
 #include "../utils/types.h"
 #include "../config/ini.h"
+#include "../sec/tsec.h"
+
+#define KB_FIRMWARE_VERSION_100_200 0
+#define KB_FIRMWARE_VERSION_300 1
+#define KB_FIRMWARE_VERSION_301 2
+#define KB_FIRMWARE_VERSION_400 3
+#define KB_FIRMWARE_VERSION_500 4
+#define KB_FIRMWARE_VERSION_600 5
+#define KB_FIRMWARE_VERSION_620 6
+#define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_620
 
 typedef struct _launch_ctxt_t
 {
@@ -55,6 +65,6 @@ typedef struct _merge_kip_t
 } merge_kip_t;
 
 int hos_launch(ini_sec_t *cfg);
-int keygen(u8 *keyblob, u32 kb, void *tsec_fw);
+int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
 
 #endif

@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (c) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -19,6 +20,16 @@
 
 #include "../utils/types.h"
 
-int tsec_query(u8 *dst, u32 rev, void *fw);
+typedef struct _tsec_ctxt_t
+{
+	u32 key_ver;
+	void *fw;
+	u32 size;
+	void *pkg1;
+	u32 pkg11_off;
+	u32 secmon_base;
+} tsec_ctxt_t;
+
+int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt);
 
 #endif

@@ -32,6 +32,7 @@
 #include "../soc/cluster.h"
 #include "../soc/fuse.h"
 #include "../soc/pmc.h"
+#include "../soc/smmu.h"
 #include "../soc/t210.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
@@ -40,20 +41,13 @@
 #include "../gfx/gfx.h"
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
+
 extern hekate_config h_cfg;
 
 extern void sd_unmount();
 
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
-
-#define KB_FIRMWARE_VERSION_100_200 0
-#define KB_FIRMWARE_VERSION_300 1
-#define KB_FIRMWARE_VERSION_301 2
-#define KB_FIRMWARE_VERSION_400 3
-#define KB_FIRMWARE_VERSION_500 4
-#define KB_FIRMWARE_VERSION_600 5
-#define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_600
 
 // Exosphère magic "XBC0".
 #define MAGIC_EXOSPHERE 0x30434258
@@ -79,25 +73,31 @@ static const u8 console_keyseed[0x10] =
 static const u8 key8_keyseed[] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
-static const u8 master_keyseed_4xx_5xx[0x10] = 
+static const u8 master_keyseed_4xx_5xx_610[0x10] = 
 	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
+
+static const u8 master_keyseed_620[0x10] =
+    { 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
 static const u8 console_keyseed_4xx_5xx[0x10] = 
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
 
-static void _se_lock()
+static void _se_lock(bool lock_se)
 {
-	for (u32 i = 0; i < 16; i++)
+	if (lock_se)
+	{
+		for (u32 i = 0; i < 16; i++)
 		se_key_acc_ctrl(i, 0x15);
 
-	for (u32 i = 0; i < 2; i++)
-		se_rsa_acc_ctrl(i, 1);
+		for (u32 i = 0; i < 2; i++)
+			se_rsa_acc_ctrl(i, 1);
+		SE(0x4) = 0; // Make this reg secure only.
+		SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; // Make all key access regs secure only.
+		SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; // Make all RSA access regs secure only.
+		SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
+	}
 
-	SE(0x4) = 0; // Make this reg secure only.
-	SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; // Make all key access regs secure only.
-	SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; // Make all RSA access regs secure only.
-	SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
 	memset((void *)IPATCH_BASE, 0, 13);
 	SB(SB_CSR) = 0x10; // Protected IROM enable.
 
@@ -134,7 +134,6 @@ void _pmc_scratch_lock(u32 kb)
 	case KB_FIRMWARE_VERSION_400:
 	case KB_FIRMWARE_VERSION_500:
 	case KB_FIRMWARE_VERSION_600:
-	default:
 		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x3FCFFFF;
 	    PMC(APBDEV_PMC_SEC_DISABLE4) |= 0x3F3FFFFF;
 	    PMC(APBDEV_PMC_SEC_DISABLE5)  = 0xFFFFFFFF;
@@ -145,75 +144,126 @@ void _pmc_scratch_lock(u32 kb)
 	}
 }
 
-int keygen(u8 *keyblob, u32 kb, void *tsec_fw)
+void _sysctr0_reset()
 {
-	u8 tmp[0x10];
+	SYSCTR0(SYSCTR0_CNTFID0) = 19200000;
+	SYSCTR0(SYSCTR0_CNTCR) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID0) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID1) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID2) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID3) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID4) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID5) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID6) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID7) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID8) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID9) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID10) = 0;
+	SYSCTR0(SYSCTR0_COUNTERID11) = 0;
+}
+
+int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
+{
+	u8 tmp[0x20];
+	u32 retries = 0;
+
+	tsec_ctxt->size = 0xF00;
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
 		return 0;
 
-	se_key_acc_ctrl(13, 0x15);
-	se_key_acc_ctrl(14, 0x15);
-
 	// Get TSEC key.
-	if (tsec_query(tmp, 1, tsec_fw) < 0)
-		return 0;
-
-	se_aes_key_set(13, tmp, 0x10);
-
-	// Derive keyblob keys from TSEC+SBK.
-	se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[0]);
-	se_aes_unwrap_key(15, 14, tmp);
-	se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[kb]);
-	se_aes_unwrap_key(13, 14, tmp);
-
-	// Clear SBK.
-	se_aes_key_clear(14);
-
-	//TODO: verify keyblob CMAC.
-	//se_aes_unwrap_key(11, 13, cmac_keyseed);
-	//se_aes_cmac(tmp, 0x10, 11, keyblob + 0x10, 0xA0);
-	//if (!memcmp(keyblob, tmp, 0x10))
-	//	return 0;
-
-	se_aes_crypt_block_ecb(13, 0, tmp, cmac_keyseed);
-	se_aes_unwrap_key(11, 13, cmac_keyseed);
-
-	// Decrypt keyblob and set keyslots.
-	se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-	se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); // Package1 key.
-	se_aes_key_set(12, keyblob + 0x20, 0x10);
-	se_aes_key_set(13, keyblob + 0x20, 0x10);
-
-	se_aes_crypt_block_ecb(12, 0, tmp, master_keyseed_retail);
-
-	switch (kb)
+	if (kb >= KB_FIRMWARE_VERSION_620)
 	{
-	case KB_FIRMWARE_VERSION_100_200:
-	case KB_FIRMWARE_VERSION_300:
-	case KB_FIRMWARE_VERSION_301:
-		se_aes_unwrap_key(13, 15, console_keyseed);
-		se_aes_unwrap_key(12, 12, master_keyseed_retail);
-		break;
-	case KB_FIRMWARE_VERSION_400:
-		se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
-		se_aes_unwrap_key(15, 15, console_keyseed);
-		se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
-		se_aes_unwrap_key(12, 12, master_keyseed_retail);
-		break;
-	case KB_FIRMWARE_VERSION_500:
-	case KB_FIRMWARE_VERSION_600:
-	default:
-		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
-		se_aes_unwrap_key(15, 15, console_keyseed);
-		se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx);
-		se_aes_unwrap_key(12, 12, master_keyseed_retail);
-		break;
+		tsec_ctxt->size = 0x2900;
+		u8 *tsec_paged = (u8 *)page_alloc(3);
+		memcpy(tsec_paged, (void *)tsec_ctxt->fw, tsec_ctxt->size);
+		tsec_ctxt->fw = tsec_paged;
 	}
 
-	// Package2 key.
-	se_key_acc_ctrl(8, 0x15);
-	se_aes_unwrap_key(8, 12, key8_keyseed);
+	while (tsec_query(tmp, kb, tsec_ctxt) < 0)
+	{
+		memset(tmp, 0x00, 0x20);
+		retries++;
+
+		if (retries > 3)
+			return 0;
+	}
+
+	if (kb >= KB_FIRMWARE_VERSION_620)
+	{
+		// Set TSEC key.
+		se_aes_key_set(12, tmp, 0x10);
+		// Set TSEC root key.
+		se_aes_key_set(13, tmp + 0x10, 0x10);
+
+		// Package2 key.
+		se_aes_key_set(8, tmp + 0x10, 0x10);
+		se_aes_unwrap_key(8, 8, master_keyseed_620);
+		se_aes_unwrap_key(8, 8, master_keyseed_retail);
+		se_aes_unwrap_key(8, 8, key8_keyseed);
+	}
+	else
+	{
+		se_key_acc_ctrl(13, 0x15);
+		se_key_acc_ctrl(14, 0x15);
+
+		// Set TSEC key.
+		se_aes_key_set(13, tmp, 0x10);
+
+		// Derive keyblob keys from TSEC+SBK.
+		se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[0]);
+		se_aes_unwrap_key(15, 14, tmp);
+		se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[kb]);
+		se_aes_unwrap_key(13, 14, tmp);
+
+		// Clear SBK.
+		se_aes_key_clear(14);
+
+		//TODO: verify keyblob CMAC.
+		//se_aes_unwrap_key(11, 13, cmac_keyseed);
+		//se_aes_cmac(tmp, 0x10, 11, keyblob + 0x10, 0xA0);
+		//if (!memcmp(keyblob, tmp, 0x10))
+		//	return 0;
+
+		se_aes_crypt_block_ecb(13, 0, tmp, cmac_keyseed);
+		se_aes_unwrap_key(11, 13, cmac_keyseed);
+
+		// Decrypt keyblob and set keyslots.
+		se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
+		se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); // Package1 key.
+		se_aes_key_set(12, keyblob + 0x20, 0x10);
+		se_aes_key_set(13, keyblob + 0x20, 0x10);
+
+		se_aes_crypt_block_ecb(12, 0, tmp, master_keyseed_retail);
+
+		switch (kb)
+		{
+		case KB_FIRMWARE_VERSION_100_200:
+		case KB_FIRMWARE_VERSION_300:
+		case KB_FIRMWARE_VERSION_301:
+			se_aes_unwrap_key(13, 15, console_keyseed);
+			se_aes_unwrap_key(12, 12, master_keyseed_retail);
+			break;
+		case KB_FIRMWARE_VERSION_400:
+			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(15, 15, console_keyseed);
+			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+			se_aes_unwrap_key(12, 12, master_keyseed_retail);
+			break;
+		case KB_FIRMWARE_VERSION_500:
+		case KB_FIRMWARE_VERSION_600:
+			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(15, 15, console_keyseed);
+			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+			se_aes_unwrap_key(12, 12, master_keyseed_retail);
+			break;
+		}
+
+		// Package2 key.
+		se_key_acc_ctrl(8, 0x15);
+		se_aes_unwrap_key(8, 12, key8_keyseed);
+	}
 
 	return 1;
 }
@@ -312,6 +362,7 @@ int hos_launch(ini_sec_t *cfg)
 	int bootStatePkg2Continue = 0;
 	int exoFwNumber = 0;
 	launch_ctxt_t ctxt;
+	tsec_ctxt_t tsec_ctxt;
 
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	list_init(&ctxt.kip1_list);
@@ -333,18 +384,29 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
 
 	// Generate keys.
-	if (!h_cfg.se_keygen_done)
+	if (!h_cfg.se_keygen_done || ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
 	{
-		keygen(ctxt.keyblob, ctxt.pkg1_id->kb, (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off);
-		h_cfg.se_keygen_done = 1;
+		tsec_ctxt.key_ver = 1;
+		tsec_ctxt.fw = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
+		tsec_ctxt.pkg1 = ctxt.pkg1;
+		tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
+		tsec_ctxt.secmon_base = ctxt.pkg1_id->secmon_base;
+
+		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt))
+			return 0;
 		DPRINTF("Generated keys\n");
+
+		h_cfg.se_keygen_done = 1;
 	}
 
 	// Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
-		pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
+		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+			pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
+
 		pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
+
 		gfx_printf(&gfx_con, "Decrypted and unpacked package1\n");
 	}
 
@@ -434,6 +496,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
+
 	gfx_printf(&gfx_con, "Rebuilt and loaded package2\n");
 
 	// Unmount SD card.
@@ -441,6 +504,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
+	// Clear pkg1/pkg2 keys.
 	se_aes_key_clear(8);
 	se_aes_key_clear(11);
 
@@ -486,7 +550,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Clear BCT area for retail units and copy it over if dev unit.
-	if (ctxt.pkg1_id->kb < KB_FIRMWARE_VERSION_600)
+	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_500)
 	{
 		memset((void *)0x4003D000, 0, 0x3000);
 		if ((fuse_read_odm(4) & 3) == 3)
@@ -514,8 +578,16 @@ int hos_launch(ini_sec_t *cfg)
 	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)
 		mc_config_carveout();
 
-	// Lock SE before starting 'SecureMonitor'.
-	_se_lock();
+	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise finalize 6.2.0 keygen and reset sysctr0 counters.
+	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+		_se_lock(true);
+	else
+	{
+		// Lock bootrom and ipatches only.
+		_se_lock(false);
+		// Reset sysctr0 counters.
+		_sysctr0_reset();
+	}
 
 	// Free allocated memory.
 	ini_free_section(cfg);
@@ -538,7 +610,10 @@ int hos_launch(ini_sec_t *cfg)
 	display_end();
 
 	// Wait for secmon to get ready.
-	cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
+	if (smmu_is_used())
+		smmu_exit();
+    else
+		cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!*mb_out)
 		usleep(1); // This only works when in IRAM or with a trained DRAM.
 

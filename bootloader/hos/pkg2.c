@@ -254,7 +254,7 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 	{ 0xe0e8cdc4, _kernel_302_patchset }, //3.0.2
 	{ 0x485d0157, _kernel_4_patchset },   //4.0.0 - 4.1.0
 	{ 0xf3c363f2, _kernel_5_patchset },   //5.0.0 - 5.1.0
-	{ 0x64ce1a44, _kernel_6_patchset },   //6.0.0
+	{ 0x64ce1a44, _kernel_6_patchset },   //6.0.0 - 6.2.0
 	{ 0, 0 }                              //End.
 };
 
