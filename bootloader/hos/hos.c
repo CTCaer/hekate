@@ -22,6 +22,7 @@
 
 #include "hos.h"
 #include "hos_config.h"
+#include "secmon_exo.h"
 #include "../config/config.h"
 #include "../gfx/di.h"
 #include "../mem/heap.h"
@@ -48,9 +49,6 @@ extern void sd_unmount();
 
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
-
-// Exosphère magic "XBC0".
-#define MAGIC_EXOSPHERE 0x30434258
 
 static const u8 keyblob_keyseeds[][0x10] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, //1.0.0
@@ -358,9 +356,6 @@ static void _free_launch_components(launch_ctxt_t *ctxt)
 
 int hos_launch(ini_sec_t *cfg)
 {
-	int bootStateDramPkg2 = 0;
-	int bootStatePkg2Continue = 0;
-	int exoFwNumber = 0;
 	launch_ctxt_t ctxt;
 	tsec_ctxt_t tsec_ctxt;
 
@@ -466,7 +461,7 @@ int hos_launch(ini_sec_t *cfg)
 				for (u32 i = 0; kernel_patchset[i].id != 0xFFFFFFFF; i++)
 				{
 					if ((ctxt.svcperm && kernel_patchset[i].id == SVC_VERIFY_DS)
-					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_MODE_EN)
+					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_MODE_EN && !(ctxt.atmosphere && ctxt.secmon))
 					|| (ctxt.atmosphere && kernel_patchset[i].id == ATM_GEN_PATCH))
 						*(vu32 *)(ctxt.kernel + kernel_patchset[i].off) = kernel_patchset[i].val;
 					else if (ctxt.atmosphere && kernel_patchset[i].id == ATM_ARR_PATCH)
@@ -508,17 +503,13 @@ int hos_launch(ini_sec_t *cfg)
 	se_aes_key_clear(8);
 	se_aes_key_clear(11);
 
-	// Final per firmware configuration.
+	// Finalize per firmware keys.
+	int bootStateDramPkg2 = 0;
+	int bootStatePkg2Continue = 0;
+	
 	switch (ctxt.pkg1_id->kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
-		if (!exoFwNumber)
-		{
-			if (!strcmp(ctxt.pkg1_id->id, "20161121183008"))
-				exoFwNumber = 1;
-			else
-				exoFwNumber = 2;
-		}
 	case KB_FIRMWARE_VERSION_300:
 	case KB_FIRMWARE_VERSION_301:
 		if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_300)
@@ -529,23 +520,15 @@ int hos_launch(ini_sec_t *cfg)
 		se_key_acc_ctrl(13, 0xFF);
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 3;
-		if (!exoFwNumber)
-			exoFwNumber = 3;
 		break;
 	case KB_FIRMWARE_VERSION_400:
-		if (!exoFwNumber)
-			exoFwNumber = 4;
 	case KB_FIRMWARE_VERSION_500:
-		if (!exoFwNumber)
-			exoFwNumber = 5;
 	case KB_FIRMWARE_VERSION_600:
-	default:
 		se_key_acc_ctrl(12, 0xFF);
 		se_key_acc_ctrl(15, 0xFF);
+	case KB_FIRMWARE_VERSION_620:
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 4;
-		if (!exoFwNumber)
-			exoFwNumber = 6;
 		break;
 	}
 
@@ -564,30 +547,20 @@ int hos_launch(ini_sec_t *cfg)
 	}
 	free(bootConfigBuf);
 
-	// Config Exosphère if booting Atmosphère.
-	if (ctxt.atmosphere)
-	{
-		vu32 *mb_exo_magic = (vu32 *)0x40002E40;
-		vu32 *mb_exo_fw_no = (vu32 *)0x40002E44;
-
-		*mb_exo_magic = MAGIC_EXOSPHERE;
-		*mb_exo_fw_no = exoFwNumber;
-	}
+	// Config Exosphère if booting full Atmosphère.
+	if (ctxt.atmosphere && ctxt.secmon)
+		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, ctxt.debugmode);
 
 	// Finalize MC carveout.
 	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)
 		mc_config_carveout();
 
-	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise finalize 6.2.0 keygen and reset sysctr0 counters.
-	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
-		_se_lock(true);
-	else
-	{
-		// Lock bootrom and ipatches only.
-		_se_lock(false);
-		// Reset sysctr0 counters.
+	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise lock bootrom and ipatches.
+	_se_lock(ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600);
+
+	// Reset sysctr0 counters.
+	if (kb >= KB_FIRMWARE_VERSION_620)
 		_sysctr0_reset();
-	}
 
 	// Free allocated memory.
 	ini_free_section(cfg);
