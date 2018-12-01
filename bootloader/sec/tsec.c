@@ -36,7 +36,7 @@ static int _tsec_dma_wait_idle()
 {
 	u32 timeout = get_tmr_ms() + 10000;
 
-	while (!(TSEC(0x1118) & 2))
+	while (!(TSEC(TSEC_DMATRFCMD) & TSEC_DMATRFCMD_IDLE))
 		if (get_tmr_ms() > timeout)
 			return 0;
 
@@ -48,13 +48,13 @@ static int _tsec_dma_pa_to_internal_100(int not_imem, int i_offset, int pa_offse
 	u32 cmd;
 
 	if (not_imem)
-		cmd = 0x600; // DMA 0x100 bytes
+		cmd = TSEC_DMATRFCMD_SIZE_256B; // DMA 256 bytes
 	else
-		cmd = 0x10; // dma imem
+		cmd = TSEC_DMATRFCMD_IMEM;      // DMA IMEM (Instruction memmory)
 
-	TSEC(0x1114) = i_offset; // tsec_dmatrfmoffs_r
-	TSEC(0x111C) = pa_offset; // tsec_dmatrffboffs_r
-	TSEC(0x1118) = cmd; // tsec_dmatrfcmd_r
+	TSEC(TSEC_DMATRFMOFFS) = i_offset;
+	TSEC(TSEC_DMATRFFBOFFS) = pa_offset;
+	TSEC(TSEC_DMATRFCMD) = cmd;
 
 	return _tsec_dma_wait_idle();
 }
@@ -74,10 +74,21 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	clock_enable_kfuse();
 
 	//Configure Falcon.
-	TSEC(0x110C) = 0; // tsec_dmactl_r
-	TSEC(0x1010) = 0xFFF2; // tsec_irqmset_r
-	TSEC(0x101C) = 0xFFF0; // tsec_irqdest_r
-	TSEC(0x1048) = 3; // tsec_itfen_r
+	TSEC(TSEC_DMACTL) = 0;
+	TSEC(TSEC_IRQMSET) =
+		TSEC_IRQMSET_EXT(0xFF) |
+		TSEC_IRQMSET_WDTMR |
+		TSEC_IRQMSET_HALT |
+		TSEC_IRQMSET_EXTERR |
+		TSEC_IRQMSET_SWGEN0 |
+		TSEC_IRQMSET_SWGEN1;
+	TSEC(TSEC_IRQDEST) =
+		TSEC_IRQDEST_EXT(0xFF) |
+		TSEC_IRQDEST_HALT |
+		TSEC_IRQDEST_EXTERR |
+		TSEC_IRQDEST_SWGEN0 |
+		TSEC_IRQDEST_SWGEN1;
+	TSEC(TSEC_ITFEN) = TSEC_ITFEN_CTXEN | TSEC_ITFEN_MTHDEN;
 	if (!_tsec_dma_wait_idle())
 	{
 		res = -1;
@@ -122,6 +133,9 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		// Fuse driver.
 		fuse = page_alloc(1);
 		memcpy((void *)&fuse[0x800/4], (void *)FUSE_BASE, 0x400);
+		fuse[0x82C / 4] = 0;
+		fuse[0x9E0 / 4] = (1 << (kb + 2)) - 1;
+		fuse[0x9E4 / 4] = (1 << (kb + 2)) - 1;
 		smmu_map(pdir, (FUSE_BASE - 0x800), (u32)fuse, 1, _READABLE | _NONSECURE);
 
 		// Power management controller.
@@ -156,10 +170,10 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 
 	//Execute firmware.
 	HOST1X(0x3300) = 0x34C2E1DA;
-	TSEC(0x1044) = 0;
-	TSEC(0x1040) = rev;
-	TSEC(0x1104) = 0; // tsec_bootvec_r
-	TSEC(0x1100) = 2; // tsec_cpuctl_r
+	TSEC(TSEC_STATUS) = 0;
+	TSEC(TSEC_BOOTKEYVER) = tsec_ctxt->key_ver;
+	TSEC(TSEC_BOOTVEC) = 0;
+	TSEC(TSEC_CPUCTL) = TSEC_CPUCTL_STARTCPU;
 
 	if (kb <= KB_FIRMWARE_VERSION_600)
 	{
@@ -169,13 +183,13 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 			goto out_free;
 		}
 		u32 timeout = get_tmr_ms() + 2000;
-		while (!TSEC(0x1044))
+		while (!TSEC(TSEC_STATUS))
 			if (get_tmr_ms() > timeout)
 			{
 				res = -4;
 				goto out_free;
 			}
-		if (TSEC(0x1044) != 0xB0B0B0B0)
+		if (TSEC(TSEC_STATUS) != 0xB0B0B0B0)
 		{
 			res = -5;
 			goto out_free;
@@ -210,6 +224,9 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 			k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
 			key[kidx++] = k;
 
+			// Failsafe.
+			if ((u32)get_tmr_us() - start > 500000)
+				break;
 		}
 
 		if (kidx != 8)
