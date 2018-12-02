@@ -30,6 +30,7 @@
 #include "../soc/fuse.h"
 #include "../soc/i2c.h"
 #include "../soc/kfuse.h"
+#include "../soc/smmu.h"
 #include "../soc/t210.h"
 #include "../storage/mmc.h"
 #include "../storage/nx_emmc.h"
@@ -347,6 +348,10 @@ void print_tsec_key()
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
+	u32 retries = 0;
+	u32 key_ver_max = 3;
+
+	tsec_ctxt_t tsec_ctxt;
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
@@ -366,19 +371,76 @@ void print_tsec_key()
 	}
 
 	u8 keys[0x10 * 3];
-	for (u32 i = 1; i <= 3; i++)
-	{
-		int res = tsec_query(keys + ((i - 1) * 0x10), i, pkg1 + pkg1_id->tsec_off);
 
-		gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFF00DDFF, i, 0xFFCCCCCC);
-		if (res >= 0)
+	tsec_ctxt.size = 0xF00;
+	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
+	tsec_ctxt.pkg1 = pkg1;
+	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
+	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
+
+	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
+	{
+		tsec_ctxt.size = 0x2900;
+		u8 *tsec_paged = (u8 *)page_alloc(3);
+		memcpy(tsec_paged, (void *)tsec_ctxt.fw, tsec_ctxt.size);
+		tsec_ctxt.fw = tsec_paged;
+
+		key_ver_max = 1;
+	}
+
+	for (u32 i = 1; i <= key_ver_max; i++)
+	{
+		tsec_ctxt.key_ver = i;
+		int res = 0;
+
+		while (tsec_query(keys + ((i - 1) * 0x10), pkg1_id->kb, &tsec_ctxt) < 0)
 		{
-			for (u32 j = 0; j < 0x10; j++)
-				gfx_printf(&gfx_con, "%02X", keys[((i - 1) * 0x10) + j]);
+			if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+				memset(keys + ((i - 1) * 0x10), 0x00, 0x10);
+			else
+				memset(keys, 0x00, 0x30);
+
+			retries++;
+
+			if (retries > 3)
+			{
+				res = -1;
+				break;
+			}
+		}
+
+		if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+		{
+			gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFF00DDFF, i, 0xFFCCCCCC);
+
+			if (res >= 0)
+			{
+				for (u32 j = 0; j < 0x10; j++)
+					gfx_printf(&gfx_con, "%02X", keys[((i - 1) * 0x10) + j]);
+			}
+			else
+				EPRINTFARGS("ERROR %X", res);
+			gfx_putc(&gfx_con, '\n');
 		}
 		else
-			EPRINTFARGS("ERROR %X", res);
-		gfx_putc(&gfx_con, '\n');
+		{
+			gfx_printf(&gfx_con, "%kTSEC key:  %k", 0xFF00DDFF, 0xFFCCCCCC);
+
+			if (res >= 0)
+			{
+				for (u32 j = 0; j < 0x10; j++)
+					gfx_printf(&gfx_con, "%02X", keys[j]);
+				gfx_putc(&gfx_con, '\n');
+
+				gfx_printf(&gfx_con, "%kTSEC root: %k", 0xFF00DDFF, 0xFFCCCCCC);
+				for (u32 j = 0; j < 0x10; j++)
+					gfx_printf(&gfx_con, "%02X", keys[0x10 + j]);
+			}
+			else
+				EPRINTFARGS("ERROR %X", res);
+			gfx_putc(&gfx_con, '\n');
+		}
+		
 	}
 
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");

@@ -29,6 +29,7 @@
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../power/max7762x.h"
+#include "../sec/se.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
@@ -58,6 +59,9 @@ void dump_packages12()
 	u8 *secmon = (u8 *)calloc(1, 0x40000);
 	u8 *loader = (u8 *)calloc(1, 0x40000);
 	u8 *pkg2 = NULL;
+	u8 kb = 0;
+
+	tsec_ctxt_t tsec_ctxt;
 
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -82,19 +86,29 @@ void dump_packages12()
 		goto out_free;
 	}
 
-	if (!h_cfg.se_keygen_done)
+	kb = pkg1_id->kb;
+
+	if (!h_cfg.se_keygen_done || kb >= KB_FIRMWARE_VERSION_620)
 	{
+		tsec_ctxt.key_ver = 1;
+		tsec_ctxt.fw = (void *)pkg1 + pkg1_id->tsec_off;
+		tsec_ctxt.pkg1 = (void *)pkg1;
+		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
+		tsec_ctxt.secmon_base = pkg1_id->secmon_base;
+
 		// Read keyblob.
 		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
+		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 		// Decrypt.
-		keygen(keyblob, pkg1_id->kb, (u8 *)pkg1 + pkg1_id->tsec_off);
+		keygen(keyblob, kb, &tsec_ctxt);
 
 		h_cfg.se_keygen_done = 1;
 		free(keyblob);
 	}
-	pkg1_decrypt(pkg1_id, pkg1);
+
+	if (kb <= KB_FIRMWARE_VERSION_600)
+		pkg1_decrypt(pkg1_id, pkg1);
 
 	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
@@ -193,6 +207,9 @@ out_free:
 	free(pkg2);
 	sdmmc_storage_end(&storage);
 	sd_unmount();
+
+	if (kb >= KB_FIRMWARE_VERSION_620)
+		se_aes_key_clear(8);
 
 	btn_wait();
 }

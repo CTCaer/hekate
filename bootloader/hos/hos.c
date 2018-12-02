@@ -559,7 +559,7 @@ int hos_launch(ini_sec_t *cfg)
 	_se_lock(ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600);
 
 	// Reset sysctr0 counters.
-	if (kb >= KB_FIRMWARE_VERSION_620)
+	if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
 		_sysctr0_reset();
 
 	// Free allocated memory.
