@@ -28,10 +28,17 @@
 
 #define BAUD_115200 115200
 
-#define UART_TX_IDLE 0x00000001
-#define UART_RX_IDLE 0x00000002
-#define UART_TX_FIFO_FULL 0x100
-#define UART_RX_FIFO_EMPTY 0x200
+#define UART_TX_IDLE 0x1
+#define UART_RX_IDLE 0x2
+
+#define UART_LCR_DLAB 0x80
+#define UART_LCR_WORD_LENGTH_8 0x3
+#define UART_LSR_RDR 0x1
+#define UART_LSR_THRE 0x20
+#define UART_LSR_TMTY 0x40
+#define UART_IIR_FCR_TX_CLR 0x4
+#define UART_IIR_FCR_RX_CLR 0x2
+#define UART_IIR_FCR_EN_FIFO 0x1
 
 typedef struct _uart_t
 {

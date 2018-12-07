@@ -64,8 +64,12 @@ void _config_gpios()
 	PINMUX_AUX(PINMUX_AUX_GPIO_PE6) = PINMUX_INPUT_ENABLE;
 	PINMUX_AUX(PINMUX_AUX_GPIO_PH6) = PINMUX_INPUT_ENABLE;
 
+#if !defined (DEBUG_UART_PORT) || DEBUG_UART_PORT != UART_B
 	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
+#endif
+#if !defined (DEBUG_UART_PORT) || DEBUG_UART_PORT != UART_C
 	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
+#endif
 	gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_GPIO);
 	gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_G, GPIO_PIN_0, GPIO_OUTPUT_DISABLE);
@@ -187,8 +191,10 @@ void config_hw()
 	APB_MISC(APB_MISC_PP_PINMUX_GLOBAL) = 0;
 	_config_gpios();
 
-	//clock_enable_uart(UART_C);
-	//uart_init(UART_C, 115200);
+#ifdef DEBUG_UART_PORT
+	clock_enable_uart(DEBUG_UART_PORT);
+	uart_init(DEBUG_UART_PORT, 115200);
+#endif
 
 	clock_enable_cl_dvfs();
 
