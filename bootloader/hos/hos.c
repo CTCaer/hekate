@@ -96,7 +96,7 @@ static void _se_lock(bool lock_se)
 		SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
 	}
 
-	memset((void *)IPATCH_BASE, 0, 13);
+	memset((void *)IPATCH_BASE, 0, 13 * sizeof(u32));
 	SB(SB_CSR) = 0x10; // Protected IROM enable.
 
 	// This is useful for documenting the bits in the SE config registers, so we can keep it around.

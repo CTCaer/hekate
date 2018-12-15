@@ -688,15 +688,15 @@ void bootrom_ipatches_info()
 			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
 				gfx_puts(&gfx_con, "\nbootrom_patched.bin saved!\n");
 			
-			u8 ipatch_backup[13];
-			memcpy(ipatch_backup, (void *) IPATCH_BASE, 13);
-			memset((void*)IPATCH_BASE, 0, 13);
+			u32 ipatch_backup[13];
+			memcpy(ipatch_backup, (void *) IPATCH_BASE, sizeof(ipatch_backup));
+			memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
 			
 			emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
 			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
 				gfx_puts(&gfx_con, "\nbootrom_unpatched.bin saved!\n");
 			
-			memcpy((void*)IPATCH_BASE, ipatch_backup, 13);
+			memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
 			
 			sd_unmount();
 		}
