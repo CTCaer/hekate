@@ -408,6 +408,14 @@ int hos_launch(ini_sec_t *cfg)
 	// Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
 		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
+	else
+	{
+		// Else we patch it to allow downgrading.
+		patch_t *warmboot_patchset = ctxt.pkg1_id->warmboot_patchset;
+		gfx_printf(&gfx_con, "%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
+			*(vu32 *)(ctxt.pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
+	}
 	// Set warmboot address in PMC if required.
 	if (ctxt.pkg1_id->set_warmboot)
 		PMC(APBDEV_PMC_SCRATCH1) = ctxt.pkg1_id->warmboot_base;
