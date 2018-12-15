@@ -1155,8 +1155,10 @@ void ipl_main()
 	//Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
 	heap_init(0x90020000);
 
-	//uart_send(UART_C, (u8 *)0x40000000, 0x10000);
-	//uart_wait_idle(UART_C, UART_TX_IDLE);
+#ifdef DEBUG_UART_PORT
+	//uart_send(DEBUG_UART_PORT, (u8 *)0x40000000, 0x10000);
+	//uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
+#endif
 
 	// Set bootloader's default configuration.
 	set_default_configuration();
