@@ -23,6 +23,8 @@
 #include "../utils/aarch64_util.h"
 #include "../sec/se.h"
 
+#define _NOPv7() 0xE320F000
+
 #define SM_100_ADR 0x4002B020
 PATCHSET_DEF(_secmon_1_patchset,
 	// Patch the relocator to be able to run from SM_100_ADR.
@@ -80,6 +82,39 @@ PATCHSET_DEF(_secmon_620_patchset,
 	{ 0xDC8 + 0xF10, _NOP() }  //Sections SHA2.
 );
 
+PATCHSET_DEF(_warmboot_1_patchset,
+	{ 0x4DC, _NOPv7() } // Fuse check.
+);
+
+PATCHSET_DEF(_warmboot_2_patchset,
+	{ 0x4DC, _NOPv7() } // Fuse check.
+);
+
+PATCHSET_DEF(_warmboot_3_patchset,
+	{ 0x4DC, _NOPv7() } // Fuse check.
+	{ 0x4F0, _NOPv7() } // Segment id check.
+);
+
+PATCHSET_DEF(_warmboot_4_patchset,
+	{ 0x544, _NOPv7() } // Fuse check.
+	{ 0x558, _NOPv7() } // Segment id check.
+);
+
+PATCHSET_DEF(_warmboot_5_patchset,
+	{ 0x544, _NOPv7() } // Fuse check.
+	{ 0x558, _NOPv7() } // Segment id check.
+);
+
+PATCHSET_DEF(_warmboot_6_patchset,
+	{ 0x544, _NOPv7() } // Fuse check.
+	{ 0x558, _NOPv7() } // Segment id check.
+);
+
+PATCHSET_DEF(_warmboot_620_patchset,
+	{ 0x544, _NOPv7() } // Fuse check.
+	{ 0x558, _NOPv7() } // Segment id check.
+);
+
 /*
  * package1.1 header: <wb, ldr, sm>
  * package1.1 layout:
@@ -94,14 +129,14 @@ PATCHSET_DEF(_secmon_620_patchset,
  */
 
 static const pkg1_id_t _pkg1_ids[] = {
-	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, SM_100_ADR, 0x8000D000, true,  _secmon_1_patchset },   //1.0.0 (Patched relocator)
-	{ "20170210155124", 0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_2_patchset },   //2.0.0 - 2.3.0
-	{ "20170519101410", 1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset },   //3.0.0
-	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset },   //3.0.1 - 3.0.2
-	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_4_patchset },   //4.0.0 - 4.1.0
-	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_5_patchset },   //5.0.0 - 5.1.0
-	{ "20180802162753", 5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_6_patchset },   //6.0.0 - 6.1.0
-	{ "20181107105733", 6, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_620_patchset }, //6.2.0
+	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, SM_100_ADR, 0x8000D000, true,  _secmon_1_patchset, _warmboot_1_patchset },     //1.0.0 (Patched relocator)
+	{ "20170210155124", 0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_2_patchset, _warmboot_2_patchset },     //2.0.0 - 2.3.0
+	{ "20170519101410", 1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset, _warmboot_3_patchset },     //3.0.0
+	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset, _warmboot_3_patchset },     //3.0.1 - 3.0.2
+	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_4_patchset, _warmboot_4_patchset },     //4.0.0 - 4.1.0
+	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_5_patchset, _warmboot_5_patchset },     //5.0.0 - 5.1.0
+	{ "20180802162753", 5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_6_patchset, _warmboot_6_patchset },     //6.0.0 - 6.1.0
+	{ "20181107105733", 6, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_620_patchset, _warmboot_620_patchset }, //6.2.0
 	{ NULL } //End.
 };
 
