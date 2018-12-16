@@ -329,7 +329,7 @@ void menu_autorcm()
 	tui_do_menu(&gfx_con, &menu);
 }
 
-int _fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
+int _fix_attributes(char *path, u32 *total, u32 hos_folder, u32 check_first_run)
 {
 	FRESULT res;
 	DIR dir;
@@ -369,8 +369,8 @@ int _fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 		if (res != FR_OK || fno.fname[0] == 0)
 			break;
 
-		// Skip official Nintendo dir.
-		if (is_root && !strcmp(fno.fname, "Nintendo"))
+		// Skip official Nintendo dir if started from root.
+		if (!hos_folder && !strcmp(fno.fname, "Nintendo"))
 			continue;
 
 		// Set new directory or file.
@@ -380,15 +380,21 @@ int _fix_attributes(char *path, u32 *total, u32 is_root, u32 check_first_run)
 		// Check if archive bit is set.
 		if (fno.fattrib & AM_ARC)
 		{
-			*(u32 *)total = *(u32 *)total + 1;
+			*total = *total + 1;
 			f_chmod(path, 0, AM_ARC);
 		}
 
 		// Is it a directory?
 		if (fno.fattrib & AM_DIR)
 		{
+			// Set archive bit to NCA folders.
+			if (hos_folder && !strcmp(fno.fname + strlen(fno.fname) - 4, ".nca"))
+			{
+				*total = *total + 1;
+				f_chmod(path, AM_ARC, AM_ARC);
+			}
 			// Enter the directory.
-			res = _fix_attributes(path, total, 0, 0);
+			res = _fix_attributes(path, total, hos_folder, 0);
 			if (res != FR_OK)
 				break;
 		}
@@ -405,7 +411,7 @@ void _fix_sd_attr(u32 type)
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	char path[256];
-	char label[14];
+	char label[16];
 
 	u32 total = 0;
 	if (sd_mount())
@@ -418,21 +424,21 @@ void _fix_sd_attr(u32 type)
 			break;
 		case 1:
 		default:
-			memcpy(path, "/switch", 8);
-			memcpy(label, "switch folder", 14);
+			memcpy(path, "/Nintendo", 10);
+			memcpy(label, "Nintendo folder", 16);
 			break;
 		}
 
 		gfx_printf(&gfx_con, "Traversing all %s files!\nThis may take some time, please wait...\n\n", label);
-		_fix_attributes(path, &total, !type, type);
+		_fix_attributes(path, &total, type, type);
 		gfx_printf(&gfx_con, "%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
 		sd_unmount();
 	}
 	btn_wait();
 }
 
-void fix_sd_all_attr()    { _fix_sd_attr(0); }
-void fix_sd_switch_attr() { _fix_sd_attr(1); }
+void fix_sd_all_attr() { _fix_sd_attr(0); }
+void fix_sd_nin_attr() { _fix_sd_attr(1); }
 
 void fix_battery_desync()
 {

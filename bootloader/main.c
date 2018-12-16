@@ -1106,8 +1106,8 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1/2", dump_packages12),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
-	MDEF_HANDLER("Unset archive bit (switch folder)", fix_sd_switch_attr),
-	MDEF_HANDLER("Unset archive bit (all sd files)", fix_sd_all_attr),
+	MDEF_HANDLER("Fix archive bit (except Nintendo folder)", fix_sd_all_attr),
+	MDEF_HANDLER("Fix archive bit (Nintendo folder)", fix_sd_nin_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	//MDEF_HANDLER("Minerva", minerva), // Uncomment for testing Minerva Training Cell
