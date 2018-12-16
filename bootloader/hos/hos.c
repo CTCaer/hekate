@@ -184,8 +184,12 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		memset(tmp, 0x00, 0x20);
 		retries++;
 
-		if (retries > 3)
+		// We rely on racing conditions, make sure we cover even the unluckiest cases.
+		if (retries > 15)
+		{
+			gfx_printf(&gfx_con, "%k\nFailed to get TSEC keys. Please try again.%k\n\n", 0xFFFF0000, 0xFFCCCCCC);
 			return 0;
+		}
 	}
 
 	if (kb >= KB_FIRMWARE_VERSION_620)

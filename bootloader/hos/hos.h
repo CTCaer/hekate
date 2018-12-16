@@ -32,6 +32,8 @@
 #define KB_FIRMWARE_VERSION_620 6
 #define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_620
 
+#define HOS_PKG11_MAGIC 0x31314B50
+
 typedef struct _launch_ctxt_t
 {
 	void *keyblob;

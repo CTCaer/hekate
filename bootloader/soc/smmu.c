@@ -94,7 +94,7 @@ void smmu_enable()
 
 	cluster_boot_cpu0((u32)smmu_payload);
 	smmu_used = true;
-	msleep(100);
+	msleep(150);
 
 	smmu_flush_all();
 }

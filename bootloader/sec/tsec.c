@@ -64,6 +64,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	int res = 0;
 	u8 *fwbuf = NULL;
 	u32 *pdir, *car, *fuse, *pmc, *flowctrl, *se, *mc, *iram, *evec;
+	u32 *pkg11_magic_off;
 
 	//Enable clocks.
 	clock_enable_host1x();
@@ -161,6 +162,8 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		// IRAM
 		iram = page_alloc(0x30);
 		memcpy(iram, tsec_ctxt->pkg1, 0x30000);
+		// PKG1.1 magic offset.
+		pkg11_magic_off = (u32 *)(iram + ((tsec_ctxt->pkg11_off + 0x20) / 4));
 		smmu_map(pdir, 0x40010000, (u32)iram, 0x30, _READABLE | _WRITABLE | _NONSECURE);
 
 		// Exception vectors
@@ -216,16 +219,17 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		u32 key[16] = {0};
 		u32 kidx = 0;
 
-		while (memcmp((u8 *)(iram + ((tsec_ctxt->pkg11_off + 0x20) / 4)), "PK11", 4))
+		while (*pkg11_magic_off != HOS_PKG11_MAGIC)
 		{
 			smmu_flush_all();
+
 			if (k == se[SE_KEYTABLE_DATA0_REG_OFFSET / 4])
 				continue;
 			k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
 			key[kidx++] = k;
 
 			// Failsafe.
-			if ((u32)get_tmr_us() - start > 500000)
+			if ((u32)get_tmr_us() - start > 125000)
 				break;
 		}
 
@@ -236,6 +240,9 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 
 			goto out;
 		}
+
+		// Give some extra time to make sure PKG1.1 is decrypted.
+		msleep(50);
 
 		memcpy(tsec_keys, &key, 0x20);
 		memcpy(tsec_ctxt->pkg1, iram, 0x30000);
