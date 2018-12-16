@@ -322,6 +322,7 @@ void menu_autorcm()
 		ments[4].handler = _disable_autorcm;
 	}
 	ments[4].type = MENT_HDLR_RE;
+	ments[4].data = NULL;
 
 	memset(&ments[5], 0, sizeof(ment_t));
 	menu_t menu = {ments, "This corrupts your BOOT0!", 0, 0};

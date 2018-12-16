@@ -206,8 +206,10 @@ void *tui_do_menu(gfx_con_t *con, menu_t *menu)
 				return NULL;
 				break;
 			case MENT_HDLR_RE:
-				ent->handler(ent->data);
-				return NULL;
+				ent->handler(ent);
+				if (!ent->data)
+					return NULL;
+				break;
 			default:
 				break;
 			}

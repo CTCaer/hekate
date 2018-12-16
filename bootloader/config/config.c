@@ -156,7 +156,7 @@ int create_config_entry()
 	return 0;
 }
 
-void _config_autoboot_list()
+static void _config_autoboot_list(void *ent)
 {
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
@@ -231,6 +231,9 @@ void _config_autoboot_list()
 				else
 					EPRINTF("\nConfiguration saving failed!");
 				gfx_puts(&gfx_con, "\nPress any key...");
+
+				ment_t *tmp = (ment_t *)ent;
+				tmp->data = NULL;
 			}
 			else
 				goto out2;
@@ -251,9 +254,6 @@ out2:;
 	ini_free(&ini_sections);
 
 	sd_unmount();
-
-	if (temp_autoboot == NULL)
-		return;
 }
 
 void config_autoboot()
@@ -291,13 +291,13 @@ void config_autoboot()
 				ments[2].caption = " Disable";
 			ments[2].data = &boot_values[0];
 
-			ments[3].type = MENT_HANDLER;
+			ments[3].type = MENT_HDLR_RE;
 			if (h_cfg.autoboot_list)
 				ments[3].caption = "*More configs...";
 			else
 				ments[3].caption = " More configs...";
 			ments[3].handler = _config_autoboot_list;
-			ments[3].data = NULL;
+			ments[3].data = (void *)0xCAFE;
 
 			ments[4].type = MENT_CHGLINE;
 
