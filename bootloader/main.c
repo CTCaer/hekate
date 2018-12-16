@@ -269,6 +269,7 @@ void check_power_off_from_hos()
 #define COREBOOT_ADDR      (0xD0000000 - 0x100000)
 
 void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
 void reloc_patcher(u32 payload_size)
 {
@@ -289,7 +290,7 @@ void reloc_patcher(u32 payload_size)
 	}
 }
 
-#define BOOTLOADER_UPDATED_MAGIC      0x424f4f54 // "BOOT".
+#define BOOTLOADER_UPDATED_MAGIC      0x424F4F54 // "BOOT".
 #define BOOTLOADER_UPDATED_MAGIC_ADDR 0x4003E000
 
 int launch_payload(char *path, bool update)
@@ -375,7 +376,10 @@ int launch_payload(char *path, bool update)
 		}
 
 		// Launch our payload.
-		(*ext_payload_ptr)();
+		if (!update)
+			(*ext_payload_ptr)();
+		else
+			(*update_ptr)();
 	}
 
 	return 1;
@@ -959,7 +963,6 @@ void auto_launch_firmware()
 #endif //MENU_LOGO_ENABLE
 
 out:
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
 	ini_free(&ini_sections);
 	if (h_cfg.autoboot_list)
 		ini_free(&ini_list_sections);
@@ -1146,8 +1149,7 @@ extern void pivot_stack(u32 stack_top);
 void ipl_main()
 {
 	// Skip config if we just updated the bootloader.
-	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR != BOOTLOADER_UPDATED_MAGIC)
-		config_hw();
+	config_hw();
 
 	//Pivot the stack so we have enough space.
 	pivot_stack(0x90010000);
@@ -1164,9 +1166,8 @@ void ipl_main()
 	set_default_configuration();
 
 	// Save sdram lp0 config.
-	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR != BOOTLOADER_UPDATED_MAGIC)
-		if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
-			h_cfg.errors |= ERR_LIBSYS_LP0;
+	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
+		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	display_init();
 
