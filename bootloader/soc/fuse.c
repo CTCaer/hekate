@@ -222,7 +222,7 @@ int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value))
 		{
 			for (u32 i = 0; i < ipatch_count; i++)
 			{
-				u32 word = words[i];
+				u32 word = words[i + 1];
 				u32 addr = (word >> 16) * 2;
 				u32 data = word & 0xffff;
 		
