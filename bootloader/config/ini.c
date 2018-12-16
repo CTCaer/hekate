@@ -84,7 +84,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 			lblen = strlen(lbuf);
 
 			// Remove trailing newline.
-			if (lbuf[lblen - 1] == '\n')
+			if (lbuf[lblen - 1] == '\n' || lbuf[lblen - 1] == '\r')
 				lbuf[lblen - 1] = 0;
 
 			if (lblen > 2 && lbuf[0] == '[') // Create new section.
@@ -96,7 +96,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				}
 
 				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != ']'; i++)
+				for (i = 0; i < lblen  && lbuf[i] != ']' && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
 					;
 				lbuf[i] = 0;
 
@@ -114,7 +114,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				}
 
 				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '}'; i++)
+				for (i = 0; i < lblen && lbuf[i] != '}' && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
 					;
 				lbuf[i] = 0;
 
@@ -132,7 +132,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				}
 
 				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '\n'; i++)
+				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
 					;
 				lbuf[i] = 0;
 
@@ -155,7 +155,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 			else if (csec && csec->type == INI_CHOICE) //Extract key/value.
 			{
 				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '='; i++)
+				for (i = 0; i < lblen && lbuf[i] != '=' && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
 					;
 				lbuf[i] = 0;
 

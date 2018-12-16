@@ -57,7 +57,7 @@ void config_exosphere(const char *id, u32 kb, bool debug)
 		exoFlags |= EXO_FLAG_620_KGN;
 
 	if (debug)
-		exoFlags |= EXO_FLAG_DBG_PRIV | EXO_FLAG_DBG_USER;
+		exoFlags |= EXO_FLAG_DBG_PRIV;
 
 	// Set mailbox values.
 	*mb_exo_magic = EXO_MAGIC_VAL;

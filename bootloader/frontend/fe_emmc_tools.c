@@ -652,7 +652,10 @@ int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *par
 	res = f_open(&fp, outFilename, FA_READ);
 	if (res)
 	{
-		WPRINTFARGS("Error (%d) while opening backup. Continuing...\n", res);
+		if (res != FR_NO_FILE)
+			EPRINTFARGS("Error (%d) while opening backup. Continuing...\n", res);
+		else
+			WPRINTFARGS("Error (%d) file not found. Continuing...\n", res);
 		gfx_con.fntsz = 16;
 
 		return 0;

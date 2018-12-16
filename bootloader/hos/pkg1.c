@@ -91,28 +91,28 @@ PATCHSET_DEF(_warmboot_2_patchset,
 );
 
 PATCHSET_DEF(_warmboot_3_patchset,
-	{ 0x4DC, _NOPv7() } // Fuse check.
-	{ 0x4F0, _NOPv7() } // Segment id check.
+	{ 0x4DC, _NOPv7() }, // Fuse check.
+	{ 0x4F0, _NOPv7() }  // Segment id check.
 );
 
 PATCHSET_DEF(_warmboot_4_patchset,
-	{ 0x544, _NOPv7() } // Fuse check.
-	{ 0x558, _NOPv7() } // Segment id check.
+	{ 0x544, _NOPv7() }, // Fuse check.
+	{ 0x558, _NOPv7() }  // Segment id check.
 );
 
 PATCHSET_DEF(_warmboot_5_patchset,
-	{ 0x544, _NOPv7() } // Fuse check.
-	{ 0x558, _NOPv7() } // Segment id check.
+	{ 0x544, _NOPv7() }, // Fuse check.
+	{ 0x558, _NOPv7() }  // Segment id check.
 );
 
 PATCHSET_DEF(_warmboot_6_patchset,
-	{ 0x544, _NOPv7() } // Fuse check.
-	{ 0x558, _NOPv7() } // Segment id check.
+	{ 0x544, _NOPv7() }, // Fuse check.
+	{ 0x558, _NOPv7() }  // Segment id check.
 );
 
 PATCHSET_DEF(_warmboot_620_patchset,
-	{ 0x544, _NOPv7() } // Fuse check.
-	{ 0x558, _NOPv7() } // Segment id check.
+	{ 0x544, _NOPv7() }, // Fuse check.
+	{ 0x558, _NOPv7() }  // Segment id check.
 );
 
 /*

@@ -1156,16 +1156,17 @@ void ipl_main()
 	heap_init(0x90020000);
 
 #ifdef DEBUG_UART_PORT
-	//uart_send(DEBUG_UART_PORT, (u8 *)0x40000000, 0x10000);
-	//uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
+	uart_send(DEBUG_UART_PORT, (u8 *)"Hekate: Hello!\r\n", 18);
+	uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
 	// Save sdram lp0 config.
-	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
-		h_cfg.errors |= ERR_LIBSYS_LP0;
+	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR != BOOTLOADER_UPDATED_MAGIC)
+		if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
+			h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	display_init();
 

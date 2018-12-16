@@ -637,11 +637,11 @@ void _ipatch_process(u32 offset, u32 value)
 	u8 lo = value & 0xff;
 	switch (value >> 8)
 	{
-	case 0xdf:
-		gfx_printf(&gfx_con, "    svc #0x%02x", lo);
-		break;
 	case 0x20:
-		gfx_printf(&gfx_con, "    movs r0, #0x%02x", lo);
+		gfx_printf(&gfx_con, "    MOVS R0, #0x%02X", lo);
+		break;
+	case 0xDF:
+		gfx_printf(&gfx_con, "    SVC #0x%02X", lo);
 		break;
 	}
 	gfx_puts(&gfx_con, "\n");
@@ -657,7 +657,7 @@ void bootrom_ipatches_info()
 	u32 res = fuse_read_ipatch(_ipatch_process);
 	if (res != 0)
 		EPRINTFARGS("Failed to read ipatches. Error: %d", res);
-	
+
 	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 	
 	u32 btn = btn_wait();
@@ -688,8 +688,8 @@ void bootrom_ipatches_info()
 			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
 				gfx_puts(&gfx_con, "\nbootrom_patched.bin saved!\n");
 			
-			u32 ipatch_backup[13];
-			memcpy(ipatch_backup, (void *) IPATCH_BASE, sizeof(ipatch_backup));
+			u32 ipatch_backup[14];
+			memcpy(ipatch_backup, (void *)IPATCH_BASE, sizeof(ipatch_backup));
 			memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
 			
 			emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);

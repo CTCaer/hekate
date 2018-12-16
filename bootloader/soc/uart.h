@@ -31,6 +31,9 @@
 #define UART_TX_IDLE 0x1
 #define UART_RX_IDLE 0x2
 
+#define UART_TX_FIFO_FULL 0x100
+#define UART_RX_FIFO_EMPTY 0x200
+
 #define UART_LCR_DLAB 0x80
 #define UART_LCR_WORD_LENGTH_8 0x3
 #define UART_LSR_RDR 0x1

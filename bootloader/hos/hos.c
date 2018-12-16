@@ -96,7 +96,7 @@ static void _se_lock(bool lock_se)
 		SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
 	}
 
-	memset((void *)IPATCH_BASE, 0, 13 * sizeof(u32));
+	memset((void *)IPATCH_BASE, 0, 14 * sizeof(u32));
 	SB(SB_CSR) = 0x10; // Protected IROM enable.
 
 	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
@@ -281,10 +281,10 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kUnknown package1,\nVersion (= '%s').%k\n", 0xFFFF0000, (char *)ctxt->pkg1 + 0x10, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kUnknown pkg1,\nVersion (= '%s').%k\n", 0xFFFF0000, (char *)ctxt->pkg1 + 0x10, 0xFFCCCCCC);
 		goto out;
 	}
-	gfx_printf(&gfx_con, "Identified package1 ('%s'),\nKeyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
+	gfx_printf(&gfx_con, "Identified pkg1 ('%s'),\nKeyblob version %d\n\n", (char *)(ctxt->pkg1 + 0x10), ctxt->pkg1_id->kb);
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
@@ -376,7 +376,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!_read_emmc_pkg1(&ctxt))
 		return 0;
 
-	gfx_printf(&gfx_con, "Loaded package1 and keyblob\n");
+	gfx_printf(&gfx_con, "Loaded pkg1 and keyblob\n");
 
 	// Generate keys.
 	if (!h_cfg.se_keygen_done || ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
@@ -402,7 +402,7 @@ int hos_launch(ini_sec_t *cfg)
 
 		pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
 
-		gfx_printf(&gfx_con, "Decrypted and unpacked package1\n");
+		gfx_printf(&gfx_con, "Decrypted and unpacked pkg1\n");
 	}
 
 	// Replace 'warmboot.bin' if requested.
@@ -439,10 +439,15 @@ int hos_launch(ini_sec_t *cfg)
 	if (!bootConfigBuf)
 		return 0;
 
-	gfx_printf(&gfx_con, "Read package2\n");
+	gfx_printf(&gfx_con, "Read pkg2\n");
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
+	if (!pkg2_hdr)
+	{
+		gfx_printf(&gfx_con, "Pkg2 decryption failed!\n");
+		return 0;
+	}
 
 	LIST_INIT(kip1_info);
 	pkg2_parse_kips(&kip1_info, pkg2_hdr);
@@ -500,7 +505,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
 
-	gfx_printf(&gfx_con, "Rebuilt and loaded package2\n");
+	gfx_printf(&gfx_con, "Rebuilt and loaded pkg2\n");
 
 	// Unmount SD card.
 	sd_unmount();
