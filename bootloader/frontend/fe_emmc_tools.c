@@ -48,7 +48,7 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 #define WPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
 #define WPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
 
-int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
+static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
 	FIL fp;
 	u32 btn = 0;
@@ -165,7 +165,7 @@ int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename,
 	}
 }
 
-int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
+static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
@@ -635,7 +635,7 @@ void dump_emmc_user()    { _dump_emmc_selected(PART_USER); }
 void dump_emmc_boot()    { _dump_emmc_selected(PART_BOOT); }
 void dump_emmc_rawnand() { _dump_emmc_selected(PART_RAW); }
 
-int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
+static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
 {
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
 

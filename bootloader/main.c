@@ -1148,7 +1148,6 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
-	// Skip config if we just updated the bootloader.
 	config_hw();
 
 	//Pivot the stack so we have enough space.
