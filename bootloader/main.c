@@ -1164,8 +1164,29 @@ void ipl_main()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
+	sdram_params_t *params = sdram_get_params();
+	
+	/*
+	 * This code here implements a warmboot exploit. Hotboot, that's so hot, it burns Nvidia once again.
+	 * In the bootrom if the boot_rom_patch_control's highest bit set it uses it as an index to
+	 * APB_MISC_BASE (u32 array) and sets it to boot_rom_patch_data.
+	 * (The hightes bit falls out when it gets multiplied by sizeof(u32) aka. 4).
+	 * Because the bootrom misses the boundary checks, it lets us write anywhere, anything.
+	 * Ipatch hardware lets us apply 12 changes to the bootrom and can be changed any time.
+	 * The first patch is not needed anymore when the bug triggers, so we overwrite that.
+	 * 0x10459E is the address where it returns error when the signature is worng.
+	 * We change it to `MOV R0, #0`(0x2000), so we pass that check.
+	 *
+	 * Note: The modulus in the warmboot header is still validated.
+	 */
+	
+	params->boot_rom_patch_control = (1 << 31) | (((IPATCH_BASE + 4) - APB_MISC_BASE) / 4);
+	u32 addr = 0x10459E;
+	u32 data = 0x2000;
+	params->boot_rom_patch_data = (addr / 2) << 16 | (data & 0xffff);
+	
 	// Save sdram lp0 config.
-	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
+	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	display_init();

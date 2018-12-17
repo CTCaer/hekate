@@ -22,7 +22,7 @@
 #include "../utils/util.h"
 #include "../soc/fuse.h"
 #include "../power/max77620.h"
-#include "../mem/sdram_param_t210.h"
+#include "sdram_param_t210.h"
 #include "../soc/clock.h"
 
 #define CONFIG_SDRAM_COMPRESS_CFG
@@ -388,9 +388,9 @@ break_nosleep:
 	EMC(EMC_ACPD_CONTROL) = params->emc_acpd_control;
 	EMC(EMC_TXDSRVTTGEN) = params->emc_txdsrvttgen;
 	EMC(EMC_CFG) = (params->emc_cfg & 0xE) | 0x3C00000;
-	if (params->boot_rom_patch_control & 0x80000000)
+	if (params->boot_rom_patch_control & (1 << 31))
 	{
-		*(vu32 *)(4 * (params->boot_rom_patch_control + 0x1C000000)) = params->boot_rom_patch_data;
+		*(vu32 *)(APB_MISC_BASE + params->boot_rom_patch_control * 4) = params->boot_rom_patch_data;
 		MC(MC_TIMING_CONTROL) = 1;
 	}
 	PMC(APBDEV_PMC_IO_DPD3_REQ) = ((4 * params->emc_pmc_scratch1 >> 2) + 0x40000000) & 0xCFFF0000;
@@ -489,14 +489,14 @@ break_nosleep:
 	MC(MC_EMEM_CFG_ACCESS_CTRL) = 1; //Disable write access to a bunch of EMC registers.
 }
 
-const void *sdram_get_params()
+sdram_params_t *sdram_get_params()
 {
 	//TODO: sdram_id should be in [0, 7].
 
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
 	u8 *buf = (u8 *)0x40030000;
 	LZ_Uncompress(_dram_cfg_lz, buf, sizeof(_dram_cfg_lz));
-	return (const void *)&buf[sizeof(sdram_params_t) * _get_sdram_id()];
+	return (sdram_params_t *)&buf[sizeof(sdram_params_t) * _get_sdram_id()];
 #else
 	return _dram_cfgs[_get_sdram_id()];
 #endif
