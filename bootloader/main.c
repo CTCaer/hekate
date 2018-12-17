@@ -1165,7 +1165,7 @@ void ipl_main()
 	set_default_configuration();
 
 	// Save sdram lp0 config.
-	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params()))
+	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params_patched()))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	display_init();
