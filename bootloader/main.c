@@ -268,8 +268,15 @@ void check_power_off_from_hos()
 #define CBFS_SDRAM_EN_ADDR 0x4003e000
 #define COREBOOT_ADDR      (0xD0000000 - 0x100000)
 
+void (*ipl_start_ptr)() = (void *)IPL_LOAD_ADDR;
 void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
+
+void restart_hekate()
+{
+	reconfig_hw_workaround(false, 0);
+	ipl_start_ptr();
+}
 
 void reloc_patcher(u32 payload_size)
 {
@@ -1132,6 +1139,7 @@ ment_t ment_top[] = {
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
 	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_HANDLER("Restart hekate", restart_hekate),
 	MDEF_HANDLER("Reboot (Normal)", reboot_normal),
 	MDEF_HANDLER("Reboot (RCM)", reboot_rcm),
 	MDEF_HANDLER("Power off", power_off),
