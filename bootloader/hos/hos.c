@@ -479,9 +479,11 @@ int hos_launch(ini_sec_t *cfg)
 				{
 					if ((ctxt.svcperm && kernel_patchset[i].id == SVC_VERIFY_DS)
 					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_MODE_EN && !(ctxt.atmosphere && ctxt.secmon))
-					|| (ctxt.atmosphere && kernel_patchset[i].id == ATM_GEN_PATCH))
+					|| (ctxt.atmosphere && kernel_patchset[i].id == ATM_GEN_PATCH)
+					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_OUTPUT_GEN))
 						*(vu32 *)(ctxt.kernel + kernel_patchset[i].off) = kernel_patchset[i].val;
-					else if (ctxt.atmosphere && kernel_patchset[i].id == ATM_ARR_PATCH)
+					else if ((ctxt.atmosphere && kernel_patchset[i].id == ATM_ARR_PATCH)
+							|| ctxt.debugmode && kernel_patchset[i].id == DEBUG_OUTPUT_ARR)
 					{
 						temp = (u32 *)kernel_patchset[i].ptr;
 						for (u32 j = 0; j < kernel_patchset[i].val; j++)

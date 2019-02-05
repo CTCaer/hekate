@@ -50,6 +50,8 @@ enum
 	ATM_GEN_PATCH,
 	// >4 bytes patches. Value is a pointer of a u32 array.
 	ATM_ARR_PATCH,
+	DEBUG_OUTPUT_GEN,
+	DEBUG_OUTPUT_ARR,
 };
 
 typedef struct _pkg2_hdr_t
