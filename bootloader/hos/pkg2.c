@@ -77,6 +77,14 @@ extern gfx_con_t gfx_con;
 #define PRINTK_OFF_500 0x1DD4
 #define PRINTK_OFF_600 0x1F44
 
+#define UART_CONF_100 0x3AD4
+#define UART_CONF_200 0x4084
+#define UART_CONF_300 0x490C
+#define UART_CONF_302 0x490C
+#define UART_CONF_400 0x4670
+#define UART_CONF_500 0x59CC0
+#define UART_CONF_600 0x5C618
+
 static u32 PRC_ID_SND_100[] =
 {
 	0xA9BF2FEA, 0x2A0E03EB, 0xD37EF56B, 0xF86B6B8B, 0x92FFFFE9, 0x8A090168, 0xD2FFFFE9, 0x8A09016B,
@@ -212,12 +220,19 @@ static u32 DEBUG_OUTPUT_TRAMPOLINE_600[] =
 	0xFD7BC1A8, 0xC0035FD6
 };
 
+#ifndef DEBUG_UART_PORT
+#define DEBUG_UART_PORT 0
+#endif
+
+#define DEBUG_UART_OFF	DEBUG_UART_PORT == 1 ? 0x040 : DEBUG_UART_PORT * 0x100
+
 // Include kernel patches here, so we can utilize pkg1 id
 KERNEL_PATCHSET_DEF(_kernel_1_patchset,
 	{ SVC_VERIFY_DS, 0x3764C, _NOP(), NULL },          // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x44074, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_100, _B(OUTPUT_DEBUG_OFF_100, FREE_CODE_OFF_3RD_100), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_100, sizeof(DEBUG_OUTPUT_TRAMPOLINE_100) >> 2, DEBUG_OUTPUT_TRAMPOLINE_100 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_100, _MOVKX(12, 0x8014 + DEBUG_UART_OFF, 0), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_100, _B(ID_SND_OFF_100, FREE_CODE_OFF_1ST_100), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_100, sizeof(PRC_ID_SND_100) >> 2, PRC_ID_SND_100}, // Send process id code.
@@ -234,6 +249,7 @@ KERNEL_PATCHSET_DEF(_kernel_2_patchset,
 	{ DEBUG_MODE_EN, 0x6086C, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_200, _B(OUTPUT_DEBUG_OFF_200, FREE_CODE_OFF_3RD_200), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_200, sizeof(DEBUG_OUTPUT_TRAMPOLINE_200) >> 2, DEBUG_OUTPUT_TRAMPOLINE_200 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_200, _MOVKX(12, 0x8014 + DEBUG_UART_OFF, 0), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_200, _B(ID_SND_OFF_200, FREE_CODE_OFF_1ST_200), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_200, sizeof(PRC_ID_SND_200) >> 2, PRC_ID_SND_200}, // Send process id code.
@@ -250,6 +266,7 @@ KERNEL_PATCHSET_DEF(_kernel_3_patchset,
 	{ DEBUG_MODE_EN, 0x483FC, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_300, _B(OUTPUT_DEBUG_OFF_300, FREE_CODE_OFF_3RD_300), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_300, sizeof(DEBUG_OUTPUT_TRAMPOLINE_300) >> 2, DEBUG_OUTPUT_TRAMPOLINE_300 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_300, _MOVKX(12, 0x4014 + DEBUG_UART_OFF, 0), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_300, _B(ID_SND_OFF_300, FREE_CODE_OFF_1ST_300), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_300, sizeof(PRC_ID_SND_300) >> 2, PRC_ID_SND_300}, // Send process id code.
@@ -266,6 +283,7 @@ KERNEL_PATCHSET_DEF(_kernel_302_patchset,
 	{ DEBUG_MODE_EN, 0x48414, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_302, _B(OUTPUT_DEBUG_OFF_302, FREE_CODE_OFF_3RD_302), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_302, sizeof(DEBUG_OUTPUT_TRAMPOLINE_302) >> 2, DEBUG_OUTPUT_TRAMPOLINE_302 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_302, _MOVKX(12, 0x4014 + DEBUG_UART_OFF, 0), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_302, _B(ID_SND_OFF_302, FREE_CODE_OFF_1ST_302), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_302, sizeof(PRC_ID_SND_302) >> 2, PRC_ID_SND_302}, // Send process id code.
@@ -282,6 +300,7 @@ KERNEL_PATCHSET_DEF(_kernel_4_patchset,
 	{ DEBUG_MODE_EN, 0x4EBFC, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_400, _B(OUTPUT_DEBUG_OFF_400, FREE_CODE_OFF_3RD_400), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_400, sizeof(DEBUG_OUTPUT_TRAMPOLINE_400) >> 2, DEBUG_OUTPUT_TRAMPOLINE_400 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_400, _MOVKX(11, 0x4014 + DEBUG_UART_OFF, 0), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_400, _B(ID_SND_OFF_400, FREE_CODE_OFF_1ST_400), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_400, sizeof(PRC_ID_SND_400) >> 2, PRC_ID_SND_400}, // Send process id code.
@@ -298,6 +317,7 @@ KERNEL_PATCHSET_DEF(_kernel_5_patchset,
 	{ DEBUG_MODE_EN, 0x5513C, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_500, _B(OUTPUT_DEBUG_OFF_500, FREE_CODE_OFF_3RD_500), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_500, sizeof(DEBUG_OUTPUT_TRAMPOLINE_500) >> 2, DEBUG_OUTPUT_TRAMPOLINE_500 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_500, _ADDXI(0, 20, DEBUG_UART_OFF), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_500, _B(ID_SND_OFF_500, FREE_CODE_OFF_1ST_500), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_500, sizeof(PRC_ID_SND_500) >> 2, PRC_ID_SND_500}, // Send process id code.
@@ -314,6 +334,7 @@ KERNEL_PATCHSET_DEF(_kernel_6_patchset,
 	{ DEBUG_MODE_EN, 0x57548, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	{ DEBUG_OUTPUT_GEN,  OUTPUT_DEBUG_OFF_600, _B(OUTPUT_DEBUG_OFF_600, FREE_CODE_OFF_3RD_600), NULL }, // Branch to the printk trampoline
 	{ DEBUG_OUTPUT_ARR, FREE_CODE_OFF_3RD_600, sizeof(DEBUG_OUTPUT_TRAMPOLINE_600) >> 2, DEBUG_OUTPUT_TRAMPOLINE_600 }, // Call printk with the right arguments.
+	{ DEBUG_OUTPUT_UART_CONF, UART_CONF_600, _ADDXI(0, 20, DEBUG_UART_OFF), NULL }, // Configure printk to use the UART port we want.
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_600, _B(ID_SND_OFF_600, FREE_CODE_OFF_1ST_600), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_600, sizeof(PRC_ID_SND_600) >> 2, PRC_ID_SND_600}, // Send process id code.

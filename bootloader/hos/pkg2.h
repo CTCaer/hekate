@@ -52,6 +52,7 @@ enum
 	ATM_ARR_PATCH,
 	DEBUG_OUTPUT_GEN,
 	DEBUG_OUTPUT_ARR,
+	DEBUG_OUTPUT_UART_CONF,
 };
 
 typedef struct _pkg2_hdr_t
