@@ -484,7 +484,7 @@ int hos_launch(ini_sec_t *cfg)
 					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_OUTPUT_UART_CONF))
 						*(vu32 *)(ctxt.kernel + kernel_patchset[i].off) = kernel_patchset[i].val;
 					else if ((ctxt.atmosphere && kernel_patchset[i].id == ATM_ARR_PATCH)
-							|| ctxt.debugmode && kernel_patchset[i].id == DEBUG_OUTPUT_ARR)
+							|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_OUTPUT_ARR))
 					{
 						temp = (u32 *)kernel_patchset[i].ptr;
 						for (u32 j = 0; j < kernel_patchset[i].val; j++)
