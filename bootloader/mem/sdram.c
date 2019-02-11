@@ -509,7 +509,7 @@ sdram_params_t *sdram_get_params()
  * If the boot_rom_patch_control's MSB is set, it uses it as an index to
  * APB_MISC_BASE (u32 array) and sets it to the value of boot_rom_patch_data.
  * (The MSB falls out when it gets multiplied by sizeof(u32)).
- * Because the bootrom does not do any the boundary checks, it lets us write anywhere and anything.
+ * Because the bootrom does not do any boundary checks, it lets us write anywhere and anything.
  * Ipatch hardware let us apply 12 changes to the bootrom and can be changed any time.
  * The first patch is not needed any more when the exploit is triggered, so we overwrite that.
  * 0x10459E is the address where it returns an error when the signature is not valid.

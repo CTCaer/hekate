@@ -84,7 +84,7 @@ void ianos_print_error(int errorno)
 		gfx_printf(&gfx_con, "Error loading ELF!\n");
 		break;
 	case 5:
-		gfx_printf(&gfx_con, "Error relcating ELF!\n");
+		gfx_printf(&gfx_con, "Error relocating ELF!\n");
 		break;
 	}
 }

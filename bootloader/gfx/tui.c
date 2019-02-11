@@ -15,13 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "di.h"
 #include "tui.h"
 #include "../utils/btn.h"
 #include "../config/config.h"
 #include "../power/max17050.h"
 #include "../utils/util.h"
-#include "../config/config.h"
-#include "di.h"
 
 #ifdef MENU_LOGO_ENABLE
 extern u8 *Kc_MENU_LOGO;

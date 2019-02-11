@@ -238,6 +238,10 @@
 #define DC_WINBUF_ADDR_H_OFFSET 0x806
 #define DC_WINBUF_ADDR_V_OFFSET 0x808
 #define DC_WINBUF_SURFACE_KIND 0x80B
+#define  PITCH	(0 << 0)
+#define  TILED	(1 << 0)
+#define  BLOCK	(2 << 0)
+#define  BLOCK_HEIGHT(x) (((x) & 0x7) << 4)
 
 /*! Display serial interface registers. */
 #define _DSIREG(reg) ((reg) * 4)

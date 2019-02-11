@@ -553,8 +553,10 @@ void fix_battery_desync()
 }*/
 
 /*
-//#include "../modules/hekate_libsys_minerva/mtc.h"
-//mtc_config_t mtc_cfg;
+#include "../modules/hekate_libsys_minerva/mtc.h"
+#include "../ianos/ianos.h"
+#include "../soc/fuse.h"
+mtc_config_t mtc_cfg;
 
 void minerva()
 {
@@ -582,6 +584,9 @@ void minerva()
 			break;
 	}
 
+	// Change DRAM voltage.
+	//i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD1, 42); //40 = (1000 * 1100 - 600000) / 12500 -> 1.1V
+
 	mtc_cfg.rate_from = mtc_cfg.mtc_table[curr_ram_idx].rate_khz;
 	mtc_cfg.rate_to = 800000;
 	mtc_cfg.train_mode = OP_TRAIN_SWITCH;
@@ -590,7 +595,7 @@ void minerva()
 	
 	// Thefollowing frequency needs periodic training every 100ms.
 	//msleep(200);
-	
+
 	//mtc_cfg.rate_to = 1600000;
 	//gfx_printf(&gfx_con, "Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
 	//ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);

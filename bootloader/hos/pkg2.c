@@ -571,7 +571,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	memcpy(&hdr, ki->kip1, sizeof(hdr));
 	
 	unsigned int newKipSize = sizeof(hdr);
-	for (u32 sectIdx=0; sectIdx<KIP1_NUM_SECTIONS; sectIdx++)
+	for (u32 sectIdx = 0; sectIdx < KIP1_NUM_SECTIONS; sectIdx++)
 	{
 		u32 sectCompBit = 1u << sectIdx;
 		// For compressed, cant get actual decompressed size without doing it, so use safe "output size".
@@ -584,7 +584,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	pkg2_kip1_t* newKip = malloc(newKipSize);	
 	unsigned char* dstDataPtr = newKip->data;
 	const unsigned char* srcDataPtr = ki->kip1->data;
-	for (u32 sectIdx=0; sectIdx<KIP1_NUM_SECTIONS; sectIdx++)
+	for (u32 sectIdx = 0; sectIdx < KIP1_NUM_SECTIONS; sectIdx++)
 	{
 		u32 sectCompBit = 1u << sectIdx;
 		// Easy copy path for uncompressed or ones we dont want to uncompress.
@@ -638,7 +638,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	static const u32 MAX_NUM_PATCHES_REQUESTED = sizeof(u32)*8;
 	char* patches[MAX_NUM_PATCHES_REQUESTED];
 
-	u32 numPatches=1;
+	u32 numPatches = 1;
 	patches[0] = patchNames;
 	{
 		for (char* p = patchNames; *p != 0; p++)
@@ -646,7 +646,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			if (*p == ',')
 			{
 				*p = 0;
-				patches[numPatches++] = p+1;
+				patches[numPatches++] = p + 1;
 				if (numPatches >= MAX_NUM_PATCHES_REQUESTED)
 					return "too_many_patches";
 			}
@@ -656,10 +656,10 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	}
 
 	u32 patchesApplied = 0; // Bitset over patches.
-	for (u32 i=0; i<numPatches; i++)
+	for (u32 i = 0; i < numPatches; i++)
 	{
 		// Eliminate leading spaces.
-		for (const char* p=patches[i]; *p!=0; p++)
+		for (const char* p = patches[i]; *p != 0; p++)
 		{
 			if (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
 				patches[i]++;
@@ -671,7 +671,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			continue;
 
 		// Eliminate trailing spaces.
-		for (int chIdx=valueLen-1; chIdx>=0; chIdx--)
+		for (int chIdx=valueLen - 1; chIdx >= 0; chIdx--)
 		{
 			const char* p = patches[i] + chIdx;
 			if (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
@@ -684,11 +684,11 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		DPRINTF("Requested patch: '%s'\n", patches[i]);
 	}
 
-	u32 shaBuf[32/sizeof(u32)];
+	u32 shaBuf[32 / sizeof(u32)];
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 	{
 		shaBuf[0] = 0; // sha256 for this kip not yet calculated.
-		for (u32 currKipIdx=0; currKipIdx<(sizeof(_kip_ids)/sizeof(_kip_ids[0])); currKipIdx++)
+		for (u32 currKipIdx = 0; currKipIdx < (sizeof(_kip_ids) / sizeof(_kip_ids[0])); currKipIdx++)
 		{
 			if (strncmp((const char*)ki->kip1->name, _kip_ids[currKipIdx].name, sizeof(ki->kip1->name)) != 0)
 				continue;
@@ -697,7 +697,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			kip1_patchset_t* currPatchset = _kip_ids[currKipIdx].patchset;
 			while (currPatchset != NULL && currPatchset->name != NULL)
 			{
-				for (u32 i=0; i<numPatches; i++)
+				for (u32 i = 0; i < numPatches; i++)
 				{
 					if (strcmp(currPatchset->name, patches[i]) != 0)
 					{
@@ -728,7 +728,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			{
 				if (currPatchset->patches != NULL)
 				{
-					for (u32 currEnabIdx=0; currEnabIdx<numPatches; currEnabIdx++)
+					for (u32 currEnabIdx = 0; currEnabIdx < numPatches; currEnabIdx++)
 					{
 						if (strcmp(currPatchset->name, patches[currEnabIdx]))
 							continue;
@@ -752,13 +752,13 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			if (!se_calc_sha256(shaBuf, ki->kip1, ki->size))
 				memset(shaBuf, 0, sizeof(shaBuf));
 
-			DPRINTF("%dms %s KIP1 size %d hash %08X\n", (postDecompTime-preDecompTime)/1000, ki->kip1->name, (int)ki->size, __builtin_bswap32(shaBuf[0]));
+			DPRINTF("%dms %s KIP1 size %d hash %08X\n", (postDecompTime-preDecompTime) / 1000, ki->kip1->name, (int)ki->size, __builtin_bswap32(shaBuf[0]));
 #endif
 
 			currPatchset = _kip_ids[currKipIdx].patchset;
 			while (currPatchset != NULL && currPatchset->name != NULL)
 			{
-				for (u32 currEnabIdx=0; currEnabIdx<numPatches; currEnabIdx++)
+				for (u32 currEnabIdx = 0; currEnabIdx < numPatches; currEnabIdx++)
 				{
 					if (strcmp(currPatchset->name, patches[currEnabIdx]))
 						continue;
@@ -772,7 +772,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 					}
 
 					unsigned char* kipSectData = ki->kip1->data;
-					for (u32 currSectIdx=0; currSectIdx<KIP1_NUM_SECTIONS; currSectIdx++)
+					for (u32 currSectIdx = 0; currSectIdx < KIP1_NUM_SECTIONS; currSectIdx++)
 					{
 						if (bitsAffected & (1u << currSectIdx))
 						{
@@ -806,7 +806,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		}
 	}
 
-	for (u32 i=0; i<numPatches; i++)
+	for (u32 i = 0; i < numPatches; i++)
 	{
 		if ((patchesApplied & (1u << i)) == 0)
 			return patches[i];

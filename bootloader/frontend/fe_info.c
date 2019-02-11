@@ -54,6 +54,9 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 #define WPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
 #define WPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
 
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
+
 void print_fuseinfo()
 {
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
@@ -77,7 +80,7 @@ void print_fuseinfo()
 		break;
 	}
 	gfx_printf(&gfx_con, "Sdram ID:    %d\n", (fuse_read_odm(4) >> 3) & 0x1F);
-	gfx_printf(&gfx_con, "Burnt fuses: %d\n", burntFuses);
+	gfx_printf(&gfx_con, "Burnt fuses: %d / 64\n", burntFuses);
 	gfx_printf(&gfx_con, "Secure key:  %08X%08X%08X%08X\n\n\n",
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)));
@@ -704,3 +707,6 @@ void bootrom_ipatches_info()
 		btn_wait();
 	}
 }
+
+#pragma GCC pop_options
+
