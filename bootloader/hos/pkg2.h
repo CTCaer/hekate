@@ -44,8 +44,10 @@ typedef struct _kernel_patch_t
 
 enum
 {
-	// Generic instruction patches
-	SVC_VERIFY_DS = 0x10, // 0x0-0xF are RESERVED.
+	// Always applied.
+	SVC_GENERIC   = 0,
+	// Generic instruction patches.
+	SVC_VERIFY_DS = 0x10,
 	DEBUG_MODE_EN,
 	ATM_GEN_PATCH,
 	// >4 bytes patches. Value is a pointer of a u32 array.

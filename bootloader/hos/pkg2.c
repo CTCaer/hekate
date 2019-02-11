@@ -219,6 +219,7 @@ KERNEL_PATCHSET_DEF(_kernel_4_patchset,
 );
 
 KERNEL_PATCHSET_DEF(_kernel_5_patchset,
+	{ SVC_GENERIC,   0x38C2C, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
 	{ SVC_VERIFY_DS, 0x45E6C, _NOP(), NULL },          // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x5513C, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
@@ -233,6 +234,7 @@ KERNEL_PATCHSET_DEF(_kernel_5_patchset,
 );
 
 KERNEL_PATCHSET_DEF(_kernel_6_patchset,
+	{ SVC_GENERIC,   0x3A8CC, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
 	{ SVC_VERIFY_DS, 0x47EA0, _NOP(), NULL },          // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x57548, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.

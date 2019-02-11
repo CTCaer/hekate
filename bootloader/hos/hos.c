@@ -487,6 +487,8 @@ int hos_launch(ini_sec_t *cfg)
 						for (u32 j = 0; j < kernel_patchset[i].val; j++)
 							*(vu32 *)(ctxt.kernel + kernel_patchset[i].off + (j << 2)) = temp[j];
 					}
+					else if (kernel_patchset[i].id < SVC_VERIFY_DS)
+						*(vu32 *)(ctxt.kernel + kernel_patchset[i].off) = kernel_patchset[i].val;
 				}
 			}
 		}
