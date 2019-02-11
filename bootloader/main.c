@@ -1157,6 +1157,7 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
+	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
 	config_hw();
 
 	//Pivot the stack so we have enough space.

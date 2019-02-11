@@ -247,6 +247,10 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_SPIO);
+
+		// Fix GPU after warmboot for Linux.
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO5, 2);
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO6, 2);
 	}
 
 	// Power off display.
