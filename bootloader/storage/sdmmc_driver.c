@@ -143,8 +143,20 @@ static int _sdmmc_get_clkcon(sdmmc_t *sdmmc)
 static void _sdmmc_pad_config_fallback(sdmmc_t *sdmmc, u32 power)
 {
 	_sdmmc_get_clkcon(sdmmc);
-	if (sdmmc->id == SDMMC_4)
-		*(vu32 *)0x70000AB4 = ((*(vu32 *)0x70000AB4) & 0x3FFC) | 0x1040;
+	switch (sdmmc->id)
+	{
+	case SDMMC_1:
+		if (power == SDMMC_POWER_OFF)
+			break;
+		if (power == SDMMC_POWER_1_8)
+			APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = 0x304; // Up: 3, Dn: 4.
+		else if (power == SDMMC_POWER_3_3)
+			APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = 0x808; // Up: 8, Dn: 8.
+		break;
+	case SDMMC_4:
+		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) & 0x3FFC) | 0x1040;
+		break;
+	}
 	//TODO: load standard values for other controllers, can depend on power.
 }
 

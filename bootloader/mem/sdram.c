@@ -520,12 +520,12 @@ sdram_params_t *sdram_get_params()
 
 sdram_params_t *sdram_get_params_patched()
 {
+	#define IPATCH_CONFIG(addr, data) (((addr - 0x100000) / 2) << 16 | (data & 0xffff))
 	sdram_params_t *sdram_params = sdram_get_params();
 
+	// Disable Warmboot signature check.
 	sdram_params->boot_rom_patch_control = (1 << 31) | (((IPATCH_BASE + 4) - APB_MISC_BASE) / 4);
-	u32 addr = 0x10459E; // Bootrom address for warmboot sig check.
-	u32 data = 0x2000;   // MOV R0, #0.
-	sdram_params->boot_rom_patch_data = (addr / 2) << 16 | (data & 0xffff);
+	sdram_params->boot_rom_patch_data = IPATCH_CONFIG(0x10459E, 0x2000);
 
 	return sdram_params;
 }
