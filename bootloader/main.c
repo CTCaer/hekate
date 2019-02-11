@@ -31,6 +31,7 @@
 #include "mem/heap.h"
 #include "mem/sdram.h"
 #include "power/max77620.h"
+#include "rtc/max77620-rtc.h"
 #include "soc/hw_init.h"
 #include "soc/i2c.h"
 #include "soc/pmc.h"
@@ -229,6 +230,10 @@ void reboot_rcm()
 void power_off()
 {
 	sd_unmount();
+
+	// Stop the alarm, in case we injected and powered off too fast.
+	max77620_rtc_stop_alarm();
+
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
@@ -243,6 +248,10 @@ void check_power_off_from_hos()
 	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
 		sd_unmount();
+
+		// Stop the alarm, in case we injected too fast.
+		max77620_rtc_stop_alarm();
+
 		if (h_cfg.autohosoff == 1)
 		{
 			gfx_clear_grey(&gfx_ctxt, 0x1B);

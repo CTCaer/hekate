@@ -53,6 +53,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	ini.o \
 	ianos.o \
 	smmu.o \
+	max77620-rtc.o \
 )
 
 OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
