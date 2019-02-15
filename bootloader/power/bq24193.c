@@ -148,7 +148,7 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 
 void bq24193_fake_battery_removal()
 {
-	u8  value;
+	u8 value;
 
 	// Disable watchdog to keep BATFET disabled.
 	value = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_ChrgTermTimer);

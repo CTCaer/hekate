@@ -23,6 +23,7 @@
 #include "../soc/i2c.h"
 #include "../soc/pmc.h"
 #include "../power/max77620.h"
+#include "../power/max7762x.h"
 #include "../soc/gpio.h"
 #include "../soc/pinmux.h"
 #include "../soc/clock.h"
@@ -42,8 +43,8 @@ static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 void display_init()
 {
 	// Power on.
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO0_CFG, 0xD0); // Configure to 1.2V.
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO7, 0x09);
+	max77620_regulator_set_volt_and_flags(REGULATOR_LDO0, 1200000, MAX77620_POWER_MODE_NORMAL); // Configure to 1.2V.
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO7, MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH | MAX77620_CNFG_GPIO_DRV_PUSHPULL);
 
 	// Enable MIPI CAL, DSI, DISP1, HOST1X, UART_FST_MIPI_CAL, DSIA LP clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = 0x1010000;

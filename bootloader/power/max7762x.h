@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,10 +31,10 @@
 *  ldo0 | Display Panel | 25000   | 800000 | 1200000    | 1200000 | 1.2V   (pkg1.1)
 *  ldo1 | XUSB, PCIE    | 25000   | 800000 | 1050000    | 1050000 | 1.05V  (pcv)
 *  ldo2 | SDMMC1        | 50000   | 800000 | 1800000    | 3300000 |
-*  ldo3 |               | 50000   | 800000 | 3100000    | 3100000 |
+*  ldo3 | GC ASIC       | 50000   | 800000 | 3100000    | 3100000 | 3.1V  (pcv)
 *  ldo4 | RTC           | 12500   | 800000 |  850000    |  850000 |
-*  ldo5 |               | 50000   | 800000 | 1800000    | 1800000 |
-*  ldo6 |               | 50000   | 800000 | 2900000    | 2900000 |
+*  ldo5 | GC ASIC       | 50000   | 800000 | 1800000    | 1800000 | 1.8V  (pcv)
+*  ldo6 | Touch, ALS    | 50000   | 800000 | 2900000    | 2900000 | 2.9V
 *  ldo7 | XUSB          | 50000   | 800000 | 1050000    | 1050000 |
 *  ldo8 | XUSB, DC      | 50000   | 800000 | 1050000    | 1050000 |
 */
@@ -108,6 +109,7 @@ int max77620_regulator_get_status(u32 id);
 int max77620_regulator_config_fps(u32 id);
 int max77620_regulator_set_voltage(u32 id, u32 mv);
 int max77620_regulator_enable(u32 id, int enable);
+int max77620_regulator_set_volt_and_flags(u32 id, u32 mv, u8 flags);
 void max77620_config_default();
 void max77620_low_battery_monitor_config();
 
