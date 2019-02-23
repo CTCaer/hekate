@@ -338,12 +338,8 @@ int launch_payload(char *path, bool update)
 		}
 
 		f_close(&fp);
-		if (!update)
-		{
-			free(path);
-			path = NULL;
-		}
-			
+		free(path);
+
 
 		if (update)
 		{
@@ -810,7 +806,6 @@ void auto_launch_firmware()
 						{
 							if (!strcmp("logopath", kv->key))
 								bootlogoCustomEntry = kv->val;
-							gfx_printf(&gfx_con, "\n%s=%s\n\n", kv->key, kv->val);
 						}
 						break;
 					}
@@ -844,7 +839,6 @@ void auto_launch_firmware()
 								{
 									if (!strcmp("logopath", kv->key))
 										bootlogoCustomEntry = kv->val;
-									gfx_printf(&gfx_con, "\n%s=%s\n\n", kv->key, kv->val);
 								}
 								break;
 							}

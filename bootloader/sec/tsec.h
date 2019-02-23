@@ -22,7 +22,6 @@
 
 typedef struct _tsec_ctxt_t
 {
-	u32 key_ver;
 	void *fw;
 	u32 size;
 	void *pkg1;

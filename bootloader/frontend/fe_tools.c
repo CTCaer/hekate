@@ -36,6 +36,7 @@
 #include "../utils/util.h"
 
 extern hekate_config h_cfg;
+
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
 extern sdmmc_storage_t sd_storage;
@@ -82,15 +83,14 @@ void dump_packages12()
 	if (!pkg1_id)
 	{
 		gfx_con.fntsz = 8;
-		EPRINTFARGS("Unknown package1 version for reading\nTSEC firmware (= '%s').", (char *)pkg1 + 0x10);
+		EPRINTF("Unknown pkg1 version for reading\nTSEC firmware.");
 		goto out_free;
 	}
 
 	kb = pkg1_id->kb;
 
-	if (!h_cfg.se_keygen_done || kb >= KB_FIRMWARE_VERSION_620)
+	if (!h_cfg.se_keygen_done || kb == KB_FIRMWARE_VERSION_620)
 	{
-		tsec_ctxt.key_ver = 1;
 		tsec_ctxt.fw = (void *)pkg1 + pkg1_id->tsec_off;
 		tsec_ctxt.pkg1 = (void *)pkg1;
 		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
@@ -110,41 +110,45 @@ void dump_packages12()
 	if (kb <= KB_FIRMWARE_VERSION_600)
 		pkg1_decrypt(pkg1_id, pkg1);
 
-	pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
-
-	// Display info.
-	gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
-
-	gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
-	gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
-
-	gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
-	gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
-
 	char path[64];
-	// Dump package1.1.
-	emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
-	if (sd_save_to_file(pkg1, 0x40000, path))
-		goto out_free;
-	gfx_puts(&gfx_con, "\nFull package1 dumped to pkg1_decr.bin\n");
 
-	// Dump nxbootloader.
-	emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
-	if (sd_save_to_file(loader, hdr->ldr_size, path))
-		goto out_free;
-	gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
+	if (kb <= KB_FIRMWARE_VERSION_620)
+	{
+		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+	
+		// Display info.
+		gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
+	
+		gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
+		gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
+	
+		gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
+		gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
 
-	// Dump secmon.
-	emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
-	if (sd_save_to_file(secmon, hdr->sm_size, path))
-		goto out_free;
-	gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
-
-	// Dump warmboot.
-	emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
-	if (sd_save_to_file(warmboot, hdr->wb_size, path))
-		goto out_free;
-	gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
+		// Dump package1.1.
+		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
+		if (sd_save_to_file(pkg1, 0x40000, path))
+			goto out_free;
+		gfx_puts(&gfx_con, "\npkg1 dumped to pkg1_decr.bin\n");
+	
+		// Dump nxbootloader.
+		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
+		if (sd_save_to_file(loader, hdr->ldr_size, path))
+			goto out_free;
+		gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
+	
+		// Dump secmon.
+		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
+		if (sd_save_to_file(secmon, hdr->sm_size, path))
+			goto out_free;
+		gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
+	
+		// Dump warmboot.
+		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
+		if (sd_save_to_file(warmboot, hdr->wb_size, path))
+			goto out_free;
+		gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
+	}
 
 	// Dump package2.1.
 	sdmmc_storage_set_mmc_partition(&storage, 0);
@@ -180,7 +184,7 @@ void dump_packages12()
 	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &storage);
 	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
-	gfx_puts(&gfx_con, "\nFull package2 dumped to pkg2_decr.bin\n");
+	gfx_puts(&gfx_con, "\npkg2 dumped to pkg2_decr.bin\n");
 
 	// Dump kernel.
 	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &storage);
@@ -193,7 +197,7 @@ void dump_packages12()
 	if (sd_save_to_file(pkg2_hdr->data + pkg2_hdr->sec_size[PKG2_SEC_KERNEL],
 		pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
-	gfx_puts(&gfx_con, "INI1 kip1 package dumped to ini1.bin\n");
+	gfx_puts(&gfx_con, "INI1 dumped to ini1.bin\n");
 
 	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
 
@@ -430,7 +434,7 @@ void _fix_sd_attr(u32 type)
 			break;
 		}
 
-		gfx_printf(&gfx_con, "Traversing all %s files!\nThis may take some time, please wait...\n\n", label);
+		gfx_printf(&gfx_con, "Traversing all %s files!\nThis may take some time...\n\n", label);
 		_fix_attributes(path, &total, type, type);
 		gfx_printf(&gfx_con, "%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
 		sd_unmount();
@@ -553,10 +557,10 @@ void fix_battery_desync()
 }*/
 
 /*
-#include "../modules/hekate_libsys_minerva/mtc.h"
+#include "../../modules/hekate_libsys_minerva/mtc.h"
 #include "../ianos/ianos.h"
 #include "../soc/fuse.h"
-mtc_config_t mtc_cfg;
+#include "../soc/clock.h"
 
 void minerva()
 {

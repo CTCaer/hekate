@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ void print_fuseinfo()
 	gfx_printf(&gfx_con, "%k(Unlocked) fuse cache:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 	gfx_hexdump(&gfx_con, 0x7000F900, (u8 *)0x7000F900, 0x2FC);
 
-	gfx_puts(&gfx_con, "Press POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
@@ -352,7 +352,6 @@ void print_tsec_key()
 	gfx_con_setpos(&gfx_con, 0, 0);
 
 	u32 retries = 0;
-	u32 key_ver_max = 3;
 
 	tsec_ctxt_t tsec_ctxt;
 	sdmmc_storage_t storage;
@@ -368,85 +367,70 @@ void print_tsec_key()
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
-		EPRINTFARGS("Unknown package1 version for reading\nTSEC firmware (= '%s').",
-			(char *)pkg1 + 0x10);
+		EPRINTF("Unknown pkg1 version for reading\nTSEC firmware.");
 		goto out_wait;
 	}
 
-	u8 keys[0x10 * 3];
+	u8 keys[0x10 * 2];
+	memset(keys, 0x00, 0x20);
 
-	tsec_ctxt.size = 0xF00;
 	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
 	tsec_ctxt.pkg1 = pkg1;
 	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
 	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
-	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
-	{
+	if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+		tsec_ctxt.size = 0xF00;
+	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 		tsec_ctxt.size = 0x2900;
+	else
+	{
+		tsec_ctxt.size = 0x3000;
+		// Exit after TSEC key generation.
+		*((vu16 *)((u32)tsec_ctxt.fw + 0x2DB5)) = 0x02F8;
+	}
+
+	if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
+	{
 		u8 *tsec_paged = (u8 *)page_alloc(3);
 		memcpy(tsec_paged, (void *)tsec_ctxt.fw, tsec_ctxt.size);
 		tsec_ctxt.fw = tsec_paged;
-
-		key_ver_max = 1;
 	}
 
-	for (u32 i = 1; i <= key_ver_max; i++)
+	int res = 0;
+
+	while (tsec_query(keys, pkg1_id->kb, &tsec_ctxt) < 0)
 	{
-		tsec_ctxt.key_ver = i;
-		int res = 0;
+		memset(keys, 0x00, 0x20);
 
-		while (tsec_query(keys + ((i - 1) * 0x10), pkg1_id->kb, &tsec_ctxt) < 0)
+		retries++;
+
+		if (retries > 3)
 		{
-			if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
-				memset(keys + ((i - 1) * 0x10), 0x00, 0x10);
-			else
-				memset(keys, 0x00, 0x30);
-
-			retries++;
-
-			if (retries > 3)
-			{
-				res = -1;
-				break;
-			}
+			res = -1;
+			break;
 		}
-
-		if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
-		{
-			gfx_printf(&gfx_con, "%kTSEC key %d: %k", 0xFF00DDFF, i, 0xFFCCCCCC);
-
-			if (res >= 0)
-			{
-				for (u32 j = 0; j < 0x10; j++)
-					gfx_printf(&gfx_con, "%02X", keys[((i - 1) * 0x10) + j]);
-			}
-			else
-				EPRINTFARGS("ERROR %X", res);
-			gfx_putc(&gfx_con, '\n');
-		}
-		else
-		{
-			gfx_printf(&gfx_con, "%kTSEC key:  %k", 0xFF00DDFF, 0xFFCCCCCC);
-
-			if (res >= 0)
-			{
-				for (u32 j = 0; j < 0x10; j++)
-					gfx_printf(&gfx_con, "%02X", keys[j]);
-				gfx_putc(&gfx_con, '\n');
-
-				gfx_printf(&gfx_con, "%kTSEC root: %k", 0xFF00DDFF, 0xFFCCCCCC);
-				for (u32 j = 0; j < 0x10; j++)
-					gfx_printf(&gfx_con, "%02X", keys[0x10 + j]);
-			}
-			else
-				EPRINTFARGS("ERROR %X", res);
-			gfx_putc(&gfx_con, '\n');
-		}
-		
 	}
 
-	gfx_puts(&gfx_con, "\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
+	gfx_printf(&gfx_con, "%kTSEC key:  %k", 0xFF00DDFF, 0xFFCCCCCC);
+
+	if (res >= 0)
+	{
+		for (u32 j = 0; j < 0x10; j++)
+			gfx_printf(&gfx_con, "%02X", keys[j]);
+		
+
+		if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
+		{
+			gfx_printf(&gfx_con, "\n%kTSEC root: %k", 0xFF00DDFF, 0xFFCCCCCC);
+			for (u32 j = 0; j < 0x10; j++)
+				gfx_printf(&gfx_con, "%02X", keys[0x10 + j]);
+		}
+	}
+	else
+		EPRINTFARGS("ERROR %X\n", res);
+
+	gfx_puts(&gfx_con, "\n\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
@@ -455,7 +439,7 @@ void print_tsec_key()
 		{
 			char path[64];
 			emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
-			if (!sd_save_to_file(keys, 0x10 * 3, path))
+			if (!sd_save_to_file(keys, 0x10 * 2, path))
 				gfx_puts(&gfx_con, "\nDone!\n");
 			sd_unmount();
 		}
@@ -709,4 +693,3 @@ void bootrom_ipatches_info()
 }
 
 #pragma GCC pop_options
-

@@ -179,4 +179,8 @@
 #define  I2S_CG_SLCG_ENABLE (1 << 0)
 #define  I2S_CTRL_MASTER_EN (1 << 10)
 
+/*! Special registers. */
+#define EMC_SCRATCH0 0x324
+#define  EMC_SEPT_RUN (1 << 31)
+
 #endif
