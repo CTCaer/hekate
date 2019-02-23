@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018 CTCaer
+ * Copyright (C) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -24,9 +24,37 @@
 
 static char *_strdup(char *str)
 {
+	if (!str)
+		return NULL;
 	char *res = (char *)malloc(strlen(str) + 1);
 	strcpy(res, str);
+
 	return res;
+}
+
+u32 _find_section_name(char *lbuf, u32 lblen, char schar)
+{
+	u32 i;
+	for (i = 0; i < lblen  && lbuf[i] != schar && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
+		;
+	lbuf[i] = 0;
+
+	return i;
+}
+
+ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type)
+{
+	if (csec)
+	{
+		list_append(dst, &csec->link);
+		csec = NULL;
+	}
+
+	csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
+	csec->name = _strdup(name);
+	csec->type = type;
+
+	return csec;
 }
 
 int ini_parse(link_t *dst, char *ini_path, bool is_dir)
@@ -43,6 +71,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 	memcpy(filename, ini_path, pathlen + 1);
 
+	// Get all ini filenames.
 	if (is_dir)
 	{
 		filelist = dirlist(filename, "*.ini", false);
@@ -57,6 +86,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 	do
 	{
+		// Copy ini filename in path string.
 		if (is_dir)
 		{
 			if (filelist[k * 256])
@@ -68,6 +98,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				break;
 		}
 
+		// Open ini.
 		if (f_open(&fp, filename, FA_READ) != FR_OK)
 		{
 			free(filelist);
@@ -89,75 +120,31 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 			if (lblen > 2 && lbuf[0] == '[') // Create new section.
 			{
-				if (csec)
-				{
-					list_append(dst, &csec->link);
-					csec = NULL;
-				}
+				_find_section_name(lbuf, lblen, ']');
 
-				u32 i;
-				for (i = 0; i < lblen  && lbuf[i] != ']' && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
-					;
-				lbuf[i] = 0;
-
-				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-				csec->name = _strdup(&lbuf[1]);
-				csec->type = INI_CHOICE;
+				csec = _ini_create_section(dst, csec, &lbuf[1], INI_CHOICE);
 				list_init(&csec->kvs);
 			}
 			else if (lblen > 2 && lbuf[0] == '{') //Create new caption.
 			{
-				if (csec)
-				{
-					list_append(dst, &csec->link);
-					csec = NULL;
-				}
+				_find_section_name(lbuf, lblen, '}');
 
-				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '}' && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
-					;
-				lbuf[i] = 0;
-
-				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-				csec->name = _strdup(&lbuf[1]);
-				csec->type = INI_CAPTION;
+				csec = _ini_create_section(dst, csec, &lbuf[1], INI_CAPTION);
 				csec->color = 0xFF0AB9E6;
 			}
 			else if (lblen > 2 && lbuf[0] == '#') //Create empty lines and comments.
 			{
-				if (csec)
-				{
-					list_append(dst, &csec->link);
-					csec = NULL;
-				}
+				_find_section_name(lbuf, lblen, '\0');
 
-				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
-					;
-				lbuf[i] = 0;
-
-				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-				csec->name = _strdup(&lbuf[1]);
-				csec->type = INI_COMMENT;
+				csec = _ini_create_section(dst, csec, &lbuf[1], INI_COMMENT);
 			}
 			else if (lblen < 2)
 			{
-				if (csec)
-				{
-					list_append(dst, &csec->link);
-					csec = NULL;
-				}
-
-				csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-				csec->name = NULL;
-				csec->type = INI_NEWLINE;
+				csec = _ini_create_section(dst, csec, NULL, INI_NEWLINE);
 			}
 			else if (csec && csec->type == INI_CHOICE) //Extract key/value.
 			{
-				u32 i;
-				for (i = 0; i < lblen && lbuf[i] != '=' && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
-					;
-				lbuf[i] = 0;
+				u32 i = _find_section_name(lbuf, lblen, '=');
 
 				ini_kv_t *kv = (ini_kv_t *)malloc(sizeof(ini_kv_t));
 				kv->key = _strdup(&lbuf[0]);
@@ -169,8 +156,11 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 		f_close(&fp);
 
 		if (csec)
+		{
 			list_append(dst, &csec->link);
-
+			if (is_dir)
+				csec = NULL;
+		}
 	} while (is_dir);
 
 	free(filename);
