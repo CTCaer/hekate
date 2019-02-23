@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -786,14 +786,14 @@ void auto_launch_firmware()
 								h_cfg.autoboot_list = atoi(kv->val);
 							else if (!strcmp("bootwait", kv->key))
 								h_cfg.bootwait = atoi(kv->val);
-							else if (!strcmp("customlogo", kv->key))
-								h_cfg.customlogo = atoi(kv->val);
 							else if (!strcmp("verification", kv->key))
 								h_cfg.verification = atoi(kv->val);
 							else if (!strcmp("backlight", kv->key))
 								h_cfg.backlight = atoi(kv->val);
 							else if (!strcmp("autohosoff", kv->key))
 								h_cfg.autohosoff = atoi(kv->val);
+							else if (!strcmp("autonogc", kv->key))
+								h_cfg.autonogc = atoi(kv->val);
 						}
 						boot_entry_id++;
 						continue;
@@ -867,8 +867,6 @@ void auto_launch_firmware()
 	else
 		goto out;
 
-	if (h_cfg.customlogo)
-	{
 		u8 *bitmap = NULL;
 		if (bootlogoCustomEntry != NULL) // Check if user set custom logo path at the boot entry.
 		{
@@ -916,7 +914,6 @@ void auto_launch_firmware()
 			else
 				free(bitmap);
 		}
-	}
 
 	// Render boot logo.
 	if (bootlogoFound)
@@ -978,8 +975,8 @@ out:
 void about()
 {
 	static const char credits[] =
-		"\nhekate     (C) 2018 naehrwert, st4rk\n\n"
-		"CTCaer mod (C) 2018 CTCaer\n"
+		"\nhekate     (c) 2018 naehrwert, st4rk\n\n"
+		"CTCaer mod (c) 2018 CTCaer\n"
 		" ___________________________________________\n\n"
 		"Thanks to: %kderrek, nedwill, plutoo,\n"
 		"           shuffle2, smea, thexyz, yellows8%k\n"
@@ -989,14 +986,14 @@ void about()
 		" ___________________________________________\n\n"
 		"Open source and free packages used:\n\n"
 		" - FatFs R0.13b,\n"
-		"   Copyright (C) 2018, ChaN\n\n"
+		"   Copyright (c) 2018, ChaN\n\n"
 		" - bcl-1.2.0,\n"
-		"   Copyright (C) 2003-2006, Marcus Geelnard\n\n"
+		"   Copyright (c) 2003-2006, Marcus Geelnard\n\n"
 		" - Atmosphere (SE sha256, prc id patches),\n"
-		"   Copyright (C) 2018, Atmosphere-NX\n\n"
+		"   Copyright (c) 2018, Atmosphere-NX\n\n"
 		" - elfload,\n"
-		"   Copyright (C) 2014, Owen Shepherd\n"
-		"   Copyright (C) 2018, M4xw\n"
+		"   Copyright (c) 2014, Owen Shepherd\n"
+		"   Copyright (c) 2018, M4xw\n"
 		" ___________________________________________\n\n";
 	static const char octopus[] =
 		"                         %k___\n"
@@ -1033,7 +1030,7 @@ ment_t ment_options[] = {
 	MDEF_CHGLINE(),
 	MDEF_HANDLER("Auto boot", config_autoboot),
 	MDEF_HANDLER("Boot time delay", config_bootdelay),
-	MDEF_HANDLER("Custom boot logo", config_customlogo),
+	MDEF_HANDLER("Auto NoGC", config_nogc),
 	MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
 	MDEF_HANDLER("Backlight", config_backlight),
 	MDEF_END()
@@ -1112,8 +1109,8 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1/2", dump_packages12),
 	MDEF_HANDLER("Fix battery de-sync", fix_battery_desync),
-	MDEF_HANDLER("Fix archive bit (except Nintendo folder)", fix_sd_all_attr),
-	MDEF_HANDLER("Fix archive bit (Nintendo folder)", fix_sd_nin_attr),
+	MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
+	MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	//MDEF_HANDLER("Minerva", minerva), // Uncomment for testing Minerva Training Cell

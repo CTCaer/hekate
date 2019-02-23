@@ -380,12 +380,15 @@ int hos_launch(ini_sec_t *cfg)
 	if (!_read_emmc_pkg1(&ctxt))
 		return 0;
 
+	// Check if fuses lower than 4.0.0 and if yes apply NO Gamecard patch.
+	if (h_cfg.autonogc && !(fuse_read_odm(7) & ~0xF) && ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)
+		config_kip1patch(&ctxt, "nogc");
+
 	gfx_printf(&gfx_con, "Loaded pkg1 and keyblob\n");
 
 	// Generate keys.
 	if (!h_cfg.se_keygen_done || ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
 	{
-		tsec_ctxt.key_ver = 1;
 		tsec_ctxt.fw = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
 		tsec_ctxt.pkg1 = ctxt.pkg1;
 		tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
@@ -503,7 +506,7 @@ int hos_launch(ini_sec_t *cfg)
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
-		gfx_printf(&gfx_con, "%kREQUESTED PATCH '%s' NOT APPLIED!%k\n", 0xFFFF0000, unappliedPatch, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kFailed to apply patch '%s'!%k\n", 0xFFFF0000, unappliedPatch, 0xFFCCCCCC);
 		sd_unmount(); // Just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it.
 
 		_free_launch_components(&ctxt);

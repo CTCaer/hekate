@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -25,14 +25,15 @@ typedef struct _hekate_config
 	u32 autoboot;
 	u32 autoboot_list;
 	u32 bootwait;
-	u32 customlogo;
 	u32 verification;
 	u32 backlight;
 	u32 autohosoff;
-	u32 errors;
+	u32 autonogc;
 	// Global temporary config.
 	int se_keygen_done;
 	u32 sbar_time_keeping;
+	u32 errors;
+	int sept_run;
 } hekate_config;
 
 typedef enum
@@ -44,9 +45,9 @@ void set_default_configuration();
 int create_config_entry();
 void config_autoboot();
 void config_bootdelay();
-void config_customlogo();
 void config_verification();
 void config_backlight();
 void config_auto_hos_poweroff();
+void config_nogc();
 
 #endif /* _CONFIG_H_ */

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -156,7 +156,7 @@ static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
-static int _config_kip1patch(launch_ctxt_t *ctxt, const char *value)
+int config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 {
 	if (value == NULL)
 		return 0;
@@ -197,14 +197,14 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "secmon", _config_secmon },
 	{ "kernel", _config_kernel },
 	{ "kip1", _config_kip1 },
-	{ "kip1patch", _config_kip1patch },
+	{ "kip1patch", config_kip1patch },
 	{ "fullsvcperm", _config_svcperm },
 	{ "debugmode", _config_debugmode },
 	{ "atmosphere", _config_atmosphere },
 	{ NULL, NULL },
 };
 
-int _parse_boot_config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
+int parse_boot_config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
 {
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
 	{
