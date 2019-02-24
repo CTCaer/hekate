@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 CTCaer
+ * Copyright (C) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,6 +19,6 @@
 
 #include "../utils/types.h"
 
-void config_exosphere(const char *id, u32 kb, bool debug);
+void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool debug);
 
 #endif

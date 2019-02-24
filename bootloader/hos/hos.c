@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -518,9 +518,6 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf(&gfx_con, "Rebuilt and loaded pkg2\n");
 
-	// Unmount SD card.
-	sd_unmount();
-
 	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
 	// Clear pkg1/pkg2 keys.
@@ -573,7 +570,10 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Config Exosphère if booting full Atmosphère.
 	if (ctxt.atmosphere && ctxt.secmon)
-		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, ctxt.debugmode);
+		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, (void *)ctxt.pkg1_id->warmboot_base, ctxt.pkg1, ctxt.debugmode);
+
+	// Unmount SD card.
+	sd_unmount();
 
 	// Finalize MC carveout.
 	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)
