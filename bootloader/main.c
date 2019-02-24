@@ -344,10 +344,38 @@ int launch_payload(char *path, bool update)
 		f_close(&fp);
 		free(path);
 
-
+		// Check for updated version.
 		if (update)
 		{
 			u8 *update_ft = calloc(1, 6);
+
+			bool update_sept = true;
+			if (!f_open(&fp, "sept/payload.bin", FA_READ | FA_WRITE))
+			{
+				memset(update_ft, 0, 6);
+				f_lseek(&fp, f_size(&fp) - 6);
+				f_read(&fp, update_ft, 6, NULL);
+				f_close(&fp);
+				update_ft[4] -= '0';
+				update_ft[5] -= '0';
+				if (*(u32 *)update_ft == 0x43544349)
+				{
+					if (update_ft[4] == BLVERSIONMJ && update_ft[5] == BLVERSIONMN)
+						update_sept = false;
+				}
+				else
+					update_sept = false;
+			}
+
+			if (update_sept)
+			{
+				if (!f_open(&fp, "sept/payload.bin", FA_CREATE_ALWAYS | FA_WRITE))
+				{
+					f_write(&fp, buf, size, NULL);
+					f_close(&fp);
+				}
+			}	
+
 			memcpy(update_ft, buf + size - 6, 6);
 			update_ft[4] -= '0';
 			update_ft[5] -= '0';
