@@ -1,9 +1,11 @@
 ENTRY(_start)
 
 SECTIONS {
-	PROVIDE(__ipl_start = 0x40008000);
+	PROVIDE(__ipl_start = IPL_LOAD_ADDR);
 	. = __ipl_start;
 	.text : {
+		*(.text._start);
+		. = . + 36;
 		*(.text*);
 	}
 	.data : {

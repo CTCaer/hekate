@@ -51,4 +51,16 @@ typedef int bool;
 #define true  1
 #define false 0
 
+#define BOOT_CFG_AUTOBOOT_EN (1 << 0)
+#define BOOT_CFG_FROM_LAUNCH (1 << 1)
+
+typedef struct __attribute__((__packed__)) _boot_cfg_t
+{
+	u8  boot_cfg;
+	u8  autoboot;
+	u8  autoboot_list;
+	u8  rsvd_cfg;
+	u8  rsvd[32];
+} boot_cfg_t;
+
 #endif

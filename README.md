@@ -29,15 +29,15 @@ The bootloader can be configured via 'bootloader/hekate_ipl.ini' (if it is prese
 There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Caption, "**#**": Comment, "*newline*": .ini cosmetic newline.
 
 
-### Configuration keys/values when boot entry is **config**:
+### Global Configuration keys/values when boot entry is **config**:
 
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
 | autoboot=0         | 0: Disable, #: Boot entry number to auto boot.             |
 | bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
-| customlogo=0       | 0: Use default hekate bootlogo, 1: Use bootlogo.bmp.       |
 | verification=2     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and not 100% reliable), 2: Full (sha256 based, slow and 100% reliable). |
 | autohosoff=1       | 0: Disable, 1: If woke up from HOS via an RTC alarm, shows logo, then powers off completely, 2: No logo, immediately powers off.|
+| autonogc=1         | 0: Disable, 1: Automatically applies nogc patch if unburnt fuses found and a >= 4.0.0 HOS is booted. |
 | backlight=100      | Screen backlight level. 0-255.                             |
 
 
@@ -51,11 +51,24 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | kernel={SD path}   | Replaces the kernel binary                                 |
 | kip1={SD path}     | Replaces/Adds kernel initial process. Multiple can be set. |
 | kip1={SD folder}/* | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
-| kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Implemented patches right now are nosigchk,nogc |
+| kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Current available patches nosigchk. |
 | fullsvcperm=1      | Disables SVC verification (full services permission)       |
 | debugmode=1        | Enables Debug mode                                         |
 | atmosphere=1       | Enables Atmosphère patching                                |
 | payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
+
+
+### Payload storage:
+
+Hekate now has a new storage in the binary that helps it configure it outside of BPMP enviroment:
+
+| Offset / Name        | Description                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log.                      |
+| '0x98' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
+| '0x9C' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
+| '0xA0' rsvd_cfg      | Reserved.                                                         |
+| '0xA4' rsvd[32]      | Reserved.                                                         |
 
 
 You can find a template [Here](./res/hekate_ipl_template.ini)

@@ -67,6 +67,7 @@ static bool sd_mounted;
 u8 *Kc_MENU_LOGO;
 #endif //MENU_LOGO_ENABLE
 
+boot_cfg_t *b_cfg;
 hekate_config h_cfg;
 
 bool sd_mount()
@@ -370,6 +371,8 @@ int launch_payload(char *path, bool update)
 		{
 			if (!update)
 				reloc_patcher(ALIGN(size, 0x10));
+			else
+				memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), (u8 *)(IPL_LOAD_ADDR + PATCHED_RELOC_SZ), sizeof(boot_cfg_t));
 			reconfig_hw_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 		}
 		else
@@ -393,6 +396,7 @@ int launch_payload(char *path, bool update)
 void auto_launch_update()
 {
 	FIL fp;
+
 	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR == BOOTLOADER_UPDATED_MAGIC)
 		*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = 0;
 	else
@@ -526,6 +530,7 @@ void ini_list_launcher()
 	u8 max_entries = 61;
 	char *payload_path = NULL;
 
+	ini_sec_t *cfg_tmp = NULL;
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_list_sections);
 
@@ -564,7 +569,30 @@ void ini_list_launcher()
 				menu_t menu = {
 					ments, "Launch ini configurations", 0, 0
 				};
-				cfg_sec = ini_clone_section((ini_sec_t *)tui_do_menu(&gfx_con, &menu));
+
+				cfg_tmp = (ini_sec_t *)tui_do_menu(&gfx_con, &menu);
+
+				if (cfg_tmp)
+				{
+					u32 non_cfg = 1;
+					for (int j = 2; j < i; j++)
+					{
+						if (ments[j].type != INI_CHOICE)
+							non_cfg++;
+
+						if (ments[j].data == cfg_tmp)
+						{
+							b_cfg->boot_cfg = BOOT_CFG_FROM_LAUNCH;
+							b_cfg->autoboot = j - non_cfg;
+							b_cfg->autoboot_list = 1;
+
+							break;
+						}
+					}
+				}
+
+				cfg_sec = ini_clone_section(cfg_tmp);
+
 				if (!cfg_sec)
 				{
 					free(ments);
@@ -574,12 +602,12 @@ void ini_list_launcher()
 				}
 			}
 			else
-				EPRINTF("No ini configurations found.");
+				EPRINTF("No ini configs found.");
 			free(ments);
 			ini_free(&ini_list_sections);
 		}
 		else
-			EPRINTF("Could not find any ini\nin bootloader/ini folder!");
+			EPRINTF("Could not find any ini\nin bootloader/ini!");
 	}
 
 	if (!cfg_sec)
@@ -622,6 +650,7 @@ void launch_firmware()
 	u8 max_entries = 61;
 	char *payload_path = NULL;
 
+	ini_sec_t *cfg_tmp = NULL;
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 
@@ -674,7 +703,29 @@ void launch_firmware()
 			menu_t menu = {
 				ments, "Launch configurations", 0, 0
 			};
-			cfg_sec = ini_clone_section((ini_sec_t *)tui_do_menu(&gfx_con, &menu));
+
+			cfg_tmp = (ini_sec_t *)tui_do_menu(&gfx_con, &menu);
+
+			if (cfg_tmp)
+			{
+				u8 non_cfg = 4;
+				for (int j = 5; j < i; j++)
+				{
+					if (ments[j].type != INI_CHOICE)
+						non_cfg++;
+					if (ments[j].data == cfg_tmp)
+					{
+						b_cfg->boot_cfg = BOOT_CFG_FROM_LAUNCH;
+						b_cfg->autoboot = j - non_cfg;
+						b_cfg->autoboot_list = 0;
+
+						break;
+					}
+				}
+			}
+
+
+			cfg_sec = ini_clone_section(cfg_tmp);
 			if (!cfg_sec)
 			{
 				free(ments);
@@ -687,7 +738,7 @@ void launch_firmware()
 			ini_free(&ini_sections);
 		}
 		else
-			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists in SD Card!");
+			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists!");
 	}
 
 	if (!cfg_sec)
@@ -731,11 +782,16 @@ out:
 
 void auto_launch_firmware()
 {
-	auto_launch_update();
+	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	{
+		auto_launch_update();
+		gfx_con.mute = true;
+	}
 
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
 	FIL fp;
+	u32 btn = 0;
 
 	struct _bmp_data
 	{
@@ -754,8 +810,6 @@ void auto_launch_firmware()
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 	LIST_INIT(ini_list_sections);
-
-	gfx_con.mute = true;
 
 	if (sd_mount())
 	{
@@ -796,6 +850,19 @@ void auto_launch_firmware()
 								h_cfg.autonogc = atoi(kv->val);
 						}
 						boot_entry_id++;
+
+						// Override autoboot, otherwise save it for a possbile sept run.
+						if (b_cfg->boot_cfg & BOOT_CFG_AUTOBOOT_EN)
+						{
+							h_cfg.autoboot = b_cfg->autoboot;
+							h_cfg.autoboot_list = b_cfg->autoboot_list;
+						}
+						else
+						{
+							b_cfg->autoboot = h_cfg.autoboot;
+							b_cfg->autoboot_list = h_cfg.autoboot_list;
+						}
+
 						continue;
 					}
 
@@ -813,7 +880,7 @@ void auto_launch_firmware()
 				}
 			}
 
-			if (h_cfg.autohosoff)
+			if (h_cfg.autohosoff && !(b_cfg->boot_cfg & BOOT_CFG_AUTOBOOT_EN))
 				check_power_off_from_hos();
 
 			if (h_cfg.autoboot_list)
@@ -867,7 +934,9 @@ void auto_launch_firmware()
 	else
 		goto out;
 
-		u8 *bitmap = NULL;
+	u8 *bitmap = NULL;
+	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	{
 		if (bootlogoCustomEntry != NULL) // Check if user set custom logo path at the boot entry.
 		{
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry);
@@ -915,28 +984,21 @@ void auto_launch_firmware()
 				free(bitmap);
 		}
 
-	// Render boot logo.
-	if (bootlogoFound)
-	{
-		gfx_render_bmp_argb(&gfx_ctxt, (u32 *)BOOTLOGO, bmpData.size_x, bmpData.size_y,
-			bmpData.pos_x, bmpData.pos_y);
+		// Render boot logo.
+		if (bootlogoFound)
+		{
+			gfx_render_bmp_argb(&gfx_ctxt, (u32 *)BOOTLOGO, bmpData.size_x, bmpData.size_y,
+				bmpData.pos_x, bmpData.pos_y);
+		}
+		else
+		{
+			gfx_clear_grey(&gfx_ctxt, 0x1B);
+			BOOTLOGO = (void *)malloc(0x4000);
+			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
+			gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+		}
+		free(BOOTLOGO);
 	}
-	else
-	{
-		gfx_clear_grey(&gfx_ctxt, 0x1B);
-		BOOTLOGO = (void *)malloc(0x4000);
-		blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-		gfx_set_rect_grey(&gfx_ctxt, BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-	}
-	free(BOOTLOGO);
-
-	display_backlight_brightness(h_cfg.backlight, 1000);
-
-	// Wait before booting. If VOL- is pressed go into bootloader menu.
-	u32 btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
-
-	if (btn & BTN_VOL_DOWN)
-		goto out;
 
 	ini_free(&ini_sections);
 	if (h_cfg.autoboot_list)
@@ -945,6 +1007,20 @@ void auto_launch_firmware()
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
+
+	if (b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH)
+		display_backlight_brightness(h_cfg.backlight, 0);
+	else if (h_cfg.bootwait)
+		display_backlight_brightness(h_cfg.backlight, 1000);
+
+	// Wait before booting. If VOL- is pressed go into bootloader menu.
+	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	{
+		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
+
+		if (btn & BTN_VOL_DOWN)
+			goto out;
+	}
 
 	payload_path = ini_check_payload_section(cfg_sec);
 
@@ -970,6 +1046,8 @@ out:
 
 	sd_unmount();
 	gfx_con.mute = false;
+
+	b_cfg->boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
 }
 
 void about()
@@ -1148,6 +1226,9 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
+	// Set boot config address.
+	b_cfg = (boot_cfg_t *)(IPL_LOAD_ADDR + PATCHED_RELOC_SZ);
+
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
 	config_hw();
 
