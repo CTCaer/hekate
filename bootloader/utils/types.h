@@ -53,6 +53,7 @@ typedef int bool;
 
 #define BOOT_CFG_AUTOBOOT_EN (1 << 0)
 #define BOOT_CFG_FROM_LAUNCH (1 << 1)
+#define BOOT_CFG_SEPT_RUN    (1 << 7)
 
 typedef struct __attribute__((__packed__)) _boot_cfg_t
 {

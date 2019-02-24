@@ -22,6 +22,7 @@
 
 #include "hos.h"
 #include "hos_config.h"
+#include "sept.h"
 #include "secmon_exo.h"
 #include "../config/config.h"
 #include "../gfx/di.h"
@@ -43,6 +44,7 @@
 extern gfx_ctxt_t gfx_ctxt;
 extern gfx_con_t gfx_con;
 
+extern boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 
 extern void sd_unmount();
@@ -416,6 +418,12 @@ int hos_launch(ini_sec_t *cfg)
 		tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
 		tsec_ctxt.secmon_base = ctxt.pkg1_id->secmon_base;
 
+		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
+		{
+			gfx_printf(&gfx_con, "Failed to run sept\n");
+			return 0;
+		}
+
 		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt))
 			return 0;
 		DPRINTF("Generated keys\n");
@@ -636,6 +644,9 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
 	display_end();
+
+	// Clear EMC_SCRATCH0.
+	EMC(EMC_SCRATCH0) = 0;
 
 	// Wait for secmon to get ready.
 	if (smmu_is_used())

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  * Copyright (c) 2018 Reisyukaku
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
+#include "../hos/sept.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../power/max7762x.h"
@@ -35,6 +36,7 @@
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
+extern boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 
 extern gfx_ctxt_t gfx_ctxt;
@@ -95,6 +97,21 @@ void dump_packages12()
 		tsec_ctxt.pkg1 = (void *)pkg1;
 		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
 		tsec_ctxt.secmon_base = pkg1_id->secmon_base;
+
+		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
+		{
+			b_cfg->autoboot = 0;
+			b_cfg->autoboot_list = 0;
+
+			gfx_printf(&gfx_con, "sept will run to get the keys.\nThen rerun this option.");
+			btn_wait();
+
+			if (!reboot_to_sept((u8 *)tsec_ctxt.fw))
+			{
+				gfx_printf(&gfx_con, "Failed to run sept\n");
+				goto out_free;
+			}
+		}
 
 		// Read keyblob.
 		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);

@@ -64,7 +64,7 @@ Hekate now has a new storage in the binary that helps it configure it outside of
 
 | Offset / Name        | Description                                                       |
 | -------------------- | ----------------------------------------------------------------- |
-| '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log.                      |
+| '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log, bit2: sept run.      |
 | '0x98' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
 | '0x9C' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
 | '0xA0' rsvd_cfg      | Reserved.                                                         |

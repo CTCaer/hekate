@@ -25,6 +25,7 @@
 #include "gfx/logos.h"
 #include "gfx/tui.h"
 #include "hos/hos.h"
+#include "hos/sept.h"
 #include "ianos/ianos.h"
 #include "libs/compr/blz.h"
 #include "libs/fatfs/ff.h"
@@ -270,7 +271,7 @@ void check_power_off_from_hos()
 }
 
 // This is a safe and unused DRAM region for our payloads.
-#define IPL_LOAD_ADDR      0x40008000
+// IPL_LOAD_ADDR is defined in makefile.
 #define EXT_PAYLOAD_ADDR   0xC03C0000
 #define PATCHED_RELOC_SZ   0x94
 #define RCM_PAYLOAD_ADDR   (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
@@ -281,21 +282,23 @@ void check_power_off_from_hos()
 void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
-void reloc_patcher(u32 payload_size)
+void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
 	static const u32 START_OFF = 0x7C;
+	static const u32 STACK_OFF = 0x80;
 	static const u32 PAYLOAD_END_OFF = 0x84;
 	static const u32 IPL_START_OFF = 0x88;
 
-	memcpy((u8 *)EXT_PAYLOAD_ADDR, (u8 *)IPL_LOAD_ADDR, PATCHED_RELOC_SZ);
+	memcpy((u8 *)payload_src, (u8 *)IPL_LOAD_ADDR, PATCHED_RELOC_SZ);
 
-	*(vu32 *)(EXT_PAYLOAD_ADDR + START_OFF) = PAYLOAD_ENTRY - ALIGN(PATCHED_RELOC_SZ, 0x10);
-	*(vu32 *)(EXT_PAYLOAD_ADDR + PAYLOAD_END_OFF) = PAYLOAD_ENTRY + payload_size;
-	*(vu32 *)(EXT_PAYLOAD_ADDR + IPL_START_OFF) = PAYLOAD_ENTRY;
+	*(vu32 *)(payload_src + START_OFF) = payload_dst - ALIGN(PATCHED_RELOC_SZ, 0x10);
+	*(vu32 *)(payload_src + PAYLOAD_END_OFF) = payload_dst + payload_size;
+	*(vu32 *)(payload_src + STACK_OFF) = 0x40008000;
+	*(vu32 *)(payload_src + IPL_START_OFF) = payload_dst;
 
 	if (payload_size == 0x7000)
 	{
-		memcpy((u8 *)(EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10)), (u8 *)COREBOOT_ADDR, 0x7000); //Bootblock
+		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), (u8 *)COREBOOT_ADDR, 0x7000); //Bootblock
 		*(vu32 *)CBFS_SDRAM_EN_ADDR = 0x4452414D;
 	}
 }
@@ -370,14 +373,15 @@ int launch_payload(char *path, bool update)
 		if (size < 0x30000)
 		{
 			if (!update)
-				reloc_patcher(ALIGN(size, 0x10));
+				reloc_patcher(PAYLOAD_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 			else
 				memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), (u8 *)(IPL_LOAD_ADDR + PATCHED_RELOC_SZ), sizeof(boot_cfg_t));
+
 			reconfig_hw_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 		}
 		else
 		{
-			reloc_patcher(0x7000);
+			reloc_patcher(PAYLOAD_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
 			if (*(vu32 *)CBFS_SDRAM_EN_ADDR != 0x4452414D)
 				return 1;
 			reconfig_hw_workaround(true, 0);
@@ -591,6 +595,11 @@ void ini_list_launcher()
 					}
 				}
 
+				payload_path = ini_check_payload_section(cfg_tmp);
+
+				if (cfg_tmp && !payload_path)
+					check_sept();
+
 				cfg_sec = ini_clone_section(cfg_tmp);
 
 				if (!cfg_sec)
@@ -616,8 +625,6 @@ void ini_list_launcher()
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
-
-	payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
 	{
@@ -724,6 +731,10 @@ void launch_firmware()
 				}
 			}
 
+			payload_path = ini_check_payload_section(cfg_tmp);
+
+			if (cfg_tmp && !payload_path)
+				check_sept();
 
 			cfg_sec = ini_clone_section(cfg_tmp);
 			if (!cfg_sec)
@@ -753,8 +764,6 @@ void launch_firmware()
 #ifdef MENU_LOGO_ENABLE
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
-
-	payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
 	{
@@ -934,6 +943,11 @@ void auto_launch_firmware()
 	else
 		goto out;
 
+	payload_path = ini_check_payload_section(cfg_sec);
+
+	if (!payload_path)
+		check_sept();
+
 	u8 *bitmap = NULL;
 	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
@@ -1021,8 +1035,6 @@ void auto_launch_firmware()
 		if (btn & BTN_VOL_DOWN)
 			goto out;
 	}
-
-	payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
 	{

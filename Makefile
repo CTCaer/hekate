@@ -30,6 +30,7 @@ OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
 	hos.o \
 	hos_config.o \
 	secmon_exo.o \
+	sept.o \
 	i2c.o \
 	kfuse.o \
 	bq24193.o \

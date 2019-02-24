@@ -37,6 +37,7 @@
 #include "../utils/util.h"
 
 extern sdmmc_t sd_sdmmc;
+extern boot_cfg_t *b_cfg;
 
 void _config_oscillators()
 {
@@ -145,26 +146,30 @@ void _mbist_workaround()
 
 void _config_se_brom()
 {
-	// Bootrom part we skipped.
-	u32 sbk[4] = { 
-		FUSE(FUSE_PRIVATE_KEY0),
-		FUSE(FUSE_PRIVATE_KEY1),
-		FUSE(FUSE_PRIVATE_KEY2),
-		FUSE(FUSE_PRIVATE_KEY3)
-	};
-	// Set SBK to slot 14.
-	se_aes_key_set(14, sbk, 0x10);
+	// Skip SBK/SSK if sept was run.
+	if (!(b_cfg->boot_cfg & BOOT_CFG_SEPT_RUN))
+	{
+		// Bootrom part we skipped.
+		u32 sbk[4] = { 
+			FUSE(FUSE_PRIVATE_KEY0),
+			FUSE(FUSE_PRIVATE_KEY1),
+			FUSE(FUSE_PRIVATE_KEY2),
+			FUSE(FUSE_PRIVATE_KEY3)
+		};
+		// Set SBK to slot 14.
+		se_aes_key_set(14, sbk, 0x10);
 
-	// Lock SBK from being read.
-	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 14 * 4) = 0x7E;
+		// Lock SBK from being read.
+		SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 14 * 4) = 0x7E;
+
+		// Lock SSK (although it's not set and unused anyways).
+		SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
+	}
 
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
 	memset((void *)TZRAM_BASE, 0, 0x10000);
 	PMC(APBDEV_PMC_CRYPTO_OP) = 0;
 	SE(SE_INT_STATUS_REG_OFFSET) = 0x1F;
-
-	// Lock SSK (although it's not set and unused anyways).
-	SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
 
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
