@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -20,8 +20,11 @@
 #include <string.h>
 
 #include "pkg1.h"
-#include "../utils/aarch64_util.h"
+#include "../gfx/gfx.h"
 #include "../sec/se.h"
+#include "../utils/aarch64_util.h"
+
+extern gfx_con_t gfx_con;
 
 #define _NOPv7() 0xE320F000
 
@@ -116,20 +119,6 @@ PATCHSET_DEF(_warmboot_4_patchset,
 	{ 0x558, _NOPv7() }  // Segment id check.
 );
 
-PATCHSET_DEF(_warmboot_5_patchset,
-	{ 0x544, _NOPv7() }, // Fuse check.
-	{ 0x558, _NOPv7() }  // Segment id check.
-);
-
-PATCHSET_DEF(_warmboot_6_patchset,
-	{ 0x544, _NOPv7() }, // Fuse check.
-	{ 0x558, _NOPv7() }  // Segment id check.
-);
-
-PATCHSET_DEF(_warmboot_620_patchset,
-	{ 0x544, _NOPv7() }, // Fuse check.
-	{ 0x558, _NOPv7() }  // Segment id check.
-);
 
 /*
  * package1.1 header: <wb, ldr, sm>
@@ -145,20 +134,24 @@ PATCHSET_DEF(_warmboot_620_patchset,
  */
 
 static const pkg1_id_t _pkg1_ids[] = {
-	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, SM_100_ADR, 0x8000D000, true,  _secmon_1_patchset, _warmboot_1_patchset },     //1.0.0 (Patched relocator)
-	{ "20170210155124", 0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_2_patchset, _warmboot_2_patchset },     //2.0.0 - 2.3.0
-	{ "20170519101410", 1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset, _warmboot_3_patchset },     //3.0.0
-	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset, _warmboot_3_patchset },     //3.0.1 - 3.0.2
-	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_4_patchset, _warmboot_4_patchset },     //4.0.0 - 4.1.0
-	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_5_patchset, _warmboot_5_patchset },     //5.0.0 - 5.1.0
-	{ "20180802162753", 5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_6_patchset, _warmboot_6_patchset },     //6.0.0 - 6.1.0
-	{ "20181107105733", 6, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_620_patchset, _warmboot_620_patchset }, //6.2.0
+	{ "20161121183008", 0, 0x1900, 0x3FE0, { 2, 1, 0 }, SM_100_ADR, 0x8000D000, true,  _secmon_1_patchset, _warmboot_1_patchset },   //1.0.0 (Patched relocator)
+	{ "20170210155124", 0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_2_patchset, _warmboot_2_patchset },   //2.0.0 - 2.3.0
+	{ "20170519101410", 1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset, _warmboot_3_patchset },   //3.0.0
+	{ "20170710161758", 2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000, true,  _secmon_3_patchset, _warmboot_3_patchset },   //3.0.1 - 3.0.2
+	{ "20170921172629", 3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_4_patchset, _warmboot_4_patchset },   //4.0.0 - 4.1.0
+	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_5_patchset, _warmboot_4_patchset },   //5.0.0 - 5.1.0
+	{ "20180802162753", 5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_6_patchset, _warmboot_4_patchset },   //6.0.0 - 6.1.0
+	{ "20181107105733", 6, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_620_patchset, _warmboot_4_patchset }, //6.2.0
 	{ NULL } //End.
 };
 
-
 const pkg1_id_t *pkg1_identify(u8 *pkg1)
 {
+	char build_date[15];
+	memcpy(build_date, (char *)(pkg1 + 0x10), 14);
+	build_date[14] = 0;
+	gfx_printf(&gfx_con, "Found pkg1 ('%s').\n\n", build_date);
+
 	for (u32 i = 0; _pkg1_ids[i].id; i++)
 		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 12))
 			return &_pkg1_ids[i];
