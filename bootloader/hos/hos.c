@@ -211,7 +211,9 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		}
 	}
 
-	if (kb == KB_FIRMWARE_VERSION_620)
+	if (kb >= KB_FIRMWARE_VERSION_700)
+		se_aes_unwrap_key(8, 12, package2_keyseed);
+	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
 		// Set TSEC key.
 		se_aes_key_set(12, tmp, 0x10);
@@ -381,6 +383,7 @@ int hos_launch(ini_sec_t *cfg)
 {
 	launch_ctxt_t ctxt;
 	tsec_ctxt_t tsec_ctxt;
+	volatile secmon_mailbox_t *secmon_mb;
 
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	list_init(&ctxt.kip1_list);
@@ -440,6 +443,11 @@ int hos_launch(ini_sec_t *cfg)
 		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
 	else
 	{
+		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
+		{
+			gfx_printf(&gfx_con, "%kNo warmboot provided!%k\n", 0xFFFF0000, 0xFFCCCCCC);
+			return 0;
+		}
 		// Else we patch it to allow downgrading.
 		patch_t *warmboot_patchset = ctxt.pkg1_id->warmboot_patchset;
 		gfx_printf(&gfx_con, "%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
@@ -453,7 +461,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Replace 'SecureMonitor' if requested.
 	if (ctxt.secmon)
 		memcpy((void *)ctxt.pkg1_id->secmon_base, ctxt.secmon, ctxt.secmon_size);
-	else
+	else if (ctxt.pkg1_id->secmon_patchset)
 	{
 		// Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
