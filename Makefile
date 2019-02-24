@@ -6,7 +6,7 @@ include $(DEVKITARM)/base_rules
 
 IPL_LOAD_ADDR := 0x40008000
 BLVERSION_MAJOR := 4
-BLVERSION_MINOR := 6
+BLVERSION_MINOR := 8
 
 TARGET := hekate
 BUILD := build
