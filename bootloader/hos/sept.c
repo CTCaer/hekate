@@ -61,7 +61,7 @@ u8 warmboot_reboot[] = {
 #define SEPT_STG2_ADDR  (SEPT_PK1T_ADDR + 0x60E0)
 #define SEPT_PKG_SZ     (0x2F100 + WB_RST_SIZE)
 
-extern boot_cfg_t *b_cfg;
+extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
 extern void *sd_file_read(char *path);
 extern void sd_mount();
@@ -135,7 +135,7 @@ int reboot_to_sept(const u8 *tsec_fw)
 
 	// Save auto boot config to payload, if any.
 	boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
-	memcpy(tmp_cfg, b_cfg, sizeof(boot_cfg_t));
+	memcpy(tmp_cfg, &b_cfg, sizeof(boot_cfg_t));
 
 	tmp_cfg->boot_cfg |= (BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_SEPT_RUN);
 

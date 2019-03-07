@@ -68,8 +68,14 @@ static bool sd_mounted;
 u8 *Kc_MENU_LOGO;
 #endif //MENU_LOGO_ENABLE
 
-boot_cfg_t *b_cfg;
 hekate_config h_cfg;
+boot_cfg_t __attribute__((section ("._boot_cfg"))) b_cfg;
+const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
+	.magic = BL_MAGIC,
+	.version = (BL_VER_MJ + '0') | ((BL_VER_MN + '0') << 8) | ((BL_VER_HF + '0') << 16),
+	.rsvd0 = 0,
+	.rsvd1 = 0
+};
 
 bool sd_mount()
 {
@@ -614,9 +620,9 @@ void ini_list_launcher()
 
 						if (ments[j].data == cfg_tmp)
 						{
-							b_cfg->boot_cfg = BOOT_CFG_FROM_LAUNCH;
-							b_cfg->autoboot = j - non_cfg;
-							b_cfg->autoboot_list = 1;
+							b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
+							b_cfg.autoboot = j - non_cfg;
+							b_cfg.autoboot_list = 1;
 
 							break;
 						}
@@ -750,9 +756,9 @@ void launch_firmware()
 						non_cfg++;
 					if (ments[j].data == cfg_tmp)
 					{
-						b_cfg->boot_cfg = BOOT_CFG_FROM_LAUNCH;
-						b_cfg->autoboot = j - non_cfg;
-						b_cfg->autoboot_list = 0;
+						b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
+						b_cfg.autoboot = j - non_cfg;
+						b_cfg.autoboot_list = 0;
 
 						break;
 					}
@@ -889,15 +895,15 @@ void auto_launch_firmware()
 						boot_entry_id++;
 
 						// Override autoboot, otherwise save it for a possbile sept run.
-						if (b_cfg->boot_cfg & BOOT_CFG_AUTOBOOT_EN)
+						if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
 						{
-							h_cfg.autoboot = b_cfg->autoboot;
-							h_cfg.autoboot_list = b_cfg->autoboot_list;
+							h_cfg.autoboot = b_cfg.autoboot;
+							h_cfg.autoboot_list = b_cfg.autoboot_list;
 						}
 						else
 						{
-							b_cfg->autoboot = h_cfg.autoboot;
-							b_cfg->autoboot_list = h_cfg.autoboot_list;
+							b_cfg.autoboot = h_cfg.autoboot;
+							b_cfg.autoboot_list = h_cfg.autoboot_list;
 						}
 
 						continue;
@@ -917,7 +923,7 @@ void auto_launch_firmware()
 				}
 			}
 
-			if (h_cfg.autohosoff && !(b_cfg->boot_cfg & BOOT_CFG_AUTOBOOT_EN))
+			if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
 				check_power_off_from_hos();
 
 			if (h_cfg.autoboot_list)
@@ -977,7 +983,7 @@ void auto_launch_firmware()
 		check_sept();
 
 	u8 *bitmap = NULL;
-	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
 		if (bootlogoCustomEntry != NULL) // Check if user set custom logo path at the boot entry.
 		{
@@ -1050,13 +1056,13 @@ void auto_launch_firmware()
 	free(Kc_MENU_LOGO);
 #endif //MENU_LOGO_ENABLE
 
-	if (b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH)
+	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
 		display_backlight_brightness(h_cfg.backlight, 0);
 	else if (h_cfg.bootwait)
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
-	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
 		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
 
@@ -1087,7 +1093,7 @@ out:
 	sd_unmount();
 	gfx_con.mute = false;
 
-	b_cfg->boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
+	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
 }
 
 void about()
@@ -1266,9 +1272,6 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
-	// Set boot config address.
-	b_cfg = (boot_cfg_t *)(IPL_LOAD_ADDR + PATCHED_RELOC_SZ);
-
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
 	config_hw();
 

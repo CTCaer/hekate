@@ -37,7 +37,7 @@
 #include "../utils/util.h"
 
 extern sdmmc_t sd_sdmmc;
-extern boot_cfg_t *b_cfg;
+extern boot_cfg_t b_cfg;
 
 void _config_oscillators()
 {
@@ -147,7 +147,7 @@ void _mbist_workaround()
 void _config_se_brom()
 {
 	// Skip SBK/SSK if sept was run.
-	if (!(b_cfg->boot_cfg & BOOT_CFG_SEPT_RUN))
+	if (!(b_cfg.boot_cfg & BOOT_CFG_SEPT_RUN))
 	{
 		// Bootrom part we skipped.
 		u32 sbk[4] = { 

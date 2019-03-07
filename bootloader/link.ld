@@ -5,7 +5,7 @@ SECTIONS {
 	. = __ipl_start;
 	.text : {
 		*(.text._start);
-		. = . + 36;
+		*(._boot_cfg);
 		*(.text*);
 	}
 	.data : {
