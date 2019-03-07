@@ -31,6 +31,10 @@
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
+#define EMMC_BUF_ALIGNED 0x85000000
+#define SDXC_BUF_ALIGNED 0x86000000
+#define MIXD_BUF_ALIGNED 0x87000000
+
 extern sdmmc_t sd_sdmmc;
 extern sdmmc_storage_t sd_storage;
 extern FATFS sd_fs;
@@ -43,6 +47,7 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
 	FIL fp;
+	u8 sparseShouldVerify = 0;
 	u32 btn = 0;
 	u32 prevPct = 200;
 	int res = 0;
@@ -54,14 +59,10 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 	{
 		u32 totalSectorsVer = (u32)((u64)f_size(&fp) >> (u64)9);
 
-		u32 numSectorsPerIter = 0;
-		if (totalSectorsVer > 0x200000)
-			numSectorsPerIter = 8192; //4MB Cache
-		else
-			numSectorsPerIter = 512;  //256KB Cache
+		const u32 NUM_SECTORS_PER_ITER = 8192; // 4MB Cache.
 
-		u8 *bufEm = (u8 *)calloc(numSectorsPerIter, NX_EMMC_BLOCKSIZE);
-		u8 *bufSd = (u8 *)calloc(numSectorsPerIter, NX_EMMC_BLOCKSIZE);
+		u8 *bufEm = (u8 *)EMMC_BUF_ALIGNED;
+		u8 *bufSd = (u8 *)SDXC_BUF_ALIGNED;
 
 		u32 pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFF96FF00, 0xFF155500);
@@ -69,52 +70,46 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 		u32 num = 0;
 		while (totalSectorsVer > 0)
 		{
-			num = MIN(totalSectorsVer, numSectorsPerIter);
-
-			if (!sdmmc_storage_read(storage, lba_curr, num, bufEm))
+			num = MIN(totalSectorsVer, NUM_SECTORS_PER_ITER);
+			
+			// Check every time or every 4.
+			// Every 4 protects from fake sd, sector corruption and frequent I/O corruption.
+			// Full provides all that, plus protection from extremely rare I/O corruption.
+			if ((h_cfg.verification & 2) || !(sparseShouldVerify % 4))
 			{
-				gfx_con.fntsz = 16;
-				EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom eMMC!\n\nVerification failed..\n",
-					num, lba_curr);
+				if (!sdmmc_storage_read(storage, lba_curr, num, bufEm))
+				{
+					gfx_con.fntsz = 16;
+					EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom eMMC!\n\nVerification failed..\n",
+						num, lba_curr);
+	
+					f_close(&fp);
+					return 1;
+				}
+				if (f_read(&fp, bufSd, num << 9, NULL))
+				{
+					gfx_con.fntsz = 16;
+					EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom sd card!\n\nVerification failed..\n", num, lba_curr);
+	
+					f_close(&fp);
+					return 1;
+				}
 
-				free(bufEm);
-				free(bufSd);
-				f_close(&fp);
-				return 1;
-			}
-			if (f_read(&fp, bufSd, num << 9, NULL))
-			{
-				gfx_con.fntsz = 16;
-				EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom sd card!\n\nVerification failed..\n", num, lba_curr);
-
-				free(bufEm);
-				free(bufSd);
-				f_close(&fp);
-				return 1;
-			}
-
-			switch (h_cfg.verification)
-			{
-			case 1:
-				res = memcmp32sparse((u32 *)bufEm, (u32 *)bufSd, num << 9);
-				break;
-			case 2:
-			default:
-				se_calc_sha256(&hashEm, bufEm, num << 9);
-				se_calc_sha256(&hashSd, bufSd, num << 9);
+				se_calc_sha256(hashEm, bufEm, num << 9);
+				se_calc_sha256(hashSd, bufSd, num << 9);
 				res = memcmp(hashEm, hashSd, 0x10);
-				break;
-			}
-			if (res)
-			{
-				gfx_con.fntsz = 16;
-				EPRINTFARGS("\nSD card and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", lba_curr);
 
-				free(bufEm);
-				free(bufSd);
-				f_close(&fp);
-				return 1;
+				if (res)
+				{
+					gfx_con.fntsz = 16;
+					EPRINTFARGS("\nSD and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", lba_curr);
+	
+					f_close(&fp);
+					return 1;
+				}
 			}
+
+			sparseShouldVerify++;
 
 			pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 			if (pct != prevPct)
@@ -130,19 +125,15 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 			if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
 			{
 				gfx_con.fntsz = 16;
-				WPRINTF("\n\nThe verification was cancelled!");
+				WPRINTF("\n\nVerification was cancelled!");
 				EPRINTF("\nPress any key...\n");
-				msleep(1500);
+				msleep(1000);
 
-				free(bufEm);
-				free(bufSd);
 				f_close(&fp);
 
 				return 0;
 			}
 		}
-		free(bufEm);
-		free(bufSd);
 		f_close(&fp);
 
 		tui_pbar(&gfx_con, 0, gfx_con.y, pct, 0xFFCCCCCC, 0xFF555555);
@@ -155,6 +146,17 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 		EPRINTF("\nFile not found or could not be loaded.\n\nVerification failed..\n");
 		return 1;
 	}
+}
+
+void _update_filename(char *outFilename, u32 sdPathLen, u32 numSplitParts, u32 currPartIdx)
+{
+	if (numSplitParts >= 10 && currPartIdx < 10)
+	{
+		outFilename[sdPathLen] = '0';
+		itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
+	}
+	else
+		itoa(currPartIdx, &outFilename[sdPathLen], 10);
 }
 
 static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
@@ -187,7 +189,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 	if ((sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits)) <= 8192)
 		multipartSplitSize = (1u << 30);
 	// Maximum parts fitting the free space available.
-	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (multipartSplitSize / 512);
+	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (multipartSplitSize / NX_EMMC_BLOCKSIZE);
 
 	// Check if the USER partition or the RAW eMMC fits the sd card free space.
 	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
@@ -238,28 +240,8 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 
 		outFilename[sdPathLen++] = '.';
 
-		if (!partialDumpInProgress)
-		{
-			outFilename[sdPathLen] = '0';
-			if (numSplitParts >= 10)
-			{
-				outFilename[sdPathLen + 1] = '0';
-				outFilename[sdPathLen + 2] = 0;
-			}
-			else
-				outFilename[sdPathLen + 1] = 0;
-		}
 		// Continue from where we left, if Partial Backup in progress.
-		else
-		{
-			if (numSplitParts >= 10 && currPartIdx < 10)
-			{
-				outFilename[sdPathLen] = '0';
-				itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
-			}
-			else
-				itoa(currPartIdx, &outFilename[sdPathLen], 10);
-		}
+		_update_filename(outFilename, sdPathLen, numSplitParts, partialDumpInProgress ? currPartIdx : 0);
 	}
 
 	FIL fp;
@@ -268,7 +250,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 	{
 		f_close(&fp);
 		gfx_con.fntsz = 16;
-		
+
 		WPRINTF("An existing backup has been detected!");
 		WPRINTF("Press POWER to Continue.\nPress VOL to go to the menu.\n");
 		msleep(500);
@@ -289,12 +271,9 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		return 0;
 	}
 
-	u32 numSectorsPerIter = 0;
-	if (totalSectors > 0x200000)
-		numSectorsPerIter = 8192;
-	else
-		numSectorsPerIter = 512;
-	u8 *buf = (u8 *)calloc(numSectorsPerIter, NX_EMMC_BLOCKSIZE);
+	const u32 NUM_SECTORS_PER_ITER = 8192;
+
+	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
 
 	u32 lba_curr = part->lba_start;
 	u32 lbaStartPart = part->lba_start;
@@ -333,18 +312,11 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 				{
 					EPRINTF("\nPress any key and try again...\n");
 
-					free(buf);
 					return 0;
 				}
 			}
 
-			if (numSplitParts >= 10 && currPartIdx < 10)
-			{
-				outFilename[sdPathLen] = '0';
-				itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
-			}
-			else
-				itoa(currPartIdx, &outFilename[sdPathLen], 10);
+			_update_filename(outFilename, sdPathLen, numSplitParts, currPartIdx);
 
 			// Always create partial.idx before next part, in case a fatal error occurs.
 			if (isSmallSdCard)
@@ -360,7 +332,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 					gfx_con.fntsz = 16;
 					EPRINTF("\nError creating partial.idx file.\n");
 
-					free(buf);
 					return 0;
 				}
 
@@ -374,7 +345,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 						4. Select the SAME option again to continue.\n");
 					gfx_con.fntsz = 16;
 
-					free(buf);
 					return 1;
 				}
 			}
@@ -389,7 +359,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 				gfx_con.fntsz = 16;
 				EPRINTFARGS("Error (%d) creating file %s.\n", res, outFilename);
 
-				free(buf);
 				return 0;
 			}
 			bytesWritten = 0;
@@ -400,7 +369,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		}
 
 		retryCount = 0;
-		num = MIN(totalSectors, numSectorsPerIter);
+		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 		while (!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
 			EPRINTFARGS("Error reading %d blocks @ LBA %08X,\nfrom eMMC (try %d), retrying...",
@@ -414,7 +383,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 					num, lba_curr);
 				EPRINTF("\nPress any key and try again...\n");
 
-				free(buf);
 				f_close(&fp);
 				f_unlink(outFilename);
 
@@ -428,7 +396,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 			EPRINTFARGS("\nFatal error (%d) when writing to SD Card", res);
 			EPRINTF("\nPress any key and try again...\n");
 
-			free(buf);
 			f_close(&fp);
 			f_unlink(outFilename);
 
@@ -460,7 +427,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 			EPRINTF("\nPress any key...\n");
 			msleep(1500);
 
-			free(buf);
 			f_close(&fp);
 			f_unlink(outFilename);
 
@@ -470,7 +436,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
 
 	// Backup operation ended successfully.
-	free(buf);
 	f_close(&fp);
 
 	if (h_cfg.verification)
@@ -664,13 +629,9 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 	else
 		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", ((u32)((u64)f_size(&fp) >> (u64)9)) >> SECTORS_TO_MIB_COEFF);
 
-	u32 numSectorsPerIter = 0;
-	if (totalSectors > 0x200000)
-		numSectorsPerIter = 8192; //4MB Cache
-	else
-		numSectorsPerIter = 512;  //256KB Cache
+	const u32 NUM_SECTORS_PER_ITER = 8192; // 4MB Cache.
 
-	u8 *buf = (u8 *)calloc(numSectorsPerIter, NX_EMMC_BLOCKSIZE);
+	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
 
 	u32 lba_curr = part->lba_start;
 	u32 bytesWritten = 0;
@@ -682,7 +643,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 	while (totalSectors > 0)
 	{
 		retryCount = 0;
-		num = MIN(totalSectors, numSectorsPerIter);
+		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
 		res = f_read(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
 		if (res)
@@ -691,7 +652,6 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 			EPRINTFARGS("\nFatal error (%d) when reading from SD Card", res);
 			EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again now...\n");
 
-			free(buf);
 			f_close(&fp);
 			return 0;
 		}
@@ -708,7 +668,6 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 					num, lba_curr);
 				EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again...\n");
 
-				free(buf);
 				f_close(&fp);
 				return 0;
 			}
@@ -727,7 +686,6 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 	tui_pbar(&gfx_con, 0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
 
 	// Restore operation ended successfully.
-	free(buf);
 	f_close(&fp);
 
 	if (h_cfg.verification)
@@ -769,13 +727,13 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 	}
 	gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
 
-	u8 value = 10;
-	while (value > 0)
+	u8 failsafe_wait = 10;
+	while (failsafe_wait > 0)
 	{
 		gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
-		gfx_printf(&gfx_con, "%kWait... (%ds)    %k", 0xFF888888, value, 0xFFCCCCCC);
+		gfx_printf(&gfx_con, "%kWait... (%ds)    %k", 0xFF888888, failsafe_wait, 0xFFCCCCCC);
 		msleep(1000);
-		value--;
+		failsafe_wait--;
 	}
 	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 

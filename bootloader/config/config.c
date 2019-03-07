@@ -36,7 +36,7 @@ void set_default_configuration()
 	h_cfg.autoboot = 0;
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait = 3;
-	h_cfg.verification = 2;
+	h_cfg.verification = 1;
 	h_cfg.se_keygen_done = 0;
 	h_cfg.sbar_time_keeping = 0;
 	h_cfg.backlight = 100;
@@ -453,9 +453,9 @@ void config_verification()
 
 	ments[1].type = MENT_CHGLINE;
 
-	memcpy(vr_text,       " Disable (Fastest)", 19);
-	memcpy(vr_text + 64,  " Sparse  (Fast)", 16);
-	memcpy(vr_text + 128, " Full    (Slow)", 16);
+	memcpy(vr_text,       " Disable (Fastest - Unsafe)", 28);
+	memcpy(vr_text + 64,  " Sparse  (Fast - Safe)", 23);
+	memcpy(vr_text + 128, " Full    (Slow - Safe)", 23);
 
 	for (u32 i = 0; i < 3; i++)
 	{
