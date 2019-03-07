@@ -46,9 +46,6 @@ extern void sd_unmount();
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-#pragma GCC push_options
-#pragma GCC optimize ("Os")
-
 void print_fuseinfo()
 {
 	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
@@ -683,5 +680,3 @@ void bootrom_ipatches_info()
 		btn_wait();
 	}
 }
-
-#pragma GCC pop_options

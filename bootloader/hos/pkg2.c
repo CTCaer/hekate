@@ -26,9 +26,6 @@
 
 #include "../gfx/gfx.h"
 
-#pragma GCC push_options
-#pragma GCC optimize ("Os")
-
 /*#include "util.h"
 #define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DEBUG_PRINTING*/
@@ -980,5 +977,3 @@ DPRINTF("INI1 encrypted\n");
 	memset(hdr->ctr, 0 , 0x10);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 }
-
-#pragma GCC pop_options

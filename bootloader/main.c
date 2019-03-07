@@ -383,7 +383,10 @@ int launch_payload(char *path, bool update)
 		if (!update)
 			(*ext_payload_ptr)();
 		else
+		{
+			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 			(*update_ptr)();
+		}
 	}
 
 	return 1;
@@ -419,7 +422,7 @@ void launch_tools(u8 type)
 		if (!type)
 			memcpy(dir, "bootloader/payloads", 20);
 		else
-			memcpy(dir, "bootloader/libtools", 20);
+			memcpy(dir, "bootloader/modules", 19);
 
 		filelist = dirlist(dir, NULL, false);
 
@@ -464,7 +467,7 @@ void launch_tools(u8 type)
 			}
 		}
 		else
-			EPRINTF("No payloads or libraries found.");
+			EPRINTF("No payloads or modules found.");
 
 		free(ments);
 		free(filelist);
@@ -478,9 +481,6 @@ void launch_tools(u8 type)
 
 	if (file_sec)
 	{
-#ifdef MENU_LOGO_ENABLE
-		free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 		memcpy(dir + strlen(dir), "/", 2);
 		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
 
@@ -494,10 +494,6 @@ void launch_tools(u8 type)
 		}
 		else
 			ianos_loader(true, dir, DRAM_LIB, NULL);
-#ifdef MENU_LOGO_ENABLE
-		Kc_MENU_LOGO = (u8 *)malloc(0x6000);
-		blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 	}
 
 out:
@@ -508,7 +504,7 @@ out:
 }
 
 void launch_tools_payload() { launch_tools(0); }
-void launch_tools_library() { launch_tools(1); }
+void launch_tools_module() { launch_tools(1); }
 
 void ini_list_launcher()
 {
@@ -592,7 +588,7 @@ void ini_list_launcher()
 				}
 			}
 			else
-				EPRINTF("No ini configs found.");
+				EPRINTF("No extra configs found.");
 			free(ments);
 			ini_free(&ini_list_sections);
 		}
@@ -602,10 +598,6 @@ void ini_list_launcher()
 
 	if (!cfg_sec)
 		goto out;
-
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 
 	if (payload_path)
 	{
@@ -621,11 +613,6 @@ void ini_list_launcher()
 		EPRINTF("Failed to launch firmware.");
 		btn_wait();
 	}
-
-#ifdef MENU_LOGO_ENABLE
-	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
-	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 
 out:
 	ini_free_section(cfg_sec);
@@ -683,7 +670,7 @@ void launch_firmware()
 			if (i < 6)
 			{
 				ments[i].type = MENT_CAPTION;
-				ments[i].caption = "No main configurations found...";
+				ments[i].caption = "No main configs found...";
 				ments[i].color = 0xFFFFDD00;
 				i++;
 			}
@@ -742,9 +729,6 @@ void launch_firmware()
 		if (!(btn & BTN_POWER))
 			goto out;
 	}
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 
 	if (payload_path)
 	{
@@ -757,11 +741,6 @@ void launch_firmware()
 	}
 	else if (!hos_launch(cfg_sec))
 		EPRINTF("Failed to launch firmware.");
-
-#ifdef MENU_LOGO_ENABLE
-	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
-	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 
 out:
 	ini_free_section(cfg_sec);
@@ -997,10 +976,6 @@ void auto_launch_firmware()
 	if (h_cfg.autoboot_list)
 		ini_free(&ini_list_sections);
 
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-
 	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
 		display_backlight_brightness(h_cfg.backlight, 0);
 	else if (h_cfg.bootwait)
@@ -1023,11 +998,6 @@ void auto_launch_firmware()
 	}
 	else
 		hos_launch(cfg_sec);
-
-#ifdef MENU_LOGO_ENABLE
-	Kc_MENU_LOGO = (u8 *)malloc(ALIGN(SZ_MENU_LOGO, 0x10));
-	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 
 out:
 	ini_free(&ini_sections);
@@ -1244,9 +1214,9 @@ void ipl_main()
 	gfx_init_ctxt(&gfx_ctxt, fb, 720, 1280, 720);
 
 #ifdef MENU_LOGO_ENABLE
-	Kc_MENU_LOGO = (u8 *)malloc(0x6000);
+	Kc_MENU_LOGO = (u8 *)malloc(ALIGN(SZ_MENU_LOGO, 0x1000));
 	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
+#endif
 
 	gfx_con_init(&gfx_con, &gfx_ctxt);
 

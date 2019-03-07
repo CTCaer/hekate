@@ -23,10 +23,8 @@
 
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
-
 #include "../../gfx/gfx.h"
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
+
 #define EFSPRINTF(text, ...) print_error(); gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);
 //#define EFSPRINTF(...)
 

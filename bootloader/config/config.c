@@ -372,9 +372,6 @@ out2:;
 		return;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("Os")
-
 void config_bootdelay()
 {
 	gfx_clear_grey(&gfx_ctxt, 0x1B);
@@ -652,5 +649,3 @@ void config_nogc()
 		return;
 	btn_wait();
 }
-
-#pragma GCC pop_options
