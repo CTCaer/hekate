@@ -279,6 +279,7 @@ void check_power_off_from_hos()
 // This is a safe and unused DRAM region for our payloads.
 // IPL_LOAD_ADDR is defined in makefile.
 #define EXT_PAYLOAD_ADDR   0xC03C0000
+#define RELOC_META_OFF     0x7C
 #define PATCHED_RELOC_SZ   0x94
 #define RCM_PAYLOAD_ADDR   (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
 #define PAYLOAD_ENTRY      0x40010000
@@ -312,9 +313,25 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 #define BOOTLOADER_UPDATED_MAGIC      0x424F4F54 // "BOOT".
 #define BOOTLOADER_UPDATED_MAGIC_ADDR 0x4003E000
 
+bool is_ipl_updated(void *buf)
+{
+	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));	
+
+	if (update_ft->magic == ipl_ver.magic)
+	{
+		if (byte_swap_32(update_ft->version) <= byte_swap_32(ipl_ver.version))
+			return true;
+		return false;
+		
+	}
+	else
+		return true;
+}
+
 int launch_payload(char *path, bool update)
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
+	if (!update)
+		gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
 	if (!path)
 		return 1;
@@ -350,66 +367,17 @@ int launch_payload(char *path, bool update)
 		f_close(&fp);
 		free(path);
 
-		// Check for updated version.
-		if (update)
-		{
-			u8 *update_ft = calloc(1, 6);
+		if (update && is_ipl_updated(buf))
+			return 1;
 
-			bool update_sept = true;
-			if (!f_open(&fp, "sept/payload.bin", FA_READ | FA_WRITE))
-			{
-				memset(update_ft, 0, 6);
-				f_lseek(&fp, f_size(&fp) - 6);
-				f_read(&fp, update_ft, 6, NULL);
-				f_close(&fp);
-				update_ft[4] -= '0';
-				update_ft[5] -= '0';
-				if (*(u32 *)update_ft == 0x43544349)
-				{
-					if (update_ft[4] == BLVERSIONMJ && update_ft[5] == BLVERSIONMN)
-						update_sept = false;
-				}
-				else
-					update_sept = false;
-			}
-
-			if (update_sept)
-			{
-				if (!f_open(&fp, "sept/payload.bin", FA_CREATE_ALWAYS | FA_WRITE))
-				{
-					f_write(&fp, buf, size, NULL);
-					f_close(&fp);
-				}
-			}	
-
-			memcpy(update_ft, buf + size - 6, 6);
-			update_ft[4] -= '0';
-			update_ft[5] -= '0';
-			if (*(u32 *)update_ft == 0x43544349)
-			{
-				if (update_ft[4] < BLVERSIONMJ || (update_ft[4] == BLVERSIONMJ && update_ft[5] <= BLVERSIONMN))
-				{
-					free(update_ft);
-					return 1;
-				}
-				*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = BOOTLOADER_UPDATED_MAGIC;
-			}
-			else
-			{
-				free(update_ft);
-				return 1;
-			}
-				
-			free(update_ft);
-		}
 		sd_unmount();
 
 		if (size < 0x30000)
 		{
-			if (!update)
-				reloc_patcher(PAYLOAD_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
+			if (update)
+				memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
 			else
-				memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), (u8 *)(IPL_LOAD_ADDR + PATCHED_RELOC_SZ), sizeof(boot_cfg_t));
+				reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
 			reconfig_hw_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 		}
@@ -433,23 +401,12 @@ int launch_payload(char *path, bool update)
 
 void auto_launch_update()
 {
-	FIL fp;
-
-	if (*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR == BOOTLOADER_UPDATED_MAGIC)
-		*(vu32 *)BOOTLOADER_UPDATED_MAGIC_ADDR = 0;
-	else
+	if (EMC(EMC_SCRATCH0) & EMC_HEKA_UPD)
+		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
+	else if (sd_mount())
 	{
-		if (sd_mount())
-		{
-			if (f_open(&fp, "bootloader/update.bin", FA_READ))
-				return;
-			else
-			{
-				f_close(&fp);
-				launch_payload("bootloader/update.bin", true);
-			}
-
-		}
+		if (!f_stat("bootloader/update.bin", NULL))
+			launch_payload("bootloader/update.bin", true);
 	}
 }
 
@@ -825,7 +782,7 @@ out:
 
 void auto_launch_firmware()
 {
-	if (!(b_cfg->boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
 		auto_launch_update();
 		gfx_con.mute = true;
@@ -856,10 +813,8 @@ void auto_launch_firmware()
 
 	if (sd_mount())
 	{
-		if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_READ))
+		if (f_stat("bootloader/hekate_ipl.ini", NULL))
 			create_config_entry();
-		else
-			f_close(&fp);
 
 		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{

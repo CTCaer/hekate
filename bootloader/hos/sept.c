@@ -35,6 +35,7 @@ extern gfx_con_t gfx_con;
 #define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
 #define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
 
+#define RELOC_META_OFF   0x7C
 #define PATCHED_RELOC_SZ 0x94
 
 #define WB_RST_ADDR 0x40010ED0
@@ -55,7 +56,6 @@ u8 warmboot_reboot[] = {
 #define SEPT_PRI_ADDR   0x4003F000
 
 #define SEPT_PK1T_ADDR  0xC0400000
-#define SEPT_PK1T_STACK 0x40008000
 #define SEPT_TCSZ_ADDR  (SEPT_PK1T_ADDR - 0x4)
 #define SEPT_STG1_ADDR  (SEPT_PK1T_ADDR + 0x2E100)
 #define SEPT_STG2_ADDR  (SEPT_PK1T_ADDR + 0x60E0)
@@ -63,13 +63,24 @@ u8 warmboot_reboot[] = {
 
 extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
+extern const volatile ipl_ver_meta_t ipl_ver;
+
 extern void *sd_file_read(char *path);
 extern void sd_mount();
 extern void sd_unmount();
+extern bool is_ipl_updated(void *buf);
 extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
 
 void check_sept()
 {
+	// Check if non-hekate payload is used for sept and restore it.
+	if (h_cfg.sept_run && !f_stat("sept/payload.bak", NULL))
+	{
+		f_unlink("sept/payload.bin");
+		f_rename("sept/payload.bak", "sept/payload.bin");
+		return;
+	}
+
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
 
 	sdmmc_storage_t storage;
@@ -133,25 +144,41 @@ int reboot_to_sept(const u8 *tsec_fw)
 	}
 	f_close(&fp);
 
-	// Save auto boot config to payload, if any.
-	boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
-	memcpy(tmp_cfg, &b_cfg, sizeof(boot_cfg_t));
+	b_cfg.boot_cfg |= (BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_SEPT_RUN);
 
-	tmp_cfg->boot_cfg |= (BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_SEPT_RUN);
-
-	if (f_open(&fp, "sept/payload.bin", FA_READ | FA_WRITE))
-		goto error;
-
-	u32 magic;
-	f_lseek(&fp, f_size(&fp) - 6);
-	f_read(&fp, &magic, 4, NULL);
-	if (magic == 0x43544349)
+	bool update_sept_payload = true;
+	if (!f_open(&fp, "sept/payload.bin", FA_READ | FA_WRITE))
 	{
-		f_lseek(&fp, PATCHED_RELOC_SZ);
-		f_write(&fp, tmp_cfg, sizeof(boot_cfg_t), NULL);
+		ipl_ver_meta_t tmp_ver;
+		f_lseek(&fp, PATCHED_RELOC_SZ + sizeof(boot_cfg_t));
+		f_read(&fp, &tmp_ver, sizeof(ipl_ver_meta_t), NULL);
+
+		if (tmp_ver.magic == ipl_ver.magic)
+		{
+			if (tmp_ver.version == ipl_ver.version)
+			{
+				// Save auto boot config to sept payload, if any.
+				boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
+				memcpy(tmp_cfg, &b_cfg, sizeof(boot_cfg_t));
+				f_lseek(&fp, PATCHED_RELOC_SZ);
+				f_write(&fp, tmp_cfg, sizeof(boot_cfg_t), NULL);
+				f_close(&fp);
+				update_sept_payload = false;
+			}
+		}
+		else
+			f_rename("sept/payload.bin", "sept/payload.bak"); // Backup foreign payload.
+
+		f_close(&fp);
 	}
-	
-	f_close(&fp);
+
+	if (update_sept_payload)
+	{
+		volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
+		f_open(&fp, "sept/payload.bin", FA_WRITE | FA_CREATE_ALWAYS);
+		f_write(&fp, (u8 *)reloc->start, reloc->end - reloc->start, NULL);
+		f_close(&fp);
+	}
 
 	sd_unmount();
 
@@ -171,8 +198,6 @@ int reboot_to_sept(const u8 *tsec_fw)
 	display_end();
 
 	(*sept)();
-
-	return 1;
 
 error:
 	EPRINTF("Failed to run sept\n");

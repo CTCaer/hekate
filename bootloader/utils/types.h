@@ -76,4 +76,12 @@ typedef struct __attribute__((__packed__)) _ipl_ver_meta_t
 	u16 rsvd1;
 } ipl_ver_meta_t;
 
+typedef struct __attribute__((__packed__)) _reloc_meta_t
+{
+	u32 start;
+	u32 stack;
+	u32 end;
+	u32 ep;
+} reloc_meta_t;
+
 #endif

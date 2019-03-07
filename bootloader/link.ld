@@ -6,6 +6,7 @@ SECTIONS {
 	.text : {
 		*(.text._start);
 		*(._boot_cfg);
+		*(._ipl_version);
 		*(.text*);
 	}
 	.data : {
