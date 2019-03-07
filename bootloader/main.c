@@ -695,11 +695,8 @@ out:
 
 void auto_launch_firmware()
 {
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
-	{
+	if (!h_cfg.sept_run)
 		auto_launch_update();
-		gfx_con.mute = true;
-	}
 
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
@@ -718,6 +715,9 @@ void auto_launch_firmware()
 	struct _bmp_data bmpData;
 	bool bootlogoFound = false;
 	char *bootlogoCustomEntry = NULL;
+
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
+		gfx_con.mute = true;
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
@@ -843,13 +843,8 @@ void auto_launch_firmware()
 	else
 		goto out;
 
-	payload_path = ini_check_payload_section(cfg_sec);
-
-	if (!payload_path)
-		check_sept();
-
 	u8 *bitmap = NULL;
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
 	{
 		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry);
@@ -915,19 +910,21 @@ void auto_launch_firmware()
 	if (h_cfg.autoboot_list)
 		ini_free(&ini_list_sections);
 
-	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
+	if (h_cfg.sept_run)
 		display_backlight_brightness(h_cfg.backlight, 0);
 	else if (h_cfg.bootwait)
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	if (!h_cfg.sept_run)
 	{
 		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
 
 		if (btn & BTN_VOL_DOWN)
 			goto out;
 	}
+
+	payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
 	{
@@ -936,7 +933,10 @@ void auto_launch_firmware()
 			free(payload_path);
 	}
 	else
+	{
+		check_sept();
 		hos_launch(cfg_sec);
+	}
 
 out:
 	ini_free(&ini_sections);

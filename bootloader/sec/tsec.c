@@ -29,8 +29,7 @@
 #include "../utils/util.h"
 #include "../hos/hos.h"
 
-/* #include "../gfx/gfx.h"
-extern gfx_con_t gfx_con; */
+// #include "../gfx/gfx.h"
 
 static int _tsec_dma_wait_idle()
 {
