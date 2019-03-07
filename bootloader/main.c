@@ -35,7 +35,6 @@
 #include "rtc/max77620-rtc.h"
 #include "soc/hw_init.h"
 #include "soc/i2c.h"
-#include "soc/pmc.h"
 #include "soc/t210.h"
 #include "soc/uart.h"
 #include "storage/sdmmc.h"
@@ -189,56 +188,6 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 
 	if (init_done)
 		sdmmc_storage_end(&storage2);
-}
-
-void panic(u32 val)
-{
-	// Set panic code.
-	PMC(APBDEV_PMC_SCRATCH200) = val;
-	//PMC(APBDEV_PMC_CRYPTO_OP) = 1; // Disable SE.
-	TMR(TIMER_WDT4_UNLOCK_PATTERN) = TIMER_MAGIC_PTRN;
-	TMR(TIMER_TMR9_TMR_PTV) = TIMER_EN | TIMER_PER_EN;
-	TMR(TIMER_WDT4_CONFIG)  = TIMER_SRC(9) | TIMER_PER(1) | TIMER_PMCRESET_EN;
-	TMR(TIMER_WDT4_COMMAND) = TIMER_START_CNT;
-	while (1)
-		;
-}
-
-void reboot_normal()
-{
-	sd_unmount();
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-	display_end();
-	panic(0x21); // Bypass fuse programming in package1.
-}
-
-void reboot_rcm()
-{
-	sd_unmount();
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-	display_end();
-	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
-	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
-	while (true)
-		usleep(1);
-}
-
-void power_off()
-{
-	sd_unmount();
-
-	// Stop the alarm, in case we injected and powered off too fast.
-	max77620_rtc_stop_alarm();
-
-#ifdef MENU_LOGO_ENABLE
-	free(Kc_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
-	//TODO: we should probably make sure all regulators are powered off properly.
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
 
 void check_power_off_from_hos()
