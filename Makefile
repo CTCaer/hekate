@@ -48,7 +48,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 # Horizon.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	nx_emmc.o \
-	hos.o hos_config.o pkg1.o pkg2.o secmon_exo.o sept.o \
+	hos.o hos_config.o pkg1.o pkg2.o fss.o secmon_exo.o sept.o \
 )
 
 # Libraries.

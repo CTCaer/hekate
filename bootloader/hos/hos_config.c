@@ -19,6 +19,7 @@
 
 #include "hos.h"
 #include "hos_config.h"
+#include "fss.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../utils/dirlist.h"
@@ -185,6 +186,11 @@ static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_fss(launch_ctxt_t *ctxt, const char *value)
+{
+	return parse_fss(ctxt, value);
+}
+
 typedef struct _cfg_handler_t
 {
 	const char *key;
@@ -200,6 +206,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "fullsvcperm", _config_svcperm },
 	{ "debugmode", _config_debugmode },
 	{ "atmosphere", _config_atmosphere },
+	{ "fss0", _config_fss },
 	{ NULL, NULL },
 };
 
