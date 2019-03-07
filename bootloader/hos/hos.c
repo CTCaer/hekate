@@ -610,7 +610,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Config Exosphère if booting full Atmosphère.
 	if (ctxt.atmosphere && ctxt.secmon)
-		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, (void *)ctxt.pkg1_id->warmboot_base, ctxt.pkg1, ctxt.debugmode);
+		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, (void *)ctxt.pkg1_id->warmboot_base, ctxt.pkg1);
 
 	// Unmount SD card.
 	sd_unmount();

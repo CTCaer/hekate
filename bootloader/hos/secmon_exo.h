@@ -19,6 +19,6 @@
 
 #include "../utils/types.h"
 
-void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool debug);
+void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1);
 
 #endif

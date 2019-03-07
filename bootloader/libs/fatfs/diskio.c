@@ -11,6 +11,8 @@
 #include "diskio.h"		/* FatFs lower layer API */
 #include "../../storage/sdmmc.h"
 
+#define SDMMC_UPPER_BUFFER 0xB8000000
+
 extern sdmmc_storage_t sd_storage;
 
 DSTATUS disk_status (
@@ -36,7 +38,7 @@ DRESULT disk_read (
 {
 	if ((u32)buff >= 0x90000000)
 		return sdmmc_storage_read(&sd_storage, sector, count, buff) ? RES_OK : RES_ERROR;
-	u8 *buf = (u8 *)0x98000000; //TODO: define this somewhere.
+	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER; //TODO: define this somewhere.
 	if (sdmmc_storage_read(&sd_storage, sector, count, buf))
 	{
 		memcpy(buff, buf, 512 * count);
@@ -54,7 +56,7 @@ DRESULT disk_write (
 {
 	if ((u32)buff >= 0x90000000)
 		return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
-	u8 *buf = (u8 *)0x98000000; //TODO: define this somewhere.
+	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER; //TODO: define this somewhere.
 	memcpy(buf, buff, 512 * count);
 	if (sdmmc_storage_write(&sd_storage, sector, count, buf))
 		return RES_OK;

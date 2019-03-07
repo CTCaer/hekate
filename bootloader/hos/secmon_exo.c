@@ -18,6 +18,7 @@
 
 #include "hos.h"
 #include "../mem/heap.h"
+#include "../soc/fuse.h"
 #include "../storage/sdmmc.h"
 #include "../utils/types.h"
 
@@ -47,7 +48,7 @@ typedef struct _atm_meta_t
 #define  EXO_FLAG_DBG_PRIV  (1 << 1)
 #define  EXO_FLAG_DBG_USER  (1 << 2)
 
-void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool debug)
+void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1)
 {
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;
@@ -74,8 +75,8 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool d
 	if (kb == KB_FIRMWARE_VERSION_620)
 		exoFlags |= EXO_FLAG_620_KGN;
 
-	if (debug)
-		exoFlags |= EXO_FLAG_DBG_PRIV;
+	// To avoid problems, make private debug mode always on.
+	exoFlags |= EXO_FLAG_DBG_PRIV;
 
 	// Set mailbox values.
 	exo_cfg_depr->magic = EXO_MAGIC_VAL;
@@ -87,6 +88,7 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool d
 	exo_cfg_depr->flags = exoFlags;
 	exo_cfg->flags = exoFlags;
 
+	// If warmboot is lp0fw, add in RSA modulus.
 	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(warmboot + ATM_WB_HEADER_OFF);
 
 	if (wb_cfg->magic == ATM_WB_MAGIC)
@@ -104,8 +106,11 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool d
 		sdmmc_storage_read(&storage, 1, 1, rsa_mod);
 		sdmmc_storage_end(&storage);
 
-		// Patch AutoRCM.
-		rsa_mod[0x10] = 0xF7;
+		// Patch AutoRCM out.
+		if ((fuse_read_odm(4) & 3) != 3)
+			rsa_mod[0x10] = 0xF7;
+		else
+			rsa_mod[0x10] = 0x37;
 
 		memcpy(warmboot + 0x10, rsa_mod + 0x10, 0x100);
 	}

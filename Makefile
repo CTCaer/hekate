@@ -4,6 +4,8 @@ endif
 
 include $(DEVKITARM)/base_rules
 
+################################################################################
+
 IPL_LOAD_ADDR := 0x40008000
 IPL_MAGIC := 0x43544349 #"ICTC"
 BLVERSION_MAJOR := 4
@@ -12,62 +14,51 @@ BLVERSION_HOTFX := 0
 
 BL_RESERVED := 0
 
+################################################################################
+
 TARGET := hekate
-BUILD := build
-OUTPUT := output
+BUILDDIR := build
+OUTPUTDIR := output
 SOURCEDIR = bootloader
 VPATH = $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
 
-OBJS = $(addprefix $(BUILD)/$(TARGET)/, \
+# Main and graphics.
+OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	start.o \
-	main.o \
-	fe_emmc_tools.o \
-	fe_info.o \
-	fe_tools.o \
-	config.o \
-	btn.o \
-	clock.o \
-	cluster.o \
-	fuse.o \
-	gpio.o \
-	heap.o \
-	hos.o \
-	hos_config.o \
-	secmon_exo.o \
-	sept.o \
-	i2c.o \
-	kfuse.o \
-	bq24193.o \
-	max7762x.o \
-	max17050.o \
-	mc.o \
-	nx_emmc.o \
-	sdmmc.o \
-	sdmmc_driver.o \
-	sdram.o \
-	tui.o \
-	util.o \
-	di.o \
-	gfx.o \
-	pinmux.o \
-	pkg1.o \
-	pkg2.o \
-	se.o \
-	tsec.o \
-	uart.o \
-	hw_init.o \
-	dirlist.o \
-	ini.o \
-	ianos.o \
-	smmu.o \
-	max77620-rtc.o \
+	main.o heap.o \
+	gfx.o tui.o \
+	fe_emmc_tools.o fe_info.o fe_tools.o \
 )
 
-OBJS += $(addprefix $(BUILD)/$(TARGET)/, \
+# Hardware.
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	clock.o cluster.o di.o gpio.o i2c.o mc.o sdram.o pinmux.o se.o smmu.o tsec.o uart.o \
+	fuse.o kfuse.o \
+	sdmmc.o sdmmc_driver.o \
+	bq24193.o max17050.o max7762x.o max77620-rtc.o \
+	hw_init.o \
+)
+
+# Utilities.
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	btn.o dirlist.o ianos.o util.o \
+	config.o ini.o \
+)
+
+# Horizon.
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
+	nx_emmc.o \
+	hos.o hos_config.o pkg1.o pkg2.o secmon_exo.o sept.o \
+)
+
+# Libraries.
+OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	lz.o blz.o \
 	diskio.o ff.o ffunicode.o ffsystem.o \
 	elfload.o elfreloc_arm.o \
 )
+
+################################################################################
 
 CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_RESERVED=$(BL_RESERVED)
@@ -84,33 +75,35 @@ LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defs
 
 MODULEDIRS := $(wildcard modules/*)
 
+################################################################################
+
 .PHONY: all clean $(MODULEDIRS)
 
 all: $(TARGET).bin
 	@echo -n "Payload size is "
-	@wc -c < $(OUTPUT)/$(TARGET).bin
+	@wc -c < $(OUTPUTDIR)/$(TARGET).bin
 	@echo "Max size is 126296 Bytes."
 
 clean:
 	@rm -rf $(OBJS)
-	@rm -rf $(BUILD)
-	@rm -rf $(OUTPUT)
+	@rm -rf $(BUILDDIR)
+	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-$(TARGET).bin: $(BUILD)/$(TARGET)/$(TARGET).elf $(MODULEDIRS)
-	$(OBJCOPY) -S -O binary $< $(OUTPUT)/$@
-	@printf ICTC$(BLVERSION_MAJOR)$(BLVERSION_MINOR) >> $(OUTPUT)/$@
+$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS)
+	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
+	@printf ICTC$(BLVERSION_MAJOR)$(BLVERSION_MINOR) >> $(OUTPUTDIR)/$@
 
-$(BUILD)/$(TARGET)/$(TARGET).elf: $(OBJS)
+$(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 	$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
 
-$(BUILD)/$(TARGET)/%.o: %.c
+$(BUILDDIR)/$(TARGET)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/$(TARGET)/%.o: %.S
-	@mkdir -p "$(BUILD)"
-	@mkdir -p "$(BUILD)/$(TARGET)"
-	@mkdir -p "$(OUTPUT)"
+$(BUILDDIR)/$(TARGET)/%.o: %.S
+	@mkdir -p "$(BUILDDIR)"
+	@mkdir -p "$(BUILDDIR)/$(TARGET)"
+	@mkdir -p "$(OUTPUTDIR)"
 	$(CC) $(CFLAGS) -c $< -o $@

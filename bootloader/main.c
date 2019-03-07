@@ -116,10 +116,12 @@ void *sd_file_read(char *path)
 	u8 *ptr = buf;
 	while (size > 0)
 	{
-		u32 rsize = MIN(size, 512 * 512);
+		u32 rsize = MIN(size, 512 * 8192);
 		if (f_read(&fp, ptr, rsize, NULL) != FR_OK)
 		{
 			free(buf);
+			f_close(&fp);
+
 			return NULL;
 		}
 
@@ -259,7 +261,7 @@ void check_power_off_from_hos()
 
 			display_backlight_brightness(10, 5000);
 			display_backlight_brightness(100, 25000);
-			usleep(600000);
+			msleep(600);
 			display_backlight_brightness(0, 20000);
 		}
 		power_off();
@@ -759,7 +761,6 @@ void auto_launch_firmware()
 
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
-	FIL fp;
 	u32 btn = 0;
 
 	struct _bmp_data
@@ -852,7 +853,6 @@ void auto_launch_firmware()
 
 			if (h_cfg.autoboot_list)
 			{
-				ini_free(&ini_sections);
 				ini_free_section(cfg_sec);
 				boot_entry_id = 1;
 				bootlogoCustomEntry = NULL;
@@ -909,16 +909,13 @@ void auto_launch_firmware()
 	u8 *bitmap = NULL;
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
-		if (bootlogoCustomEntry != NULL) // Check if user set custom logo path at the boot entry.
-		{
+		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry);
-			if (bitmap == NULL) // Custom entry bootlogo not found, trying default custom one.
-				bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp");
-		}
-		else // User has not set a custom logo path.
+
+		if (!bitmap) // Custom entry bootlogo not found, trying default custom one.
 			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp");
 
-		if (bitmap != NULL)
+		if (bitmap)
 		{
 			// Get values manually to avoid unaligned access.
 			bmpData.size = bitmap[2] | bitmap[3] << 8 |
@@ -932,7 +929,7 @@ void auto_launch_firmware()
 			// Sanity check.
 			if (bitmap[0] == 'B' &&
 				bitmap[1] == 'M' &&
-				bitmap[28] == 32 && //
+				bitmap[28] == 32 && // Only 32 bit BMPs allowed.
 				bmpData.size_x <= 720 &&
 				bmpData.size_y <= 1280)
 			{
@@ -1183,6 +1180,10 @@ menu_t menu_top = {
 	"hekate - CTCaer mod v4.8", 0, 0
 };
 
+#define IPL_STACK_TOP  0x90010000
+#define IPL_HEAP_START 0x90020000
+#define IPL_HEAP_END   0xB8000000
+
 extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
@@ -1191,13 +1192,13 @@ void ipl_main()
 	config_hw();
 
 	//Pivot the stack so we have enough space.
-	pivot_stack(0x90010000);
+	pivot_stack(IPL_STACK_TOP);
 
 	//Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
-	heap_init(0x90020000);
+	heap_init(IPL_HEAP_START);
 
 #ifdef DEBUG_UART_PORT
-	uart_send(DEBUG_UART_PORT, (u8 *)"Hekate: Hello!\r\n", 18);
+	uart_send(DEBUG_UART_PORT, (u8 *)"Hekate: Hello!\r\n", 16);
 	uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 

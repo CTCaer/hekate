@@ -125,36 +125,6 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
-static int _config_svcperm(launch_ctxt_t *ctxt, const char *value)
-{
-	if (*value == '1')
-	{
-		DPRINTF("Disabled SVC verification\n");
-		ctxt->svcperm = true;
-	}
-	return 1;
-}
-
-static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
-{
-	if (*value == '1')
-	{
-		DPRINTF("Enabled Debug mode\n");
-		ctxt->debugmode = true;
-	}
-	return 1;
-}
-
-static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
-{
-	if (*value == '1')
-	{
-		DPRINTF("Enabled atmosphere patching\n");
-		ctxt->atmosphere = true;
-	}
-	return 1;
-}
-
 int config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 {
 	if (value == NULL)
@@ -181,6 +151,36 @@ int config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 		ctxt->kip1_patches[oldSize++] = ',';
 		memcpy(&ctxt->kip1_patches[oldSize], value, valueLen);
 		ctxt->kip1_patches[oldSize + valueLen] = 0;
+	}
+	return 1;
+}
+
+static int _config_svcperm(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Disabled SVC verification\n");
+		ctxt->svcperm = true;
+	}
+	return 1;
+}
+
+static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Enabled Debug mode\n");
+		ctxt->debugmode = true;
+	}
+	return 1;
+}
+
+static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Enabled atmosphere patching\n");
+		ctxt->atmosphere = true;
 	}
 	return 1;
 }

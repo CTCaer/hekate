@@ -270,15 +270,15 @@ int se_calc_sha256(void *dst, const void *src, u32 src_size)
 	int res;
 	// Setup config for SHA256, size = BITS(src_size).
 	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_SHA256) | SE_CONFIG_ENC_ALG(ALG_SHA) | SE_CONFIG_DST(DST_HASHREG);
-	SE(SE_SHA_CONFIG_REG_OFFSET) = 1;
+	SE(SE_SHA_CONFIG_REG_OFFSET) = SHA_ENABLE;
 	SE(SE_SHA_MSG_LENGTH_REG_OFFSET) = (u32)(src_size << 3);
-	SE(0x208) = 0;
-	SE(0x20C) = 0;
-	SE(0x210) = 0;
+	SE(SE_SHA_MSG_LENGTH_REG_OFFSET + 4 * 1) = 0;
+	SE(SE_SHA_MSG_LENGTH_REG_OFFSET + 4 * 2) = 0;
+	SE(SE_SHA_MSG_LENGTH_REG_OFFSET + 4 * 3) = 0;
 	SE(SE_SHA_MSG_LEFT_REG_OFFSET) = (u32)(src_size << 3);
-	SE(0x218) = 0;
-   	SE(0x21C) = 0;
-	SE(0x220) = 0;
+	SE(SE_SHA_MSG_LEFT_REG_OFFSET + 4 * 1) = 0;
+	SE(SE_SHA_MSG_LEFT_REG_OFFSET + 4 * 2) = 0;
+	SE(SE_SHA_MSG_LEFT_REG_OFFSET + 4 * 3) = 0;
 
 	// Trigger the operation.
 	res = _se_execute(OP_START, NULL, 0, src, src_size);

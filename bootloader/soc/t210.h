@@ -181,6 +181,7 @@
 
 /*! Special registers. */
 #define EMC_SCRATCH0 0x324
+#define  EMC_HEKA_UPD (1 << 30)
 #define  EMC_SEPT_RUN (1 << 31)
 
 #endif
