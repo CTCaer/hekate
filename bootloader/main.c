@@ -218,41 +218,33 @@ void check_power_off_from_hos()
 }
 
 // This is a safe and unused DRAM region for our payloads.
-// IPL_LOAD_ADDR is defined in makefile.
-#define EXT_PAYLOAD_ADDR   0xC03C0000
-#define RELOC_META_OFF     0x7C
-#define PATCHED_RELOC_SZ   0x94
-#define RCM_PAYLOAD_ADDR   (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
-#define PAYLOAD_ENTRY      0x40010000
-#define CBFS_SDRAM_EN_ADDR 0x4003e000
-#define COREBOOT_ADDR      (0xD0000000 - 0x100000)
-
-void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
-void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
+#define RELOC_META_OFF      0x7C
+#define PATCHED_RELOC_SZ    0x94
+#define PATCHED_RELOC_STACK 0x40007000
+#define PATCHED_RELOC_ENTRY 0x40010000
+#define EXT_PAYLOAD_ADDR    0xC03C0000
+#define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
+#define COREBOOT_ADDR       (0xD0000000 - 0x100000)
+#define CBFS_DRAM_EN_ADDR   0x4003e000
+#define  CBFS_DRAM_MAGIC    0x4452414D // "DRAM"
 
 void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
-	static const u32 START_OFF = 0x7C;
-	static const u32 STACK_OFF = 0x80;
-	static const u32 PAYLOAD_END_OFF = 0x84;
-	static const u32 IPL_START_OFF = 0x88;
-
 	memcpy((u8 *)payload_src, (u8 *)IPL_LOAD_ADDR, PATCHED_RELOC_SZ);
 
-	*(vu32 *)(payload_src + START_OFF) = payload_dst - ALIGN(PATCHED_RELOC_SZ, 0x10);
-	*(vu32 *)(payload_src + PAYLOAD_END_OFF) = payload_dst + payload_size;
-	*(vu32 *)(payload_src + STACK_OFF) = 0x40008000;
-	*(vu32 *)(payload_src + IPL_START_OFF) = payload_dst;
+	volatile reloc_meta_t *relocator = (reloc_meta_t *)(payload_src + RELOC_META_OFF);
+
+	relocator->start = payload_dst - ALIGN(PATCHED_RELOC_SZ, 0x10);
+	relocator->stack = PATCHED_RELOC_STACK;
+	relocator->end   = payload_dst + payload_size;
+	relocator->ep    = payload_dst;
 
 	if (payload_size == 0x7000)
 	{
 		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), (u8 *)COREBOOT_ADDR, 0x7000); //Bootblock
-		*(vu32 *)CBFS_SDRAM_EN_ADDR = 0x4452414D;
+		*(vu32 *)CBFS_DRAM_EN_ADDR = CBFS_DRAM_MAGIC;
 	}
 }
-
-#define BOOTLOADER_UPDATED_MAGIC      0x424F4F54 // "BOOT".
-#define BOOTLOADER_UPDATED_MAGIC_ADDR 0x4003E000
 
 bool is_ipl_updated(void *buf)
 {
@@ -324,11 +316,12 @@ int launch_payload(char *path, bool update)
 		}
 		else
 		{
-			reloc_patcher(PAYLOAD_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
-			if (*(vu32 *)CBFS_SDRAM_EN_ADDR != 0x4452414D)
-				return 1;
+			reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
 			reconfig_hw_workaround(true, 0);
 		}
+
+		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+		void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
 		// Launch our payload.
 		if (!update)
