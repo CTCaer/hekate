@@ -26,7 +26,6 @@
 
 #ifdef DEBUG
 #include "../../gfx/gfx.h"
-extern gfx_con_t gfx_con;
 #define EL_DEBUG(format, ...) \
 	gfx_printf(&gfx_con, format __VA_OPT__(, ) __VA_ARGS__)
 #else

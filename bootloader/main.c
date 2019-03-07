@@ -49,16 +49,6 @@
 #include "frontend/fe_info.h"
 
 //TODO: ugly.
-gfx_ctxt_t gfx_ctxt;
-gfx_con_t gfx_con;
-
-//TODO: Create more macros (info, header, debug, etc) with different colors and utilize them for consistency.
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
-#define WPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
-#define WPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
-
-//TODO: ugly.
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;

@@ -31,9 +31,6 @@
 #include "../utils/types.h"
 
 #include "../gfx/gfx.h"
-extern gfx_con_t gfx_con;
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
 
 #define RELOC_META_OFF   0x7C
 #define PATCHED_RELOC_SZ 0x94

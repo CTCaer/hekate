@@ -17,20 +17,18 @@
 
 #include <string.h>
 
-#include "sdmmc.h"
-#include "../utils/util.h"
-#include "../soc/clock.h"
 #include "mmc.h"
+#include "sdmmc.h"
+#include "../gfx/gfx.h"
 #include "../power/max7762x.h"
-#include "../soc/t210.h"
-#include "../soc/pmc.h"
-#include "../soc/pinmux.h"
+#include "../soc/clock.h"
 #include "../soc/gpio.h"
+#include "../soc/pinmux.h"
+#include "../soc/pmc.h"
+#include "../soc/t210.h"
+#include "../utils/util.h"
 
-/*#include "gfx.h"
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
-#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)*/
+//#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
 
 /*! SCMMC controller base addresses. */

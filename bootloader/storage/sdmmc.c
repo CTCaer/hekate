@@ -19,13 +19,11 @@
 #include "sdmmc.h"
 #include "mmc.h"
 #include "sd.h"
-#include "../utils/util.h"
+#include "../gfx/gfx.h"
 #include "../mem/heap.h"
+#include "../utils/util.h"
 
-/*#include "gfx.h"
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
-#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)*/
+//#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
 
 static inline u32 unstuff_bits(u32 *resp, u32 start, u32 size)

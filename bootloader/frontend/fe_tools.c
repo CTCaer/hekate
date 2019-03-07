@@ -36,21 +36,13 @@
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
-extern boot_cfg_t *b_cfg;
+extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
-
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
-extern sdmmc_storage_t sd_storage;
 
 extern bool sd_mount();
 extern void sd_unmount();
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
-
-//TODO: Create more macros (info, header, debug, etc) with different colors and utilize them for consistency.
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
 
 void dump_packages12()
 {
@@ -100,8 +92,8 @@ void dump_packages12()
 
 		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
-			b_cfg->autoboot = 0;
-			b_cfg->autoboot_list = 0;
+			b_cfg.autoboot = 0;
+			b_cfg.autoboot_list = 0;
 
 			gfx_printf(&gfx_con, "sept will run to get the keys.\nThen rerun this option.");
 			btn_wait();

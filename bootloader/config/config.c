@@ -27,12 +27,6 @@
 #include "../utils/list.h"
 #include "../utils/util.h"
 
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
-//TODO: Create more macros (info, header, debug, etc) with different colors and utilize them for consistency.
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
-
 extern hekate_config h_cfg;
 extern int sd_mount();
 extern int sd_unmount();

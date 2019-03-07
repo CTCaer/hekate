@@ -38,8 +38,6 @@
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
 extern sdmmc_storage_t sd_storage;
 extern FATFS sd_fs;
 
@@ -47,12 +45,6 @@ extern bool sd_mount();
 extern void sd_unmount();
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
-
-//TODO: Create more macros (info, header, debug, etc) with different colors and utilize them for consistency.
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
-#define WPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
-#define WPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
 
 #pragma GCC push_options
 #pragma GCC optimize ("Os")

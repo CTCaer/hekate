@@ -29,8 +29,6 @@
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
 
-extern gfx_con_t gfx_con;
-
 /*#include "util.h"
 #define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DEBUG_PRINTING*/

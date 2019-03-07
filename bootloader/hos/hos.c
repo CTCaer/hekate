@@ -39,12 +39,8 @@
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/util.h"
-
 #include "../gfx/gfx.h"
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
 
-extern boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 
 extern void sd_unmount();
@@ -52,10 +48,11 @@ extern void sd_unmount();
 //#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
 #define DPRINTF(...)
 
-#define SECMON_MB_ADDR  0x40002EF8
-#define SECMON7_MB_ADDR 0x400000F8
+#define PKG2_LOAD_ADDR 0xA9800000
 
  // Secmon mailbox.
+#define SECMON_MB_ADDR  0x40002EF8
+#define SECMON7_MB_ADDR 0x400000F8
 typedef struct _secmon_mailbox_t
 {
 	//  < 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
@@ -207,7 +204,7 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 			// We rely on racing conditions, make sure we cover even the unluckiest cases.
 			if (retries > 15)
 			{
-				gfx_printf(&gfx_con, "%k\nFailed to get TSEC keys. Please try again.%k\n\n", 0xFFFF0000, 0xFFCCCCCC);
+				EPRINTF("\nFailed to get TSEC keys. Please try again.\n");
 				return 0;
 			}
 		}
@@ -308,7 +305,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		gfx_printf(&gfx_con, "%kUnknown pkg1 version.%k\n", 0xFFFF0000, 0xFFCCCCCC);
+		EPRINTF("Unknown pkg1 version.");
 		goto out;
 	}
 	gfx_printf(&gfx_con, "Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
@@ -388,6 +385,7 @@ int hos_launch(ini_sec_t *cfg)
 	volatile secmon_mailbox_t *secmon_mb;
 
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
+	memset(&tsec_ctxt, 0, sizeof(tsec_ctxt_t));
 	list_init(&ctxt.kip1_list);
 
 	if (!gfx_con.mute)
@@ -443,7 +441,10 @@ int hos_launch(ini_sec_t *cfg)
 			gfx_printf(&gfx_con, "Decrypted & unpacked pkg1\n");
 		}
 		else
+		{
+			EPRINTF("No mandatory secmon or warmboot provided!");
 			return 0;
+		}
 	}
 
 	// Replace 'warmboot.bin' if requested.
@@ -453,7 +454,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
 		{
-			gfx_printf(&gfx_con, "%kNo warmboot provided!%k\n", 0xFFFF0000, 0xFFCCCCCC);
+			EPRINTF("No warmboot provided!");
 			return 0;
 		}
 		// Else we patch it to allow downgrading.
@@ -545,7 +546,7 @@ int hos_launch(ini_sec_t *cfg)
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
-		gfx_printf(&gfx_con, "%kFailed to apply '%s'!%k\n", 0xFFFF0000, unappliedPatch, 0xFFCCCCCC);
+		EPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
 		sd_unmount(); // Just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it.
 
 		_free_launch_components(&ctxt);
@@ -553,7 +554,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Rebuild and encrypt package2.
-	pkg2_build_encrypt((void *)0xA9800000, ctxt.kernel, ctxt.kernel_size, &kip1_info);
+	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info);
 
 	gfx_printf(&gfx_con, "Rebuilt & loaded pkg2\n");
 

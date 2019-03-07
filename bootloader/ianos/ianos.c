@@ -27,8 +27,6 @@
 #define IRAM_LIB_ADDR 0x4002B000
 #define DRAM_LIB_ADDR 0xE0000000
 
-extern gfx_ctxt_t gfx_ctxt;
-extern gfx_con_t gfx_con;
 extern heap_t _heap;
 
 extern void *sd_file_read(char *path);

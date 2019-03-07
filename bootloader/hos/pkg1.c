@@ -24,8 +24,6 @@
 #include "../sec/se.h"
 #include "../utils/aarch64_util.h"
 
-extern gfx_con_t gfx_con;
-
 #define _NOPv7() 0xE320F000
 
 #define SM_100_ADR 0x4002B020
