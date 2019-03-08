@@ -595,19 +595,77 @@ void dump_emmc_user()    { _dump_emmc_selected(PART_USER); }
 void dump_emmc_boot()    { _dump_emmc_selected(PART_BOOT); }
 void dump_emmc_rawnand() { _dump_emmc_selected(PART_RAW); }
 
-static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
+static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part, bool allow_multi_part)
 {
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
+	u32 currPartIdx = 0;
+	u32 numSplitParts = 0;
 	u32 lbaStartPart = part->lba_start;
 	int res = 0;
 	char *outFilename = sd_path;
-
+	u32 sdPathLen = strlen(sd_path);
+	u64 fileSize = 0;
+	u64 totalCheckFileSize = 0;
 	gfx_con.fntsz = 8;
 
 	FIL fp;
+	FILINFO fno;
 	gfx_printf(&gfx_con, "\nFilename: %s\n", outFilename);
+
+    bool use_multipart = false;
+
+	if (allow_multi_part)
+	{
+		// Check to see if there is a combined file and if so then use that.
+		if (f_stat(outFilename, &fno))
+		{
+			// If not, check if there are partial files and the total size matches.
+			gfx_printf(&gfx_con, "\nFile not found, checking for part files.\n");
+
+			// Store console pos, so we dont take too much room.
+			gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
+
+			outFilename[sdPathLen++] = '.';
+
+			// Stat total size of the part files.
+			while ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
+			{
+				_update_filename(outFilename, sdPathLen, 99, numSplitParts);
+
+				gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+				gfx_printf(&gfx_con, "\nFilename: %s\n", outFilename);
+
+				if (f_stat(outFilename, &fno))
+				{
+					WPRINTFARGS("Error (%d) file not found '%s'. Aborting...\n", res, outFilename);
+					return 0;
+				}
+				else
+					totalCheckFileSize += (u64)fno.fsize;
+
+				numSplitParts++;
+			}
+
+			gfx_printf(&gfx_con, "\n%X sectors total.\n", (u32)((u64)totalCheckFileSize >> (u64)9));
+
+			if ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
+			{
+				gfx_con.fntsz = 16;
+				EPRINTF("Size of SD Card split backups does not match,\neMMC's selected part size.\n");
+
+				return 0;
+			}
+			else
+			{
+				use_multipart = true;
+				_update_filename(outFilename, sdPathLen, numSplitParts, 0);
+			}
+		}
+	}
+
+	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
 
 	res = f_open(&fp, outFilename, FA_READ);
 	if (res)
@@ -620,8 +678,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 
 		return 0;
 	}
-	//TODO: Should we keep this check?
-	else if (((u32)((u64)f_size(&fp) >> (u64)9)) != totalSectors)
+	else if (!use_multipart && (((u32)((u64)f_size(&fp) >> (u64)9)) != totalSectors)) // Check total restore size vs emmc size.
 	{
 		gfx_con.fntsz = 16;
 		EPRINTF("Size of the SD Card backup does not match,\neMMC's selected part size.\n");
@@ -630,7 +687,11 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 		return 0;
 	}
 	else
-		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n", ((u32)((u64)f_size(&fp) >> (u64)9)) >> SECTORS_TO_MIB_COEFF);
+	{
+		fileSize = (u64)f_size(&fp);
+		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n",
+			((u32)((use_multipart ? ((u64)totalCheckFileSize >> (u64)9) : fileSize) >> (u64)9)) >> SECTORS_TO_MIB_COEFF);
+	}
 
 	const u32 NUM_SECTORS_PER_ITER = 8192; // 4MB Cache.
 
@@ -643,8 +704,51 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 
 	u32 num = 0;
 	u32 pct = 0;
+
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
+
 	while (totalSectors > 0)
 	{
+		// If we have more than one part, check the size for the split parts and make sure that the bytes written is not more than that.
+		if (numSplitParts != 0 && bytesWritten >= fileSize)
+		{
+			// If we have more bytes written then close the file pointer and increase the part index we are using
+			f_close(&fp);
+			memset(&fp, 0, sizeof(fp));
+			currPartIdx++;
+
+			if (h_cfg.verification)
+			{
+				// Verify part.
+				if (_dump_emmc_verify(storage, lbaStartPart, outFilename, part))
+				{
+					EPRINTF("\nPress any key and try again...\n");
+
+					return 0;
+				}
+			}
+
+			_update_filename(outFilename, sdPathLen, numSplitParts, currPartIdx);
+
+			// Read from next part.
+			gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+			gfx_printf(&gfx_con, "Filename: %s\n\n", outFilename);
+
+			lbaStartPart = lba_curr;
+
+			// Try to open the next file part
+			res = f_open(&fp, outFilename, FA_READ);
+			if (res)
+			{
+				gfx_con.fntsz = 16;
+				EPRINTFARGS("Error (%d) opening file %s.\n", res, outFilename);
+
+				return 0;
+			}
+			fileSize = (u64)f_size(&fp);
+			bytesWritten = 0;
+		}
+
 		retryCount = 0;
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
@@ -781,7 +885,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 			sdmmc_storage_set_mmc_partition(&storage, i + 1);
 
 			emmcsn_path_impl(sdPath, "/restore", bootPart.name, &storage);
-			res = _restore_emmc_part(sdPath, &storage, &bootPart);
+			res = _restore_emmc_part(sdPath, &storage, &bootPart, false);
 		}
 	}
 
@@ -797,7 +901,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 				part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
 			emmcsn_path_impl(sdPath, "/restore/partitions/", part->name, &storage);
-			res = _restore_emmc_part(sdPath, &storage, part);
+			res = _restore_emmc_part(sdPath, &storage, part, false);
 		}
 		nx_emmc_gpt_free(&gpt);
 	}
@@ -817,7 +921,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 				rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
 			emmcsn_path_impl(sdPath, "/restore", rawPart.name, &storage);
-			res = _restore_emmc_part(sdPath, &storage, &rawPart);
+			res = _restore_emmc_part(sdPath, &storage, &rawPart, true);
 		}
 	}
 

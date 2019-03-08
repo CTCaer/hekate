@@ -1046,7 +1046,7 @@ ment_t ment_restore[] = {
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Restore eMMC BOOT0/1", restore_emmc_boot),
-	MDEF_HANDLER("Restore eMMC RAW GPP (exFAT only)", restore_emmc_rawnand),
+	MDEF_HANDLER("Restore eMMC RAW GPP", restore_emmc_rawnand),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
 	MDEF_HANDLER("Restore GPP partitions", restore_emmc_gpp_parts),
