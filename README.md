@@ -20,6 +20,8 @@ Custom Nintendo Switch bootloader, firmware patcher, and more.
 | bootloader/payloads/ | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
 | bootloader/libtools/ | Future reserved                                                       |
 
+**Note**: Sept files for booting 7.0.0 and up are expected at /sept folder at root of sd card.
+
 
 ## Bootloader configuration
 
@@ -51,11 +53,19 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | kernel={SD path}   | Replaces the kernel binary                                 |
 | kip1={SD path}     | Replaces/Adds kernel initial process. Multiple can be set. |
 | kip1={SD folder}/* | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
+| fss0={SD path}     | Takes a fusee-secondary binary and extracts all needed parts from it. |
 | kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Current available patches nosigchk. |
 | fullsvcperm=1      | Disables SVC verification (full services permission)       |
-| debugmode=1        | Enables Debug mode                                         |
+| debugmode=1        | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1       | Enables Atmosphère patching                                |
 | payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
+
+**Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra signle kips.
+
+**Note2**: When using FSS0 it parses exosphere, warmboot and all core kips. You can override the first 2 by using `secmon`/`warmboot` after defining `fss0`.
+You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage.
+
+**Warning**: Never define core kips when using `fss0` and make sure that the folder (when using `/*`), does not include them.
 
 
 ### Payload storage:
@@ -67,8 +77,8 @@ Hekate now has a new storage in the binary that helps it configure it outside of
 | '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log, bit2: sept run.      |
 | '0x98' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
 | '0x9C' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
-| '0xA0' rsvd_cfg      | Reserved.                                                         |
-| '0xA4' rsvd[32]      | Reserved.                                                         |
+| '0xA0' extra_cfg     | Reserved.                                                         |
+| '0xA4' rsvd[128]     | Reserved.                                                         |
 
 
 You can find a template [Here](./res/hekate_ipl_template.ini)
