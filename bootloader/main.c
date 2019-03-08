@@ -1124,7 +1124,7 @@ menu_t menu_top = {
 
 #define IPL_STACK_TOP  0x90010000
 #define IPL_HEAP_START 0x90020000
-#define IPL_HEAP_END   0xB8000000
+#define IPL_HEAP_END   0xB5000000
 
 extern void pivot_stack(u32 stack_top);
 

@@ -64,13 +64,13 @@ u8 btn_wait_timeout(u32 time_ms, u8 mask)
 	u32 timeout = get_tmr_ms() + time_ms;
 	u8 res = btn_read() & mask;
 
-	do
+	while (get_tmr_ms() < timeout)
 	{
 		if (res == mask)
 			break;
 		else
 			res = btn_read() & mask;
-	} while (get_tmr_ms() < timeout);
+	};
 
 	return res;
 }

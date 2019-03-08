@@ -31,9 +31,9 @@
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
-#define EMMC_BUF_ALIGNED 0x85000000
-#define SDXC_BUF_ALIGNED 0x86000000
-#define MIXD_BUF_ALIGNED 0x87000000
+#define EMMC_BUF_ALIGNED 0xB5000000
+#define SDXC_BUF_ALIGNED 0xB6000000
+#define MIXD_BUF_ALIGNED 0xB7000000
 
 extern sdmmc_t sd_sdmmc;
 extern sdmmc_storage_t sd_storage;
@@ -51,6 +51,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 	u32 btn = 0;
 	u32 prevPct = 200;
 	int res = 0;
+	u32 sdFileSector = 0;
 
 	u8 hashEm[0x20];
 	u8 hashSd[0x20];
@@ -86,6 +87,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 					f_close(&fp);
 					return 1;
 				}
+				f_lseek(&fp, sdFileSector);
 				if (f_read(&fp, bufSd, num << 9, NULL))
 				{
 					gfx_con.fntsz = 16;
@@ -110,6 +112,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 			}
 
 			sparseShouldVerify++;
+			sdFileSector += NUM_SECTORS_PER_ITER << 9;
 
 			pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 			if (pct != prevPct)
@@ -715,7 +718,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 	tui_sbar(&gfx_con, true);
 	gfx_con_setpos(&gfx_con, 0, 0);
 
-	gfx_printf(&gfx_con, "%kThis is a dangerous operation\nand may render your device inoperative!\n\n", 0xFFFFDD00);
+	gfx_printf(&gfx_con, "%kThis may render your device inoperative!\n\n", 0xFFFFDD00);
 	gfx_printf(&gfx_con, "Are you really sure?\n\n%k", 0xFFCCCCCC);
 	if ((restoreType & PART_BOOT) || (restoreType & PART_GP_ALL))
 	{
