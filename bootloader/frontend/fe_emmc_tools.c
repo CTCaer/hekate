@@ -87,7 +87,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 					f_close(&fp);
 					return 1;
 				}
-				f_lseek(&fp, sdFileSector);
+				f_lseek(&fp, (u64)sdFileSector << (u64)9);
 				if (f_read(&fp, bufSd, num << 9, NULL))
 				{
 					gfx_con.fntsz = 16;
@@ -112,7 +112,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 			}
 
 			sparseShouldVerify++;
-			sdFileSector += NUM_SECTORS_PER_ITER << 9;
+			sdFileSector += NUM_SECTORS_PER_ITER;
 
 			pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 			if (pct != prevPct)
@@ -129,7 +129,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 			{
 				gfx_con.fntsz = 16;
 				WPRINTF("\n\nVerification was cancelled!");
-				EPRINTF("\nPress any key...\n");
+				gfx_con.fntsz = 8;
 				msleep(1000);
 
 				f_close(&fp);
@@ -612,7 +612,8 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 
 	FIL fp;
 	FILINFO fno;
-	gfx_printf(&gfx_con, "\nFilename: %s\n", outFilename);
+
+	gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
 
     bool use_multipart = false;
 
@@ -622,10 +623,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 		if (f_stat(outFilename, &fno))
 		{
 			// If not, check if there are partial files and the total size matches.
-			gfx_printf(&gfx_con, "\nFile not found, checking for part files.\n");
-
-			// Store console pos, so we dont take too much room.
-			gfx_con_getpos(&gfx_con, &gfx_con.savedx, &gfx_con.savedy);
+			gfx_printf(&gfx_con, "No single file, checking for part files...\n");
 
 			outFilename[sdPathLen++] = '.';
 
@@ -665,9 +663,9 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 		}
 	}
 
-	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
-
 	res = f_open(&fp, outFilename, FA_READ);
+	gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+	gfx_printf(&gfx_con, "\nFilename: %s\n", outFilename);
 	if (res)
 	{
 		if (res != FR_NO_FILE)
@@ -690,7 +688,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 	{
 		fileSize = (u64)f_size(&fp);
 		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n",
-			((u32)((use_multipart ? ((u64)totalCheckFileSize >> (u64)9) : fileSize) >> (u64)9)) >> SECTORS_TO_MIB_COEFF);
+			(u32)((use_multipart ? (u64)totalCheckFileSize : fileSize) >> (u64)9) >> SECTORS_TO_MIB_COEFF);
 	}
 
 	const u32 NUM_SECTORS_PER_ITER = 8192; // 4MB Cache.
