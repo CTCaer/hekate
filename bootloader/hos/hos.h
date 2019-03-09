@@ -58,7 +58,10 @@ typedef struct _launch_ctxt_t
 
 	bool svcperm;
 	bool debugmode;
+	bool stock;
 	bool atmosphere;
+
+	ini_sec_t *cfg;
 } launch_ctxt_t;
 
 typedef struct _merge_kip_t

@@ -176,6 +176,16 @@ static int _config_debugmode(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_stock(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Disabled all patching\n");
+		ctxt->stock = true;
+	}
+	return 1;
+}
+
 static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
 {
 	if (*value == '1')
@@ -205,14 +215,15 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "kip1patch", config_kip1patch },
 	{ "fullsvcperm", _config_svcperm },
 	{ "debugmode", _config_debugmode },
+	{ "stock", _config_stock },
 	{ "atmosphere", _config_atmosphere },
 	{ "fss0", _config_fss },
 	{ NULL, NULL },
 };
 
-int parse_boot_config(launch_ctxt_t *ctxt, ini_sec_t *cfg)
+int parse_boot_config(launch_ctxt_t *ctxt)
 {
-	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
+	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
 	{
 		for(u32 i = 0; _config_handlers[i].key; i++)
 		{

@@ -369,6 +369,7 @@ out:;
 
 static void _free_launch_components(launch_ctxt_t *ctxt)
 {
+	ini_free_section(ctxt->cfg);
 	free(ctxt->keyblob);
 	free(ctxt->pkg1);
 	free(ctxt->pkg2);
@@ -388,19 +389,24 @@ int hos_launch(ini_sec_t *cfg)
 	memset(&tsec_ctxt, 0, sizeof(tsec_ctxt_t));
 	list_init(&ctxt.kip1_list);
 
+	ctxt.cfg = cfg;
+
 	if (!gfx_con.mute)
 		gfx_clear_grey(&gfx_ctxt, 0x1B);
 	gfx_con_setpos(&gfx_con, 0, 0);
-
-	// Try to parse config if present.
-	if (cfg && !parse_boot_config(&ctxt, cfg))
-		return 0;
 
 	gfx_printf(&gfx_con, "Initializing...\n\n");
 
 	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
 		return 0;
+
+	// Try to parse config if present.
+	if (ctxt.cfg && !parse_boot_config(&ctxt))
+	{
+		EPRINTF("Wrong ini cfg or missing files!");
+		return 0;
+	}
 
 	// Check if fuses lower than 4.0.0 and if yes apply NO Gamecard patch.
 	if (h_cfg.autonogc && !(fuse_read_odm(7) & ~0xF) && ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)
@@ -507,7 +513,7 @@ int hos_launch(ini_sec_t *cfg)
 		ctxt.kernel = pkg2_hdr->data;
 		ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
 
-		if (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere)
+		if (!ctxt.stock && (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere))
 		{
 			u32 kernel_crc32 = crc32c(ctxt.kernel, ctxt.kernel_size);
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_crc32);
@@ -610,7 +616,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Config Exosphère if booting full Atmosphère.
 	if (ctxt.atmosphere && ctxt.secmon)
-		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, (void *)ctxt.pkg1_id->warmboot_base, ctxt.pkg1);
+		config_exosphere(ctxt.pkg1_id->id, ctxt.pkg1_id->kb, (void *)ctxt.pkg1_id->warmboot_base, ctxt.pkg1, ctxt.stock);
 
 	// Unmount SD card.
 	sd_unmount();
@@ -640,7 +646,6 @@ int hos_launch(ini_sec_t *cfg)
 	secmon_mb->out = 0;
 
 	// Free allocated memory.
-	ini_free_section(cfg);
 	_free_launch_components(&ctxt);
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.

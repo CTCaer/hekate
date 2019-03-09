@@ -58,6 +58,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | fullsvcperm=1      | Disables SVC verification (full services permission)       |
 | debugmode=1        | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1       | Enables Atmosphère patching                                |
+| stock=1            | Disables unneeded kernel patching when running stock or semi-stock. |
 | payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
 
 **Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra signle kips.

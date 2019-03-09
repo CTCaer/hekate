@@ -19,7 +19,7 @@
 
 #include "hos.h"
 
-int parse_boot_config(launch_ctxt_t *ctxt, ini_sec_t *cfg);
+int parse_boot_config(launch_ctxt_t *ctxt);
 int config_kip1patch(launch_ctxt_t *ctxt, const char *value);
 
 #endif

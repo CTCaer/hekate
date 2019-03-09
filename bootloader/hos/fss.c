@@ -60,8 +60,23 @@ typedef struct _fss_content_t
 int parse_fss(launch_ctxt_t *ctxt, const char *value)
 {
 	FIL fp;
+
+	bool stock = false;
+
+	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
+	{
+		if (!strcmp("stock", kv->key))
+			if (kv->val[0] == '1')
+				stock = true;
+	}
+
+	if (stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620)
+		return 1;
+
 	if (f_open(&fp, value, FA_READ) != FR_OK)
 		return 0;
+
+	ctxt->atmosphere = true;
 
 	void *fss = malloc(f_size(&fp));
 	// Read header.
@@ -89,7 +104,9 @@ int parse_fss(launch_ctxt_t *ctxt, const char *value)
 			// Load content to launch context.
 			switch (curr_fss_cnt[i].type)
 			{
-			case CNT_TYPE_KIP:;
+			case CNT_TYPE_KIP:
+				if (stock)
+					continue;
 				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
 				mkip1->kip1 = content;
 				list_append(&ctxt->kip1_list, &mkip1->link);
