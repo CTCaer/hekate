@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------*/
 /* Sample Code of OS Dependent Functions for FatFs                        */
-/* (C) ChaN, 2017                                                         */
+/* (C) ChaN, 2018                                                          */
 /* (C) CTCaer, 2018                                                       */
 /*------------------------------------------------------------------------*/
 
@@ -16,7 +16,7 @@
 /* Allocate a memory block                                                */
 /*------------------------------------------------------------------------*/
 
-void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on not enough core) */
+void* ff_memalloc (	/* Returns pointer to the allocated memory block (null if not enough core) */
 	UINT msize		/* Number of bytes to allocate */
 )
 {
@@ -29,7 +29,7 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on no
 /*------------------------------------------------------------------------*/
 
 void ff_memfree (
-	void* mblock	/* Pointer to the memory block to free (nothing to do for null) */
+	void* mblock	/* Pointer to the memory block to free (nothing to do if null) */
 )
 {
 	free(mblock);	/* Free the memory block with POSIX API */
