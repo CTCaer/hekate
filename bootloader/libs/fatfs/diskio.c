@@ -12,6 +12,7 @@
 #include "../../storage/sdmmc.h"
 
 #define SDMMC_UPPER_BUFFER 0xB8000000
+#define DRAM_START         0x80000000
 
 extern sdmmc_storage_t sd_storage;
 
@@ -45,7 +46,7 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	if ((u32)buff >= 0x90000000)
+	if ((u32)buff >= DRAM_START)
 		return sdmmc_storage_read(&sd_storage, sector, count, buff) ? RES_OK : RES_ERROR;
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
 	if (sdmmc_storage_read(&sd_storage, sector, count, buf))
@@ -66,7 +67,7 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	if ((u32)buff >= 0x90000000)
+	if ((u32)buff >= DRAM_START)
 		return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER; //TODO: define this somewhere.
 	memcpy(buf, buff, 512 * count);

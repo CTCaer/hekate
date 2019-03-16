@@ -29,7 +29,7 @@
 
 extern heap_t _heap;
 
-extern void *sd_file_read(char *path);
+extern void *sd_file_read(const char *path, u32 *fsize);
 extern bool sd_mount();
 extern void sd_unmount();
 
@@ -101,7 +101,7 @@ int ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
 		}
 	}
 
-	fileBuf = sd_file_read(path);
+	fileBuf = sd_file_read(path, NULL);
 
 	if (sdmount)
 		sd_unmount();

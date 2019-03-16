@@ -103,29 +103,24 @@ void sd_unmount()
 	}
 }
 
-void *sd_file_read(char *path)
+void *sd_file_read(const char *path, u32 *fsize)
 {
 	FIL fp;
 	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return NULL;
 
 	u32 size = f_size(&fp);
+	if (fsize)
+		*fsize = size;
+
 	void *buf = malloc(size);
 
-	u8 *ptr = buf;
-	while (size > 0)
+	if (f_read(&fp, buf, size, NULL) != FR_OK)
 	{
-		u32 rsize = MIN(size, 512 * 8192);
-		if (f_read(&fp, ptr, rsize, NULL) != FR_OK)
-		{
-			free(buf);
-			f_close(&fp);
+		free(buf);
+		f_close(&fp);
 
-			return NULL;
-		}
-
-		ptr += rsize;
-		size -= rsize;
+		return NULL;
 	}
 
 	f_close(&fp);
@@ -847,10 +842,10 @@ void auto_launch_firmware()
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
 	{
 		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
-			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry);
+			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, NULL);
 
 		if (!bitmap) // Custom entry bootlogo not found, trying default custom one.
-			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp");
+			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp", NULL);
 
 		if (bitmap)
 		{

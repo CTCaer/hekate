@@ -3790,17 +3790,16 @@ FRESULT f_read (
 	UINT rcnt, cc, csect;
 	BYTE *rbuff = (BYTE*)buff;
 
-
+	UINT br_tmp;
+	if (!br)
+		br = &br_tmp;
 	*br = 0;	/* Clear read byte counter */
 	res = validate(&fp->obj, &fs);				/* Check validity of the file object */
 	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) {
 		EFSPRINTF("FOV");
 		LEAVE_FF(fs, res);	/* Check validity */
 	}
-	if (!(fp->flag & FA_READ)) {
-		EFSPRINTF("NOACCESS");
-		LEAVE_FF(fs, FR_DENIED);	/* Check access mode */
-	}
+	if (!(fp->flag & FA_READ)) LEAVE_FF(fs, FR_DENIED); /* Check access mode */
 	remain = fp->obj.objsize - fp->fptr;
 	if (btr > remain) btr = (UINT)remain;		/* Truncate btr by remaining bytes */
 
@@ -3910,7 +3909,9 @@ FRESULT f_write (
 	UINT wcnt, cc, csect;
 	const BYTE *wbuff = (const BYTE*)buff;
 
-
+	UINT bw_tmp;
+	if (!bw)
+		bw = &bw_tmp;
 	*bw = 0;	/* Clear write byte counter */
 	res = validate(&fp->obj, &fs);			/* Check validity of the file object */
 	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) {
