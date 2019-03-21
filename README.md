@@ -76,10 +76,10 @@ Hekate now has a new storage in the binary that helps it configure it outside of
 | Offset / Name        | Description                                                       |
 | -------------------- | ----------------------------------------------------------------- |
 | '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log, bit2: sept run.      |
-| '0x98' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
-| '0x9C' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
-| '0xA0' extra_cfg     | Reserved.                                                         |
-| '0xA4' rsvd[128]     | Reserved.                                                         |
+| '0x95' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
+| '0x96' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
+| '0x97' extra_cfg     | Reserved.                                                         |
+| '0x98' rsvd[128]     | Reserved.                                                         |
 
 
 You can find a template [Here](./res/hekate_ipl_template.ini)
