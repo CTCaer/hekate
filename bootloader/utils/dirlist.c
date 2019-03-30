@@ -74,6 +74,7 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 		return NULL;
 	}
 
+	// Reorder ini files by ASCII ordering.
 	for (i = 0; i < k - 1 ; i++)
 	{
 		for (j = i + 1; j < k; j++)

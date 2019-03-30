@@ -36,6 +36,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
 | autoboot=0         | 0: Disable, #: Boot entry number to auto boot.             |
+| autoboot_list=0    | 0: Read `autoboot` boot entry from hekate_ipl.ini, 1: Read from ini folder (ini files are ASCII ordered). |
 | bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
 | verification=2     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and not 100% reliable), 2: Full (sha256 based, slow and 100% reliable). |
 | autohosoff=1       | 0: Disable, 1: If woke up from HOS via an RTC alarm, shows logo, then powers off completely, 2: No logo, immediately powers off.|
@@ -61,7 +62,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | stock=1            | Disables unneeded kernel patching when running stock or semi-stock. |
 | payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
 
-**Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra signle kips.
+**Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra single kips.
 
 **Note2**: When using FSS0 it parses exosphere, warmboot and all core kips. You can override the first 2 by using `secmon`/`warmboot` after defining `fss0`.
 You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage.
