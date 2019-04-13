@@ -179,6 +179,10 @@
 #define  I2S_CG_SLCG_ENABLE (1 << 0)
 #define  I2S_CTRL_MASTER_EN (1 << 10)
 
+/*! PWM registers. */
+#define PWM_CONTROLLER_PWM_CSR_0 0x00
+#define PWM_CONTROLLER_PWM_CSR_1 0x10
+
 /*! Special registers. */
 #define EMC_SCRATCH0 0x324
 #define  EMC_HEKA_UPD (1 << 30)

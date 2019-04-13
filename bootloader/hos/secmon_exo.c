@@ -48,7 +48,7 @@ typedef struct _atm_meta_t
 #define  EXO_FLAG_DBG_PRIV  (1 << 1)
 #define  EXO_FLAG_DBG_USER  (1 << 2)
 
-void config_exosphere(const char *id, u32 kb, void *warmboot, void *pkg1, bool stock)
+void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 {
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;

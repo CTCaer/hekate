@@ -26,7 +26,7 @@
 #define OFFSET_OF(t, m) ((u32)&((t *)NULL)->m)
 #define CONTAINER_OF(mp, t, mn) ((t *)((u32)mp - OFFSET_OF(t, mn)))
 
-typedef char s8;
+typedef signed char s8;
 typedef short s16;
 typedef short SHORT;
 typedef int s32;

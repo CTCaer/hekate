@@ -276,12 +276,16 @@ static void _clock_sdmmc_set_reset(u32 id)
 	{
 	case SDMMC_1:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = L_SET_SDMMC1_RST;
+		break;
 	case SDMMC_2:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = L_SET_SDMMC2_RST;
+		break;
 	case SDMMC_3:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_SET) = U_SET_SDMMC3_RST;
+		break;
 	case SDMMC_4:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = L_SET_SDMMC4_RST;
+		break;
 	}
 }
 
@@ -291,12 +295,16 @@ static void _clock_sdmmc_clear_reset(u32 id)
 	{
 	case SDMMC_1:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = L_CLR_SDMMC1_RST;
+		break;
 	case SDMMC_2:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = L_CLR_SDMMC2_RST;
+		break;
 	case SDMMC_3:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_CLR) = U_CLR_SDMMC3_RST;
+		break;
 	case SDMMC_4:
 		CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = L_CLR_SDMMC4_RST;
+		break;
 	}
 }
 
@@ -322,12 +330,16 @@ static void _clock_sdmmc_set_enable(u32 id)
 	{
 	case SDMMC_1:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = L_SET_CLK_ENB_SDMMC1;
+		break;
 	case SDMMC_2:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = L_SET_CLK_ENB_SDMMC2;
+		break;
 	case SDMMC_3:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_U_SET) = U_SET_CLK_ENB_SDMMC3;
+		break;
 	case SDMMC_4:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = L_SET_CLK_ENB_SDMMC4;
+		break;
 	}
 }
 
@@ -337,12 +349,16 @@ static void _clock_sdmmc_clear_enable(u32 id)
 	{
 	case SDMMC_1:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = L_CLR_CLK_ENB_SDMMC1;
+		break;
 	case SDMMC_2:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = L_CLR_CLK_ENB_SDMMC2;
+		break;
 	case SDMMC_3:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_U_CLR) = U_CLR_CLK_ENB_SDMMC3;
+		break;
 	case SDMMC_4:
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = L_CLR_CLK_ENB_SDMMC4;
+		break;
 	}
 }
 
@@ -457,6 +473,7 @@ void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type)
 	case 5:
 		*pout = 25000;
 		*pdivisor = 64;
+		break;
 	case 6:
 	case 8:
 		*pout = 25000;
@@ -465,9 +482,11 @@ void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type)
 	case 7:
 		*pout = 50000;
 		*pdivisor = 1;
+		break;
 	case 10:
 		*pout = 100000;
 		*pdivisor = 1;
+		break;
 	case 13:
 		*pout = 40800;
 		*pdivisor = 1;

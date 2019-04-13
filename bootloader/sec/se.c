@@ -36,7 +36,7 @@ static void _gf256_mul_x(void *block)
 	u8 *pdata = (u8 *)block;
 	u32 carry = 0;
 
-	for (u32 i = 0xF; i >= 0; i--)
+	for (int i = 0xF; i >= 0; i--)
 	{
 		u8 b = pdata[i];
 		pdata[i] = (b << 1) | carry;

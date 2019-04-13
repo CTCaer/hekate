@@ -178,11 +178,11 @@ typedef struct {
 	DWORD	dir_sect;		/* Sector number containing the directory entry (not used at exFAT) */
 	BYTE*	dir_ptr;		/* Pointer to the directory entry in the win[] (not used at exFAT) */
 #endif
-#if FF_USE_FASTSEEK
-	DWORD*	cltbl;			/* Pointer to the cluster link map table (nulled on open, set by application) */
-#endif
 #if !FF_FS_TINY
 	BYTE	buf[FF_MAX_SS];	/* File private data read/write window */
+#endif
+#if FF_USE_FASTSEEK
+	DWORD*	cltbl;			/* Pointer to the cluster link map table (nulled on open, set by application) */
 #endif
 } FIL;
 

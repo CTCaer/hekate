@@ -224,10 +224,12 @@ int parse_boot_config(launch_ctxt_t *ctxt)
 		{
 			if (!strcmp(_config_handlers[i].key, kv->key))
 				if (!_config_handlers[i].handler(ctxt, kv->val))
+				{
+					EPRINTFARGS("Error while loading %s:\n%s", kv->key, kv->val);
 					return 0;
+				}
 		}
 	}
 
 	return 1;
 }
-

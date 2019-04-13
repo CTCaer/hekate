@@ -35,6 +35,8 @@
 #define SDXC_BUF_ALIGNED 0xB6000000
 #define MIXD_BUF_ALIGNED 0xB7000000
 
+#define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
+
 extern sdmmc_t sd_sdmmc;
 extern sdmmc_storage_t sd_storage;
 extern FATFS sd_fs;
@@ -47,7 +49,7 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
 	FIL fp;
-	u8 sparseShouldVerify = 0;
+	u8 sparseShouldVerify = 4;
 	u32 btn = 0;
 	u32 prevPct = 200;
 	int res = 0;
@@ -59,8 +61,6 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
 		u32 totalSectorsVer = (u32)((u64)f_size(&fp) >> (u64)9);
-
-		const u32 NUM_SECTORS_PER_ITER = 8192; // 4MB Cache.
 
 		u8 *bufEm = (u8 *)EMMC_BUF_ALIGNED;
 		u8 *bufSd = (u8 *)SDXC_BUF_ALIGNED;
@@ -111,9 +111,6 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 				}
 			}
 
-			sparseShouldVerify++;
-			sdFileSector += NUM_SECTORS_PER_ITER;
-
 			pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 			if (pct != prevPct)
 			{
@@ -123,6 +120,8 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 
 			lba_curr += num;
 			totalSectorsVer -= num;
+			sdFileSector += num;
+			sparseShouldVerify++;
 
 			btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
 			if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
@@ -274,8 +273,6 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		return 0;
 	}
 
-	const u32 NUM_SECTORS_PER_ITER = 8192;
-
 	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
 
 	u32 lba_curr = part->lba_start;
@@ -292,7 +289,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		lbaStartPart = lba_curr; // Update the start LBA for verification.
 	}
 	u64 totalSize = (u64)((u64)totalSectors << 9);
-	if (!isSmallSdCard && sd_fs.fs_type == FS_EXFAT)
+	if (!isSmallSdCard && (sd_fs.fs_type == FS_EXFAT || totalSize <= FAT32_FILESIZE_LIMIT))
 		f_lseek(&fp, totalSize);
 	else
 		f_lseek(&fp, MIN(totalSize, multipartSplitSize));
@@ -690,8 +687,6 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 		gfx_printf(&gfx_con, "\nTotal restore size: %d MiB.\n\n",
 			(u32)((use_multipart ? (u64)totalCheckFileSize : fileSize) >> (u64)9) >> SECTORS_TO_MIB_COEFF);
 	}
-
-	const u32 NUM_SECTORS_PER_ITER = 8192; // 4MB Cache.
 
 	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
 

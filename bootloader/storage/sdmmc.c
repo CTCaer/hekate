@@ -530,7 +530,9 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32
 		DPRINTF("[MMC] BKOPS enabled\n");
 	}
 	else
+	{
 		DPRINTF("[MMC] BKOPS disabled\n");
+	}
 
 	if (!_mmc_storage_enable_highspeed(storage, storage->ext_csd.card_type, type))
 		return 0;
@@ -1103,7 +1105,9 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 		DPRINTF("[SD] switched to wide bus width\n");
 	}
 	else
+	{
 		DPRINTF("[SD] SD does not support wide bus width\n");
+	}
 
 	if (storage->is_low_voltage)
 	{
@@ -1129,7 +1133,9 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 
 	// Parse additional card info from sd status.
 	if (_sd_storage_get_ssr(storage, buf))
+	{
 		DPRINTF("[SD] got sd status\n");
+	}
 
 	free(buf);
 	return 1;

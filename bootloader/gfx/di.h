@@ -350,9 +350,6 @@
 
 #define MIPI_CAL_MIPI_BIAS_PAD_CFG2 0x60
 
-/*! Display backlight related PWM registers. */
-#define PWM_CONTROLLER_PWM_CSR 0x00
-
 void display_init();
 void display_backlight_pwm_init();
 void display_end();

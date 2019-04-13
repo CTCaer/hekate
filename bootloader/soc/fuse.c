@@ -313,9 +313,9 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 	return 0;
 }
 
-void read_raw_ipatch_fuses(u32 *words)
+void read_raw_fuses(u32 *words)
 {
-	for (u32 i = 0; i < 0x100; i++)
+	for (u32 i = 0; i < 192; i++)
 	{
 		FUSE(FUSE_ADDR) = i;
 		FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;

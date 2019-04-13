@@ -142,7 +142,7 @@ void display_backlight_pwm_init()
 {
 	clock_enable_pwm();
 
-	PWM(PWM_CONTROLLER_PWM_CSR) = (1 << 31); // Enable PWM
+	PWM(PWM_CONTROLLER_PWM_CSR_0) = (1 << 31); // Enable PWM
 
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) >> 2) << 2 | 1; // PWM clock source.
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight power mode.
@@ -156,7 +156,7 @@ void display_backlight(bool enable)
 
 void display_backlight_brightness(u32 brightness, u32 step_delay)
 {
-	u32 old_value = (PWM(PWM_CONTROLLER_PWM_CSR) >> 16) & 0xFF;
+	u32 old_value = (PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF;
 	if (brightness == old_value)
 		return;
 
@@ -167,7 +167,7 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 	{
 		for (u32 i = old_value; i < brightness + 1; i++)
 		{
-			PWM(PWM_CONTROLLER_PWM_CSR) = (1 << 31) | (i << 16); // Enable PWM
+			PWM(PWM_CONTROLLER_PWM_CSR_0) = (1 << 31) | (i << 16); // Enable PWM
 			usleep(step_delay);
 		}
 	}
@@ -175,12 +175,12 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 	{
 		for (u32 i = old_value; i > brightness; i--)
 		{
-			PWM(PWM_CONTROLLER_PWM_CSR) = (1 << 31) | (i << 16); // Enable PWM
+			PWM(PWM_CONTROLLER_PWM_CSR_0) = (1 << 31) | (i << 16); // Enable PWM
 			usleep(step_delay);
 		}
 	}
 	if (!brightness)
-	    PWM(PWM_CONTROLLER_PWM_CSR) = 0;
+		PWM(PWM_CONTROLLER_PWM_CSR_0) = 0;
 }
 
 void display_end()

@@ -449,9 +449,6 @@ void print_fuel_gauge_info()
 
 	gfx_printf(&gfx_con, "%kFuel Gauge IC Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 
-	max17050_get_property(MAX17050_Age, &value);
-	gfx_printf(&gfx_con, "Age:                    %3d%\n", value);
-
 	max17050_get_property(MAX17050_RepSOC, &value);
 	gfx_printf(&gfx_con, "Capacity now:           %3d%\n", value >> 8);
 
@@ -654,9 +651,9 @@ void bootrom_ipatches_info()
 			else
 				EPRINTFARGS("Failed to read evp_thunks. Error: %d", res);
 			
-			u32 words[0x100];
-			read_raw_ipatch_fuses(words);
-			emmcsn_path_impl(path, "/dumps", "ipatches.bin", NULL);
+			u32 words[192];
+			read_raw_fuses(words);
+			emmcsn_path_impl(path, "/dumps", "raw_fuses.bin", NULL);
 			if (!sd_save_to_file((u8 *)words, sizeof(words), path))
 				gfx_puts(&gfx_con, "\nipatches.bin saved!\n");
 			
