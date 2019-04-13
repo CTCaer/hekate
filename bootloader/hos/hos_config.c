@@ -26,7 +26,7 @@
 
 #include "../gfx/gfx.h"
 
-//#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
+//#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
 extern void *sd_file_read(const char *path, u32 *fsize);

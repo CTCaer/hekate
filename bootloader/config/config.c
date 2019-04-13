@@ -154,20 +154,20 @@ int create_config_entry()
 
 static void _save_config()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	if (!create_config_entry())
-		gfx_puts(&gfx_con, "\nConfiguration was saved!\n");
+		gfx_puts("\nConfiguration was saved!\n");
 	else
 		EPRINTF("\nConfiguration saving failed!");
-	gfx_puts(&gfx_con, "\nPress any key...");
+	gfx_puts("\nPress any key...");
 }
 
 static void _config_autoboot_list(void *ent)
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	u32 *temp_autoboot = NULL;
 
@@ -225,7 +225,7 @@ static void _config_autoboot_list(void *ent)
 
 			memset(&ments[i], 0, sizeof(ment_t));
 			menu_t menu = {ments, "Select an entry to auto boot", 0, 0};
-			temp_autoboot = (u32 *)tui_do_menu(&gfx_con, &menu);
+			temp_autoboot = (u32 *)tui_do_menu(&menu);
 			if (temp_autoboot != NULL)
 			{
 				h_cfg.autoboot = *(u32 *)temp_autoboot;
@@ -258,8 +258,8 @@ out2:;
 
 void config_autoboot()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	u32 *temp_autoboot = NULL;
 
@@ -341,7 +341,7 @@ void config_autoboot()
 
 			memset(&ments[i], 0, sizeof(ment_t));
 			menu_t menu = {ments, "Disable or select entry to auto boot", 0, 0};
-			temp_autoboot = (u32 *)tui_do_menu(&gfx_con, &menu);
+			temp_autoboot = (u32 *)tui_do_menu(&menu);
 			if (temp_autoboot != NULL)
 			{
 				h_cfg.autoboot = *(u32 *)temp_autoboot;
@@ -374,8 +374,8 @@ out2:;
 
 void config_bootdelay()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	u32 delay_entries = 6;
 
@@ -416,7 +416,7 @@ void config_bootdelay()
 	memset(&ments[i + 2], 0, sizeof(ment_t));
 	menu_t menu = {ments, "Time delay for entering bootloader menu", 0, 0};
 
-	u32 *temp_bootwait = (u32 *)tui_do_menu(&gfx_con, &menu);
+	u32 *temp_bootwait = (u32 *)tui_do_menu(&menu);
 	if (temp_bootwait != NULL)
 	{
 		h_cfg.bootwait = *(u32 *)temp_bootwait;
@@ -434,8 +434,8 @@ void config_bootdelay()
 
 void config_verification()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
 	u32 *vr_values = (u32 *)malloc(sizeof(u32) * 3);
@@ -469,7 +469,7 @@ void config_verification()
 	memset(&ments[5], 0, sizeof(ment_t));
 	menu_t menu = {ments, "Backup & Restore verification", 0, 0};
 
-	u32 *temp_verification = (u32 *)tui_do_menu(&gfx_con, &menu);
+	u32 *temp_verification = (u32 *)tui_do_menu(&menu);
 	if (temp_verification != NULL)
 	{
 		h_cfg.verification = *(u32 *)temp_verification;
@@ -487,8 +487,8 @@ void config_verification()
 
 void config_backlight()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	u32 bri_entries = 11;
 
@@ -528,7 +528,7 @@ void config_backlight()
 	memset(&ments[i + 1], 0, sizeof(ment_t));
 	menu_t menu = {ments, "Backlight brightness", 0, 0};
 
-	u32 *temp_backlight = (u32 *)tui_do_menu(&gfx_con, &menu);
+	u32 *temp_backlight = (u32 *)tui_do_menu(&menu);
 	if (temp_backlight != NULL)
 	{
 		h_cfg.backlight = (*(u32 *)temp_backlight) * 2;
@@ -546,8 +546,8 @@ void config_backlight()
 
 void config_auto_hos_poweroff()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
 	u32 *hp_values = (u32 *)malloc(sizeof(u32) * 3);
@@ -586,7 +586,7 @@ void config_auto_hos_poweroff()
 	memset(&ments[5], 0, sizeof(ment_t));
 	menu_t menu = {ments, "Power off if woke up from HOS", 0, 0};
 
-	u32 *temp_autohosoff = (u32 *)tui_do_menu(&gfx_con, &menu);
+	u32 *temp_autohosoff = (u32 *)tui_do_menu(&menu);
 	if (temp_autohosoff != NULL)
 	{
 		h_cfg.autohosoff = *(u32 *)temp_autohosoff;
@@ -603,8 +603,8 @@ void config_auto_hos_poweroff()
 
 void config_nogc()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 5);
 	u32 *cb_values = (u32 *)malloc(sizeof(u32) * 2);
@@ -635,7 +635,7 @@ void config_nogc()
 	memset(&ments[4], 0, sizeof(ment_t));
 	menu_t menu = {ments, "No Gamecard", 0, 0};
 
-	u32 *temp_nogc = (u32 *)tui_do_menu(&gfx_con, &menu);
+	u32 *temp_nogc = (u32 *)tui_do_menu(&menu);
 	if (temp_nogc != NULL)
 	{
 		h_cfg.autonogc = *(u32 *)temp_nogc;

@@ -87,7 +87,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *value)
 
 	if (fss_meta->magic == FSS0_MAGIC)
 	{
-		gfx_printf(&gfx_con, "Found FSS0, Atmosphere %d.%d.%d-%08x\n"
+		gfx_printf("Found FSS0, Atmosphere %d.%d.%d-%08x\n"
 			"Max HOS supported: %d.%d.%d\n"
 			"Unpacking and loading components..  ",
 			fss_meta->version >> 24, (fss_meta->version >> 16) & 0xFF, (fss_meta->version >> 8) & 0xFF, fss_meta->git_rev,
@@ -131,7 +131,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *value)
 			f_read(&fp, content, curr_fss_cnt[i].size, NULL);
 		}
 
-		gfx_printf(&gfx_con, "Done!\n");
+		gfx_printf("Done!\n");
 		f_close(&fp);
 
 		return 1;

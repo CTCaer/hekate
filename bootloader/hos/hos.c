@@ -45,7 +45,7 @@ extern hekate_config h_cfg;
 
 extern void sd_unmount();
 
-//#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
+//#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
 #define PKG2_LOAD_ADDR 0xA9800000
@@ -112,17 +112,17 @@ static void _se_lock(bool lock_se)
 	SB(SB_CSR) = 0x10; // Protected IROM enable.
 
 	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
-	/*gfx_printf(&gfx_con, "SE(SE_SECURITY_0) = %08X\n", SE(SE_SECURITY_0));
-	gfx_printf(&gfx_con, "SE(0x4) = %08X\n", SE(0x4));
-	gfx_printf(&gfx_con, "SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = %08X\n", SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET));
-	gfx_printf(&gfx_con, "SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = %08X\n", SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET));
+	/*gfx_printf("SE(SE_SECURITY_0) = %08X\n", SE(SE_SECURITY_0));
+	gfx_printf("SE(0x4) = %08X\n", SE(0x4));
+	gfx_printf("SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = %08X\n", SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET));
+	gfx_printf("SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = %08X\n", SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET));
 	for(u32 i = 0; i < 16; i++)
-		gfx_printf(&gfx_con, "%02X ", SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + i * 4) & 0xFF);
-	gfx_putc(&gfx_con, '\n');
+		gfx_printf("%02X ", SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + i * 4) & 0xFF);
+	gfx_putc('\n');
 	for(u32 i = 0; i < 2; i++)
-		gfx_printf(&gfx_con, "%02X ", SE(SE_RSA_KEYTABLE_ACCESS_REG_OFFSET + i * 4) & 0xFF);
-	gfx_putc(&gfx_con, '\n');
-	gfx_hexdump(&gfx_con, SE_BASE, (void *)SE_BASE, 0x400);*/
+		gfx_printf("%02X ", SE(SE_RSA_KEYTABLE_ACCESS_REG_OFFSET + i * 4) & 0xFF);
+	gfx_putc('\n');
+	gfx_hexdump(SE_BASE, (void *)SE_BASE, 0x400);*/
 }
 
 void _pmc_scratch_lock(u32 kb)
@@ -308,7 +308,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 		EPRINTF("Unknown pkg1 version.");
 		goto out;
 	}
-	gfx_printf(&gfx_con, "Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
+	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
@@ -392,10 +392,10 @@ int hos_launch(ini_sec_t *cfg)
 	ctxt.cfg = cfg;
 
 	if (!gfx_con.mute)
-		gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+		gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
-	gfx_printf(&gfx_con, "Initializing...\n\n");
+	gfx_printf("Initializing...\n\n");
 
 	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
@@ -412,7 +412,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (h_cfg.autonogc && !(fuse_read_odm(7) & ~0xF) && ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)
 		config_kip1patch(&ctxt, "nogc");
 
-	gfx_printf(&gfx_con, "Loaded pkg1 & keyblob\n");
+	gfx_printf("Loaded pkg1 & keyblob\n");
 
 	// Generate keys.
 	if (!h_cfg.se_keygen_done || ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_620)
@@ -424,7 +424,7 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
-			gfx_printf(&gfx_con, "Failed to run sept\n");
+			gfx_printf("Failed to run sept\n");
 			return 0;
 		}
 
@@ -444,7 +444,7 @@ int hos_launch(ini_sec_t *cfg)
 		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_620)
 		{
 			pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
-			gfx_printf(&gfx_con, "Decrypted & unpacked pkg1\n");
+			gfx_printf("Decrypted & unpacked pkg1\n");
 		}
 		else
 		{
@@ -465,7 +465,7 @@ int hos_launch(ini_sec_t *cfg)
 		}
 		// Else we patch it to allow downgrading.
 		patch_t *warmboot_patchset = ctxt.pkg1_id->warmboot_patchset;
-		gfx_printf(&gfx_con, "%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 		for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
 	}
@@ -480,32 +480,32 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		// Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
-		gfx_printf(&gfx_con, "%kPatching Security Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kPatching Security Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 		for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 	}
 
-	gfx_printf(&gfx_con, "Loaded warmboot and secmon\n");
+	gfx_printf("Loaded warmboot and secmon\n");
 
 	// Read package2.
 	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
 	if (!bootConfigBuf)
 		return 0;
 
-	gfx_printf(&gfx_con, "Read pkg2\n");
+	gfx_printf("Read pkg2\n");
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
 	if (!pkg2_hdr)
 	{
-		gfx_printf(&gfx_con, "Pkg2 decryption failed!\n");
+		gfx_printf("Pkg2 decryption failed!\n");
 		return 0;
 	}
 
 	LIST_INIT(kip1_info);
 	pkg2_parse_kips(&kip1_info, pkg2_hdr);
 
-	gfx_printf(&gfx_con, "Parsed ini1\n");
+	gfx_printf("Parsed ini1\n");
 
 	// Use the kernel included in package2 in case we didn't load one already.
 	if (!ctxt.kernel)
@@ -522,7 +522,7 @@ int hos_launch(ini_sec_t *cfg)
 			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
 			if (kernel_patchset != NULL)
 			{
-				gfx_printf(&gfx_con, "%kPatching kernel%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+				gfx_printf("%kPatching kernel%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 				u32 *temp;
 				for (u32 i = 0; kernel_patchset[i].id != 0xFFFFFFFF; i++)
 				{
@@ -544,7 +544,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Merge extra KIP1s into loaded ones.
-	gfx_printf(&gfx_con, "%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
@@ -562,9 +562,9 @@ int hos_launch(ini_sec_t *cfg)
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info);
 
-	gfx_printf(&gfx_con, "Rebuilt & loaded pkg2\n");
+	gfx_printf("Rebuilt & loaded pkg2\n");
 
-	gfx_printf(&gfx_con, "\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
+	gfx_printf("\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
 	// Clear pkg1/pkg2 keys.
 	se_aes_key_clear(8);

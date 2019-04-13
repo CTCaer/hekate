@@ -58,8 +58,8 @@ void dump_packages12()
 
 	tsec_ctxt_t tsec_ctxt;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -95,12 +95,12 @@ void dump_packages12()
 			b_cfg.autoboot = 0;
 			b_cfg.autoboot_list = 0;
 
-			gfx_printf(&gfx_con, "sept will run to get the keys.\nThen rerun this option.");
+			gfx_printf("sept will run to get the keys.\nThen rerun this option.");
 			btn_wait();
 
 			if (!reboot_to_sept((u8 *)tsec_ctxt.fw))
 			{
-				gfx_printf(&gfx_con, "Failed to run sept\n");
+				gfx_printf("Failed to run sept\n");
 				goto out_free;
 			}
 		}
@@ -126,37 +126,37 @@ void dump_packages12()
 		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 	
 		// Display info.
-		gfx_printf(&gfx_con, "%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
+		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
 	
-		gfx_printf(&gfx_con, "%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
-		gfx_printf(&gfx_con, "%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
+		gfx_printf("%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
+		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
 	
-		gfx_printf(&gfx_con, "%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
-		gfx_printf(&gfx_con, "%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
+		gfx_printf("%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
+		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
 
 		// Dump package1.1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
-		gfx_puts(&gfx_con, "\npkg1 dumped to pkg1_decr.bin\n");
+		gfx_puts("\npkg1 dumped to pkg1_decr.bin\n");
 	
 		// Dump nxbootloader.
 		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
 		if (sd_save_to_file(loader, hdr->ldr_size, path))
 			goto out_free;
-		gfx_puts(&gfx_con, "NX Bootloader dumped to nxloader.bin\n");
+		gfx_puts("NX Bootloader dumped to nxloader.bin\n");
 	
 		// Dump secmon.
 		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
 		if (sd_save_to_file(secmon, hdr->sm_size, path))
 			goto out_free;
-		gfx_puts(&gfx_con, "Secure Monitor dumped to secmon.bin\n");
+		gfx_puts("Secure Monitor dumped to secmon.bin\n");
 	
 		// Dump warmboot.
 		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
 		if (sd_save_to_file(warmboot, hdr->wb_size, path))
 			goto out_free;
-		gfx_puts(&gfx_con, "Warmboot dumped to warmboot.bin\n\n\n");
+		gfx_puts("Warmboot dumped to warmboot.bin\n\n\n");
 	}
 
 	// Dump package2.1.
@@ -185,30 +185,30 @@ void dump_packages12()
 
 	// Display info.
 	u32 kernel_crc32 = crc32c(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
-	gfx_printf(&gfx_con, "\n%kKernel CRC32C: %k0x%08X\n\n", 0xFFC7EA46, 0xFFCCCCCC, kernel_crc32);
-	gfx_printf(&gfx_con, "%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
-	gfx_printf(&gfx_con, "%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
+	gfx_printf("\n%kKernel CRC32C: %k0x%08X\n\n", 0xFFC7EA46, 0xFFCCCCCC, kernel_crc32);
+	gfx_printf("%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
+	gfx_printf("%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
 	// Dump pkg2.1.
 	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &storage);
 	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
-	gfx_puts(&gfx_con, "\npkg2 dumped to pkg2_decr.bin\n");
+	gfx_puts("\npkg2 dumped to pkg2_decr.bin\n");
 
 	// Dump kernel.
 	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &storage);
 	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
 		goto out;
-	gfx_puts(&gfx_con, "Kernel dumped to kernel.bin\n");
+	gfx_puts("Kernel dumped to kernel.bin\n");
 
 	// Dump INI1.
 	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);
 	if (sd_save_to_file(pkg2_hdr->data + pkg2_hdr->sec_size[PKG2_SEC_KERNEL],
 		pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
-	gfx_puts(&gfx_con, "INI1 dumped to ini1.bin\n");
+	gfx_puts("INI1 dumped to ini1.bin\n");
 
-	gfx_puts(&gfx_con, "\nDone. Press any key...\n");
+	gfx_puts("\nDone. Press any key...\n");
 
 out:
 	nx_emmc_gpt_free(&gpt);
@@ -234,8 +234,8 @@ void _toggle_autorcm(bool enable)
 
 	u8 randomXor = 0;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
@@ -270,10 +270,10 @@ void _toggle_autorcm(bool enable)
 	sdmmc_storage_end(&storage);
 
 	if (enable)
-		gfx_printf(&gfx_con, "%kAutoRCM mode enabled!%k", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kAutoRCM mode enabled!%k", 0xFFFFBA00, 0xFFCCCCCC);
 	else
-		gfx_printf(&gfx_con, "%kAutoRCM mode disabled!%k", 0xFF96FF00, 0xFFCCCCCC);
-	gfx_printf(&gfx_con, "\n\nPress any key...\n");
+		gfx_printf("%kAutoRCM mode disabled!%k", 0xFF96FF00, 0xFFCCCCCC);
+	gfx_printf("\n\nPress any key...\n");
 
 out:
 	btn_wait();
@@ -284,8 +284,8 @@ void _disable_autorcm() { _toggle_autorcm(false); }
 
 void menu_autorcm()
 {
-	gfx_clear_grey(&gfx_ctxt, 0x1B);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
 
 	// Do a simple check on the main BCT.
 	sdmmc_storage_t storage;
@@ -340,7 +340,7 @@ void menu_autorcm()
 	memset(&ments[5], 0, sizeof(ment_t));
 	menu_t menu = {ments, "This corrupts your BOOT0!", 0, 0};
 
-	tui_do_menu(&gfx_con, &menu);
+	tui_do_menu(&menu);
 }
 
 int _fix_attributes(char *path, u32 *total, u32 hos_folder, u32 check_first_run)
@@ -421,8 +421,8 @@ int _fix_attributes(char *path, u32 *total, u32 hos_folder, u32 check_first_run)
 
 void _fix_sd_attr(u32 type)
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
 	char path[256];
 	char label[16];
@@ -443,9 +443,9 @@ void _fix_sd_attr(u32 type)
 			break;
 		}
 
-		gfx_printf(&gfx_con, "Traversing all %s files!\nThis may take some time...\n\n", label);
+		gfx_printf("Traversing all %s files!\nThis may take some time...\n\n", label);
 		_fix_attributes(path, &total, type, type);
-		gfx_printf(&gfx_con, "%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
+		gfx_printf("%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
 		sd_unmount();
 	}
 	btn_wait();
@@ -456,20 +456,20 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 
 void fix_battery_desync()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
 	max77620_low_battery_monitor_config();
 
-	gfx_puts(&gfx_con, "\nDone!\n");
+	gfx_puts("\nDone!\n");
 
 	btn_wait();
 }
 
 /* void fix_fuel_gauge_configuration()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
 	int battVoltage, avgCurrent;
 
@@ -483,23 +483,23 @@ void fix_battery_desync()
 			EPRINTF("You need to be connected to a wall adapter,\nto apply this fix!");
 		else
 		{
-			gfx_printf(&gfx_con, "%kAre you really sure?\nThis will reset your fuel gauge completely!\n", 0xFFFFDD00);
-			gfx_printf(&gfx_con, "Additionally this will power off your console.\n%k", 0xFFCCCCCC);
+			gfx_printf("%kAre you really sure?\nThis will reset your fuel gauge completely!\n", 0xFFFFDD00);
+			gfx_printf("Additionally this will power off your console.\n%k", 0xFFCCCCCC);
 
-			gfx_puts(&gfx_con, "\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+			gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
 
 			u32 btn = btn_wait();
 			if (btn & BTN_POWER)
 			{
 				max17050_fix_configuration();
 				msleep(1000);
-				gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+				gfx_con_getpos(&gfx_con.savedx,  &gfx_con.savedy);
 				u16 value = 0;
-				gfx_printf(&gfx_con, "%kThe console will power off in 45 seconds.\n%k", 0xFFFFDD00, 0xFFCCCCCC);
+				gfx_printf("%kThe console will power off in 45 seconds.\n%k", 0xFFFFDD00, 0xFFCCCCCC);
 				while (value < 46)
 				{
-					gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
-					gfx_printf(&gfx_con, "%2ds elapsed", value);
+					gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+					gfx_printf("%2ds elapsed", value);
 					msleep(1000);
 					value++;
 				}
@@ -521,31 +521,31 @@ void fix_battery_desync()
 {
 	int avgCurrent;
 
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
-	gfx_printf(&gfx_con, "%k\nThis will wipe your battery stats completely!\n"
+	gfx_printf("%k\nThis will wipe your battery stats completely!\n"
 		"%kAnd it may not power on without physically\nremoving and re-inserting the battery.\n%k"
 		"\nAre you really sure?%k\n", 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
 
-	gfx_puts(&gfx_con, "\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
+	gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
-		gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-		gfx_con_setpos(&gfx_con, 0, 0);
-		gfx_printf(&gfx_con, "%kKeep the USB cable connected!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
-		gfx_con_getpos(&gfx_con, &gfx_con.savedx,  &gfx_con.savedy);
+		gfx_clear_partial_grey(0x1B, 0, 1256);
+		gfx_con_setpos(0, 0);
+		gfx_printf("%kKeep the USB cable connected!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
+		gfx_con_getpos(&gfx_con.savedx,  &gfx_con.savedy);
 
 		u8 value = 30;
 		while (value > 0)
 		{
-			gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
-			gfx_printf(&gfx_con, "%kWait... (%ds)   %k", 0xFF888888, value, 0xFFCCCCCC);
+			gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+			gfx_printf("%kWait... (%ds)   %k", 0xFF888888, value, 0xFFCCCCCC);
 			msleep(1000);
 			value--;
 		}
-		gfx_con_setpos(&gfx_con, gfx_con.savedx, gfx_con.savedy);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
 
 		//Check if still connected.
 		max17050_get_property(MAX17050_AvgCurrent, &avgCurrent);
@@ -555,7 +555,7 @@ void fix_battery_desync()
 		{
 			// Apply fix.
 			bq24193_fake_battery_removal();
-			gfx_printf(&gfx_con, "Done!               \n"
+			gfx_printf("Done!               \n"
 				"%k1. Remove the USB cable\n"
 				"2. Press POWER for 15s.\n"
 				"3. Reconnect the USB to power-on!%k\n", 0xFFFFDD00, 0xFFCCCCCC);
@@ -573,22 +573,22 @@ void fix_battery_desync()
 
 void minerva()
 {
-	gfx_clear_partial_grey(&gfx_ctxt, 0x1B, 0, 1256);
-	gfx_con_setpos(&gfx_con, 0, 0);
+	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_con_setpos(0, 0);
 
 	u32 curr_ram_idx = 0;
 
 	if (!sd_mount())
 		return;
 
-	gfx_printf(&gfx_con, "-- Minerva Training Cell --\n\n");
+	gfx_printf("-- Minerva Training Cell --\n\n");
 
 	// Set table to ram.
 	mtc_cfg.mtc_table = NULL;
 	mtc_cfg.sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
 	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
 
-	gfx_printf(&gfx_con, "\nStarting training process..\n\n");
+	gfx_printf("\nStarting training process..\n\n");
 
 	// Get current frequency
 	for (curr_ram_idx = 0; curr_ram_idx < 10; curr_ram_idx++)
@@ -603,21 +603,21 @@ void minerva()
 	mtc_cfg.rate_from = mtc_cfg.mtc_table[curr_ram_idx].rate_khz;
 	mtc_cfg.rate_to = 800000;
 	mtc_cfg.train_mode = OP_TRAIN_SWITCH;
-	gfx_printf(&gfx_con, "Training and switching %7d -> %7d\n\n", mtc_cfg.mtc_table[curr_ram_idx].rate_khz, 800000);
+	gfx_printf("Training and switching %7d -> %7d\n\n", mtc_cfg.mtc_table[curr_ram_idx].rate_khz, 800000);
 	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
 	
 	// Thefollowing frequency needs periodic training every 100ms.
 	//msleep(200);
 
 	//mtc_cfg.rate_to = 1600000;
-	//gfx_printf(&gfx_con, "Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
+	//gfx_printf("Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
 	//ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
 
 	//mtc_cfg.train_mode = OP_PERIODIC_TRAIN;
 	
 	sd_unmount();
 	
-	gfx_printf(&gfx_con, "Finished!");
+	gfx_printf("Finished!");
 
 	btn_wait();
 }

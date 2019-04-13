@@ -215,16 +215,16 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		smmu_deinit_for_tsec();
 
 		// for (int i = 0; i < kidx; i++)
-		// 	gfx_printf(&gfx_con, "key %08X\n", key[i]);
+		// 	gfx_printf("key %08X\n", key[i]);
 
-		// gfx_printf(&gfx_con, "cpuctl (%08X) mbox (%08X)\n", TSEC(TSEC_CPUCTL), TSEC(TSEC_STATUS));
+		// gfx_printf("cpuctl (%08X) mbox (%08X)\n", TSEC(TSEC_CPUCTL), TSEC(TSEC_STATUS));
 
 		// u32 errst = MC(MC_ERR_STATUS);
-		// gfx_printf(&gfx_con, " MC %08X %08X %08X\n", MC(MC_INTSTATUS), errst, MC(MC_ERR_ADR));
-		// gfx_printf(&gfx_con, " type: %02X\n", errst >> 28);
-		// gfx_printf(&gfx_con, " smmu: %02X\n", (errst >> 25) & 3);
-		// gfx_printf(&gfx_con, " dir:  %s\n", (errst >> 16) & 1 ? "W" : "R");
-		// gfx_printf(&gfx_con, " cid:  %02x\n", errst & 0xFF);
+		// gfx_printf(" MC %08X %08X %08X\n", MC(MC_INTSTATUS), errst, MC(MC_ERR_ADR));
+		// gfx_printf(" type: %02X\n", errst >> 28);
+		// gfx_printf(" smmu: %02X\n", (errst >> 25) & 3);
+		// gfx_printf(" dir:  %s\n", (errst >> 16) & 1 ? "W" : "R");
+		// gfx_printf(" cid:  %02x\n", errst & 0xFF);
 	}
 	else
 	{

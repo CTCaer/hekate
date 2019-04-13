@@ -70,19 +70,19 @@ void ianos_print_error(int errorno)
 	switch (errorno)
 	{
 	case 1:
-		gfx_printf(&gfx_con, "Can't find library!\n");
+		gfx_printf("Can't find library!\n");
 		break;
 	case 2:
-		gfx_printf(&gfx_con, "Cant init ELF context!\n");
+		gfx_printf("Cant init ELF context!\n");
 		break;
 	case 3:
-		gfx_printf(&gfx_con, "Cant alloc memory!\n");
+		gfx_printf("Cant alloc memory!\n");
 		break;
 	case 4:
-		gfx_printf(&gfx_con, "Error loading ELF!\n");
+		gfx_printf("Error loading ELF!\n");
 		break;
 	case 5:
-		gfx_printf(&gfx_con, "Error relocating ELF!\n");
+		gfx_printf("Error relocating ELF!\n");
 		break;
 	}
 }

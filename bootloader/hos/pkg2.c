@@ -27,7 +27,7 @@
 #include "../gfx/gfx.h"
 
 /*#include "util.h"
-#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
+#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DEBUG_PRINTING*/
 #define DPRINTF(...)
 
@@ -680,10 +680,10 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 
 		unsigned int compSize = hdr.sections[sectIdx].size_comp;
 		unsigned int outputSize = hdr.sections[sectIdx].size_decomp;
-		gfx_printf(&gfx_con, "Decomping %s KIP1 sect %d of size %d...\n", (const char*)hdr.name, sectIdx, compSize);
+		gfx_printf("Decomping %s KIP1 sect %d of size %d...\n", (const char*)hdr.name, sectIdx, compSize);
 		if (blz_uncompress_srcdest(srcDataPtr, compSize, dstDataPtr, outputSize) == 0)
 		{
-			gfx_printf(&gfx_con, "%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);			
+			gfx_printf("%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);			
 			free(newKip);
 
 			return 1;
@@ -844,7 +844,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 					u32 appliedMask = 1u << currEnabIdx;
 					if (currPatchset->patches == NULL)
 					{
-						gfx_printf(&gfx_con, "Patch '%s' not necessary for %s KIP1\n", currPatchset->name, (const char*)ki->kip1->name);
+						gfx_printf("Patch '%s' not necessary for %s KIP1\n", currPatchset->name, (const char*)ki->kip1->name);
 						patchesApplied |= appliedMask;
 						break;
 					}
@@ -854,7 +854,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 					{
 						if (bitsAffected & (1u << currSectIdx))
 						{
-							gfx_printf(&gfx_con, "Applying patch '%s' on %s KIP1 sect %d\n", currPatchset->name, (const char*)ki->kip1->name, currSectIdx);
+							gfx_printf("Applying patch '%s' on %s KIP1 sect %d\n", currPatchset->name, (const char*)ki->kip1->name, currSectIdx);
 							for (const kip1_patch_t* currPatch=currPatchset->patches;currPatch != NULL && currPatch->length != 0; currPatch++)
 							{
 								if (GET_KIP_PATCH_SECTION(currPatch->offset) != currSectIdx)
@@ -863,7 +863,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 								u32 currOffset = GET_KIP_PATCH_OFFSET(currPatch->offset);
 								if (memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0)
 								{
-									gfx_printf(&gfx_con, "%kDATA MISMATCH FOR PATCH AT OFFSET 0x%x!!!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
+									gfx_printf("%kDATA MISMATCH FOR PATCH AT OFFSET 0x%x!!!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
 									return currPatchset->name; // MUST stop here as kip is likely corrupt.
 								}
 								else
@@ -907,7 +907,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data)
 
 	// Decrypt header.
 	se_aes_crypt_ctr(8, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
-	//gfx_hexdump(&gfx_con, (u32)hdr, hdr, 0x100);
+	//gfx_hexdump((u32)hdr, hdr, 0x100);
 
 	if (hdr->magic != PKG2_MAGIC)
 		return NULL;
@@ -919,7 +919,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 			continue;
 
 		se_aes_crypt_ctr(8, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * 0x10]);
-		//gfx_hexdump(&gfx_con, (u32)pdata, pdata, 0x100);
+		//gfx_hexdump((u32)pdata, pdata, 0x100);
 
 		pdata += hdr->sec_size[i];
 	}

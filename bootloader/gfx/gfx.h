@@ -21,32 +21,32 @@
 
 #include "../../common/common_gfx.h"
 
-#define EPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
-#define WPRINTF(text) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
-#define WPRINTFARGS(text, args...) gfx_printf(&gfx_con, "%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
+#define EPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
+#define EPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
+#define WPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
+#define WPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
 
-void gfx_init_ctxt(gfx_ctxt_t *ctxt, u32 *fb, u32 width, u32 height, u32 stride);
-void gfx_clear_grey(gfx_ctxt_t *ctxt, u8 color);
-void gfx_clear_partial_grey(gfx_ctxt_t *ctxt, u8 color, u32 pos_x, u32 height);
-void gfx_clear_color(gfx_ctxt_t *ctxt, u32 color);
-void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt);
-void gfx_con_setcol(gfx_con_t *con, u32 fgcol, int fillbg, u32 bgcol);
-void gfx_con_getpos(gfx_con_t *con, u32 *x, u32 *y);
-void gfx_con_setpos(gfx_con_t *con, u32 x, u32 y);
-void gfx_putc(gfx_con_t *con, char c);
-void gfx_puts(gfx_con_t *con, const char *s);
-void gfx_printf(gfx_con_t *con, const char *fmt, ...);
-void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len);
+void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride);
+void gfx_clear_grey(u8 color);
+void gfx_clear_partial_grey(u8 color, u32 pos_x, u32 height);
+void gfx_clear_color(u32 color);
+void gfx_con_init();
+void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol);
+void gfx_con_getpos(u32 *x, u32 *y);
+void gfx_con_setpos(u32 x, u32 y);
+void gfx_putc(char c);
+void gfx_puts(const char *s);
+void gfx_printf(const char *fmt, ...);
+void gfx_hexdump(u32 base, const u8 *buf, u32 len);
 
-void gfx_set_pixel(gfx_ctxt_t *ctxt, u32 x, u32 y, u32 color);
-void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color);
+void gfx_set_pixel(u32 x, u32 y, u32 color);
+void gfx_line(int x0, int y0, int x1, int y1, u32 color);
 void gfx_put_small_sep(gfx_con_t *con);
 void gfx_put_big_sep(gfx_con_t *con);
-void gfx_set_rect_grey(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
-void gfx_set_rect_rgb(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
-void gfx_set_rect_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
-void gfx_render_bmp_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
+void gfx_set_rect_grey(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
+void gfx_set_rect_rgb(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
+void gfx_set_rect_argb(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
+void gfx_render_bmp_argb(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y);
 
 // Global gfx console and context.
 gfx_ctxt_t gfx_ctxt;
