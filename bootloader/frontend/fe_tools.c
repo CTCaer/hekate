@@ -407,6 +407,10 @@ int _fix_attributes(char *path, u32 *total, u32 hos_folder, u32 check_first_run)
 				*total = *total + 1;
 				f_chmod(path, AM_ARC, AM_ARC);
 			}
+
+			// Update status bar.
+			tui_sbar(false);
+
 			// Enter the directory.
 			res = _fix_attributes(path, total, hos_folder, 0);
 			if (res != FR_OK)
