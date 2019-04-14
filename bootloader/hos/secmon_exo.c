@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2018-2019 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -15,12 +16,21 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "hos.h"
+#include "../gfx/di.h"
+#include "../gfx/gfx.h"
+#include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../soc/fuse.h"
 #include "../storage/sdmmc.h"
+#include "../utils/btn.h"
+#include "../utils/util.h"
 #include "../utils/types.h"
+
+extern bool sd_mount();
+extern int sd_save_to_file(void *buf, u32 size, const char *filename);
 
 typedef struct _exo_cfg_t
 {
@@ -35,6 +45,36 @@ typedef struct _atm_meta_t
 	uint32_t magic;
 	uint32_t fwno;
 } wb_cfg_t;
+
+// Atmosphère reboot-to-fatal-error.
+typedef struct _atm_fatal_error_ctx
+{
+	u32 magic;
+	u32 error_desc;
+	u64 title_id;
+	union
+	{
+		u64 gprs[32];
+		struct
+		{
+			u64 _gprs[29];
+			u64 fp;
+			u64 lr;
+			u64 sp;
+		};
+	};
+	u64 pc;
+	u64 padding;
+	u32 pstate;
+	u32 afsr0;
+	u32 afsr1;
+	u32 esr;
+	u64 far;
+	u64 report_identifier; // Normally just system tick.
+} atm_fatal_error_ctx;
+
+#define ATM_FATAL_ERR_CTX_ADDR 0x4003E000
+#define  ATM_FATAL_MAGIC 0x30454641 // AFE0
 
 #define ATM_WB_HEADER_OFF 0x244
 #define  ATM_WB_MAGIC 0x30544257
@@ -115,4 +155,74 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 
 		memcpy(warmboot + 0x10, rsa_mod + 0x10, 0x100);
 	}
+}
+
+static const char *get_error_desc(u32 error_desc)
+{
+	switch (error_desc)
+	{
+	case 0x100:
+		return "Instruction Abort";
+	case 0x101:
+		return "Data Abort";
+	case 0x102:
+		return "PC Misalignment";
+	case 0x103:
+		return "SP Misalignment";
+	case 0x104:
+		return "Trap";
+	case 0x106:
+		return "SError";
+	case 0x301:
+		return "Bad SVC";
+	default:
+		return "Unknown";
+	}
+}
+
+void secmon_exo_check_panic()
+{
+	volatile atm_fatal_error_ctx *rpt = (atm_fatal_error_ctx *)ATM_FATAL_ERR_CTX_ADDR;
+
+	if (rpt->magic != ATM_FATAL_MAGIC)
+		return;
+
+	gfx_clear_grey(0x1B);
+	gfx_con_setpos(0, 0);
+
+	WPRINTF("Panic occurred while running Atmosphere.\n\n");
+	WPRINTFARGS("Title ID:   %08X%08X", (u32)((u64)rpt->title_id >> 32), (u32)rpt->title_id);
+	WPRINTFARGS("Error Desc: %s (0x%x)\n", get_error_desc(rpt->error_desc), rpt->error_desc);
+
+	if (sd_mount())
+	{
+		// Save context to the SD card.
+		char filepath[0x40];
+		f_mkdir("atmosphere/fatal_errors");
+		memcpy(filepath, "/atmosphere/fatal_errors/report_", 33);
+		itoa((u32)((u64)rpt->report_identifier >> 32), filepath + strlen(filepath), 16);
+		itoa((u32)(rpt->report_identifier), filepath + strlen(filepath), 16);
+		memcpy(filepath + strlen(filepath), ".bin", 5);
+
+		sd_save_to_file((void *)rpt, sizeof(atm_fatal_error_ctx), filepath);
+
+		gfx_con.fntsz = 8;
+		WPRINTFARGS("Report saved to %s\n", filepath);
+	}
+
+	// Change magic to invalid, to prevent double-display of error/bootlooping.
+	rpt->magic = 0x0;
+
+	gfx_con.fntsz = 16;
+	gfx_printf("\n\nPress POWER to continue.\n");
+
+	display_backlight_brightness(100, 1000);
+	msleep(1000);
+
+	u32 btn = btn_wait();
+	while (!(btn & BTN_POWER))
+		btn = btn_wait();
+
+	display_backlight_brightness(0, 1000);
+	gfx_con_setpos(0, 0);
 }

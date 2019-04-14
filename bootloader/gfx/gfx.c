@@ -150,7 +150,7 @@ void gfx_con_init()
 	gfx_con.savedx = 0;
 	gfx_con.savedy = 0;
 	gfx_con.fgcol = 0xFFCCCCCC;
-	gfx_con.fillbg = 0;
+	gfx_con.fillbg = 1;
 	gfx_con.bgcol = 0xFF1B1B1B;
 	gfx_con.mute = 0;
 }

@@ -25,6 +25,7 @@
 #include "gfx/logos.h"
 #include "gfx/tui.h"
 #include "hos/hos.h"
+#include "hos/secmon_exo.h"
 #include "hos/sept.h"
 #include "ianos/ianos.h"
 #include "libs/compr/blz.h"
@@ -139,7 +140,6 @@ int sd_save_to_file(void *buf, u32 size, const char *filename)
 		return 1;
 	}
 
-	f_sync(&fp);
 	f_write(&fp, buf, size, NULL);
 	f_close(&fp);
 
@@ -1160,6 +1160,9 @@ void ipl_main()
 
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
+
+	// Check if we had a panic while in CFW.
+	secmon_exo_check_panic();
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();
