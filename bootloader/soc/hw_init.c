@@ -239,6 +239,9 @@ void config_hw()
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO5, 2);
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO6, 2);
 
+	// Disable low battery shutdown monitor.
+	max77620_low_battery_monitor_config();
+
 	_config_pmc_scratch(); // Missing from 4.x+
 
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = (CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) & 0xFFFF8888) | 0x3333;

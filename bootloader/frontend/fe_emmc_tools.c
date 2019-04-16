@@ -52,8 +52,8 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 	u8 sparseShouldVerify = 4;
 	u32 btn = 0;
 	u32 prevPct = 200;
-	int res = 0;
 	u32 sdFileSector = 0;
+	int res = 0;
 
 	u8 hashEm[0x20];
 	u8 hashSd[0x20];

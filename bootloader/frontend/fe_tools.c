@@ -458,18 +458,6 @@ void _fix_sd_attr(u32 type)
 void fix_sd_all_attr() { _fix_sd_attr(0); }
 void fix_sd_nin_attr() { _fix_sd_attr(1); }
 
-void fix_battery_desync()
-{
-	gfx_clear_partial_grey(0x1B, 0, 1256);
-	gfx_con_setpos(0, 0);
-
-	max77620_low_battery_monitor_config();
-
-	gfx_puts("\nDone!\n");
-
-	btn_wait();
-}
-
 /* void fix_fuel_gauge_configuration()
 {
 	gfx_clear_partial_grey(0x1B, 0, 1256);
