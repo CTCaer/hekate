@@ -34,10 +34,12 @@
 #include "mem/sdram.h"
 #include "power/max77620.h"
 #include "rtc/max77620-rtc.h"
+#include "soc/fuse.h"
 #include "soc/hw_init.h"
 #include "soc/i2c.h"
 #include "soc/t210.h"
 #include "soc/uart.h"
+#include "storage/nx_emmc.h"
 #include "storage/sdmmc.h"
 #include "utils/btn.h"
 #include "utils/dirlist.h"
@@ -945,6 +947,48 @@ out:
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
 }
 
+void patched_rcm_protection()
+{
+	sdmmc_storage_t storage;
+	sdmmc_t sdmmc;
+
+	h_cfg.rcm_patched = fuse_check_patched_rcm();
+
+	if (!h_cfg.rcm_patched)
+		return;
+
+	// Check if AutoRCM is enabled and protect from a permanent brick.
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+		return;
+
+	u8 *tempbuf = (u8 *)malloc(0x200);
+	sdmmc_storage_set_mmc_partition(&storage, 1);
+
+	u8 corr_mod_byte0;
+	int i, sect = 0;
+	if ((fuse_read_odm(4) & 3) != 3)
+		corr_mod_byte0 = 0xF7;
+	else
+		corr_mod_byte0 = 0x37;
+
+	for (i = 0; i < 4; i++)
+	{
+		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
+		sdmmc_storage_read(&storage, sect, 1, tempbuf);
+
+		// If AutoRCM is enabled, disable it.
+		if (tempbuf[0x10] != corr_mod_byte0)
+		{
+			tempbuf[0x10] = corr_mod_byte0;
+
+			sdmmc_storage_write(&storage, sect, 1, tempbuf);
+		}
+	}
+
+	free(tempbuf);
+	sdmmc_storage_end(&storage);
+}
+
 void about()
 {
 	static const char credits[] =
@@ -1087,7 +1131,7 @@ ment_t ment_tools[] = {
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	//MDEF_HANDLER("Minerva", minerva), // Uncomment for testing Minerva Training Cell
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Dangerous -----", 0xFFFF0000),
+	MDEF_CAPTION("-------- Other -------", 0xFFFFDD00),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()
 };
@@ -1162,6 +1206,9 @@ void ipl_main()
 
 	// Check if we had a panic while in CFW.
 	secmon_exo_check_panic();
+
+	// Check if RCM is patched and protect from a possible brick.
+	patched_rcm_protection();
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();

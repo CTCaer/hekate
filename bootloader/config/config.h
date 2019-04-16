@@ -30,10 +30,11 @@ typedef struct _hekate_config
 	u32 autohosoff;
 	u32 autonogc;
 	// Global temporary config.
-	int se_keygen_done;
+	bool se_keygen_done;
 	u32 sbar_time_keeping;
 	u32 errors;
 	int sept_run;
+	bool rcm_patched;
 } hekate_config;
 
 typedef enum

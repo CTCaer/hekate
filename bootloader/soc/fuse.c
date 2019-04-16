@@ -318,3 +318,32 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 	return 0;
 }
 
+bool fuse_check_patched_rcm()
+{
+	// Check if XUSB in use.
+	if (FUSE(FUSE_RESERVED_SW) & (1<<7))
+		return true;
+
+	// Check if RCM is ipatched.
+	u32 word_count = FUSE(FUSE_FIRST_BOOTROM_PATCH_SIZE) & 0x7F;
+	u32 word_addr = 191;
+
+	while (word_count)
+	{
+		u32 word0 = fuse_read(word_addr);
+		u32 ipatch_count = (word0 >> 16) & 0xF;        
+
+		for (u32 i = 0; i < ipatch_count; i++)
+		{
+			u32 word = fuse_read(word_addr - (i + 1));
+			u32 addr = (word >> 16) * 2;
+			if (addr == 0x769A)
+				return true;
+		}
+
+		word_addr -= word_count;
+		word_count = word0 >> 25;
+	}
+
+	return false;
+}

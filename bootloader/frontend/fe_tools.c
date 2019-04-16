@@ -294,6 +294,16 @@ void menu_autorcm()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
+	if (h_cfg.rcm_patched)
+	{
+		gfx_printf("%kThis device is RCM patched and\nAutoRCM function is disabled.\n\n"
+			"In case %kAutoRCM%k is enabled\nthis will %kBRICK%k your device PERMANENTLY!!%k",
+			0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
+		btn_wait();
+
+		return;
+	}
+
 	// Do a simple check on the main BCT.
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
