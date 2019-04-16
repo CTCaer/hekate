@@ -33,6 +33,7 @@
 #include "../sec/se.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
+#include "../soc/fuse.h"
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
@@ -247,6 +248,12 @@ void _toggle_autorcm(bool enable)
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 
 	int i, sect = 0;
+	u8 corr_mod_byte0;
+	if ((fuse_read_odm(4) & 3) != 3)
+		corr_mod_byte0 = 0xF7;
+	else
+		corr_mod_byte0 = 0x37;
+
 	for (i = 0; i < 4; i++)
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
@@ -262,7 +269,7 @@ void _toggle_autorcm(bool enable)
 			tempbuf[0x10] ^= randomXor;
 		}
 		else
-			tempbuf[0x10] = 0xF7;
+			tempbuf[0x10] = corr_mod_byte0;
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
 	}
 
@@ -304,8 +311,16 @@ void menu_autorcm()
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
-	if (tempbuf[0x10] != 0xF7)
-		disabled = false;
+	if ((fuse_read_odm(4) & 3) != 3)
+	{
+		if (tempbuf[0x10] != 0xF7)
+			disabled = false;
+	}
+	else
+	{
+		if (tempbuf[0x10] != 0x37)
+			disabled = false;
+	}
 
 	free(tempbuf);
 	sdmmc_storage_end(&storage);

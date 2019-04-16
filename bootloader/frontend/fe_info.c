@@ -652,7 +652,7 @@ void bootrom_ipatches_info()
 				EPRINTFARGS("Failed to read evp_thunks. Error: %d", res);
 			
 			u32 words[192];
-			read_raw_fuses(words);
+			fuse_read_array(words);
 			emmcsn_path_impl(path, "/dumps", "raw_fuses.bin", NULL);
 			if (!sd_save_to_file((u8 *)words, sizeof(words), path))
 				gfx_puts("\nipatches.bin saved!\n");

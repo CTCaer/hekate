@@ -2,6 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
+ * Copyright (c) 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -68,7 +69,21 @@ void fuse_wait_idle()
     } while (((ctrl >> 16) & 0x1f) != 4);
 }
 
-u32 parity32_even(u32 *words, u32 count)
+u32 fuse_read(u32 addr)
+{
+    FUSE(FUSE_ADDR) = addr;
+    FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
+    fuse_wait_idle();
+    return FUSE(FUSE_RDATA);
+}
+
+void fuse_read_array(u32 *words)
+{
+	for (u32 i = 0; i < 192; i++)
+		words[i] = fuse_read(i);
+}
+
+static u32 _parity32_even(u32 *words, u32 count)
 {
 	u32 acc = words[0];
 	for (u32 i = 1; i < count; i++)
@@ -85,10 +100,10 @@ u32 parity32_even(u32 *words, u32 count)
 	return (x & 1) ^ (x >> 1);
 }
 
-int patch_hash_one(u32 *word)
+static int _patch_hash_one(u32 *word)
 {
 	u32 bits20_31 = *word & 0xfff00000;
-	u32 parity_bit = parity32_even(&bits20_31, 1);
+	u32 parity_bit = _parity32_even(&bits20_31, 1);
 	u32 hash = 0;
 	for (u32 i = 0; i < 12; i++)
 	{
@@ -121,9 +136,9 @@ int patch_hash_one(u32 *word)
 	return 2;
 }
 
-int patch_hash_multi(u32 *words, u32 count)
+static int _patch_hash_multi(u32 *words, u32 count)
 {
-	u32 parity_bit = parity32_even(words, count);
+	u32 parity_bit = _parity32_even(words, count);
 	u32 bits0_14 = words[0] & 0x7fff;
 	u32 bit15 = words[0] & 0x8000;
 	u32 bits16_19 = words[0] & 0xf0000;
@@ -193,7 +208,7 @@ int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value))
 	u32 total_read = 0;
 
 	word_count = FUSE(FUSE_FIRST_BOOTROM_PATCH_SIZE);
-	word_count &= 0x7f;
+	word_count &= 0x7F;
 	word_addr = 191;
 
 	while (word_count)
@@ -205,26 +220,21 @@ int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value))
 		}
 		
 		for (u32 i = 0; i < word_count; i++)
-		{
-			FUSE(FUSE_ADDR) = word_addr--;
-			FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
-			fuse_wait_idle();
-			words[i] = FUSE(FUSE_RDATA);
-		}
+			words[i] = fuse_read(word_addr--);
 		
 		word0 = words[0];
-		if (patch_hash_multi(words, word_count) >= 2)
+		if (_patch_hash_multi(words, word_count) >= 2)
 		{
 			return 1;
 		}
-		u32 ipatch_count = (words[0] >> 16) & 0xf;
+		u32 ipatch_count = (words[0] >> 16) & 0xF;
 		if (ipatch_count)
 		{
 			for (u32 i = 0; i < ipatch_count; i++)
 			{
 				u32 word = words[i + 1];
 				u32 addr = (word >> 16) * 2;
-				u32 data = word & 0xffff;
+				u32 data = word & 0xFFFF;
 		
 				ipatch(addr, data);
 			}
@@ -232,7 +242,7 @@ int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value))
 		words[0] = word0;
 		if ((word0 >> 25) == 0)
 			break;
-		if (patch_hash_one(&word0) >= 2)
+		if (_patch_hash_one(&word0) >= 2)
 		{
 			return 3;
 		}
@@ -255,7 +265,7 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 	memset(iram_evp_thunks, 0, *iram_evp_thunks_len);
 
 	word_count = FUSE(FUSE_FIRST_BOOTROM_PATCH_SIZE);
-	word_count &= 0x7f;
+	word_count &= 0x7F;
 	word_addr = 191;
 
 	while (word_count)
@@ -267,19 +277,14 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 		}
 		
 		for (u32 i = 0; i < word_count; i++)
-		{
-			FUSE(FUSE_ADDR) = word_addr--;
-			FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
-			fuse_wait_idle();
-			words[i] = FUSE(FUSE_RDATA);
-		}
+			words[i] = fuse_read(word_addr--);
 		
 		word0 = words[0];
-		if (patch_hash_multi(words, word_count) >= 2)
+		if (_patch_hash_multi(words, word_count) >= 2)
 		{
 			return 1;
 		}
-		u32 ipatch_count = (words[0] >> 16) & 0xf;
+		u32 ipatch_count = (words[0] >> 16) & 0xF;
 		u32 insn_count = word_count - ipatch_count - 1;
 		if (insn_count)
 		{
@@ -303,7 +308,7 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 		words[0] = word0;
 		if ((word0 >> 25) == 0)
 			break;
-		if (patch_hash_one(&word0) >= 2)
+		if (_patch_hash_one(&word0) >= 2)
 		{
 			return 3;
 		}
@@ -313,13 +318,3 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 	return 0;
 }
 
-void read_raw_fuses(u32 *words)
-{
-	for (u32 i = 0; i < 192; i++)
-	{
-		FUSE(FUSE_ADDR) = i;
-		FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
-		fuse_wait_idle();
-		words[i] = FUSE(FUSE_RDATA);
-	}
-}
