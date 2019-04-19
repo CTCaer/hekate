@@ -188,10 +188,11 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		{
 			smmu_flush_all();
 
-			if (k == se[SE_KEYTABLE_DATA0_REG_OFFSET / 4])
-				continue;
-			k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
-			key[kidx++] = k;
+			if (k != se[SE_KEYTABLE_DATA0_REG_OFFSET / 4])
+			{
+				k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
+				key[kidx++] = k;
+			}
 
 			// Failsafe.
 			if ((u32)get_tmr_us() - start > 125000)
