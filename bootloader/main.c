@@ -1157,7 +1157,7 @@ ment_t ment_top[] = {
 };
 menu_t menu_top = {
 	ment_top,
-	"hekate - CTCaer mod v4.9.1", 0, 0
+	"hekate - CTCaer mod v4.10.0", 0, 0
 };
 
 #define IPL_STACK_TOP  0x90010000
@@ -1199,7 +1199,7 @@ void ipl_main()
 	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
 #endif
 
-	gfx_con_init(&gfx_ctxt);
+	gfx_con_init();
 
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
