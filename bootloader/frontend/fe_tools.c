@@ -588,6 +588,7 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 #include "../soc/fuse.h"
 #include "../soc/clock.h"
 
+mtc_config_t mtc_cfg;
 void minerva()
 {
 	gfx_clear_partial_grey(0x1B, 0, 1256);

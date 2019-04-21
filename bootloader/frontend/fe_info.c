@@ -248,16 +248,16 @@ void print_mmc_info()
 			gfx_printf("%keMMC Partitions:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 			gfx_printf(" 1: %kBOOT0      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
 				boot_size / 1024, boot_size / 1024 / 512);
-			gfx_put_small_sep(&gfx_con);
+			gfx_put_small_sep();
 			gfx_printf(" 2: %kBOOT1      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
 				boot_size / 1024, boot_size / 1024 / 512);
-			gfx_put_small_sep(&gfx_con);
+			gfx_put_small_sep();
 			gfx_printf(" 3: %kRPMB       %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
 				rpmb_size / 1024, rpmb_size / 1024 / 512);
-			gfx_put_small_sep(&gfx_con);
+			gfx_put_small_sep();
 			gfx_printf(" 0: %kGPP (USER) %k\n    Size: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF96FF00, 0xFFCCCCCC,
 				storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
-			gfx_put_small_sep(&gfx_con);
+			gfx_put_small_sep();
 			gfx_printf("%kGPP (eMMC USER) partition table:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 
 			sdmmc_storage_set_mmc_partition(&storage, 0);
@@ -269,7 +269,7 @@ void print_mmc_info()
 				gfx_printf(" %02d: %k%s%k\n     Size: % 5d MiB (LBA Sectors 0x%07X)\n     LBA Range: %08X-%08X\n",
 					gpp_idx++, 0xFFAEFD14, part->name, 0xFFCCCCCC, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
-				gfx_put_small_sep(&gfx_con);
+				gfx_put_small_sep();
 			}
 			nx_emmc_gpt_free(&gpt);
 		}

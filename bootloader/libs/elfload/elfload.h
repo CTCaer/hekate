@@ -27,7 +27,7 @@
 #ifdef DEBUG
 #include "../../gfx/gfx.h"
 #define EL_DEBUG(format, ...) \
-	gfx_printf(&gfx_con, format __VA_OPT__(, ) __VA_ARGS__)
+	gfx_printf(format __VA_OPT__(, ) __VA_ARGS__)
 #else
 #define EL_DEBUG(...) \
 	do                \

@@ -467,7 +467,7 @@ void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type)
 	case 3:
 	case 4:
 	case 11:
-		*pout = 200000;
+		*pout = 208000;
 		*pdivisor = 1;
 		break;
 	case 5:

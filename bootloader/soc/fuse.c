@@ -62,19 +62,19 @@ u32 fuse_read_odm(u32 idx)
 
 void fuse_wait_idle()
 {
-    u32 ctrl;
-    do
-    {
-        ctrl = FUSE(FUSE_CTRL);
-    } while (((ctrl >> 16) & 0x1f) != 4);
+	u32 ctrl;
+	do
+	{
+		ctrl = FUSE(FUSE_CTRL);
+	} while (((ctrl >> 16) & 0x1f) != 4);
 }
 
 u32 fuse_read(u32 addr)
 {
-    FUSE(FUSE_ADDR) = addr;
-    FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
-    fuse_wait_idle();
-    return FUSE(FUSE_RDATA);
+	FUSE(FUSE_ADDR) = addr;
+	FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
+	fuse_wait_idle();
+	return FUSE(FUSE_RDATA);
 }
 
 void fuse_read_array(u32 *words)

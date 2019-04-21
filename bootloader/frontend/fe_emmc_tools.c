@@ -612,7 +612,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 
 	gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
 
-    bool use_multipart = false;
+	bool use_multipart = false;
 
 	if (allow_multi_part)
 	{

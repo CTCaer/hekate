@@ -28,7 +28,7 @@
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
-//#define DPRINTF(...) gfx_printf(&gfx_con, __VA_ARGS__)
+//#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
 /*! SCMMC controller base addresses. */
