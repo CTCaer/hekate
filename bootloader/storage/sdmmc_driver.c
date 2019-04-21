@@ -1036,6 +1036,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 		if (sdmmc->id == SDMMC_1)
 		{
 			gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
+			max77620_regulator_enable(REGULATOR_LDO2, 0);
 			msleep(1); // To power cycle min 1ms without power is needed.
 		}
 

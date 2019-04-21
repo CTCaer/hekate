@@ -488,6 +488,8 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf("Loaded warmboot and secmon\n");
 
 	// Read package2.
+	if (!strcmp(ctxt.pkg1_id->id, "20190314172056"))
+		ctxt.new_pkg2 = true;
 	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
 	if (!bootConfigBuf)
 		return 0;
@@ -515,7 +517,14 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (!ctxt.stock && (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere))
 		{
-			u32 kernel_crc32 = crc32c(ctxt.kernel, ctxt.kernel_size);
+			u32 kernel_crc32;
+			// New Kernel with INI1 takes long to hash with crc32c. Hash kernel only.
+			if (!ctxt.new_pkg2)
+				kernel_crc32 = crc32c(ctxt.kernel, ctxt.kernel_size);
+			else
+				kernel_crc32 = crc32c(ctxt.kernel + PKG2_NEWKERN_START,
+					*(u32 *)(ctxt.kernel + PKG2_NEWKERN_INI1_START) - PKG2_NEWKERN_START);
+
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_crc32);
 
 			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
@@ -560,7 +569,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Rebuild and encrypt package2.
-	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info);
+	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info, ctxt.new_pkg2);
 
 	gfx_printf("Rebuilt & loaded pkg2\n");
 

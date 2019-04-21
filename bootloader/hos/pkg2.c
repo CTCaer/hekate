@@ -43,6 +43,7 @@
 #define FREE_CODE_OFF_1ST_500 0x5C020
 #define FREE_CODE_OFF_1ST_600 0x5EE00
 #define FREE_CODE_OFF_1ST_700 0x5FEC0
+#define FREE_CODE_OFF_1ST_800 0x607F0
 
 #define ID_SND_OFF_100 0x23CC0
 #define ID_SND_OFF_200 0x3F134
@@ -52,6 +53,7 @@
 #define ID_SND_OFF_500 0x2AD34
 #define ID_SND_OFF_600 0x2BB8C
 #define ID_SND_OFF_700 0x2D044
+#define ID_SND_OFF_800 0x2F1FC
 
 #define ID_RCV_OFF_100 0x219F0
 #define ID_RCV_OFF_200 0x3D1A8
@@ -61,6 +63,7 @@
 #define ID_RCV_OFF_500 0x28DAC
 #define ID_RCV_OFF_600 0x29B6C
 #define ID_RCV_OFF_700 0x2B23C
+#define ID_RCV_OFF_800 0x2D424
 
 static u32 PRC_ID_SND_100[] =
 {
@@ -98,17 +101,7 @@ static u32 PRC_ID_RCV_300[] =
 	0xD2FFFFE9, 0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000040, 0xF9415568, 0xA8C12FEA
 };
 
-static u32 PRC_ID_SND_302[] =
-{
-	0xA9BF2FEA, 0x2A1803EB, 0xD37EF56B, 0xF86B6B8B, 0x92FFFFE9, 0x8A090168, 0xD2FFFFE9, 0x8A09016B,
-	0xD2FFFFC9, 0xEB09017F, 0x54000040, 0xF9415548, 0xA8C12FEA
-};
-#define FREE_CODE_OFF_2ND_302 (FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_302) + sizeof(u32))
-static u32 PRC_ID_RCV_302[] =
-{
-	0xA9BF2FEA, 0x2A0F03EA, 0xD37EF54A, 0xF9405FEB, 0xF86A696A, 0xF9407BEB, 0x92FFFFE9, 0x8A090148,
-	0xD2FFFFE9, 0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000040, 0xF9415568, 0xA8C12FEA
-};
+#define FREE_CODE_OFF_2ND_302 (FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300) + sizeof(u32))
 
 static u32 PRC_ID_SND_400[] =
 {
@@ -162,6 +155,8 @@ static u32 PRC_ID_RCV_700[] =
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
 
+#define FREE_CODE_OFF_2ND_800 (FREE_CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700) + sizeof(u32))
+
 // Include kernel patches here, so we can utilize pkg1 id
 KERNEL_PATCHSET_DEF(_kernel_1_patchset,
 	{ SVC_VERIFY_DS, 0x3764C, _NOP(), NULL },          // Disable SVC verifications
@@ -210,13 +205,13 @@ KERNEL_PATCHSET_DEF(_kernel_302_patchset,
 	{ DEBUG_MODE_EN, 0x48414, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
 	{ ATM_GEN_PATCH, ID_SND_OFF_302, _B(ID_SND_OFF_302, FREE_CODE_OFF_1ST_302), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_302, sizeof(PRC_ID_SND_302) >> 2, PRC_ID_SND_302}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_302),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_302), ID_SND_OFF_302 + sizeof(u32)), NULL},
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_302, sizeof(PRC_ID_SND_300) >> 2, PRC_ID_SND_300}, // Send process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300),                      // Branch back and skip 1 instruction.
+		_B(FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300), ID_SND_OFF_302 + sizeof(u32)), NULL},
 	{ ATM_GEN_PATCH, ID_RCV_OFF_302, _B(ID_RCV_OFF_302, FREE_CODE_OFF_2ND_302), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_302, sizeof(PRC_ID_RCV_302) >> 2, PRC_ID_RCV_302}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_302),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_302), ID_RCV_OFF_302 + sizeof(u32)), NULL}
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_302, sizeof(PRC_ID_RCV_300) >> 2, PRC_ID_RCV_300}, // Receive process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_300),                      // Branch back and skip 1 instruction.
+		_B(FREE_CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_300), ID_RCV_OFF_302 + sizeof(u32)), NULL}
 );
 
 KERNEL_PATCHSET_DEF(_kernel_4_patchset,
@@ -278,6 +273,21 @@ KERNEL_PATCHSET_DEF(_kernel_7_patchset,
 		_B(FREE_CODE_OFF_2ND_700 + sizeof(PRC_ID_RCV_700), ID_RCV_OFF_700 + sizeof(u32) * 4), NULL}
 );
 
+KERNEL_PATCHSET_DEF(_kernel_8_patchset,
+	{ SVC_GENERIC,   0x3FAD0, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x4D15C, _NOP(), NULL },          // Disable SVC verifications
+	{ DEBUG_MODE_EN, 0x5BFAC, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
+	// Atmosphère kernel patches.
+	{ ATM_GEN_PATCH, ID_SND_OFF_800, _B(ID_SND_OFF_800, FREE_CODE_OFF_1ST_800), NULL},    // Send process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_800, sizeof(PRC_ID_RCV_700) >> 2, PRC_ID_RCV_700}, // Send process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_800 + sizeof(PRC_ID_RCV_700),                      // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_1ST_800 + sizeof(PRC_ID_RCV_700), ID_SND_OFF_800 + sizeof(u32) * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_800, _B(ID_RCV_OFF_800, FREE_CODE_OFF_2ND_800), NULL},    // Receive process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_800, sizeof(PRC_ID_RCV_700) >> 2, PRC_ID_RCV_700}, // Receive process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_800 + sizeof(PRC_ID_RCV_700),                      // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_2ND_800 + sizeof(PRC_ID_RCV_700), ID_RCV_OFF_800 + sizeof(u32) * 4), NULL}
+);
+
 static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 {
 	{ 0x427f2647, _kernel_1_patchset },   //1.0.0
@@ -288,6 +298,7 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 	{ 0xf3c363f2, _kernel_5_patchset },   //5.0.0 - 5.1.0
 	{ 0x64ce1a44, _kernel_6_patchset },   //6.0.0 - 6.2.0
 	{ 0x908175e1, _kernel_7_patchset },   //7.0.0
+	{ 0x22832de4, _kernel_8_patchset },   //8.0.0. Kernel only.
 	{ 0, 0 }                              //End.
 };
 
@@ -539,6 +550,48 @@ static kip1_patchset_t _fs_patches_700_exfat[] =
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nosigchk_800[] =
+{
+	{ KPS(KIP_TEXT) | 0x7630C, 4, "\x51\x44\x00\x94", "\xE0\x03\x1F\x2A" },
+	{ KPS(KIP_TEXT) | 0xF49A4, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patch_t _fs_nosigchk_800_exfat[] =
+{
+	{ KPS(KIP_TEXT) | 0x818BC, 4, "\x51\x44\x00\x94", "\xE0\x03\x1F\x2A" },
+	{ KPS(KIP_TEXT) | 0xFFF54, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patch_t _fs_nogc_800[] =
+{
+	{ KPS(KIP_TEXT) | 0x136800, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x15EB94, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patch_t _fs_nogc_800_exfat[] =
+{
+	{ KPS(KIP_TEXT) | 0x141DB0, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x16A144, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_800[] =
+{
+	{ "nosigchk", _fs_nosigchk_800 },
+	{ "nogc",     _fs_nogc_800 },
+	{ NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_800_exfat[] =
+{
+	{ "nosigchk", _fs_nosigchk_800_exfat },
+	{ "nogc",     _fs_nogc_800_exfat },
+	{ NULL, NULL }
+};
+
 // SHA256 hashes.
 static kip1_id_t _kip_ids[] = 
 {
@@ -565,7 +618,9 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x3a\x57\x4d\x43\x61\x86\x19\x1d\x17\x88\xeb\x2c\x0f\x07\x6b\x11", _fs_patches_600 }, 		 // FS 6.0.0-5.0
 	{ "FS", "\x33\x05\x53\xf6\xb5\xfb\x55\xc4\xc2\xd7\xb7\x36\x24\x02\x76\xb3", _fs_patches_600_exfat }, // FS 6.0.0-5.0 exfat
 	{ "FS", "\x2A\xDB\xE9\x7E\x9B\x5F\x41\x77\x9E\xC9\x5F\xFE\x26\x99\xC9\x33", _fs_patches_700 }, 		 // FS 7.0.0
-	{ "FS", "\x2C\xCE\x65\x9C\xEC\x53\x6A\x8E\x4D\x91\xF3\xBE\x4B\x74\xBE\xD3", _fs_patches_700_exfat }  // FS 7.0.0 exfat
+	{ "FS", "\x2C\xCE\x65\x9C\xEC\x53\x6A\x8E\x4D\x91\xF3\xBE\x4B\x74\xBE\xD3", _fs_patches_700_exfat }, // FS 7.0.0 exfat
+	{ "FS", "\xB2\xF5\x17\x6B\x35\x48\x36\x4D\x07\x9A\x29\xB1\x41\xA2\x3B\x06", _fs_patches_800 }, 		 // FS 8.0.0
+	{ "FS", "\xDB\xD9\x41\xC0\xC5\x3C\x52\xCC\xF7\x20\x2C\x84\xD8\xE0\xF7\x80", _fs_patches_800_exfat }  // FS 8.0.0 exfat
 };
 
 const pkg2_kernel_id_t *pkg2_identify(u32 id)
@@ -586,7 +641,16 @@ static u32 _pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 
 void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2)
 {
-	u8 *ptr = pkg2->data + pkg2->sec_size[PKG2_SEC_KERNEL];
+	u8 *ptr;
+	// Check for new pkg2
+	if (!pkg2->sec_size[PKG2_SEC_INI1])
+	{
+		u32 kernel_ini1_off = *(u32 *)(pkg2->data + PKG2_NEWKERN_INI1_START);
+		ptr = pkg2->data + kernel_ini1_off;
+	}
+	else
+		ptr = pkg2->data + pkg2->sec_size[PKG2_SEC_KERNEL];
+
 	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)ptr;
 	ptr += sizeof(pkg2_ini1_t);
 
@@ -927,31 +991,8 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 	return hdr;
 }
 
-void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info)
+static u32 _pkg2_ini1_build(u8 *pdst, pkg2_hdr_t *hdr, link_t *kips_info, bool new_pkg2)
 {
-	u8 *pdst = (u8 *)dst;
-
-	// Signature.
-	memset(pdst, 0, 0x100);
-	pdst += 0x100;
-
-	// Header.
-	pkg2_hdr_t *hdr = (pkg2_hdr_t *)pdst;
-	memset(hdr, 0, sizeof(pkg2_hdr_t));
-	pdst += sizeof(pkg2_hdr_t);
-	hdr->magic = PKG2_MAGIC;
-	hdr->base = 0x10000000;
-DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
-
-	// Kernel.
-	memcpy(pdst, kernel, kernel_size);
-	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
-	hdr->sec_off[PKG2_SEC_KERNEL] = 0x10000000;
-	se_aes_crypt_ctr(8, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * 0x10]);
-	pdst += kernel_size;
-DPRINTF("kernel encrypted\n");
-
-	// INI1.
 	u32 ini1_size = sizeof(pkg2_ini1_t);
 	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)pdst;
 	memset(ini1, 0, sizeof(pkg2_ini1_t));
@@ -966,9 +1007,60 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 		ini1->num_procs++;
 	}
 	ini1->size = ini1_size;
-	hdr->sec_size[PKG2_SEC_INI1] = ini1_size;
-	hdr->sec_off[PKG2_SEC_INI1] = 0x14080000;
-	se_aes_crypt_ctr(8, ini1, ini1_size, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * 0x10]);
+	if (!new_pkg2)
+	{
+		hdr->sec_size[PKG2_SEC_INI1] = ini1_size;
+		hdr->sec_off[PKG2_SEC_INI1] = 0x14080000;
+		se_aes_crypt_ctr(8, ini1, ini1_size, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * 0x10]);
+	}
+	else
+	{
+		hdr->sec_size[PKG2_SEC_INI1] = 0;
+		hdr->sec_off[PKG2_SEC_INI1] = 0;
+	}
+
+	return ini1_size;
+}
+
+void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2)
+{
+	u8 *pdst = (u8 *)dst;
+
+	// Signature.
+	memset(pdst, 0, 0x100);
+	pdst += 0x100;
+
+	// Header.
+	pkg2_hdr_t *hdr = (pkg2_hdr_t *)pdst;
+	memset(hdr, 0, sizeof(pkg2_hdr_t));
+	pdst += sizeof(pkg2_hdr_t);
+	hdr->magic = PKG2_MAGIC;
+	if (!new_pkg2)
+		hdr->base = 0x10000000;
+	else
+		hdr->base = 0x60000;
+DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
+
+	// Kernel.
+	memcpy(pdst, kernel, kernel_size);
+	if (!new_pkg2)
+		hdr->sec_off[PKG2_SEC_KERNEL] = 0x10000000;
+	else
+	{
+		// Set new INI1 offset to kernel.
+		*(u32 *)(pdst + PKG2_NEWKERN_INI1_START) = kernel_size;
+		kernel_size += _pkg2_ini1_build(pdst + kernel_size, hdr, kips_info, new_pkg2);
+		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
+	}
+	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
+	se_aes_crypt_ctr(8, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * 0x10]);
+	pdst += kernel_size;
+DPRINTF("kernel encrypted\n");
+
+	// INI1.
+	u32 ini1_size = 0;
+	if (!new_pkg2)
+		ini1_size = _pkg2_ini1_build(pdst, hdr, kips_info, new_pkg2);
 DPRINTF("INI1 encrypted\n");
 
 	//Encrypt header.

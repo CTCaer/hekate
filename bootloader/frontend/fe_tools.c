@@ -50,6 +50,8 @@ void dump_packages12()
 	if (!sd_mount())
 		return;
 
+	char path[64];
+
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
 	u8 *warmboot = (u8 *)calloc(1, 0x40000);
 	u8 *secmon = (u8 *)calloc(1, 0x40000);
@@ -74,13 +76,18 @@ void dump_packages12()
 	// Read package1.
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
-	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 	if (!pkg1_id)
 	{
-		gfx_con.fntsz = 8;
 		EPRINTF("Unknown pkg1 version for reading\nTSEC firmware.");
+		// Dump package1.
+		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &storage);
+		if (sd_save_to_file(pkg1, 0x40000, path))
+			goto out_free;
+		gfx_puts("\nEnc pkg1 dumped to pkg1_enc.bin\n");
+
 		goto out_free;
 	}
+	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 
 	kb = pkg1_id->kb;
 
@@ -119,8 +126,6 @@ void dump_packages12()
 
 	if (kb <= KB_FIRMWARE_VERSION_600)
 		pkg1_decrypt(pkg1_id, pkg1);
-
-	char path[64];
 
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
@@ -204,8 +209,14 @@ void dump_packages12()
 
 	// Dump INI1.
 	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);
-	if (sd_save_to_file(pkg2_hdr->data + pkg2_hdr->sec_size[PKG2_SEC_KERNEL],
-		pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
+	u32 ini1_off = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
+	u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
+	if (!ini1_size)
+	{
+		ini1_off = *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_START);
+		ini1_size = *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_END) - *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_START);
+	}
+	if (sd_save_to_file(pkg2_hdr->data + ini1_off, ini1_size, path))
 		goto out;
 	gfx_puts("INI1 dumped to ini1.bin\n");
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018 CTCaer
+ * Copyright (C) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -27,6 +27,9 @@
 #define PKG2_SEC_INI1 1
 
 #define INI1_MAGIC 0x31494E49
+#define PKG2_NEWKERN_INI1_START 0x168
+#define PKG2_NEWKERN_INI1_END   0x170
+#define PKG2_NEWKERN_START      0x800
 
 typedef struct _kernel_patch_t
 {
@@ -145,6 +148,6 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames);
 
 const pkg2_kernel_id_t *pkg2_identify(u32 id);
 pkg2_hdr_t *pkg2_decrypt(void *data);
-void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info);
+void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2);
 
 #endif
