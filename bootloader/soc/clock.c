@@ -364,10 +364,12 @@ static void _clock_sdmmc_clear_enable(u32 id)
 
 static u32 _clock_sdmmc_table[8] = { 0 };
 
+#define PLLP_OUT0      0x0
+
 static int _clock_sdmmc_config_clock_source_inner(u32 *pout, u32 id, u32 val)
 {
 	u32 divisor = 0;
-	u32 source = 0;
+	u32 source = PLLP_OUT0;
 
 	switch (val)
 	{
@@ -414,16 +416,16 @@ static int _clock_sdmmc_config_clock_source_inner(u32 *pout, u32 id, u32 val)
 	switch (id)
 	{
 	case SDMMC_1:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC1) = source | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC1) = (source << 29) | divisor;
 		break;
 	case SDMMC_2:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2) = source | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2) = (source << 29) | divisor;
 		break;
 	case SDMMC_3:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3) = source | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3) = (source << 29) | divisor;
 		break;
 	case SDMMC_4:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4) = source | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4) = (source << 29) | divisor;
 		break;
 	}
 
@@ -467,7 +469,7 @@ void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type)
 	case 3:
 	case 4:
 	case 11:
-		*pout = 208000;
+		*pout = 200000;
 		*pdivisor = 1;
 		break;
 	case 5:
