@@ -488,8 +488,6 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf("Loaded warmboot and secmon\n");
 
 	// Read package2.
-	if (!strcmp(ctxt.pkg1_id->id, "20190314172056"))
-		ctxt.new_pkg2 = true;
 	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
 	if (!bootConfigBuf)
 		return 0;
@@ -505,7 +503,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	LIST_INIT(kip1_info);
-	pkg2_parse_kips(&kip1_info, pkg2_hdr);
+	pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2);
 
 	gfx_printf("Parsed ini1\n");
 

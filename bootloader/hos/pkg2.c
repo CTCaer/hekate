@@ -639,14 +639,15 @@ static u32 _pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 	return size;
 }
 
-void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2)
+void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 {
 	u8 *ptr;
-	// Check for new pkg2
+	// Check for new pkg2 type.
 	if (!pkg2->sec_size[PKG2_SEC_INI1])
 	{
 		u32 kernel_ini1_off = *(u32 *)(pkg2->data + PKG2_NEWKERN_INI1_START);
 		ptr = pkg2->data + kernel_ini1_off;
+		*new_pkg2 = true;
 	}
 	else
 		ptr = pkg2->data + pkg2->sec_size[PKG2_SEC_KERNEL];
