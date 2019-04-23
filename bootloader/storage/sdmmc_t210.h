@@ -115,18 +115,18 @@ typedef struct _t210_sdmmc_t
 	vu32 vendebouncecnt;
 	vu32 venmiscctl;
 	vu32 res6[34];
-	vu32 field_1AC;
-	vu32 field_1B0;
+	vu32 veniotrimctl;
+	vu32 vendllcal;
 	vu8 res7[8];
-	vu32 field_1BC;
-	vu32 field_1C0;
+	vu32 dllcfgstatus;
+	vu32 ventunctl0;
 	vu32 field_1C4;
 	vu8 field_1C8[24];
 	vu32 sdmemcmppadctl;
 	vu32 autocalcfg;
 	vu32 autocalintval;
 	vu32 autocalsts;
-	vu32 field_1F0;
+	vu32 iospare;
 } t210_sdmmc_t;
 
 #endif
