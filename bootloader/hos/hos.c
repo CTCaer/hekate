@@ -415,7 +415,7 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf("Loaded pkg1 & keyblob\n");
 
 	// Generate keys.
-	if (!h_cfg.se_keygen_done || ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_620)
+	if (!h_cfg.se_keygen_done)
 	{
 		tsec_ctxt.fw = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
 		tsec_ctxt.pkg1 = ctxt.pkg1;
@@ -431,8 +431,8 @@ int hos_launch(ini_sec_t *cfg)
 		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt))
 			return 0;
 		DPRINTF("Generated keys\n");
-
-		h_cfg.se_keygen_done = 1;
+		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+			h_cfg.se_keygen_done = 1;
 	}
 
 	// Decrypt and unpack package1 if we require parts of it.

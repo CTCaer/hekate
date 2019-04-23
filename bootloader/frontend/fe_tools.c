@@ -91,7 +91,7 @@ void dump_packages12()
 
 	kb = pkg1_id->kb;
 
-	if (!h_cfg.se_keygen_done || kb == KB_FIRMWARE_VERSION_620)
+	if (!h_cfg.se_keygen_done)
 	{
 		tsec_ctxt.fw = (void *)pkg1 + pkg1_id->tsec_off;
 		tsec_ctxt.pkg1 = (void *)pkg1;
@@ -119,8 +119,8 @@ void dump_packages12()
 
 		// Decrypt.
 		keygen(keyblob, kb, &tsec_ctxt);
-
-		h_cfg.se_keygen_done = 1;
+		if (kb <= KB_FIRMWARE_VERSION_600)
+			h_cfg.se_keygen_done = 1;
 		free(keyblob);
 	}
 
@@ -188,6 +188,11 @@ void dump_packages12()
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2);
+	if (!pkg2_hdr)
+	{
+		gfx_printf("Pkg2 decryption failed!\n");
+		goto out;
+	}
 
 	// Display info.
 	u32 kernel_crc32 = crc32c(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
