@@ -114,7 +114,7 @@ typedef struct _pkg2_kip1_info_t
 
 typedef struct _pkg2_kernel_id_t
 {
-	u32 crc32c_id;
+	u8 hash[8];
 	kernel_patch_t *kernel_patchset;
 } pkg2_kernel_id_t;
 
@@ -135,7 +135,7 @@ typedef struct _kip1_patchset_t
 typedef struct _kip1_id_t
 {
 	const char* name;
-	u8 hash[16];
+	u8 hash[8];
 	kip1_patchset_t* patchset;
 } kip1_id_t;
 
@@ -146,7 +146,7 @@ void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
 const char* pkg2_patch_kips(link_t *info, char* patchNames);
 
-const pkg2_kernel_id_t *pkg2_identify(u32 id);
+const pkg2_kernel_id_t *pkg2_identify(u8 *hash);
 pkg2_hdr_t *pkg2_decrypt(void *data);
 void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2);
 

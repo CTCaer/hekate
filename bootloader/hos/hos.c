@@ -515,15 +515,15 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (!ctxt.stock && (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere))
 		{
-			u32 kernel_crc32;
-			// New Kernel with INI1 takes long to hash with crc32c. Hash kernel only.
+			u8 kernel_hash[0x20];
+			// Hash only Kernel when it embeds INI1.
 			if (!ctxt.new_pkg2)
-				kernel_crc32 = crc32c(ctxt.kernel, ctxt.kernel_size);
+				se_calc_sha256(kernel_hash, ctxt.kernel, ctxt.kernel_size);
 			else
-				kernel_crc32 = crc32c(ctxt.kernel + PKG2_NEWKERN_START,
+				se_calc_sha256(kernel_hash, ctxt.kernel + PKG2_NEWKERN_START,
 					*(u32 *)(ctxt.kernel + PKG2_NEWKERN_INI1_START) - PKG2_NEWKERN_START);
 
-			ctxt.pkg2_kernel_id = pkg2_identify(kernel_crc32);
+			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
 
 			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
 			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;

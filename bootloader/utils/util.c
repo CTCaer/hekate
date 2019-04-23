@@ -106,17 +106,3 @@ void power_off()
 	//TODO: we should probably make sure all regulators are powered off properly.
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }
-
-#define CRC32C_POLY 0x82F63B78
-u32 crc32c(const void *buf, u32 len)
-{
-	const u8 *cbuf = (const u8 *)buf;
-	u32 crc = 0xFFFFFFFF;
-	while (len--)
-	{
-		crc ^= *cbuf++;
-		for (int i = 0; i < 8; i++)
-			crc = crc & 1 ? (crc >> 1) ^ CRC32C_POLY : crc >> 1;
-	}
-	return ~crc;
-}
