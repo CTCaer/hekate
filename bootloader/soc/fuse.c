@@ -96,7 +96,7 @@ static u32 _parity32_even(u32 *words, u32 count)
 	lo = ((x & 0xf) ^ (x >> 4)) & 3;
 	hi = ((x & 0xf) ^ (x >> 4)) >> 2;
 	x = hi ^ lo;
- 
+
 	return (x & 1) ^ (x >> 1);
 }
 

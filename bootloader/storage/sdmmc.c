@@ -19,12 +19,15 @@
 #include "sdmmc.h"
 #include "mmc.h"
 #include "sd.h"
+#include "../config/config.h"
 #include "../gfx/gfx.h"
 #include "../mem/heap.h"
 #include "../utils/util.h"
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
+
+extern hekate_config h_cfg;
 
 static inline u32 unstuff_bits(u32 *resp, u32 start, u32 size)
 {
@@ -833,6 +836,7 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 	switch (type)
 	{
 	case 11:
+		// Fall through if not supported.
 		if (buf[13] & SD_MODE_UHS_SDR104)
 		{
 			type = 11;
@@ -841,7 +845,6 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 			storage->csd.busspeed = 104;
 			break;
 		}
-		//Fall through.
 	case 10:
 		if (buf[13] & SD_MODE_UHS_SDR50)
 		{
@@ -878,7 +881,7 @@ int _sd_storage_enable_highspeed_high_volt(sdmmc_storage_t *storage, u8 *buf)
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
 	//gfx_hexdump(0, (u8 *)buf, 64);
-	if (!(buf[13] & 2))
+	if (!(buf[13] & SD_MODE_HIGH_SPEED))
 		return 1;
 
 	if (!_sd_storage_enable_highspeed(storage, 1, buf))
@@ -1012,6 +1015,11 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 bus_width, u32 type)
 {
 	int is_version_1 = 0;
+	
+	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+	u32 sd_poweroff_time = (u32)get_tmr_ms() - h_cfg.sd_timeoff;
+	if (id == SDMMC_1 && (sd_poweroff_time < 100))
+		msleep(100 - sd_poweroff_time);
 
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;

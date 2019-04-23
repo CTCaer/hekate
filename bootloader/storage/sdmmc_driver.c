@@ -19,6 +19,7 @@
 
 #include "mmc.h"
 #include "sdmmc.h"
+#include "../config/config.h"
 #include "../gfx/gfx.h"
 #include "../power/max7762x.h"
 #include "../soc/clock.h"
@@ -30,6 +31,8 @@
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
+
+extern hekate_config h_cfg;
 
 /*! SCMMC controller base addresses. */
 static const u32 _sdmmc_bases[4] = {
@@ -1037,6 +1040,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 		{
 			gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
 			max77620_regulator_enable(REGULATOR_LDO2, 0);
+			h_cfg.sd_timeoff = get_tmr_ms(); // Some sandisc U1 cards need 100ms for a power cycle.
 			msleep(1); // To power cycle min 1ms without power is needed.
 		}
 
