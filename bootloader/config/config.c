@@ -438,11 +438,11 @@ void config_verification()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
-	u32 *vr_values = (u32 *)malloc(sizeof(u32) * 3);
-	char *vr_text = (char *)malloc(64 * 3);
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 7);
+	u32 *vr_values = (u32 *)malloc(sizeof(u32) * 4);
+	char *vr_text = (char *)malloc(64 * 4);
 
-	for (u32 j = 0; j < 3; j++)
+	for (u32 j = 0; j < 4; j++)
 	{
 		vr_values[j] = j;
 		ments[j + 2].type = MENT_DATA;
@@ -454,11 +454,12 @@ void config_verification()
 
 	ments[1].type = MENT_CHGLINE;
 
-	memcpy(vr_text,       " Disable (Fastest - Unsafe)", 28);
-	memcpy(vr_text + 64,  " Sparse  (Fast - Safe)", 23);
-	memcpy(vr_text + 128, " Full    (Slow - Safe)", 23);
+	memcpy(vr_text,       " None           (Fastest - Unsafe)", 35);
+	memcpy(vr_text + 64,  " Sparse            (Fast - Safe)",   33);
+	memcpy(vr_text + 128, " Full              (Slow - Safer)",  34);
+	memcpy(vr_text + 192, " Full w/ hashfiles (Slow - Safest)", 35);
 
-	for (u32 i = 0; i < 3; i++)
+	for (u32 i = 0; i < 4; i++)
 	{
 		if (h_cfg.verification != i)
 			vr_text[64 * i] = ' ';
@@ -467,7 +468,7 @@ void config_verification()
 		ments[2 + i].caption = vr_text + (i * 64);
 	}
 
-	memset(&ments[5], 0, sizeof(ment_t));
+	memset(&ments[6], 0, sizeof(ment_t));
 	menu_t menu = {ments, "Backup & Restore verification", 0, 0};
 
 	u32 *temp_verification = (u32 *)tui_do_menu(&menu);
