@@ -102,7 +102,7 @@ void check_sept()
 	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 	{
 		sdmmc_storage_end(&storage);
-		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off);
+		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off, pkg1_id->kb);
 	}
 
 out_free:
@@ -110,14 +110,14 @@ out_free:
 	sdmmc_storage_end(&storage);
 }
 
-int reboot_to_sept(const u8 *tsec_fw)
+int reboot_to_sept(const u8 *tsec_fw, const u32 kb)
 {
 	FIL fp;
 
 	// Copy warmboot reboot code and TSEC fw.
 	memcpy((u8 *)(SEPT_PK1T_ADDR - WB_RST_SIZE), (u8 *)warmboot_reboot, sizeof(warmboot_reboot));
-	memcpy((void *)SEPT_PK1T_ADDR, tsec_fw, 0x3000);
-	*(vu32 *)SEPT_TCSZ_ADDR = 0x3000;
+	memcpy((void *)SEPT_PK1T_ADDR, tsec_fw, kb == KB_FIRMWARE_VERSION_700 ? 0x3000 : 0x3300);
+	*(vu32 *)SEPT_TCSZ_ADDR = kb == KB_FIRMWARE_VERSION_700 ? 0x3000 : 0x3300;
 	
 	// Copy sept-primary.
 	if (f_open(&fp, "sept/sept-primary.bin", FA_READ))
@@ -131,7 +131,9 @@ int reboot_to_sept(const u8 *tsec_fw)
 	f_close(&fp);
 
 	// Copy sept-secondary.
-	if (f_open(&fp, "sept/sept-secondary.enc", FA_READ))
+	if ((kb == 7) && f_open(&fp, "sept/sept-secondary_00.enc", FA_READ))
+		goto error;
+	else if ((kb == 8) && f_open(&fp, "sept/sept-secondary_01.enc", FA_READ))
 		goto error;
 
 	if (f_read(&fp, (u8 *)SEPT_STG2_ADDR, f_size(&fp), NULL))

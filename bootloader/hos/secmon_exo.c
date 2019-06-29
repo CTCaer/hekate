@@ -109,8 +109,8 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		break;
 	default:
 		exoFwNo = kb + 1;
-		if (!strcmp(id, "20190314172056"))
-			exoFwNo++; // ATM_TARGET_FW_800.
+		if (!strcmp(id, "20190531152432"))
+			exoFwNo++; // ATM_TARGET_FW_810.
 		break;
 	}
 

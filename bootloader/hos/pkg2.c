@@ -592,6 +592,49 @@ static kip1_patchset_t _fs_patches_800_exfat[] =
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nosigchk_810[] =
+{
+	{ KPS(KIP_TEXT) | 0x7630C, 4, "\x51\x44\x00\x94", "\xE0\x03\x1F\x2A" },
+	{ KPS(KIP_TEXT) | 0xF49A4, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patch_t _fs_nosigchk_810_exfat[] =
+{
+	{ KPS(KIP_TEXT) | 0x818BC, 4, "\x51\x44\x00\x94", "\xE0\x03\x1F\x2A" },
+	{ KPS(KIP_TEXT) | 0xFFF54, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patch_t _fs_nogc_810[] =
+{
+	{ KPS(KIP_TEXT) | 0x136800, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x15EB94, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patch_t _fs_nogc_810_exfat[] =
+{
+	{ KPS(KIP_TEXT) | 0x141DB0, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x16A144, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_810[] =
+{
+	{ "nosigchk", _fs_nosigchk_810 },
+	{ "nogc",     _fs_nogc_810 },
+	{ NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_810_exfat[] =
+{
+	{ "nosigchk", _fs_nosigchk_810_exfat },
+	{ "nogc",     _fs_nogc_810_exfat },
+	{ NULL, NULL }
+};
+
+
 // SHA256 hashes.
 static kip1_id_t _kip_ids[] = 
 {
@@ -620,7 +663,9 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x2A\xDB\xE9\x7E\x9B\x5F\x41\x77", _fs_patches_700 }, 		 // FS 7.0.0
 	{ "FS", "\x2C\xCE\x65\x9C\xEC\x53\x6A\x8E", _fs_patches_700_exfat }, // FS 7.0.0 exfat
 	{ "FS", "\xB2\xF5\x17\x6B\x35\x48\x36\x4D", _fs_patches_800 }, 		 // FS 8.0.0
-	{ "FS", "\xDB\xD9\x41\xC0\xC5\x3C\x52\xCC", _fs_patches_800_exfat }  // FS 8.0.0 exfat
+	{ "FS", "\xDB\xD9\x41\xC0\xC5\x3C\x52\xCC", _fs_patches_800_exfat }, // FS 8.0.0 exfat
+	{ "FS", "\x6B\x09\xB6\x7B\x29\xC0\x20\x24", _fs_patches_810 },       // FS 8.1.0
+    { "FS", "\xB4\xCA\xE1\xF2\x49\x65\xD9\x2E", _fs_patches_810_exfat }  // FS 8.1.0 exfat
 };
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)

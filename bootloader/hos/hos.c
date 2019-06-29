@@ -182,6 +182,8 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		tsec_ctxt->size = 0xF00;
 	else if (kb == KB_FIRMWARE_VERSION_620)
 		tsec_ctxt->size = 0x2900;
+	else if (kb == KB_FIRMWARE_VERSION_810)
+		tsec_ctxt->size = 0x3300;
 	else
 		tsec_ctxt->size = 0x3000;
 
