@@ -74,10 +74,11 @@ CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=IPL_LOAD_ADDR=$(IPL_LOAD_ADDR)
 
 MODULEDIRS := $(wildcard modules/*)
+NYXDIR := $(wildcard nyx)
 
 ################################################################################
 
-.PHONY: all clean $(MODULEDIRS)
+.PHONY: all clean $(MODULEDIRS) $(NYXDIR)
 
 all: $(TARGET).bin
 	@echo -n "Payload size is "
@@ -92,7 +93,10 @@ clean:
 $(MODULEDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)$(MAKEFLAGS)
 
-$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS)
+$(NYXDIR):
+	$(MAKE) -C $@ $(MAKECMDGOALS)$(MAKEFLAGS)
+
+$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR)
 	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
 	@printf ICTC49 >> $(OUTPUTDIR)/$@
 
