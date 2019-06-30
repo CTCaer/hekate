@@ -1,6 +1,6 @@
 # hekate - CTCaer mod
 
-![Image of Hekate](https://i.imgur.com/O3REoy5.png)
+![Image of Hekate](https://user-images.githubusercontent.com/3665130/60391760-bc1e8c00-9afe-11e9-8b7a-b065873081b2.png)
 
 
 Custom Nintendo Switch bootloader, firmware patcher, and more.
