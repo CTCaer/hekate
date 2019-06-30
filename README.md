@@ -8,17 +8,28 @@ Custom Nintendo Switch bootloader, firmware patcher, and more.
 
 ## Bootloader folders and files
 
-| Folder/File          | Description                                                           |
-| -------------------- | --------------------------------------------------------------------- |
-| bootloader           | Main folder.                                                          |
-|  \|__ bootlogo.bmp   | It is used when custom is on and no logopath found. Can be skipped.   |
-|  \|__ hekate_ipl.ini | Main bootloader configuration and boot entries.                       |
-|  \|__ update.bin     | If newer, it is loaded at boot. For modchips. Can be skipped.         |
-| bootloader/ini/      | For individual inis. 'More configs...' menu. Autoboot is supported.   |
-| bootloader/sys/      | For system modules.                                                   |
-|  \|__ libsys_lp0.bso | LP0 (sleep mode) module. Important!                                   |
-| bootloader/payloads/ | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
-| bootloader/libtools/ | Future reserved                                                       |
+| Folder/File              | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| bootloader               | Main folder.                                                          |
+|  \|__ bootlogo.bmp       | It is used when custom is on and no logopath found. Can be skipped.   |
+|  \|__ hekate_ipl.ini     | Main bootloader configuration and boot entries.                       |
+|  \|__ patches            | Add external patches. Can be skipped                                  |
+|  \|__ update.bin         | If newer, it is loaded at boot. For modchips. Can be skipped.         |
+| bootloader/ini/          | For individual inis. 'More configs...' menu. Autoboot is supported.   |
+| bootloader/res/          | Nyx user resources. Icons and more.                                   |
+|  \|__ background.bmp     | Nyx - custom background.                                              |
+|  \|__ icon_switch.bmp    | Nyx - Default icon for CFWs.                                          |
+|  \|__ icon_payload.bmp   | Nyx - Default icon for Payloads.                                      |
+|  \|__ icon_lakka.bmp     | Nyx - Default icon for Lakka.                                         |
+| bootloader/sys/          | For system modules.                                                   |
+|  \|__ emummc.kipm        | emuMMC KIP1 module. Important!                                        |
+|  \|__ libsys_lp0.bso     | LP0 (sleep mode) module. Important!                                   |
+|  \|__ libsys_minerva.bso | Minerva Training Cell. Used for DRAM Frequency training. Important!   |
+|  \|__ nyx.bin            | Nyx - Our GUI. Important!                                             |
+|  \|__ res.pak            | Nyx resources package. Important!                                     |
+| bootloader/screenshots/  | Folder where Nyx screenshots are saved                                |
+| bootloader/payloads/     | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
+| bootloader/libtools/     | Future reserved                                                       |
 
 **Note**: Sept files for booting 7.0.0 and up are expected at /sept folder at root of sd card.
 
@@ -67,7 +78,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 **Note2**: When using FSS0 it parses exosphere, warmboot and all core kips. You can override the first 2 by using `secmon`/`warmboot` after defining `fss0`.
 You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage.
 
-**Warning**: Never define core kips when using `fss0` and make sure that the folder (when using `/*`), does not include them.
+**Warning**: Never define core kips when using `fss0` and make sure that the folder (when using `/*`), does not include them. This is in case the kips are incompatible between them.
 
 
 ### Payload storage:
@@ -79,7 +90,7 @@ Hekate now has a new storage in the binary that helps it configure it outside of
 | '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log, bit2: sept run.      |
 | '0x95' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
 | '0x96' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
-| '0x97' extra_cfg     | Reserved.                                                         |
+| '0x97' extra_cfg     | bit7: Force Nyx to run `Dump pkg1/2.                              |
 | '0x98' rsvd[128]     | Reserved.                                                         |
 
 

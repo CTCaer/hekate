@@ -7,6 +7,7 @@ include $(DEVKITARM)/base_rules
 ################################################################################
 
 IPL_LOAD_ADDR := 0x40008000
+NYX_STORAGE_ADDR := 0xED000000
 IPL_MAGIC := 0x43544349 #"ICTC"
 BLVERSION_MAJOR := 4
 BLVERSION_MINOR := 10
@@ -32,7 +33,7 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Hardware.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	clock.o cluster.o di.o gpio.o i2c.o mc.o sdram.o pinmux.o se.o smmu.o tsec.o uart.o \
+	bpmp.o clock.o cluster.o di.o gpio.o i2c.o mc.o sdram.o pinmux.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o minerva.o \
 	sdmmc.o sdmmc_driver.o emummc.o nx_emmc.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o \
@@ -59,7 +60,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 ################################################################################
 
-CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
+CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DNYX_STORAGE_ADDR=$(NYX_STORAGE_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_RESERVED=$(BL_RESERVED)
 CUSTOMDEFINES += -DMENU_LOGO_ENABLE
 
@@ -89,7 +90,7 @@ clean:
 	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS)
+	$(MAKE) -C $@ $(MAKECMDGOALS)$(MAKEFLAGS)
 
 $(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS)
 	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
