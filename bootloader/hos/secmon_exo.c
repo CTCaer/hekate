@@ -110,17 +110,21 @@ typedef struct _atm_fatal_error_ctx
 		};
 	};
 	u64 pc;
-	u64 padding;
+	u64 module_base;
 	u32 pstate;
 	u32 afsr0;
 	u32 afsr1;
 	u32 esr;
 	u64 far;
 	u64 report_identifier; // Normally just system tick.
+	u64 stack_trace_size;
+	u64 stack_dump_size;
+	u64 stack_trace[0x20];
+	u8  stack_dump[0x100];
 } atm_fatal_error_ctx;
 
 #define ATM_FATAL_ERR_CTX_ADDR 0x4003E000
-#define  ATM_FATAL_MAGIC 0x30454641 // AFE0
+#define  ATM_FATAL_MAGIC 0x31454641 // AFE1
 
 #define ATM_WB_HEADER_OFF 0x244
 #define  ATM_WB_MAGIC 0x30544257
@@ -237,6 +241,8 @@ static const char *get_error_desc(u32 error_desc)
 		return "SError";
 	case 0x301:
 		return "Bad SVC";
+	case 0xFFE:
+		return "std::abort()";
 	default:
 		return "Unknown";
 	}
