@@ -1582,15 +1582,9 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 				{
 					if (!strcmp("icon", kv->key))
-					{
 						icon_path = kv->val;
-						break;
-					}
 					else if (!strcmp("payload", kv->key))
-					{
 						payload = true;
-						break;
-					}
 				}
 
 				// If icon not found, check res folder for section_name.bmp.
