@@ -109,7 +109,7 @@ void dump_packages12()
 			gfx_printf("sept will run to get the keys.\nThen rerun this option.");
 			btn_wait();
 
-			if (!reboot_to_sept((u8 *)tsec_ctxt.fw))
+			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
 			{
 				gfx_printf("Failed to run sept\n");
 				goto out_free;

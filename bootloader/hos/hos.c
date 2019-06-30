@@ -184,8 +184,10 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		tsec_ctxt->size = 0xF00;
 	else if (kb == KB_FIRMWARE_VERSION_620)
 		tsec_ctxt->size = 0x2900;
-	else
+	else if (kb == KB_FIRMWARE_VERSION_700)
 		tsec_ctxt->size = 0x3000;
+	else
+		tsec_ctxt->size = 0x3300;
 
 	// Prepare smmu tsec page for 6.2.0.
 	if (kb == KB_FIRMWARE_VERSION_620)

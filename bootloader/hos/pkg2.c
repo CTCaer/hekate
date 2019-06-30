@@ -29,10 +29,16 @@
 
 #include "../gfx/gfx.h"
 
-/*#include "util.h"
-#define DPRINTF(...) gfx_printf(__VA_ARGS__)
-#define DEBUG_PRINTING*/
-#define DPRINTF(...)
+extern hekate_config h_cfg;
+
+
+#ifdef KIP1_PATCH_DEBUG
+	#include "../utils/util.h"
+	#define DPRINTF(...) gfx_printf(__VA_ARGS__)
+	#define DEBUG_PRINTING
+#else
+	#define DPRINTF(...)
+#endif
 
 //TODO: Replace hardcoded AArch64 instructions with instruction macros.
 //TODO: Reduce hardcoded values without searching kernel for patterns?
@@ -616,14 +622,16 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\xce\x3e\xcb\xa2\xf2\xf0\x62\xf5", _fs_patches_50x },       // FS 5.0.0 exfat
 	{ "FS", "\x76\xf8\x74\x02\xc9\x38\x7c\x0f", _fs_patches_510 },       // FS 5.1.0
 	{ "FS", "\x10\xb2\xd8\x16\x05\x48\x85\x99", _fs_patches_510 },       // FS 5.1.0 exfat
-	{ "FS", "\x1b\x82\xcb\x22\x18\x67\xcb\x52", _fs_patches_600 }, 		 // FS 6.0.0-4.0
+	{ "FS", "\x1b\x82\xcb\x22\x18\x67\xcb\x52", _fs_patches_600 },       // FS 6.0.0-4.0
 	{ "FS", "\x96\x6a\xdd\x3d\x20\xb6\x27\x13", _fs_patches_600_exfat }, // FS 6.0.0-4.0 exfat
-	{ "FS", "\x3a\x57\x4d\x43\x61\x86\x19\x1d", _fs_patches_600 }, 		 // FS 6.0.0-5.0
+	{ "FS", "\x3a\x57\x4d\x43\x61\x86\x19\x1d", _fs_patches_600 },       // FS 6.0.0-5.0
 	{ "FS", "\x33\x05\x53\xf6\xb5\xfb\x55\xc4", _fs_patches_600_exfat }, // FS 6.0.0-5.0 exfat
-	{ "FS", "\x2A\xDB\xE9\x7E\x9B\x5F\x41\x77", _fs_patches_700 }, 		 // FS 7.0.0
+	{ "FS", "\x2A\xDB\xE9\x7E\x9B\x5F\x41\x77", _fs_patches_700 },       // FS 7.0.0
 	{ "FS", "\x2C\xCE\x65\x9C\xEC\x53\x6A\x8E", _fs_patches_700_exfat }, // FS 7.0.0 exfat
-	{ "FS", "\xB2\xF5\x17\x6B\x35\x48\x36\x4D", _fs_patches_800 }, 		 // FS 8.0.0
-	{ "FS", "\xDB\xD9\x41\xC0\xC5\x3C\x52\xCC", _fs_patches_800_exfat }  // FS 8.0.0 exfat
+	{ "FS", "\xB2\xF5\x17\x6B\x35\x48\x36\x4D", _fs_patches_800 },       // FS 8.0.0
+	{ "FS", "\xDB\xD9\x41\xC0\xC5\x3C\x52\xCC", _fs_patches_800_exfat }, // FS 8.0.0 exfat
+	{ "FS", "\x6B\x09\xB6\x7B\x29\xC0\x20\x24", _fs_patches_800 },       // FS 8.1.0
+	{ "FS", "\xB4\xCA\xE1\xF2\x49\x65\xD9\x2E", _fs_patches_800_exfat }  // FS 8.1.0 exfat
 };
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)

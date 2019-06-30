@@ -382,12 +382,14 @@ void print_tsec_key()
 		tsec_ctxt.size = 0xF00;
 	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 		tsec_ctxt.size = 0x2900;
-	else
+	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_700)
 	{
 		tsec_ctxt.size = 0x3000;
 		// Exit after TSEC key generation.
 		*((vu16 *)((u32)tsec_ctxt.fw + 0x2DB5)) = 0x02F8;
 	}
+	else
+		tsec_ctxt.size = 0x3300;
 
 	if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 	{

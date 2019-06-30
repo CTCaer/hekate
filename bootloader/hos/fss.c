@@ -20,6 +20,7 @@
 
 #include "fss.h"
 #include "hos.h"
+#include "../config/config.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../storage/emummc.h"
