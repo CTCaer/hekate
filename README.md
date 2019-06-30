@@ -57,21 +57,23 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 
 ### Possible boot entry key/value combinations:
 
-| Config option      | Description                                                |
-| ------------------ | ---------------------------------------------------------- |
-| logopath={SD path} | If global customlogo is 1 and logopath empty, bootlogo.bmp will be used. If logopath exists, it will load the specified bitmap. |
-| warmboot={SD path} | Replaces the warmboot binary                               |
-| secmon={SD path}   | Replaces the security monitor binary                       |
-| kernel={SD path}   | Replaces the kernel binary                                 |
-| kip1={SD path}     | Replaces/Adds kernel initial process. Multiple can be set. |
-| kip1={SD folder}/* | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
-| fss0={SD path}     | Takes a fusee-secondary binary and extracts all needed parts from it. |
-| kip1patch=patchname| Enables a kip1 patch. Specify with multiple lines and/or as CSV. Current available patches nosigchk. |
-| fullsvcperm=1      | Disables SVC verification (full services permission)       |
-| debugmode=1        | Enables Debug mode. Obsolete when used with exosphere as secmon. |
-| atmosphere=1       | Enables Atmosphère patching                                |
-| stock=1            | Disables unneeded kernel patching when running stock or semi-stock. |
-| payload={SD path}  | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
+| Config option          | Description                                                |
+| ---------------------- | ---------------------------------------------------------- |
+| logopath={SD path}     | If global customlogo is 1 and logopath empty, bootlogo.bmp will be used. If logopath exists, it will load the specified bitmap. |
+| warmboot={SD path}     | Replaces the warmboot binary                               |
+| secmon={SD path}       | Replaces the security monitor binary                       |
+| kernel={SD path}       | Replaces the kernel binary                                 |
+| kip1={SD path}         | Replaces/Adds kernel initial process. Multiple can be set. |
+| kip1={SD folder}/*     | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
+| fss0={SD path}         | Takes a fusee-secondary binary and extracts all needed parts from it. |
+| kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or as CSV. Current available patches nosigchk. |
+| fullsvcperm=1          | Disables SVC verification (full services permission)       |
+| debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
+| atmosphere=1           | Enables Atmosphère patching.                               |
+| emummc_force_disable=1 | Disabled emuMMC if it's enabled.                           |
+| stock=1                | Disables unneeded kernel patching when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required to run completely stock. |
+| payload={SD path}      | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
+| icon={SD path}         | Force Nyx to use the icon defined here. If this is not found, it will check for a bmp named as the boot entry ([Test 2] -> `bootloader/res/Test 2.bmp`). Otherwise default will be used. |
 
 **Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra single kips.
 
