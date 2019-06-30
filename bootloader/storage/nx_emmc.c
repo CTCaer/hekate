@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "nx_emmc.h"
+#include "emummc.h"
 #include "../mem/heap.h"
 #include "../utils/list.h"
 
@@ -24,7 +25,7 @@ void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage)
 {
 	u8 *buf = (u8 *)malloc(NX_GPT_NUM_BLOCKS * NX_EMMC_BLOCKSIZE);
 
-	sdmmc_storage_read(storage, NX_GPT_FIRST_LBA, NX_GPT_NUM_BLOCKS, buf);
+	emummc_storage_read(storage, NX_GPT_FIRST_LBA, NX_GPT_NUM_BLOCKS, buf);
 
 	gpt_header_t *hdr = (gpt_header_t *)buf;
 	for (u32 i = 0; i < hdr->num_part_ents; i++)
@@ -65,7 +66,7 @@ int nx_emmc_part_read(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_of
 	// The last LBA is inclusive.
 	if (part->lba_start + sector_off > part->lba_end)
 		return 0;
-	return sdmmc_storage_read(storage, part->lba_start + sector_off, num_sectors, buf);
+	return emummc_storage_read(storage, part->lba_start + sector_off, num_sectors, buf);
 }
 
 int nx_emmc_part_write(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_off, u32 num_sectors, void *buf)

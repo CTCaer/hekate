@@ -36,6 +36,7 @@
 #include "../soc/pmc.h"
 #include "../soc/smmu.h"
 #include "../soc/t210.h"
+#include "../storage/emummc.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/util.h"
@@ -44,6 +45,7 @@
 extern hekate_config h_cfg;
 
 extern void sd_unmount();
+extern bool sd_mount();
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
@@ -296,12 +298,12 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	emummc_storage_init_mmc(&storage, &sdmmc);
 
 	// Read package1.
 	ctxt->pkg1 = (void *)malloc(0x40000);
-	sdmmc_storage_set_mmc_partition(&storage, 1);
-	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_set_mmc_partition(&storage, 1);
+	emummc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
@@ -312,7 +314,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+	emummc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 
 	res = 1;
 
@@ -327,9 +329,9 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!emummc_storage_init_mmc(&storage, &sdmmc))
 		return NULL;
-	sdmmc_storage_set_mmc_partition(&storage, 0);
+	emummc_storage_set_mmc_partition(&storage, 0);
 
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
@@ -407,6 +409,10 @@ int hos_launch(ini_sec_t *cfg)
 		EPRINTF("Wrong ini cfg or missing files!");
 		return 0;
 	}
+
+	// Enable emummc patching.
+	if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
+		config_kip1patch(&ctxt, "emummc");
 
 	// Check if fuses lower than 4.0.0 and if yes apply NO Gamecard patch.
 	if (h_cfg.autonogc && !(fuse_read_odm(7) & ~0xF) && ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)

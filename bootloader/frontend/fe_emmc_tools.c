@@ -995,3 +995,5 @@ out:
 void restore_emmc_boot()      { _restore_emmc_selected(PART_BOOT); }
 void restore_emmc_rawnand()   { _restore_emmc_selected(PART_RAW); }
 void restore_emmc_gpp_parts() { _restore_emmc_selected(PART_GP_ALL); }
+
+#pragma GCC pop_options

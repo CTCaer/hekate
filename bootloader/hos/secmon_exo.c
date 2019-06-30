@@ -19,31 +19,77 @@
 #include <stdlib.h>
 
 #include "hos.h"
+#include "../config/config.h"
 #include "../gfx/di.h"
 #include "../gfx/gfx.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../soc/fuse.h"
+#include "../storage/emummc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/util.h"
 #include "../utils/types.h"
 
+extern hekate_config h_cfg;
+
 extern bool sd_mount();
 extern int sd_save_to_file(void *buf, u32 size, const char *filename);
 
+enum emuMMC_Type
+{
+	emuMMC_None = 0,
+	emuMMC_Partition,
+	emuMMC_File,
+	emuMMC_MAX
+};
+
+/* "EFS0" */
+#define EMUMMC_MAGIC 0x30534645
+#define EMUMMC_FILE_PATH_MAX 0x80
+
+typedef struct
+{
+	u32 magic;
+	u32 type;
+	u32 id;
+	u32 fs_ver;
+} emummc_base_config_t;
+
+typedef struct
+{
+	u64 start_sector;
+} emummc_partition_config_t;
+
+typedef struct
+{
+	char path[EMUMMC_FILE_PATH_MAX];
+} emummc_file_config_t;
+
+typedef struct
+{
+	emummc_base_config_t base_cfg;
+	union
+	{
+		emummc_partition_config_t partition_cfg;
+		emummc_file_config_t file_cfg;
+	};
+	char nintendo_path[EMUMMC_FILE_PATH_MAX];
+} exo_emummc_config_t;
+
 typedef struct _exo_cfg_t
 {
-	vu32 magic;
-	vu32 fwno;
-	vu32 flags;
-	vu32 rsvd;
+	u32 magic;
+	u32 fwno;
+	u32 flags;
+	u32 reserved[5];
+	exo_emummc_config_t emummc_cfg;
 } exo_cfg_t;
 
 typedef struct _atm_meta_t
 {
-	uint32_t magic;
-	uint32_t fwno;
+	u32 magic;
+	u32 fwno;
 } wb_cfg_t;
 
 // Atmosphère reboot-to-fatal-error.
@@ -118,7 +164,7 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		exoFlags |= EXO_FLAG_620_KGN;
 
 	// To avoid problems, make private debug mode always on if not semi-stock.
-	if (!stock)
+	if (!stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))
 		exoFlags |= EXO_FLAG_DBG_PRIV;
 
 	// Set mailbox values.
@@ -156,6 +202,24 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 			rsa_mod[0x10] = 0x37;
 
 		memcpy(warmboot + 0x10, rsa_mod + 0x10, 0x100);
+	}
+
+	if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
+	{
+		exo_cfg->emummc_cfg.base_cfg.magic = EMUMMC_MAGIC;
+		exo_cfg->emummc_cfg.base_cfg.type = emu_cfg.sector ? emuMMC_Partition : emuMMC_File;
+		exo_cfg->emummc_cfg.base_cfg.fs_ver = emu_cfg.fs_ver;
+		exo_cfg->emummc_cfg.base_cfg.id = emu_cfg.id;
+
+		if (emu_cfg.sector)
+			exo_cfg->emummc_cfg.partition_cfg.start_sector = emu_cfg.sector;
+		else
+			strcpy((char *)exo_cfg->emummc_cfg.file_cfg.path, emu_cfg.path);
+
+		if (emu_cfg.nintendo_path)
+			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, emu_cfg.nintendo_path);
+		else
+			exo_cfg->emummc_cfg.nintendo_path[0] = 0;
 	}
 }
 

@@ -19,9 +19,12 @@
 #include <string.h>
 
 #include "pkg2.h"
+#include "../config/config.h"
+#include "../libs/fatfs/ff.h"
 #include "../utils/aarch64_util.h"
 #include "../mem/heap.h"
 #include "../sec/se.h"
+#include "../storage/emummc.h"
 #include "../libs/compr/blz.h"
 
 #include "../gfx/gfx.h"
@@ -625,9 +628,11 @@ static kip1_id_t _kip_ids[] =
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)
 {
-	for (u32 i = 0; sizeof(_pkg2_kernel_ids) / sizeof(pkg2_kernel_id_t); i++)
+	for (u32 i = 0; i < (sizeof(_pkg2_kernel_ids) / sizeof(pkg2_kernel_id_t)); i++)
+	{
 		if (!memcmp(hash, _pkg2_kernel_ids[i].hash, sizeof(_pkg2_kernel_ids[0].hash)))
 			return &_pkg2_kernel_ids[i];
+	}
 	return NULL;
 }
 
@@ -678,6 +683,7 @@ int pkg2_has_kip(link_t *info, u64 tid)
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1)
 {
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
+	{
 		if (ki->kip1->tid == tid)
 		{
 			ki->kip1 = kip1;
@@ -685,6 +691,7 @@ void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1)
 DPRINTF("replaced kip (new size %08X)\n", ki->size);
 			return;
 		}
+	}
 }
 
 void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1)
@@ -773,6 +780,69 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	return 0;
 }
 
+static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info_t* ki)
+{
+	if (!strcmp((const char *)ki->kip1->name, target_name))
+	{
+		u32 size = 0;
+		u8 *kipm_data = (u8 *)sd_file_read(kipm_path, &size);
+		if (!kipm_data)
+			return 1;
+
+		u32 inject_size = size - sizeof(ki->kip1->caps);
+		u8 *kip_patched_data = (u8 *)malloc(ki->size + inject_size);
+
+		// Copy headers.
+		memcpy(kip_patched_data, ki->kip1, sizeof(pkg2_kip1_t));
+
+		pkg2_kip1_t *fs_kip = ki->kip1;
+		ki->kip1 = (pkg2_kip1_t *)kip_patched_data;
+		ki->size = ki->size + inject_size;
+
+		// Patch caps.
+		memcpy(&ki->kip1->caps, kipm_data, sizeof(ki->kip1->caps));
+		// Copy our .text data.
+		memcpy(&ki->kip1->data, kipm_data + sizeof(ki->kip1->caps), inject_size);
+
+		u32 new_offset = 0;
+
+		for (u32 currSectIdx = 0; currSectIdx < KIP1_NUM_SECTIONS - 2; currSectIdx++)
+		{
+			if(!currSectIdx) // .text.
+			{
+				memcpy(ki->kip1->data + inject_size, fs_kip->data + new_offset, fs_kip->sections[0].size_comp);
+				ki->kip1->sections[0].size_decomp += inject_size;
+				ki->kip1->sections[0].size_comp += inject_size;
+			}
+			else // Others.
+			{
+				if (currSectIdx < 3)
+					memcpy(ki->kip1->data + new_offset + inject_size, fs_kip->data + new_offset, fs_kip->sections[currSectIdx].size_comp);
+				ki->kip1->sections[currSectIdx].offset += inject_size;
+			}
+			new_offset += fs_kip->sections[currSectIdx].size_comp;
+		}
+
+		// Patch PMC capabilities for 1.0.0.
+		if (!emu_cfg.fs_ver)
+		{
+			for (u32 i = 0; i < 0x20; i++)
+			{
+				if (ki->kip1->caps[i] == 0xFFFFFFFF)
+				{
+					ki->kip1->caps[i] = 0x07000E7F;
+					break;
+				}
+			}
+		}
+
+		free(kipm_data);
+		return 0;
+	}
+
+	return 1;
+}
+
 const char* pkg2_patch_kips(link_t *info, char* patchNames)
 {
 	if (patchNames == NULL || patchNames[0] == 0)
@@ -814,7 +884,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			continue;
 
 		// Eliminate trailing spaces.
-		for (int chIdx=valueLen - 1; chIdx >= 0; chIdx--)
+		for (int chIdx = valueLen - 1; chIdx >= 0; chIdx--)
 		{
 			const char* p = patches[i] + chIdx;
 			if (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
@@ -876,7 +946,10 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						if (strcmp(currPatchset->name, patches[currEnabIdx]))
 							continue;
 
-						for (const kip1_patch_t* currPatch=currPatchset->patches; currPatch != NULL && currPatch->length != 0; currPatch++)
+						if (!strcmp(currPatchset->name, "emummc"))
+							bitsAffected |= 1u << GET_KIP_PATCH_SECTION(currPatchset->patches->offset);
+
+						for (const kip1_patch_t* currPatch=currPatchset->patches; currPatch != NULL && (currPatch->length != 0); currPatch++)
 							bitsAffected |= 1u << GET_KIP_PATCH_SECTION(currPatch->offset);
 					}
 				}		
@@ -899,6 +972,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 #endif
 
 			currPatchset = _kip_ids[currKipIdx].patchset;
+			bool emummc_patch_selected = false;
 			while (currPatchset != NULL && currPatchset->name != NULL)
 			{
 				for (u32 currEnabIdx = 0; currEnabIdx < numPatches; currEnabIdx++)
@@ -907,10 +981,13 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						continue;
 
 					u32 appliedMask = 1u << currEnabIdx;
-					if (currPatchset->patches == NULL)
+					if (currPatchset->patches == NULL || !strcmp(currPatchset->name, "emummc"))
 					{
 						gfx_printf("Patch '%s' not necessary for %s KIP1\n", currPatchset->name, (const char*)ki->kip1->name);
 						patchesApplied |= appliedMask;
+
+						if (!strcmp(currPatchset->name, "emummc"))
+							emummc_patch_selected = true;
 						break;
 					}
 
@@ -920,7 +997,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						if (bitsAffected & (1u << currSectIdx))
 						{
 							gfx_printf("Applying patch '%s' on %s KIP1 sect %d\n", currPatchset->name, (const char*)ki->kip1->name, currSectIdx);
-							for (const kip1_patch_t* currPatch=currPatchset->patches;currPatch != NULL && currPatch->length != 0; currPatch++)
+							for (const kip1_patch_t* currPatch = currPatchset->patches; currPatch != NULL && currPatch->length != 0; currPatch++)
 							{
 								if (GET_KIP_PATCH_SECTION(currPatch->offset) != currSectIdx)
 									continue;
@@ -945,6 +1022,19 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 					break;
 				}
 				currPatchset++;
+			}
+			if (!strncmp(_kip_ids[currKipIdx].name, "FS", 2) && emummc_patch_selected)
+			{
+				emummc_patch_selected = false;
+				emu_cfg.fs_ver = currKipIdx;
+				if (currKipIdx)
+					emu_cfg.fs_ver--;
+				if (currKipIdx > 19)
+					emu_cfg.fs_ver -= 2;
+
+				gfx_printf("Injecting emuMMC. FS ver: %d\n", emu_cfg.fs_ver);
+				if (_kipm_inject("/bootloader/sys/emummc.kipm", "FS", ki))
+					return "emummc";
 			}
 		}
 	}
@@ -1007,6 +1097,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 		ini1_size += ki->size;
 		ini1->num_procs++;
 	}
+	ini1_size = ALIGN(ini1_size, 4);
 	ini1->size = ini1_size;
 	if (!new_pkg2)
 	{

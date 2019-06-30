@@ -39,6 +39,7 @@
 #include "soc/i2c.h"
 #include "soc/t210.h"
 #include "soc/uart.h"
+#include "storage/emummc.h"
 #include "storage/nx_emmc.h"
 #include "storage/sdmmc.h"
 #include "utils/btn.h"
@@ -630,6 +631,15 @@ void launch_firmware()
 
 			payload_path = ini_check_payload_section(cfg_tmp);
 
+			if (cfg_tmp)
+			{
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_tmp->kvs, link)
+				{
+					if (!strcmp("emummc_force_disable", kv->key))
+						h_cfg.emummc_force_disable = atoi(kv->val);
+				}
+			}
+
 			if (cfg_tmp && !payload_path)
 				check_sept();
 
@@ -674,6 +684,8 @@ void launch_firmware()
 out:
 	ini_free_section(cfg_sec);
 	sd_unmount();
+
+	h_cfg.emummc_force_disable = false;
 
 	btn_wait();
 }
@@ -768,6 +780,8 @@ void auto_launch_firmware()
 						{
 							if (!strcmp("logopath", kv->key))
 								bootlogoCustomEntry = kv->val;
+							if (!strcmp("emummc_force_disable", kv->key))
+								h_cfg.emummc_force_disable = atoi(kv->val);
 						}
 						break;
 					}
@@ -795,11 +809,14 @@ void auto_launch_firmware()
 
 							if (h_cfg.autoboot == boot_entry_id)
 							{
+								h_cfg.emummc_force_disable = false;
 								cfg_sec = ini_clone_section(ini_sec_list);
 								LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 								{
 									if (!strcmp("logopath", kv->key))
 										bootlogoCustomEntry = kv->val;
+									if (!strcmp("emummc_force_disable", kv->key))
+										h_cfg.emummc_force_disable = atoi(kv->val);
 								}
 								break;
 							}
@@ -927,10 +944,11 @@ out:
 		ini_free(&ini_list_sections);
 	ini_free_section(cfg_sec);
 
-	sd_unmount();
 	gfx_con.mute = false;
 
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
+	h_cfg.emummc_force_disable = false;
+	sd_unmount();
 }
 
 void patched_rcm_protection()
@@ -1178,6 +1196,9 @@ void ipl_main()
 
 	// Check if RCM is patched and protect from a possible brick.
 	patched_rcm_protection();
+
+	// Load emuMMC configuration from SD.
+	emummc_load_cfg();
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();

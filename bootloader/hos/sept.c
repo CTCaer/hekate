@@ -25,6 +25,7 @@
 #include "../mem/heap.h"
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
+#include "../storage/emummc.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
@@ -63,10 +64,13 @@ extern hekate_config h_cfg;
 extern const volatile ipl_ver_meta_t ipl_ver;
 
 extern void *sd_file_read(char *path);
-extern void sd_mount();
+extern bool sd_mount();
 extern void sd_unmount();
 extern bool is_ipl_updated(void *buf);
 extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
+
+extern sdmmc_t sd_sdmmc;
+extern sdmmc_storage_t sd_storage;
 
 void check_sept()
 {
@@ -82,15 +86,15 @@ void check_sept()
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!emummc_storage_init_mmc(&storage, &sdmmc))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out_free;
 	}
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	emummc_storage_set_mmc_partition(&storage, 1);
 
 	// Read package1.
-	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	emummc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{

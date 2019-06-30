@@ -61,6 +61,7 @@ typedef struct _launch_ctxt_t
 	bool debugmode;
 	bool stock;
 	bool atmosphere;
+	bool emuMMC;
 
 	ini_sec_t *cfg;
 } launch_ctxt_t;
