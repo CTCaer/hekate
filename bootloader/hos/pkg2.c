@@ -19,6 +19,8 @@
 #include <string.h>
 
 #include "pkg2.h"
+#include "pkg2_ini_kippatch.h"
+
 #include "../config/config.h"
 #include "../libs/fatfs/ff.h"
 #include "../utils/aarch64_util.h"
@@ -30,7 +32,7 @@
 #include "../gfx/gfx.h"
 
 extern hekate_config h_cfg;
-
+extern void *sd_file_read(const char *path, u32 *fsize);
 
 #ifdef KIP1_PATCH_DEBUG
 	#include "../utils/util.h"
@@ -334,86 +336,39 @@ static kip1_patch_t _fs_emummc[] =
 	{ 0, 0, NULL, NULL }
 };
 
-static kip1_patch_t _fs_nosigchk_100[] =
-{
-	{ KPS(KIP_TEXT) | 0x194A0, 4, "\xBA\x09\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x3A79C, 4, "\xE0\x06\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
-};
-
 static kip1_patchset_t _fs_patches_100[] =
 {
-	{ "nosigchk", _fs_nosigchk_100 },
 	{ "nogc",     NULL },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_200[] =
-{
-	{ KPS(KIP_TEXT) | 0x15DF4, 4, "\xBC\x0A\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x3F720, 4, "\x00\x06\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_200[] =
 {
-	{ "nosigchk", _fs_nosigchk_200 },
 	{ "nogc",     NULL },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_210[] =
-{
-	{ KPS(KIP_TEXT) | 0x15F64, 4, "\xDF\x0A\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x3FAF8, 4, "\x00\x06\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_210[] =
 {
-	{ "nosigchk", _fs_nosigchk_210 },
 	{ "nogc",     NULL },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_300[] =
-{
-	{ KPS(KIP_TEXT) | 0x18E24, 4, "\x52\x0C\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x49EC8, 4, "\x40\x04\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_300[] =
 {
-	{ "nosigchk", _fs_nosigchk_300 },
 	{ "nogc",     NULL },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_30x[] =
-{
-	{ KPS(KIP_TEXT) | 0x18E90, 4, "\x52\x0C\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x49F34, 4, "\xE0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_30x[] =
 {
-	{ "nosigchk", _fs_nosigchk_30x },
 	{ "nogc",     NULL },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_4xx[] =
-{
-	{ KPS(KIP_TEXT) | 0x1C4FC, 4, "\x3C\x2F\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x57934, 4, "\xE0\x02\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patch_t _fs_nogc_40x[] =
@@ -425,7 +380,6 @@ static kip1_patch_t _fs_nogc_40x[] =
 
 static kip1_patchset_t _fs_patches_40x[] =
 {
-	{ "nosigchk", _fs_nosigchk_4xx },
 	{ "nogc",     _fs_nogc_40x },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
@@ -440,17 +394,9 @@ static kip1_patch_t _fs_nogc_410[] =
 
 static kip1_patchset_t _fs_patches_410[] =
 {
-	{ "nosigchk", _fs_nosigchk_4xx },
 	{ "nogc",     _fs_nogc_410 },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_50x[] =
-{
-	{ KPS(KIP_TEXT) | 0x22DDC, 4, "\x7D\x3E\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x7D490, 4, "\x40\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patch_t _fs_nogc_50x[] =
@@ -462,17 +408,9 @@ static kip1_patch_t _fs_nogc_50x[] =
 
 static kip1_patchset_t _fs_patches_50x[] =
 {
-	{ "nosigchk", _fs_nosigchk_50x },
 	{ "nogc",     _fs_nogc_50x },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_510[] =
-{
-	{ KPS(KIP_TEXT) | 0x22E0C, 4, "\x85\x3E\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0x7D860, 4, "\x40\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patch_t _fs_nogc_510[] =
@@ -484,24 +422,9 @@ static kip1_patch_t _fs_nogc_510[] =
 
 static kip1_patchset_t _fs_patches_510[] =
 {
-	{ "nosigchk", _fs_nosigchk_510 },
 	{ "nogc",     _fs_nogc_510 },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_600[] =
-{
-	{ KPS(KIP_TEXT) | 0x712A8, 4, "\x8E\x3E\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0xEB08C, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_600_exfat[] =
-{
-	{ KPS(KIP_TEXT) | 0x7C9A8, 4, "\x8E\x3E\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0xF678C, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patch_t _fs_nogc_600[] =
@@ -520,7 +443,6 @@ static kip1_patch_t _fs_nogc_600_exfat[] =
 
 static kip1_patchset_t _fs_patches_600[] =
 {
-	{ "nosigchk", _fs_nosigchk_600 },
 	{ "nogc",     _fs_nogc_600 },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
@@ -528,24 +450,9 @@ static kip1_patchset_t _fs_patches_600[] =
 
 static kip1_patchset_t _fs_patches_600_exfat[] =
 {
-	{ "nosigchk", _fs_nosigchk_600_exfat },
 	{ "nogc",     _fs_nogc_600_exfat },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_700[] =
-{
-	{ KPS(KIP_TEXT) | 0x74A2C, 4, "\x31\x43\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0xF25E4, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_700_exfat[] =
-{
-	{ KPS(KIP_TEXT) | 0x7FFDC, 4, "\x31\x43\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0xFDB94, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patch_t _fs_nogc_700[] =
@@ -564,7 +471,6 @@ static kip1_patch_t _fs_nogc_700_exfat[] =
 
 static kip1_patchset_t _fs_patches_700[] =
 {
-	{ "nosigchk", _fs_nosigchk_700 },
 	{ "nogc",     _fs_nogc_700 },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
@@ -572,24 +478,9 @@ static kip1_patchset_t _fs_patches_700[] =
 
 static kip1_patchset_t _fs_patches_700_exfat[] =
 {
-	{ "nosigchk", _fs_nosigchk_700_exfat },
 	{ "nogc",     _fs_nogc_700_exfat },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_800[] =
-{
-	{ KPS(KIP_TEXT) | 0x7630C, 4, "\x51\x44\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0xF49A4, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
-};
-
-static kip1_patch_t _fs_nosigchk_800_exfat[] =
-{
-	{ KPS(KIP_TEXT) | 0x818BC, 4, "\x51\x44\x00\x94", "\xE0\x03\x1F\x2A" },
-	{ KPS(KIP_TEXT) | 0xFFF54, 4, "\xC0\x03\x00\x36", "\x1F\x20\x03\xD5" },
-	{ 0, 0, NULL, NULL }
 };
 
 static kip1_patch_t _fs_nogc_800[] =
@@ -608,7 +499,6 @@ static kip1_patch_t _fs_nogc_800_exfat[] =
 
 static kip1_patchset_t _fs_patches_800[] =
 {
-	{ "nosigchk", _fs_nosigchk_800 },
 	{ "nogc",     _fs_nogc_800 },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
@@ -616,7 +506,6 @@ static kip1_patchset_t _fs_patches_800[] =
 
 static kip1_patchset_t _fs_patches_800_exfat[] =
 {
-	{ "nosigchk", _fs_nosigchk_800_exfat },
 	{ "nogc",     _fs_nogc_800_exfat },
 	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
@@ -654,6 +543,82 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x6B\x09\xB6\x7B\x29\xC0\x20\x24", _fs_patches_800 },       // FS 8.1.0
 	{ "FS", "\xB4\xCA\xE1\xF2\x49\x65\xD9\x2E", _fs_patches_800_exfat }  // FS 8.1.0 exfat
 };
+
+static void parse_external_kip_patches()
+{
+	u32 curr_kip_idx = 0;
+	LIST_INIT(ini_kip_sections);
+	if (ini_patch_parse(&ini_kip_sections, "bootloader/patches.ini"))
+	{
+		// Parse patchsets and glue them together.
+		LIST_FOREACH_ENTRY(ini_kip_sec_t, ini_psec, &ini_kip_sections, link)
+		{
+			kip1_id_t* curr_kip = &_kip_ids[curr_kip_idx];
+
+			if (!strcmp(curr_kip->name, ini_psec->name) && !memcmp(curr_kip->hash, ini_psec->hash, 8))
+			{
+				kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 8);
+
+				u32 curr_patchset_idx;
+				for(curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
+				{
+					patchsets[curr_patchset_idx].name = curr_kip->patchset[curr_patchset_idx].name;
+					patchsets[curr_patchset_idx].patches = curr_kip->patchset[curr_patchset_idx].patches;
+				}
+
+				curr_kip->patchset = patchsets;
+				bool first_ext_patch = true;
+				u32 curr_patch_idx = 0;
+
+				// Parse patches and glue them together to a patchset.
+				kip1_patch_t *patches = calloc(sizeof(kip1_patch_t), 16);
+				LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
+				{
+					if (first_ext_patch)
+					{
+						first_ext_patch = false;
+						patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
+						strcpy(patchsets[curr_patchset_idx].name, pt->name);
+						patchsets[curr_patchset_idx].patches = patches;
+					}
+					else
+					{
+						if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
+						{
+							curr_patchset_idx++;
+							curr_patch_idx = 0;
+							patches = calloc(sizeof(kip1_patch_t), 16);
+
+							patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
+							strcpy(patchsets[curr_patchset_idx].name, pt->name);
+							patchsets[curr_patchset_idx].patches = patches;
+						}
+					}
+
+					if (pt->length)
+					{
+						patches[curr_patch_idx].offset = pt->offset;
+						patches[curr_patch_idx].length = pt->length;
+
+						patches[curr_patch_idx].srcData = malloc(pt->length);
+						patches[curr_patch_idx].dstData = malloc(pt->length);
+						memcpy(patches[curr_patch_idx].srcData, pt->srcData, pt->length);
+						memcpy(patches[curr_patch_idx].dstData, pt->dstData, pt->length);
+					}
+					
+					curr_patch_idx++;
+				}
+				curr_patchset_idx++;
+				patchsets[curr_patchset_idx].name = NULL;
+				patchsets[curr_patchset_idx].patches = NULL;
+			}
+
+			curr_kip_idx++;
+			if (!(curr_kip_idx < (sizeof(_kip_ids) / sizeof(_kip_ids[0]))))
+				break;
+		}
+	}
+}
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)
 {
@@ -872,10 +837,18 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 	return 1;
 }
 
+static bool ext_patches_parsed = false;
+
 const char* pkg2_patch_kips(link_t *info, char* patchNames)
 {
 	if (patchNames == NULL || patchNames[0] == 0)
 		return NULL;
+
+	if (!ext_patches_parsed)
+	{
+		parse_external_kip_patches();
+		ext_patches_parsed = true;
+	}
 
 	static const u32 MAX_NUM_PATCHES_REQUESTED = sizeof(u32) * 8;
 	char* patches[MAX_NUM_PATCHES_REQUESTED];

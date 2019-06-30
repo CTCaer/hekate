@@ -122,13 +122,13 @@ typedef struct _kip1_patch_t
 {
 	u32 offset; // section+offset of patch to apply.
 	u32 length; // In bytes, 0 means last patch.
-	const char* srcData; // That must match.
-	const char* dstData; // That it gets replaced by.
+	char* srcData; // That must match.
+	char* dstData; // That it gets replaced by.
 } kip1_patch_t;
 
 typedef struct _kip1_patchset_t
 {
-	const char* name; // NULL means end.
+	char* name; // NULL means end.
 	kip1_patch_t* patches; // NULL means not necessary.
 } kip1_patchset_t;
 
