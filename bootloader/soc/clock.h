@@ -108,6 +108,9 @@
 #define CLK_RST_CONTROLLER_PLLX_MISC_3 0x518
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRE 0x554
 #define CLK_RST_CONTROLLER_SPARE_REG0 0x55C
+#define CLK_RST_CONTROLLER_PLLC4_BASE 0x5A4
+#define CLK_RST_CONTROLLER_PLLC4_MISC 0x5A8
+#define CLK_RST_CONTROLLER_PLLC4_OUT 0x5E4
 #define CLK_RST_CONTROLLER_PLLMB_BASE 0x5E8
 #define CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP 0x620
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL 0x664
@@ -139,7 +142,7 @@ void clock_enable_uart(u32 idx);
 void clock_enable_i2c(u32 idx);
 void clock_disable_i2c(u32 idx);
 void clock_enable_se();
-void clock_enable_unk2();
+void clock_enable_tzram();
 void clock_enable_host1x();
 void clock_disable_host1x();
 void clock_enable_tsec();

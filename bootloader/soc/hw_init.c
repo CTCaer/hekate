@@ -209,7 +209,7 @@ void config_hw()
 	clock_enable_i2c(I2C_1);
 	clock_enable_i2c(I2C_5);
 
-	clock_enable_unk2();
+	clock_enable_tzram();
 
 	i2c_init(I2C_1);
 	i2c_init(I2C_5);

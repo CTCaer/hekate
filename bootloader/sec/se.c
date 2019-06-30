@@ -20,6 +20,7 @@
 
 #include "../sec/se.h"
 #include "../mem/heap.h"
+#include "../soc/bpmp.h"
 #include "../soc/t210.h"
 #include "../sec/se_t210.h"
 #include "../utils/util.h"
@@ -73,6 +74,8 @@ static int _se_wait()
 
 static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
+	bpmp_mmu_disable();
+
 	se_ll_t *ll_dst = NULL, *ll_src = NULL;
 
 	if (dst)
@@ -99,6 +102,8 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 		free(ll_src);
 	if (dst)
 		free(ll_dst);
+
+	bpmp_mmu_enable();
 
 	return res;
 }

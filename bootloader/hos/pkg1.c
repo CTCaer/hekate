@@ -141,9 +141,9 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20180220163747", 4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000, false, _secmon_5_patchset, _warmboot_4_patchset },   //5.0.0 - 5.1.0
 	{ "20180802162753", 5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_6_patchset, _warmboot_4_patchset },   //6.0.0 - 6.1.0
 	{ "20181107105733", 6, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800, false, _secmon_620_patchset, _warmboot_4_patchset }, //6.2.0
-	{ "20181218175730", 7, 0x0F00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, _warmboot_4_patchset },                 //7.0.0
-	{ "20190208150037", 7, 0x0F00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, _warmboot_4_patchset },                 //7.0.1
-	{ "20190314172056", 7, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, _warmboot_4_patchset },                 //8.0.0
+	{ "20181218175730", 7, 0x0F00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //7.0.0
+	{ "20190208150037", 7, 0x0F00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //7.0.1
+	{ "20190314172056", 7, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //8.0.0 - 8.0.1
 	{ NULL } //End.
 };
 

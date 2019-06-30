@@ -18,15 +18,16 @@
 #include <string.h>
 
 #include "di.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
-#include "../soc/i2c.h"
-#include "../soc/pmc.h"
+#include "../gfx/gfx.h"
 #include "../power/max77620.h"
 #include "../power/max7762x.h"
-#include "../soc/gpio.h"
-#include "../soc/pinmux.h"
 #include "../soc/clock.h"
+#include "../soc/gpio.h"
+#include "../soc/i2c.h"
+#include "../soc/pinmux.h"
+#include "../soc/pmc.h"
+#include "../soc/t210.h"
+#include "../utils/util.h"
 
 #include "di.inl"
 
@@ -252,11 +253,11 @@ void display_color_screen(u32 color)
 u32 *display_init_framebuffer()
 {
 	// Sanitize framebuffer area.
-	memset((u32 *)0xC0000000, 0, 0x3C0000);
-	// This configures the framebuffer @ 0xC0000000 with a resolution of 1280x720 (line stride 768).
+	memset((u32 *)FB_ADDRESS, 0, 0x3C0000);
+	// This configures the framebuffer @ 0xC0000000 with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer, 32);
 
 	usleep(35000);
 
-	return (u32 *)0xC0000000;
+	return (u32 *)FB_ADDRESS;
 }

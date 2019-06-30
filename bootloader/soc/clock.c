@@ -30,18 +30,19 @@ static const clock_t _clock_uart[] = {
 };
 
 static const clock_t _clock_i2c[] = {
-/* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 0xC, 6, 0 },
+/* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 0xC, 6, 0 }, // 0, 19 }, // 100KHz
 /* I2C2 */ { 0 },
 /* I2C3 */ { 0 },
 /* I2C4 */ { 0 },
-/* I2C5 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C5, 0xF, 6, 0 },
+/* I2C5 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C5, 0xF, 6, 0 }, // 0, 4 },  // 400KHz
 /* I2C6 */ { 0 }
 };
 
 static clock_t _clock_se = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,     0x1F, 0, 0
 };
-static clock_t _clock_unk2 = {
+
+static clock_t _clock_tzram = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_NO_SOURCE,                        0x1E, 0, 0
 };
 
@@ -123,9 +124,9 @@ void clock_enable_se()
 	clock_enable(&_clock_se);
 }
 
-void clock_enable_unk2()
+void clock_enable_tzram()
 {
-	clock_enable(&_clock_unk2);
+	clock_enable(&_clock_tzram);
 }
 
 void clock_enable_host1x()

@@ -95,7 +95,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *value)
 
 		fss_content_t *curr_fss_cnt = (fss_content_t *)(fss + fss_meta->cnt_off);
 		void *content;
-		for (int i = 0; i < fss_meta->cnt_count; i++)
+		for (u32 i = 0; i < fss_meta->cnt_count; i++)
 		{
 			content = (void *)(fss + curr_fss_cnt[i].offset);
 			if ((curr_fss_cnt[i].offset + curr_fss_cnt[i].size) > fss_meta->size)

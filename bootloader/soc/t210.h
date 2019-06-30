@@ -20,6 +20,7 @@
 #include "../utils/types.h"
 
 #define BOOTROM_BASE 0x100000
+#define IRAM_BASE 0x40000000
 #define HOST1X_BASE 0x50000000
 #define BPMP_CACHE_BASE 0x50040000
 #define DISPLAY_A_BASE 0x54200000

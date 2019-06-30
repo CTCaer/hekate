@@ -524,6 +524,12 @@ int hos_launch(ini_sec_t *cfg)
 					*(u32 *)(ctxt.kernel + PKG2_NEWKERN_INI1_START) - PKG2_NEWKERN_START);
 
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
+			if (!ctxt.pkg2_kernel_id)
+			{
+				EPRINTF("Failed to identify kernel!");
+				return 0;
+			}
+
 
 			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
 			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;

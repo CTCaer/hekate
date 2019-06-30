@@ -45,6 +45,9 @@ extern void sd_unmount();
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
+
 void dump_packages12()
 {
 	if (!sd_mount())
@@ -596,61 +599,4 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 	}
 }*/
 
-/*
-#include "../../modules/hekate_libsys_minerva/mtc.h"
-#include "../ianos/ianos.h"
-#include "../soc/fuse.h"
-#include "../soc/clock.h"
-
-mtc_config_t mtc_cfg;
-void minerva()
-{
-	gfx_clear_partial_grey(0x1B, 0, 1256);
-	gfx_con_setpos(0, 0);
-
-	u32 curr_ram_idx = 0;
-
-	if (!sd_mount())
-		return;
-
-	gfx_printf("-- Minerva Training Cell --\n\n");
-
-	// Set table to ram.
-	mtc_cfg.mtc_table = NULL;
-	mtc_cfg.sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
-	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
-
-	gfx_printf("\nStarting training process..\n\n");
-
-	// Get current frequency
-	for (curr_ram_idx = 0; curr_ram_idx < 10; curr_ram_idx++)
-	{
-		if (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) == mtc_cfg.mtc_table[curr_ram_idx].clk_src_emc)
-			break;
-	}
-
-	// Change DRAM voltage.
-	//i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD1, 42); //40 = (1000 * 1100 - 600000) / 12500 -> 1.1V
-
-	mtc_cfg.rate_from = mtc_cfg.mtc_table[curr_ram_idx].rate_khz;
-	mtc_cfg.rate_to = 800000;
-	mtc_cfg.train_mode = OP_TRAIN_SWITCH;
-	gfx_printf("Training and switching %7d -> %7d\n\n", mtc_cfg.mtc_table[curr_ram_idx].rate_khz, 800000);
-	ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
-	
-	// Thefollowing frequency needs periodic training every 100ms.
-	//msleep(200);
-
-	//mtc_cfg.rate_to = 1600000;
-	//gfx_printf("Training and switching  %7d -> %7d\n\n", mtc_cfg.current_emc_table->rate_khz, 1600000);
-	//ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_cfg);
-
-	//mtc_cfg.train_mode = OP_PERIODIC_TRAIN;
-	
-	sd_unmount();
-	
-	gfx_printf("Finished!");
-
-	btn_wait();
-}
-*/
+#pragma GCC pop_options

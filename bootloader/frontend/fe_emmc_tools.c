@@ -36,7 +36,7 @@
 #define MIXD_BUF_ALIGNED 0xB7000000
 
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
-#define OUT_FILENAME_SZ 80
+#define OUT_FILENAME_SZ 128
 #define HASH_FILENAME_SZ (OUT_FILENAME_SZ + 11) // 11 == strlen(".sha256sums")
 #define SHA256_SZ 0x20
 
@@ -48,6 +48,9 @@ extern hekate_config h_cfg;
 extern bool sd_mount();
 extern void sd_unmount();
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
 
 static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
@@ -115,6 +118,8 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 						num, lba_curr);
 	
 					f_close(&fp);
+					if (h_cfg.verification == 3)
+						f_close(&hashFp);
 					return 1;
 				}
 				f_lseek(&fp, (u64)sdFileSector << (u64)9);
@@ -124,6 +129,9 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 					EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom sd card!\n\nVerification failed..\n", num, lba_curr);
 	
 					f_close(&fp);
+					if (h_cfg.verification == 3)
+						f_close(&hashFp);
+
 					return 1;
 				}
 
@@ -137,6 +145,9 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 					EPRINTFARGS("\nSD and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", lba_curr);
 	
 					f_close(&fp);
+					if (h_cfg.verification == 3)
+						f_close(&hashFp);
+
 					return 1;
 				}
 
@@ -198,7 +209,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 	}
 }
 
-void _update_filename(char *outFilename, u32 sdPathLen, u32 numSplitParts, u32 currPartIdx)
+static void _update_filename(char *outFilename, u32 sdPathLen, u32 numSplitParts, u32 currPartIdx)
 {
 	if (numSplitParts >= 10 && currPartIdx < 10)
 	{
@@ -283,7 +294,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		gfx_printf("%kPartial Backup enabled (with %d MiB parts)...%k\n\n", 0xFFFFBA00, multipartSplitSize >> 20, 0xFFCCCCCC);
 
 	// Check if filesystem is FAT32 or the free space is smaller and backup in parts.
-	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) | isSmallSdCard)
+	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) || isSmallSdCard)
 	{
 		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors + multipartSplitSectors - 1) / multipartSplitSectors;

@@ -26,8 +26,17 @@ static char *_strdup(char *str)
 {
 	if (!str)
 		return NULL;
+
+	// Remove starting space.
+	if (str[0] == ' ' && strlen(str))
+		str++;
+
 	char *res = (char *)malloc(strlen(str) + 1);
 	strcpy(res, str);
+
+	// Remove trailing space.
+	if (res[strlen(res) - 1] == ' ' && strlen(res))
+		res[strlen(res) - 1] = 0;
 
 	return res;
 }

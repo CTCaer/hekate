@@ -46,6 +46,9 @@ extern void sd_unmount();
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
+#pragma GCC push_options
+#pragma GCC optimize ("Os") 
+
 void print_fuseinfo()
 {
 	gfx_clear_partial_grey(0x1B, 0, 1256);
@@ -75,7 +78,7 @@ void print_fuseinfo()
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)));
 
 	gfx_printf("%k(Unlocked) fuse cache:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
-	gfx_hexdump(0x7000F900, (u8 *)0x7000F900, 0x2FC);
+	gfx_hexdump(0x7000F900, (u8 *)0x7000F900, 0x300);
 
 	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
 
@@ -85,9 +88,16 @@ void print_fuseinfo()
 		if (sd_mount())
 		{
 			char path[64];
-			emmcsn_path_impl(path, "/dumps", "fuses.bin", NULL);
-			if (!sd_save_to_file((u8 *)0x7000F900, 0x2FC, path))
-				gfx_puts("\nDone!\n");
+			emmcsn_path_impl(path, "/dumps", "fuse_cached.bin", NULL);
+			if (!sd_save_to_file((u8 *)0x7000F900, 0x300, path))
+				gfx_puts("\nfuse_cached.bin saved!\n");
+
+			u32 words[192];
+			fuse_read_array(words);
+			emmcsn_path_impl(path, "/dumps", "fuse_array_raw.bin", NULL);
+			if (!sd_save_to_file((u8 *)words, sizeof(words), path))
+				gfx_puts("\nfuse_array_raw.bin saved!\n");
+
 			sd_unmount();
 		}
 
@@ -247,13 +257,13 @@ void print_mmc_info()
 			u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
 			gfx_printf("%keMMC Partitions:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 			gfx_printf(" 1: %kBOOT0      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
-				boot_size / 1024, boot_size / 1024 / 512);
+				boot_size / 1024, boot_size / 512);
 			gfx_put_small_sep();
 			gfx_printf(" 2: %kBOOT1      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
-				boot_size / 1024, boot_size / 1024 / 512);
+				boot_size / 1024, boot_size / 512);
 			gfx_put_small_sep();
 			gfx_printf(" 3: %kRPMB       %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
-				rpmb_size / 1024, rpmb_size / 1024 / 512);
+				rpmb_size / 1024, rpmb_size / 512);
 			gfx_put_small_sep();
 			gfx_printf(" 0: %kGPP (USER) %k\n    Size: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF96FF00, 0xFFCCCCCC,
 				storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
@@ -576,7 +586,7 @@ void print_battery_info()
 
 	for (int i = 0; i < 0x200; i += 2)
 	{
-		i2c_recv_buf_small(buf + i, 2, I2C_1, 0x36, i >> 1);
+		i2c_recv_buf_small(buf + i, 2, I2C_1, MAXIM17050_I2C_ADDR, i >> 1);
 		usleep(2500);
 	}
 
@@ -651,12 +661,6 @@ void bootrom_ipatches_info()
 			else
 				EPRINTFARGS("Failed to read evp_thunks. Error: %d", res);
 			
-			u32 words[192];
-			fuse_read_array(words);
-			emmcsn_path_impl(path, "/dumps", "raw_fuses.bin", NULL);
-			if (!sd_save_to_file((u8 *)words, sizeof(words), path))
-				gfx_puts("\nipatches.bin saved!\n");
-			
 			emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
 			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
 				gfx_puts("\nbootrom_patched.bin saved!\n");
@@ -677,3 +681,5 @@ void bootrom_ipatches_info()
 		btn_wait();
 	}
 }
+
+#pragma GCC pop_options

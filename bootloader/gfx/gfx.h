@@ -21,10 +21,12 @@
 
 #include "../../common/common_gfx.h"
 
-#define EPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
+#define EPRINTF(text) ({ gfx_con.mute = false; gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC); })
+#define EPRINTFARGS(text, args...) ({ gfx_con.mute = false; gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC); })
 #define WPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
 #define WPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
+
+#define FB_ADDRESS 0xC0000000
 
 void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride);
 void gfx_clear_grey(u8 color);

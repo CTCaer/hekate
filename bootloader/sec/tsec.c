@@ -21,6 +21,7 @@
 #include "../sec/tsec.h"
 #include "../sec/tsec_t210.h"
 #include "../sec/se_t210.h"
+#include "../soc/bpmp.h"
 #include "../soc/clock.h"
 #include "../soc/smmu.h"
 #include "../soc/t210.h"
@@ -64,6 +65,9 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	u8 *fwbuf = NULL;
 	u32 *pdir, *car, *fuse, *pmc, *flowctrl, *se, *mc, *iram, *evec;
 	u32 *pkg11_magic_off;
+
+	bpmp_mmu_disable();
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	//Enable clocks.
 	clock_enable_host1x();
@@ -274,6 +278,8 @@ out:;
 	clock_disable_sor_safe();
 	clock_disable_tsec();
 	clock_disable_host1x();
+	bpmp_mmu_enable();
+	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
 
 	return res;
 }

@@ -139,7 +139,7 @@ int sd_save_to_file(void *buf, u32 size, const char *filename)
 	if (res)
 	{
 		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
-		return 1;
+		return res;
 	}
 
 	f_write(&fp, buf, size, NULL);
@@ -320,6 +320,8 @@ int launch_payload(char *path, bool update)
 		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 		void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
+		msleep(100);
+
 		// Launch our payload.
 		if (!update)
 			(*ext_payload_ptr)();
@@ -344,7 +346,7 @@ void auto_launch_update()
 	}
 }
 
-void launch_tools(u8 type)
+void launch_tools()
 {
 	u8 max_entries = 61;
 	char *filelist = NULL;
@@ -360,10 +362,7 @@ void launch_tools(u8 type)
 	{
 		dir = (char *)malloc(256);
 
-		if (!type)
-			memcpy(dir, "bootloader/payloads", 20);
-		else
-			memcpy(dir, "bootloader/modules", 19);
+		memcpy(dir, "bootloader/payloads", 20);
 
 		filelist = dirlist(dir, NULL, false);
 
@@ -391,10 +390,7 @@ void launch_tools(u8 type)
 		if (i > 0)
 		{
 			memset(&ments[i + 2], 0, sizeof(ment_t));
-			menu_t menu = {
-					ments,
-					"Choose a file to launch", 0, 0
-			};
+			menu_t menu = { ments, "Choose a file to launch", 0, 0 };
 			
 			file_sec = (char *)tui_do_menu(&menu);
 
@@ -425,16 +421,11 @@ void launch_tools(u8 type)
 		memcpy(dir + strlen(dir), "/", 2);
 		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
 
-		if (!type)
+		if (launch_payload(dir, false))
 		{
-			if (launch_payload(dir, false))
-			{
-				EPRINTF("Failed to launch payload.");
-				free(dir);
-			}
+			EPRINTF("Failed to launch payload.");
+			free(dir);
 		}
-		else
-			ianos_loader(true, dir, DRAM_LIB, NULL);
 	}
 
 out:
@@ -443,9 +434,6 @@ out:
 
 	btn_wait();
 }
-
-void launch_tools_payload() { launch_tools(0); }
-void launch_tools_module() { launch_tools(1); }
 
 void ini_list_launcher()
 {
@@ -585,7 +573,7 @@ void launch_firmware()
 
 			ments[2].type = MENT_HANDLER;
 			ments[2].caption = "Payloads...";
-			ments[2].handler = launch_tools_payload;
+			ments[2].handler = launch_tools;
 			ments[3].type = MENT_HANDLER;
 			ments[3].caption = "More configs...";
 			ments[3].handler = ini_list_launcher;
@@ -663,8 +651,8 @@ void launch_firmware()
 
 	if (!cfg_sec)
 	{
-		gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n");
-		gfx_printf("\nUsing default launch configuration...\n\n\n");
+		gfx_puts("\nUsing default launch configuration...\n");
+		gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.");
 
 		u32 btn = btn_wait();
 		if (!(btn & BTN_POWER))
@@ -841,7 +829,7 @@ void auto_launch_firmware()
 		goto out;
 
 	u8 *bitmap = NULL;
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait && !h_cfg.sept_run)
 	{
 		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, NULL);
@@ -907,9 +895,7 @@ void auto_launch_firmware()
 	if (h_cfg.autoboot_list)
 		ini_free(&ini_list_sections);
 
-	if (h_cfg.sept_run)
-		display_backlight_brightness(h_cfg.backlight, 0);
-	else if (h_cfg.bootwait)
+	if (!h_cfg.sept_run && h_cfg.bootwait)
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
@@ -1053,10 +1039,7 @@ ment_t ment_options[] = {
 	MDEF_END()
 };
 
-menu_t menu_options = {
-	ment_options,
-	"Launch Options", 0, 0
-};
+menu_t menu_options = { ment_options, "Launch Options", 0, 0 };
 
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
@@ -1075,10 +1058,8 @@ ment_t ment_cinfo[] = {
 	MDEF_HANDLER("Print battery info", print_battery_info),
 	MDEF_END()
 };
-menu_t menu_cinfo = {
-	ment_cinfo,
-	"Console Info", 0, 0
-};
+
+menu_t menu_cinfo = { ment_cinfo, "Console Info", 0, 0 };
 
 ment_t ment_restore[] = {
 	MDEF_BACK(),
@@ -1092,10 +1073,7 @@ ment_t ment_restore[] = {
 	MDEF_END()
 };
 
-menu_t menu_restore = {
-	ment_restore,
-	"Restore Options", 0, 0
-};
+menu_t menu_restore = { ment_restore, "Restore Options", 0, 0 };
 
 ment_t ment_backup[] = {
 	MDEF_BACK(),
@@ -1110,10 +1088,7 @@ ment_t ment_backup[] = {
 	MDEF_END()
 };
 
-menu_t menu_backup = {
-	ment_backup,
-	"Backup Options", 0, 0
-};
+menu_t menu_backup = { ment_backup, "Backup Options", 0, 0 };
 
 ment_t ment_tools[] = {
 	MDEF_BACK(),
@@ -1129,17 +1104,13 @@ ment_t ment_tools[] = {
 	MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
-	//MDEF_HANDLER("Minerva", minerva), // Uncomment for testing Minerva Training Cell
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Other -------", 0xFFFFDD00),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()
 };
 
-menu_t menu_tools = {
-	ment_tools,
-	"Tools", 0, 0
-};
+menu_t menu_tools = { ment_tools, "Tools", 0, 0 };
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
@@ -1155,10 +1126,8 @@ ment_t ment_top[] = {
 	MDEF_HANDLER("About", about),
 	MDEF_END()
 };
-menu_t menu_top = {
-	ment_top,
-	"hekate - CTCaer mod v4.10.1", 0, 0
-};
+
+menu_t menu_top = { ment_top, "hekate - CTCaer mod v4.10.1", 0, 0 };
 
 #define IPL_STACK_TOP  0x90010000
 #define IPL_HEAP_START 0x90020000

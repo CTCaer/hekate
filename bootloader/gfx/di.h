@@ -20,6 +20,8 @@
 
 #include "../utils/types.h"
 
+#define FB_ADDRESS 0xC0000000
+
 /*! Display registers. */
 #define _DIREG(reg) ((reg) * 4)
 
@@ -333,7 +335,7 @@
 #define  DSI_PAD_CONTROL_VS1_PDIO_CLK   (1 <<  8)
 #define  DSI_PAD_CONTROL_VS1_PDIO(x)    (((x) & 0xf) <<  0)
 
-#define DSI_PAD_CONTROL_CD 0x4c
+#define DSI_PAD_CONTROL_CD 0x4C
 #define DSI_VIDEO_MODE_CONTROL 0x4E
 
 #define DSI_PAD_CONTROL_1 0x4F

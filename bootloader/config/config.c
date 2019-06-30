@@ -28,8 +28,8 @@
 #include "../utils/util.h"
 
 extern hekate_config h_cfg;
-extern int sd_mount();
-extern int sd_unmount();
+extern bool sd_mount();
+extern void sd_unmount();
 
 void set_default_configuration()
 {
@@ -41,8 +41,8 @@ void set_default_configuration()
 	h_cfg.sbar_time_keeping = 0;
 	h_cfg.backlight = 100;
 	h_cfg.autohosoff = 0;
-	h_cfg.errors = 0;
 	h_cfg.autonogc = 1;
+	h_cfg.errors = 0;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
 	h_cfg.rcm_patched = true;
 	h_cfg.sd_timeoff = 0;
@@ -153,6 +153,9 @@ int create_config_entry()
 
 	return 0;
 }
+
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
 
 static void _save_config()
 {
@@ -455,10 +458,10 @@ void config_verification()
 
 	ments[1].type = MENT_CHGLINE;
 
-	memcpy(vr_text,       " None           (Fastest - Unsafe)", 35);
-	memcpy(vr_text + 64,  " Sparse            (Fast - Safe)",   33);
-	memcpy(vr_text + 128, " Full              (Slow - Safer)",  34);
-	memcpy(vr_text + 192, " Full w/ hashfiles (Slow - Safest)", 35);
+	memcpy(vr_text,       " Disable (Fastest - Unsafe)", 28);
+	memcpy(vr_text + 64,  " Sparse  (Fast - Safe)", 23);
+	memcpy(vr_text + 128, " Full    (Slow - Safe)", 23);
+	memcpy(vr_text + 192, " Full    (w/ hashfile)", 23);
 
 	for (u32 i = 0; i < 4; i++)
 	{
@@ -652,3 +655,5 @@ void config_nogc()
 		return;
 	btn_wait();
 }
+
+#pragma GCC pop_options
