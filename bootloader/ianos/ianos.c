@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 M4xw
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -88,8 +88,9 @@ void ianos_print_error(int errorno)
 }
 
 //TODO: Support shared libraries.
-int ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
+uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
 {
+	uintptr_t epaddr = 0;
 	int res = 0;
 
 	if (sdmount)
@@ -155,19 +156,18 @@ int ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
 	}
 
 	// Launch.
-	uintptr_t epaddr = ctx.ehdr.e_entry + (uintptr_t)elfBuf;
+	epaddr = ctx.ehdr.e_entry + (uintptr_t)elfBuf;
 	moduleEntrypoint_t ep = (moduleEntrypoint_t)epaddr;
 
 	_ianos_call_ep(ep, moduleConfig);
 
 elfFreeOut:
-	if ((u32)elfBuf >= 0x90000000 && (u32)elfBuf <= DRAM_LIB_ADDR)
-		free(elfBuf);
 	free(fileBuf);
 	elfBuf = NULL;
 	fileBuf = NULL;
+	ianos_print_error(res);
 
 elfLoadFinalOut:
 
-	return res;
+	return epaddr;
 }

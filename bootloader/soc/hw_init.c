@@ -28,6 +28,7 @@
 #include "uart.h"
 #include "../gfx/di.h"
 #include "../mem/mc.h"
+#include "../mem/minerva.h"
 #include "../mem/sdram.h"
 #include "../power/max77620.h"
 #include "../power/max7762x.h"
@@ -251,6 +252,8 @@ void config_hw()
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
+	minerva_change_freq(FREQ_204);
+
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= (1 << 10); // Enable AHUB clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= (1 <<  6);  // Enable APE clock.

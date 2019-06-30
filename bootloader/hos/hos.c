@@ -28,6 +28,7 @@
 #include "../gfx/di.h"
 #include "../mem/heap.h"
 #include "../mem/mc.h"
+#include "../mem/minerva.h"
 #include "../sec/se.h"
 #include "../sec/se_t210.h"
 #include "../sec/tsec.h"
@@ -385,6 +386,7 @@ static void _free_launch_components(launch_ctxt_t *ctxt)
 
 int hos_launch(ini_sec_t *cfg)
 {
+	minerva_change_freq(FREQ_1600);
 	launch_ctxt_t ctxt;
 	tsec_ctxt_t tsec_ctxt;
 	volatile secmon_mailbox_t *secmon_mb;
@@ -674,6 +676,8 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Clear EMC_SCRATCH0.
 	EMC(EMC_SCRATCH0) = 0;
+
+	minerva_change_freq(FREQ_800);
 
 	// Wait for secmon to get ready.
 	if (smmu_is_used())

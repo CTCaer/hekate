@@ -3856,9 +3856,9 @@ u32 _minerva_do_periodic_compensation(emc_table_t *mtc_table_entry)
 		if (channel1_enabled)
 			_wait_emc_status(EMC_EMC_STATUS, IN_SELF_REFRESH_MASK, 0, channel1_enabled);
 
-		_wait_emc_status(EMC_EMC_STATUS, REQ_FIFO_EMPTY, 0, EMC_CH0); //v1.6
-		if (channel1_enabled)
-			_wait_emc_status(EMC_EMC_STATUS, REQ_FIFO_EMPTY, 0, channel1_enabled); //v1.6
+		//_wait_emc_status(EMC_EMC_STATUS, REQ_FIFO_EMPTY, 0, EMC_CH0); //v1.6
+		//if (channel1_enabled)
+		//	_wait_emc_status(EMC_EMC_STATUS, REQ_FIFO_EMPTY, 0, channel1_enabled); //v1.6
 
 		u32 emc_cfg_update = EMC(EMC_CFG_UPDATE);
 		EMC(EMC_CFG_UPDATE) = (emc_cfg_update & 0xFFFFF9FF) | 0x400;

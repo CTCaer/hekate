@@ -31,6 +31,7 @@
 #include "libs/compr/blz.h"
 #include "libs/fatfs/ff.h"
 #include "mem/heap.h"
+#include "mem/minerva.h"
 #include "mem/sdram.h"
 #include "power/max77620.h"
 #include "rtc/max77620-rtc.h"
@@ -1172,9 +1173,14 @@ void ipl_main()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
+	sd_mount();
+
 	// Save sdram lp0 config.
-	if (ianos_loader(true, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params_patched()))
+	if (!ianos_loader(false, "bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params_patched()))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
+		
+	minerva_init();
+	minerva_change_freq(FREQ_1600);
 
 	display_init();
 
@@ -1202,6 +1208,8 @@ void ipl_main()
 
 	// Load saved configuration and auto boot if enabled.
 	auto_launch_firmware();
+
+	minerva_change_freq(FREQ_800);
 
 	while (true)
 		tui_do_menu(&menu_top);
