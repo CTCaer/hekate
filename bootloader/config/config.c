@@ -42,6 +42,8 @@ void set_default_configuration()
 	h_cfg.backlight = 100;
 	h_cfg.autohosoff = 0;
 	h_cfg.autonogc = 1;
+	h_cfg.brand = NULL;
+	h_cfg.tagline = NULL;
 	h_cfg.errors = 0;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
 	h_cfg.rcm_patched = true;
@@ -104,6 +106,16 @@ int create_config_entry()
 	f_puts("\nautonogc=", &fp);
 	itoa(h_cfg.autonogc, lbuf, 10);
 	f_puts(lbuf, &fp);
+	if (h_cfg.brand)
+	{
+		f_puts("\nbrand=", &fp);
+		f_puts(h_cfg.brand, &fp);
+	}
+	if (h_cfg.tagline)
+	{
+		f_puts("\ntagline=", &fp);
+		f_puts(h_cfg.tagline, &fp);
+	}
 	f_puts("\n", &fp);
 
 	if (mainIniFound)

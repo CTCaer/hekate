@@ -32,6 +32,7 @@
 #include "../sec/se.h"
 #include "../sec/se_t210.h"
 #include "../sec/tsec.h"
+#include "../soc/bpmp.h"
 #include "../soc/cluster.h"
 #include "../soc/fuse.h"
 #include "../soc/pmc.h"
@@ -677,6 +678,9 @@ int hos_launch(ini_sec_t *cfg)
 	// Clear EMC_SCRATCH0.
 	EMC(EMC_SCRATCH0) = 0;
 
+	// Flush cache and disable MMU.
+	bpmp_mmu_disable();
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 	minerva_change_freq(FREQ_800);
 
 	// Wait for secmon to get ready.

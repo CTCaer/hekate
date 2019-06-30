@@ -29,6 +29,8 @@ typedef struct _hekate_config
 	u32 backlight;
 	u32 autohosoff;
 	u32 autonogc;
+	char *brand;
+	char *tagline;
 	// Global temporary config.
 	bool se_keygen_done;
 	u32 sbar_time_keeping;

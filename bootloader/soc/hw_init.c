@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "hw_init.h"
+#include "bpmp.h"
 #include "clock.h"
 #include "fuse.h"
 #include "gpio.h"
@@ -248,10 +249,15 @@ void config_hw()
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = (CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) & 0xFFFF8888) | 0x3333;
 
 	sdram_init();
+
+	bpmp_mmu_enable();
 }
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
+	// Flush and disable MMU.
+	bpmp_mmu_disable();
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 	minerva_change_freq(FREQ_204);
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.

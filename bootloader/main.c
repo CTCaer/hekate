@@ -35,6 +35,7 @@
 #include "mem/sdram.h"
 #include "power/max77620.h"
 #include "rtc/max77620-rtc.h"
+#include "soc/bpmp.h"
 #include "soc/fuse.h"
 #include "soc/hw_init.h"
 #include "soc/i2c.h"
@@ -70,6 +71,8 @@ const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver
 	.rsvd0 = 0,
 	.rsvd1 = 0
 };
+
+volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
 
 bool sd_mount()
 {
@@ -691,8 +694,56 @@ out:
 	btn_wait();
 }
 
+void nyx_load_run()
+{
+	sd_mount();
+
+	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", false);
+	if (!nyx)
+		return;
+
+	sd_unmount();
+
+	gfx_clear_grey(0x1B);
+	u8 *BOOTLOGO = (void *)malloc(0x4000);
+	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
+	gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+	free(BOOTLOGO);
+	display_backlight_brightness(h_cfg.backlight, 1000);
+
+	nyx_str->cfg = 0;
+	if (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
+	{
+		b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_DUMP);
+		nyx_str->cfg |= NYX_CFG_DUMP;
+	}
+	if (nyx_str->mtc_cfg.mtc_table)
+		nyx_str->cfg |= NYX_CFG_MINERVA;
+
+	nyx_str->version = ipl_ver.version - 0x303030;
+
+	memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);
+	volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
+	memcpy((u8 *)nyx_str->hekate, (u8 *)reloc->start, reloc->end - reloc->start);
+
+	void (*nyx_ptr)() = (void *)nyx;
+
+	bpmp_mmu_disable();
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	msleep(100);
+	minerva_periodic_training();
+
+	(*nyx_ptr)();
+}
+
 void auto_launch_firmware()
 {
+	if(!h_cfg.sept_run && (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP))
+	{
+		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
+		check_sept();
+	}
+
 	if (!h_cfg.sept_run)
 		auto_launch_update();
 
@@ -756,6 +807,16 @@ void auto_launch_firmware()
 								h_cfg.autohosoff = atoi(kv->val);
 							else if (!strcmp("autonogc", kv->key))
 								h_cfg.autonogc = atoi(kv->val);
+							else if (!strcmp("brand", kv->key))
+							{
+								h_cfg.brand = malloc(strlen(kv->val) + 1);
+								strcpy(h_cfg.brand, kv->val);
+							}
+							else if (!strcmp("tagline", kv->key))
+							{
+								h_cfg.tagline = malloc(strlen(kv->val) + 1);
+								strcpy(h_cfg.tagline, kv->val);
+							}
 						}
 						boot_entry_id++;
 
@@ -949,6 +1010,9 @@ out:
 
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
 	h_cfg.emummc_force_disable = false;
+
+	nyx_load_run();
+
 	sd_unmount();
 }
 
@@ -1196,6 +1260,9 @@ void ipl_main()
 
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
+
+	// Overclock BPMP.
+	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
 
 	// Check if we had a panic while in CFW.
 	secmon_exo_check_panic();
