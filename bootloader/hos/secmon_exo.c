@@ -126,9 +126,7 @@ typedef struct _atm_fatal_error_ctx
 #define  ATM_WB_MAGIC 0x30544257
 
 // Exosphère mailbox defines.
-#define EXO_CFG_DEPR_ADDR 0x40002E40 // Deprecated.
 #define EXO_CFG_ADDR      0x8000F000
-#define  EXO_MAGIC_DEPR_VAL 0x31434258
 #define  EXO_MAGIC_VAL      0x304F5845
 #define  EXO_FLAG_620_KGN   (1 << 0)
 #define  EXO_FLAG_DBG_PRIV  (1 << 1)
@@ -139,7 +137,8 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;
 
-	volatile exo_cfg_t *exo_cfg_depr = (exo_cfg_t *)EXO_CFG_DEPR_ADDR;
+	memset((exo_cfg_t *)EXO_CFG_ADDR, 0, sizeof(exo_cfg_t));
+
 	volatile exo_cfg_t *exo_cfg = (exo_cfg_t *)EXO_CFG_ADDR;
 
 	switch (kb)
@@ -155,8 +154,8 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		break;
 	default:
 		exoFwNo = kb + 1;
-		if (!strcmp(id, "20190314172056"))
-			exoFwNo++; // ATM_TARGET_FW_800.
+		if (!strcmp(id, "20190314172056") || !strcmp(id, "20190531152432"))
+			exoFwNo++; // ATM_TARGET_FW_800/810.
 		break;
 	}
 
@@ -168,13 +167,10 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		exoFlags |= EXO_FLAG_DBG_PRIV;
 
 	// Set mailbox values.
-	exo_cfg_depr->magic = EXO_MAGIC_VAL;
 	exo_cfg->magic = EXO_MAGIC_VAL;
 
-	exo_cfg_depr->fwno = exoFwNo;
 	exo_cfg->fwno = exoFwNo;
 
-	exo_cfg_depr->flags = exoFlags;
 	exo_cfg->flags = exoFlags;
 
 	// If warmboot is lp0fw, add in RSA modulus.

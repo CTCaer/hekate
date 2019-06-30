@@ -36,6 +36,7 @@ typedef struct _hekate_config
 	int sept_run;
 	bool rcm_patched;
 	u32 sd_timeoff;
+	bool emummc_force_disable;
 } hekate_config;
 
 typedef enum

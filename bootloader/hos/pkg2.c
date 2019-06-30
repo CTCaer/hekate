@@ -328,6 +328,12 @@ enum kip_offset_section
 #define GET_KIP_PATCH_OFFSET(x) (x & KIP_PATCH_OFFSET_MASK)
 #define KPS(x) ((u32)(x) << KIP_PATCH_SECTION_SHIFT)
 
+static kip1_patch_t _fs_emummc[] =
+{
+	{ KPS(KIP_TEXT) | 1, 0, "", "" },
+	{ 0, 0, NULL, NULL }
+};
+
 static kip1_patch_t _fs_nosigchk_100[] =
 {
 	{ KPS(KIP_TEXT) | 0x194A0, 4, "\xBA\x09\x00\x94", "\xE0\x03\x1F\x2A" },
@@ -339,6 +345,7 @@ static kip1_patchset_t _fs_patches_100[] =
 {
 	{ "nosigchk", _fs_nosigchk_100 },
 	{ "nogc",     NULL },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -353,6 +360,7 @@ static kip1_patchset_t _fs_patches_200[] =
 {
 	{ "nosigchk", _fs_nosigchk_200 },
 	{ "nogc",     NULL },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -367,6 +375,7 @@ static kip1_patchset_t _fs_patches_210[] =
 {
 	{ "nosigchk", _fs_nosigchk_210 },
 	{ "nogc",     NULL },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -381,6 +390,7 @@ static kip1_patchset_t _fs_patches_300[] =
 {
 	{ "nosigchk", _fs_nosigchk_300 },
 	{ "nogc",     NULL },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -395,6 +405,7 @@ static kip1_patchset_t _fs_patches_30x[] =
 {
 	{ "nosigchk", _fs_nosigchk_30x },
 	{ "nogc",     NULL },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -416,6 +427,7 @@ static kip1_patchset_t _fs_patches_40x[] =
 {
 	{ "nosigchk", _fs_nosigchk_4xx },
 	{ "nogc",     _fs_nogc_40x },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -430,6 +442,7 @@ static kip1_patchset_t _fs_patches_410[] =
 {
 	{ "nosigchk", _fs_nosigchk_4xx },
 	{ "nogc",     _fs_nogc_410 },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -451,6 +464,7 @@ static kip1_patchset_t _fs_patches_50x[] =
 {
 	{ "nosigchk", _fs_nosigchk_50x },
 	{ "nogc",     _fs_nogc_50x },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -472,6 +486,7 @@ static kip1_patchset_t _fs_patches_510[] =
 {
 	{ "nosigchk", _fs_nosigchk_510 },
 	{ "nogc",     _fs_nogc_510 },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -507,6 +522,7 @@ static kip1_patchset_t _fs_patches_600[] =
 {
 	{ "nosigchk", _fs_nosigchk_600 },
 	{ "nogc",     _fs_nogc_600 },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -514,6 +530,7 @@ static kip1_patchset_t _fs_patches_600_exfat[] =
 {
 	{ "nosigchk", _fs_nosigchk_600_exfat },
 	{ "nogc",     _fs_nogc_600_exfat },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -549,6 +566,7 @@ static kip1_patchset_t _fs_patches_700[] =
 {
 	{ "nosigchk", _fs_nosigchk_700 },
 	{ "nogc",     _fs_nogc_700 },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -556,6 +574,7 @@ static kip1_patchset_t _fs_patches_700_exfat[] =
 {
 	{ "nosigchk", _fs_nosigchk_700_exfat },
 	{ "nogc",     _fs_nogc_700_exfat },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -591,6 +610,7 @@ static kip1_patchset_t _fs_patches_800[] =
 {
 	{ "nosigchk", _fs_nosigchk_800 },
 	{ "nogc",     _fs_nogc_800 },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -598,6 +618,7 @@ static kip1_patchset_t _fs_patches_800_exfat[] =
 {
 	{ "nosigchk", _fs_nosigchk_800_exfat },
 	{ "nogc",     _fs_nogc_800_exfat },
+	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -696,7 +717,7 @@ void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1)
 		{
 			ki->kip1 = kip1;
 			ki->size = _pkg2_calc_kip1_size(kip1);
-DPRINTF("replaced kip (new size %08X)\n", ki->size);
+DPRINTF("replaced kip %s (new size %08X)\n", kip1->name, ki->size);
 			return;
 		}
 	}
@@ -707,7 +728,7 @@ void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1)
 	pkg2_kip1_info_t *ki = (pkg2_kip1_info_t *)malloc(sizeof(pkg2_kip1_info_t));
 	ki->kip1 = kip1;
 	ki->size = _pkg2_calc_kip1_size(kip1);
-DPRINTF("added kip (size %08X)\n", ki->size);
+DPRINTF("added kip %s (size %08X)\n", kip1->name, ki->size);
 	list_append(info, &ki->link);
 }
 

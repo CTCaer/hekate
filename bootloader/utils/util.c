@@ -103,6 +103,5 @@ void power_off()
 	// Stop the alarm, in case we injected and powered off too fast.
 	max77620_rtc_stop_alarm();
 
-	//TODO: we should probably make sure all regulators are powered off properly.
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 }

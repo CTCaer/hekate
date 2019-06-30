@@ -34,7 +34,7 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	clock.o cluster.o di.o gpio.o i2c.o mc.o sdram.o pinmux.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o \
-	sdmmc.o sdmmc_driver.o \
+	sdmmc.o sdmmc_driver.o emummc.o nx_emmc.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o \
 	hw_init.o \
 )
@@ -47,7 +47,6 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Horizon.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	nx_emmc.o \
 	hos.o hos_config.o pkg1.o pkg2.o fss.o secmon_exo.o sept.o \
 )
 

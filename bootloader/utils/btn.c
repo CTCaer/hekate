@@ -29,7 +29,7 @@ u8 btn_read()
 		res |= BTN_VOL_DOWN;
 	if (!gpio_read(GPIO_PORT_X, GPIO_PIN_6))
 		res |= BTN_VOL_UP;
-	if (i2c_recv_byte(4, MAX77620_I2C_ADDR, 0x15) & 0x4)
+	if (i2c_recv_byte(4, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFSTAT) & 0x4)
 		res |= BTN_POWER;
 	return res;
 }
