@@ -1210,7 +1210,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate - CTCaer mod v4.10.1", 0, 0 };
+menu_t menu_top = { ment_top, "hekate - CTCaer mod v5.0.0", 0, 0 };
 
 #define IPL_STACK_TOP  0x90010000
 #define IPL_HEAP_START 0x90020000
