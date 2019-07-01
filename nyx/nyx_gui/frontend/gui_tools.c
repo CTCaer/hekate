@@ -121,7 +121,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	{
 		lv_mbox_set_text(mbox,
 			"AutoRCM is now #FF8000 DISABLED!#\n\n"
-			"The boot process is now normal and you need the #FF8000 VOL-# + #FF8000 HOME# (jig) combo to enter RCM.\n");
+			"The boot process is now normal and you need the #FF8000 VOL+# + #FF8000 POWER# (jig) combo to enter RCM.\n");
 	}
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
