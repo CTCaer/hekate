@@ -444,9 +444,13 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	return win;
 }
 
+static bool launch_logs_enable = false;
+
 static void _launch_hos(u8 autoboot, u8 autoboot_list)
 {
 	b_cfg->boot_cfg = BOOT_CFG_AUTOBOOT_EN;
+	if (launch_logs_enable)
+		b_cfg->boot_cfg |= BOOT_CFG_FROM_LAUNCH;
 	b_cfg->autoboot = autoboot;
 	b_cfg->autoboot_list = autoboot_list;
 
@@ -1421,6 +1425,29 @@ static lv_res_t _launch_action(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t logs_onoff_toggle(lv_obj_t *btn)
+{
+	launch_logs_enable = !launch_logs_enable;
+
+	lv_obj_t *label_btn = lv_obj_get_child(btn, NULL);
+
+	char label_text[64];
+	strcpy(label_text, lv_label_get_text(label_btn));
+	label_text[strlen(label_text) - 12] = 0;
+
+	if (!launch_logs_enable)
+	{
+		strcat(label_text, "#D0D0D0 OFF#");
+		lv_label_set_array_text(label_btn, label_text, 64);
+	}
+	else
+	{
+		strcat(label_text, "#00FFC9 ON #");
+		lv_label_set_array_text(label_btn, label_text, 64);
+	}
+
+	return LV_RES_OK;
+}
 
 typedef struct _launch_button_pos_t
 {
@@ -1467,6 +1494,9 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		win = create_window_launch(SYMBOL_GPS" Launch");
 	else
 		win = create_window_launch(SYMBOL_GPS" More Configurations");
+
+	lv_win_add_btn(win, NULL, SYMBOL_LIST" Logs #D0D0D0 OFF#", logs_onoff_toggle);
+	launch_logs_enable = false;
 
 	lv_cont_set_fit(lv_page_get_scrl(lv_win_get_content(win)), false, false);
 	lv_page_set_scrl_height(lv_win_get_content(win), 572);

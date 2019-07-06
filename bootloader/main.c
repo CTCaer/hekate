@@ -961,11 +961,13 @@ void auto_launch_firmware()
 		free(BOOTLOGO);
 	}
 
-	if (!h_cfg.sept_run && h_cfg.bootwait)
+	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
+		display_backlight_brightness(h_cfg.backlight, 0);
+	else if (!h_cfg.sept_run && h_cfg.bootwait)
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
-	if (!h_cfg.sept_run)
+	if (!h_cfg.sept_run && !(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
 		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
 
