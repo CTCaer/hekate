@@ -445,7 +445,16 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Enable emummc patching.
 	if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
+	{
+		if (ctxt.stock)
+		{
+			EHPRINTF("Stock emuMMC is not supported yet!");
+			return 0;
+		}
+
+		ctxt.atmosphere = true; // Set atmosphere patching in case of Stock emuMMC and no fss0.
 		config_kip1patch(&ctxt, "emummc");
+	}
 
 	// Check if fuses lower than 4.0.0 and if yes apply NO Gamecard patch.
 	if (h_cfg.autonogc && !(fuse_read_odm(7) & ~0xF) && ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)
