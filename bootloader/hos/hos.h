@@ -74,6 +74,6 @@ typedef struct _merge_kip_t
 } merge_kip_t;
 
 int hos_launch(ini_sec_t *cfg);
-int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
+int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt);
 
 #endif

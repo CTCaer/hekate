@@ -132,7 +132,6 @@ typedef struct _atm_fatal_error_ctx
 // Exosphère mailbox defines.
 #define EXO_CFG_ADDR      0x8000F000
 #define  EXO_MAGIC_VAL      0x304F5845
-#define  EXO_FLAG_620_KGN   (1 << 0)
 #define  EXO_FLAG_DBG_PRIV  (1 << 1)
 #define  EXO_FLAG_DBG_USER  (1 << 2)
 
@@ -162,9 +161,6 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 			exoFwNo++; // ATM_TARGET_FW_800/810.
 		break;
 	}
-
-	if (kb == KB_FIRMWARE_VERSION_620)
-		exoFlags |= EXO_FLAG_620_KGN;
 
 	// To avoid problems, make private debug mode always on if not semi-stock.
 	if (!stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))

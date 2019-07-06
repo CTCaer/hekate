@@ -183,9 +183,9 @@ void _sysctr0_reset()
 	SYSCTR0(SYSCTR0_COUNTERID11) = 0;
 }
 
-int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
+int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 {
-	u8 tmp[0x20];
+	u8 tmp[0x30];
 	u32 retries = 0;
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
@@ -234,11 +234,31 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		// Set TSEC root key.
 		se_aes_key_set(13, tmp + 0x10, 0x10);
 
-		// Package2 key.
-		se_aes_key_set(8, tmp + 0x10, 0x10);
-		se_aes_unwrap_key(8, 8, master_keyseed_620);
-		se_aes_unwrap_key(8, 8, master_keyseed_retail);
-		se_aes_unwrap_key(8, 8, package2_keyseed);
+		if (!(emu_cfg.enabled && !h_cfg.emummc_force_disable) && hos_ctxt->stock)
+		{
+			// Package2 key.
+			se_aes_key_set(8, tmp + 0x10, 0x10);
+			se_aes_unwrap_key(8, 8, master_keyseed_620);
+			se_aes_unwrap_key(8, 8, master_keyseed_retail);
+			se_aes_unwrap_key(8, 8, package2_keyseed);
+		}
+		else
+		{
+			// Decrypt keyblob and set keyslots
+			se_aes_crypt_block_ecb(12, 0, tmp + 0x20, keyblob_keyseeds[0]);
+			se_aes_unwrap_key(15, 14, tmp + 0x20);
+			se_aes_unwrap_key(14, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(15, 15, console_keyseed);
+
+			se_aes_unwrap_key(13, 13, master_keyseed_620);
+			se_aes_unwrap_key(12, 13, master_keyseed_retail);
+			se_aes_unwrap_key(10, 13, master_keyseed_4xx_5xx_610);
+			
+			// Package2 key.
+			se_aes_unwrap_key(8, 12, package2_keyseed);
+
+			h_cfg.se_keygen_done = 1;
+		}
 	}
 	else
 	{
@@ -447,7 +467,7 @@ int hos_launch(ini_sec_t *cfg)
 			return 0;
 		}
 
-		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt))
+		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt, &ctxt))
 			return 0;
 		DPRINTF("Generated keys\n");
 		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
