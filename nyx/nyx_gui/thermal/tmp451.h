@@ -25,6 +25,10 @@
 
 #define TMP451_PCB_TEMP_REG    0x00
 #define TMP451_SOC_TEMP_REG    0x01
+
+#define TMP451_CONFIG_REG      0x09
+#define TMP451_CNV_RATE_REG    0x0A
+
 #define TMP451_SOC_TMP_DEC_REG 0x10
 #define TMP451_PCB_TMP_DEC_REG 0x15
 
@@ -33,5 +37,6 @@
 // Otherwise it's an integer oC.
 u16 tmp451_get_soc_temp(bool integer);
 u16 tmp451_get_pcb_temp(bool integer);
+void tmp451_init();
 
 #endif /* __TMP451_H_ */

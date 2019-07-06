@@ -50,3 +50,16 @@ u16 tmp451_get_pcb_temp(bool intenger)
 
 	return temp;
 }
+
+void tmp451_init()
+{
+	// Disable ALARM.
+	i2c_send_byte(I2C_1, TMP451_I2C_ADDR, TMP451_CONFIG_REG, 0x80);
+
+	// Set conversion rate to 32/s and make a read to update the reg.
+	i2c_send_byte(I2C_1, TMP451_I2C_ADDR, TMP451_CNV_RATE_REG, 9);
+	tmp451_get_soc_temp(false);
+
+	// Set rate to every 4 seconds.
+	i2c_send_byte(I2C_1, TMP451_I2C_ADDR, TMP451_CNV_RATE_REG, 2);
+}
