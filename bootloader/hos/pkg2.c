@@ -547,8 +547,15 @@ static kip1_id_t _kip_ids[] =
 static void parse_external_kip_patches()
 {
 	u32 curr_kip_idx = 0;
+	char path[64];
+	strcpy(path, "bootloader/patches.ini");
+
+	// If patches.ini not found, try to load from template.
+	if (f_stat(path, NULL))
+		strcpy(path, "bootloader/patches_template.ini");
+
 	LIST_INIT(ini_kip_sections);
-	if (ini_patch_parse(&ini_kip_sections, "bootloader/patches.ini"))
+	if (ini_patch_parse(&ini_kip_sections, path))
 	{
 		// Parse patchsets and glue them together.
 		LIST_FOREACH_ENTRY(ini_kip_sec_t, ini_psec, &ini_kip_sections, link)
@@ -1031,7 +1038,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				emu_cfg.fs_ver = currKipIdx;
 				if (currKipIdx)
 					emu_cfg.fs_ver--;
-				if (currKipIdx > 19)
+				if (currKipIdx > 17)
 					emu_cfg.fs_ver -= 2;
 
 				gfx_printf("Injecting emuMMC. FS ver: %d\n", emu_cfg.fs_ver);
