@@ -653,8 +653,8 @@ typedef struct _emummc_images_t
 	char *dirlist;
 	u32 part_sector[3];
 	u32 part_type[3];
-	u32 part_size[3];
-	char part_path[3 * 32];
+	u32 part_end[3];
+	char part_path[3 * 128];
 	lv_obj_t *win;
 } emummc_images_t;
 
@@ -708,10 +708,10 @@ static lv_res_t _save_raw_emummc_cfg_action(lv_obj_t * btn)
 		save_emummc_cfg(1, emummc_img->part_sector[0], &emummc_img->part_path[0]);
 		break;
 	case 1:
-		save_emummc_cfg(2, emummc_img->part_sector[1], &emummc_img->part_path[32]);
+		save_emummc_cfg(2, emummc_img->part_sector[1], &emummc_img->part_path[128]);
 		break;
 	case 2:
-		save_emummc_cfg(3, emummc_img->part_sector[2], &emummc_img->part_path[64]);
+		save_emummc_cfg(3, emummc_img->part_sector[2], &emummc_img->part_path[256]);
 		break;
 	}
 
@@ -756,12 +756,12 @@ static lv_res_t _create_change_emummc_window()
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
 	memcpy(mbr, mbr + 0x1BE, 0x40);
-	memset(emummc_img->part_path, 0, 3 * 32);
+	memset(emummc_img->part_path, 0, 3 * 128);
 
 	for (int i = 1; i < 4; i++)
 	{
-		emummc_img->part_size[i - 1] = *(u32 *)&mbr[0x0C + (0x10 * i)];
 		emummc_img->part_sector[i - 1] = *(u32 *)&mbr[0x08 + (0x10 * i)];
+		emummc_img->part_end[i - 1] = emummc_img->part_sector[i - 1] + *(u32 *)&mbr[0x0C + (0x10 * i)] - 1;
 		emummc_img->part_type[i - 1] = mbr[0x04 + (0x10 * i)];
 	}
 	free(mbr);
@@ -772,7 +772,7 @@ static lv_res_t _create_change_emummc_window()
 		goto out0;
 
 	u32 emummc_idx = 0;
-	FILINFO fno;
+
 	FIL fp;
 
 	// Check for sd raw partitions, based on the folders in /emuMMC.
@@ -780,7 +780,7 @@ static lv_res_t _create_change_emummc_window()
 	{
 		s_printf(path, "emuMMC/%s/raw_based", &emummc_img->dirlist[emummc_idx * 256]);
 
-		if(!f_stat(path, &fno))
+		if(!f_stat(path, NULL))
 		{
 			f_open(&fp, path, FA_READ);
 			u32 curr_list_sector = 0;
@@ -788,32 +788,27 @@ static lv_res_t _create_change_emummc_window()
 			f_close(&fp);
 
 			// Check if there's a HOS image there.
-			if (emummc_img->part_sector[0] && curr_list_sector >= emummc_img->part_sector[0] && emummc_img->part_type[0] != 0x83)
+			if ((curr_list_sector == 2) || (emummc_img->part_sector[0] && curr_list_sector >= emummc_img->part_sector[0] &&
+				curr_list_sector < emummc_img->part_end[0] && emummc_img->part_type[0] != 0x83))
 			{
-				if (emummc_img->part_sector[1] && curr_list_sector >= emummc_img->part_sector[1] && emummc_img->part_type[1] != 0x83)
-				{
-					if (emummc_img->part_sector[2] && curr_list_sector >= emummc_img->part_sector[2] && emummc_img->part_type[2] != 0x83)
-					{
-						s_printf(path, "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
-						strcpy(&emummc_img->part_path[2 * 32], path);
-						emummc_img->part_sector[2] = curr_list_sector;
-					}
-					else
-					{
-						s_printf(path, "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
-						strcpy(&emummc_img->part_path[1 * 32], path);
-						emummc_img->part_sector[1] = curr_list_sector;
-					}
-					
-				}
-				else
-				{
-					s_printf(path, "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
-					strcpy(&emummc_img->part_path[0], path);
-					emummc_img->part_sector[0] = curr_list_sector;
-				}
+				s_printf(&emummc_img->part_path[0], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+				emummc_img->part_sector[0] = curr_list_sector;
+				emummc_img->part_end[0] = 0;
 			}
-
+			else if (emummc_img->part_sector[1] && curr_list_sector >= emummc_img->part_sector[1] &&
+				curr_list_sector < emummc_img->part_end[1] && emummc_img->part_type[1] != 0x83)
+			{
+				s_printf(&emummc_img->part_path[1 * 128], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+				emummc_img->part_sector[1] = curr_list_sector;
+				emummc_img->part_end[1] = 0;
+			}
+			else if (emummc_img->part_sector[2] && curr_list_sector >= emummc_img->part_sector[2] &&
+				curr_list_sector < emummc_img->part_end[2] && emummc_img->part_type[2] != 0x83)
+			{
+				s_printf(&emummc_img->part_path[2 * 128], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+				emummc_img->part_sector[2] = curr_list_sector;
+				emummc_img->part_end[2] = 0;
+			}
 		}
 		emummc_idx++;
 	}
