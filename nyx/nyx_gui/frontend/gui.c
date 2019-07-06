@@ -55,6 +55,7 @@ void *sd_file_read(const char *path, u32 *fsize);
 int sd_save_to_file(void *buf, u32 size, const char *filename);
 
 static bool disp_init_done = false;
+static bool do_reload = false;
 
 typedef struct _gui_status_bar_ctx
 {
@@ -77,6 +78,9 @@ static void _nyx_disp_init()
 
 static void _save_fb_to_bmp()
 {
+	if (do_reload)
+		return;
+
 	const u32 file_size = 0x384000 + 0x36;
 	u8 *bitmap = malloc(file_size);
 	u32 *fb = malloc(0x384000);
@@ -743,7 +747,22 @@ static lv_res_t reload_action(lv_obj_t *btns, const char *txt)
 	return mbox_action(btns, txt);
 }
 
-static bool do_reload = false;
+static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
+{
+	u32 btnidx = lv_btnm_get_pressed(btns);
+
+	switch (btnidx)
+	{
+	case 0:
+		reboot_rcm();
+		break;
+	case 1:
+		power_off();
+		break;
+	}
+
+	return mbox_action(btns, txt);
+}
 
 static void _check_sd_card_removed(void *params)
 {
@@ -756,11 +775,13 @@ static void _check_sd_card_removed(void *params)
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
+		static const char * mbox_btn_map[] = { "\221Reboot (RCM)", "\221Power Off", "" };
 		lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 		lv_mbox_set_recolor_text(mbox, true);
 		lv_obj_set_width(mbox, LV_HOR_RES * 4 / 9);
 
 		lv_mbox_set_text(mbox, "\n#FF8000 SD card was removed!#\n\n#96FF00 Nyx will reload after inserting it.#\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map, _removed_sd_action);
 
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
@@ -2088,6 +2109,9 @@ void nyx_load_and_run()
 	indev_drv.read = _fts_touch_read;
 	lv_indev_drv_register(&indev_drv);
 	touchpad.touch = false;
+
+	// Initialize temperature sensor.
+	tmp451_init();
 
 	//Set the theme.
 	//! TODO: Finish theme support.
