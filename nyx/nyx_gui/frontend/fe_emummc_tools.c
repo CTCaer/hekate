@@ -50,6 +50,9 @@ extern hekate_config h_cfg;
 extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 
+#pragma GCC push_options
+#pragma GCC target ("thumb")
+
 void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
 {
 	sd_mount();
@@ -97,6 +100,8 @@ void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
 
 	f_close(&fp);
 }
+
+#pragma GCC pop_options
 
 static void _update_emummc_base_folder(char *outFilename, u32 sdPathLen, u32 currPartIdx)
 {
@@ -255,7 +260,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 		
 		if (res)
 		{
-			s_printf(gui->txt_buf, "#FF0000 Fatal error (%d) when writing to SD Card#\nPlease try again...\n", res);
+			s_printf(gui->txt_buf, "\n#FF0000 Fatal error (%d) when writing to SD Card#\nPlease try again...\n", res);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -270,7 +275,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_text(gui->label_pct, gui->txt_buf);
+			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 			manual_system_maintenance(true);
 
 			prevPct = pct;
@@ -300,17 +305,18 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 void dump_emummc_file(emmc_tool_gui_t *gui)
 {
-	FILINFO fno;
 	int res = 0;
 	int base_len = 0;
 	u32 timer = 0;
-	//! TODO switch to 800MHz
-	manual_system_maintenance(true);
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
 	s_printf(txt_buf, "");
 	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+
+	manual_system_maintenance(true);
+
+	sd_unmount(true);
 
 	if (!sd_mount())
 	{
@@ -343,7 +349,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	for (int j = 0; j < 100; j++)
 	{
 		_update_emummc_base_folder(sdPath, base_len, j);
-		if(f_stat(sdPath, &fno) == FR_NO_FILE)
+		if(f_stat(sdPath, NULL) == FR_NO_FILE)
 			break;
 	}
 
@@ -489,7 +495,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		while (!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
-				"#FFDD00 Error reading %d blocks @LBA %08X,#\n"
+				"\n#FFDD00 Error reading %d blocks @LBA %08X,#\n"
 				"#FFDD00 from eMMC (try %d). #",
 				num, lba_curr, ++retryCount);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -517,7 +523,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		while (!sdmmc_storage_write(&sd_storage, sd_sector_off + lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
-				"#FFDD00 Error writing %d blocks @LBA %08X,#\n"
+				"\n#FFDD00 Error writing %d blocks @LBA %08X,#\n"
 				"#FFDD00 to SD (try %d). #",
 				num, lba_curr, ++retryCount);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -544,7 +550,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_text(gui->label_pct, gui->txt_buf);
+			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 			manual_system_maintenance(true);
 
 			prevPct = pct;
@@ -562,7 +568,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	{
 		u8 *mbr = (u8 *)malloc(0x200);
 		sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-		mbr[MBR_1ST_PART_TYPE_OFF + (0x10 * part_idx)] = 0xEE;
+		mbr[MBR_1ST_PART_TYPE_OFF + (0x10 * part_idx)] = 0xE0;
 		sdmmc_storage_write(&sd_storage, 0, 1, mbr);
 		free(mbr);
 	}
@@ -574,13 +580,15 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 {
 	int res = 0;
 	u32 timer = 0;
-	//! TODO switch to 800MHz
-	manual_system_maintenance(true);
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
 	s_printf(txt_buf, "");
 	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+
+	manual_system_maintenance(true);
+
+	sd_unmount(true);
 
 	if (!sd_mount())
 	{

@@ -216,8 +216,10 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		else
 			strcpy((char *)exo_cfg->emummc_cfg.file_cfg.path, emu_cfg.path);
 
-		if (emu_cfg.nintendo_path)
+		if (emu_cfg.nintendo_path && !stock)
 			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, emu_cfg.nintendo_path);
+		else if (stock)
+			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, "Nintendo");
 		else
 			exo_cfg->emummc_cfg.nintendo_path[0] = 0;
 	}

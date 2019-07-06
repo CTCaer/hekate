@@ -52,6 +52,15 @@ extern bool sd_mount();
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
+#define EHPRINTF(text) \
+	({ display_backlight_brightness(h_cfg.backlight, 1000); \
+		gfx_con.mute = false; \
+		gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC); })
+#define EHPRINTFARGS(text, args...) \
+	({ display_backlight_brightness(h_cfg.backlight, 1000); \
+		gfx_con.mute = false; \
+		gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC); })
+
 #define PKG2_LOAD_ADDR 0xA9800000
 
  // Secmon mailbox.
@@ -210,7 +219,7 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 			// We rely on racing conditions, make sure we cover even the unluckiest cases.
 			if (retries > 15)
 			{
-				EPRINTF("\nFailed to get TSEC keys. Please try again.\n");
+				EHPRINTF("\nFailed to get TSEC keys. Please try again.\n");
 				return 0;
 			}
 		}
@@ -311,7 +320,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		EPRINTF("Unknown pkg1 version.");
+		EHPRINTF("Unknown pkg1 version.");
 		goto out;
 	}
 	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
@@ -375,7 +384,6 @@ out:;
 
 static void _free_launch_components(launch_ctxt_t *ctxt)
 {
-	ini_free_section(ctxt->cfg);
 	free(ctxt->keyblob);
 	free(ctxt->pkg1);
 	free(ctxt->pkg2);
@@ -411,7 +419,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Try to parse config if present.
 	if (ctxt.cfg && !parse_boot_config(&ctxt))
 	{
-		EPRINTF("Wrong ini cfg or missing files!");
+		EHPRINTF("Wrong ini cfg or missing files!");
 		return 0;
 	}
 
@@ -452,14 +460,14 @@ int hos_launch(ini_sec_t *cfg)
 		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
 			pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
 
-		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_620)
+		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && !(emu_cfg.enabled && !h_cfg.emummc_force_disable))
 		{
 			pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
 			gfx_printf("Decrypted & unpacked pkg1\n");
 		}
 		else
 		{
-			EPRINTF("No mandatory secmon or warmboot provided!");
+			EHPRINTF("No mandatory secmon or warmboot provided!");
 			return 0;
 		}
 	}
@@ -471,7 +479,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
 		{
-			EPRINTF("No warmboot provided!");
+			EHPRINTF("No warmboot provided!");
 			return 0;
 		}
 		// Else we patch it to allow downgrading.
@@ -537,7 +545,7 @@ int hos_launch(ini_sec_t *cfg)
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
 			if (!ctxt.pkg2_kernel_id)
 			{
-				EPRINTF("Failed to identify kernel!");
+				EHPRINTF("Failed to identify kernel!");
 				return 0;
 			}
 
@@ -576,7 +584,7 @@ int hos_launch(ini_sec_t *cfg)
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
-		EPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
+		EHPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
 		sd_unmount(); // Just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it.
 
 		_free_launch_components(&ctxt);

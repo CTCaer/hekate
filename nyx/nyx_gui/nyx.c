@@ -85,7 +85,11 @@ bool sd_mount()
 	int res = 0;
 
 	if (!sd_init_done)
+	{
 		res = !sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11);
+		if (!res)
+			sd_init_done = true;
+	}
 
 	if (res)
 	{
@@ -93,11 +97,10 @@ bool sd_mount()
 	}
 	else
 	{
-		sd_init_done = true;
 		int res = f_mount(&sd_fs, "", 1);
 		if (res == FR_OK)
 		{
-			sd_mounted = 1;
+			sd_mounted = true;
 			return true;
 		}
 		else
@@ -111,7 +114,7 @@ bool sd_mount()
 
 void sd_unmount(bool deinit)
 {
-	if (sd_mounted)
+	if (sd_init_done && sd_mounted)
 	{
 		f_mount(NULL, "", 1);
 		sd_mounted = false;
@@ -290,8 +293,6 @@ lv_res_t launch_payload(lv_obj_t *list)
 
 		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 
-		msleep(100);
-
 		// Launch our payload.
 		(*ext_payload_ptr)();
 	}
@@ -326,7 +327,11 @@ void load_saved_configuration()
 						else if (!strcmp("verification", kv->key))
 							h_cfg.verification = atoi(kv->val);
 						else if (!strcmp("backlight", kv->key))
+						{
 							h_cfg.backlight = atoi(kv->val);
+							if (h_cfg.backlight <= 20)
+								h_cfg.backlight = 30;
+						}
 						else if (!strcmp("autohosoff", kv->key))
 							h_cfg.autohosoff = atoi(kv->val);
 						else if (!strcmp("autonogc", kv->key))
@@ -398,9 +403,6 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
-	//Pivot the stack so we have enough space.
-	pivot_stack(IPL_STACK_TOP);
-
 	//Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
 	heap_init(IPL_HEAP_START);
 

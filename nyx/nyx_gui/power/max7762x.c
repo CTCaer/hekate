@@ -23,6 +23,9 @@
 #define REGULATOR_SD 0
 #define REGULATOR_LDO 1
 
+#pragma GCC push_options
+#pragma GCC target ("thumb")
+
 typedef struct _max77620_regulator_t
 {
 	u8 type;
@@ -163,3 +166,5 @@ void max77620_low_battery_monitor_config()
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGGLBL1,
 		MAX77620_CNFGGLBL1_LBDAC_EN | MAX77620_CNFGGLBL1_LBHYST_N | MAX77620_CNFGGLBL1_LBDAC_N);
 }
+
+#pragma GCC pop_options

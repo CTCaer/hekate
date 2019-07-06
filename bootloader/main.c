@@ -445,7 +445,6 @@ void ini_list_launcher()
 	u8 max_entries = 61;
 	char *payload_path = NULL;
 
-	ini_sec_t *cfg_tmp = NULL;
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_list_sections);
 
@@ -485,9 +484,9 @@ void ini_list_launcher()
 					ments, "Launch ini configurations", 0, 0
 				};
 
-				cfg_tmp = (ini_sec_t *)tui_do_menu(&menu);
+				cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
 
-				if (cfg_tmp)
+				if (cfg_sec)
 				{
 					u32 non_cfg = 1;
 					for (int j = 2; j < i; j++)
@@ -495,7 +494,7 @@ void ini_list_launcher()
 						if (ments[j].type != INI_CHOICE)
 							non_cfg++;
 
-						if (ments[j].data == cfg_tmp)
+						if (ments[j].data == cfg_sec)
 						{
 							b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
 							b_cfg.autoboot = j - non_cfg;
@@ -506,17 +505,14 @@ void ini_list_launcher()
 					}
 				}
 
-				payload_path = ini_check_payload_section(cfg_tmp);
+				payload_path = ini_check_payload_section(cfg_sec);
 
-				if (cfg_tmp && !payload_path)
+				if (cfg_sec && !payload_path)
 					check_sept();
-
-				cfg_sec = ini_clone_section(cfg_tmp);
 
 				if (!cfg_sec)
 				{
 					free(ments);
-					ini_free(&ini_list_sections);
 
 					return;
 				}
@@ -524,7 +520,6 @@ void ini_list_launcher()
 			else
 				EPRINTF("No extra configs found.");
 			free(ments);
-			ini_free(&ini_list_sections);
 		}
 		else
 			EPRINTF("Could not find any ini\nin bootloader/ini!");
@@ -535,7 +530,6 @@ void ini_list_launcher()
 
 	if (payload_path)
 	{
-		ini_free_section(cfg_sec);
 		if (launch_payload(payload_path, false))
 		{
 			EPRINTF("Failed to launch payload.");
@@ -549,7 +543,6 @@ void ini_list_launcher()
 	}
 
 out:
-	ini_free_section(cfg_sec);
 
 	btn_wait();
 }
@@ -559,7 +552,6 @@ void launch_firmware()
 	u8 max_entries = 61;
 	char *payload_path = NULL;
 
-	ini_sec_t *cfg_tmp = NULL;
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 
@@ -613,16 +605,16 @@ void launch_firmware()
 				ments, "Launch configurations", 0, 0
 			};
 
-			cfg_tmp = (ini_sec_t *)tui_do_menu(&menu);
+			cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
 
-			if (cfg_tmp)
+			if (cfg_sec)
 			{
 				u8 non_cfg = 4;
 				for (int j = 5; j < i; j++)
 				{
 					if (ments[j].type != INI_CHOICE)
 						non_cfg++;
-					if (ments[j].data == cfg_tmp)
+					if (ments[j].data == cfg_sec)
 					{
 						b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
 						b_cfg.autoboot = j - non_cfg;
@@ -633,31 +625,28 @@ void launch_firmware()
 				}
 			}
 
-			payload_path = ini_check_payload_section(cfg_tmp);
+			payload_path = ini_check_payload_section(cfg_sec);
 
-			if (cfg_tmp)
+			if (cfg_sec)
 			{
-				LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_tmp->kvs, link)
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 				{
 					if (!strcmp("emummc_force_disable", kv->key))
 						h_cfg.emummc_force_disable = atoi(kv->val);
 				}
 			}
 
-			if (cfg_tmp && !payload_path)
+			if (cfg_sec && !payload_path)
 				check_sept();
 
-			cfg_sec = ini_clone_section(cfg_tmp);
 			if (!cfg_sec)
 			{
 				free(ments);
-				ini_free(&ini_sections);
 				sd_unmount();
 				return;
 			}
 
 			free(ments);
-			ini_free(&ini_sections);
 		}
 		else
 			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists!");
@@ -675,7 +664,6 @@ void launch_firmware()
 
 	if (payload_path)
 	{
-		ini_free_section(cfg_sec);
 		if (launch_payload(payload_path, false))
 		{
 			EPRINTF("Failed to launch payload.");
@@ -686,7 +674,6 @@ void launch_firmware()
 		EPRINTF("Failed to launch firmware.");
 
 out:
-	ini_free_section(cfg_sec);
 	sd_unmount();
 
 	h_cfg.emummc_force_disable = false;
@@ -722,7 +709,7 @@ void nyx_load_run()
 
 	nyx_str->version = ipl_ver.version - 0x303030;
 
-	memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);
+	//memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);
 	volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
 	memcpy((u8 *)nyx_str->hekate, (u8 *)reloc->start, reloc->end - reloc->start);
 
@@ -730,17 +717,22 @@ void nyx_load_run()
 
 	bpmp_mmu_disable();
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-	msleep(100);
 	minerva_periodic_training();
+
+	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+	u32 sd_poweroff_time = (u32)get_tmr_ms() - h_cfg.sd_timeoff;
+	if (sd_poweroff_time < 100)
+		msleep(100 - sd_poweroff_time);
 
 	(*nyx_ptr)();
 }
 
 void auto_launch_firmware()
 {
-	if(!h_cfg.sept_run && (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP))
+	if(b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
 	{
-		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
+		if (!h_cfg.sept_run)
+			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 		check_sept();
 	}
 
@@ -837,7 +829,7 @@ void auto_launch_firmware()
 
 					if (h_cfg.autoboot == boot_entry_id && configEntry)
 					{
-						cfg_sec = ini_clone_section(ini_sec);
+						cfg_sec = ini_sec;
 						LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 						{
 							if (!strcmp("logopath", kv->key))
@@ -856,7 +848,6 @@ void auto_launch_firmware()
 
 			if (h_cfg.autoboot_list)
 			{
-				ini_free_section(cfg_sec);
 				boot_entry_id = 1;
 				bootlogoCustomEntry = NULL;
 
@@ -872,7 +863,7 @@ void auto_launch_firmware()
 							if (h_cfg.autoboot == boot_entry_id)
 							{
 								h_cfg.emummc_force_disable = false;
-								cfg_sec = ini_clone_section(ini_sec_list);
+								cfg_sec = ini_sec_list;
 								LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 								{
 									if (!strcmp("logopath", kv->key))
@@ -970,10 +961,6 @@ void auto_launch_firmware()
 		free(BOOTLOGO);
 	}
 
-	ini_free(&ini_sections);
-	if (h_cfg.autoboot_list)
-		ini_free(&ini_list_sections);
-
 	if (!h_cfg.sept_run && h_cfg.bootwait)
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
@@ -990,7 +977,6 @@ void auto_launch_firmware()
 
 	if (payload_path)
 	{
-		ini_free_section(cfg_sec);
 		if (launch_payload(payload_path, false))
 			free(payload_path);
 	}
@@ -1001,11 +987,6 @@ void auto_launch_firmware()
 	}
 
 out:
-	ini_free(&ini_sections);
-	if (h_cfg.autoboot_list)
-		ini_free(&ini_list_sections);
-	ini_free_section(cfg_sec);
-
 	gfx_con.mute = false;
 
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);

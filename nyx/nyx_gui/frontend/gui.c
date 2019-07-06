@@ -743,7 +743,7 @@ static bool do_reload = false;
 
 static void _check_sd_card_removed(void *params)
 {
-	// The following checks if sdmmc_1 is initialized.
+	// The following checks if SDMMC_1 is initialized.
 	// If yes and card was removed, shows a message box,
 	// that will reload Nyx, when the card is inserted again.
 	if (!do_reload && get_sd_card_removed())
@@ -1421,6 +1421,27 @@ static lv_res_t _launch_action(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+
+typedef struct _launch_button_pos_t
+{
+	u16 btn_x;
+	u16 btn_y;
+	u16 lbl_x;
+	u16 lbl_y;
+
+} launch_button_pos_t;
+
+static const launch_button_pos_t launch_button_pos[8] = {
+	{  19,  36,   0, 245 },
+	{ 340,  36, 321, 245 },
+	{ 661,  36, 642, 245 },
+	{ 982,  36, 963, 245 },
+	{  19, 313,   0, 522 },
+	{ 340, 313, 321, 522 },
+	{ 661, 313, 642, 522 },
+	{ 982, 313, 963, 522 }
+};
+
 static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 {
 	char *icon_path;
@@ -1428,6 +1449,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	static lv_style_t btn_home_transp_rel;
 	lv_style_copy(&btn_home_transp_rel, lv_theme_get_current()->btn.rel);
 	btn_home_transp_rel.body.opa = LV_OPA_0;
+	btn_home_transp_rel.body.border.width = 4;
 
 	static lv_style_t btn_home_transp_pr;
 	lv_style_copy(&btn_home_transp_pr, lv_theme_get_current()->btn.pr);
@@ -1457,17 +1479,14 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	u32 max_entries = 8;
 	lv_btn_ext_t * ext;
 
-	//! TODO: Use an array/loop for the initialization.
 	// Create CFW buttons.
-	btn_boot_entry = lv_btn_create(win, NULL);
-	launch_ctxt[0] = btn_boot_entry;
-
-
 	// Buttons are 200 x 200 with 4 pixel borders.
 	// Icons must be <= 192 x 192.
-	// Button 0.
+	// Create first Button.
+	btn_boot_entry = lv_btn_create(win, NULL);
+	launch_ctxt[0] = btn_boot_entry;
 	lv_obj_set_size(btn_boot_entry, 200, 200);
-	lv_obj_set_pos(btn_boot_entry, 19, 36);
+	lv_obj_set_pos(btn_boot_entry, launch_button_pos[0].btn_x, launch_button_pos[0].btn_y);
 	lv_obj_set_opa_scale(btn_boot_entry, LV_OPA_0);
 	lv_obj_set_opa_scale_enable(btn_boot_entry, true);
 	lv_btn_set_layout(btn_boot_entry, LV_LAYOUT_OFF);
@@ -1481,77 +1500,20 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_cont_set_fit(boot_entry_lbl_cont, false, false);
 	lv_cont_set_layout(boot_entry_lbl_cont, LV_LAYOUT_CENTER);
 	lv_obj_set_size(boot_entry_lbl_cont, 238, 20);
-	lv_obj_set_pos(boot_entry_lbl_cont, 0, 245);
+	lv_obj_set_pos(boot_entry_lbl_cont, launch_button_pos[0].lbl_x, launch_button_pos[0].lbl_y);
 
-	// Button 1.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[2] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 340, 36);
+	// Create the rest of the buttons.
+	for (u32 btn_idx = 2; btn_idx < 16; btn_idx += 2)
+	{
+		btn_boot_entry = lv_btn_create(win, btn_boot_entry);
+		launch_ctxt[btn_idx] = btn_boot_entry;
+		lv_obj_set_pos(btn_boot_entry, launch_button_pos[btn_idx >> 1].btn_x, launch_button_pos[btn_idx >> 1].btn_y);
 
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 321, 245);
-	launch_ctxt[3] = boot_entry_label;
-
-	// Button 2.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[4] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 661, 36);
-
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 642, 245);
-	launch_ctxt[5] = boot_entry_label;
-
-	// Button 3.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[6] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 982, 36);
-
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 963, 245);
-	launch_ctxt[7] = boot_entry_label;
-
-	// Button 4.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[8] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 19, 313);
-
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 0, 522);
-	launch_ctxt[9] = boot_entry_label;
-
-	// Button 5.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[10] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 340, 313);
-
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 321, 522);
-	launch_ctxt[11] = boot_entry_label;
-
-	// Button 6.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[12] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 661, 313);
-
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 642, 522);
-	launch_ctxt[13] = boot_entry_label;
-
-	// Button 7.
-	btn_boot_entry = lv_btn_create(win, btn_boot_entry);
-	launch_ctxt[14] = btn_boot_entry;
-	lv_obj_set_pos(btn_boot_entry, 982, 313);
-
-	boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
-	boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
-	lv_obj_set_pos(boot_entry_lbl_cont, 963, 522);
-	launch_ctxt[15] = boot_entry_label;
+		boot_entry_lbl_cont = lv_cont_create(win, boot_entry_lbl_cont);
+		boot_entry_label = lv_label_create(boot_entry_lbl_cont, boot_entry_label);
+		lv_obj_set_pos(boot_entry_lbl_cont, launch_button_pos[btn_idx >> 1].lbl_x, launch_button_pos[btn_idx >> 1].lbl_y);
+		launch_ctxt[btn_idx + 1] = boot_entry_label;
+	}
 
 	// Parse ini boot entries and set buttons/icons.
 	char *tmp_path = calloc(0x80, 1);
@@ -1577,6 +1539,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				icon_path = NULL;
 				bool payload = false;
 				lv_img_dsc_t *bmp = NULL;
+				lv_obj_t *img = NULL;
 
 				// Check for icons.
 				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
@@ -1613,31 +1576,38 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				if (!bmp)
 					bmp = icon_switch;
 
-				//Set icon and border/radius mask.
+				//Set icon.
 				if (bmp)
 				{
-					lv_obj_t *img = lv_img_create(launch_ctxt[x], NULL);
+					img = lv_img_create(launch_ctxt[x], NULL);
 					lv_img_set_src(img, bmp);
-					lv_obj_t *btn = lv_btn_create(launch_ctxt[x], NULL);
-					lv_obj_set_size(btn, 200, 200);
-					lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_home_transp_rel);
-					lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
-					lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
-					ext = lv_obj_get_ext_attr(btn);
-					ext->idx = i;
-
-					if (!more_cfg)
-						lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_action);
-					else
-						lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
 				}
+
+				// Add button mask/radius and align icon.
+				lv_obj_t *btn = lv_btn_create(launch_ctxt[x], NULL);
+				lv_obj_set_size(btn, 200, 200);
+				lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_home_transp_rel);
+				lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
+				if (img)
+					lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
+
+				// Set autoboot index.
+				ext = lv_obj_get_ext_attr(btn);
+				ext->idx = i;
+				
+				// Set action.
+				if (!more_cfg)
+					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_action);
+				else
+					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
 
 				// Set button's label text.
 				lv_label_set_array_text(launch_ctxt[x + 1], ini_sec->name, strlen(ini_sec->name));
 				lv_obj_set_opa_scale(launch_ctxt[x + 1], LV_OPA_COVER);
 
-				//! TODO: Check strlen and decide on rolling text
-				//lv_label_set_long_mode(boot_entry_label, LV_LABEL_LONG_ROLL);
+				// Set rolling text if name is big.
+				if (strlen(ini_sec->name) > 22)
+					lv_label_set_long_mode(boot_entry_label, LV_LABEL_LONG_ROLL);
 
 				i++;
 				x += 2;

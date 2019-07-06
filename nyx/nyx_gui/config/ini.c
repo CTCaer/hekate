@@ -178,64 +178,6 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 	return 1;
 }
 
-void ini_free(link_t *dst)
-{
-	if (!dst->prev || !dst->next)
-		return;
-
-	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, dst, link)
-	{
-		if (ini_sec->type == INI_CHOICE)
-		{
-			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
-			{
-				free(kv->key);
-				free(kv->val);
-				//free(kv);
-			}
-		}
-		free(ini_sec->name);
-		//free(ini_sec);
-	}
-
-	list_init(dst);
-}
-
-ini_sec_t *ini_clone_section(ini_sec_t *cfg)
-{
-	if (cfg == NULL)
-		return NULL;
-
-	ini_sec_t *csec = (ini_sec_t *)malloc(sizeof(ini_sec_t));
-	list_init(&csec->kvs);
-
-	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
-	{
-		ini_kv_t *kvcfg = (ini_kv_t *)malloc(sizeof(ini_kv_t));
-		kvcfg->key = _strdup(kv->key);
-		kvcfg->val = _strdup(kv->val);
-		list_append(&csec->kvs, &kvcfg->link);
-	}
-
-	return csec;
-}
-
-void ini_free_section(ini_sec_t *cfg)
-{
-	if (cfg == NULL)
-		return;
-
-	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
-	{
-		free(kv->key);
-		free(kv->val);
-		//free(kv);
-	}
-	//free(cfg);
-
-	cfg = NULL;
-}
-
 char *ini_check_payload_section(ini_sec_t *cfg)
 {
 	char *path = NULL;

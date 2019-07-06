@@ -36,7 +36,7 @@ _start:
 
 	/* If we are not in the right location already, copy a relocator to upper IRAM. */
 	ADR R2, _reloc_ipl
-	LDR R3, =0x4003FF00
+	LDR R3, =0x4003FFE0
 	MOV R4, #(_real_start - _reloc_ipl)
 _copy_loop:
 	LDMIA R2!, {R5}
@@ -48,7 +48,7 @@ _copy_loop:
 	LDR R2, =__ipl_end
 	SUB R2, R2, R1
 	LDR R3, =_real_start
-	LDR R4, =0x4003FF00
+	LDR R4, =0x4003FFE0
 	BX R4
 
 _reloc_ipl:
@@ -61,7 +61,7 @@ _reloc_ipl:
 
 _real_start:
 	/* Initially, we place our stack in IRAM but will move it to SDRAM later. */
-	LDR SP, =0x4003FF00
+	LDR SP, =0x90010000
 	LDR R0, =__bss_start
 	EOR R1, R1, R1
 	LDR R2, =__bss_end

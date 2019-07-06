@@ -22,6 +22,9 @@
 #include "../soc/fuse.h"
 #include "../soc/t210.h"
 
+#pragma GCC push_options
+#pragma GCC target ("thumb")
+
 #define ARRAYSIZE(x) (sizeof(x) / sizeof(*x))
 
 static const u32 evp_thunk_template[] = {
@@ -347,3 +350,5 @@ bool fuse_check_patched_rcm()
 
 	return false;
 }
+
+#pragma GCC pop_options

@@ -275,11 +275,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	{
 	case 0:
 	case 4:
-		memcpy(dram_man, "Samsung ", 9);
-		if (!dram_id)
-			memcpy(dram_man + strlen(dram_man), "4GB", 4);
-		else
-			memcpy(dram_man + strlen(dram_man), "6GB", 4);
+		s_printf(dram_man, "Samsung %s", (!dram_id) ? "4GB" : "6GB");
 		break;
 	case 1:
 		memcpy(dram_man, "Hynix 4GB", 10);
@@ -1078,7 +1074,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_line_set_style(line_sep, &line_style);
 
 	// Create Fuses button.
-	lv_obj_t *btn3 = lv_btn_create(h1, NULL);
+	lv_obj_t *btn3 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
 	lv_label_set_static_text(label_btn, SYMBOL_CIRCUIT"  Fuses ");

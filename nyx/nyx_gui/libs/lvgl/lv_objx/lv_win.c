@@ -201,6 +201,7 @@ lv_obj_t * lv_win_add_btn(lv_obj_t * win, const void * img_src, const char * lab
 	else if (label_src)
 	{
 		lv_obj_t *label = lv_label_create(btn, NULL);
+        lv_label_set_recolor(label, true);
 		lv_label_set_text(label, label_src);
 	}
 

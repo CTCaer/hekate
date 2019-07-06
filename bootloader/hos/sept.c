@@ -76,10 +76,14 @@ extern sdmmc_storage_t sd_storage;
 void check_sept()
 {
 	// Check if non-hekate payload is used for sept and restore it.
-	if (h_cfg.sept_run && !f_stat("sept/payload.bak", NULL))
+	if (h_cfg.sept_run)
 	{
-		f_unlink("sept/payload.bin");
-		f_rename("sept/payload.bak", "sept/payload.bin");
+		if (!f_stat("sept/payload.bak", NULL))
+		{
+			f_unlink("sept/payload.bin");
+			f_rename("sept/payload.bak", "sept/payload.bin");
+		}
+		
 		return;
 	}
 

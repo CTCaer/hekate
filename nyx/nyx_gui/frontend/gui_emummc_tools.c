@@ -178,7 +178,7 @@ static void _create_mbox_emummc_raw()
 		u32 curr_part_size = *(u32 *)&mbr[0x0C + (0x10 * i)];
 		sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
 		u8 type = mbr[0x04 + (0x10 * i)];
-		if ((curr_part_size > storage.sec_cnt) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
+		if ((curr_part_size >= (storage.sec_cnt + 0x8000)) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
 		{
 			part_idx = i;
 			sector_start += 0x8000;
@@ -191,7 +191,7 @@ static void _create_mbox_emummc_raw()
 	if (part_idx)
 	{
 		s_printf(txt_buf,
-			"#C7EA46 Found applicable partition [%d]!#\n"
+			"#C7EA46 Found applicable partition: [Part %d]!#\n"
 			"#FF8000 Do you want to continue?#\n\n", part_idx);
 	}
 	else
@@ -283,7 +283,7 @@ static void _change_raw_emummc_part_type()
 
 static void _migrate_sd_raw_based()
 {
-	sector_start += 2;
+	sector_start = 2;
 
 	sd_mount();
 	f_mkdir("emuMMC");
@@ -294,8 +294,6 @@ static void _migrate_sd_raw_based()
 	f_open(&fp, "emuMMC/ER00/raw_based", FA_CREATE_ALWAYS | FA_WRITE);
 	f_write(&fp, &sector_start, 4, NULL);
 	f_close(&fp);
-
-	_change_raw_emummc_part_type();
 
 	save_emummc_cfg(1, sector_start, "emuMMC/ER00");
 	sd_unmount(false);
@@ -391,9 +389,7 @@ static void _migrate_sd_backup_file_based()
 	bool multipart = false;
 	s_printf(path2, "%s/rawnand.bin", path);
 
-	FILINFO fno;
-
-	if(f_stat(path2, &fno))
+	if(f_stat(path2, NULL))
 		multipart = true;
 
 	if (!multipart)
@@ -572,24 +568,23 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 		}
 	}
 
-	FILINFO fno;
 	s_printf(txt_buf, "%c%c%c%c%s", 's', 'x', 'o','s', "/emunand/boot0.bin");
 
-	if(!f_stat(txt_buf, &fno))
+	if(!f_stat(txt_buf, NULL))
 		file_based = true;
 
 	bool rawnand_backup_found = false;
 
 	emmcsn_path_impl(txt_buf, "", "BOOT0", &storage);
-	if(!f_stat(txt_buf, &fno))
+	if(!f_stat(txt_buf, NULL))
 		backup = true;
 
 	emmcsn_path_impl(txt_buf, "", "rawnand.bin", &storage);
-	if(!f_stat(txt_buf, &fno))
+	if(!f_stat(txt_buf, NULL))
 		rawnand_backup_found = true;
 
 	emmcsn_path_impl(txt_buf, "", "rawnand.bin.00", &storage);
-	if(!f_stat(txt_buf, &fno))
+	if(!f_stat(txt_buf, NULL))
 		rawnand_backup_found = true;
 
 	if (backup && rawnand_backup_found)
@@ -637,7 +632,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	}
 	else
 	{
-		s_printf(txt_buf, "No foreign emunand or emuMMC found!\n\n");
+		s_printf(txt_buf, "No emuMMC or foreign emunand found!\n\n");
 		lv_mbox_add_btns(mbox, mbox_btn_map3, mbox_action);
 	}
 
@@ -829,7 +824,7 @@ static lv_res_t _create_change_emummc_window()
 	{
 		s_printf(path, "emuMMC/%s/file_based", &emummc_img->dirlist[emummc_idx * 256]);
 
-		if(!f_stat(path, &fno))
+		if(!f_stat(path, NULL))
 		{
 			strcpy(&emummc_img->dirlist[file_based_idx * 256], &emummc_img->dirlist[emummc_idx * 256]);
 			file_based_idx++;
@@ -867,79 +862,58 @@ out0:;
 	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
 	lv_obj_align(line_sep, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
 
-	// Create RAW 1 button.
-	lv_obj_t *btn = lv_btn_create(h1, NULL);
-	lv_btn_ext_t *ext = lv_obj_get_ext_attr(btn);
-	ext->idx = 0;
-	lv_obj_t *btn_label = lv_label_create(btn, NULL);
-	if (emummc_img->part_type[0] != 0x83)
-		lv_label_set_static_text(btn_label, "SD RAW 1");
-	else
-		lv_label_set_static_text(btn_label, "Linux");
-	if (!emummc_img->part_sector[0] || emummc_img->part_type[0] == 0x83 || !emummc_img->part_path[0])
-	{
-		lv_btn_set_state(btn, LV_BTN_STATE_INA);
-		lv_obj_set_click(btn, false);
-	}
 
-	lv_btn_set_fit(btn, false, true);
-	lv_obj_set_width(btn, LV_DPI * 3);
-	lv_obj_align(btn, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 2, LV_DPI / 5);
-	lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _save_raw_emummc_cfg_action);
-
-	lv_obj_t *lv_desc = lv_label_create(h1, NULL);
-	lv_label_set_recolor(lv_desc, true);
-
+	lv_obj_t *btn = NULL;
+	lv_btn_ext_t *ext;
+	lv_obj_t *btn_label = NULL;
+	lv_obj_t *lv_desc = NULL;
 	char *txt_buf = malloc(0x500);
-	s_printf(txt_buf, "Sector start: 0x%08X\nFolder: %s", emummc_img->part_sector[0], &emummc_img->part_path[0]);
-	lv_label_set_array_text(lv_desc, txt_buf, 0x500);
-	lv_obj_set_style(lv_desc, &hint_small_style);
-	lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 
-	// Create RAW 2 button.
-	btn = lv_btn_create(h1, btn);
-	ext = lv_obj_get_ext_attr(btn);
-	ext->idx = 1;
-	btn_label = lv_label_create(btn, btn_label);
-	if (emummc_img->part_type[1] != 0x83)
-		lv_label_set_static_text(btn_label, "SD RAW 2");
-	else
-		lv_label_set_static_text(btn_label, "Linux");
-	if (!emummc_img->part_sector[1] || emummc_img->part_type[1] == 0x83 || !emummc_img->part_path[32])
+	// Create RAW buttons.
+	for (u32 raw_btn_idx = 0; raw_btn_idx < 3; raw_btn_idx++)
 	{
-		lv_btn_set_state(btn, LV_BTN_STATE_INA);
-		lv_obj_set_click(btn, false);
+		btn = lv_btn_create(h1, btn);
+		ext = lv_obj_get_ext_attr(btn);
+		ext->idx = raw_btn_idx;
+		btn_label = lv_label_create(btn, btn_label);
+
+		lv_btn_set_state(btn, LV_BTN_STATE_REL);
+		lv_obj_set_click(btn, true);
+
+		if (emummc_img->part_type[raw_btn_idx] != 0x83)
+		{
+			s_printf(txt_buf, "SD RAW %d", raw_btn_idx + 1);
+			lv_label_set_array_text(btn_label, txt_buf, 32);
+		}
+
+		if (!emummc_img->part_sector[raw_btn_idx] || emummc_img->part_type[raw_btn_idx] == 0x83 || !emummc_img->part_path[raw_btn_idx * 128])
+		{
+			lv_btn_set_state(btn, LV_BTN_STATE_INA);
+			lv_obj_set_click(btn, false);
+
+			if (emummc_img->part_type[raw_btn_idx] == 0x83)
+				lv_label_set_static_text(btn_label, "Linux");
+		}
+
+		if (!raw_btn_idx)
+		{
+			lv_btn_set_fit(btn, false, true);
+			lv_obj_set_width(btn, LV_DPI * 3);
+			lv_obj_align(btn, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 2, LV_DPI / 5);
+		}
+		else
+			lv_obj_align(btn, lv_desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+		
+		lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _save_raw_emummc_cfg_action);
+		
+		lv_desc = lv_label_create(h1, lv_desc);
+		lv_label_set_recolor(lv_desc, true);
+		lv_obj_set_style(lv_desc, &hint_small_style);
+
+		s_printf(txt_buf, "Sector start: 0x%08X\nFolder: %s", emummc_img->part_sector[raw_btn_idx], &emummc_img->part_path[raw_btn_idx * 128]);
+		lv_label_set_array_text(lv_desc, txt_buf, 0x500);
+		lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 	}
-	lv_obj_align(btn, lv_desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
-	lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _save_raw_emummc_cfg_action);
-
-	lv_desc = lv_label_create(h1, lv_desc);
-	s_printf(txt_buf, "Sector start: 0x%08X\nFolder: %s", emummc_img->part_sector[1], &emummc_img->part_path[32]);
-	lv_label_set_array_text(lv_desc, txt_buf, 0x500);
-	lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
-
-	// Create RAW 3 button.
-	btn = lv_btn_create(h1, btn);
-	ext = lv_obj_get_ext_attr(btn);
-	ext->idx = 2;
-	btn_label = lv_label_create(btn, btn_label);
-	if (emummc_img->part_type[2] != 0x83)
-		lv_label_set_static_text(btn_label, "SD RAW 3");
-	else
-		lv_label_set_static_text(btn_label, "Linux");
-
-	if (!emummc_img->part_sector[2] || emummc_img->part_type[2] == 0x83 || !emummc_img->part_path[64])
-	{
-		lv_btn_set_state(btn, LV_BTN_STATE_INA);
-		lv_obj_set_click(btn, false);
-	}
-	lv_obj_align(btn, lv_desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
-	lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _save_raw_emummc_cfg_action);
-
-	lv_desc = lv_label_create(h1, lv_desc);
-	s_printf(txt_buf, "Sector start: 0x%08X\nFolder: %s", emummc_img->part_sector[2], &emummc_img->part_path[64]);
-	lv_label_set_array_text(lv_desc, txt_buf, 0x500);
-	lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 
 	// Create SD File Based container.
 	lv_obj_t *h2 = lv_cont_create(win, NULL);

@@ -121,7 +121,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	{
 		lv_mbox_set_text(mbox,
 			"AutoRCM is now #FF8000 DISABLED!#\n\n"
-			"The boot process is now normal and you need the #FF8000 VOL-# + #FF8000 HOME# (jig) combo to enter RCM.\n");
+			"The boot process is now normal and you need the #FF8000 VOL+# + #FF8000 HOME# (jig) combo to enter RCM.\n");
 	}
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
@@ -611,23 +611,30 @@ void sept_run_dump()
 	_create_window_dump_pk12_tool(NULL);
 }
 
-static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
+static lv_obj_t *_create_container(lv_obj_t *parent)
 {
-	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
-
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);
 	h_style.body.padding.inner = 0;
 	h_style.body.padding.hor = LV_DPI - (LV_DPI / 4);
 	h_style.body.padding.ver = LV_DPI / 6;
 
-	// Create Backup & Restore container.
 	lv_obj_t *h1 = lv_cont_create(parent, NULL);
 	lv_cont_set_style(h1, &h_style);
 	lv_cont_set_fit(h1, false, true);
 	lv_obj_set_width(h1, (LV_HOR_RES / 9) * 4);
 	lv_obj_set_click(h1, false);
 	lv_cont_set_layout(h1, LV_LAYOUT_OFF);
+
+	return h1;
+}
+
+static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
+{
+	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
+
+	// Create Backup & Restore container.
+	lv_obj_t *h1 = _create_container(parent);
 
 	lv_obj_t *label_sep = lv_label_create(h1, NULL);
 	lv_label_set_static_text(label_sep, "");
@@ -675,19 +682,14 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to restore your eMMC partitions individually or as\n"
-		"a whole raw image to your SD card.\n"
+		"Allows you to restore your eMMC/emuMMC partitions individually\n"
+		"or as a whole raw image from your SD card.\n"
 		"#FF8000 Supports SD cards from 4GB and up. FAT32 and exFAT. #");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
 	// Create Misc container.
-	lv_obj_t *h2 = lv_cont_create(parent, NULL);
-	lv_cont_set_style(h2, &h_style);
-	lv_cont_set_fit(h2, false, true);
-	lv_obj_set_width(h2, (LV_HOR_RES / 9) * 4);
-	lv_obj_set_click(h2, false);
-	lv_cont_set_layout(h2, LV_LAYOUT_OFF);
+	lv_obj_t *h2 = _create_container(parent);
 	lv_obj_align(h2, h1, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
 	label_sep = lv_label_create(h2, NULL);
@@ -731,19 +733,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
 
-	static lv_style_t h_style;
-	lv_style_copy(&h_style, &lv_style_transp);
-	h_style.body.padding.inner = 0;
-	h_style.body.padding.hor = LV_DPI - (LV_DPI / 4);
-	h_style.body.padding.ver = LV_DPI / 6;
-
 	// Create Misc container.
-	lv_obj_t *h1 = lv_cont_create(parent, NULL);
-	lv_cont_set_style(h1, &h_style);
-	lv_cont_set_fit(h1, false, true);
-	lv_obj_set_width(h1, (LV_HOR_RES / 9) * 4);
-	lv_obj_set_click(h1, false);
-	lv_cont_set_layout(h1, LV_LAYOUT_OFF);
+	lv_obj_t *h1 = _create_container(parent);
 
 	lv_obj_t *label_sep = lv_label_create(h1, NULL);
 	lv_label_set_static_text(label_sep, "");
@@ -798,12 +789,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
 	// Create Others container.
-	lv_obj_t *h2 = lv_cont_create(parent, NULL);
-	lv_cont_set_style(h2, &h_style);
-	lv_cont_set_fit(h2, false, true);
-	lv_obj_set_width(h2, (LV_HOR_RES / 9) * 4);
-	lv_obj_set_click(h2, false);
-	lv_cont_set_layout(h2, LV_LAYOUT_OFF);
+	lv_obj_t *h2 = _create_container(parent);
 	lv_obj_align(h2, h1, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
 	label_sep = lv_label_create(h2, NULL);

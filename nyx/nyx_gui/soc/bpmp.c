@@ -72,6 +72,9 @@
 #define  MMU_EN_READ                  (1 << 2)
 #define  MMU_EN_WRITE                 (1 << 3)
 
+#pragma GCC push_options
+#pragma GCC target ("thumb")
+
 bpmp_mmu_entry_t mmu_entries[] =
 {
 	{ 0x80000000,    0xFFFFFFFF, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true },
@@ -215,3 +218,4 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 	}
 }
 
+#pragma GCC pop_options

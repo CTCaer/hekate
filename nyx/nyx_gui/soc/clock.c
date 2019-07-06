@@ -19,6 +19,9 @@
 #include "../utils/util.h"
 #include "../storage/sdmmc.h"
 
+#pragma GCC push_options
+#pragma GCC target ("thumb")
+
 /* clock_t: reset, enable, source, index, clk_src, clk_div */
 
 static const clock_t _clock_uart[] = {
@@ -527,3 +530,5 @@ void clock_sdmmc_disable(u32 id)
 	_clock_sdmmc_clear_enable(id);
 	_clock_sdmmc_is_reset(id);
 }
+
+#pragma GCC pop_options

@@ -1,5 +1,5 @@
 /*
- * BPMP-Lite Cache/MMU driver for Tegra X1
+ * BPMP-Lite Cache/MMU and Frequency driver for Tegra X1
  *
  * Copyright (c) 2019 CTCaer
  *

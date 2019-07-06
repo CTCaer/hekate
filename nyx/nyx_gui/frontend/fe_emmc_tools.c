@@ -132,6 +132,19 @@ static lv_obj_t *create_mbox_text(char *text, bool button_ok)
 	return dark_bg;
 }
 
+static void _update_filename(char *outFilename, u32 sdPathLen, u32 numSplitParts, u32 currPartIdx)
+{
+	if (numSplitParts >= 10 && currPartIdx < 10)
+	{
+		outFilename[sdPathLen] = '0';
+		itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
+	}
+	else
+		itoa(currPartIdx, &outFilename[sdPathLen], 10);
+}
+
+#pragma GCC pop_options
+
 static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {
 	FIL fp;
@@ -188,7 +201,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 		lv_bar_set_style(gui->bar, LV_BAR_STYLE_BG, gui->bar_teal_bg);
 		lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, lv_theme_get_current()->bar.indic);
 		s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-		lv_label_set_text(gui->label_pct, gui->txt_buf);
+		lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 		manual_system_maintenance(true);
 
 		clmt = f_expand_cltbl(&fp, 0x400000, 0);
@@ -280,7 +293,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 			{
 				lv_bar_set_value(gui->bar, pct);
 				s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-				lv_label_set_text(gui->label_pct, gui->txt_buf);
+				lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 				manual_system_maintenance(true);
 				prevPct = pct;
 			}
@@ -312,7 +325,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 		lv_bar_set_value(gui->bar, pct);
 		s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-		lv_label_set_text(gui->label_pct, gui->txt_buf);
+		lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 		manual_system_maintenance(true);
 
 		return 0;
@@ -326,19 +339,6 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 		return 1;
 	}
 }
-
-static void _update_filename(char *outFilename, u32 sdPathLen, u32 numSplitParts, u32 currPartIdx)
-{
-	if (numSplitParts >= 10 && currPartIdx < 10)
-	{
-		outFilename[sdPathLen] = '0';
-		itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
-	}
-	else
-		itoa(currPartIdx, &outFilename[sdPathLen], 10);
-}
-
-#pragma GCC pop_options
 
 bool partial_sd_full_unmount = false;
 
@@ -417,7 +417,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 
 		if (!maxSplitParts)
 		{
-			s_printf(gui->txt_buf, "#FFDD00 Not enough free space for Partial Backup!#\n");
+			s_printf(gui->txt_buf, "\n#FFDD00 Not enough free space for Partial Backup!#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -580,7 +580,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 			if (res)
 			{
-				s_printf(gui->txt_buf, "#FF0000 Error (%d) while creating#\n#FFDD00 %s#\n", res, outFilename);
+				s_printf(gui->txt_buf, "\n#FF0000 Error (%d) while creating#\n#FFDD00 %s#\n", res, outFilename);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
@@ -598,7 +598,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		while (!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
-				"#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
+				"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
 				"#FFDD00 from eMMC (try %d). #",
 				num, lba_curr, ++retryCount);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -629,7 +629,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		
 		if (res)
 		{
-			s_printf(gui->txt_buf, "#FF0000 Fatal error (%d) when writing to SD Card#\nPlease try again...\n", res);
+			s_printf(gui->txt_buf, "\n#FF0000 Fatal error (%d) when writing to SD Card#\nPlease try again...\n", res);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -644,7 +644,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_text(gui->label_pct, gui->txt_buf);
+			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 			manual_system_maintenance(true);
 
 			prevPct = pct;
@@ -720,22 +720,23 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 {
 	int res = 0;
 	u32 timer = 0;
-	//! TODO switch to 800MHz
-	manual_system_maintenance(true);
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
 	s_printf(txt_buf, "");
 	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
 
+	lv_label_set_static_text(gui->label_info, "Checking for available free space...");
+	manual_system_maintenance(true);
+
+	// Do a reinit to refresh tuning.
+	sd_unmount(true);
+
 	if (!sd_mount())
 	{
 		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
-
-	lv_label_set_static_text(gui->label_info, "Checking for available free space...");
-	manual_system_maintenance(true);
 
 	// Get SD Card free space for Partial Backup.
 	f_getfree("", &sd_fs.free_clst, NULL);
@@ -891,13 +892,16 @@ out:
 	if (!partial_sd_full_unmount)
 		sd_unmount(false);
 	else
+	{
+		partial_sd_full_unmount = false;
 		sd_unmount(true);
+	}
 }
 
 static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part, sdmmc_storage_t *storage, emmc_part_t *part, bool allow_multi_part)
 {
 	const u32 SECTORS_TO_MIB_COEFF = 11;
-	//! TODO switch to 800MHz
+
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
@@ -953,7 +957,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 				if (f_stat(outFilename, &fno) && !gui->raw_emummc)
 				{
-					s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found '%s'. Aborting...#\n", res, outFilename);
+					s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n#FFDD00 Aborting...#", res, outFilename);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -1194,7 +1198,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		{;
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_text(gui->label_pct, gui->txt_buf);
+			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
 			manual_system_maintenance(true);
 			prevPct = pct;
 		}
@@ -1252,13 +1256,13 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	int res = 0;
 	u32 timer = 0;
 
-	//! TODO switch to 800MHz
-	manual_system_maintenance(true);
-
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
 	s_printf(txt_buf, "");
 	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+
+	manual_system_maintenance(true);
+	sd_unmount(true);
 
 	s_printf(txt_buf,
 		"#FFDD00 This may render your device inoperative!#\n\n"

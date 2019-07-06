@@ -61,7 +61,11 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 
 	emmc_tool_gui_ctxt.raw_emummc = emmc_btn_ctxt.raw_emummc;
 
-	lv_obj_t *win = nyx_create_standard_window(win_label);
+	char win_label_full[80];
+
+	s_printf(win_label_full, "%s%s", emmc_btn_ctxt.restore ? SYMBOL_DOWNLOAD"  Restore " : SYMBOL_UPLOAD"  Backup ", win_label+3);
+
+	lv_obj_t *win = nyx_create_standard_window(win_label_full);
 
 	//Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -108,20 +112,18 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 	lv_obj_align(label_info, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 10);
 	emmc_tool_gui_ctxt.label_info = label_info;
 
-	lv_style_t *bar_teal_bg, *bar_white_ind;
-	bar_teal_bg = (lv_style_t *)malloc(sizeof(lv_style_t));
-	bar_white_ind = (lv_style_t *)malloc(sizeof(lv_style_t));
+	static lv_style_t bar_teal_bg, bar_white_ind;
 
-	lv_style_copy(bar_teal_bg, lv_theme_get_current()->bar.bg);
-	bar_teal_bg->body.main_color = LV_COLOR_HEX(0x005a47);
-	bar_teal_bg->body.grad_color = bar_teal_bg->body.main_color;
+	lv_style_copy(&bar_teal_bg, lv_theme_get_current()->bar.bg);
+	bar_teal_bg.body.main_color = LV_COLOR_HEX(0x005a47);
+	bar_teal_bg.body.grad_color = bar_teal_bg.body.main_color;
 
-	lv_style_copy(bar_white_ind, lv_theme_get_current()->bar.indic);
-	bar_white_ind->body.main_color = LV_COLOR_HEX(0xF0F0F0);
-	bar_white_ind->body.grad_color = bar_white_ind->body.main_color;
+	lv_style_copy(&bar_white_ind, lv_theme_get_current()->bar.indic);
+	bar_white_ind.body.main_color = LV_COLOR_HEX(0xF0F0F0);
+	bar_white_ind.body.grad_color = bar_white_ind.body.main_color;
 
-	emmc_tool_gui_ctxt.bar_teal_bg = bar_teal_bg;
-	emmc_tool_gui_ctxt.bar_white_ind = bar_white_ind;
+	emmc_tool_gui_ctxt.bar_teal_bg = &bar_teal_bg;
+	emmc_tool_gui_ctxt.bar_white_ind = &bar_white_ind;
 
 	lv_obj_t * bar = lv_bar_create(h1, NULL);
 	lv_obj_set_size(bar, LV_DPI * 38 / 10, LV_DPI / 5);
@@ -154,9 +156,6 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 		restore_emmc_selected(type, &emmc_tool_gui_ctxt);
 
 	nyx_window_toggle_buttons(win, false);
-
-	free(bar_teal_bg);
-	free(bar_white_ind);
 }
 
 static lv_res_t _emmc_backup_buttons_decider(lv_obj_t *btn)
