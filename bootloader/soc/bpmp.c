@@ -83,15 +83,15 @@ void bpmp_mmu_maintenance(u32 op)
 	if (!(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE))
 		return;
 
-	//BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = INT_CLR_MAINT_DONE;
+	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = INT_CLR_MAINT_DONE;
 
 	// This is a blocking operation.
 	BPMP_CACHE_CTRL(BPMP_CACHE_MAINT_REQ) = MAINT_REQ_WAY_BITMAP(0xF) | op;
 
-	//while(!(BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT) & INT_RAW_EVENT_MAINT_DONE))
-	//	;
+	while(!(BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT) & INT_RAW_EVENT_MAINT_DONE))
+		;
 
-	//BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT);
+	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT);
 }
 
 void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply)
@@ -156,11 +156,12 @@ void bpmp_mmu_disable()
 	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY);
 }
 
-static u8 pllc4_divn[] = {
+const u8 pllc4_divn[] = {
 	0,   // BPMP_CLK_NORMAL:      408MHz  0% - 136MHz APB.
 	85,  // BPMP_CLK_LOW_BOOST:   544MHz 33% - 136MHz APB.
 	90,  // BPMP_CLK_MID_BOOST:   576MHz 41% - 144MHz APB.
-	95   // BPMP_CLK_SUPER_BOOST: 608MHz 49% - 152MHz APB.
+	94   // BPMP_CLK_SUPER_BOOST: 602MHz 48% - 150MHz APB.
+	//95   // BPMP_CLK_SUPER_BOOST: 608MHz 49% - 152MHz APB.
 };
 
 bpmp_freq_t bpmp_clock_set = BPMP_CLK_NORMAL;
