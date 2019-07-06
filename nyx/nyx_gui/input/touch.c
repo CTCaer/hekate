@@ -145,12 +145,13 @@ int touch_power_on()
 	gpio_write(GPIO_PORT_J, GPIO_PIN_7, GPIO_HIGH);
 
 	// IRQ and more.
-	// PINMUX_AUX(PINMUX_AUX_TOUCH_INT) = PINMUX_TRISTATE | PINMUX_PULL_UP | 3;
+	// PINMUX_AUX(PINMUX_AUX_TOUCH_INT) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP | 3;
 	// gpio_config(GPIO_PORT_X, GPIO_PIN_1, GPIO_MODE_GPIO);
-	// gpio_write(GPIO_PORT_X, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3, GPIO_LOW);
+	// gpio_write(GPIO_PORT_X, GPIO_PIN_1, GPIO_LOW);
 
 	// Configure Touscreen and GCAsic shared GPIO.
 	PINMUX_AUX(PINMUX_AUX_CAM_I2C_SDA) = PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP | 3;
+	PINMUX_AUX(PINMUX_AUX_CAM_I2C_SCL) = PINMUX_INPUT_ENABLE | 1;
 	gpio_config(GPIO_PORT_S, GPIO_PIN_3, GPIO_MODE_GPIO);
 
 	// Initialize I2C3.
@@ -159,8 +160,9 @@ int touch_power_on()
 	i2c_init(I2C_3);
 
 	// Enables LDO6 for touchscreen VDD/AVDD supply
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG, 0xEA);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2, 0xDA);
+	max77620_regulator_set_volt_and_flags(REGULATOR_LDO6, 2900000, MAX77620_POWER_MODE_NORMAL);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
+		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT)); 
 
 	msleep(20);
 
@@ -193,14 +195,13 @@ void touch_power_off()
 {
 	touch_command(STMFTS_SLEEP_IN);
 
-	// Disables LDO6 for touchscreen VDD, AVDD supply
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG, 0x28);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2, 0xD2);
-
-	clock_disable_i2c(I2C_3);
-
 	// Disable touchscreen power.
 	gpio_write(GPIO_PORT_J, GPIO_PIN_7, GPIO_LOW);
 
-	pinmux_config_i2c(I2C_3);
+	// Disables LDO6 for touchscreen VDD, AVDD supply
+	max77620_regulator_enable(REGULATOR_LDO6, 0);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
+		MAX77620_LDO_CFG2_ADE_ENABLE | (2 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
+
+	clock_disable_i2c(I2C_3);
 }

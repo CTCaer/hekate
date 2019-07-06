@@ -41,6 +41,7 @@
 #define PINMUX_AUX_SATA_LED_ACTIVE 0x4C
 #define PINMUX_AUX_DMIC3_CLK       0xB4
 #define PINMUX_AUX_DMIC3_DAT       0xB8
+#define PINMUX_AUX_CAM_I2C_SCL     0xD4
 #define PINMUX_AUX_CAM_I2C_SDA     0xD8
 #define PINMUX_AUX_UART2_TX        0xF4
 #define PINMUX_AUX_UART3_TX        0x104
