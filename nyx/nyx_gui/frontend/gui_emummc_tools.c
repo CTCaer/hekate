@@ -276,7 +276,7 @@ static void _change_raw_emummc_part_type()
 {
 	u8 *mbr = (u8 *)malloc(0x200);
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-	mbr[MBR_1ST_PART_TYPE_OFF + (0x10 * part_idx)] = 0xEE;
+	mbr[MBR_1ST_PART_TYPE_OFF + (0x10 * part_idx)] = 0xE0;
 	sdmmc_storage_write(&sd_storage, 0, 1, mbr);
 	free(mbr);
 }

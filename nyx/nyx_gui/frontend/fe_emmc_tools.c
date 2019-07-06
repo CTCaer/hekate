@@ -71,7 +71,7 @@ static void get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_i
 		curr_part_size = *(u32 *)&mbr[0x0C + (0x10 * i)];
 		*sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
 		u8 type = mbr[0x04 + (0x10 * i)];
-		if ((curr_part_size >= *sector_size) && *sector_start && type != 0x83 && (!backup || type == 0xEE))
+		if ((curr_part_size >= *sector_size) && *sector_start && type != 0x83 && (!backup || type == 0xE0))
 			break;
 	}
 	if (i < 4)
