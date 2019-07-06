@@ -516,6 +516,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 
 	char *txt_buf = (char *)malloc(0x500);
 	u8 *mbr = (u8 *)malloc(0x200);
+	u8 *efi_part = (u8 *)malloc(0x200);
 
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
@@ -529,43 +530,43 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	bool backup = false;
 	bool emummc = false;
 	bool file_based = false;
+	bool em = false;
 	sector_start = 0;
 	part_idx = 0;
 
 	for (int i = 1; i < 4; i++)
 	{
-		u32 curr_part_size = *(u32 *)&mbr[0x0C + (0x10 * i)];
 		sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
-		if ((curr_part_size > storage.sec_cnt) && sector_start)
+		if (sector_start)
 		{
-			part_idx = i;
-			break;
+			sdmmc_storage_read(&sd_storage, sector_start + 0xC001, 1, efi_part);
+			if (!memcmp(efi_part, "EFI PART", 8))
+			{
+				sector_start += 0x8000;
+				emummc = true;
+				part_idx = i;
+				break;
+			}
+			else
+			{
+				sdmmc_storage_read(&sd_storage, sector_start + 0x4001, 1, efi_part);
+				if (!memcmp(efi_part, "EFI PART", 8))
+				{
+					emummc = true;
+					part_idx = i;
+					break;
+				}
+			}
 		}	
 	}
 
 	//! TODO: What about unallocated
 
-	if (part_idx)
+	if (!part_idx)
 	{
-		sdmmc_storage_read(&sd_storage, sector_start + 0xC001, 1, mbr);
-		if (!memcmp(mbr, "EFI PART", 8))
-		{
-			sector_start += 0x8000;
-			emummc = true;
-		}
-		else
-		{
-			sdmmc_storage_read(&sd_storage, sector_start + 0x4001, 1, mbr);
-			if (!memcmp(mbr, "EFI PART", 8))
-				emummc = true;
-		}
-
-		if (!emummc)
-		{
-			sdmmc_storage_read(&sd_storage, sector_start + 0x4003, 1, mbr);
-			if (memcmp(mbr, "EFI PART", 8))
-				part_idx = 0;
-		}
+		sdmmc_storage_read(&sd_storage, 0x4003, 1, efi_part);
+		if (!memcmp(efi_part, "EFI PART", 8))
+			em = true;
 	}
 
 	s_printf(txt_buf, "%c%c%c%c%s", 's', 'x', 'o','s', "/emunand/boot0.bin");
@@ -609,21 +610,21 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 			"#FF8000 Do you want to repair the config for it?#\n\n");
 		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig3_action);
 	}
-	else if (part_idx && !file_based)
+	else if (em && !file_based)
 	{
 		s_printf(txt_buf,
 			"#C7EA46 Found foreign SD Partition emunand!#\n"
 			"#FF8000 Do you want to migrate it?#\n\n");
 		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig2_action);
 	}
-	else if (!part_idx && file_based)
+	else if (!em && file_based)
 	{
 		s_printf(txt_buf,
 			"#C7EA46 Found foreign SD File emunand!#\n"
 			"#FF8000 Do you want to migrate it?#\n\n");
 		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig0_action);
 	}
-	else if (part_idx && file_based)
+	else if (em && file_based)
 	{
 		s_printf(txt_buf,
 			"#C7EA46 Found both foreign SD File and Partition emunand!#\n"
@@ -639,6 +640,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	lv_mbox_set_text(mbox, txt_buf);
 	free(txt_buf);
 	free(mbr);
+	free(efi_part);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
