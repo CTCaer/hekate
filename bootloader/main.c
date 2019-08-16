@@ -727,6 +727,29 @@ void nyx_load_run()
 	(*nyx_ptr)();
 }
 
+static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char *bootlogoCustomEntry)
+{
+	ini_sec_t *cfg_sec = NULL;
+
+	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+	{
+		if (!strcmp("id", kv->key))
+			if (!strcmp(b_cfg.id, kv->val))
+				cfg_sec = ini_sec;
+		if (!strcmp("logopath", kv->key))
+			bootlogoCustomEntry = kv->val;
+		if (!strcmp("emummc_force_disable", kv->key))
+			h_cfg.emummc_force_disable = atoi(kv->val);
+	}
+	if (!cfg_sec)
+	{
+		bootlogoCustomEntry = NULL;
+		h_cfg.emummc_force_disable = false;
+	}
+
+	return cfg_sec;
+}
+
 void auto_launch_firmware()
 {
 	if(b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
@@ -742,6 +765,9 @@ void auto_launch_firmware()
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
 	u32 btn = 0;
+	bool boot_from_id = (b_cfg.boot_cfg & BOOT_CFG_FROM_ID) && (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN);
+	if (boot_from_id)
+		b_cfg.id[7] = 0;
 
 	struct _bmp_data
 	{
@@ -827,7 +853,9 @@ void auto_launch_firmware()
 						continue;
 					}
 
-					if (h_cfg.autoboot == boot_entry_id && configEntry)
+					if (boot_from_id)
+						cfg_sec = get_ini_sec_from_id(ini_sec, bootlogoCustomEntry);				
+					else if (h_cfg.autoboot == boot_entry_id && configEntry)
 					{
 						cfg_sec = ini_sec;
 						LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
@@ -837,8 +865,9 @@ void auto_launch_firmware()
 							if (!strcmp("emummc_force_disable", kv->key))
 								h_cfg.emummc_force_disable = atoi(kv->val);
 						}
-						break;
 					}
+					if (cfg_sec)
+						break;
 					boot_entry_id++;
 				}
 			}
@@ -846,8 +875,11 @@ void auto_launch_firmware()
 			if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
 				check_power_off_from_hos();
 
-			if (h_cfg.autoboot_list)
+			if (h_cfg.autoboot_list || (boot_from_id && !cfg_sec))
 			{
+				if (boot_from_id && cfg_sec)
+					goto skip_list;
+
 				boot_entry_id = 1;
 				bootlogoCustomEntry = NULL;
 
@@ -860,7 +892,9 @@ void auto_launch_firmware()
 							if (!strcmp(ini_sec_list->name, "config"))
 								continue;
 
-							if (h_cfg.autoboot == boot_entry_id)
+							if (boot_from_id)
+								cfg_sec = get_ini_sec_from_id(ini_sec_list, bootlogoCustomEntry);
+							else if (h_cfg.autoboot == boot_entry_id)
 							{
 								h_cfg.emummc_force_disable = false;
 								cfg_sec = ini_sec_list;
@@ -871,8 +905,9 @@ void auto_launch_firmware()
 									if (!strcmp("emummc_force_disable", kv->key))
 										h_cfg.emummc_force_disable = atoi(kv->val);
 								}
-								break;
 							}
+							if (cfg_sec)
+								break;
 							boot_entry_id++;
 						}
 						
@@ -881,7 +916,7 @@ void auto_launch_firmware()
 				}
 
 			}
-
+skip_list:
 			// Add missing configuration entry.
 			if (!configEntry)
 				create_config_entry();
@@ -991,7 +1026,10 @@ void auto_launch_firmware()
 out:
 	gfx_con.mute = false;
 
-	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH);
+	// Clear boot reasons from binary.
+	if (b_cfg.boot_cfg & BOOT_CFG_FROM_ID)
+		memset(b_cfg.xt_str, 0, sizeof(b_cfg.xt_str));
+	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID);
 	h_cfg.emummc_force_disable = false;
 
 	nyx_load_run();

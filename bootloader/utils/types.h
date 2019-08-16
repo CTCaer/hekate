@@ -53,6 +53,7 @@ typedef int bool;
 
 #define BOOT_CFG_AUTOBOOT_EN (1 << 0)
 #define BOOT_CFG_FROM_LAUNCH (1 << 1)
+#define BOOT_CFG_FROM_ID     (1 << 2)
 #define BOOT_CFG_SEPT_RUN    (1 << 7)
 
 #define EXTRA_CFG_KEYS    (1 << 0)
@@ -64,11 +65,18 @@ typedef int bool;
 
 typedef struct __attribute__((__packed__)) _boot_cfg_t
 {
-	u8  boot_cfg;
-	u8  autoboot;
-	u8  autoboot_list;
-	u8  extra_cfg;
-	u8  rsvd[128];
+	u8 boot_cfg;
+	u8 autoboot;
+	u8 autoboot_list;
+	u8 extra_cfg;
+	union
+	{
+		struct
+		{
+			char id[8];
+		};
+		u8 xt_str[0x80];
+	};
 } boot_cfg_t;
 
 typedef struct __attribute__((__packed__)) _ipl_ver_meta_t
