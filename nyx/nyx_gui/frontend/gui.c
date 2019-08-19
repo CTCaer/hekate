@@ -2047,7 +2047,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 
 	// Create tasks.
 	system_tasks.task.dram_periodic_comp = lv_task_create(minerva_periodic_training, 500, LV_TASK_PRIO_HIGHEST, NULL);
-	lv_task_ready(system_tasks.task.status_bar);
+	lv_task_ready(system_tasks.task.dram_periodic_comp);
 	
 	system_tasks.task.status_bar = lv_task_create(_update_status_bar, 5000, LV_TASK_PRIO_LOW, NULL);
 	lv_task_ready(system_tasks.task.status_bar);
