@@ -285,6 +285,13 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 		_fix_attributes(&ufidx, lb_val, path, &total, nintendo_folder, nintendo_folder);
 
+		// Also fix the emuMMC Nintendo folders.
+		if (nintendo_folder)
+		{
+			memcpy(path, "emuMMC", 7);
+			_fix_attributes(&ufidx, lb_val, path, &total, nintendo_folder, nintendo_folder);
+		}
+
 		sd_unmount(false);
 
 		lv_obj_t *desc2 = lv_cont_create(win, NULL);
@@ -767,8 +774,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
 		"Allows you to unset the archive bit for all folders except the\n"
-		"Nintendo folder.\n"
-		"#FF8000 If you want the Nintendo folder, use the below option.#");
+		"root and emuMMC \'Nintendo\' folders.\n"
+		"#FF8000 If you want the Nintendo folders, use the below option.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -782,8 +789,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to fix your Nintendo folder's archive bits.\n"
-		"They are required for the NCA folders but not anywhere else.\n"
+		"Allows you to fix your \'Nintendo\' folder's archive bits.\n"
+		"This will also fix the \'Nintendo\' folders found in emuMMC.\n"
 		"#FF8000 Use that option when you have corruption messages.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
