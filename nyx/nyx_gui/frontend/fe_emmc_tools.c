@@ -132,9 +132,9 @@ static lv_obj_t *create_mbox_text(char *text, bool button_ok)
 	return dark_bg;
 }
 
-static void _update_filename(char *outFilename, u32 sdPathLen, u32 numSplitParts, u32 currPartIdx)
+static void _update_filename(char *outFilename, u32 sdPathLen, u32 currPartIdx)
 {
-	if (numSplitParts >= 10 && currPartIdx < 10)
+	if (currPartIdx < 10)
 	{
 		outFilename[sdPathLen] = '0';
 		itoa(currPartIdx, &outFilename[sdPathLen + 1], 10);
@@ -443,7 +443,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		outFilename[sdPathLen++] = '.';
 
 		// Continue from where we left, if Partial Backup in progress.
-		_update_filename(outFilename, sdPathLen, numSplitParts, partialDumpInProgress ? currPartIdx : 0);
+		_update_filename(outFilename, sdPathLen, partialDumpInProgress ? currPartIdx : 0);
 	}
 
 	FIL fp;
@@ -530,7 +530,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 				lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, gui->bar_white_ind);
 			}
 
-			_update_filename(outFilename, sdPathLen, numSplitParts, currPartIdx);
+			_update_filename(outFilename, sdPathLen, currPartIdx);
 
 			// Always create partial.idx before next part, in case a fatal error occurs.
 			if (isSmallSdCard)
@@ -935,7 +935,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 			outFilename[sdPathLen++] = '.';
 
-			_update_filename(outFilename, sdPathLen, 99, numSplitParts);
+			_update_filename(outFilename, sdPathLen, numSplitParts);
 
 			s_printf(gui->txt_buf, "#96FF00 Filepath:#\n%s\n#96FF00 Filename:# #FF8000 %s#",
 				gui->base_path, outFilename + strlen(gui->base_path));
@@ -944,7 +944,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			// Stat total size of the part files.
 			while ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
 			{
-				_update_filename(outFilename, sdPathLen, 99, numSplitParts);
+				_update_filename(outFilename, sdPathLen, numSplitParts);
 
 				s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
 				lv_label_ins_text(gui->label_info,
@@ -988,7 +988,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			else
 			{
 				use_multipart = true;
-				_update_filename(outFilename, sdPathLen, numSplitParts, 0);
+				_update_filename(outFilename, sdPathLen, 0);
 			}
 		}
 	}
@@ -1109,7 +1109,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				}
 			}
 
-			_update_filename(outFilename, sdPathLen, numSplitParts, currPartIdx);
+			_update_filename(outFilename, sdPathLen, currPartIdx);
 
 			// Read from next part.
 			s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
