@@ -18,6 +18,7 @@
 
 #include "gui.h"
 #include "gui_emmc_tools.h"
+#include "gui_tools.h"
 #include "fe_emmc_tools.h"
 #include "../config/config.h"
 #include "../hos/pkg1.h"
@@ -156,6 +157,22 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 		restore_emmc_selected(type, &emmc_tool_gui_ctxt);
 
 	nyx_window_toggle_buttons(win, false);
+
+	// Refresh AutoRCM button.
+	if (emmc_btn_ctxt.restore && (type == PART_BOOT) && !emmc_btn_ctxt.raw_emummc)
+	{
+		if (get_autorcm_status(false))
+			lv_btn_set_state(autorcm_btn, LV_BTN_STATE_TGL_REL);
+		else
+			lv_btn_set_state(autorcm_btn, LV_BTN_STATE_REL);
+		nyx_generic_onoff_toggle(autorcm_btn);
+
+		if (h_cfg.rcm_patched)
+		{
+			lv_obj_set_click(autorcm_btn, false);
+			lv_btn_set_state(autorcm_btn, LV_BTN_STATE_INA);
+		}
+	}
 }
 
 static lv_res_t _emmc_backup_buttons_decider(lv_obj_t *btn)

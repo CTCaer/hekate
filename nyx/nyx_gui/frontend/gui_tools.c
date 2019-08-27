@@ -44,7 +44,7 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 #pragma GCC push_options
 #pragma GCC target ("thumb")
 
-static bool _get_autorcm_status(bool change)
+bool get_autorcm_status(bool change)
 {
 	u8 corr_mod_byte0;
 	sdmmc_storage_t storage;
@@ -108,7 +108,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	bool enabled = _get_autorcm_status(true);
+	bool enabled = get_autorcm_status(true);
 
 	if (enabled)
 	{
@@ -820,7 +820,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_mbox_autorcm_status);
 
 	// Set default state for AutoRCM and lock it out if patched unit.
-	if (_get_autorcm_status(false))
+	if (get_autorcm_status(false))
 		lv_btn_set_state(btn3, LV_BTN_STATE_TGL_REL);
 	else
 		lv_btn_set_state(btn3, LV_BTN_STATE_REL);
@@ -831,6 +831,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 		lv_obj_set_click(btn3, false);
 		lv_btn_set_state(btn3, LV_BTN_STATE_INA);
 	}
+	autorcm_btn = btn3;
 
 	char *txt_buf = (char *)malloc(0x1000);
 

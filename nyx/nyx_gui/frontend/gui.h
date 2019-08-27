@@ -38,6 +38,7 @@ lv_style_t hint_small_style_white;
 lv_style_t monospace_text;
 
 lv_obj_t *payload_list;
+lv_obj_t *autorcm_btn;
 
 lv_img_dsc_t *icon_switch;
 lv_img_dsc_t *icon_payload;

@@ -21,5 +21,6 @@
 
 void create_tab_tools(lv_theme_t *th, lv_obj_t *parent);
 void sept_run_dump();
+bool get_autorcm_status(bool change);
 
 #endif
