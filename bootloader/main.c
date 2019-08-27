@@ -324,7 +324,8 @@ int launch_payload(char *path, bool update)
 		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 		void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
-		msleep(100);
+		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+		sdmmc_storage_init_wait_sd();
 
 		// Launch our payload.
 		if (!update)
@@ -719,9 +720,7 @@ void nyx_load_run()
 	minerva_periodic_training();
 
 	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-	u32 sd_poweroff_time = (u32)get_tmr_ms() - h_cfg.sd_timeoff;
-	if (sd_poweroff_time < 100)
-		msleep(100 - sd_poweroff_time);
+	sdmmc_storage_init_wait_sd();
 
 	(*nyx_ptr)();
 }

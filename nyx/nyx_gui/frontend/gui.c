@@ -735,6 +735,9 @@ static void _reload_nyx()
 
 	reconfig_hw_workaround(false, 0);
 
+	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+	sdmmc_storage_init_wait_sd();
+
 	(*main_ptr)();
 }
 

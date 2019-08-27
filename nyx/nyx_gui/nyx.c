@@ -293,6 +293,9 @@ lv_res_t launch_payload(lv_obj_t *list)
 
 		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 
+		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+		sdmmc_storage_init_wait_sd();
+
 		// Launch our payload.
 		(*ext_payload_ptr)();
 	}

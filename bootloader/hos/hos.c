@@ -720,6 +720,9 @@ int hos_launch(ini_sec_t *cfg)
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 	minerva_change_freq(FREQ_800);
 
+	// emuMMC: Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+	sdmmc_storage_init_wait_sd();
+
 	// Wait for secmon to get ready.
 	if (smmu_is_used())
 		smmu_exit();
@@ -733,7 +736,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Halt ourselves in waitevent state and resume if there's JTAG activity.
 	while (true)
-		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = 0x50000000;
+		bpmp_halt();
 
 	return 0;
 }
