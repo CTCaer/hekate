@@ -56,7 +56,7 @@ int create_config_entry()
 	if (!sd_mount())
 		return 1;
 
-	char lbuf[16];
+	char lbuf[32];
 	FIL fp;
 	bool mainIniFound = false;
 

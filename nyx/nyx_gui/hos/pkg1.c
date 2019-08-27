@@ -57,8 +57,11 @@ static const pkg1_id_t _pkg1_ids[] = {
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
 {
-	memcpy(build_date, (char *)(pkg1 + 0x10), 14);
-	build_date[14] = 0;
+	if (build_date)
+	{
+		memcpy(build_date, (char *)(pkg1 + 0x10), 14);
+		build_date[14] = 0;
+	}
 
 	for (u32 i = 0; _pkg1_ids[i].id; i++)
 		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 12))

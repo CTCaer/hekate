@@ -60,15 +60,16 @@ void set_fan_duty(u32 duty)
 
 	// Inverted polarity.
 	u32 inv_duty = 236 - duty;
+
+	// If disabled send a 0 duty.
 	if (inv_duty == 236)
 		inv_duty = 255;
 
 	// Set PWM duty.
-	if (inv_duty)
-		PWM(PWM_CONTROLLER_PWM_CSR_1) = (1 << 31) | (inv_duty << 16);
-	else
+	if (inv_duty == 255)
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = 0;
-}
+	else
+		PWM(PWM_CONTROLLER_PWM_CSR_1) = (1 << 31) | (inv_duty << 16);
 
 void get_fan_speed(u32 *duty, u32 *rpm)
 {

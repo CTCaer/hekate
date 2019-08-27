@@ -26,8 +26,6 @@
 #define WPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
 #define WPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
 
-#define FB_ADDRESS 0xC0000000
-
 void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride);
 void gfx_clear_grey(u8 color);
 void gfx_clear_partial_grey(u8 color, u32 pos_x, u32 height);

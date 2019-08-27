@@ -219,7 +219,6 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 
 error:
 	EPRINTF("Failed to run sept\n");
-	display_backlight_brightness(h_cfg.backlight, 1000);
 
 	btn_wait();
 

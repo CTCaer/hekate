@@ -838,7 +838,7 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 	u32 hs_type = 0;
 	switch (type)
 	{
-	case 11:
+	case 11: // SDR104.
 		// Fall through if not supported.
 		if (buf[13] & SD_MODE_UHS_SDR104)
 		{
@@ -848,7 +848,7 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 			storage->csd.busspeed = 104;
 			break;
 		}
-	case 10:
+	case 10: // SDR50.
 		if (buf[13] & SD_MODE_UHS_SDR50)
 		{
 			type = 10;
@@ -857,7 +857,7 @@ int _sd_storage_enable_highspeed_low_volt(sdmmc_storage_t *storage, u32 type, u8
 			storage->csd.busspeed = 50;
 			break;
 		}
-	case 8:
+	case 8: // SDR12.
 		if (!(buf[13] & SD_MODE_UHS_SDR12))
 			return 0;
 		type = 8;

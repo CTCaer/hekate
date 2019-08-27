@@ -35,7 +35,7 @@ static char *_strdup(char *str)
 	strcpy(res, str);
 
 	// Remove trailing space.
-	if (res[strlen(res) - 1] == ' ' && strlen(res))
+	if (strlen(res) && res[strlen(res) - 1] == ' ')
 		res[strlen(res) - 1] = 0;
 
 	return res;
@@ -180,22 +180,14 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 char *ini_check_payload_section(ini_sec_t *cfg)
 {
-	char *path = NULL;
-
 	if (cfg == NULL)
 		return NULL;
 
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
 	{
 		if (!strcmp("payload", kv->key))
-		{
-			if (!path)
-				path = _strdup(kv->val);
-		}
+			return kv->val;
 	}
 
-	if (path)
-		return path;
-	else
-		return NULL;
+	return NULL;
 }

@@ -811,7 +811,7 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 		{
 			if(!currSectIdx) // .text.
 			{
-				memcpy(ki->kip1->data + inject_size, fs_kip->data + new_offset, fs_kip->sections[0].size_comp);
+				memcpy(ki->kip1->data + inject_size, fs_kip->data, fs_kip->sections[0].size_comp);
 				ki->kip1->sections[0].size_decomp += inject_size;
 				ki->kip1->sections[0].size_comp += inject_size;
 			}

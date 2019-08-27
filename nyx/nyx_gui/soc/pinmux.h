@@ -46,13 +46,13 @@
 #define PINMUX_AUX_UART2_TX        0xF4
 #define PINMUX_AUX_UART3_TX        0x104
 #define PINMUX_AUX_DAP4_DIN        0x148
-#define PINMUX_AUX_USB_VBUS_EN0    0x1A8
-#define PINMUX_AUX_WIFI_EN         0x1B4
-#define PINMUX_AUX_WIFI_RST        0x1B8
 #define PINMUX_AUX_DAP4_SCLK       0x150
 #define PINMUX_AUX_GPIO_X1_AUD     0x18C
 #define PINMUX_AUX_GPIO_X3_AUD     0x190
 #define PINMUX_AUX_SPDIF_IN        0x1A4
+#define PINMUX_AUX_USB_VBUS_EN0    0x1A8
+#define PINMUX_AUX_WIFI_EN         0x1B4
+#define PINMUX_AUX_WIFI_RST        0x1B8
 #define PINMUX_AUX_AP_WAKE_NFC     0x1CC
 #define PINMUX_AUX_NFC_EN          0x1D0
 #define PINMUX_AUX_NFC_INT         0x1D4

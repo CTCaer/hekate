@@ -300,7 +300,6 @@ int launch_payload(char *path, bool update)
 		}
 
 		f_close(&fp);
-		free(path);
 
 		if (update && is_ipl_updated(buf))
 			return 1;
@@ -685,7 +684,7 @@ void nyx_load_run()
 {
 	sd_mount();
 
-	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", false);
+	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", NULL);
 	if (!nyx)
 		return;
 

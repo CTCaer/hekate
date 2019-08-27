@@ -44,10 +44,10 @@ static int _i2c_send_pkt(u32 idx, u32 x, u8 *buf, u32 size)
 	memcpy(&tmp, buf, size);
 
 	vu32 *base = (vu32 *)i2c_addrs[idx];
-	base[I2C_CMD_ADDR0] = x << 1; //Set x (send mode).
-	base[I2C_CMD_DATA1] = tmp;    //Set value.
-	base[I2C_CNFG] = (2 * size - 2) | 0x2800; //Set size and send mode.
-	_i2c_wait(base);  //Kick transaction.
+	base[I2C_CMD_ADDR0] = x << 1;                //Set x (send mode).
+	base[I2C_CMD_DATA1] = tmp;                   //Set value.
+	base[I2C_CNFG] = ((size - 1) << 1) | 0x2800; //Set size and send mode.
+	_i2c_wait(base);                             //Kick transaction.
 
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFFDFF) | 0x200;
 	while (base[I2C_STATUS] & 0x100)
@@ -65,9 +65,9 @@ static int _i2c_recv_pkt(u32 idx, u8 *buf, u32 size, u32 x)
 		return 0;
 
 	vu32 *base = (vu32 *)i2c_addrs[idx];
-	base[I2C_CMD_ADDR0] = (x << 1) | 1; // Set x (recv mode).
-	base[I2C_CNFG] = (size - 1) << 1 | 0x2840; // Set size and recv mode.
-	_i2c_wait(base);        // Kick transaction.
+	base[I2C_CMD_ADDR0] = (x << 1) | 1;          // Set x (recv mode).
+	base[I2C_CNFG] = ((size - 1) << 1) | 0x2840; // Set size and recv mode.
+	_i2c_wait(base);                             // Kick transaction.
 
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFFDFF) | 0x200;
 	while (base[I2C_STATUS] & 0x100)
