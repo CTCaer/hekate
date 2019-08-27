@@ -922,6 +922,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	manual_system_maintenance(true);
 
 	bool use_multipart = false;
+	bool check_4MB_aligned = true;
 
 	if (allow_multi_part)
 	{
@@ -968,7 +969,20 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 					totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
 				}
 				else
+				{
 					totalCheckFileSize += (u64)fno.fsize;
+
+					if (check_4MB_aligned && (((u64)fno.fsize) % 0x400000))
+					{
+						s_printf(gui->txt_buf, "#FFDD00 The split file must be a#\n#FFDD00 multiple of 4 MiB.#\n#FFDD00 Aborting...#", res, outFilename);
+						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+						manual_system_maintenance(true);
+
+						return 0;
+					}
+
+					check_4MB_aligned = false;
+				}
 
 				numSplitParts++;
 			}
