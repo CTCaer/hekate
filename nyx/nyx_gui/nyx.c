@@ -358,6 +358,7 @@ void load_saved_configuration()
 void nyx_init_load_res()
 {
 	bpmp_mmu_enable();
+	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
 
 	// Set bootloader's default configuration.
 	set_default_configuration();
@@ -385,8 +386,6 @@ void nyx_init_load_res()
 	sd_unmount(false);
 
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
-
-	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
 }
 
 #define IPL_STACK_TOP  0x90010000
@@ -424,6 +423,7 @@ void ipl_main()
 
 	nyx_load_and_run();
 
+	// Halt BPMP if we managed to get out of execution.
 	while (true)
-		;
+		bpmp_halt();
 }

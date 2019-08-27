@@ -1302,7 +1302,8 @@ void ipl_main()
 
 	while (true)
 		tui_do_menu(&menu_top);
-
+	
+	// Halt BPMP if we managed to get out of execution.
 	while (true)
-		;
+		bpmp_halt();
 }

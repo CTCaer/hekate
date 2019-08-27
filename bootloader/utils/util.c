@@ -24,6 +24,8 @@
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
 
+#define USE_RTC_TIMER
+
 extern void sd_unmount();
 
 u32 get_tmr_s()
@@ -35,7 +37,7 @@ u32 get_tmr_ms()
 {
 	// The registers must be read with the following order:
 	// RTC_MILLI_SECONDS (0x10) -> RTC_SHADOW_SECONDS (0xC)
-	return (RTC(APBDEV_RTC_MILLI_SECONDS) | (RTC(APBDEV_RTC_SHADOW_SECONDS) << 10));
+	return (RTC(APBDEV_RTC_MILLI_SECONDS) + (RTC(APBDEV_RTC_SHADOW_SECONDS) * 1000));
 }
 
 u32 get_tmr_us()
@@ -43,19 +45,28 @@ u32 get_tmr_us()
 	return TMR(TIMERUS_CNTR_1US); //TIMERUS_CNTR_1US
 }
 
-void msleep(u32 milliseconds)
+void msleep(u32 ms)
 {
-	u32 start = RTC(APBDEV_RTC_MILLI_SECONDS) | (RTC(APBDEV_RTC_SHADOW_SECONDS) << 10);
-	while (((RTC(APBDEV_RTC_MILLI_SECONDS) | (RTC(APBDEV_RTC_SHADOW_SECONDS) << 10)) - start) <= milliseconds)
+#ifdef USE_RTC_TIMER
+	u32 start = RTC(APBDEV_RTC_MILLI_SECONDS) + (RTC(APBDEV_RTC_SHADOW_SECONDS) * 1000);
+	// Casting to u32 is important!
+	while (((u32)(RTC(APBDEV_RTC_MILLI_SECONDS) + (RTC(APBDEV_RTC_SHADOW_SECONDS) * 1000)) - start) <= ms)
 		;
+#else
+	bpmp_msleep(ms);
+#endif
 }
 
-void usleep(u32 microseconds)
+void usleep(u32 us)
 {
+#ifdef USE_RTC_TIMER
 	u32 start = TMR(TIMERUS_CNTR_1US);
 	// Casting to u32 is important!
-	while ((u32)(TMR(TIMERUS_CNTR_1US) - start) <= microseconds)
+	while ((u32)(TMR(TIMERUS_CNTR_1US) - start) <= us)
 		;
+#else
+	bpmp_usleep(us);
+#endif
 }
 
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops)
@@ -76,7 +87,6 @@ void panic(u32 val)
 	
 	while (true)
 		usleep(1);
-
 }
 
 void reboot_normal()
@@ -100,7 +110,7 @@ void reboot_rcm()
 	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
 
 	while (true)
-		usleep(1);
+		bpmp_halt();
 }
 
 void power_off()
@@ -114,5 +124,5 @@ void power_off()
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 	
 	while (true)
-		usleep(1);
+		bpmp_halt();
 }

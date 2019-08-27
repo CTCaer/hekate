@@ -46,8 +46,8 @@ typedef struct _nyx_storage_t
 u32 get_tmr_us();
 u32 get_tmr_ms();
 u32 get_tmr_s();
-void usleep(u32 ticks);
-void msleep(u32 milliseconds);
+void usleep(u32 us);
+void msleep(u32 ms);
 void panic(u32 val);
 void reboot_normal();
 void reboot_rcm();

@@ -189,4 +189,24 @@
 #define  EMC_HEKA_UPD (1 << 30)
 #define  EMC_SEPT_RUN (1 << 31)
 
+/*! Flow controller registers. */
+#define FLOW_CTLR_HALT_COP_EVENTS  0x4
+#define  HALT_COP_SEC        (1 << 23)
+#define  HALT_COP_MSEC       (1 << 24)
+#define  HALT_COP_USEC       (1 << 25)
+#define  HALT_COP_JTAG       (1 << 28)
+#define  HALT_COP_WAIT_EVENT (1 << 30)
+#define  HALT_COP_WAIT_IRQ   (1 << 31)
+#define  HALT_COP_MAX_CNT        0xFF
+#define FLOW_CTLR_HALT_CPU0_EVENTS 0x0
+#define FLOW_CTLR_HALT_CPU1_EVENTS 0x14
+#define FLOW_CTLR_HALT_CPU2_EVENTS 0x1C
+#define FLOW_CTLR_HALT_CPU3_EVENTS 0x24
+#define FLOW_CTLR_CPU0_CSR 0x8
+#define FLOW_CTLR_CPU1_CSR 0x18
+#define FLOW_CTLR_CPU2_CSR 0x20
+#define FLOW_CTLR_CPU3_CSR 0x28
+#define FLOW_CTLR_RAM_REPAIR 0x40
+#define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
+
 #endif

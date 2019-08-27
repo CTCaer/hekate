@@ -47,5 +47,8 @@ void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply);
 void bpmp_mmu_enable();
 void bpmp_mmu_disable();
 void bpmp_clk_rate_set(bpmp_freq_t fid);
+void bpmp_usleep(u32 us);
+void bpmp_msleep(u32 ms);
+void bpmp_halt();
 
 #endif
