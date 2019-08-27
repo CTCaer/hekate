@@ -671,7 +671,7 @@ static void _create_autoboot_window()
 	LIST_INIT(ini_list_sections);
 	if (ini_parse(&ini_list_sections, "bootloader/ini", true))
 	{
-		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_list_sections, link)
 		{
 			if (!strcmp(ini_sec->name, "config") || (ini_sec->type != INI_CHOICE))
 				continue;
