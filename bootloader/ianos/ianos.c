@@ -65,41 +65,15 @@ static bool _ianos_read_cb(el_ctx *ctx, void *dest, size_t numberBytes, size_t o
 	return true;
 }
 
-void ianos_print_error(int errorno)
-{
-	switch (errorno)
-	{
-	case 1:
-		gfx_printf("Can't find library!\n");
-		break;
-	case 2:
-		gfx_printf("Cant init ELF context!\n");
-		break;
-	case 3:
-		gfx_printf("Cant alloc memory!\n");
-		break;
-	case 4:
-		gfx_printf("Error loading ELF!\n");
-		break;
-	case 5:
-		gfx_printf("Error relocating ELF!\n");
-		break;
-	}
-}
-
 //TODO: Support shared libraries.
 uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
 {
 	uintptr_t epaddr = 0;
-	int res = 0;
 
 	if (sdmount)
 	{
 		if (!sd_mount())
-		{
-			res = 0xFFFF;
 			goto elfLoadFinalOut;
-		}
 	}
 
 	fileBuf = sd_file_read(path, NULL);
@@ -108,20 +82,14 @@ uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleCon
 		sd_unmount();
 
 	if (!fileBuf)
-	{
-		res = 1;
 		goto elfLoadFinalOut;
-	}
 
 
 	el_ctx ctx;
 	ctx.pread = _ianos_read_cb;
 
 	if (el_init(&ctx))
-	{
-		res = 2;
 		goto elfLoadFinalOut;
-	}
 
 	// Set our relocated library's buffer.
 	switch (type & 0xFFFF)
@@ -136,24 +104,15 @@ uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleCon
 	}
 
 	if (!elfBuf)
-	{
-		res = 3;
 		goto elfLoadFinalOut;
-	}
 
 	// Load and relocate library.
 	ctx.base_load_vaddr = ctx.base_load_paddr = (uintptr_t)elfBuf;
 	if (el_load(&ctx, _ianos_alloc_cb))
-	{
-		res = 4;
 		goto elfFreeOut;
-	}
 
 	if (el_relocate(&ctx))
-	{
-		res = 5;
 		goto elfFreeOut;
-	}
 
 	// Launch.
 	epaddr = ctx.ehdr.e_entry + (uintptr_t)elfBuf;
@@ -165,7 +124,6 @@ elfFreeOut:
 	free(fileBuf);
 	elfBuf = NULL;
 	fileBuf = NULL;
-	ianos_print_error(res);
 
 elfLoadFinalOut:
 
