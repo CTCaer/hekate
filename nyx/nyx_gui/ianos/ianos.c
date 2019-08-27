@@ -100,7 +100,7 @@ uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleCon
 		sd_unmount(true);
 		break;
 	default:
-		elfBuf = memalign(ctx.align, ctx.memsz);
+		elfBuf = malloc(ctx.memsz); // Aligned to 0x10 by default.
 	}
 
 	if (!elfBuf)

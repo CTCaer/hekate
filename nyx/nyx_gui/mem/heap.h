@@ -23,6 +23,5 @@ void heap_init(u32 base);
 void *malloc(u32 size);
 void *calloc(u32 num, u32 size);
 void free(void *buf);
-void *memalign(u32 align, u32 size);
 
 #endif
