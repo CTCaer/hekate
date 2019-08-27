@@ -733,8 +733,12 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char *bootlogoCustomEn
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 	{
 		if (!strcmp("id", kv->key))
-			if (!strcmp(b_cfg.id, kv->val))
+		{
+			if (b_cfg.id[0] && kv->val[0] && !strcmp(b_cfg.id, kv->val))
 				cfg_sec = ini_sec;
+			else
+				break;
+		}
 		if (!strcmp("logopath", kv->key))
 			bootlogoCustomEntry = kv->val;
 		if (!strcmp("emummc_force_disable", kv->key))
@@ -879,6 +883,7 @@ void auto_launch_firmware()
 				if (boot_from_id && cfg_sec)
 					goto skip_list;
 
+				cfg_sec = NULL;
 				boot_entry_id = 1;
 				bootlogoCustomEntry = NULL;
 
@@ -920,11 +925,8 @@ skip_list:
 			if (!configEntry)
 				create_config_entry();
 
-			if (!h_cfg.autoboot)
-				goto out; // Auto boot is disabled.
-
 			if (!cfg_sec)
-				goto out; // No configurations.
+				goto out; // No configurations or auto boot is disabled.
 		}
 		else
 			goto out; // Can't load hekate_ipl.ini.
