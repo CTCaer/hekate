@@ -36,6 +36,7 @@
 #define STMFTS_MS_MT_SENSE_ON          0x93
 #define STMFTS_SS_HOVER_SENSE_OFF      0x94
 #define STMFTS_SS_HOVER_SENSE_ON       0x95
+#define STMFTS_LP_TIMER_CALIB          0x97
 #define STMFTS_MS_KEY_SENSE_OFF        0x9A
 #define STMFTS_MS_KEY_SENSE_ON         0x9B
 #define STMFTS_SYSTEM_RESET            0xA0
@@ -45,7 +46,10 @@
 #define STMFTS_SS_CX_TUNING            0xA4
 #define STMFTS_RELEASEINFO             0xAA
 #define STMFTS_WRITE_REG               0xB6
+#define STMFTS_NOISE_WRITE             0xC7
+#define STMFTS_NOISE_READ              0xC8
 #define STMFTS_RW_FB_REG               0xD0 // read data
+#define STMFTS_SAVE_CX_TUNING          0xFC
 
 #define STMFTS_UNK0 0xB8 //Request compensation
 #define STMFTS_UNK1 0xCF

@@ -30,6 +30,7 @@
 #include "../gfx/gfx.h"
 #include "../input/touch.h"
 #include "../libs/fatfs/ff.h"
+#include "../mem/heap.h"
 #include "../mem/minerva.h"
 #include "../power/bq24193.h"
 #include "../power/max17050.h"
@@ -172,41 +173,39 @@ static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const
 	lv_flush_ready();
 }
 
-touch_event touchpad;
+static touch_event touchpad;
 
 static bool _fts_touch_read(lv_indev_data_t *data) 
 {
 	touch_poll(&touchpad);
 
+	// Take a screenshot if 3 fingers.
 	if (touchpad.fingers > 2)
+	{
 		_save_fb_to_bmp();
+		msleep(200);
+	}
+
+	// Always set touch points.
+	data->point.x = touchpad.x;
+	data->point.y = touchpad.y;
 	
+	// Decide touch enable.
 	switch (touchpad.type & STMFTS_MASK_EVENT_ID) 
 	{
 	case STMFTS_EV_MULTI_TOUCH_ENTER:
 	case STMFTS_EV_MULTI_TOUCH_MOTION:
 		data->state = LV_INDEV_STATE_PR;
-		data->point.x = touchpad.x;
-		data->point.y = touchpad.y;
 		break;
 	case STMFTS_EV_MULTI_TOUCH_LEAVE:
 		data->state = LV_INDEV_STATE_REL;
-		data->point.x = touchpad.x;
-		data->point.y = touchpad.y;
 		break;
 	case STMFTS_EV_NO_EVENT:
 	default:
 		if (touchpad.touch)
-		{
 			data->state = LV_INDEV_STATE_PR;
-		}
 		else
-		{
-			data->point.x = touchpad.x;
-			data->point.y = touchpad.y;
 			data->state = LV_INDEV_STATE_REL;
-			//return true;
-		}
 		break;
 	}
 
@@ -925,7 +924,7 @@ void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, co
 
 	lv_label_set_text(label_btn, btn_name);
 
-	lv_label_set_static_text(label_btnsw, "#00ffc9 OFF#");
+	lv_label_set_static_text(label_btnsw, "#D0D0D0 OFF#");
 	lv_obj_align(label_btn, btn, LV_ALIGN_IN_LEFT_MID, LV_DPI / 4, 0);
 	lv_obj_align(label_btnsw, btn, LV_ALIGN_IN_RIGHT_MID, -LV_DPI / 4, -LV_DPI / 10);
 
@@ -1619,8 +1618,6 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 					bmp = bmp_to_lvimg_obj(icon_path);
 
 				// Enable button.
-				ext = lv_obj_get_ext_attr(launch_ctxt[x]);
-				ext->idx = i;
 				lv_obj_set_opa_scale(launch_ctxt[x], LV_OPA_COVER);
 				
 				// Default to switch logo if no icon found at all.
@@ -1643,6 +1640,8 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 					lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 
 				// Set autoboot index.
+				ext = lv_obj_get_ext_attr(launch_ctxt[x]);
+				ext->idx = i;
 				ext = lv_obj_get_ext_attr(btn);
 				ext->idx = i;
 				
@@ -2046,7 +2045,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	_create_status_bar(th);
 
 	// Create tasks.
-	system_tasks.task.dram_periodic_comp = lv_task_create(minerva_periodic_training, 500, LV_TASK_PRIO_HIGHEST, NULL);
+	system_tasks.task.dram_periodic_comp = lv_task_create(minerva_periodic_training, EMC_PERIODIC_TRAIN_MS, LV_TASK_PRIO_HIGHEST, NULL);
 	lv_task_ready(system_tasks.task.dram_periodic_comp);
 	
 	system_tasks.task.status_bar = lv_task_create(_update_status_bar, 5000, LV_TASK_PRIO_LOW, NULL);
@@ -2103,11 +2102,11 @@ void nyx_load_and_run()
 
 	// Initialize touch.
 	touch_power_on();
-	lv_indev_drv_t indev_drv;
-	lv_indev_drv_init(&indev_drv);
-	indev_drv.type = LV_INDEV_TYPE_POINTER;
-	indev_drv.read = _fts_touch_read;
-	lv_indev_drv_register(&indev_drv);
+	lv_indev_drv_t indev_drv_touch;
+	lv_indev_drv_init(&indev_drv_touch);
+	indev_drv_touch.type = LV_INDEV_TYPE_POINTER;
+	indev_drv_touch.read = _fts_touch_read;
+	lv_indev_drv_register(&indev_drv_touch);
 	touchpad.touch = false;
 
 	// Initialize temperature sensor.
@@ -2118,6 +2117,7 @@ void nyx_load_and_run()
 	lv_theme_t *th = lv_theme_hekate_init(167, NULL);
 	lv_theme_set_current(th);
 
+	// Create main menu
 	_nyx_main_menu(th);
 
 	while (true)

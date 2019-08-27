@@ -36,6 +36,7 @@ extern "C" {
 /**
  * Possible priorities for lv_tasks
  */
+#define LV_TASK_ONESHOT 0
 enum
 {
     LV_TASK_PRIO_OFF = 0,

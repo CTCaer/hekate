@@ -143,8 +143,11 @@ void lv_indev_set_cursor(lv_indev_t * indev, lv_obj_t * cur_obj)
     if(indev->driver.type != LV_INDEV_TYPE_POINTER) return;
 
     indev->cursor = cur_obj;
-    lv_obj_set_parent(indev->cursor, lv_layer_sys());
-    lv_obj_set_pos(indev->cursor, indev->proc.act_point.x,  indev->proc.act_point.y);
+    if (indev->cursor)
+    {
+        lv_obj_set_parent(indev->cursor, lv_layer_sys());
+        lv_obj_set_pos(indev->cursor, indev->proc.act_point.x,  indev->proc.act_point.y);
+    }
 }
 
 #if USE_LV_GROUP

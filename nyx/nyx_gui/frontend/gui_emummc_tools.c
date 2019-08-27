@@ -178,7 +178,7 @@ static void _create_mbox_emummc_raw()
 		u32 curr_part_size = *(u32 *)&mbr[0x0C + (0x10 * i)];
 		sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
 		u8 type = mbr[0x04 + (0x10 * i)];
-		if ((curr_part_size >= (storage.sec_cnt + 0x8000)) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
+		if ((curr_part_size >= (storage.sec_cnt + 0xC000)) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
 		{
 			part_idx = i;
 			sector_start += 0x8000;
@@ -823,7 +823,8 @@ static lv_res_t _create_change_emummc_window()
 
 		if(!f_stat(path, NULL))
 		{
-			strcpy(&emummc_img->dirlist[file_based_idx * 256], &emummc_img->dirlist[emummc_idx * 256]);
+			char *tmp = &emummc_img->dirlist[emummc_idx * 256];
+			memcpy(&emummc_img->dirlist[file_based_idx * 256], tmp, strlen(tmp) + 1);
 			file_based_idx++;
 		}
 		emummc_idx++;
