@@ -321,11 +321,11 @@ int launch_payload(char *path, bool update)
 			reconfig_hw_workaround(true, 0);
 		}
 
-		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
-		void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
-
 		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
 		sdmmc_storage_init_wait_sd();
+
+		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+		void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
 		// Launch our payload.
 		if (!update)

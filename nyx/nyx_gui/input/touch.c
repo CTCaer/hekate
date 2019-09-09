@@ -93,7 +93,7 @@ static void _touch_parse_event(touch_event *event)
 	}
 
 	// gfx_con_setpos(&gfx_con, 0, 300);
-	// DPRINTF("x = %d    \ny = %d    \nz: %d  \n", event->x, event->y, event->z);
+	// DPRINTF("x = %d    \ny = %d    \nz = %d  \n", event->x, event->y, event->z);
 	// DPRINTF("0 = %02X\n1 = %02x\n2 = %02x\n3 = %02x\n", event->raw[0], event->raw[1], event->raw[2], event->raw[3]);
 	// DPRINTF("4 = %02X\n5 = %02x\n6 = %02x\n7 = %02x\n", event->raw[4], event->raw[5], event->raw[6], event->raw[7]);
 }

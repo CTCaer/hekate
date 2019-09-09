@@ -117,10 +117,10 @@ void cluster_boot_cpu0(u32 entry)
 	EXCP_VEC(EVP_CPU_RESET_VECTOR) = 0;
 
 	// Set reset vector.
-	SB(SB_AA64_RESET_LOW) = entry | 1;
+	SB(SB_AA64_RESET_LOW) = entry | SB_AA64_RST_AARCH64_MODE_EN;
 	SB(SB_AA64_RESET_HIGH) = 0;
 	// Non-secure reset vector write disable.
-	SB(SB_CSR) = 2;
+	SB(SB_CSR) = SB_CSR_NS_RST_VEC_WR_DIS;
 	(void)SB(SB_CSR);
 
 	// Clear MSELECT reset.

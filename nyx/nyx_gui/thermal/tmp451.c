@@ -53,7 +53,7 @@ u16 tmp451_get_pcb_temp(bool intenger)
 
 void tmp451_init()
 {
-	// Disable ALARM.
+	// Disable ALARM and Range to 0 - 127 oC.
 	i2c_send_byte(I2C_1, TMP451_I2C_ADDR, TMP451_CONFIG_REG, 0x80);
 
 	// Set conversion rate to 32/s and make a read to update the reg.

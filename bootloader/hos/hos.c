@@ -122,7 +122,7 @@ static void _se_lock(bool lock_se)
 	}
 
 	memset((void *)IPATCH_BASE, 0, 14 * sizeof(u32));
-	SB(SB_CSR) = 0x10; // Protected IROM enable.
+	SB(SB_CSR) = SB_CSR_PIROM_DISABLE;
 
 	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
 	/*gfx_printf("SE(SE_SECURITY_0) = %08X\n", SE(SE_SECURITY_0));
@@ -167,7 +167,6 @@ void _pmc_scratch_lock(u32 kb)
 
 void _sysctr0_reset()
 {
-	SYSCTR0(SYSCTR0_CNTFID0) = 19200000;
 	SYSCTR0(SYSCTR0_CNTCR) = 0;
 	SYSCTR0(SYSCTR0_COUNTERID0) = 0;
 	SYSCTR0(SYSCTR0_COUNTERID1) = 0;
@@ -185,7 +184,7 @@ void _sysctr0_reset()
 
 int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 {
-	u8 tmp[0x30];
+	u8 tmp[0x20];
 	u32 retries = 0;
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
@@ -729,7 +728,7 @@ int hos_launch(ini_sec_t *cfg)
 	else
 		cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!secmon_mb->out)
-		usleep(1); // This only works when in IRAM or with a trained DRAM.
+		; // A usleep(1) only works when in IRAM or with a trained DRAM.
 
 	// Signal pkg2 ready and continue boot.
 	secmon_mb->in = bootStatePkg2Continue;

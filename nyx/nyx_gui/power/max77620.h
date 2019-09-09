@@ -130,7 +130,7 @@
 #define  MAX77620_POWER_MODE_DISABLE          0
 #define  MAX20024_LDO_CFG2_MPOK_MASK          (1 << 2)
 #define  MAX77620_LDO_CFG2_ADE_MASK           (1 << 1)
-#define  MAX77620_LDO_CFG2_ADE_DISABLE        0
+#define  MAX77620_LDO_CFG2_ADE_DISABLE        (0 << 1)
 #define  MAX77620_LDO_CFG2_ADE_ENABLE         (1 << 1)
 #define  MAX77620_LDO_CFG2_SS_MASK            (1 << 0)
 #define  MAX77620_LDO_CFG2_SS_FAST            (1 << 0)
@@ -153,6 +153,24 @@
 #define MAX77620_REG_PUE_GPIO       0x3E
 #define MAX77620_REG_PDE_GPIO       0x3F
 #define MAX77620_REG_AME_GPIO       0x40
+#define  MAX77620_CNFG_GPIO_DRV_MASK          (1 << 0)
+#define  MAX77620_CNFG_GPIO_DRV_PUSHPULL      (1 << 0)
+#define  MAX77620_CNFG_GPIO_DRV_OPENDRAIN     (0 << 0)
+#define  MAX77620_CNFG_GPIO_DIR_MASK          (1 << 1)
+#define  MAX77620_CNFG_GPIO_DIR_INPUT         (1 << 1)
+#define  MAX77620_CNFG_GPIO_DIR_OUTPUT        (0 << 1)
+#define  MAX77620_CNFG_GPIO_INPUT_VAL_MASK    (1 << 2)
+#define  MAX77620_CNFG_GPIO_OUTPUT_VAL_MASK   (1 << 3)
+#define  MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH   (1 << 3)
+#define  MAX77620_CNFG_GPIO_OUTPUT_VAL_LOW    (0 << 3)
+#define  MAX77620_CNFG_GPIO_INT_MASK          (0x3 << 4)
+#define  MAX77620_CNFG_GPIO_INT_FALLING       (1 << 4)
+#define  MAX77620_CNFG_GPIO_INT_RISING        (1 << 5)
+#define  MAX77620_CNFG_GPIO_DBNC_MASK         (0x3 << 6)
+#define  MAX77620_CNFG_GPIO_DBNC_None         (0x0 << 6)
+#define  MAX77620_CNFG_GPIO_DBNC_8ms          (0x1 << 6)
+#define  MAX77620_CNFG_GPIO_DBNC_16ms         (0x2 << 6)
+#define  MAX77620_CNFG_GPIO_DBNC_32ms         (0x3 << 6)
 
 #define MAX77620_REG_ONOFFCNFG1     0x41
 #define  MAX77620_ONOFFCNFG1_SFT_RST          (1 << 7)
@@ -258,25 +276,6 @@
 #define MAX77620_SD_CFG1_FSRADE_SD_MASK       (1 << 0)
 #define MAX77620_SD_CFG1_FSRADE_SD_DISABLE    0
 #define MAX77620_SD_CFG1_FSRADE_SD_ENABLE     (1 << 0)
-
-#define MAX77620_CNFG_GPIO_DRV_MASK           (1 << 0)
-#define MAX77620_CNFG_GPIO_DRV_PUSHPULL       (1 << 0)
-#define MAX77620_CNFG_GPIO_DRV_OPENDRAIN      0
-#define MAX77620_CNFG_GPIO_DIR_MASK           (1 << 1)
-#define MAX77620_CNFG_GPIO_DIR_INPUT          (1 << 1)
-#define MAX77620_CNFG_GPIO_DIR_OUTPUT         0
-#define MAX77620_CNFG_GPIO_INPUT_VAL_MASK     (1 << 2)
-#define MAX77620_CNFG_GPIO_OUTPUT_VAL_MASK    (1 << 3)
-#define MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH    (1 << 3)
-#define MAX77620_CNFG_GPIO_OUTPUT_VAL_LOW     0
-#define MAX77620_CNFG_GPIO_INT_MASK           (0x3 << 4)
-#define MAX77620_CNFG_GPIO_INT_FALLING        (1 << 4)
-#define MAX77620_CNFG_GPIO_INT_RISING         (1 << 5)
-#define MAX77620_CNFG_GPIO_DBNC_MASK          (0x3 << 6)
-#define MAX77620_CNFG_GPIO_DBNC_None          (0x0 << 6)
-#define MAX77620_CNFG_GPIO_DBNC_8ms           (0x1 << 6)
-#define MAX77620_CNFG_GPIO_DBNC_16ms          (0x2 << 6)
-#define MAX77620_CNFG_GPIO_DBNC_32ms          (0x3 << 6)
 
 #define MAX77620_IRQ_LVL2_GPIO_EDGE0          (1 << 0)
 #define MAX77620_IRQ_LVL2_GPIO_EDGE1          (1 << 1)

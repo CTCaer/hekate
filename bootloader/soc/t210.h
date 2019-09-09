@@ -107,9 +107,11 @@
 /*! Misc registers. */
 #define APB_MISC_PP_STRAPPING_OPT_A 0x08
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
+#define APB_MISC_GP_HIDREV 0x804
 #define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL 0xA34
 #define APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL 0xA98
 #define APB_MISC_GP_EMMC4_PAD_CFGPADCTRL 0xAB4
+#define APB_MISC_GP_EMMC4_PAD_PUPD_CFGPADCTRL 0xABC
 #define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64
 #define APB_MISC_GP_WIFI_RST_CFGPADCTRL 0xB68
 
@@ -119,7 +121,10 @@
 
 /*! Secure boot registers. */
 #define SB_CSR 0x0
+#define  SB_CSR_NS_RST_VEC_WR_DIS    (1 << 1)
+#define  SB_CSR_PIROM_DISABLE        (1 << 4)
 #define SB_AA64_RESET_LOW  0x30
+#define  SB_AA64_RST_AARCH64_MODE_EN (1 << 0)
 #define SB_AA64_RESET_HIGH 0x34
 
 /*! SOR registers. */
@@ -183,6 +188,7 @@
 /*! PWM registers. */
 #define PWM_CONTROLLER_PWM_CSR_0 0x00
 #define PWM_CONTROLLER_PWM_CSR_1 0x10
+#define  PWM_CSR_EN (1 << 31)
 
 /*! Special registers. */
 #define EMC_SCRATCH0 0x324

@@ -70,6 +70,8 @@
 #define STMFTS_EV_HOVER_MOTION         0x09
 #define STMFTS_EV_KEY_STATUS           0x0e
 #define STMFTS_EV_ERROR                0x0f
+#define STMFTS_EV_NOISE_READ           0x17
+#define STMFTS_EV_NOISE_WRITE          0x18
 
 #define STMFTS_EV_CONTROLLER_READY     0x10
 #define STMFTS_EV_SLEEP_OUT_CONTROLLER_READY 0x11

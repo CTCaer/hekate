@@ -22,9 +22,8 @@
 #define UART_A 0
 #define UART_B 1
 #define UART_C 2
-//TODO: define clock inits for those.
-/*#define UART_D 3
-#define UART_E 4*/
+#define UART_D 3
+#define UART_E 4
 
 #define BAUD_115200 115200
 
@@ -34,14 +33,28 @@
 #define UART_TX_FIFO_FULL 0x100
 #define UART_RX_FIFO_EMPTY 0x200
 
+#define UART_INVERT_RXD 0x01
+#define UART_INVERT_TXD 0x02
+#define UART_INVERT_CTS 0x04
+#define UART_INVERT_RTS 0x08
+
+#define UART_IER_DLAB_IE_EORD 0x20
+
 #define UART_LCR_DLAB 0x80
+#define UART_LCR_STOP 0x4
 #define UART_LCR_WORD_LENGTH_8 0x3
+
 #define UART_LSR_RDR 0x1
 #define UART_LSR_THRE 0x20
 #define UART_LSR_TMTY 0x40
+#define UART_LSR_FIFOE 0x80
+
 #define UART_IIR_FCR_TX_CLR 0x4
 #define UART_IIR_FCR_RX_CLR 0x2
 #define UART_IIR_FCR_EN_FIFO 0x1
+
+#define UART_MCR_RTS 0x2
+#define UART_MCR_DTR 0x1
 
 typedef struct _uart_t
 {

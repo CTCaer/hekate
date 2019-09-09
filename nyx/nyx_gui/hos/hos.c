@@ -126,7 +126,10 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 			// We rely on racing conditions, make sure we cover even the unluckiest cases.
 			if (retries > 15)
+			{
+				EPRINTF("\nFailed to get TSEC keys. Please try again.\n");
 				return 0;
+			}
 		}
 	}
 

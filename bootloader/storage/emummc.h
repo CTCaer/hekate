@@ -35,7 +35,7 @@ typedef enum {
 
 typedef struct _emummc_cfg_t
 {
-	int  enabled;
+	int   enabled;
 	u64   sector;
 	u16   id;
 	char *path;
