@@ -38,6 +38,7 @@
 #include "../soc/bpmp.h"
 #include "../soc/hw_init.h"
 #include "../soc/t210.h"
+#include "../storage/sdmmc.h"
 #include "../thermal/tmp451.h"
 #include "../utils/dirlist.h"
 #include "../utils/sprintf.h"

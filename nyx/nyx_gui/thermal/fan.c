@@ -70,6 +70,7 @@ void set_fan_duty(u32 duty)
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = 0;
 	else
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = (1 << 31) | (inv_duty << 16);
+}
 
 void get_fan_speed(u32 *duty, u32 *rpm)
 {
