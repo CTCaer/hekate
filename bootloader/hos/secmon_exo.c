@@ -131,11 +131,12 @@ typedef struct _atm_fatal_error_ctx
 
 // Exosphère mailbox defines.
 #define EXO_CFG_ADDR      0x8000F000
-#define  EXO_MAGIC_VAL      0x304F5845
-#define  EXO_FLAG_DBG_PRIV  (1 << 1)
-#define  EXO_FLAG_DBG_USER  (1 << 2)
+#define  EXO_MAGIC_VAL        0x304F5845
+#define  EXO_FLAG_DBG_PRIV    (1 << 1)
+#define  EXO_FLAG_DBG_USER    (1 << 2)
+#define  EXO_FLAG_NO_USER_EXC (1 << 3)
 
-void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
+void config_exosphere(launch_ctxt_t *ctxt)
 {
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;
@@ -144,10 +145,10 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 
 	volatile exo_cfg_t *exo_cfg = (exo_cfg_t *)EXO_CFG_ADDR;
 
-	switch (kb)
+	switch (ctxt->pkg1_id->kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
-		if (!strcmp(id, "20161121183008"))
+		if (!strcmp(ctxt->pkg1_id->id, "20161121183008"))
 			exoFwNo = 1;
 		else
 			exoFwNo = 2;
@@ -156,15 +157,19 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		exoFwNo = 3;
 		break;
 	default:
-		exoFwNo = kb + 1;
-		if (!strcmp(id, "20190314172056") || !strcmp(id, "20190531152432"))
+		exoFwNo = ctxt->pkg1_id->kb + 1;
+		if (!strcmp(ctxt->pkg1_id->id, "20190314172056") || !strcmp(ctxt->pkg1_id->id, "20190531152432"))
 			exoFwNo++; // ATM_TARGET_FW_800/810.
 		break;
 	}
 
 	// To avoid problems, make private debug mode always on if not semi-stock.
-	if (!stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))
+	if (!ctxt->stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))
 		exoFlags |= EXO_FLAG_DBG_PRIV;
+
+	// Disable proper failure handling.
+	if (ctxt->exo_no_user_exceptions)
+		exoFlags |= EXO_FLAG_NO_USER_EXC;
 
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;
@@ -174,7 +179,7 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 	exo_cfg->flags = exoFlags;
 
 	// If warmboot is lp0fw, add in RSA modulus.
-	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(warmboot + ATM_WB_HEADER_OFF);
+	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(ctxt->pkg1_id->warmboot_base + ATM_WB_HEADER_OFF);
 
 	if (wb_cfg->magic == ATM_WB_MAGIC)
 	{
@@ -197,7 +202,7 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		else
 			rsa_mod[0x10] = 0x37;
 
-		memcpy(warmboot + 0x10, rsa_mod + 0x10, 0x100);
+		memcpy((void *)(ctxt->pkg1_id->warmboot_base + 0x10), rsa_mod + 0x10, 0x100);
 	}
 
 	if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
@@ -212,9 +217,9 @@ void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock)
 		else
 			strcpy((char *)exo_cfg->emummc_cfg.file_cfg.path, emu_cfg.path);
 
-		if (emu_cfg.nintendo_path && !stock)
+		if (emu_cfg.nintendo_path && !ctxt->stock)
 			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, emu_cfg.nintendo_path);
-		else if (stock)
+		else if (ctxt->stock)
 			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, "Nintendo");
 		else
 			exo_cfg->emummc_cfg.nintendo_path[0] = 0;

@@ -19,7 +19,7 @@
 
 #include "../utils/types.h"
 
-void config_exosphere(const char *id, u32 kb, void *warmboot, bool stock);
+void config_exosphere(launch_ctxt_t *ctxt);
 void secmon_exo_check_panic();
 
 #endif

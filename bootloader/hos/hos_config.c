@@ -191,6 +191,16 @@ static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_dis_exo_user_exceptions(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Disabled exosphere user exception handlers\n");
+		ctxt->exo_no_user_exceptions = true;
+	}
+	return 1;
+}
+
 static int _config_fss(launch_ctxt_t *ctxt, const char *value)
 {
 	return parse_fss(ctxt, value);
@@ -212,6 +222,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "debugmode", _config_debugmode },
 	{ "stock", _config_stock },
 	{ "atmosphere", _config_atmosphere },
+	{ "nouserexceptions", _config_dis_exo_user_exceptions },
 	{ "fss0", _config_fss },
 	{ NULL, NULL },
 };
