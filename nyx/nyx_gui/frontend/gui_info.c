@@ -388,7 +388,7 @@ static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 
 	char *txt_buf = (char *)malloc(0x1000);
 	ipatches_txt = txt_buf;
-	s_printf(txt_buf, "#00DDFF Ipatches:#\n#FF8000 Address  "SYMBOL_DOT"  Val  "SYMBOL_DOT"  Instruction\n");
+	s_printf(txt_buf, "#00DDFF Ipatches:#\n#FF8000 Address  "SYMBOL_DOT"  Val  "SYMBOL_DOT"  Instruction#\n");
 
 	u32 res = fuse_read_ipatch(_ipatch_process);
 	if (res != 0)

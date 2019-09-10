@@ -1026,7 +1026,7 @@ static void _create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_btn, true);
 	lv_btn_set_fit(btn, true, true);
 	lv_btn_set_toggle(btn, true);
-	lv_label_set_static_text(label_btn, SYMBOL_GPS" Auto Boot #00ffc9   ON #");
+	lv_label_set_static_text(label_btn, SYMBOL_GPS" Auto Boot #00FFC9   ON #");
 	lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _autoboot_hide_delay_action);
 	lv_obj_align(btn, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -LV_DPI / 18 + 6);
 	lv_btn_set_fit(btn, false, false);
@@ -1689,14 +1689,14 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		if (!more_cfg)
 		{
 			lv_label_set_static_text(label_error,
-				"#FFDD00 No main boot entries found...\n"
+				"#FFDD00 No main boot entries found...#\n"
 				"You can use the following entry to boot stock,\n"
 				"or use #C7EA46 More configs# button for more boot entries.");
 		}
 		else
 		{
 			lv_label_set_static_text(label_error,
-				"#FFDD00 No .ini or boot entries found...\n"
+				"#FFDD00 No .ini or boot entries found...#\n"
 				"Check that a .ini file exists in #96FF00 /bootloader/ini/#,\n"
 				"and that it contains at least one entry.");
 		}
@@ -1719,7 +1719,7 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// Set brand label.
 	lv_obj_t *label_brand = lv_label_create(parent, NULL);
 	lv_label_set_recolor(label_brand, true);
-	lv_label_set_static_text(label_brand, "#00EDBA hekate");
+	lv_label_set_static_text(label_brand, "#00EDBA hekate#");
 	lv_obj_set_pos(label_brand, 50, 48);
 
 	// Set tagline label.

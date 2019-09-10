@@ -258,7 +258,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				{
 					s_printf(gui->txt_buf,
 						"#FF0000 SD & eMMC data (@LBA %08X) do not match!#\n"
-						"#FF0000 \nVerification failed..#\n",
+						"\n#FF0000 Verification failed..#\n",
 						lba_curr);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
@@ -664,7 +664,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
 		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
 		{
-			s_printf(gui->txt_buf, "\n#FFDD00 The backup was cancelled!\n");
+			s_printf(gui->txt_buf, "\n#FFDD00 The backup was cancelled!#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 

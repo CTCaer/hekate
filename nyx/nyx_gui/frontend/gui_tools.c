@@ -375,7 +375,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	// Dump package1 in its encrypted state if unknown.
 	if (!pkg1_id)
 	{
-		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Unknown pkg1 version for reading\nTSEC firmware!#");
+		s_printf(txt_buf + strlen(txt_buf),
+			"#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#");
 		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
 		manual_system_maintenance(true);
 
@@ -408,7 +409,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
 			{
-				lv_label_set_static_text(lb_desc, "FFDD00 Failed to run sept#\n");
+				lv_label_set_static_text(lb_desc, "#FFDD00 Failed to run sept#\n");
 				goto out_free;
 			}
 		}
@@ -508,7 +509,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2);
 	if (!pkg2_hdr)
 	{
-		s_printf(txt_buf + strlen(txt_buf), "FFDD00 Pkg2 decryption failed!#");
+		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Pkg2 decryption failed!#");
 		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
 		manual_system_maintenance(true);
 
