@@ -693,8 +693,6 @@ static void _create_text_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn,
 		lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, action);
 }
 
-
-
 static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 {
 	lv_obj_t * lbl_credits = lv_label_create(parent, NULL);

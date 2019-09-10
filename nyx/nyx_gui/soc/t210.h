@@ -101,6 +101,11 @@
 #define CL_DVFS(off) _REG(CL_DVFS_BASE, off)
 #define TEST_REG(off) _REG(0x0, off)
 
+/* HOST1X registers. */
+#define HOST1X_CH0_SYNC_BASE 0x2100
+#define HOST1X_CH0_SYNC_SYNCPT_9   (HOST1X_CH0_SYNC_BASE + 0xFA4)
+#define HOST1X_CH0_SYNC_SYNCPT_160 (HOST1X_CH0_SYNC_BASE + 0x1200)
+
 /*! EVP registers. */
 #define EVP_CPU_RESET_VECTOR 0x100
 
