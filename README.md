@@ -13,7 +13,7 @@ Custom Nintendo Switch bootloader, firmware patcher, and more.
 | bootloader               | Main folder.                                                          |
 |  \|__ bootlogo.bmp       | It is used when custom is on and no logopath found. Can be skipped.   |
 |  \|__ hekate_ipl.ini     | Main bootloader configuration and boot entries.                       |
-|  \|__ patches.ini        | Add external patches. Can be skipped                                  |
+|  \|__ patches.ini        | Add external patches. If not found `patches_template.ini` will be loaded. Can be skipped. |
 |  \|__ update.bin         | If newer, it is loaded at boot. For modchips. Can be skipped.         |
 | bootloader/ini/          | For individual inis. 'More configs...' menu. Autoboot is supported.   |
 | bootloader/res/          | Nyx user resources. Icons and more.                                   |
@@ -70,6 +70,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | fullsvcperm=1          | Disables SVC verification (full services permission)       |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1           | Enables Atmosphère patching.                               |
+| nouserexceptions=1     | Disables usermode exception handlers when paired with Exosphère. |
 | emummc_force_disable=1 | Disabled emuMMC if it's enabled.                           |
 | stock=1                | Disables unneeded kernel patching when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required to run completely stock. |
 | payload={SD path}      | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
