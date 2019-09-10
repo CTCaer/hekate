@@ -27,14 +27,7 @@ extern hekate_config h_cfg;
 extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 
-struct autoboot_obj
-{
-	lv_obj_t *obj0;
-	lv_obj_t *obj1;
-	lv_obj_t *obj2;
-};
-
-static struct autoboot_obj autoboot_obj;
+static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
 
 static lv_res_t auto_hos_poweroff_toggle(lv_obj_t *btn)
@@ -68,19 +61,11 @@ static lv_res_t auto_nogc_toggle(lv_obj_t *btn)
 static lv_res_t _win_autoboot_close_action(lv_obj_t * btn)
 {
 	if (!h_cfg.autoboot)
-	{
-		lv_obj_set_opa_scale_enable(autoboot_obj.obj1, true);
-		lv_obj_set_click(autoboot_obj.obj2, false);
-		lv_btn_set_state(autoboot_obj.obj0, LV_BTN_STATE_REL);
-	}
+		lv_btn_set_state(autoboot_btn, LV_BTN_STATE_REL);
 	else
-	{
-		lv_obj_set_opa_scale_enable(autoboot_obj.obj1, false);
-		lv_obj_set_click(autoboot_obj.obj2, true);
-		lv_btn_set_state(autoboot_obj.obj0, LV_BTN_STATE_TGL_REL);
-	}
+		lv_btn_set_state(autoboot_btn, LV_BTN_STATE_TGL_REL);
 
-	nyx_generic_onoff_toggle(autoboot_obj.obj0);
+	nyx_generic_onoff_toggle(autoboot_btn);
 
 	lv_obj_t * win = lv_win_get_from_btn(btn);
 
@@ -113,10 +98,8 @@ static lv_res_t _autoboot_disable_action(lv_obj_t *btn)
 	h_cfg.autoboot = 0;
 	h_cfg.autoboot_list = 0;
 
-	lv_obj_set_opa_scale_enable(autoboot_obj.obj1, true);
-	lv_obj_set_click(autoboot_obj.obj2, false);
-	lv_btn_set_state(autoboot_obj.obj0, LV_BTN_STATE_REL);
-	nyx_generic_onoff_toggle(autoboot_obj.obj0);
+	lv_btn_set_state(autoboot_btn, LV_BTN_STATE_REL);
+	nyx_generic_onoff_toggle(autoboot_btn);
 
 	lv_obj_t * win = lv_win_get_from_btn(btn);
 
@@ -132,10 +115,8 @@ static lv_res_t _autoboot_enable_main_action(lv_obj_t *btn)
 	h_cfg.autoboot = lv_list_get_btn_index(auto_main_list, btn) + 1;
 	h_cfg.autoboot_list = 0;
 
-	lv_obj_set_opa_scale_enable(autoboot_obj.obj1, false);
-	lv_obj_set_click(autoboot_obj.obj2, true);
-	lv_btn_set_state(autoboot_obj.obj0, LV_BTN_STATE_TGL_REL);
-	nyx_generic_onoff_toggle(autoboot_obj.obj0);
+	lv_btn_set_state(autoboot_btn, LV_BTN_STATE_TGL_REL);
+	nyx_generic_onoff_toggle(autoboot_btn);
 
 	lv_obj_t *obj = lv_obj_get_parent(btn);
 	for (int i = 0; i < 5; i++)
@@ -150,10 +131,8 @@ static lv_res_t _autoboot_enable_more_action(lv_obj_t *btn)
 	h_cfg.autoboot = lv_list_get_btn_index(auto_more_list, btn) + 1;
 	h_cfg.autoboot_list = 1;
 
-	lv_obj_set_opa_scale_enable(autoboot_obj.obj1, false);
-	lv_obj_set_click(autoboot_obj.obj2, true);
-	lv_btn_set_state(autoboot_obj.obj0, LV_BTN_STATE_TGL_REL);
-	nyx_generic_onoff_toggle(autoboot_obj.obj0);
+	lv_btn_set_state(autoboot_btn, LV_BTN_STATE_TGL_REL);
+	nyx_generic_onoff_toggle(autoboot_btn);
 
 	lv_obj_t *obj = lv_obj_get_parent(btn);
 	for (int i = 0; i < 5; i++)
@@ -264,23 +243,13 @@ static void _create_autoboot_window()
 
 static lv_res_t _autoboot_hide_delay_action(lv_obj_t *btn)
 {
-	lv_obj_set_opa_scale(autoboot_obj.obj1, LV_OPA_40);
-
 	if (!autoboot_first_time)
 		_create_autoboot_window();
 
 	if (!h_cfg.autoboot && autoboot_first_time)
-	{
-		lv_obj_set_opa_scale_enable(autoboot_obj.obj1, true);
-		lv_obj_set_click(autoboot_obj.obj2, false);
 		lv_btn_set_state(btn, LV_BTN_STATE_REL);
-	}
 	else
-	{
-		lv_obj_set_opa_scale_enable(autoboot_obj.obj1, false);
-		lv_obj_set_click(autoboot_obj.obj2, true);
 		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
-	}
 	autoboot_first_time = false;
 
 	nyx_generic_onoff_toggle(btn);
@@ -341,7 +310,6 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_set_click(l_cont, false);
 	lv_cont_set_layout(l_cont, LV_LAYOUT_OFF);
 	lv_obj_set_opa_scale(l_cont, LV_OPA_40);
-	autoboot_obj.obj1 = l_cont;
 
 	lv_obj_t *label_sep = lv_label_create(sw_h2, NULL);
 	lv_label_set_static_text(label_sep, "");
@@ -364,7 +332,7 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _autoboot_hide_delay_action);
 	lv_obj_align(btn, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -LV_DPI / 18 + 6);
 	lv_btn_set_fit(btn, false, false);
-	autoboot_obj.obj0 = btn;
+	autoboot_btn = btn;
 
 	lv_obj_t *label_txt2 = lv_label_create(sw_h2, NULL);
 	lv_label_set_static_text(label_txt2, "Choose which boot entry or payload to automatically boot\nwhen injecting.");
@@ -395,11 +363,9 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 		"5 seconds\n"
 		"6 seconds");
 	lv_ddlist_set_selected(ddlist, 3);
-	//lv_ddlist_set_align(ddlist, LV_LABEL_ALIGN_RIGHT);
 	lv_obj_align(ddlist, label_txt, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 4, 0);
 	lv_ddlist_set_action(ddlist, _autoboot_delay_action);
 	lv_ddlist_set_selected(ddlist, h_cfg.bootwait);
-	autoboot_obj.obj2 = ddlist;
 
 	if (hekate_bg)
 	{
@@ -430,8 +396,8 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
 		"It checks fuses and applies the patch automatically\n"
-		"if higher firmware. It is now a global config and\n"
-		"set on auto by default. (ON: Auto)\n\n\n");
+		"if higher firmware. It is now a global config and set\n"
+		"at auto by default. (ON: Auto)\n\n\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 12);
 
