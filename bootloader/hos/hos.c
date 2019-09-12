@@ -52,10 +52,6 @@ extern bool sd_mount();
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
-#define EHPRINTF(text) \
-	({ display_backlight_brightness(h_cfg.backlight, 1000); \
-		gfx_con.mute = false; \
-		gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC); })
 #define EHPRINTFARGS(text, args...) \
 	({ display_backlight_brightness(h_cfg.backlight, 1000); \
 		gfx_con.mute = false; \

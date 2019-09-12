@@ -1012,6 +1012,10 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	btn_home_transp_pr.body.grad_color = btn_home_transp_pr.body.main_color;
 	btn_home_transp_pr.body.opa = LV_OPA_30;
 
+	static lv_style_t btn_label_home_transp;
+	lv_style_copy(&btn_label_home_transp, lv_theme_get_current()->cont);
+	btn_label_home_transp.body.opa = LV_OPA_TRANSP;
+
 	lv_obj_t *win;
 
 	bool more_cfg = false;
@@ -1059,6 +1063,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_cont_set_layout(boot_entry_lbl_cont, LV_LAYOUT_CENTER);
 	lv_obj_set_size(boot_entry_lbl_cont, 238, 20);
 	lv_obj_set_pos(boot_entry_lbl_cont, launch_button_pos[0].lbl_x, launch_button_pos[0].lbl_y);
+	lv_obj_set_style(boot_entry_lbl_cont, &btn_label_home_transp);
 
 	// Create the rest of the buttons.
 	for (u32 btn_idx = 2; btn_idx < 16; btn_idx += 2)
@@ -1148,9 +1153,9 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 					lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 
 				// Set autoboot index.
-				ext = lv_obj_get_ext_attr(launch_ctxt[x]);
-				ext->idx = i;
 				ext = lv_obj_get_ext_attr(btn);
+				ext->idx = i;
+				ext = lv_obj_get_ext_attr(launch_ctxt[x]); // Redundancy.
 				ext->idx = i;
 				
 				// Set action.
@@ -1589,7 +1594,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	if (nyx_str->cfg & NYX_CFG_DUMP)
 	{
 		nyx_str->cfg &= ~(NYX_CFG_DUMP);
-		lv_task_t *task_run_dump = lv_task_create(sept_run_dump, 0, LV_TASK_PRIO_MID, NULL);
+		lv_task_t *task_run_dump = lv_task_create(sept_run_dump, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
 		lv_task_once(task_run_dump);
 	}
 }

@@ -137,7 +137,7 @@ touch_info touch_get_info()
 int touch_power_on()
 {
 	// Configure touchscreen GPIO.
-	PINMUX_AUX(PINMUX_AUX_DAP4_SCLK) = PINMUX_PULL_DOWN | 3;
+	PINMUX_AUX(PINMUX_AUX_DAP4_SCLK) = PINMUX_PULL_DOWN | 1;
 	gpio_config(GPIO_PORT_J, GPIO_PIN_7, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_J, GPIO_PIN_7, GPIO_OUTPUT_ENABLE);
 	gpio_write(GPIO_PORT_J, GPIO_PIN_7, GPIO_HIGH);
