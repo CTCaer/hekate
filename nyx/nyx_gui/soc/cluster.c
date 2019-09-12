@@ -43,10 +43,13 @@ void _cluster_enable_power()
 	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_DVC_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_0_95V);
 }
 
-int _cluster_pmc_enable_partition(u32 part, u32 toggle, bool enable)
+int _cluster_pmc_enable_partition(u32 part, int enable)
 {
-	// Check if the partition has already been turned on.
-	if (enable && PMC(APBDEV_PMC_PWRGATE_STATUS) & part)
+	u32 part_mask = 1 << part;
+	u32 desired_state = enable << part;
+
+	// Check if the partition has the state we want.
+	if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
 		return 1;
 
 	u32 i = 5001;
@@ -58,12 +61,13 @@ int _cluster_pmc_enable_partition(u32 part, u32 toggle, bool enable)
 			return 0;
 	}
 
-	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = toggle | (enable ? 0x100 : 0);
+	// Toggle power gating.
+	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = part | 0x100;
 
 	i = 5001;
 	while (i > 0)
 	{
-		if (PMC(APBDEV_PMC_PWRGATE_STATUS) & part)
+		if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
 			break;
 		usleep(1);
 		i--;
@@ -106,11 +110,11 @@ void cluster_boot_cpu0(u32 entry)
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
 	// Enable CPU rail.
-	_cluster_pmc_enable_partition(1, 0, true);
+	_cluster_pmc_enable_partition(0, 1);
 	// Enable cluster 0 non-CPU.
-	_cluster_pmc_enable_partition(0x8000, 15, true);
+	_cluster_pmc_enable_partition(15, 1);
 	// Enable CE0.
-	_cluster_pmc_enable_partition(0x4000, 14, true);
+	_cluster_pmc_enable_partition(14, 1);
 
 	// Request and wait for RAM repair.
 	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = 1;
