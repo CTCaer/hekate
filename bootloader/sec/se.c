@@ -74,8 +74,6 @@ static int _se_wait()
 
 static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
-	bpmp_mmu_disable();
-
 	se_ll_t *ll_dst = NULL, *ll_src = NULL;
 
 	if (dst)
@@ -94,16 +92,18 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 
 	SE(SE_ERR_STATUS_0) = SE(SE_ERR_STATUS_0);
 	SE(SE_INT_STATUS_REG_OFFSET) = SE(SE_INT_STATUS_REG_OFFSET);
-	SE(SE_OPERATION_REG_OFFSET) = SE_OPERATION(op);
 
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
+
+	SE(SE_OPERATION_REG_OFFSET) = SE_OPERATION(op);
 	int res = _se_wait();
+
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
 
 	if (src)
 		free(ll_src);
 	if (dst)
 		free(ll_dst);
-
-	bpmp_mmu_enable();
 
 	return res;
 }
@@ -178,7 +178,7 @@ int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input)
 	return _se_execute(OP_START, NULL, 0, input, 0x10);
 }
 
-int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
+int se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
 	if (enc)
 	{
@@ -190,8 +190,13 @@ int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
 		SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_DEC_ALG(ALG_AES_DEC) | SE_CONFIG_DST(DST_MEMORY);
 		SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_CORE_SEL(CORE_DECRYPT);
 	}
-	SE(SE_BLOCK_COUNT_REG_OFFSET) = 0;
-	return _se_execute(OP_START, dst, 0x10, src, 0x10);
+	SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
+	return _se_execute(OP_START, dst, dst_size, src, src_size);
+}
+
+int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
+{
+	return se_aes_crypt_ecb(ks, enc, dst, 0x10, src, 0x10);
 }
 
 int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_size, void *ctr)
