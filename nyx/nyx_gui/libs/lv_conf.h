@@ -24,12 +24,12 @@
 
 /* Memory size which will be used by the library
  * to store the graphical objects and other data */
-#define LV_MEM_CUSTOM      0                /*1: use custom malloc/free, 0: use the built-in lv_mem_alloc/lv_mem_free*/
+#define LV_MEM_CUSTOM         0              /*1: use custom malloc/free, 0: use the built-in lv_mem_alloc/lv_mem_free*/
 #if LV_MEM_CUSTOM == 0
 #  define LV_MEM_SIZE         (0x38000U * 1024U) /*Size memory used by `lv_mem_alloc` in bytes (>= 2kB)*/
-#  define LV_MEM_ATTR                         /*Complier prefix for big array declaration*/
-#  define LV_MEM_ADR          0xF1000000      /*Set an address for memory pool instead of allocation it as an array. Can be in external SRAM too.*/
-#  define LV_MEM_AUTO_DEFRAG  1               /*Automatically defrag on free*/
+#  define LV_MEM_ATTR                        /*Complier prefix for big array declaration*/
+#  define LV_MEM_ADR          0xF1000000     /*Set an address for memory pool instead of allocation it as an array. Can be in external SRAM too.*/
+#  define LV_MEM_AUTO_DEFRAG  1              /*Automatically defrag on free*/
 #else       /*LV_MEM_CUSTOM*/
 #  define LV_MEM_CUSTOM_INCLUDE "../../../mem/heap.h"   /*Header for the dynamic memory function*/
 #  define LV_MEM_CUSTOM_ALLOC   malloc       /*Wrapper to malloc*/
@@ -119,10 +119,10 @@
 #define LV_INDEV_LONG_PRESS_REP_TIME    1000 //Fix keyb        /*Repeated trigger period in long press [ms] */
 
 /*Color settings*/
-#define LV_COLOR_DEPTH     32                     /*Color depth: 1/8/16/32*/
-#define LV_COLOR_16_SWAP   0                      /*Swap the 2 bytes of RGB565 color. Useful if the display has a 8 bit interface (e.g. SPI)*/
-#define LV_COLOR_SCREEN_TRANSP        0           /*1: Enable screen transparency. Useful for OSD or other overlapping GUIs. Requires ARGB8888 colors*/
-#define LV_COLOR_TRANSP    LV_COLOR_LIME          /*Images pixels with this color will not be drawn (with chroma keying)*/
+#define LV_COLOR_DEPTH         32                /*Color depth: 1/8/16/32*/
+#define LV_COLOR_16_SWAP       0                 /*Swap the 2 bytes of RGB565 color. Useful if the display has a 8 bit interface (e.g. SPI)*/
+#define LV_COLOR_SCREEN_TRANSP 0                 /*1: Enable screen transparency. Useful for OSD or other overlapping GUIs. Requires ARGB8888 colors*/
+#define LV_COLOR_TRANSP        LV_COLOR_LIME     /*Images pixels with this color will not be drawn (with chroma keying)*/
 
 /*Text settings*/
 #define LV_TXT_UTF8             0                /*Enable UTF-8 coded Unicode character usage */
@@ -184,10 +184,10 @@
  * which will determine the bit-per-pixel. Higher value means smoother fonts */
 #define LV_FONT_QUALITY 8
 
-#define USE_UBUNTU_MONO             LV_FONT_QUALITY
+#define USE_UBUNTU_MONO            LV_FONT_QUALITY
 
-#define USE_INTERUI_20              LV_FONT_QUALITY
-#define USE_INTERUI_30              LV_FONT_QUALITY
+#define USE_INTERUI_20             LV_FONT_QUALITY
+#define USE_INTERUI_30             LV_FONT_QUALITY
 
 #define USE_HEKATE_SYMBOL_20       USE_INTERUI_20
 #define USE_HEKATE_SYMBOL_30       USE_INTERUI_30

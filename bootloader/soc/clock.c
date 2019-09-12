@@ -366,7 +366,6 @@ static void _clock_sdmmc_clear_enable(u32 id)
 static u32 _clock_sdmmc_table[8] = { 0 };
 
 #define PLLP_OUT0      0x0
-
 static int _clock_sdmmc_config_clock_source_inner(u32 *pout, u32 id, u32 val)
 {
 	u32 divisor = 0;

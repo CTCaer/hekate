@@ -20,6 +20,7 @@
 #include "fe_emummc_tools.h"
 #include "../config/ini.h"
 #include "../libs/fatfs/ff.h"
+#include "../mem/heap.h"
 #include "../storage/sdmmc.h"
 #include "../utils/dirlist.h"
 #include "../utils/list.h"

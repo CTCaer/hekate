@@ -105,6 +105,12 @@ static const u8 master_keyseed_620[0x10] =
 static const u8 console_keyseed_4xx_5xx[0x10] = 
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
+static void _hos_crit_error(const char *text)
+{
+	display_backlight_brightness(h_cfg.backlight, 1000);
+	gfx_con.mute = false;
+	gfx_printf("%k%s%k\n", 0xFFFF0000, text, 0xFFCCCCCC);
+}
 
 static void _se_lock(bool lock_se)
 {
@@ -218,7 +224,7 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 			// We rely on racing conditions, make sure we cover even the unluckiest cases.
 			if (retries > 15)
 			{
-				EHPRINTF("\nFailed to get TSEC keys. Please try again.\n");
+				_hos_crit_error("\nFailed to get TSEC keys. Please try again.");
 				return 0;
 			}
 		}
@@ -339,7 +345,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
-		EHPRINTF("Unknown pkg1 version.");
+		_hos_crit_error("Unknown pkg1 version.");
 		goto out;
 	}
 	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
@@ -368,7 +374,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &storage);
-	DPRINTF("Parsed GPT\n");
+DPRINTF("Parsed GPT\n");
 	// Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
@@ -381,7 +387,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
 	u32 *hdr = (u32 *)(bctBuf + 0x100);
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
-	DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
+DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 
 	// Read in Boot Config.
 	memset(bctBuf, 0, BCT_SIZE);
@@ -389,7 +395,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
-	DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
+DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
 	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 
@@ -438,7 +444,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Try to parse config if present.
 	if (ctxt.cfg && !parse_boot_config(&ctxt))
 	{
-		EHPRINTF("Wrong ini cfg or missing files!");
+		_hos_crit_error("Wrong ini cfg or missing files!");
 		return 0;
 	}
 
@@ -447,7 +453,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		if (ctxt.stock)
 		{
-			EHPRINTF("Stock emuMMC is not supported yet!");
+			_hos_crit_error("Stock emuMMC is not supported yet!");
 			return 0;
 		}
 
@@ -471,13 +477,13 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
-			gfx_printf("Failed to run sept\n");
+			_hos_crit_error("Failed to run sept");
 			return 0;
 		}
 
 		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt, &ctxt))
 			return 0;
-		DPRINTF("Generated keys\n");
+DPRINTF("Generated keys\n");
 		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
 			h_cfg.se_keygen_done = 1;
 	}
@@ -495,7 +501,7 @@ int hos_launch(ini_sec_t *cfg)
 		}
 		else
 		{
-			EHPRINTF("No mandatory secmon or warmboot provided!");
+			_hos_crit_error("No mandatory secmon or warmboot provided!");
 			return 0;
 		}
 	}
@@ -507,7 +513,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
 		{
-			EHPRINTF("No warmboot provided!");
+			_hos_crit_error("No warmboot provided!");
 			return 0;
 		}
 		// Else we patch it to allow downgrading.
@@ -545,7 +551,7 @@ int hos_launch(ini_sec_t *cfg)
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
 	if (!pkg2_hdr)
 	{
-		gfx_printf("Pkg2 decryption failed!\n");
+		_hos_crit_error("Pkg2 decryption failed!");
 		return 0;
 	}
 
@@ -573,10 +579,9 @@ int hos_launch(ini_sec_t *cfg)
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
 			if (!ctxt.pkg2_kernel_id)
 			{
-				EHPRINTF("Failed to identify kernel!");
+				_hos_crit_error("Failed to identify kernel!");
 				return 0;
 			}
-
 
 			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
 			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;

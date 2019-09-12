@@ -1181,6 +1181,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	}
 	else
 		no_boot_entries = true;
+
 	sd_unmount(false);
 
 	free(tmp_path);

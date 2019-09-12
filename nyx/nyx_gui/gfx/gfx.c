@@ -131,12 +131,12 @@ void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride)
 
 void gfx_clear_grey(u8 color)
 {
-	memset(gfx_ctxt.fb, color, 0x3C0000);
+	memset(gfx_ctxt.fb, color, gfx_ctxt.width * gfx_ctxt.height * 4);
 }
 
 void gfx_clear_color(u32 color)
 {
-	for (u32 i = 0; i < gfx_ctxt.height * gfx_ctxt.stride; i++)
+	for (u32 i = 0; i < gfx_ctxt.width * gfx_ctxt.height; i++)
 		gfx_ctxt.fb[i] = color;
 }
 

@@ -548,7 +548,6 @@ static const cfg_op_t cfg_display_framebuffer[32] = {
 	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, //768*2x768*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, 0},
 	{DC_WINBUF_SURFACE_KIND, 0}, //Regular surface.
-	//{DC_WINBUF_SURFACE_KIND, BLOCK_HEIGHT(4) | BLOCK}, //Regular surface.
 	{DC_WINBUF_START_ADDR, FB_ADDRESS}, //Framebuffer address.
 	{DC_WINBUF_ADDR_H_OFFSET, 0}, //Linear: 0x383FFC, Block: 0x3813FC
 	{DC_WINBUF_ADDR_V_OFFSET, 1279}, //Linear: 1279, Block: 0
@@ -559,7 +558,6 @@ static const cfg_op_t cfg_display_framebuffer[32] = {
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
 	{DC_WIN_WIN_OPTIONS, WIN_ENABLE | V_DIRECTION}, //Enable window AD.
-	//{DC_WIN_WIN_OPTIONS, WIN_ENABLE | | SCAN_COLUMN | H_DIRECTION}, //Enable window AD. | SCAN_COLUMN | H_DIRECTION
 	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY}, //DISPLAY_CTRL_MODE: continuous display.
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE}, //General update; window A update.
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ} //General activation request; window A activation request.

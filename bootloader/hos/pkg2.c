@@ -315,19 +315,19 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 
 enum kip_offset_section
 {
-	KIP_TEXT = 0,
-	KIP_RODATA = 1,
-	KIP_DATA = 2,
-	KIP_BSS = 3,
+	KIP_TEXT    = 0,
+	KIP_RODATA  = 1,
+	KIP_DATA    = 2,
+	KIP_BSS     = 3,
 	KIP_UNKSEC1 = 4,
 	KIP_UNKSEC2 = 5
 };
 
-#define KIP_PATCH_SECTION_SHIFT (29)
-#define KIP_PATCH_SECTION_MASK (7 << KIP_PATCH_SECTION_SHIFT)
-#define KIP_PATCH_OFFSET_MASK (~KIP_PATCH_SECTION_MASK)
+#define KIP_PATCH_SECTION_SHIFT  (29)
+#define KIP_PATCH_SECTION_MASK   (7 << KIP_PATCH_SECTION_SHIFT)
+#define KIP_PATCH_OFFSET_MASK    (~KIP_PATCH_SECTION_MASK)
 #define GET_KIP_PATCH_SECTION(x) ((x >> KIP_PATCH_SECTION_SHIFT) & 7)
-#define GET_KIP_PATCH_OFFSET(x) (x & KIP_PATCH_OFFSET_MASK)
+#define GET_KIP_PATCH_OFFSET(x)  (x & KIP_PATCH_OFFSET_MASK)
 #define KPS(x) ((u32)(x) << KIP_PATCH_SECTION_SHIFT)
 
 static kip1_patch_t _fs_emummc[] =

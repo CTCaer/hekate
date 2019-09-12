@@ -59,6 +59,7 @@ u8 *Kc_MENU_LOGO;
 #endif //MENU_LOGO_ENABLE
 
 hekate_config h_cfg;
+
 const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
 	.magic = BL_MAGIC,
 	.version = (BL_VER_MJ + '0') | ((BL_VER_MN + '0') << 8) | ((BL_VER_HF + '0') << 16),
@@ -167,6 +168,9 @@ int sd_save_to_file(void *buf, u32 size, const char *filename)
 
 	return 0;
 }
+
+#pragma GCC push_options
+#pragma GCC target ("thumb")
 
 void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
 {
@@ -307,14 +311,13 @@ out:
 void load_saved_configuration()
 {
 	LIST_INIT(ini_sections);
-	LIST_INIT(ini_list_sections);
 
 	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 	{
 		// Load configuration.
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 		{
-			// Skip other ini entries for autoboot.
+			// Skip other ini entries.
 			if (ini_sec->type == INI_CHOICE)
 			{
 				if (!strcmp(ini_sec->name, "config"))
@@ -430,3 +433,5 @@ void ipl_main()
 	while (true)
 		bpmp_halt();
 }
+
+#pragma GCC pop_options

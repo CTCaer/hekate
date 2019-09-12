@@ -23,6 +23,7 @@
 #include "../gfx/tui.h"
 #include "../libs/fatfs/ff.h"
 #include "../soc/t210.h"
+#include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/list.h"
 #include "../utils/util.h"
@@ -47,8 +48,9 @@ void set_default_configuration()
 	h_cfg.errors = 0;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
 	h_cfg.rcm_patched = true;
-	h_cfg.sd_timeoff = 0;
 	h_cfg.emummc_force_disable = false;
+
+	sd_power_cycle_time_start = 0xFFFFFFF;
 }
 
 int create_config_entry()

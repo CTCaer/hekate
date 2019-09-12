@@ -64,6 +64,7 @@ void minerva_change_freq(minerva_freq_t freq)
 {
 	if (!minerva_cfg)
 		return;
+
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 	if (minerva_cfg && (mtc_cfg->rate_from != freq))
 	{
@@ -77,6 +78,7 @@ void minerva_periodic_training()
 {
 	if (!minerva_cfg)
 		return;
+
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 	if (minerva_cfg && mtc_cfg->rate_from == FREQ_1600)
 	{

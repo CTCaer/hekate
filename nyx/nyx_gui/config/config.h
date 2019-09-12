@@ -37,7 +37,6 @@ typedef struct _hekate_config
 	bool emummc_force_disable;
 	bool rcm_patched;
 	u32  sbar_time_keeping;
-	u32  sd_timeoff;
 	u32  errors;
 } hekate_config;
 

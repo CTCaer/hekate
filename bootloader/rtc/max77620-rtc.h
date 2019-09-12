@@ -64,7 +64,7 @@ typedef struct _rtc_time_t {
 	u8  sec;
 	u8  min;
 	u8  hour;
-	u8  date;
+	u8  day;
 	u8  month;
 	u16 year;
 } rtc_time_t;

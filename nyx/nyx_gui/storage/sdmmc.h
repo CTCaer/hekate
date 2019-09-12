@@ -21,6 +21,8 @@
 #include "../utils/types.h"
 #include "sdmmc_driver.h"
 
+u32 sd_power_cycle_time_start;
+
 typedef struct _mmc_cid
 {
 	u32 manfid;

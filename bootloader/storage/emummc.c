@@ -116,8 +116,7 @@ int emummc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 
 		if (f_stat(emu_cfg.emummc_file_based_path, &fno))
 		{
-			gfx_printf("e1\n");
-			gfx_printf(" %X\n ", emu_cfg.sector);
+			EPRINTF("Failed to open eMMC folder.");
 			goto out;
 		}
 		f_chmod(emu_cfg.emummc_file_based_path, AM_ARC, AM_ARC);
@@ -125,7 +124,7 @@ int emummc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 		strcat(emu_cfg.emummc_file_based_path, "/00");
 		if (f_stat(emu_cfg.emummc_file_based_path, &fno))
 		{
-			gfx_printf("e2\n");
+			EPRINTF("Failed to open emuMMC rawnand.");
 			goto out;
 		}
 		emu_cfg.file_based_part_size = fno.fsize >> 9;

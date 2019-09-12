@@ -149,7 +149,7 @@ void bpmp_mmu_disable()
 	// Clean and invalidate cache.
 	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
 
-	// Enable cache.
+	// Disable cache.
 	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = 0;
 
 	// HW bug. Invalidate cache again.

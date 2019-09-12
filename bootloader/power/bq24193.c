@@ -20,6 +20,9 @@
 #include "../soc/i2c.h"
 #include "../utils/util.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
+
 int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 {
 	u8 data;
@@ -160,3 +163,5 @@ void bq24193_fake_battery_removal()
 	value |= BQ24193_MISC_BATFET_DI_MASK;
 	i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_Misc, value);
 }
+
+#pragma GCC pop_options
