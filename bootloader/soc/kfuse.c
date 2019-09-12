@@ -18,6 +18,9 @@
 #include "../soc/clock.h"
 #include "../soc/t210.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
+
 int kfuse_read(u32 *buf)
 {
 	int res = 0;
@@ -40,3 +43,5 @@ out:;
 	clock_disable_kfuse();
 	return res;
 }
+
+#pragma GCC pop_options

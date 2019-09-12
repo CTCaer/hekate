@@ -170,13 +170,13 @@ int emummc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, v
 		}
 		if (f_open(&fp, emu_cfg.emummc_file_based_path, FA_READ))
 		{
-			gfx_printf("e3\n");
+			EPRINTF("Failed to open emuMMC image.");
 			return 0;
 		}
 		f_lseek(&fp, (u64)sector << 9);
 		if (f_read(&fp, buf, (u64)num_sectors << 9, NULL))
 		{
-			gfx_printf("e4\n");
+			EPRINTF("Failed to read emuMMC image.");
 			f_close(&fp);
 			return 0;
 		}
