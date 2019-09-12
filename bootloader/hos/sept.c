@@ -218,6 +218,7 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 	(*sept)();
 
 error:
+	gfx_con.mute = false;
 	EPRINTF("Failed to run sept\n");
 
 	btn_wait();
