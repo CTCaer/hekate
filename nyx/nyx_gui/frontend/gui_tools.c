@@ -546,8 +546,9 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
 	if (!ini1_size)
 	{
-		ini1_off = *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_START);
-		ini1_size = *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_END) - *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_START);
+		pkg2_get_newkern_info(pkg2_hdr->data);
+		ini1_off = pkg2_newkern_ini1_start;
+		ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
 	}
 	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)(pkg2_hdr->data + ini1_off);
 	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);

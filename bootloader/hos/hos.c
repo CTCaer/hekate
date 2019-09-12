@@ -570,7 +570,7 @@ DPRINTF("Generated keys\n");
 				se_calc_sha256(kernel_hash, ctxt.kernel, ctxt.kernel_size);
 			else
 				se_calc_sha256(kernel_hash, ctxt.kernel + PKG2_NEWKERN_START,
-					*(u32 *)(ctxt.kernel + PKG2_NEWKERN_INI1_START) - PKG2_NEWKERN_START);
+					pkg2_newkern_ini1_start - PKG2_NEWKERN_START);
 
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
 			if (!ctxt.pkg2_kernel_id)

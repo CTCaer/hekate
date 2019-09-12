@@ -219,8 +219,9 @@ void dump_packages12()
 	u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
 	if (!ini1_size)
 	{
-		ini1_off = *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_START);
-		ini1_size = *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_END) - *(u32 *)(pkg2_hdr->data + PKG2_NEWKERN_INI1_START);
+		pkg2_get_newkern_info(pkg2_hdr->data);
+		ini1_off = pkg2_newkern_ini1_start;
+		ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
 	}
 	if (sd_save_to_file(pkg2_hdr->data + ini1_off, ini1_size, path))
 		goto out;
