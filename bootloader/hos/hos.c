@@ -457,8 +457,13 @@ int hos_launch(ini_sec_t *cfg)
 		config_kip1patch(&ctxt, "emummc");
 	}
 
-	// Check if fuses lower than 4.0.0 and if yes apply NO Gamecard patch.
-	if (h_cfg.autonogc && !(fuse_read_odm(7) & ~0xF) && ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)
+	// Check if fuses lower than 4.0.0 or 9.0.0 and if yes apply NO Gamecard patch.
+	// Additionally check if running emuMMC and disable GC if v3 fuses are burnt and HOS is <= 8.1.0.
+	if ((h_cfg.autonogc &&
+			((!(fuse_read_odm(7) & ~0xF) && (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)) || // LAFW v2.
+			(!(fuse_read_odm(7) & ~0x3FF) && (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_900)))) // LAFW v3.
+		|| ((emu_cfg.enabled && !h_cfg.emummc_force_disable) &&
+			((fuse_read_odm(7) & 0x400) && (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_810))))
 		config_kip1patch(&ctxt, "nogc");
 
 	gfx_printf("Loaded pkg1 & keyblob\n");
