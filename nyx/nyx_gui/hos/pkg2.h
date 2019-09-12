@@ -93,6 +93,6 @@ void pkg2_get_newkern_info(u8 *kern_data);
 u32 pkg2_calc_kip1_size(pkg2_kip1_t *kip1);
 void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2);
 
-pkg2_hdr_t *pkg2_decrypt(void *data);
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb);
 
 #endif

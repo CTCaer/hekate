@@ -190,7 +190,7 @@ void dump_packages12()
 	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
-	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2);
+	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);
 	if (!pkg2_hdr)
 	{
 		gfx_printf("Pkg2 decryption failed!\n");

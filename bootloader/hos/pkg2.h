@@ -151,7 +151,7 @@ void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
 const char* pkg2_patch_kips(link_t *info, char* patchNames);
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash);
-pkg2_hdr_t *pkg2_decrypt(void *data);
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb);
 void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2);
 
 #endif

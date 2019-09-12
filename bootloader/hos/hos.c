@@ -89,7 +89,7 @@ static const u8 master_keyseed_retail[0x10] =
 static const u8 console_keyseed[0x10] =
 	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
 
-static const u8 package2_keyseed[] =
+const u8 package2_keyseed[] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
 static const u8 master_keyseed_4xx_5xx_610[0x10] = 
@@ -544,7 +544,7 @@ DPRINTF("Generated keys\n");
 	gfx_printf("Read pkg2\n");
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
-	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2);
+	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2, ctxt.pkg1_id->kb);
 	if (!pkg2_hdr)
 	{
 		_hos_crit_error("Pkg2 decryption failed!");

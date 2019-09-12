@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include "hos.h"
 #include "pkg2.h"
 #include "pkg2_ini_kippatch.h"
 
@@ -32,6 +33,8 @@
 #include "../gfx/gfx.h"
 
 extern hekate_config h_cfg;
+extern const u8 package2_keyseed[];
+
 extern void *sd_file_read(const char *path, u32 *fsize);
 
 #ifdef KIP1_PATCH_DEBUG
@@ -1039,9 +1042,16 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	return NULL;
 }
 
-pkg2_hdr_t *pkg2_decrypt(void *data)
+static const uint8_t mkey_keyseed_8xx[][0x10] =
 {
+	{0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80} // Master key 8 encrypted with 9.
+};
+
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
+{
+	pkg2_hdr_t mkey_test;
 	u8 *pdata = (u8 *)data;
+	u8 keyslot = 8;
 	
 	// Skip signature.
 	pdata += 0x100;
@@ -1051,8 +1061,27 @@ pkg2_hdr_t *pkg2_decrypt(void *data)
 	// Skip header.
 	pdata += sizeof(pkg2_hdr_t);
 
+	//! Check if we need to decrypt with newer mkeys. Valid for 8.1.0 and up.
+	if ((kb >= KB_FIRMWARE_VERSION_810) && (kb < KB_FIRMWARE_VERSION_MAX))
+	{
+		u8 tmp_mkey[0x10];
+		// Decrypt older encrypted mkey.
+		se_aes_crypt_ecb(12, 0, tmp_mkey, 0x10, mkey_keyseed_8xx[KB_FIRMWARE_VERSION_MAX - kb - 1], 0x10);
+		// Set and unwrap pkg2 key.
+		se_aes_key_set(9, tmp_mkey, 0x10);
+		se_aes_unwrap_key(9, 9, package2_keyseed);
+
+		// Decrypt header and test if it's valid.
+		se_aes_crypt_ctr(9, &mkey_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+
+		if (mkey_test.magic == PKG2_MAGIC)
+			keyslot = 9;
+		else
+			se_aes_key_clear(9);
+	}
+
 	// Decrypt header.
-	se_aes_crypt_ctr(8, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	//gfx_hexdump((u32)hdr, hdr, 0x100);
 
 	if (hdr->magic != PKG2_MAGIC)
@@ -1064,11 +1093,14 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(8, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * 0x10]);
+		se_aes_crypt_ctr(keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * 0x10]);
 		//gfx_hexdump((u32)pdata, pdata, 0x100);
 
 		pdata += hdr->sec_size[i];
 	}
+
+	if (keyslot != 8)
+		se_aes_key_clear(9);
 
 	return hdr;
 }

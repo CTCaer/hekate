@@ -506,7 +506,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 #endif
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
-	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2);
+	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);
 	if (!pkg2_hdr)
 	{
 		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Pkg2 decryption failed!#");
