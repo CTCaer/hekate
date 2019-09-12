@@ -60,9 +60,13 @@ void usleep(u32 us)
 {
 #ifdef USE_RTC_TIMER
 	u32 start = TMR(TIMERUS_CNTR_1US);
-	// Casting to u32 is important!
-	while ((u32)(TMR(TIMERUS_CNTR_1US) - start) <= us)
-		;
+
+	// Check if timer is at upper limits and use BPMP sleep so it doesn't wake up immediately.
+	if ((start + us) < start)
+		bpmp_usleep(us);
+	else
+		while ((u32)(TMR(TIMERUS_CNTR_1US) - start) <= us) // Casting to u32 is important!
+			;
 #else
 	bpmp_usleep(us);
 #endif
