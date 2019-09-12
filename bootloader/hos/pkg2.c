@@ -343,34 +343,6 @@ static kip1_patchset_t _fs_patches_100[] =
 	{ NULL, NULL }
 };
 
-static kip1_patchset_t _fs_patches_200[] =
-{
-	{ "nogc",     NULL },
-	{ "emummc",   _fs_emummc },
-	{ NULL, NULL }
-};
-
-static kip1_patchset_t _fs_patches_210[] =
-{
-	{ "nogc",     NULL },
-	{ "emummc",   _fs_emummc },
-	{ NULL, NULL }
-};
-
-static kip1_patchset_t _fs_patches_300[] =
-{
-	{ "nogc",     NULL },
-	{ "emummc",   _fs_emummc },
-	{ NULL, NULL }
-};
-
-static kip1_patchset_t _fs_patches_30x[] =
-{
-	{ "nogc",     NULL },
-	{ "emummc",   _fs_emummc },
-	{ NULL, NULL }
-};
-
 static kip1_patch_t _fs_nogc_40x[] =
 {
 	{ KPS(KIP_TEXT) | 0xA3458, 4, "\x14\x40\x80\x72", "\x14\x80\x80\x72" },
@@ -516,14 +488,14 @@ static kip1_id_t _kip_ids[] =
 {
 	{ "FS", "\xde\x9f\xdd\xa4\x08\x5d\xd5\xfe", _fs_patches_100 },       // FS 1.0.0
 	{ "FS", "\xfc\x3e\x80\x99\x1d\xca\x17\x96", _fs_patches_100 },       // FS 1.0.0 exfat
-	{ "FS", "\xcd\x7b\xbe\x18\xd6\x13\x0b\x28", _fs_patches_200 },       // FS 2.0.0
-	{ "FS", "\xe7\x66\x92\xdf\xaa\x04\x20\xe9", _fs_patches_200 },       // FS 2.0.0 exfat
-	{ "FS", "\x0d\x70\x05\x62\x7b\x07\x76\x7c", _fs_patches_210 },       // FS 2.1.0
-	{ "FS", "\xdb\xd8\x5f\xca\xcc\x19\x3d\xa8", _fs_patches_210 },       // FS 2.1.0 exfat
-	{ "FS", "\xa8\x6d\xa5\xe8\x7e\xf1\x09\x7b", _fs_patches_300 },       // FS 3.0.0
-	{ "FS", "\x98\x1c\x57\xe7\xf0\x2f\x70\xf7", _fs_patches_300 },       // FS 3.0.0 exfat
-	{ "FS", "\x57\x39\x7c\x06\x3f\x10\xb6\x31", _fs_patches_30x },       // FS 3.0.1
-	{ "FS", "\x07\x30\x99\xd7\xc6\xad\x7d\x89", _fs_patches_30x },       // FS 3.0.1 exfat
+	{ "FS", "\xcd\x7b\xbe\x18\xd6\x13\x0b\x28", _fs_patches_100 },       // FS 2.0.0
+	{ "FS", "\xe7\x66\x92\xdf\xaa\x04\x20\xe9", _fs_patches_100 },       // FS 2.0.0 exfat
+	{ "FS", "\x0d\x70\x05\x62\x7b\x07\x76\x7c", _fs_patches_100 },       // FS 2.1.0
+	{ "FS", "\xdb\xd8\x5f\xca\xcc\x19\x3d\xa8", _fs_patches_100 },       // FS 2.1.0 exfat
+	{ "FS", "\xa8\x6d\xa5\xe8\x7e\xf1\x09\x7b", _fs_patches_100 },       // FS 3.0.0
+	{ "FS", "\x98\x1c\x57\xe7\xf0\x2f\x70\xf7", _fs_patches_100 },       // FS 3.0.0 exfat
+	{ "FS", "\x57\x39\x7c\x06\x3f\x10\xb6\x31", _fs_patches_100 },       // FS 3.0.1
+	{ "FS", "\x07\x30\x99\xd7\xc6\xad\x7d\x89", _fs_patches_100 },       // FS 3.0.1 exfat
 	{ "FS", "\x06\xe9\x07\x19\x59\x5a\x01\x0c", _fs_patches_40x },       // FS 4.0.1
 	{ "FS", "\x54\x9b\x0f\x8d\x6f\x72\xc4\xe9", _fs_patches_40x },       // FS 4.0.1 exfat
 	{ "FS", "\x80\x96\xaf\x7c\x6a\x35\xaa\x82", _fs_patches_410 },       // FS 4.1.0
