@@ -39,7 +39,13 @@
 
 static u32 _get_sdram_id()
 {
-	return (fuse_read_odm(4) & 0x38) >> 3;
+	u32 sdram_id = (fuse_read_odm(4) & 0x38) >> 3;
+
+	// Check if id is proper.
+	if (sdram_id > 7)
+		sdram_id = 0;
+
+	return sdram_id;
 }
 
 static void _sdram_config(const sdram_params_t *params)
