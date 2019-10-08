@@ -103,9 +103,10 @@ static const u8 console_keyseed_4xx_5xx[0x10] =
 
 static void _hos_crit_error(const char *text)
 {
-	display_backlight_brightness(h_cfg.backlight, 1000);
 	gfx_con.mute = false;
 	gfx_printf("%k%s%k\n", 0xFFFF0000, text, 0xFFCCCCCC);
+
+	display_backlight_brightness(h_cfg.backlight, 1000);
 }
 
 static void _se_lock(bool lock_se)
@@ -332,7 +333,11 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	emummc_storage_init_mmc(&storage, &sdmmc);
+	if (!emummc_storage_init_mmc(&storage, &sdmmc))
+	{
+		_hos_crit_error("Failed to init emuMMC");
+		return 0;
+	}
 
 	// Read package1.
 	ctxt->pkg1 = (void *)malloc(0x40000);
@@ -364,7 +369,11 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 	sdmmc_t sdmmc;
 
 	if (!emummc_storage_init_mmc(&storage, &sdmmc))
+	{
+		_hos_crit_error("Failed to init emuMMC");
 		return NULL;
+	}
+		
 	emummc_storage_set_mmc_partition(&storage, 0);
 
 	// Parse eMMC GPT.
@@ -484,7 +493,7 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt, &ctxt))
 			return 0;
-DPRINTF("Generated keys\n");
+		gfx_printf("Generated keys\n");
 		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
 			h_cfg.se_keygen_done = 1;
 	}
@@ -619,7 +628,6 @@ DPRINTF("Generated keys\n");
 	if (unappliedPatch != NULL)
 	{
 		EHPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
-		sd_unmount(); // Just exiting is not enough until pkg2_patch_kips stops modifying the string passed into it.
 
 		_free_launch_components(&ctxt);
 		return 0; // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!

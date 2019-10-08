@@ -1023,6 +1023,10 @@ skip_list:
 	{
 		check_sept();
 		hos_launch(cfg_sec);
+
+		EPRINTF("\nFailed to launch HOS!");
+		msleep(500);
+		btn_wait();
 	}
 
 out:
