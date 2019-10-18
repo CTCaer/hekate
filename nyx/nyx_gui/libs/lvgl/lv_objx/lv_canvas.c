@@ -429,10 +429,10 @@ void lv_canvas_draw_line(lv_obj_t * canvas, lv_point_t point1, lv_point_t point2
   y1 = point2.y;
 
   int dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
-  int dy = abs(y1-y0), sy = y0<y1 ? 1 : -1; 
+  int dy = abs(y1-y0), sy = y0<y1 ? 1 : -1;
   int err = (dx>dy ? dx : -dy)/2, e2;
- 
-  for(;;){    
+
+  for(;;){
     lv_canvas_set_px(canvas, x0, y0, color);
 
     if (x0==x1 && y0==y1) break;
@@ -449,7 +449,7 @@ void lv_canvas_draw_line(lv_obj_t * canvas, lv_point_t point1, lv_point_t point2
  * @param color line color of the triangle
  */
 void lv_canvas_draw_triangle(lv_obj_t * canvas, lv_point_t * points, lv_color_t color)
-{ 
+{
   lv_canvas_draw_polygon(canvas, points, 3, color);
 }
 
@@ -460,7 +460,7 @@ void lv_canvas_draw_triangle(lv_obj_t * canvas, lv_point_t * points, lv_color_t 
  * @param color line color of the rectangle
  */
 void lv_canvas_draw_rect(lv_obj_t * canvas, lv_point_t * points, lv_color_t color)
-{ 
+{
   lv_canvas_draw_polygon(canvas, points, 4, color);
 }
 
@@ -472,7 +472,7 @@ void lv_canvas_draw_rect(lv_obj_t * canvas, lv_point_t * points, lv_color_t colo
  * @param color line color of the polygon
  */
 void lv_canvas_draw_polygon(lv_obj_t * canvas, lv_point_t * points, size_t size, lv_color_t color)
-{ 
+{
   uint8_t i;
 
   for(i=0; i < (size - 1); i++) {
@@ -512,7 +512,7 @@ void lv_canvas_fill_polygon(lv_obj_t * canvas, lv_point_t * points, size_t size,
  * @param x x coordinate of the start position (seed)
  * @param y y coordinate of the start position (seed)
  * @param boundary_color edge/boundary color of the area
- * @param fill_color fill color of the area 
+ * @param fill_color fill color of the area
  */
 void lv_canvas_boundary_fill4(lv_obj_t * canvas, lv_coord_t x, lv_coord_t y, lv_color_t boundary_color, lv_color_t fill_color)
 {

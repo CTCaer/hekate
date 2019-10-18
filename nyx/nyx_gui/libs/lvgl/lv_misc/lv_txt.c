@@ -189,9 +189,9 @@ uint16_t lv_txt_get_next_line(const char * txt, const lv_font_t * font,
         } else { /*Check the actual length*/
             n_char_since_last_break++;
             letter_width = lv_font_get_width(font, letter);
-            cur_w += letter_width; 
+            cur_w += letter_width;
 
-            /* Get the length of the current work and determine best place 
+            /* Get the length of the current work and determine best place
              * to break the line. */
             if(cur_w > max_width) {
                 if( last_break != NO_BREAK_FOUND ) {
@@ -231,7 +231,7 @@ uint16_t lv_txt_get_next_line(const char * txt, const lv_font_t * font,
                                 }
                                 other = false;
                                 break;
-                            } 
+                            }
                             n_char_since_last_break++;
                             lv_coord_t letter_width2 = lv_font_get_width(font, letter);
                             cur_w += letter_width2;

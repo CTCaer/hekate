@@ -101,7 +101,7 @@ lv_obj_t * lv_list_create(lv_obj_t * par, const lv_obj_t * copy)
     lv_list_ext_t * ext = lv_obj_allocate_ext_attr(new_list, sizeof(lv_list_ext_t));
     lv_mem_assert(ext);
     if(ext == NULL) return NULL;
-	
+
 	// Important!
     static lv_style_t img_btn_color;
     lv_style_copy( &img_btn_color, &lv_style_plain);
@@ -116,7 +116,7 @@ lv_obj_t * lv_list_create(lv_obj_t * par, const lv_obj_t * copy)
     ext->anim_time = LV_LIST_FOCUS_TIME;
     ext->single_mode = false;
     ext->size = 0;
-    
+
 #if USE_LV_GROUP
     ext->last_sel = NULL;
     ext->selected_btn = NULL;

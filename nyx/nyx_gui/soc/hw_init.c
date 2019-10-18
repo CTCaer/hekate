@@ -30,7 +30,6 @@
 
 extern sdmmc_t sd_sdmmc;
 
-
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
 	// Flush and disable MMU.

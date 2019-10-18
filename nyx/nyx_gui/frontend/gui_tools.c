@@ -50,7 +50,7 @@ bool get_autorcm_status(bool change)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 	bool enabled = false;
-	
+
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
@@ -383,7 +383,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &storage);
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
-		
+
 		s_printf(txt_buf + strlen(txt_buf), "\nEncrypted pkg1 dumped to pkg1_enc.bin");
 		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
 		manual_system_maintenance(true);
@@ -431,9 +431,9 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
 		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
-	
+
 		// Display info.
-		s_printf(txt_buf + strlen(txt_buf), 
+		s_printf(txt_buf + strlen(txt_buf),
 			"#C7EA46 NX Bootloader size:  #0x%05X\n"
 			"#C7EA46 Secure monitor addr: #0x%05X\n"
 			"#C7EA46 Secure monitor size: #0x%05X\n"
@@ -451,7 +451,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "pkg1 dumped to pkg1_decr.bin\n");
 		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
 		manual_system_maintenance(true);
-	
+
 		// Dump nxbootloader.
 		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
 		if (sd_save_to_file(loader, hdr->ldr_size, path))
@@ -459,7 +459,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "NX Bootloader dumped to nxloader.bin\n");
 		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
 		manual_system_maintenance(true);
-	
+
 		// Dump secmon.
 		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
 		if (sd_save_to_file(secmon, hdr->sm_size, path))
@@ -467,7 +467,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "Secure Monitor dumped to secmon.bin\n");
 		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
 		manual_system_maintenance(true);
-	
+
 		// Dump warmboot.
 		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
 		if (sd_save_to_file(warmboot, hdr->wb_size, path))
@@ -496,7 +496,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
+	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
 #if 0
 	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &storage);
@@ -517,7 +517,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	}
 
 	// Display info.
-	s_printf(txt_buf + strlen(txt_buf), 
+	s_printf(txt_buf + strlen(txt_buf),
 		"#C7EA46 Kernel size:   #0x%05X\n"
 		"#C7EA46 INI1 size:     #0x%05X\n\n",
 		pkg2_hdr->sec_size[PKG2_SEC_KERNEL], pkg2_hdr->sec_size[PKG2_SEC_INI1]);
@@ -819,7 +819,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 		lv_btn_set_style(btn3, LV_BTN_STYLE_REL, &btn_transp_rel);
 		lv_btn_set_style(btn3, LV_BTN_STYLE_PR, &btn_transp_pr);
 		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_REL, &btn_transp_tgl_rel);
-		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_PR, &btn_transp_tgl_pr);	
+		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_PR, &btn_transp_tgl_pr);
 	}
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
@@ -885,7 +885,7 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 
 	lv_tabview_set_sliding(tv, false);
 	lv_tabview_set_btns_pos(tv, LV_TABVIEW_BTNS_POS_BOTTOM);
-	
+
 	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" Package1/2");
 	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Archive bit "SYMBOL_DOT" AutoRCM");
 

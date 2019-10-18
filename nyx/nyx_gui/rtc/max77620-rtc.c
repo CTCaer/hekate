@@ -36,7 +36,7 @@ void max77620_rtc_get_time(rtc_time_t *time)
 	time->min  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_MIN_REG) & 0x7F;
 
 	time->hour = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_HOUR_REG) & 0x1F;
-	
+
 	if (!(val & MAX77620_RTC_24H) && time->hour & MAX77620_RTC_HOUR_PM_MASK)
 		time->hour = (time->hour & 0xF) + 12;
 

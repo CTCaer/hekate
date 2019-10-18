@@ -155,7 +155,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		se = page_alloc(1);
 		memcpy(se, (void *)SE_BASE, 0x1000);
 		smmu_map(pdir, SE_BASE, (u32)se, 1, _READABLE | _WRITABLE | _NONSECURE);
-		
+
 		// Memory controller.
 		mc = page_alloc(1);
 		memcpy(mc, (void *)MC_BASE, 0x1000);
@@ -217,7 +217,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 
 		memcpy(tsec_keys, &key, 0x20);
 		memcpy(tsec_ctxt->pkg1, iram, 0x30000);
-		
+
 		smmu_deinit_for_tsec();
 
 		// for (int i = 0; i < kidx; i++)

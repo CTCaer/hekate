@@ -33,24 +33,24 @@ const blz_footer *blz_get_footer(const unsigned char *compData, unsigned int com
 }
 
 // From https://github.com/SciresM/hactool/blob/master/kip.c which is exactly how kernel does it, thanks SciresM!
-int blz_uncompress_inplace(unsigned char *dataBuf, unsigned int compSize, const blz_footer *footer) 
+int blz_uncompress_inplace(unsigned char *dataBuf, unsigned int compSize, const blz_footer *footer)
 {
 	u32 addl_size = footer->addl_size;
 	u32 header_size = footer->header_size;
 	u32 cmp_and_hdr_size = footer->cmp_and_hdr_size;
-	
+
 	unsigned char* cmp_start = &dataBuf[compSize] - cmp_and_hdr_size;
 	u32 cmp_ofs = cmp_and_hdr_size - header_size;
 	u32 out_ofs = cmp_and_hdr_size + addl_size;
-	
-	while (out_ofs) 
+
+	while (out_ofs)
 	{
 		unsigned char control = cmp_start[--cmp_ofs];
-		for (unsigned int i=0; i<8; i++) 
+		for (unsigned int i=0; i<8; i++)
 		{
-			if (control & 0x80) 
+			if (control & 0x80)
 			{
-				if (cmp_ofs < 2) 
+				if (cmp_ofs < 2)
 					return 0; // Out of bounds.
 
 				cmp_ofs -= 2;
@@ -65,17 +65,17 @@ int blz_uncompress_inplace(unsigned char *dataBuf, unsigned int compSize, const 
 				for (unsigned int j = 0; j < seg_size; j++)
 					cmp_start[out_ofs + j] = cmp_start[out_ofs + j + seg_ofs];
 			}
-			else 
+			else
 			{
 				// Copy directly.
-				if (cmp_ofs < 1) 
+				if (cmp_ofs < 1)
 					return 0; //out of bounds
 
 				cmp_start[--out_ofs] = cmp_start[--cmp_ofs];
 			}
 			control <<= 1;
 			if (out_ofs == 0) // Blz works backwards, so if it reaches byte 0, it's done.
-				return 1; 
+				return 1;
 			}
 		}
 

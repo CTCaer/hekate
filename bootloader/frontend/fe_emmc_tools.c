@@ -77,7 +77,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 		while (totalSectorsVer > 0)
 		{
 			num = MIN(totalSectorsVer, NUM_SECTORS_PER_ITER);
-			
+
 			// Check every time or every 4.
 			// Every 4 protects from fake sd, sector corruption and frequent I/O corruption.
 			// Full provides all that, plus protection from extremely rare I/O corruption.
@@ -88,7 +88,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 					gfx_con.fntsz = 16;
 					EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom eMMC!\n\nVerification failed..\n",
 						num, lba_curr);
-	
+
 					f_close(&fp);
 					return 1;
 				}
@@ -97,7 +97,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 				{
 					gfx_con.fntsz = 16;
 					EPRINTFARGS("\nFailed to read %d blocks (@LBA %08X),\nfrom sd card!\n\nVerification failed..\n", num, lba_curr);
-	
+
 					f_close(&fp);
 					return 1;
 				}
@@ -110,7 +110,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 				{
 					gfx_con.fntsz = 16;
 					EPRINTFARGS("\nSD and eMMC data (@LBA %08X),\ndo not match!\n\nVerification failed..\n", lba_curr);
-	
+
 					f_close(&fp);
 					return 1;
 				}

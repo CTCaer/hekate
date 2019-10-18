@@ -1,6 +1,6 @@
 # hekate - Bootlogo
 
-The bootlogo can be any size with a maximum of 720 x 1280. 
+The bootlogo can be any size with a maximum of 720 x 1280.
 
 When it's smaller than 720 x 1280, it is automatically centered and the background takes the color of the first pixel.
 

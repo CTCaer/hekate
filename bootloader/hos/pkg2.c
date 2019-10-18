@@ -534,7 +534,7 @@ static kip1_patchset_t _fs_patches_900[] =
 };
 
 // SHA256 hashes.
-static kip1_id_t _kip_ids[] = 
+static kip1_id_t _kip_ids[] =
 {
 	{ "FS", "\xde\x9f\xdd\xa4\x08\x5d\xd5\xfe", _fs_patches_100 },       // FS 1.0.0
 	{ "FS", "\xfc\x3e\x80\x99\x1d\xca\x17\x96", _fs_patches_100 },       // FS 1.0.0 exfat
@@ -636,7 +636,7 @@ static void parse_external_kip_patches()
 						memcpy(patches[curr_patch_idx].srcData, pt->srcData, pt->length);
 						memcpy(patches[curr_patch_idx].dstData, pt->dstData, pt->length);
 					}
-					
+
 					curr_patch_idx++;
 				}
 				curr_patchset_idx++;
@@ -754,19 +754,19 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 
 	pkg2_kip1_t hdr;
 	memcpy(&hdr, ki->kip1, sizeof(hdr));
-	
+
 	unsigned int newKipSize = sizeof(hdr);
 	for (u32 sectIdx = 0; sectIdx < KIP1_NUM_SECTIONS; sectIdx++)
 	{
 		u32 sectCompBit = 1u << sectIdx;
 		// For compressed, cant get actual decompressed size without doing it, so use safe "output size".
-		if (sectIdx < 3 && (sectsToDecomp & sectCompBit) && (hdr.flags & sectCompBit)) 
+		if (sectIdx < 3 && (sectsToDecomp & sectCompBit) && (hdr.flags & sectCompBit))
 			newKipSize += hdr.sections[sectIdx].size_decomp;
 		else
 			newKipSize += hdr.sections[sectIdx].size_comp;
 	}
 
-	pkg2_kip1_t* newKip = malloc(newKipSize);	
+	pkg2_kip1_t* newKip = malloc(newKipSize);
 	unsigned char* dstDataPtr = newKip->data;
 	const unsigned char* srcDataPtr = ki->kip1->data;
 	for (u32 sectIdx = 0; sectIdx < KIP1_NUM_SECTIONS; sectIdx++)
@@ -790,7 +790,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 		gfx_printf("Decomping %s KIP1 sect %d of size %d...\n", (const char*)hdr.name, sectIdx, compSize);
 		if (blz_uncompress_srcdest(srcDataPtr, compSize, dstDataPtr, outputSize) == 0)
 		{
-			gfx_printf("%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);			
+			gfx_printf("%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);
 			free(newKip);
 
 			return 1;
@@ -972,7 +972,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			{
 				if (!se_calc_sha256(shaBuf, ki->kip1, ki->size))
 					memset(shaBuf, 0, sizeof(shaBuf));
-			}			
+			}
 
 			if (memcmp(shaBuf, _kip_ids[currKipIdx].hash, sizeof(_kip_ids[0].hash)) != 0)
 				continue;
@@ -995,7 +995,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						for (const kip1_patch_t* currPatch=currPatchset->patches; currPatch != NULL && (currPatch->length != 0); currPatch++)
 							bitsAffected |= 1u << GET_KIP_PATCH_SECTION(currPatch->offset);
 					}
-				}		
+				}
 				currPatchset++;
 			}
 
@@ -1060,7 +1060,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						}
 						kipSectData += ki->kip1->sections[currSectIdx].size_comp;
 					}
-					
+
 					patchesApplied |= appliedMask;
 					break;
 				}
@@ -1101,7 +1101,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	pkg2_hdr_t mkey_test;
 	u8 *pdata = (u8 *)data;
 	u8 keyslot = 8;
-	
+
 	// Skip signature.
 	pdata += 0x100;
 

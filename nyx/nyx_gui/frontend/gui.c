@@ -191,9 +191,9 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	// Always set touch points.
 	data->point.x = touchpad.x;
 	data->point.y = touchpad.y;
-	
+
 	// Decide touch enable.
-	switch (touchpad.type & STMFTS_MASK_EVENT_ID) 
+	switch (touchpad.type & STMFTS_MASK_EVENT_ID)
 	{
 	case STMFTS_EV_MULTI_TOUCH_ENTER:
 	case STMFTS_EV_MULTI_TOUCH_MOTION:
@@ -284,7 +284,7 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 
 		lv_img_dsc_t *img_desc = (lv_img_dsc_t *)bitmap;
 		u32 offset_copy = ALIGN((u32)bitmap + sizeof(lv_img_dsc_t), 0x10);
-	
+
 		img_desc->header.always_zero = 0;
 		img_desc->header.w = bmpData.size_x;
 		img_desc->header.h = bmpData.size_y;
@@ -315,7 +315,7 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 					tmp2[j++] = tmp[y * bmpData.size_x + x];
 			}
 		}
-		
+
 		free(tmp);
 	}
 	else
@@ -323,7 +323,7 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 		free(bitmap);
 		return NULL;
 	}
-	
+
 	return (lv_img_dsc_t *)bitmap;
 }
 
@@ -367,7 +367,7 @@ lv_res_t mbox_action(lv_obj_t *btns, const char *txt)
 {
 	lv_obj_t *mbox = lv_mbox_get_from_btn(btns);
 	lv_obj_t *dark_bg = lv_obj_get_parent(mbox);
-	
+
 	lv_obj_del(dark_bg); // Deletes children also (mbox).
 
 	return LV_RES_INV;
@@ -401,7 +401,6 @@ void nyx_window_toggle_buttons(lv_obj_t *win, bool disable)
 		}
 	}
 }
-	
 
 lv_obj_t *nyx_create_standard_window(const char *win_title)
 {
@@ -551,7 +550,7 @@ static lv_res_t _create_mbox_reload(lv_obj_t *btn)
 	lv_obj_set_width(mbox, LV_HOR_RES * 4 / 10);
 
 	lv_mbox_set_text(mbox, "#FF8000 Do you really want#\n#FF8000 to reload hekate?#");
-	
+
 	lv_mbox_add_btns(mbox, mbox_btn_map, reload_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -627,7 +626,7 @@ void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, co
 
 	lv_obj_t *label_btn = lv_label_create(btn, NULL);
 	lv_obj_t *label_btnsw = NULL;
-	
+
 	lv_label_set_recolor(label_btn, true);
 	label_btnsw = lv_label_create(btn, NULL);
 	lv_label_set_recolor(label_btnsw, true);
@@ -797,7 +796,7 @@ static void _update_status_bar(void *params)
 
 	lv_obj_realign(status_bar.temp_symbol);
 	lv_obj_realign(status_bar.temp_degrees);
-	
+
 	// Set battery percent and charging symbol.
 	s_printf(label, " "SYMBOL_DOT" %d.%d%% ", (batt_percent >> 8) & 0xFF, (batt_percent & 0xFF) / 26);
 
@@ -824,7 +823,7 @@ static void _update_status_bar(void *params)
 		s_printf(label, "#96FF00 +%d", batt_curr / 1000);
 	else
 		s_printf(label, "#FF3C28 -%d", (~batt_curr + 1) / 1000);
-	
+
 	s_printf(label + strlen(label), " mA# (%d mV)", batt_volt);
 
 	lv_label_set_array_text(status_bar.battery_more, label, 64);
@@ -1132,7 +1131,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 
 				// Enable button.
 				lv_obj_set_opa_scale(launch_ctxt[x], LV_OPA_COVER);
-				
+
 				// Default to switch logo if no icon found at all.
 				if (!bmp)
 					bmp = icon_switch;
@@ -1157,7 +1156,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				ext->idx = i;
 				ext = lv_obj_get_ext_attr(launch_ctxt[x]); // Redundancy.
 				ext->idx = i;
-				
+
 				// Set action.
 				if (!more_cfg)
 					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_action);
@@ -1210,7 +1209,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				"Check that a .ini file exists in #96FF00 /bootloader/ini/#,\n"
 				"and that it contains at least one entry.");
 		}
-		
+
 		lv_obj_set_pos(label_error, 19, 0);
 	}
 
@@ -1420,7 +1419,7 @@ static lv_res_t _show_hide_save_button(lv_obj_t *tv, uint16_t tab_idx)
 		lv_obj_set_opa_scale(status_bar.mid, LV_OPA_0);
 		lv_obj_set_click(status_bar.mid, false);
 	}
-	
+
 	return LV_RES_OK;
 }
 
@@ -1529,14 +1528,14 @@ static void _nyx_main_menu(lv_theme_t * th)
 	}
 	lv_tabview_set_sliding(tv, false);
 	lv_obj_set_size(tv, LV_HOR_RES, LV_VER_RES);
-	
+
 	// Add all tabs content.
 	char version[32];
 	s_printf(version, "hekate v%d.%d.%d", nyx_str->version & 0xFF, (nyx_str->version >> 8) & 0xFF, (nyx_str->version >> 16) & 0xFF);
 	lv_obj_t *tab_about = lv_tabview_add_tab(tv, version);
 
 	lv_obj_t *tab_home = lv_tabview_add_tab(tv, SYMBOL_HOME" Home");
-	
+
 	lv_obj_t *tab_tools = lv_tabview_add_tab(tv, SYMBOL_TOOLS" Tools");
 	lv_page_set_style(tab_tools, LV_PAGE_STYLE_BG, &no_padding);
 	lv_page_set_style(tab_tools, LV_PAGE_STYLE_SCRL, &no_padding);
@@ -1546,7 +1545,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	lv_page_set_style(tab_info, LV_PAGE_STYLE_SCRL, &no_padding);
 
 	lv_obj_t *tab_options = lv_tabview_add_tab(tv, SYMBOL_SETTINGS" Options");
-	
+
 	_create_tab_about(th, tab_about);
 	_create_tab_home(th, tab_home);
 	create_tab_tools(th, tab_tools);
@@ -1561,10 +1560,10 @@ static void _nyx_main_menu(lv_theme_t * th)
 	// Create tasks.
 	system_tasks.task.dram_periodic_comp = lv_task_create(minerva_periodic_training, EMC_PERIODIC_TRAIN_MS, LV_TASK_PRIO_HIGHEST, NULL);
 	lv_task_ready(system_tasks.task.dram_periodic_comp);
-	
+
 	system_tasks.task.status_bar = lv_task_create(_update_status_bar, 5000, LV_TASK_PRIO_LOW, NULL);
 	lv_task_ready(system_tasks.task.status_bar);
-	
+
 	lv_task_create(_check_sd_card_removed, 2000, LV_TASK_PRIO_LOWEST, NULL);
 
 	// Create top level global line separators.

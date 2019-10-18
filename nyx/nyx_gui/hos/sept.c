@@ -44,7 +44,7 @@ u8 warmboot_reboot[] = {
 	0x14, 0x00, 0x9F, 0xE5, // LDR R0, =0x7000E450
 	0x01, 0x10, 0xB0, 0xE3, // MOVS R1, #1
 	0x00, 0x10, 0x80, 0xE5, // STR R1, [R0]
-	0x0C, 0x00, 0x9F, 0xE5, // LDR R0, =0x7000E400 
+	0x0C, 0x00, 0x9F, 0xE5, // LDR R0, =0x7000E400
 	0x10, 0x10, 0xB0, 0xE3, // MOVS R1, #0x10
 	0x00, 0x10, 0x80, 0xE5, // STR R1, [R0]
 	0xFE, 0xFF, 0xFF, 0xEA, // LOOP
@@ -80,7 +80,7 @@ void check_sept()
 			f_unlink("sept/payload.bin");
 			f_rename("sept/payload.bak", "sept/payload.bin");
 		}
-		
+
 		return;
 	}
 
@@ -129,7 +129,7 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 	memcpy((u8 *)(SEPT_PK1T_ADDR - WB_RST_SIZE), (u8 *)warmboot_reboot, sizeof(warmboot_reboot));
 	memcpy((void *)SEPT_PK1T_ADDR, tsec_fw, tsec_fw_size);
 	*(vu32 *)SEPT_TCSZ_ADDR = tsec_fw_size;
-	
+
 	// Copy sept-primary.
 	if (f_open(&fp, "sept/sept-primary.bin", FA_READ))
 		goto error;

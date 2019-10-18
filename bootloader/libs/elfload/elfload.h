@@ -75,7 +75,7 @@ typedef struct el_ctx
 	// Section Header Str Table
 	Elf_Shdr shstr;
 	Elf_Shdr symtab;
-	
+
 	/* Offset of dynamic table (0 if not ET_DYN) */
 	Elf_Off dynoff;
 	/* Size of dynamic table (0 if not ET_DYN) */

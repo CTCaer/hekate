@@ -67,7 +67,7 @@ void lv_init(void)
     /* Do nothing if already initialized */
     if (_lv_initialized)
          return;
-    
+
     LV_GC_ROOT(_lv_def_scr) = NULL;
     LV_GC_ROOT(_lv_act_scr) = NULL;
     LV_GC_ROOT(_lv_top_layer) = NULL;
@@ -1938,8 +1938,8 @@ static void delete_children(lv_obj_t * obj)
     lv_obj_t * i_next;
     i = lv_ll_get_head(&(obj->child_ll));
 
-    /*Remove from the group; remove before transversing children so that 
-     * the object still has access to all children during the 
+    /*Remove from the group; remove before transversing children so that
+     * the object still has access to all children during the
      * LV_SIGNAL_DEFOCUS call*/
 #if USE_LV_GROUP
     if(obj->group_p != NULL) lv_group_remove_obj(obj);

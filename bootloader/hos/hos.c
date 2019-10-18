@@ -92,13 +92,13 @@ static const u8 console_keyseed[0x10] =
 const u8 package2_keyseed[] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
-static const u8 master_keyseed_4xx_5xx_610[0x10] = 
+static const u8 master_keyseed_4xx_5xx_610[0x10] =
 	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
 
 static const u8 master_keyseed_620[0x10] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
-static const u8 console_keyseed_4xx_5xx[0x10] = 
+static const u8 console_keyseed_4xx_5xx[0x10] =
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
 static void _hos_crit_error(const char *text)
@@ -255,7 +255,7 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 			se_aes_unwrap_key(13, 13, master_keyseed_620);
 			se_aes_unwrap_key(12, 13, master_keyseed_retail);
 			se_aes_unwrap_key(10, 13, master_keyseed_4xx_5xx_610);
-			
+
 			// Package2 key.
 			se_aes_unwrap_key(8, 12, package2_keyseed);
 
@@ -373,7 +373,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 		_hos_crit_error("Failed to init emuMMC");
 		return NULL;
 	}
-		
+
 	emummc_storage_set_mmc_partition(&storage, 0);
 
 	// Parse eMMC GPT.
@@ -403,7 +403,7 @@ DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
-	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 
+	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, ctxt->pkg2);
 out:;
 	nx_emmc_gpt_free(&gpt);
@@ -650,7 +650,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Finalize per firmware keys.
 	int bootStateDramPkg2 = 0;
 	int bootStatePkg2Continue = 0;
-	
+
 	switch (ctxt.pkg1_id->kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:

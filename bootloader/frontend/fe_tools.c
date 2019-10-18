@@ -133,13 +133,13 @@ void dump_packages12()
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
 		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
-	
+
 		// Display info.
 		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
-	
+
 		gfx_printf("%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
 		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
-	
+
 		gfx_printf("%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
 		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
 
@@ -148,19 +148,19 @@ void dump_packages12()
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
 		gfx_puts("\npkg1 dumped to pkg1_decr.bin\n");
-	
+
 		// Dump nxbootloader.
 		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
 		if (sd_save_to_file(loader, hdr->ldr_size, path))
 			goto out_free;
 		gfx_puts("NX Bootloader dumped to nxloader.bin\n");
-	
+
 		// Dump secmon.
 		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
 		if (sd_save_to_file(secmon, hdr->sm_size, path))
 			goto out_free;
 		gfx_puts("Secure Monitor dumped to secmon.bin\n");
-	
+
 		// Dump warmboot.
 		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
 		if (sd_save_to_file(warmboot, hdr->wb_size, path))
@@ -187,7 +187,7 @@ void dump_packages12()
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 
+	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);

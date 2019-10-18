@@ -1,7 +1,7 @@
 /*
  * Defining registers address and its bit definitions of MAX77620 and MAX20024
  *
- * Copyright (C) 2016 NVIDIA CORPORATION. All rights reserved.
+ * Copyright (c) 2016 NVIDIA CORPORATION. All rights reserved.
  * Copyright (c) 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it

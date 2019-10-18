@@ -97,7 +97,7 @@
 #define PINMUX_OPEN_DRAIN   (1 << 11)
 #define PINMUX_SCHMT        (1 << 12)
 
-#define PINMUX_DRIVE_1X     (0 << 13) 
+#define PINMUX_DRIVE_1X     (0 << 13)
 #define PINMUX_DRIVE_2X     (1 << 13)
 #define PINMUX_DRIVE_3X     (2 << 13)
 #define PINMUX_DRIVE_4X     (3 << 13)

@@ -60,7 +60,7 @@ static void get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_i
 	sd_mount();
 	u8 *mbr = (u8 *)malloc(0x200);
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-	
+
 	memcpy(mbr, mbr + 0x1BE, 0x40);
 
 	*part_idx = 0;
@@ -106,7 +106,7 @@ static void get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_i
 			goto out;
 		}
 	}
-	
+
 out:
 	free(mbr);
 }
@@ -178,7 +178,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 						"#FF0000 Aborting..#\n", res);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
-				
+
 				return 1;
 			}
 
@@ -210,7 +210,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 		while (totalSectorsVer > 0)
 		{
 			num = MIN(totalSectorsVer, NUM_SECTORS_PER_ITER);
-			
+
 			// Check every time or every 4.
 			// Every 4 protects from fake sd, sector corruption and frequent I/O corruption.
 			// Full provides all that, plus protection from extremely rare I/O corruption.
@@ -468,7 +468,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		gui->base_path, outFilename + strlen(gui->base_path));
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 	manual_system_maintenance(true);
-	
+
 	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
 	{
@@ -626,7 +626,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		}
 
 		res = f_write_fast(&fp, buf, NX_EMMC_BLOCKSIZE * num);
-		
+
 		if (res)
 		{
 			s_printf(gui->txt_buf, "\n#FF0000 Fatal error (%d) when writing to SD Card#\nPlease try again...\n", res);
@@ -883,7 +883,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 		s_printf(txt_buf, "Time taken: %dm %ds.\nFinished!", timer / 60, timer % 60);
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
-	
+
 	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
 
 out:
@@ -1450,7 +1450,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 		s_printf(txt_buf, "Time taken: %dm %ds.\nFinished!", timer / 60, timer % 60);
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
-	
+
 	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
 
 out:

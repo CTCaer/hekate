@@ -526,7 +526,7 @@ void config_backlight()
 			bri_text[i * 32] = ' ';
 		else
 			bri_text[i * 32] = '*';
-		
+
 		if (i < 10)
 		{
 			bri_text[i * 32 + 1] = i + '0';

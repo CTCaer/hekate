@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018-2019 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -185,7 +185,7 @@ void gfx_putc(char c)
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
 			u32 *fb = gfx_ctxt.fb + gfx_con.x + gfx_con.y * gfx_ctxt.stride;
 
-			for (u32 i = 0; i < 16; i+=2)
+			for (u32 i = 0; i < 16; i += 2)
 			{
 				u8 v = *cbuf++;
 				for (u32 k = 0; k < 2; k++)
@@ -254,7 +254,6 @@ void gfx_putc(char c)
 		}
 		break;
 	}
-	
 }
 
 void gfx_puts(const char *s)

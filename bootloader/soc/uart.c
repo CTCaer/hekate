@@ -35,7 +35,7 @@ void uart_init(u32 idx, u32 baud)
 	uart->UART_LCR = UART_LCR_DLAB | UART_LCR_WORD_LENGTH_8; // Enable DLAB & set 8n1 mode.
 	uart->UART_THR_DLAB = (u8)rate; // Divisor latch LSB.
 	uart->UART_IER_DLAB = (u8)(rate >> 8); // Divisor latch MSB.
-	uart->UART_LCR = UART_LCR_WORD_LENGTH_8; // Diable DLAB.
+	uart->UART_LCR = UART_LCR_WORD_LENGTH_8; // Disable DLAB.
 
 	// Setup and flush fifo.
 	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | UART_IIR_FCR_RX_CLR | UART_IIR_FCR_TX_CLR;

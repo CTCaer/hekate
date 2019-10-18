@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (C) 2018 CTCaer
+* Copyright (c) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -87,7 +87,7 @@ void panic(u32 val)
 	TMR(TIMER_TMR9_TMR_PTV) = TIMER_EN | TIMER_PER_EN;
 	TMR(TIMER_WDT4_CONFIG)  = TIMER_SRC(9) | TIMER_PER(1) | TIMER_PMCRESET_EN;
 	TMR(TIMER_WDT4_COMMAND) = TIMER_START_CNT;
-	
+
 	while (true)
 		usleep(1);
 }

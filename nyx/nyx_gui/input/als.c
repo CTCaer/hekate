@@ -64,7 +64,6 @@ void get_als_lux(als_table_t *als_val)
 	data[1] = i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA1LOW_REG)) +
 		(i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA1HIGH_REG)) << 8);
 
-	
 	als_val->over_limit = data[0] > 65534 || data[1] > 65534;
 	als_val->vi_light = data[0];
 	als_val->ir_light = data[1];

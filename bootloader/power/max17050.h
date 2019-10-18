@@ -2,9 +2,9 @@
  * Fuel gauge driver for Nintendo Switch's Maxim 17050
  *  Note that Maxim 8966 and 8997 are mfd and this is its subdevice.
  *
- * Copyright (C) 2011 Samsung Electronics
+ * Copyright (c) 2011 Samsung Electronics
  * MyungJoo Ham <myungjoo.ham@samsung.com>
- * Copyright (C) 2018 CTCaer
+ * Copyright (c) 2018 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

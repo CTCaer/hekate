@@ -47,7 +47,7 @@ extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 #pragma GCC push_options
-#pragma GCC optimize ("Os") 
+#pragma GCC optimize ("Os")
 
 void print_fuseinfo()
 {
@@ -419,7 +419,6 @@ void print_tsec_key()
 	{
 		for (u32 j = 0; j < 0x10; j++)
 			gfx_printf("%02X", keys[j]);
-		
 
 		if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 		{
@@ -638,13 +637,13 @@ void bootrom_ipatches_info()
 	gfx_con_setpos(0, 0);
 
 	static const u32 BOOTROM_SIZE = 0x18000;
-	
+
 	u32 res = fuse_read_ipatch(_ipatch_process);
 	if (res != 0)
 		EPRINTFARGS("Failed to read ipatches. Error: %d", res);
 
 	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
-	
+
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
@@ -662,21 +661,21 @@ void bootrom_ipatches_info()
 			}
 			else
 				EPRINTFARGS("Failed to read evp_thunks. Error: %d", res);
-			
+
 			emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
 			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
 				gfx_puts("\nbootrom_patched.bin saved!\n");
-			
+
 			u32 ipatch_backup[14];
 			memcpy(ipatch_backup, (void *)IPATCH_BASE, sizeof(ipatch_backup));
 			memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
-			
+
 			emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
 			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
 				gfx_puts("\nbootrom_unpatched.bin saved!\n");
-			
+
 			memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
-			
+
 			sd_unmount();
 		}
 

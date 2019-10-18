@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (C) 2018-2019 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -189,7 +189,7 @@ void gfx_putc(char c)
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
 			u32 *fb = gfx_ctxt.fb + gfx_con.x + gfx_con.y * gfx_ctxt.stride;
 
-			for (u32 i = 0; i < 16; i+=2)
+			for (u32 i = 0; i < 16; i += 2)
 			{
 				u8 v = *cbuf++;
 				for (u32 k = 0; k < 2; k++)
@@ -258,7 +258,6 @@ void gfx_putc(char c)
 		}
 		break;
 	}
-	
 }
 
 void gfx_puts(const char *s)
@@ -596,7 +595,7 @@ __attribute__((target("arm"))) void gfx_set_rect_land_block(const u32 *buf, u32 
 			GOB_address = (y >> 7) * image_width_in_gobs + ((x >> 4) << 13) + (((y % 128) >> 3) << 9);
 
 			x2 = x << 2;
-			addr = GOB_address 
+			addr = GOB_address
 				+ (((x2 % 64) >> 5) << 8)
 				+ (((y % 8) >> 1) << 6)
 				+ (((x2 % 32) >> 4) << 5)
@@ -616,7 +615,7 @@ __attribute__((target("arm"))) void gfx_set_rect_land_block(const u32 *buf, u32 
 	// 		GOB_address = (y / (8 * block_height)) * image_width_in_gobs + ((x * 4 / 64) * 512 * block_height) + ((y % (8 * block_height) / 8) * 512);
 
 	// 		x2 = x << 2;
-	// 		addr = GOB_address 
+	// 		addr = GOB_address
 	// 			+ (((x2 % 64) >> 5) << 8)
 	// 			+ (((y % 8) >> 1) << 6)
 	// 			+ (((x2 % 32) >> 4) << 5)

@@ -3953,7 +3953,7 @@ FRESULT f_read_fast (
 	else if (clst == 0xFFFFFFFF) { EFSPRINTF("DSKC"); ABORT(fs, FR_DISK_ERR); }
 
 	fp->clust = clst;	/* Set working cluster */
-	
+
 	sector_base = clst2sect(fs, fp->clust);
 	count += fs->csize;
 	btr -= csize_bytes;
@@ -4182,7 +4182,7 @@ FRESULT f_write_fast (
 	else if (clst == 0xFFFFFFFF) { EFSPRINTF("DERR"); ABORT(fs, FR_DISK_ERR); }
 
 	fp->clust = clst;	/* Set working cluster */
-	
+
 	sector_base = clst2sect(fs, fp->clust);
 	count += fs->csize;
 	btw -= csize_bytes;

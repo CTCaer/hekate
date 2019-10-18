@@ -28,7 +28,7 @@ static u8 *_htoa(u8 *result, const char *ptr, u8 byte_len)
 			tmp = (ch - 'A' + 10);
 		else if (ch >= 'a' && ch <= 'f')
 			tmp = (ch - 'a' + 10);
-		
+
 		if (shift)
 			*dst = (tmp << 4) & 0xF0;
 		else

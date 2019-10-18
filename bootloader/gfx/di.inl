@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (C) 2018 CTCaer
+* Copyright (c) 2018 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -415,7 +415,7 @@ static const cfg_op_t _display_config_11[113] = {
 	{DC_DISP_SYNC_WIDTH,  0x10048},
 	{DC_DISP_BACK_PORCH,  0x90048},
 	{DC_DISP_ACTIVE,      0x50002D0},
-	{DC_DISP_FRONT_PORCH, 0xA0088}, // Sources say that this should be above the DC_DISP_ACTIVE cmd.
+	{DC_DISP_FRONT_PORCH, 0xA0088},   // Sources say that this should be above the DC_DISP_ACTIVE cmd.
 	/* End of Display timings */
 	{DC_DISP_SHIFT_CLOCK_OPTIONS, SC1_H_QUALIFIER_NONE | SC0_H_QUALIFIER_NONE},
 	{DC_COM_PIN_OUTPUT_ENABLE(1), 0},

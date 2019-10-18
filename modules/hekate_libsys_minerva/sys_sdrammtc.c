@@ -1257,7 +1257,7 @@ static u32 _digital_dll_prelock(emc_table_t *mtc_table_entry, u32 needs_tristate
 	_change_dll_src(mtc_table_entry, selected_clk_src_emc);
 
 	EMC(EMC_CFG_DIG_DLL) |= 1;
-	
+
 	_timing_update(dual_channel);
 
 	while (!(EMC(EMC_CFG_DIG_DLL) & 1))
@@ -1274,6 +1274,7 @@ static u32 _digital_dll_prelock(emc_table_t *mtc_table_entry, u32 needs_tristate
 		EMC(EMC_DBG) |= 2u;
 		EMC(EMC_CFG_DIG_DLL) &= 0xFFFFFFFE; //Disable CFG_DLL_EN: [PMC] Enable digital DLL.
 		EMC(EMC_DBG) &= 0xFFFFFFFD;
+
 		while (EMC(EMC_CFG_DIG_DLL) & 1)
 			;
 		if (dual_channel)
@@ -2043,7 +2044,7 @@ static u32 _minerva_apply_periodic_compensation_trimmer(emc_table_t *mtc_table_e
 
 	u32 dst_rate_mhz = mtc_table_entry->rate_khz / 1000;
 
-	switch (trim_emc_reg_addr) 
+	switch (trim_emc_reg_addr)
 	{
 	case EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_0:
 	case EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_1:
@@ -2420,12 +2421,12 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 			if (mtc_table_entry->save_restore_mod_regs[3] & 0x80000000)
 				ib_vref_dq_byte3_icr = ((EMC(EMC_PMACRO_IB_VREF_DQ_0) >> 24) & 0x7F) - (mtc_table_entry->save_restore_mod_regs[3] & 0x7F);
 
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dq_0_idx = 
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dq_0_idx =
 				 ((ib_vref_dq_byte0_icr & 0x7F)
 				| (ib_vref_dq_byte1_icr & 0x7F) << 8)
 				| ((ib_vref_dq_byte2_icr & 0x7F) << 16)
 				| ((ib_vref_dq_byte3_icr & 0x7F) << 24);
-			
+
 			char ib_vref_dq_byte4_icr = (EMC(EMC_PMACRO_IB_VREF_DQ_1) & 0x7F) + (mtc_table_entry->save_restore_mod_regs[4] & 0x7F);
 			if (mtc_table_entry->save_restore_mod_regs[4] & 0x80000000)
 				ib_vref_dq_byte4_icr = (EMC(EMC_PMACRO_IB_VREF_DQ_1) & 0x7F) - (mtc_table_entry->save_restore_mod_regs[4] & 0x7F);
@@ -2575,7 +2576,6 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 			mtc_table_entry->burst_reg_per_ch.emc0_mrw12_idx = emc0_ib_vref_dq_byte8_modded_plus | 0x880E0000 | (emc0_mrw12_op_sp1 << 8);
 			mtc_table_entry->burst_reg_per_ch.emc0_mrw13_idx = emc0_ib_vref_dq_byte9_modded_a_plus << 8 | emc0_mrw13_op_sp0 | mr13_dev_ext_cnt_sp_addr;
 			mtc_table_entry->burst_reg_per_ch.emc1_mrw13_idx = (emc1_mrw13_op_sp1 << 8) | emc1_mrw13_op_sp0 | mr13_dev_ext_cnt_sp_addr;
-			
 		}
 	}
 }
@@ -2740,7 +2740,7 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 	// Check if we need to turn on VREF generator.
 	if ((!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 0x100)
 		&& (dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 0x100))
-		|| (!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 1) 
+		|| (!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 1)
 		&& (dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 1)))
 	{
 		EMC(EMC_PMACRO_DATA_PAD_TX_CTRL) =
@@ -2756,7 +2756,7 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 	// Step 2 - Prelock the DLL.
 	EPRINTF("Step 2");
 	if (dst_emc_entry->burst_regs.emc_cfg_dig_dll_idx & 1)
-		_digital_dll_prelock(dst_emc_entry, needs_tristate_training, selected_clk_src_emc); //Prelock enabled for target frequency.
+		_digital_dll_prelock(dst_emc_entry, needs_tristate_training, selected_clk_src_emc); // Prelock enabled for target frequency.
 	else
 	{
 		_change_dll_src(dst_emc_entry, selected_clk_src_emc);
@@ -3235,6 +3235,7 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 		ref_delay = (u32)(float)(tRP_src_timing + tRFC_src_timing + 20.0f);
 	_ccfifo_write(EMC_CFG_SYNC, 0, ref_delay);
 	_ccfifo_write(EMC_DBG, emc_dbg_val | 0x40000002, 0); // WRITE_MUX_ACTIVE | WRITE_ACTIVE_ONLY
+
 	ramp_down_wait = _dvfs_power_ramp_down(false, src_emc_entry, dst_emc_entry, src_clock_period);
 
 	// Step 12 - Trigger clock change.
@@ -3246,6 +3247,7 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 	// Step 13 - Ramp up.
 	EPRINTF("Step 13");
 	ramp_up_wait = _dvfs_power_ramp_up(false, src_emc_entry, dst_emc_entry, needs_training & 0xFF, dst_clock_period);
+
 	_ccfifo_write(EMC_DBG, emc_dbg_val, 0);
 
 	// Step 14 - Bringup CKE pins.
@@ -3313,17 +3315,22 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 					T_PDEX_timing_final = 0;
 				_ccfifo_write(EMC_ZQ_CAL, 0x80000001, T_PDEX_timing_final);
 			}
+
 			T_PDEX_timing_final = zq_latch_dvfs_wait_time + T_PDEX_timing;
+
 			if ((zq_latch_dvfs_wait_time + T_PDEX_timing) < 0)
 				T_PDEX_timing_final = 0;
+
 			_ccfifo_write(EMC_ZQ_CAL, 0x80000002, T_PDEX_timing_final);
 			_ccfifo_write(EMC_ZQ_CAL, 0x40000001, 0);
+
 			if (!needs_tristate_training)
 			{
 				_ccfifo_write(EMC_MRW3, (mr13_flip_fspop & 0xF3FFFFF7) | 0xC000000, 0);
 				_ccfifo_write(EMC_SELF_REF, 0x100, 0);
 				_ccfifo_write(EMC_REF, 0, 0);
 			}
+
 			emc_zq_cal = 0x40000002;
 			zq_latch_dvfs_wait_time = (s32)(float)(1000.0f / dst_clock_period);
 		}
@@ -3334,20 +3341,23 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 
 			if (src_clock_period > 2.0)
 				_ccfifo_write(EMC_ZQ_CAL, 1, T_PDEX_timing);
+
 			if (!needs_tristate_training)
 			{
 				_ccfifo_write(EMC_MRW3, (mr13_flip_fspop & 0xF3FFFFF7) | 0xC000000, T_PDEX_timing);
 				_ccfifo_write(EMC_SELF_REF, 0x100, 0);
 				_ccfifo_write(EMC_REF, 0, 0);
 			}
+
 			emc_zq_cal = 2;
 
 			if (zq_latch_dvfs_wait_time < 0)
 				zq_latch_dvfs_wait_time = 0;
 		}
+
 		_ccfifo_write(EMC_ZQ_CAL, emc_zq_cal, (u32)zq_latch_dvfs_wait_time);
 	}
-	
+
 	_ccfifo_write(EMC_INTSTATUS, 0, 10); // WAR: delay for zqlatch.
 
 	// Step 16 - LPDDR4 Conditional training kickoff.
@@ -3422,6 +3432,7 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 			_ccfifo_write(EMC_INTSTATUS, 0, (u32)(float)(1000.0f / src_clock_period));
 			_ccfifo_write(EMC_PMACRO_DATA_RX_TERM_MODE, src_emc_entry->burst_regs.emc_pmacro_data_rx_term_mode_idx, 0);
 		}
+
 		_ccfifo_write(EMC_DBG, emc_dbg_o, 0);
 
 		if (opt_zcal_en_cc)
@@ -3566,6 +3577,7 @@ step_19_2:
 		_ccfifo_write(EMC_SEL_DPD_CTRL, src_emc_entry->emc_sel_dpd_ctrl, 0);
 	_ccfifo_write(EMC_DBG, emc_dbg_o, 0);
 	_ccfifo_write(EMC_CFG_PIPE_CLK, emc_cfg_pipe_clk_o, 0);
+
 	if (bg_regulator_mode_change)
 	{
 		if (enable_bg_regulator)
@@ -3582,8 +3594,9 @@ step_19_2:
 		_change_dll_src(src_emc_entry, (u32)CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC));
 	}
 	EMC(EMC_CFG_DIG_DLL) = (EMC(EMC_CFG_DIG_DLL) & 0xFFFFFF24) | 0x88;
-	
+
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = selected_clk_src_emc;
+
 	if (_wait_emc_status(EMC_INTSTATUS, CLKCHANGE_COMPLETE_INT, true, 0))
 		return 4; // Clkchange handshake timeout error.
 
@@ -3916,12 +3929,15 @@ s32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 		if (mtc_cfg->rate_to == table_entry_rate)
 			dst_emc_entry_idx = i;
 	}
+
 	src_emc_entry = (emc_table_t *)&mtc_cfg->mtc_table[src_emc_entry_idx];
 	dst_emc_entry = (emc_table_t *)&mtc_cfg->mtc_table[dst_emc_entry_idx];
+
 	s32 src_rate_khz = src_emc_entry->rate_khz;
 	s32 dst_rate_khz = dst_emc_entry->rate_khz;
 	u32 src_clk_src_emc = src_emc_entry->clk_src_emc;
 	u32 dst_clk_src_emc = dst_emc_entry->clk_src_emc;
+
 	if (mtc_cfg->table_entries > 900)
 		return 4;
 
@@ -4027,11 +4043,11 @@ void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
 		_minerva_get_table(mtc_cfg);
 		return;
 	}
-	
-	// If this is set, it need to be managed. Changing freq from OC to a lower
+
+	// If this is set, it needs to be managed. Changing freq from OC to a lower
 	// must have the rate_from set to 2131200 and not 1600000
 	// bool overclock = true;
-	
+
 	// if (overclock && mtc_cfg->rate_to == 1600000)
 	// {
 	// 		mtc_cfg->rate_to = 2131200;

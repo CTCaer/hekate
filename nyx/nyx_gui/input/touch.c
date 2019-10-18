@@ -38,7 +38,7 @@ static int touch_command(u8 cmd)
 	int err = i2c_send_byte(I2C_3, STMFTS_I2C_ADDR, cmd, 0);
 	if (!err)
 		return 1;
-		
+
 	// TODO: Check for completion in event loop
 	msleep(1);
 	return 0;
@@ -60,11 +60,11 @@ static void _touch_process_contact_event(touch_event *event, bool touching)
 		event->fingers = 0;
 }
 
-static void _touch_parse_event(touch_event *event) 
+static void _touch_parse_event(touch_event *event)
 {
 	event->type = event->raw[1] & STMFTS_MASK_EVENT_ID;
 
-	switch (event->type) 
+	switch (event->type)
 	{
 	case STMFTS_EV_MULTI_TOUCH_ENTER:
 	case STMFTS_EV_MULTI_TOUCH_MOTION:
@@ -108,7 +108,7 @@ void touch_poll(touch_event *event)
 touch_event touch_poll_wait()
 {
 	touch_event event;
-	do 
+	do
 	{
 		touch_poll(&event);
 	} while (event.type != STMFTS_EV_MULTI_TOUCH_LEAVE);
@@ -160,7 +160,7 @@ int touch_power_on()
 	// Enables LDO6 for touchscreen VDD/AVDD supply
 	max77620_regulator_set_volt_and_flags(REGULATOR_LDO6, 2900000, MAX77620_POWER_MODE_NORMAL);
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
-		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT)); 
+		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
 
 	msleep(20);
 
@@ -189,7 +189,7 @@ int touch_power_on()
 	return 1;
 }
 
-void touch_power_off() 
+void touch_power_off()
 {
 	touch_command(STMFTS_SLEEP_IN);
 

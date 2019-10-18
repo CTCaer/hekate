@@ -252,14 +252,14 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 
 bool is_ipl_updated(void *buf)
 {
-	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));	
+	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));
 
 	if (update_ft->magic == ipl_ver.magic)
 	{
 		if (byte_swap_32(update_ft->version) <= byte_swap_32(ipl_ver.version))
 			return true;
 		return false;
-		
+
 	}
 	else
 		return true;
@@ -398,7 +398,7 @@ void launch_tools()
 		{
 			memset(&ments[i + 2], 0, sizeof(ment_t));
 			menu_t menu = { ments, "Choose a file to launch", 0, 0 };
-			
+
 			file_sec = (char *)tui_do_menu(&menu);
 
 			if (!file_sec)
@@ -421,7 +421,6 @@ void launch_tools()
 		free(ments);
 		goto out;
 	}
-		
 
 	if (file_sec)
 	{
@@ -915,7 +914,6 @@ void auto_launch_firmware()
 								break;
 							boot_entry_id++;
 						}
-						
 					}
 
 				}
@@ -1308,7 +1306,7 @@ void ipl_main()
 
 	while (true)
 		tui_do_menu(&menu_top);
-	
+
 	// Halt BPMP if we managed to get out of execution.
 	while (true)
 		bpmp_halt();

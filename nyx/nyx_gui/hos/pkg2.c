@@ -91,7 +91,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	pkg2_hdr_t mkey_test;
 	u8 *pdata = (u8 *)data;
 	u8 keyslot = 8;
-	
+
 	// Skip signature.
 	pdata += 0x100;
 

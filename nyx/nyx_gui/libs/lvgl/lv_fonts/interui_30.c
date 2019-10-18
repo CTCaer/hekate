@@ -23,7 +23,7 @@
 ***********************************************************************************/
 
 /*Store the glyph descriptions*/
-static const lv_font_glyph_dsc_t interui_30_glyph_dsc[] = 
+static const lv_font_glyph_dsc_t interui_30_glyph_dsc[] =
 {
 #if USE_INTERUI_30 == 4
   {.w_px = 8,	.glyph_index = 0},	/*Unicode: U+0020 ( )*/
@@ -222,7 +222,7 @@ static const lv_font_glyph_dsc_t interui_30_glyph_dsc[] =
 #endif
 };
 
-lv_font_t interui_30 = 
+lv_font_t interui_30 =
 {
     .unicode_first = 32,	/*First Unicode letter in this font*/
     .unicode_last = 126,	/*Last Unicode letter in this font*/

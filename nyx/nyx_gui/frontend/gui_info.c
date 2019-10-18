@@ -127,23 +127,23 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 		}
 		else
 			error = 255;
-		
+
 		emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
 		int res = sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path);
 		if (!error)
 			error = res;
-		
+
 		u32 ipatch_backup[14];
 		memcpy(ipatch_backup, (void *)IPATCH_BASE, sizeof(ipatch_backup));
 		memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
-		
+
 		emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
 		res = sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path);
 		if (!error)
 			error = res;
-		
+
 		memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
-		
+
 		sd_unmount(false);
 	}
 	_create_window_dump_done(error, "evp_thunks.bin, bootrom_patched.bin, bootrom_unpatched.bin");
@@ -504,13 +504,13 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "#C7EA46 TSEC Key:#\n");
 	if (res >= 0)
 	{
-		s_printf(txt_buf2, "\n%08X%08X%08X%08X\n", 
-			byte_swap_32(tsec_keys[0]), byte_swap_32(tsec_keys[1]), byte_swap_32(tsec_keys[2]), byte_swap_32(tsec_keys[3]));		
+		s_printf(txt_buf2, "\n%08X%08X%08X%08X\n",
+			byte_swap_32(tsec_keys[0]), byte_swap_32(tsec_keys[1]), byte_swap_32(tsec_keys[2]), byte_swap_32(tsec_keys[3]));
 
 		if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 		{
 			s_printf(txt_buf + strlen(txt_buf), "#C7EA46 TSEC root:#\n");
-			s_printf(txt_buf2 + strlen(txt_buf2), "%08X%08X%08X%08X\n", 
+			s_printf(txt_buf2 + strlen(txt_buf2), "%08X%08X%08X%08X\n",
 				byte_swap_32(tsec_keys[4]), byte_swap_32(tsec_keys[5]), byte_swap_32(tsec_keys[6]), byte_swap_32(tsec_keys[7]));
 		}
 		lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump Keys", _tsec_keys_dump_window_action);
@@ -838,7 +838,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
-	
+
 	lv_label_set_static_text(lb_desc,
 		"#00DDFF Fuel Gauge IC Info:#\n"
 		"Capacity now:\n"
@@ -1080,7 +1080,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_btn, SYMBOL_CIRCUIT"  Fuses ");
 	lv_obj_align(btn3, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 2);
 	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_window_fuses_info_status);
-	
+
 	// Create KFuses button.
 	lv_obj_t *btn4 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn4, NULL);
@@ -1130,7 +1130,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_btn, SYMBOL_CHIP"  eMMC  ");
 	lv_obj_align(btn5, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 2, LV_DPI / 4);
 	lv_btn_set_action(btn5, LV_BTN_ACTION_CLICK, _create_window_emmc_info_status);
-	
+
 	// Create microSD button.
 	lv_obj_t *btn6 = lv_btn_create(h2, btn);
 	label_btn = lv_label_create(btn6, NULL);

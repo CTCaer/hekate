@@ -321,7 +321,7 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 		lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_transp_rel);
 		lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_transp_pr);
 		lv_btn_set_style(btn, LV_BTN_STYLE_TGL_REL, &btn_transp_tgl_rel);
-		lv_btn_set_style(btn, LV_BTN_STYLE_TGL_PR, &btn_transp_tgl_pr);	
+		lv_btn_set_style(btn, LV_BTN_STYLE_TGL_PR, &btn_transp_tgl_pr);
 	}
 	lv_btn_set_layout(btn, LV_LAYOUT_OFF);
 	lv_obj_t *label_btn = lv_label_create(btn, NULL);
@@ -372,7 +372,7 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 		lv_ddlist_set_style(ddlist, LV_DDLIST_STYLE_BG, &ddlist_transp_bg);
 		lv_ddlist_set_style(ddlist, LV_DDLIST_STYLE_BGO, &ddlist_transp_bg);
 		lv_ddlist_set_style(ddlist, LV_DDLIST_STYLE_PR, &ddlist_transp_sel);
-		lv_ddlist_set_style(ddlist, LV_DDLIST_STYLE_SEL, &ddlist_transp_sel);	
+		lv_ddlist_set_style(ddlist, LV_DDLIST_STYLE_SEL, &ddlist_transp_sel);
 	}
 
 	label_txt2 = lv_label_create(l_cont, NULL);
@@ -464,7 +464,7 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_BG, &ddlist_transp_bg);
 		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_BGO, &ddlist_transp_bg);
 		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_PR, &ddlist_transp_sel);
-		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_SEL, &ddlist_transp_sel);	
+		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_SEL, &ddlist_transp_sel);
 	}
 
 	label_txt2 = lv_label_create(sw_h3, NULL);

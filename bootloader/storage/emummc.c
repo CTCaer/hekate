@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 CTCaer
+ * Copyright (c) 2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -180,7 +180,7 @@ int emummc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, v
 			f_close(&fp);
 			return 0;
 		}
-		
+
 		f_close(&fp);
 		return 1;
 	}
@@ -225,7 +225,7 @@ int emummc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, 
 			f_close(&fp);
 			return 0;
 		}
-		
+
 		f_close(&fp);
 		return 1;
 	}

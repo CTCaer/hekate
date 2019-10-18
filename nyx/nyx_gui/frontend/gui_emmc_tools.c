@@ -326,7 +326,7 @@ lv_res_t create_window_backup_restore_tool(lv_obj_t *btn)
 		lv_label_set_static_text(label_btn, SYMBOL_UPLOAD"  eMMC BOOT0 & BOOT1");
 	else
 		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  eMMC BOOT0 & BOOT1");
-	
+
 	lv_obj_align(btn1, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
 	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _emmc_backup_buttons_decider);
 	emmc_btn_ctxt.emmc_boot = btn1;
@@ -427,7 +427,7 @@ lv_res_t create_window_backup_restore_tool(lv_obj_t *btn)
 			"Allows you to restore ALL partitions from RAW GPP\n"
 			"It contains, CAL0, various package2, SYSTEM, USER, etc.\n");
 	}
-	
+
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 

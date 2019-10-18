@@ -36,7 +36,7 @@ static int _config_warmboot(launch_ctxt_t *ctxt, const char *value)
 	ctxt->warmboot = sd_file_read(value, &ctxt->warmboot_size);
 	if (!ctxt->warmboot)
 		return 0;
-	
+
 	return 1;
 }
 

@@ -74,7 +74,7 @@ bool get_sd_card_removed()
 {
 	if (sd_init_done && !!gpio_read(GPIO_PORT_Z, GPIO_PIN_1))
 		return true;
-	
+
 	return false;
 }
 
@@ -248,7 +248,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 		goto out;
 
 	char path[128];
-	
+
 	strcpy(path,"bootloader/payloads/");
 	strcat(path, filename);
 
@@ -378,7 +378,7 @@ void nyx_init_load_res()
 	minerva_change_freq(FREQ_1600);
 
 	load_saved_configuration();
-	
+
 	FIL fp;
 	f_open(&fp, "bootloader/sys/res.pak", FA_READ);
 	f_read(&fp, (void *)NYX_RES_ADDR, f_size(&fp), NULL);

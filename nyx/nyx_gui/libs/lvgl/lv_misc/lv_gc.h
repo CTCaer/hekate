@@ -41,15 +41,14 @@ extern "C" {
     prefix void * _lv_task_act;\
     prefix void * _lv_indev_list;\
     prefix void * _lv_disp_list;\
-    
-    
+
 #define LV_NO_PREFIX
 #define LV_ROOTS LV_GC_ROOTS(LV_NO_PREFIX)
 
 #if LV_ENABLE_GC == 1
 #   if LV_MEM_CUSTOM != 1
 #       error "GC requires CUSTOM_MEM"
-#   endif /* LV_MEM_CUSTOM */    
+#   endif /* LV_MEM_CUSTOM */
 #else /* LV_ENABLE_GC */
 #   define LV_GC_ROOT(x) x
     LV_GC_ROOTS(extern)

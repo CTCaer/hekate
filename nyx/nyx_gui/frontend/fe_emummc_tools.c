@@ -162,7 +162,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 		gui->base_path, outFilename + strlen(gui->base_path));
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 	manual_system_maintenance(true);
-	
+
 	res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
 	{
@@ -257,7 +257,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 			}
 		}
 		res = f_write_fast(&fp, buf, NX_EMMC_BLOCKSIZE * num);
-		
+
 		if (res)
 		{
 			s_printf(gui->txt_buf, "\n#FF0000 Fatal error (%d) when writing to SD Card#\nPlease try again...\n", res);
@@ -441,13 +441,13 @@ out_failed:
 		FIL fp;
 		f_open(&fp, sdPath, FA_CREATE_ALWAYS | FA_WRITE);
 		f_close(&fp);
-		
+
 		gui->base_path[strlen(gui->base_path) - 1] = 0;
 		save_emummc_cfg(0, 0, gui->base_path);
 	}
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
-	
+
 	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
 
 out:
@@ -695,13 +695,13 @@ out_failed:
 		f_open(&fp, sdPath, FA_CREATE_ALWAYS | FA_WRITE);
 		f_write(&fp, &sector_start, 4, NULL);
 		f_close(&fp);
-		
+
 		gui->base_path[strlen(gui->base_path) - 1] = 0;
 		save_emummc_cfg(part_idx, sector_start, gui->base_path);
 	}
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
-	
+
 	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
 
 out:

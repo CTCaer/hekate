@@ -24,7 +24,7 @@ all: $(TARGET).bso
 $(BUILD)/%.o: ./%.c
 	@mkdir -p "$(BUILD)"
 	$(CC) $(CFLAGS) -c $< -o $@
-	
+
 $(TARGET).bso: $(OBJS)
 	$(CC) $(LDFLAGS) -e _modInit $^ -o $(OUTPUT)/$(TARGET).bso
 	$(STRIP) -g $(OUTPUT)/$(TARGET).bso

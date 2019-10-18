@@ -722,7 +722,7 @@ static int _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
 		sdmmc->regs->norintsts = norintsts & mask;
 		return SDMMC_MASKINT_MASKED;
 	}
-	
+
 	return SDMMC_MASKINT_NOERROR;
 }
 
@@ -767,7 +767,7 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 
 	if (!res)
 		return 0;
-	
+
 	_sdmmc_cache_rsp(sdmmc, rsp, 4, SDMMC_RSP_TYPE_1);
 
 	return _sdmmc_wait_prnsts_type1(sdmmc);
@@ -901,7 +901,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 	_sdmmc_parse_cmdbuf(sdmmc, cmd, is_data_present);
 
 	int res = _sdmmc_wait_request(sdmmc);
-	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", res, 
+	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", res,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
 	if (res)
 	{
@@ -943,7 +943,7 @@ static int _sdmmc_config_sdmmc1()
 	gpio_output_enable(GPIO_PORT_Z, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
 	usleep(100);
 
-	// Check if SD card is inserted. 
+	// Check if SD card is inserted.
 	if(!!gpio_read(GPIO_PORT_Z, GPIO_PIN_1))
 		return 0;
 
@@ -1055,7 +1055,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 	if (!sdmmc->clock_stopped)
 	{
 		_sdmmc_sd_clock_disable(sdmmc);
-		// Disable SDMMC power. 
+		// Disable SDMMC power.
 		_sdmmc_set_voltage(sdmmc, SDMMC_POWER_OFF);
 
 		// Disable SD card power.
@@ -1134,7 +1134,7 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 	_sdmmc_set_voltage(sdmmc, SDMMC_POWER_1_8);
 	_sdmmc_get_clkcon(sdmmc);
 	msleep(5);
-	
+
 	if (sdmmc->regs->hostctl2 & SDHCI_CTRL_VDD_180)
 	{
 		sdmmc->regs->clkcon |= TEGRA_MMC_CLKCON_SD_CLOCK_ENABLE;

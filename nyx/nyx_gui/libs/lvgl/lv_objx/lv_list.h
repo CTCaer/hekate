@@ -121,14 +121,14 @@ bool lv_list_remove(const lv_obj_t * list, uint32_t index);
 /*=====================
  * Setter functions
  *====================*/
- 
+
 /**
  * Set single button selected mode, only one button will be selected if enabled.
  * @param list pointer to the currently pressed list object
  * @param mode, enable(true)/disable(false) single selected mode.
  */
 void lv_list_set_single_mode(lv_obj_t *list, bool mode);
-    
+
 #if USE_LV_GROUP
 
 /**
@@ -193,7 +193,7 @@ void lv_list_set_style(lv_obj_t *list, lv_list_style_t type, lv_style_t *style);
  * @param list pointer to the currently pressed list object.
  */
 bool lv_list_get_single_mode(lv_obj_t *list);
-    
+
 /**
  * Get the text of a list element
  * @param btn pointer to list element

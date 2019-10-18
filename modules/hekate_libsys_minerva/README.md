@@ -7,7 +7,7 @@ For more, check [Here](https://github.com/CTCaer/minerva_tc).
 
 
 ```
-Minerva Training Cell (C) 2018 CTCaer.
+Minerva Training Cell (c) 2018 CTCaer.
 
 /* Pain... And suffering. */
 ```
