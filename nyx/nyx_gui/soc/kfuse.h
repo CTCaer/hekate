@@ -36,6 +36,7 @@
 
 #define KFUSE_NUM_WORDS 144
 
+int kfuse_wait_ready();
 int kfuse_read(u32 *buf);
 
 #endif

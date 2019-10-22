@@ -23,6 +23,7 @@
 #include "../sec/se_t210.h"
 #include "../soc/bpmp.h"
 #include "../soc/clock.h"
+#include "../soc/kfuse.h"
 #include "../soc/smmu.h"
 #include "../soc/t210.h"
 #include "../mem/heap.h"
@@ -77,6 +78,8 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	clock_enable_sor0();
 	clock_enable_sor1();
 	clock_enable_kfuse();
+
+	kfuse_wait_ready();
 
 	// Configure Falcon.
 	TSEC(TSEC_DMACTL) = 0;

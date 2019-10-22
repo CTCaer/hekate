@@ -21,16 +21,25 @@
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
 
+int kfuse_wait_ready()
+{
+	// Wait for KFUSE to finish init and verification of data.
+	while (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_DONE))
+		;
+
+	if (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_CRCPASS))
+		return 0;
+
+	return 1;
+}
+
 int kfuse_read(u32 *buf)
 {
 	int res = 0;
 
 	clock_enable_kfuse();
 
-	while (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_DONE))
-		;
-
-	if (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_CRCPASS))
+	if (!kfuse_wait_ready())
 		goto out;
 
 	KFUSE(KFUSE_KEYADDR) = KFUSE_KEYADDR_AUTOINC;
