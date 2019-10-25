@@ -56,6 +56,7 @@ static u32 _heap_alloc(heap_t *heap, u32 size, u32 alignment)
 			node->used = 1;
 			new->used = 0;
 			new->next = node->next;
+			new->next->prev = new;
 			new->prev = node;
 			node->next = new;
 
