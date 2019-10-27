@@ -431,7 +431,6 @@ void launch_tools()
 		if (launch_payload(dir, false))
 		{
 			EPRINTF("Failed to launch payload.");
-			free(dir);
 		}
 	}
 
