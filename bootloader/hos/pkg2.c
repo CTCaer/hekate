@@ -574,10 +574,6 @@ static void parse_external_kip_patches()
 	char path[64];
 	strcpy(path, "bootloader/patches.ini");
 
-	// If patches.ini not found, try to load from template.
-	if (f_stat(path, NULL))
-		strcpy(path, "bootloader/patches_template.ini");
-
 	LIST_INIT(ini_kip_sections);
 	if (ini_patch_parse(&ini_kip_sections, path))
 	{
@@ -1066,7 +1062,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				}
 				currPatchset++;
 			}
-			if (!strncmp(_kip_ids[currKipIdx].name, "FS", 2) && emummc_patch_selected)
+			if (emummc_patch_selected && !strncmp(_kip_ids[currKipIdx].name, "FS", 2))
 			{
 				emummc_patch_selected = false;
 				emu_cfg.fs_ver = currKipIdx;
@@ -1091,7 +1087,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	return NULL;
 }
 
-static const uint8_t mkey_keyseed_8xx[][0x10] =
+static const u8 mkey_keyseed_8xx[][0x10] =
 {
 	{0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80} // Master key 8 encrypted with 9.
 };
