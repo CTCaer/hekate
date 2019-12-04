@@ -1023,13 +1023,18 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						continue;
 
 					u32 appliedMask = 1u << currEnabIdx;
-					if (currPatchset->patches == NULL || !strcmp(currPatchset->name, "emummc"))
+
+					if (!strcmp(currPatchset->name, "emummc"))
+					{
+						emummc_patch_selected = true;							
+						break;
+					}
+
+					if (currPatchset->patches == NULL)
 					{
 						gfx_printf("Patch '%s' not necessary for %s KIP1\n", currPatchset->name, (const char*)ki->kip1->name);
 						patchesApplied |= appliedMask;
 
-						if (!strcmp(currPatchset->name, "emummc"))
-							emummc_patch_selected = true;
 						break;
 					}
 
@@ -1051,9 +1056,11 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 								}
 
 								u32 currOffset = GET_KIP_PATCH_OFFSET(currPatch->offset);
-								if (memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0)
+								// If source is does not match and is not already patched, throw an error.
+								if ((memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0) &&
+									(memcmp(&kipSectData[currOffset], currPatch->dstData, currPatch->length) != 0))
 								{
-									gfx_printf("%kDATA MISMATCH FOR PATCH AT OFFSET 0x%x!!!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
+									gfx_printf("%kPatch data mismatch at 0x%x!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
 									return currPatchset->name; // MUST stop here as kip is likely corrupt.
 								}
 								else
