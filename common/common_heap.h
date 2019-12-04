@@ -25,6 +25,7 @@ typedef struct _hnode
 	u32 size;
 	struct _hnode *prev;
 	struct _hnode *next;
+	u32 align[4]; // Align to arch cache line size.
 } hnode_t;
 
 typedef struct _heap
@@ -32,3 +33,9 @@ typedef struct _heap
 	u32 start;
 	hnode_t *first;
 } heap_t;
+
+typedef struct
+{
+    u32 total;
+    u32 used;
+} heap_monitor_t;

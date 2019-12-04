@@ -18,10 +18,12 @@
 #define _HEAP_H_
 
 #include "../utils/types.h"
+#include "../../../common/common_heap.h"
 
 void heap_init(u32 base);
 void *malloc(u32 size);
 void *calloc(u32 num, u32 size);
 void free(void *buf);
+void heap_monitor(heap_monitor_t *mon, bool print_node_stats);
 
 #endif
