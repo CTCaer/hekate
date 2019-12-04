@@ -31,12 +31,12 @@ static const clock_t _clock_uart[] = {
 
 //I2C default parameters - TLOW: 4, THIGH: 2, DEBOUNCE: 0 FM_DIV: 26.
 static const clock_t _clock_i2c[] = {
-/* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 12, 6, 0 }, // 0, 19 }, // 100KHz
-/* I2C2 */ { 0 },
-/* I2C3 */ { 0 },
-/* I2C4 */ { 0 },
-/* I2C5 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C5, 15, 6, 0 }, // 0, 4 },  // 400KHz
-/* I2C6 */ { 0 }
+/* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 12, 0, 19 }, //20.4MHz -> 100KHz
+/* I2C2 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C2, 22, 0, 4  }, //81.6MHz -> 400KHz
+/* I2C3 */ { CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_I2C3, 3,  0, 4  }, //81.6MHz -> 400KHz
+/* I2C4 */ { CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_I2C4, 7,  0, 19 }, //20.4MHz -> 100KHz
+/* I2C5 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C5, 15, 0, 4  }, //81.6MHz -> 400KHz
+/* I2C6 */ { CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_I2C6, 6,  0, 19 }  //20.4MHz -> 100KHz
 };
 
 static clock_t _clock_se = {
@@ -88,6 +88,8 @@ void clock_enable(const clock_t *clk)
 		CLOCK(clk->source) = clk->clk_div | (clk->clk_src << 29);
 	// Enable.
 	CLOCK(clk->enable) = (CLOCK(clk->enable) & ~(1 << clk->index)) | (1 << clk->index);
+	usleep(2);
+
 	// Take clock off reset.
 	CLOCK(clk->reset) &= ~(1 << clk->index);
 }

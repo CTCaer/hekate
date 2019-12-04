@@ -91,6 +91,8 @@ void clock_enable(const clock_t *clk)
 		CLOCK(clk->source) = clk->clk_div | (clk->clk_src << 29);
 	// Enable.
 	CLOCK(clk->enable) = (CLOCK(clk->enable) & ~(1 << clk->index)) | (1 << clk->index);
+	usleep(2);
+
 	// Take clock off reset.
 	CLOCK(clk->reset) &= ~(1 << clk->index);
 }
