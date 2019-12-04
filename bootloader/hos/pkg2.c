@@ -584,7 +584,7 @@ static void parse_external_kip_patches()
 
 			if (!strcmp(curr_kip->name, ini_psec->name) && !memcmp(curr_kip->hash, ini_psec->hash, 8))
 			{
-				kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 8);
+				kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 8); // Max 8 patchsets per kip.
 
 				u32 curr_patchset_idx;
 				for(curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
@@ -598,7 +598,7 @@ static void parse_external_kip_patches()
 				u32 curr_patch_idx = 0;
 
 				// Parse patches and glue them together to a patchset.
-				kip1_patch_t *patches = calloc(sizeof(kip1_patch_t), 16);
+				kip1_patch_t *patches = calloc(sizeof(kip1_patch_t), 16); // Max 16 patches per set.
 				LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
 				{
 					if (first_ext_patch)
@@ -610,11 +610,12 @@ static void parse_external_kip_patches()
 					}
 					else
 					{
+						// Check if new patchset name is found and create a new set.
 						if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
 						{
 							curr_patchset_idx++;
 							curr_patch_idx = 0;
-							patches = calloc(sizeof(kip1_patch_t), 16);
+							patches = calloc(sizeof(kip1_patch_t), 16); // Max 16 patches per set.
 
 							patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
 							strcpy(patchsets[curr_patchset_idx].name, pt->name);
@@ -632,6 +633,8 @@ static void parse_external_kip_patches()
 						memcpy(patches[curr_patch_idx].srcData, pt->srcData, pt->length);
 						memcpy(patches[curr_patch_idx].dstData, pt->dstData, pt->length);
 					}
+					else
+						patches[curr_patch_idx].srcData = malloc(1); // Empty patches check. Keep everything else as 0.
 
 					curr_patch_idx++;
 				}
@@ -1036,10 +1039,16 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						if (bitsAffected & (1u << currSectIdx))
 						{
 							gfx_printf("Applying patch '%s' on %s KIP1 sect %d\n", currPatchset->name, (const char*)ki->kip1->name, currSectIdx);
-							for (const kip1_patch_t* currPatch = currPatchset->patches; currPatch != NULL && currPatch->length != 0; currPatch++)
+							for (const kip1_patch_t* currPatch = currPatchset->patches; currPatch != NULL && currPatch->srcData != 0; currPatch++)
 							{
 								if (GET_KIP_PATCH_SECTION(currPatch->offset) != currSectIdx)
 									continue;
+
+								if (!currPatch->length)
+								{
+									gfx_printf("%kPatch is empty!%k\n", 0xFFFF0000, 0xFFCCCCCC);
+									return currPatchset->name; // MUST stop here as it's not probably intended.
+								}
 
 								u32 currOffset = GET_KIP_PATCH_OFFSET(currPatch->offset);
 								if (memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0)
