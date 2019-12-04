@@ -1023,6 +1023,7 @@ skip_list:
 		hos_launch(cfg_sec);
 
 		EPRINTF("\nFailed to launch HOS!");
+		gfx_printf("\nPress any key and try again...\n");
 		msleep(500);
 		btn_wait();
 	}

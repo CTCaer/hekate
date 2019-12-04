@@ -92,18 +92,14 @@ static int emummc_raw_get_part_off(int part_idx)
 	return 2;
 }
 
-
 int emummc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 {
 	FILINFO fno;
-	if (!sdmmc_storage_init_mmc(storage, sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
-	{
-		EPRINTF("Failed to init eMMC.");
+	if (!sdmmc_storage_init_mmc(storage, sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+		return 2;
 
-		goto out;
-	}
 	if (h_cfg.emummc_force_disable)
-		return 1;
+		return 0;
 
 	emu_cfg.active_part = 0;
 	if (!sd_mount())
@@ -129,10 +125,11 @@ int emummc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 		}
 		emu_cfg.file_based_part_size = fno.fsize >> 9;
 	}
-	return 1;
+
+	return 0;
 
 out:
-	return 0;
+	return 1;
 }
 
 int emummc_storage_end(sdmmc_storage_t *storage)

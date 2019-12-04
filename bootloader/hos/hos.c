@@ -329,13 +329,18 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 {
-	int res = 0;
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	if (!emummc_storage_init_mmc(&storage, &sdmmc))
+	int res = emummc_storage_init_mmc(&storage, &sdmmc);
+
+	if (res)
 	{
-		_hos_crit_error("Failed to init emuMMC");
+		if (res == 2)
+			_hos_crit_error("Failed to init eMMC");
+		else
+			_hos_crit_error("Failed to init emuMMC");
+
 		return 0;
 	}
 
@@ -368,9 +373,15 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	if (!emummc_storage_init_mmc(&storage, &sdmmc))
+	int res = emummc_storage_init_mmc(&storage, &sdmmc);
+
+	if (res)
 	{
-		_hos_crit_error("Failed to init emuMMC");
+		if (res == 2)
+			_hos_crit_error("Failed to init eMMC");
+		else
+			_hos_crit_error("Failed to init emuMMC");
+
 		return NULL;
 	}
 
@@ -562,6 +573,8 @@ int hos_launch(ini_sec_t *cfg)
 	if (!pkg2_hdr)
 	{
 		_hos_crit_error("Pkg2 decryption failed!");
+		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
+			EPRINTF("Is Sept updated?");
 		return 0;
 	}
 
@@ -590,6 +603,7 @@ int hos_launch(ini_sec_t *cfg)
 			if (!ctxt.pkg2_kernel_id)
 			{
 				_hos_crit_error("Failed to identify kernel!");
+
 				return 0;
 			}
 

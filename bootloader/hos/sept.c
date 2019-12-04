@@ -91,9 +91,14 @@ void check_sept()
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	if (!emummc_storage_init_mmc(&storage, &sdmmc))
+	int res = emummc_storage_init_mmc(&storage, &sdmmc);
+	if (res)
 	{
-		EPRINTF("Failed to init eMMC.");
+		if (res == 2)
+			EPRINTF("Failed to init eMMC");
+		else
+			EPRINTF("Failed to init emuMMC");
+
 		goto out_free;
 	}
 
