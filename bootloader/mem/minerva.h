@@ -20,7 +20,10 @@
 #include "mtc_table.h"
 #include "../utils/types.h"
 
-#define EMC_PERIODIC_TRAIN_MS 100
+#define MTC_INIT_MAGIC 0x3043544D
+#define MTC_NEW_MAGIC  0x5243544D
+
+#define EMC_PERIODIC_TRAIN_MS 250
 
 typedef struct
 {
@@ -35,6 +38,7 @@ typedef struct
 	bool emc_2X_clk_src_is_pllmb;
 	bool fsp_for_src_freq;
 	bool train_ram_patterns;
+	bool init_done;
 } mtc_config_t;
 
 enum train_mode_t

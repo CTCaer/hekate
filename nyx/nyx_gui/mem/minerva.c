@@ -34,23 +34,32 @@ void minerva_init()
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 
+	// Set table to nyx storage.
+	mtc_cfg->mtc_table = (emc_table_t *)&nyx_str->mtc_table;
+
 	// Set table to ram.
-	if (!(mtc_cfg->table_entries == 10))
+	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
 	{
-		mtc_cfg->mtc_table = NULL;
-		mtc_cfg->sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
+		mtc_cfg->train_mode = OP_PERIODIC_TRAIN; // Retrain if needed.
 		u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
 		minerva_cfg = (void *)ep_addr;
+
+		return;
 	}
 	else
 	{
 		mtc_config_t mtc_tmp;
-		mtc_tmp.mtc_table = NULL;
+		mtc_tmp.mtc_table = mtc_cfg->mtc_table;
 		mtc_tmp.sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
+		mtc_tmp.init_done = MTC_NEW_MAGIC;
 		u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_tmp);
-		minerva_cfg = (void *)ep_addr;
-		
-		return;
+
+		if (mtc_tmp.init_done == MTC_INIT_MAGIC)
+			minerva_cfg = (void *)ep_addr;
+
+		// Copy Minerva context to Nyx storage.
+		if (minerva_cfg)
+			memcpy(mtc_cfg, (void *)&mtc_tmp, sizeof(mtc_config_t));
 	}
 
 	if (!minerva_cfg)
@@ -79,7 +88,7 @@ void minerva_change_freq(minerva_freq_t freq)
 		return;
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
-	if (minerva_cfg && (mtc_cfg->rate_from != freq))
+	if (mtc_cfg->rate_from != freq)
 	{
 		mtc_cfg->rate_to = freq;
 		mtc_cfg->train_mode = OP_SWITCH;

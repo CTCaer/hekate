@@ -34,8 +34,10 @@ void minerva_init()
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 
-	// Set table to ram.
-	mtc_cfg->mtc_table = NULL;
+	// Set table to nyx storage.
+	mtc_cfg->mtc_table = (emc_table_t *)&nyx_str->mtc_table;
+
+	mtc_cfg->init_done = MTC_NEW_MAGIC;
 	mtc_cfg->sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
 	u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
 	minerva_cfg = (void *)ep_addr;
@@ -66,7 +68,7 @@ void minerva_change_freq(minerva_freq_t freq)
 		return;
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
-	if (minerva_cfg && (mtc_cfg->rate_from != freq))
+	if (mtc_cfg->rate_from != freq)
 	{
 		mtc_cfg->rate_to = freq;
 		mtc_cfg->train_mode = OP_SWITCH;
@@ -80,7 +82,7 @@ void minerva_periodic_training()
 		return;
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
-	if (minerva_cfg && mtc_cfg->rate_from == FREQ_1600)
+	if (mtc_cfg->rate_from == FREQ_1600)
 	{
 		mtc_cfg->train_mode = OP_PERIODIC_TRAIN;
 		minerva_cfg(mtc_cfg, NULL);

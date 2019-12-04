@@ -3857,18 +3857,16 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 	switch (mtc_cfg->sdram_id)
 	{
 	case 1:
-		memcpy((void *)MTC_TABLE, nx_abca2_2_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
+		memcpy(mtc_cfg->mtc_table, nx_abca2_2_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
 		break;
 	case 0:
 	case 2:
 	case 3:
 	case 4:
 	default:
-		memcpy((void *)MTC_TABLE, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
+		memcpy(mtc_cfg->mtc_table, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
 		break;
 	}
-
-	mtc_cfg->mtc_table = (emc_table_t *)MTC_TABLE;
 
 	mtc_cfg->table_entries = 10;
 	mtc_cfg->rate_to = 0;
@@ -3881,6 +3879,7 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 	mtc_cfg->emc_2X_clk_src_is_pllmb = false;
 	mtc_cfg->fsp_for_src_freq = false;
 	mtc_cfg->train_ram_patterns = true;
+	mtc_cfg->init_done = MTC_INIT_MAGIC;
 }
 
 void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
@@ -3891,9 +3890,10 @@ void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
 	fsp_for_src_freq = mtc_cfg->fsp_for_src_freq;
 	emc_2X_clk_src_is_pllmb = mtc_cfg->emc_2X_clk_src_is_pllmb;
 
-	if (!mtc_cfg->mtc_table)
+	if (mtc_cfg->init_done != MTC_INIT_MAGIC)
 	{
-		_minerva_get_table(mtc_cfg);
+		if (mtc_cfg->init_done == MTC_NEW_MAGIC)
+			_minerva_get_table(mtc_cfg);
 		return;
 	}
 

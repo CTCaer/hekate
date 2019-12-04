@@ -17,6 +17,7 @@
 
 #include "util.h"
 #include "../gfx/di.h"
+#include "../mem/minerva.h"
 #include "../power/max77620.h"
 #include "../rtc/max77620-rtc.h"
 #include "../soc/bpmp.h"
@@ -25,6 +26,8 @@
 #include "../soc/t210.h"
 
 #define USE_RTC_TIMER
+
+extern volatile nyx_storage_t *nyx_str;
 
 extern void sd_unmount();
 
@@ -100,6 +103,8 @@ void reboot_normal()
 	sd_unmount();
 	display_end();
 
+	nyx_str->mtc_cfg.init_done = 0;
+
 	panic(0x21); // Bypass fuse programming in package1.
 }
 
@@ -109,6 +114,8 @@ void reboot_rcm()
 
 	sd_unmount();
 	display_end();
+
+	nyx_str->mtc_cfg.init_done = 0;
 
 	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
 	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;

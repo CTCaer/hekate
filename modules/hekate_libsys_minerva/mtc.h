@@ -30,7 +30,9 @@
 #define EMC_BASE   0x7001B000
 #define EMC0_BASE  0x7001E000
 #define EMC1_BASE  0x7001F000
-#define MTC_TABLE  0x8F000000
+
+#define MTC_INIT_MAGIC 0x3043544D
+#define MTC_NEW_MAGIC  0x5243544D
 
 #define _REG(base, off) *(vu32 *)((base) + (off))
 
@@ -61,6 +63,7 @@ typedef struct
 	bool emc_2X_clk_src_is_pllmb;
 	bool fsp_for_src_freq;
 	bool train_ram_patterns;
+	bool init_done;
 } mtc_config_t;
 
 enum train_mode_t

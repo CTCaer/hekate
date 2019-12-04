@@ -41,6 +41,7 @@ typedef struct _nyx_storage_t
 	u8  hekate[0x30000];
 	u8  rsvd[0x800000];
 	mtc_config_t mtc_cfg;
+	emc_table_t mtc_table;
 } nyx_storage_t;
 
 u32 get_tmr_us();

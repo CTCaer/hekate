@@ -17,6 +17,7 @@
 
 #include "util.h"
 #include "../gfx/di.h"
+#include "../mem/minerva.h"
 #include "../power/max77620.h"
 #include "../soc/bpmp.h"
 #include "../soc/i2c.h"
@@ -24,6 +25,8 @@
 #include "../soc/t210.h"
 
 #define USE_RTC_TIMER
+
+extern volatile nyx_storage_t *nyx_str;
 
 extern void sd_unmount(bool deinit);
 
@@ -99,6 +102,8 @@ void reboot_normal()
 	sd_unmount(true);
 	display_end();
 
+	nyx_str->mtc_cfg.init_done = 0;
+
 	panic(0x21); // Bypass fuse programming in package1.
 }
 
@@ -108,6 +113,8 @@ void reboot_rcm()
 
 	sd_unmount(true);
 	display_end();
+
+	nyx_str->mtc_cfg.init_done = 0;
 
 	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
 	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
@@ -121,8 +128,11 @@ void power_off()
 	sd_unmount(true);
 	display_end();
 
+	// Stop the alarm, in case we injected and powered off too fast.
+	max77620_rtc_stop_alarm();
+
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
-	
+
 	while (true)
 		bpmp_halt();
 }
