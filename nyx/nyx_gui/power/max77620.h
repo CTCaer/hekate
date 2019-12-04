@@ -19,9 +19,19 @@
 #define  MAX77620_CNFGGLBL1_LBDAC_EN          (1 << 7)
 #define  MAX77620_CNFGGLBL1_MPPLD             (1 << 6)
 #define  MAX77620_CNFGGLBL1_LBHYST            ((1 << 5) | (1 << 4))
-#define  MAX77620_CNFGGLBL1_LBHYST_N          (1 << 4)
-#define  MAX77620_CNFGGLBL1_LBDAC             0x0E
-#define  MAX77620_CNFGGLBL1_LBDAC_N           (1 << 1)
+#define  MAX77620_CNFGGLBL1_LBHYST_100        (0 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST_200        (1 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST_300        (2 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST_400        (3 << 4)
+#define  MAX77620_CNFGGLBL1_LBDAC_MASK        0x0E
+#define  MAX77620_CNFGGLBL1_LBDAC_2700        (0 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_2800        (1 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_2900        (2 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_3000        (3 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_3100        (4 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_3200        (5 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_3300        (6 << 1)
+#define  MAX77620_CNFGGLBL1_LBDAC_3400        (7 << 1)
 #define  MAX77620_CNFGGLBL1_LBRSTEN           (1 << 0)
 
 #define MAX77620_REG_CNFGGLBL2      0x01

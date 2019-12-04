@@ -258,7 +258,7 @@ void _config_regulators()
 		MAX77621_T_JUNCTION_120 | MAX77621_FT_ENABLE | MAX77621_CKKADV_TRIP_75mV_PER_US_HIST_DIS |
 		MAX77621_CKKADV_TRIP_150mV_PER_US | MAX77621_INDUCTOR_NOMINAL);
 
-	// Disable low battery shutdown monitor.
+	// Enable low battery shutdown monitor for < 2800mV.
 	max77620_low_battery_monitor_config();
 }
 
