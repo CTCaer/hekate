@@ -201,40 +201,33 @@ void print_mmc_info()
 			gfx_printf("%kExtended CSD V1.%d:%k\n",
 				0xFF00DDFF, storage.ext_csd.ext_struct, 0xFFCCCCCC);
 			card_type = storage.ext_csd.card_type;
-			u8 card_type_support[96];
-			u8 pos_type = 0;
+			char card_type_support[96];
 			card_type_support[0] = 0;
 			if (card_type & EXT_CSD_CARD_TYPE_HS_26)
 			{
-				memcpy(card_type_support, "HS26", 4);
+				strcat(card_type_support, "HS26");
 				speed = (26 << 16) | 26;
-				pos_type += 4;
 			}
 			if (card_type & EXT_CSD_CARD_TYPE_HS_52)
 			{
-				memcpy(card_type_support + pos_type, ", HS52", 6);
+				strcat(card_type_support, ", HS52");
 				speed = (52 << 16) | 52;
-				pos_type += 6;
 			}
 			if (card_type & EXT_CSD_CARD_TYPE_DDR_1_8V)
 			{
-				memcpy(card_type_support + pos_type, ", DDR52_1.8V", 12);
+				strcat(card_type_support, ", DDR52_1.8V");
 				speed = (52 << 16) | 104;
-				pos_type += 12;
 			}
 			if (card_type & EXT_CSD_CARD_TYPE_HS200_1_8V)
 			{
-				memcpy(card_type_support + pos_type, ", HS200_1.8V", 12);
+				strcat(card_type_support, ", HS200_1.8V");
 				speed = (200 << 16) | 200;
-				pos_type += 12;
 			}
 			if (card_type & EXT_CSD_CARD_TYPE_HS400_1_8V)
 			{
-				memcpy(card_type_support + pos_type, ", HS400_1.8V", 12);
+				strcat(card_type_support, ", HS400_1.8V");
 				speed = (200 << 16) | 400;
-				pos_type += 12;
 			}
-			card_type_support[pos_type] = 0;
 
 			gfx_printf(
 				" Spec Version:  %02X\n"

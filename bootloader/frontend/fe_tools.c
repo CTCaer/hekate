@@ -480,13 +480,13 @@ void _fix_sd_attr(u32 type)
 		switch (type)
 		{
 		case 0:
-			memcpy(path, "/", 2);
-			memcpy(label, "SD Card", 8);
+			strcpy(path, "/");
+			strcpy(label, "SD Card");
 			break;
 		case 1:
 		default:
-			memcpy(path, "/Nintendo", 10);
-			memcpy(label, "Nintendo folder", 16);
+			strcpy(path, "/Nintendo");
+			strcpy(label, "Nintendo folder");
 			break;
 		}
 

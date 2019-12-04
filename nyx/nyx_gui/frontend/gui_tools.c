@@ -277,9 +277,9 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		u32 total = 0;
 
 		if (!nintendo_folder)
-			memcpy(path, "", 1);
+			path[0] = 0;
 		else
-			memcpy(path, "Nintendo", 9);
+			strcpy(path, "Nintendo");
 
 		u32 ufidx = 0;
 
@@ -288,7 +288,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		// Also fix the emuMMC Nintendo folders.
 		if (nintendo_folder)
 		{
-			memcpy(path, "emuMMC", 7);
+			strcpy(path, "emuMMC");
 			_fix_attributes(&ufidx, lb_val, path, &total, nintendo_folder, nintendo_folder);
 		}
 

@@ -368,7 +368,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 	for (i = 0; i < 2; i++)
 	{
-		memcpy(bootPart.name, "BOOT", 5);
+		strcpy(bootPart.name, "BOOT");
 		bootPart.name[4] = (u8)('0' + i);
 		bootPart.name[5] = 0;
 
@@ -623,7 +623,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 	for (i = 0; i < 2; i++)
 	{
-		memcpy(bootPart.name, "BOOT", 5);
+		strcpy(bootPart.name, "BOOT");
 		bootPart.name[4] = (u8)('0' + i);
 		bootPart.name[5] = 0;
 

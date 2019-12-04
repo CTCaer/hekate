@@ -65,13 +65,13 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 	if (!memcmp(value + strlen(value) - 1, "*", 1))
 	{
 		char *dir = (char *)malloc(256);
-		memcpy(dir, value, strlen(value) + 1);
+		strcpy(dir, value);
 
 		u32 dirlen = 0;
 		dir[strlen(dir) - 2] = 0;
 		char *filelist = dirlist(dir, "*.kip*", false);
 
-		memcpy(dir + strlen(dir), "/", 2);
+		strcat(dir, "/");
 		dirlen = strlen(dir);
 
 		u32 i = 0;
@@ -82,7 +82,7 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 				if (!filelist[i * 256])
 					break;
 
-				memcpy(dir + dirlen, &filelist[i * 256], strlen(&filelist[i * 256]) + 1);
+				strcpy(dir + dirlen, &filelist[i * 256]);
 
 				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
 				mkip1->kip1 = sd_file_read(dir, &size);

@@ -278,13 +278,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		s_printf(dram_man, "Samsung %s", (!dram_id) ? "4GB" : "6GB");
 		break;
 	case 1:
-		memcpy(dram_man, "Hynix 4GB", 10);
+		strcpy(dram_man, "Hynix 4GB");
 		break;
 	case 2:
-		memcpy(dram_man, "Micron 4GB", 11);
+		strcpy(dram_man, "Micron 4GB");
 		break;
 	default:
-		memcpy(dram_man, "Unknown", 8);
+		strcpy(dram_man, "Unknown");
 		break;
 	}
 

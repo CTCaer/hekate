@@ -227,8 +227,7 @@ static void _config_autoboot_list(void *ent)
 
 						else
 							boot_text[(i - 1) * 512] = '*';
-						memcpy(boot_text + (i - 1) * 512 + 1, ini_sec->name, strlen(ini_sec->name) + 1);
-						boot_text[strlen(ini_sec->name) + (i - 1) * 512 + 1] = 0;
+						strcpy(boot_text + (i - 1) * 512 + 1, ini_sec->name);
 						ments[i].caption = &boot_text[(i - 1) * 512];
 					}
 					ments[i].type = ini_sec->type;
@@ -335,8 +334,7 @@ void config_autoboot()
 
 						else
 							boot_text[(i - 4) * 512] = '*';
-						memcpy(boot_text + (i - 4) * 512 + 1, ini_sec->name, strlen(ini_sec->name) + 1);
-						boot_text[strlen(ini_sec->name) + (i - 4) * 512 + 1] = 0;
+						strcpy(boot_text + (i - 4) * 512 + 1, ini_sec->name);
 						ments[i].caption = &boot_text[(i - 4) * 512];
 					}
 					ments[i].type = ini_sec->type;
@@ -421,7 +419,7 @@ void config_bootdelay()
 		else
 			delay_text[i * 32] = '*';
 		delay_text[i * 32 + 1] = i + '0';
-		memcpy(delay_text + i * 32 + 2, " seconds", 9);
+		strcpy(delay_text + i * 32 + 2, " seconds");
 
 		ments[i + 2].type = MENT_DATA;
 		ments[i + 2].caption = delay_text + i * 32;
@@ -468,9 +466,9 @@ void config_verification()
 
 	ments[1].type = MENT_CHGLINE;
 
-	memcpy(vr_text,       " Disable (Fastest - Unsafe)", 28);
-	memcpy(vr_text + 64,  " Sparse  (Fast - Safe)", 23);
-	memcpy(vr_text + 128, " Full    (Slow - Safe)", 23);
+	strcpy(vr_text,       " Disable (Fastest - Unsafe)");
+	strcpy(vr_text + 64,  " Sparse  (Fast - Safe)");
+	strcpy(vr_text + 128, " Full    (Slow - Safe)");
 
 	for (u32 i = 0; i < 3; i++)
 	{
@@ -530,10 +528,10 @@ void config_backlight()
 		if (i < 10)
 		{
 			bri_text[i * 32 + 1] = i + '0';
-			memcpy(bri_text + i * 32 + 2, "0%", 3);
+			strcpy(bri_text + i * 32 + 2, "0%");
 		}
 		else
-			memcpy(bri_text + i * 32 + 1, "100%", 5);
+			strcpy(bri_text + i * 32 + 1, "100%");
 
 		ments[i + 1].type = MENT_DATA;
 		ments[i + 1].caption = bri_text + i * 32;

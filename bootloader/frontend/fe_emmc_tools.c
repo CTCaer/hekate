@@ -185,7 +185,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 
 	FIL partialIdxFp;
 	char partialIdxFilename[12];
-	memcpy(partialIdxFilename, "partial.idx", 12);
+	strcpy(partialIdxFilename, "partial.idx");
 
 	gfx_con.fntsz = 8;
 	gfx_printf("\nSD Card free space: %d MiB, Total backup size %d MiB\n\n",
@@ -203,7 +203,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 	{
 		isSmallSdCard = true;
 
-		gfx_printf("%k\nSD card free space is smaller than total backup size.%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%k\nSD card free space is smaller than backup size.%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 
 		if (!maxSplitParts)
 		{
@@ -518,7 +518,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 		bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 		for (i = 0; i < 2; i++)
 		{
-			memcpy(bootPart.name, "BOOT", 5);
+			strcpy(bootPart.name, "BOOT");
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 
@@ -874,7 +874,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 		bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 		for (i = 0; i < 2; i++)
 		{
-			memcpy(bootPart.name, "BOOT", 4);
+			strcpy(bootPart.name, "BOOT");
 			bootPart.name[4] = (u8)('0' + i);
 			bootPart.name[5] = 0;
 

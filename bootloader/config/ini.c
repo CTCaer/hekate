@@ -78,7 +78,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 	char *filename = (char *)malloc(256);
 
-	memcpy(filename, ini_path, pathlen + 1);
+	strcpy(filename, ini_path);
 
 	// Get all ini filenames.
 	if (is_dir)
@@ -89,7 +89,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 			free(filename);
 			return 0;
 		}
-		memcpy(filename + pathlen, "/", 2);
+		strcpy(filename + pathlen, "/");
 		pathlen++;
 	}
 
@@ -100,7 +100,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 		{
 			if (filelist[k * 256])
 			{
-				memcpy(filename + pathlen, &filelist[k * 256], strlen(&filelist[k * 256]) + 1);
+				strcpy(filename + pathlen, &filelist[k * 256]);
 				k++;
 			}
 			else
