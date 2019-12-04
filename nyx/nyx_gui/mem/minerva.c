@@ -80,6 +80,15 @@ void minerva_init()
 	minerva_cfg(mtc_cfg, NULL);
 	mtc_cfg->rate_to = 1600000;
 	minerva_cfg(mtc_cfg, NULL);
+
+	// FSP WAR.
+	mtc_cfg->train_mode = OP_SWITCH;
+	mtc_cfg->rate_to = 800000;
+	minerva_cfg(mtc_cfg, NULL);
+
+	// Switch to max.
+	mtc_cfg->rate_to = 1600000;
+	minerva_cfg(mtc_cfg, NULL);
 }
 
 void minerva_change_freq(minerva_freq_t freq)
@@ -102,7 +111,7 @@ void minerva_periodic_training()
 		return;
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
-	if (minerva_cfg && mtc_cfg->rate_from == FREQ_1600)
+	if (mtc_cfg->rate_from == FREQ_1600)
 	{
 		mtc_cfg->train_mode = OP_PERIODIC_TRAIN;
 		minerva_cfg(mtc_cfg, NULL);

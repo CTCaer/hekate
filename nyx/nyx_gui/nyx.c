@@ -374,8 +374,8 @@ void nyx_init_load_res()
 
 	sd_mount();
 
+	// Train DRAM and switch to max frequency.
 	minerva_init();
-	minerva_change_freq(FREQ_1600);
 
 	load_saved_configuration();
 

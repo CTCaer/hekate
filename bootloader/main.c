@@ -1265,7 +1265,6 @@ void ipl_main()
 
 	// Train DRAM and switch to max frequency.
 	minerva_init();
-	minerva_change_freq(FREQ_1600);
 
 	display_init();
 
