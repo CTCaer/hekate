@@ -35,7 +35,7 @@ void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage)
 		part->lba_end = ent->lba_end;
 		part->attrs = ent->attrs;
 
-		//HACK
+		// ASCII conversion. Copy only the LSByte of the UTF-16LE name.
 		for (u32 i = 0; i < 36; i++)
 			part->name[i] = ent->name[i];
 		part->name[36] = 0;

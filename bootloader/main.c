@@ -393,7 +393,7 @@ void launch_tools()
 				i++;
 			}
 		}
-					
+
 		if (i > 0)
 		{
 			memset(&ments[i + 2], 0, sizeof(ment_t));
@@ -407,6 +407,7 @@ void launch_tools()
 				free(dir);
 				free(filelist);
 				sd_unmount();
+
 				return;
 			}
 		}
@@ -427,11 +428,8 @@ void launch_tools()
 		memcpy(dir + strlen(dir), "/", 2);
 		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
 
-		if (launch_payload(dir, false))
-		{
-			EPRINTF("Failed to launch payload.");
-			free(dir);
-		}
+		launch_payload(dir, false);
+		EPRINTF("Failed to launch payload.");
 	}
 
 out:
@@ -531,11 +529,9 @@ void ini_list_launcher()
 
 	if (payload_path)
 	{
-		if (launch_payload(payload_path, false))
-		{
-			EPRINTF("Failed to launch payload.");
-			free(payload_path);
-		}
+		launch_payload(payload_path, false);
+		EPRINTF("Failed to launch payload.");
+		free(payload_path);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -665,11 +661,9 @@ void launch_firmware()
 
 	if (payload_path)
 	{
-		if (launch_payload(payload_path, false))
-		{
-			EPRINTF("Failed to launch payload.");
-			free(payload_path);
-		}
+		launch_payload(payload_path, false);
+		EPRINTF("Failed to launch payload.");
+		free(payload_path);
 	}
 	else if (!hos_launch(cfg_sec))
 		EPRINTF("Failed to launch firmware.");
@@ -1014,8 +1008,8 @@ skip_list:
 
 	if (payload_path)
 	{
-		if (launch_payload(payload_path, false))
-			free(payload_path);
+		launch_payload(payload_path, false);
+		free(payload_path);
 	}
 	else
 	{

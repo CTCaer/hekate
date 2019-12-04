@@ -32,6 +32,7 @@ static const clock_t _clock_uart[] = {
 /* UART E */ { CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_UARTAPE, 20, 0, 2 }
 };
 
+//I2C default parameters - TLOW: 4, THIGH: 2, DEBOUNCE: 0 FM_DIV: 26.
 static const clock_t _clock_i2c[] = {
 /* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 12, 0, 19 }, //20.4MHz -> 100KHz
 /* I2C2 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C2, 22, 0, 4  }, //81.6MHz -> 400KHz
@@ -76,7 +77,7 @@ static clock_t _clock_coresight = {
 };
 
 static clock_t _clock_pwm = {
-	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM,    17, 6, 4 // Freference: 6.2MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM,    17, 6, 4 // Fref: 6.2MHz.
 };
 
 void clock_enable(const clock_t *clk)
@@ -369,7 +370,7 @@ static void _clock_sdmmc_clear_enable(u32 id)
 static u32 _clock_sdmmc_table[8] = { 0 };
 
 #define PLLP_OUT0      0x0
-static int _clock_sdmmc_config_clock_source_inner(u32 *pout, u32 id, u32 val)
+static int _clock_sdmmc_config_clock_host(u32 *pout, u32 id, u32 val)
 {
 	u32 divisor = 0;
 	u32 source = PLLP_OUT0;
@@ -417,6 +418,7 @@ static int _clock_sdmmc_config_clock_source_inner(u32 *pout, u32 id, u32 val)
 	_clock_sdmmc_table[2 * id] = val;
 	_clock_sdmmc_table[2 * id + 1] = *pout;
 
+	// Set SDMMC clock.
 	switch (id)
 	{
 	case SDMMC_1:
@@ -447,15 +449,16 @@ void clock_sdmmc_config_clock_source(u32 *pout, u32 id, u32 val)
 		int is_enabled = _clock_sdmmc_is_enabled(id);
 		if (is_enabled)
 			_clock_sdmmc_clear_enable(id);
-		_clock_sdmmc_config_clock_source_inner(pout, id, val);
+		_clock_sdmmc_config_clock_host(pout, id, val);
 		if (is_enabled)
 			_clock_sdmmc_set_enable(id);
 		_clock_sdmmc_is_reset(id);
 	}
 }
 
-void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type)
+void clock_sdmmc_get_card_clock_div(u32 *pout, u16 *pdivisor, u32 type)
 {
+	// Get Card clock divisor.
 	switch (type)
 	{
 	case 0:
@@ -516,7 +519,7 @@ void clock_sdmmc_enable(u32 id, u32 val)
 	if (_clock_sdmmc_is_enabled(id))
 		_clock_sdmmc_clear_enable(id);
 	_clock_sdmmc_set_reset(id);
-	_clock_sdmmc_config_clock_source_inner(&div, id, val);
+	_clock_sdmmc_config_clock_host(&div, id, val);
 	_clock_sdmmc_set_enable(id);
 	_clock_sdmmc_is_reset(id);
 	usleep((100000 + div - 1) / div);

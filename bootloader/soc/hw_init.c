@@ -275,6 +275,7 @@ void config_hw()
 
 	// Enable fuse clock.
 	clock_enable_fuse(true);
+
 	// Disable fuse programming.
 	fuse_disable_program();
 

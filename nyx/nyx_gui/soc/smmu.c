@@ -106,7 +106,7 @@ bool smmu_is_used()
 
 void smmu_exit()
 {
-	*(uint32_t *)(smmu_payload + 0x14) = _NOP();
+	*(u32 *)(smmu_payload + 0x14) = _NOP();
 }
 
 u32 *smmu_init_domain4(u32 dev_base, u32 asid)

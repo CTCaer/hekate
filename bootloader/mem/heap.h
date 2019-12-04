@@ -18,7 +18,7 @@
 #define _HEAP_H_
 
 #include "../utils/types.h"
-#include "../../../common/common_heap.h"
+#include "../../common/common_heap.h"
 
 void heap_init(u32 base);
 void *malloc(u32 size);

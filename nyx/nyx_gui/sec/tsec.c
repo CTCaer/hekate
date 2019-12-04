@@ -212,7 +212,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 			res = -6;
 			smmu_deinit_for_tsec();
 
-			goto out;
+			goto out_free;
 		}
 
 		// Give some extra time to make sure PKG1.1 is decrypted.

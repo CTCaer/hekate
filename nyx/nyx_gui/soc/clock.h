@@ -104,6 +104,7 @@
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SYS 0x400
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SOR1 0x410
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SE 0x42C
+#define CLK_RST_CONTROLLER_RST_DEV_V_CLR 0x434
 #define CLK_RST_CONTROLLER_CLK_ENB_V_SET 0x440
 #define CLK_RST_CONTROLLER_CLK_ENB_V_CLR 0x444
 #define CLK_RST_CONTROLLER_CLK_ENB_W_SET 0x448
@@ -181,7 +182,7 @@ void clock_disable_coresight();
 void clock_enable_pwm();
 void clock_disable_pwm();
 void clock_sdmmc_config_clock_source(u32 *pout, u32 id, u32 val);
-void clock_sdmmc_get_params(u32 *pout, u16 *pdivisor, u32 type);
+void clock_sdmmc_get_card_clock_div(u32 *pout, u16 *pdivisor, u32 type);
 int clock_sdmmc_is_not_reset_and_enabled(u32 id);
 void clock_sdmmc_enable(u32 id, u32 val);
 void clock_sdmmc_disable(u32 id);

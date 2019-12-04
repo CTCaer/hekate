@@ -18,7 +18,7 @@
 #include <string.h>
 #include "heap.h"
 #include "../gfx/gfx.h"
-#include "../../../common/common_heap.h"
+#include "../../common/common_heap.h"
 
 static void _heap_create(heap_t *heap, u32 start)
 {

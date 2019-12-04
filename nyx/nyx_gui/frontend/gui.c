@@ -177,7 +177,7 @@ static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const
 
 static touch_event touchpad;
 
-static bool _fts_touch_read(lv_indev_data_t *data) 
+static bool _fts_touch_read(lv_indev_data_t *data)
 {
 	touch_poll(&touchpad);
 
@@ -1572,7 +1572,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	static lv_style_t line_style;
 	lv_style_copy(&line_style, &lv_style_plain_color);
 
-	line_style.body.main_color = LV_COLOR_HEX3(0xDDD); // 0x505050
+	line_style.body.main_color = LV_COLOR_HEX(0xDDDDDD); // 0x505050
 	line_style.body.grad_color = line_style.body.main_color;
 	line_style.body.shadow.width = 0;
 

@@ -80,9 +80,9 @@ void cluster_boot_cpu0(u32 entry)
 
 	_cluster_enable_power();
 
-	if (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & 0x40000000))
+	if (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & 0x40000000)) // PLLX_ENABLE.
 	{
-		CLOCK(CLK_RST_CONTROLLER_PLLX_MISC_3) &= 0xFFFFFFF7;
+		CLOCK(CLK_RST_CONTROLLER_PLLX_MISC_3) &= 0xFFFFFFF7; // Disable IDDQ.
 		usleep(2);
 		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = 0x80404E02;
 		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = 0x404E02;
@@ -126,6 +126,9 @@ void cluster_boot_cpu0(u32 entry)
 	// Non-secure reset vector write disable.
 	SB(SB_CSR) = SB_CSR_NS_RST_VEC_WR_DIS;
 	(void)SB(SB_CSR);
+
+	// Tighten up the security aperture.
+	// MC(MC_TZ_SECURITY_CTRL) = 1;
 
 	// Clear MSELECT reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_V) &= 0xFFFFFFF7;

@@ -71,6 +71,7 @@ static void _sdram_config(const sdram_params_t *params)
 	// Start clocks.
 	CLOCK(CLK_RST_CONTROLLER_PLLM_MISC1) = params->pllm_setup_control;
 	CLOCK(CLK_RST_CONTROLLER_PLLM_MISC2) = 0;
+
 	// u32 tmp = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | ((params->pllm_post_divider & 0xFFFF) << 20);
 	// CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = tmp;
 	// CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = tmp | 0x40000000;

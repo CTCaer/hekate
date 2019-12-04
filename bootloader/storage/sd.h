@@ -40,7 +40,9 @@
 #define SD_ROCR_S18A        SD_OCR_S18R  /* 1.8V switching accepted by card */
 #define SD_OCR_XPC          (1 << 28)    /* SDXC power control */
 #define SD_OCR_CCS          (1 << 30)    /* Card Capacity Status */
+#define SD_OCR_VDD_27_34    (0x7F << 15) /* VDD voltage 2.7 ~ 3.4 */
 #define SD_OCR_VDD_32_33    (1 << 20)	 /* VDD voltage 3.2 ~ 3.3 */
+#define SD_OCR_VDD_18       (1 << 7)	 /* VDD voltage 1.8 */
 
 /*
 * SD_SWITCH argument format:

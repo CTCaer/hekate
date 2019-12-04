@@ -126,7 +126,7 @@ void power_off()
 	max77620_rtc_stop_alarm();
 
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
-	
+
 	while (true)
 		bpmp_halt();
 }
