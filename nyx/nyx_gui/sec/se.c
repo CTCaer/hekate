@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 CTCaer
- * Copyright (c) 2018 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -66,15 +65,17 @@ static int _se_wait()
 	while (!(SE(SE_INT_STATUS_REG_OFFSET) & SE_INT_OP_DONE(INT_SET)))
 		;
 	if (SE(SE_INT_STATUS_REG_OFFSET) & SE_INT_ERROR(INT_SET) ||
-		SE(SE_STATUS_0) & 3 ||
-		SE(SE_ERR_STATUS_0) != 0)
+		SE(SE_STATUS_0) & SE_STATUS_0_STATE_WAIT_IN ||
+		SE(SE_ERR_STATUS_0) != SE_ERR_STATUS_0_SE_NS_ACCESS_CLEAR)
 		return 0;
 	return 1;
 }
 
-static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
+se_ll_t *ll_dst, *ll_src;
+static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size, bool is_oneshot)
 {
-	se_ll_t *ll_dst = NULL, *ll_src = NULL;
+	ll_dst = NULL;
+	ll_src = NULL;
 
 	if (dst)
 	{
@@ -93,17 +94,42 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 	SE(SE_ERR_STATUS_0) = SE(SE_ERR_STATUS_0);
 	SE(SE_INT_STATUS_REG_OFFSET) = SE(SE_INT_STATUS_REG_OFFSET);
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
 	SE(SE_OPERATION_REG_OFFSET) = SE_OPERATION(op);
+
+	int res = 1;
+	if (is_oneshot)
+	{
+		res = _se_wait();
+
+		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+
+		if (src)
+			free(ll_src);
+		if (dst)
+			free(ll_dst);
+	}
+
+	return res;
+}
+
+static int _se_execute_finalize()
+{
 	int res = _se_wait();
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
-	if (src)
+	if (ll_src)
+	{
 		free(ll_src);
-	if (dst)
+		ll_src = NULL;
+	}
+	if (ll_dst)
+	{
 		free(ll_dst);
+		ll_dst = NULL;
+	}
 
 	return res;
 }
@@ -119,9 +145,9 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = 0;
 
 	memcpy(block, src, src_size);
-	int res = _se_execute(op, block, 0x10, block, 0x10);
+	int res = _se_execute(op, block, 0x10, block, 0x10, true);
 	memcpy(dst, block, dst_size);
-	
+
 	free(block);
 	return res;
 }
@@ -135,17 +161,19 @@ static void _se_aes_ctr_set(void *ctr)
 
 void se_rsa_acc_ctrl(u32 rs, u32 flags)
 {
-	if (flags & 0x7F)
-		SE(SE_RSA_KEYTABLE_ACCESS_REG_OFFSET + 4 * rs) = (((flags >> 4) & 4) | (flags & 3)) ^ 7;
-	if (flags & 0x80)
+	if (flags & SE_RSA_KEY_TBL_DIS_KEY_ALL_FLAG)
+		SE(SE_RSA_KEYTABLE_ACCESS_REG_OFFSET + 4 * rs) =
+			((flags >> SE_RSA_KEY_TBL_DIS_KEYUSE_FLAG_SHIFT) & SE_RSA_KEY_TBL_DIS_KEYUSE_FLAG) |
+			((flags & SE_RSA_KEY_TBL_DIS_KEY_READ_UPDATE_FLAG) ^ SE_RSA_KEY_TBL_DIS_KEY_ALL_COMMON_FLAG);
+	if (flags & SE_RSA_KEY_TBL_DIS_KEY_LOCK_FLAG)
 		SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) &= ~(1 << rs);
 }
 
 void se_key_acc_ctrl(u32 ks, u32 flags)
 {
-	if (flags & 0x7F)
+	if (flags & SE_KEY_TBL_DIS_KEY_ACCESS_FLAG)
 		SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 4 * ks) = ~flags;
-	if (flags & 0x80)
+	if (flags & SE_KEY_TBL_DIS_KEY_LOCK_FLAG)
 		SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) &= ~(1 << ks);
 }
 
@@ -175,7 +203,7 @@ int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input)
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = 0;
 	SE(SE_CRYPTO_KEYTABLE_DST_REG_OFFSET) = SE_CRYPTO_KEYTABLE_DST_KEY_INDEX(ks_dst);
 
-	return _se_execute(OP_START, NULL, 0, input, 0x10);
+	return _se_execute(OP_START, NULL, 0, input, 0x10, true);
 }
 
 int se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size)
@@ -191,7 +219,7 @@ int se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, 
 		SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_CORE_SEL(CORE_DECRYPT);
 	}
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
-	return _se_execute(OP_START, dst, dst_size, src, src_size);
+	return _se_execute(OP_START, dst, dst_size, src, src_size, true);
 }
 
 int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
@@ -213,7 +241,7 @@ int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_s
 	if (src_size_aligned)
 	{
 		SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
-		if (!_se_execute(OP_START, dst, dst_size, src, src_size_aligned))
+		if (!_se_execute(OP_START, dst, dst_size, src, src_size_aligned, true))
 			return 0;
 	}
 
@@ -274,30 +302,84 @@ int se_aes_xts_crypt(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u
 	return 1;
 }
 
-// se_calc_sha256() was derived from Atmosphère's se_calculate_sha256.
-int se_calc_sha256(void *dst, const void *src, u32 src_size)
+int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64 total_size, u32 sha_cfg, bool is_oneshot)
 {
 	int res;
-	// Setup config for SHA256, size = BITS(src_size).
+	u32 *hash32 = (u32 *)hash;
+
+	if (src_size > 0xFFFFFF || (u32)hash % 4 || !hash) // Max 16MB - 1 chunks and aligned x4 hash buffer.
+		return 0;
+
+	// Setup config for SHA256.
 	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_SHA256) | SE_CONFIG_ENC_ALG(ALG_SHA) | SE_CONFIG_DST(DST_HASHREG);
-	SE(SE_SHA_CONFIG_REG_OFFSET) = SHA_ENABLE;
-	SE(SE_SHA_MSG_LENGTH_REG_OFFSET) = (u32)(src_size << 3);
-	SE(SE_SHA_MSG_LENGTH_REG_OFFSET + 4 * 1) = 0;
-	SE(SE_SHA_MSG_LENGTH_REG_OFFSET + 4 * 2) = 0;
-	SE(SE_SHA_MSG_LENGTH_REG_OFFSET + 4 * 3) = 0;
-	SE(SE_SHA_MSG_LEFT_REG_OFFSET) = (u32)(src_size << 3);
-	SE(SE_SHA_MSG_LEFT_REG_OFFSET + 4 * 1) = 0;
-	SE(SE_SHA_MSG_LEFT_REG_OFFSET + 4 * 2) = 0;
-	SE(SE_SHA_MSG_LEFT_REG_OFFSET + 4 * 3) = 0;
+	SE(SE_SHA_CONFIG_REG_OFFSET) = sha_cfg;
+
+	// Set total size to current buffer size if empty.
+	if (!total_size)
+		total_size = src_size;
+
+	// Set total size: BITS(src_size), up to 2 EB.
+	SE(SE_SHA_MSG_LENGTH_0_REG_OFFSET) = (u32)(total_size << 3);
+	SE(SE_SHA_MSG_LENGTH_1_REG_OFFSET) = (u32)(total_size >> 29);
+	SE(SE_SHA_MSG_LENGTH_2_REG_OFFSET) = 0;
+	SE(SE_SHA_MSG_LENGTH_3_REG_OFFSET) = 0;
+
+	// Set size left to hash.
+	SE(SE_SHA_MSG_LEFT_0_REG_OFFSET) = (u32)(total_size << 3);
+	SE(SE_SHA_MSG_LEFT_1_REG_OFFSET) = (u32)(total_size >> 29);
+	SE(SE_SHA_MSG_LEFT_2_REG_OFFSET) = 0;
+	SE(SE_SHA_MSG_LEFT_3_REG_OFFSET) = 0;
+
+	// If we hash in chunks, copy over the intermediate.
+	if (sha_cfg == SHA_CONTINUE)
+	{
+		if (!msg_left)
+			return 0;
+
+		// Restore message left to process.
+		SE(SE_SHA_MSG_LEFT_0_REG_OFFSET) = msg_left[0];
+		SE(SE_SHA_MSG_LEFT_1_REG_OFFSET) = msg_left[1];
+
+		// Restore hash reg.
+		for (u32 i = 0; i < 8; i++)
+			SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)) = byte_swap_32(hash32[i]);
+	}
 
 	// Trigger the operation.
-	res = _se_execute(OP_START, NULL, 0, src, src_size);
+	res = _se_execute(OP_START, NULL, 0, src, src_size, is_oneshot);
 
-	// Copy output hash.
-	u32 *dst32 = (u32 *)dst;
-	for (u32 i = 0; i < 8; i++)
-		dst32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)));
+	if (is_oneshot)
+	{
+		// Backup message left.
+		if (msg_left)
+		{
+			msg_left[0] = SE(SE_SHA_MSG_LEFT_0_REG_OFFSET);
+			msg_left[1] = SE(SE_SHA_MSG_LEFT_1_REG_OFFSET);
+		}
+
+		// Copy output hash.
+		for (u32 i = 0; i < 8; i++)
+			hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)));
+	}
 
 	return res;
 }
 
+int se_calc_sha256_finalize(void *hash, u32 *msg_left)
+{
+	u32 *hash32 = (u32 *)hash;
+	int res = _se_execute_finalize();
+
+	// Backup message left.
+	if (msg_left)
+	{
+		msg_left[0] = SE(SE_SHA_MSG_LEFT_0_REG_OFFSET);
+		msg_left[1] = SE(SE_SHA_MSG_LEFT_1_REG_OFFSET);
+	}
+
+	// Copy output hash.
+	for (u32 i = 0; i < 8; i++)
+		hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)));
+
+	return res;
+}

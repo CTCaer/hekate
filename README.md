@@ -116,7 +116,8 @@ Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
 Open source and free packages used:
  - FatFs R0.13a, Copyright (C) 2017, ChaN
  - bcl-1.2.0, Copyright (C) 2003-2006, Marcus Geelnard
- - Atmosphère (SE sha256, prc id kernel patches), Copyright (C) 2018, Atmosphère-NX
+ - Atmosphère (Exosphere types/panic, prc id kernel patches),
+   Copyright (C) 2018-2019, Atmosphère-NX
  - elfload, Copyright (C) 2014 Owen Shepherd, Copyright (C) 2018 M4xw
 
                          ___

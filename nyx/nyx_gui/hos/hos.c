@@ -150,9 +150,6 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	}
 	else
 	{
-		se_key_acc_ctrl(13, 0x15);
-		se_key_acc_ctrl(14, 0x15);
-
 		// Set TSEC key.
 		se_aes_key_set(13, tmp, 0x10);
 
@@ -206,7 +203,6 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		}
 
 		// Package2 key.
-		se_key_acc_ctrl(8, 0x15);
 		se_aes_unwrap_key(8, 12, package2_keyseed);
 	}
 

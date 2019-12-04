@@ -114,11 +114,11 @@ static void _se_lock(bool lock_se)
 	if (lock_se)
 	{
 		for (u32 i = 0; i < 16; i++)
-		se_key_acc_ctrl(i, 0x15);
+			se_key_acc_ctrl(i, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
 
 		for (u32 i = 0; i < 2; i++)
-			se_rsa_acc_ctrl(i, 1);
-		SE(0x4) = 0; // Make this reg secure only.
+			se_rsa_acc_ctrl(i, SE_RSA_KEY_TBL_DIS_KEYREAD_FLAG);
+		SE(SE_TZRAM_SECURITY_0) = 0; // Make SE TZRAM secure only.
 		SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) = 0; // Make all key access regs secure only.
 		SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) = 0; // Make all RSA access regs secure only.
 		SE(SE_SECURITY_0) &= 0xFFFFFFFB; // Make access lock regs secure only.
@@ -264,8 +264,8 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 	}
 	else
 	{
-		se_key_acc_ctrl(13, 0x15);
-		se_key_acc_ctrl(14, 0x15);
+		se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
+		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
 
 		// Set TSEC key.
 		se_aes_key_set(13, tmp, 0x10);
@@ -320,7 +320,7 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 		}
 
 		// Package2 key.
-		se_key_acc_ctrl(8, 0x15);
+		se_key_acc_ctrl(8, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
 		se_aes_unwrap_key(8, 12, package2_keyseed);
 	}
 
@@ -660,16 +660,16 @@ int hos_launch(ini_sec_t *cfg)
 			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
 		else if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_301)
 			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
-		se_key_acc_ctrl(12, 0xFF);
-		se_key_acc_ctrl(13, 0xFF);
+		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_TBL_DIS_KEY_LOCK_FLAG);
+		se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_TBL_DIS_KEY_LOCK_FLAG);
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 3;
 		break;
 	case KB_FIRMWARE_VERSION_400:
 	case KB_FIRMWARE_VERSION_500:
 	case KB_FIRMWARE_VERSION_600:
-		se_key_acc_ctrl(12, 0xFF);
-		se_key_acc_ctrl(15, 0xFF);
+		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_TBL_DIS_KEY_LOCK_FLAG);
+		se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_TBL_DIS_KEY_LOCK_FLAG);
 	default:
 		bootStateDramPkg2 = 2;
 		bootStatePkg2Continue = 4;

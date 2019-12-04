@@ -250,8 +250,8 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 					return 1;
 				}
 
-				se_calc_sha256(hashEm, bufEm, num << 9);
-				se_calc_sha256(hashSd, bufSd, num << 9);
+				se_calc_sha256(hashEm, NULL, bufEm, num << 9, 0, SHA_INIT_HASH, true);
+				se_calc_sha256(hashSd, NULL, bufSd, num << 9, 0, SHA_INIT_HASH, true);
 				res = memcmp(hashEm, hashSd, 0x10);
 
 				if (res)

@@ -38,7 +38,6 @@
 
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
-#define SHA256_SZ 0x20
 
 #define MBR_1ST_PART_TYPE_OFF 0x1C2
 
