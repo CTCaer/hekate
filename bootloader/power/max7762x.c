@@ -64,6 +64,16 @@ static const max77620_regulator_t _pmic_regulators[] = {
 	{ REGULATOR_LDO, "ldo8", 0x00,  50000, 800000, 1050000, 1050000, MAX77620_REG_LDO8_CFG, MAX77620_REG_LDO8_CFG2, MAX77620_LDO_VOLT_MASK, MAX77620_LDO_POWER_MODE_MASK, MAX77620_LDO_POWER_MODE_SHIFT, 0x00,  MAX77620_REG_FPS_LDO8, 3, 7, 0 }
 };
 
+static void _max77620_try_set_reg(u8 reg, u8 val)
+{
+	u8 tmp;
+	do
+	{
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, reg, val);
+		tmp = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, reg);
+	} while (val != tmp);
+}
+
 int max77620_regulator_get_status(u32 id)
 {
 	if (id > REGULATOR_MAX)
@@ -83,7 +93,7 @@ int max77620_regulator_config_fps(u32 id)
 
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, reg->fps_addr,
+	_max77620_try_set_reg(reg->fps_addr,
 		(reg->fps_src << MAX77620_FPS_SRC_SHIFT) | (reg->pu_period << MAX77620_FPS_PU_PERIOD_SHIFT) | (reg->pd_period));
 
 	return 1;
@@ -102,7 +112,7 @@ int max77620_regulator_set_voltage(u32 id, u32 mv)
 	u32 mult = (mv + reg->mv_step - 1 - reg->mv_min) / reg->mv_step;
 	u8 val = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, reg->volt_addr);
 	val = (val & ~reg->volt_mask) | (mult & reg->volt_mask);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, reg->volt_addr, val);
+	_max77620_try_set_reg(reg->volt_addr, val);
 	usleep(1000);
 
 	return 1;
@@ -121,7 +131,7 @@ int max77620_regulator_enable(u32 id, int enable)
 		val = (val & ~reg->enable_mask) | ((MAX77620_POWER_MODE_NORMAL << reg->enable_shift) & reg->enable_mask);
 	else
 		val &= ~reg->enable_mask;
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, addr, val);
+	_max77620_try_set_reg(addr, val);
 	usleep(1000);
 
 	return 1;
@@ -139,7 +149,7 @@ int max77620_regulator_set_volt_and_flags(u32 id, u32 mv, u8 flags)
 
 	u32 mult = (mv + reg->mv_step - 1 - reg->mv_min) / reg->mv_step;
 	u8 val = ((flags << reg->enable_shift) & ~reg->volt_mask) | (mult & reg->volt_mask);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, reg->volt_addr, val);
+	_max77620_try_set_reg(reg->volt_addr, val);
 	usleep(1000);
 
 	return 1;
@@ -155,7 +165,7 @@ void max77620_config_default()
 		if (_pmic_regulators[i].fps_src != MAX77620_FPS_SRC_NONE)
 			max77620_regulator_enable(i, 1);
 	}
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD_CFG2, 4);
+	_max77620_try_set_reg(MAX77620_REG_SD_CFG2, 4);
 }
 
 void max77620_low_battery_monitor_config()
