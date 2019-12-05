@@ -786,7 +786,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 		gfx_printf("Decomping %s KIP1 sect %d of size %d...\n", (const char*)hdr.name, sectIdx, compSize);
 		if (blz_uncompress_srcdest(srcDataPtr, compSize, dstDataPtr, outputSize) == 0)
 		{
-			gfx_printf("%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);
+			gfx_printf("%kERROR decomping sect %d of %s KIP!%k\n", ERRWARNCOL, sectIdx, (char*)hdr.name, MAINTXTCOL);
 			free(newKip);
 
 			return 1;
@@ -1044,7 +1044,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 								u32 currOffset = GET_KIP_PATCH_OFFSET(currPatch->offset);
 								if (memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0)
 								{
-									gfx_printf("%kDATA MISMATCH FOR PATCH AT OFFSET 0x%x!!!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
+									gfx_printf("%kDATA MISMATCH FOR PATCH AT OFFSET 0x%x!!!%k\n", ERRWARNCOL, currOffset, MAINTXTCOL);
 									return currPatchset->name; // MUST stop here as kip is likely corrupt.
 								}
 								else

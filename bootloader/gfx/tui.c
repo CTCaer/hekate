@@ -54,18 +54,18 @@ void tui_sbar(bool force_update)
 	max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
 	max17050_get_property(MAX17050_VCELL, &battVoltCurr);
 
-	gfx_clear_partial_grey(0x30, 1256, 24);
-	gfx_printf("%K%k Battery: %d.%d%% (%d mV) - Charge:", 0xFF303030, 0xFF888888,
+	gfx_clear_partial(U8DKGREY, 1256, 24);
+	gfx_printf("%K%k Battery: %d.%d%% (%d mV) - Charge:", BATTBGCOL, BATTFGCOL,
 		(battPercent >> 8) & 0xFF, (battPercent & 0xFF) / 26, battVoltCurr);
 
 	max17050_get_property(MAX17050_Current, &battVoltCurr);
 
 	if (battVoltCurr >= 0)
 		gfx_printf(" %k+%d mA%k%K\n",
-			0xFF008800, battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+			BATTINCCOL, battVoltCurr / 1000, MAINTXTCOL, TXTBG_COL);
 	else
 		gfx_printf(" %k-%d mA%k%K\n",
-			0xFF880000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+			BATTDECCOL, (~battVoltCurr) / 1000, MAINTXTCOL, TXTBG_COL);
 	gfx_con.fntsz = prevFontSize;
 	gfx_con_setpos(cx, cy);
 }
@@ -80,7 +80,7 @@ void tui_pbar(int x, int y, u32 val, u32 fgcol, u32 bgcol)
 
 	gfx_con_setpos(x, y);
 
-	gfx_printf("%k[%3d%%]%k", fgcol, val, 0xFFCCCCCC);
+	gfx_printf("%k[%3d%%]%k", fgcol, val, MAINTXTCOL);
 
 	x += 7 * gfx_con.fntsz;
 
@@ -100,7 +100,7 @@ void *tui_do_menu(menu_t *menu)
 {
 	int idx = 0, prev_idx = 0, cnt = 0x7FFFFFFF;
 
-	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_clear_partial(BG_COL, 0, 1256);
 	tui_sbar(true);
 
 #ifdef MENU_LOGO_ENABLE
@@ -110,7 +110,7 @@ void *tui_do_menu(menu_t *menu)
 
 	while (true)
 	{
-		gfx_con_setcol(0xFFCCCCCC, 1, 0xFF1B1B1B);
+		gfx_con_setcol(MAINTXTCOL, 1, TXTBG_COL);
 		gfx_con_setpos(menu->x, menu->y);
 		gfx_printf("[%s]\n\n", menu->caption);
 
@@ -143,30 +143,30 @@ void *tui_do_menu(menu_t *menu)
 		for (cnt = 0; menu->ents[cnt].type != MENT_END; cnt++)
 		{
 			if (cnt == idx)
-				gfx_con_setcol(0xFF1B1B1B, 1, 0xFFCCCCCC);
+				gfx_con_setcol(TXTBG_COL, 1, MAINTXTCOL);
 			else
-				gfx_con_setcol(0xFFCCCCCC, 1, 0xFF1B1B1B);
+				gfx_con_setcol(MAINTXTCOL, 1, TXTBG_COL);
 			if (menu->ents[cnt].type == MENT_CAPTION)
 				gfx_printf("%k %s", menu->ents[cnt].color, menu->ents[cnt].caption);
 			else if (menu->ents[cnt].type != MENT_CHGLINE)
 				gfx_printf(" %s", menu->ents[cnt].caption);
 			if(menu->ents[cnt].type == MENT_MENU)
-				gfx_printf("%k...", 0xFF0099EE);
+				gfx_printf("%k...", INFOCOL);
 			gfx_printf(" \n");
 		}
-		gfx_con_setcol(0xFFCCCCCC, 1, 0xFF1B1B1B);
+		gfx_con_setcol(MAINTXTCOL, 1, TXTBG_COL);
 		gfx_putc('\n');
 
 		// Print help and battery status.
 		gfx_con_setpos(0,  1127);
 		if (h_cfg.errors)
 		{
-			gfx_printf("%k Warning: %k", 0xFF800000, 0xFF555555);
+			gfx_printf("%k Warning: %k", ERRWARNCOL, MAINTXTCOL);
 			if (h_cfg.errors & ERR_LIBSYS_LP0)
 				gfx_printf("Sleep mode library is missing!\n");
 		}
 		gfx_con_setpos(0,  1191);
-		gfx_printf("%k VOL: Move up/down\n PWR: Select option%k", 0xFF555555, 0xFFCCCCCC);
+		gfx_printf("%k VOL: Move up/down\n PWR: Select option%k", U32GREY, MAINTXTCOL);
 
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
@@ -213,7 +213,7 @@ void *tui_do_menu(menu_t *menu)
 				break;
 			}
 			gfx_con.fntsz = 16;
-			gfx_clear_partial_grey(0x1B, 0, 1256);
+			gfx_clear_partial(BG_COL, 0, 1256);
 #ifdef MENU_LOGO_ENABLE
 			gfx_set_rect_rgb(Kc_MENU_LOGO,
 				X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);

@@ -64,7 +64,7 @@ void dump_packages12()
 
 	tsec_ctxt_t tsec_ctxt;
 
-	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_clear_partial(BG_COL, 0, 1256);
 	gfx_con_setpos(0, 0);
 
 	sdmmc_storage_t storage;
@@ -135,13 +135,13 @@ void dump_packages12()
 		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
 
 		// Display info.
-		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
+		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", ATTNCOL, MAINTXTCOL, hdr->ldr_size);
 
-		gfx_printf("%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
-		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
+		gfx_printf("%kSecure monitor addr: %k0x%05X\n", ATTNCOL, MAINTXTCOL, pkg1_id->secmon_base);
+		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", ATTNCOL, MAINTXTCOL, hdr->sm_size);
 
-		gfx_printf("%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
-		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
+		gfx_printf("%kWarmboot addr:       %k0x%05X\n", ATTNCOL, MAINTXTCOL, pkg1_id->warmboot_base);
+		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", ATTNCOL, MAINTXTCOL, hdr->wb_size);
 
 		// Dump package1.1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
@@ -198,8 +198,8 @@ void dump_packages12()
 	}
 
 	// Display info.
-	gfx_printf("%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
-	gfx_printf("%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
+	gfx_printf("%kKernel size:   %k0x%05X\n\n", INFOCOL, MAINTXTCOL, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
+	gfx_printf("%kINI1 size:     %k0x%05X\n\n", INFOCOL, MAINTXTCOL, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
 	// Dump pkg2.1.
 	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &storage);
@@ -253,7 +253,7 @@ void _toggle_autorcm(bool enable)
 
 	u8 randomXor = 0;
 
-	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_clear_partial(BG_COL, 0, 1256);
 	gfx_con_setpos(0, 0);
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
@@ -295,9 +295,9 @@ void _toggle_autorcm(bool enable)
 	sdmmc_storage_end(&storage);
 
 	if (enable)
-		gfx_printf("%kAutoRCM mode enabled!%k", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kAutoRCM mode enabled!%k", ATTNCOL, MAINTXTCOL);
 	else
-		gfx_printf("%kAutoRCM mode disabled!%k", 0xFF96FF00, 0xFFCCCCCC);
+		gfx_printf("%kAutoRCM mode disabled!%k", U32GREEN, MAINTXTCOL);
 	gfx_printf("\n\nPress any key...\n");
 
 out:
@@ -309,14 +309,14 @@ void _disable_autorcm() { _toggle_autorcm(false); }
 
 void menu_autorcm()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	if (h_cfg.rcm_patched)
 	{
 		gfx_printf("%kThis device is RCM patched and\nAutoRCM function is disabled.\n\n"
 			"In case %kAutoRCM%k is enabled\nthis will %kBRICK%k your device PERMANENTLY!!%k",
-			0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
+			ATTNCOL, ERRWARNCOL, ATTNCOL, ERRWARNCOL, ATTNCOL, MAINTXTCOL);
 		btn_wait();
 
 		return;
@@ -366,14 +366,14 @@ void menu_autorcm()
 	if (disabled)
 	{
 		ments[2].caption = "Status: Disabled!";
-		ments[2].color = 0xFF96FF00;
+		ments[2].color = ATTNCOL;
 		ments[4].caption = "Enable AutoRCM";
 		ments[4].handler = _enable_autorcm;
 	}
 	else
 	{
 		ments[2].caption = "Status: Enabled!";
-		ments[2].color = 0xFFFFBA00;
+		ments[2].color = ATTNCOL;
 		ments[4].caption = "Disable AutoRCM";
 		ments[4].handler = _disable_autorcm;
 	}
@@ -468,7 +468,7 @@ int _fix_attributes(char *path, u32 *total, u32 hos_folder, u32 check_first_run)
 
 void _fix_sd_attr(u32 type)
 {
-	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_clear_partial(BG_COL, 0, 1256);
 	gfx_con_setpos(0, 0);
 
 	char path[256];
@@ -492,7 +492,7 @@ void _fix_sd_attr(u32 type)
 
 		gfx_printf("Traversing all %s files!\nThis may take some time...\n\n", label);
 		_fix_attributes(path, &total, type, type);
-		gfx_printf("%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
+		gfx_printf("%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", ATTNCOL, total, MAINTXTCOL);
 		sd_unmount();
 	}
 	btn_wait();
@@ -503,7 +503,7 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 
 /* void fix_fuel_gauge_configuration()
 {
-	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_clear_partial(BG_COL, 0, 1256);
 	gfx_con_setpos(0, 0);
 
 	int battVoltage, avgCurrent;
@@ -518,8 +518,8 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 			EPRINTF("You need to be connected to a wall adapter,\nto apply this fix!");
 		else
 		{
-			gfx_printf("%kAre you really sure?\nThis will reset your fuel gauge completely!\n", 0xFFFFDD00);
-			gfx_printf("Additionally this will power off your console.\n%k", 0xFFCCCCCC);
+			gfx_printf("%kAre you really sure?\nThis will reset your fuel gauge completely!\n", ATTNCOL);
+			gfx_printf("Additionally this will power off your console.\n%k", MAINTXTCOL);
 
 			gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
 
@@ -530,7 +530,7 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 				msleep(1000);
 				gfx_con_getpos(&gfx_con.savedx,  &gfx_con.savedy);
 				u16 value = 0;
-				gfx_printf("%kThe console will power off in 45 seconds.\n%k", 0xFFFFDD00, 0xFFCCCCCC);
+				gfx_printf("%kThe console will power off in 45 seconds.\n%k", ATTNCOL, MAINTXTCOL);
 				while (value < 46)
 				{
 					gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
@@ -556,27 +556,27 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 {
 	int avgCurrent;
 
-	gfx_clear_partial_grey(0x1B, 0, 1256);
+	gfx_clear_partial(BG_COL, 0, 1256);
 	gfx_con_setpos(0, 0);
 
 	gfx_printf("%k\nThis will wipe your battery stats completely!\n"
 		"%kAnd it may not power on without physically\nremoving and re-inserting the battery.\n%k"
-		"\nAre you really sure?%k\n", 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
+		"\nAre you really sure?%k\n", ERRWARNCOL, ERRWARNCOL, ATTNCOL, MAINTXTCOL);
 
 	gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.\n\n\n");
 	u32 btn = btn_wait();
 	if (btn & BTN_POWER)
 	{
-		gfx_clear_partial_grey(0x1B, 0, 1256);
+		gfx_clear_partial(BG_COL, 0, 1256);
 		gfx_con_setpos(0, 0);
-		gfx_printf("%kKeep the USB cable connected!%k\n\n", 0xFFFFDD00, 0xFFCCCCCC);
+		gfx_printf("%kKeep the USB cable connected!%k\n\n", ATTNCOL, MAINTXTCOL);
 		gfx_con_getpos(&gfx_con.savedx,  &gfx_con.savedy);
 
 		u8 value = 30;
 		while (value > 0)
 		{
 			gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
-			gfx_printf("%kWait... (%ds)   %k", 0xFF888888, value, 0xFFCCCCCC);
+			gfx_printf("%kWait... (%ds)   %k", MAINTXTCOL, value, MAINTXTCOL);
 			msleep(1000);
 			value--;
 		}
@@ -593,7 +593,7 @@ void fix_sd_nin_attr() { _fix_sd_attr(1); }
 			gfx_printf("Done!               \n"
 				"%k1. Remove the USB cable\n"
 				"2. Press POWER for 15s.\n"
-				"3. Reconnect the USB to power-on!%k\n", 0xFFFFDD00, 0xFFCCCCCC);
+				"3. Reconnect the USB to power-on!%k\n", ATTNCOL, MAINTXTCOL);
 		}
 		msleep(500);
 		btn_wait();

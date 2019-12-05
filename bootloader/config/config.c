@@ -171,7 +171,7 @@ int create_config_entry()
 
 static void _save_config()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	if (!create_config_entry())
@@ -183,7 +183,7 @@ static void _save_config()
 
 static void _config_autoboot_list(void *ent)
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	u32 *temp_autoboot = NULL;
@@ -274,7 +274,7 @@ out2:;
 
 void config_autoboot()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	u32 *temp_autoboot = NULL;
@@ -351,7 +351,7 @@ void config_autoboot()
 			{
 				ments[i].type = MENT_CAPTION;
 				ments[i].caption = "No main configurations found...";
-				ments[i].color = 0xFFFFDD00;
+				ments[i].color = ATTNCOL;
 				i++;
 			}
 
@@ -389,7 +389,7 @@ out2:;
 
 void config_bootdelay()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	u32 delay_entries = 6;
@@ -449,7 +449,7 @@ void config_bootdelay()
 
 void config_verification()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
@@ -502,7 +502,7 @@ void config_verification()
 
 void config_backlight()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	u32 bri_entries = 11;
@@ -561,7 +561,7 @@ void config_backlight()
 
 void config_auto_hos_poweroff()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
@@ -618,7 +618,7 @@ void config_auto_hos_poweroff()
 
 void config_nogc()
 {
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 5);

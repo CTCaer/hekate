@@ -55,7 +55,7 @@ extern bool sd_mount();
 #define EHPRINTFARGS(text, args...) \
 	({ display_backlight_brightness(h_cfg.backlight, 1000); \
 		gfx_con.mute = false; \
-		gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC); })
+		gfx_printf("%k"text"%k\n", ERRWARNCOL, args, MAINTXTCOL); })
 
 #define PKG2_LOAD_ADDR 0xA9800000
 
@@ -104,7 +104,7 @@ static const u8 console_keyseed_4xx_5xx[0x10] =
 static void _hos_crit_error(const char *text)
 {
 	gfx_con.mute = false;
-	gfx_printf("%k%s%k\n", 0xFFFF0000, text, 0xFFCCCCCC);
+	gfx_printf("%k%s%k\n", ERRWARNCOL, text, MAINTXTCOL);
 
 	display_backlight_brightness(h_cfg.backlight, 1000);
 }
@@ -437,7 +437,7 @@ int hos_launch(ini_sec_t *cfg)
 	ctxt.cfg = cfg;
 
 	if (!gfx_con.mute)
-		gfx_clear_grey(0x1B);
+		gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	gfx_printf("Initializing...\n\n");
@@ -528,7 +528,7 @@ int hos_launch(ini_sec_t *cfg)
 		}
 		// Else we patch it to allow downgrading.
 		patch_t *warmboot_patchset = ctxt.pkg1_id->warmboot_patchset;
-		gfx_printf("%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kPatching Warmboot%k\n", ATTNCOL, MAINTXTCOL);
 		for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
 	}
@@ -543,7 +543,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		// Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
-		gfx_printf("%kPatching Security Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kPatching Security Monitor%k\n", ATTNCOL, MAINTXTCOL);
 		for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 	}
@@ -597,7 +597,7 @@ int hos_launch(ini_sec_t *cfg)
 			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
 			if (kernel_patchset != NULL)
 			{
-				gfx_printf("%kPatching kernel%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+				gfx_printf("%kPatching kernel%k\n", ATTNCOL, MAINTXTCOL);
 				u32 *temp;
 				for (u32 i = 0; kernel_patchset[i].id != 0xFFFFFFFF; i++)
 				{
@@ -619,7 +619,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Merge extra KIP1s into loaded ones.
-	gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	gfx_printf("%kPatching kips%k\n", ATTNCOL, MAINTXTCOL);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
@@ -641,7 +641,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Unmount SD card.
 	sd_unmount();
 
-	gfx_printf("\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
+	gfx_printf("\n%kBooting...%k\n", ATTNCOL, MAINTXTCOL);
 
 	// Clear pkg1/pkg2 keys.
 	se_aes_key_clear(8);

@@ -19,10 +19,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "gfx/gfx.h"
 #include "config/config.h"
 #include "gfx/di.h"
-#include "gfx/gfx.h"
-#include "gfx/logos.h"
+
 #include "gfx/tui.h"
 #include "hos/hos.h"
 #include "hos/secmon_exo.h"
@@ -48,7 +48,7 @@
 #include "utils/dirlist.h"
 #include "utils/list.h"
 #include "utils/util.h"
-
+#include "utils/browser.h"
 #include "frontend/fe_emmc_tools.h"
 #include "frontend/fe_tools.h"
 #include "frontend/fe_info.h"
@@ -204,19 +204,6 @@ void check_power_off_from_hos()
 
 		// Stop the alarm, in case we injected too fast.
 		max77620_rtc_stop_alarm();
-
-		if (h_cfg.autohosoff == 1)
-		{
-			gfx_clear_grey(0x1B);
-			u8 *BOOTLOGO = (void *)malloc(0x4000);
-			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-			gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-
-			display_backlight_brightness(10, 5000);
-			display_backlight_brightness(100, 25000);
-			msleep(600);
-			display_backlight_brightness(0, 20000);
-		}
 		power_off();
 	}
 }
@@ -268,7 +255,7 @@ bool is_ipl_updated(void *buf)
 int launch_payload(char *path, bool update)
 {
 	if (!update)
-		gfx_clear_grey(0x1B);
+		gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 	if (!path)
 		return 1;
@@ -355,88 +342,24 @@ void auto_launch_update()
 
 void launch_tools()
 {
-	u8 max_entries = 61;
-	char *filelist = NULL;
 	char *file_sec = NULL;
-	char *dir = NULL;
 
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
-
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	if (sd_mount())
 	{
-		dir = (char *)malloc(256);
-
-		memcpy(dir, "bootloader/payloads", 20);
-
-		filelist = dirlist(dir, NULL, false);
-
-		u32 i = 0;
-
-		if (filelist)
-		{
-			// Build configuration menu.
-			ments[0].type = MENT_BACK;
-			ments[0].caption = "Back";
-			ments[1].type = MENT_CHGLINE;
-
-			while (true)
-			{
-				if (i > max_entries || !filelist[i * 256])
-					break;
-				ments[i + 2].type = INI_CHOICE;
-				ments[i + 2].caption = &filelist[i * 256];
-				ments[i + 2].data = &filelist[i * 256];
-
-				i++;
-			}
-		}
-					
-		if (i > 0)
-		{
-			memset(&ments[i + 2], 0, sizeof(ment_t));
-			menu_t menu = { ments, "Choose a file to launch", 0, 0 };
-
-			file_sec = (char *)tui_do_menu(&menu);
-
-			if (!file_sec)
-			{
-				free(ments);
-				free(dir);
-				free(filelist);
-				sd_unmount();
-				return;
-			}
-		}
-		else
-			EPRINTF("No payloads or modules found.");
-
-		free(ments);
-		free(filelist);
+	//Start folder//extn//Menu caption//return containing dir only//return to root//return in ASCII order//
+	file_sec = file_browser("bootloader/payloads", ".bin", "Select A Payload", false, true, true);
+	if (!file_sec) return;
 	}
-	else
-	{
-		free(ments);
-		goto out;
-	}
-
-	if (file_sec)
-	{
-		memcpy(dir + strlen(dir), "/", 2);
-		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
-
-		if (launch_payload(dir, false))
+	if (launch_payload(file_sec, false))
 		{
 			EPRINTF("Failed to launch payload.");
-			free(dir);
 		}
-	}
-
-out:
+	
 	sd_unmount();
-	free(dir);
+	free(file_sec);
 
 	btn_wait();
 }
@@ -445,16 +368,25 @@ void ini_list_launcher()
 {
 	u8 max_entries = 61;
 	char *payload_path = NULL;
-
+	char *path_sec = malloc(256);
+	
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_list_sections);
 
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	if (sd_mount())
 	{
-		if (ini_parse(&ini_list_sections, "bootloader/ini", true))
+		//Start folder//extn//Menu caption//return containing dir only//return to root//return in ASCII order//
+		path_sec = file_browser("bootloader/ini", ".ini", "Choose folder / INI", true, false, true);
+		if (!path_sec) return;
+		u8 fr1 = 0; u8 fr2 = 0;
+		
+		fr1 = (ini_parse(&ini_list_sections, path_sec, true));
+		if(!fr1) {fr2 = (ini_parse(&ini_list_sections, path_sec, false));}
+		
+		if(fr1 || fr2)
 		{
 			// Build configuration menu.
 			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
@@ -540,7 +472,6 @@ void ini_list_launcher()
 	else if (!hos_launch(cfg_sec))
 	{
 		EPRINTF("Failed to launch firmware.");
-		btn_wait();
 	}
 
 out:
@@ -556,7 +487,7 @@ void launch_firmware()
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	if (sd_mount())
@@ -598,7 +529,7 @@ void launch_firmware()
 			{
 				ments[i].type = MENT_CAPTION;
 				ments[i].caption = "No main configs found...";
-				ments[i].color = 0xFFFFDD00;
+				ments[i].color = ATTNCOL;
 				i++;
 			}
 			memset(&ments[i], 0, sizeof(ment_t));
@@ -692,11 +623,7 @@ void nyx_load_run()
 
 	sd_unmount();
 
-	gfx_clear_grey(0x1B);
-	u8 *BOOTLOGO = (void *)malloc(0x4000);
-	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-	gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-	free(BOOTLOGO);
+	gfx_clear(BG_COL);
 	display_backlight_brightness(h_cfg.backlight, 1000);
 
 	nyx_str->cfg = 0;
@@ -764,7 +691,7 @@ void auto_launch_firmware()
 
 	if (!h_cfg.sept_run)
 		auto_launch_update();
-
+	bool nyx_skip = false;
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
 	u32 btn = 0;
@@ -988,10 +915,7 @@ skip_list:
 		}
 		else
 		{
-			gfx_clear_grey(0x1B);
-			BOOTLOGO = (void *)malloc(0x4000);
-			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-			gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+			gfx_clear(BG_COL);
 		}
 		free(BOOTLOGO);
 	}
@@ -1004,12 +928,17 @@ skip_list:
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
 	if (!h_cfg.sept_run && !(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
-		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
+		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_VOL_UP);
 
-		if (btn & BTN_VOL_DOWN)
+		if (btn & BTN_VOL_DOWN && (!(btn & BTN_VOL_UP)))
 			goto out;
+		
+		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+			nyx_skip = true;
 	}
 
+	if(nyx_skip) goto out;
+	
 	payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
@@ -1036,8 +965,9 @@ out:
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID);
 	h_cfg.emummc_force_disable = false;
 
-	nyx_load_run();
-
+	if(!nyx_skip)
+		nyx_load_run();
+	
 	sd_unmount();
 }
 
@@ -1106,32 +1036,13 @@ void about()
 		"   Copyright (c) 2014, Owen Shepherd\n"
 		"   Copyright (c) 2018, M4xw\n"
 		" ___________________________________________\n\n";
-	static const char octopus[] =
-		"                         %k___\n"
-		"                      .-'   `'.\n"
-		"                     /         \\\n"
-		"                     |         ;\n"
-		"                     |         |           ___.--,\n"
-		"            _.._     |0) = (0) |    _.---'`__.-( (_.\n"
-		"     __.--'`_.. '.__.\\    '--. \\_.-' ,.--'`     `\"\"`\n"
-		"    ( ,.--'`   ',__ /./;   ;, '.__.'`    __\n"
-		"    _`) )  .---.__.' / |   |\\   \\__..--\"\"  \"\"\"--.,_\n"
-		"   `---' .'.''-._.-'`_./  /\\ '.  \\ _.--''````'''--._`-.__.'\n"
-		"         | |  .' _.-' |  |  \\  \\  '.               `----`\n"
-		"          \\ \\/ .'     \\  \\   '. '-._)\n"
-		"           \\/ /        \\  \\    `=.__`'-.\n"
-		"           / /\\         `) )    / / `\"\".`\\\n"
-		"     , _.-'.'\\ \\        / /    ( (     / /\n"
-		"      `--'`   ) )    .-'.'      '.'.  | (\n"
-		"             (/`    ( (`          ) )  '-;   %k[switchbrew]%k\n"
-		"              `      '-;         (-'%k";
+		
 
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
-	gfx_printf(credits, 0xFF00CCFF, 0xFFCCCCCC);
-	gfx_con.fntsz = 8;
-	gfx_printf(octopus, 0xFF00CCFF, 0xFF00FFCC, 0xFF00CCFF, 0xFFCCCCCC);
+	gfx_printf(credits, INFOCOL, MAINTXTCOL);
+	
 
 	btn_wait();
 }
@@ -1152,17 +1063,17 @@ menu_t menu_options = { ment_options, "Launch Options", 0, 0 };
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
+	MDEF_CAPTION("---- SoC Info ----", INFOCOL),
 	MDEF_HANDLER("Ipatches & bootrom info", bootrom_ipatches_info),
 	MDEF_HANDLER("Print fuse info", print_fuseinfo),
 	MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_HANDLER("Print TSEC keys", print_tsec_key),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- Storage Info --", INFOCOL),
 	MDEF_HANDLER("Print eMMC info", print_mmc_info),
 	MDEF_HANDLER("Print SD Card info", print_sdcard_info),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Misc ------", 0xFF0AB9E6),
+	MDEF_CAPTION("------ Misc ------", INFOCOL),
 	MDEF_HANDLER("Print battery info", print_battery_info),
 	MDEF_END()
 };
@@ -1172,11 +1083,11 @@ menu_t menu_cinfo = { ment_cinfo, "Console Info", 0, 0 };
 ment_t ment_restore[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
+	MDEF_CAPTION("------ Full --------", INFOCOL),
 	MDEF_HANDLER("Restore eMMC BOOT0/1", restore_emmc_boot),
 	MDEF_HANDLER("Restore eMMC RAW GPP", restore_emmc_rawnand),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- GPP Partitions --", INFOCOL),
 	MDEF_HANDLER("Restore GPP partitions", restore_emmc_gpp_parts),
 	MDEF_END()
 };
@@ -1186,11 +1097,11 @@ menu_t menu_restore = { ment_restore, "Restore Options", 0, 0 };
 ment_t ment_backup[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
+	MDEF_CAPTION("------ Full --------", INFOCOL),
 	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
 	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- GPP Partitions --", INFOCOL),
 	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
 	MDEF_END()
@@ -1201,19 +1112,19 @@ menu_t menu_backup = { ment_backup, "Backup Options", 0, 0 };
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- Backup & Restore --", INFOCOL),
 	MDEF_MENU("Backup", &menu_backup),
 	MDEF_MENU("Restore", &menu_restore),
 	MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
+	MDEF_CAPTION("-------- Misc --------", INFOCOL),
 	MDEF_HANDLER("Dump package1/2", dump_packages12),
 	MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
 	MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-------- Other -------", 0xFFFFDD00),
+	MDEF_CAPTION("-------- Other -------", ATTNCOL),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()
 };
@@ -1223,14 +1134,14 @@ menu_t menu_tools = { ment_tools, "Tools", 0, 0 };
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
 	MDEF_MENU("Options", &menu_options),
-	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_CAPTION("---------------", MENUOUTLINECOL),
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
-	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_CAPTION("---------------", MENUOUTLINECOL),
 	MDEF_HANDLER("Reboot (Normal)", reboot_normal),
 	MDEF_HANDLER("Reboot (RCM)", reboot_rcm),
 	MDEF_HANDLER("Power off", power_off),
-	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_CAPTION("---------------", MENUOUTLINECOL),
 	MDEF_HANDLER("About", about),
 	MDEF_END()
 };

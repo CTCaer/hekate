@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "ini.h"
+#include "../gfx/gfx.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../utils/dirlist.h"
@@ -139,7 +140,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				_find_section_name(lbuf, lblen, '}');
 
 				csec = _ini_create_section(dst, csec, &lbuf[1], INI_CAPTION);
-				csec->color = 0xFF0AB9E6;
+				csec->color = INFOCOL;
 			}
 			else if (lblen > 2 && lbuf[0] == '#') //Create empty lines and comments.
 			{

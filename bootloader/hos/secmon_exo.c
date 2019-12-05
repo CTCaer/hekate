@@ -259,7 +259,7 @@ void secmon_exo_check_panic()
 	if (rpt->magic != ATM_FATAL_MAGIC)
 		return;
 
-	gfx_clear_grey(0x1B);
+	gfx_clear(BG_COL);
 	gfx_con_setpos(0, 0);
 
 	WPRINTF("Panic occurred while running Atmosphere.\n\n");

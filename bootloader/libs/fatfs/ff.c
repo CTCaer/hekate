@@ -40,7 +40,7 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 #include "../../gfx/gfx.h"
 
-#define EFSPRINTF(text, ...) print_error(); gfx_printf("%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);
+#define EFSPRINTF(text, ...) print_error(); gfx_printf("%k"text"%k\n", ATTNCOL, MAINTXTCOL);
 //#define EFSPRINTF(...)
 
 /*--------------------------------------------------------------------------
@@ -598,7 +598,7 @@ static const BYTE DbcTbl[] = MKCVTBL(TBL_DC, FF_CODE_PAGE);
 
 void print_error()
 {
-	gfx_printf("\n\n\n%k[FatFS] Error: %k", 0xFFFFFF00, 0xFFFFFFFF);
+	gfx_printf("\n\n\n%k[FatFS] Error: %k", ATTNCOL, MAINTXTCOL);
 }
 
 
