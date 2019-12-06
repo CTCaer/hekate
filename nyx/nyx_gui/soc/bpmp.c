@@ -81,9 +81,9 @@ bpmp_mmu_entry_t mmu_entries[] =
 	{ NYX_LOAD_ADDR, 0x40040000, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true }
 };
 
-void bpmp_mmu_maintenance(u32 op)
+void bpmp_mmu_maintenance(u32 op, bool force)
 {
-	if (!(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE))
+	if (!force && !(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE))
 		return;
 
 	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = INT_CLR_MAINT_DONE;
@@ -135,13 +135,13 @@ void bpmp_mmu_enable()
 	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CMD) = MMU_CMD_COPY_SHADOW;
 
 	// Invalidate cache.
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, true);
 
 	// Enable cache.
 	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = CFG_ENABLE | CFG_FORCE_WRITE_THROUGH | CFG_TAG_CHK_ABRT_ON_ERR;
 
 	// HW bug. Invalidate cache again.
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 }
 
 void bpmp_mmu_disable()
@@ -150,13 +150,10 @@ void bpmp_mmu_disable()
 		return;
 
 	// Clean and invalidate cache.
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
 	// Disable cache.
 	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = 0;
-
-	// HW bug. Invalidate cache again.
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY);
 }
 
 const u8 pllc4_divn[] = {

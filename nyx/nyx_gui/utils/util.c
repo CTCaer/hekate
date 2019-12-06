@@ -19,6 +19,7 @@
 #include "../gfx/di.h"
 #include "../mem/minerva.h"
 #include "../power/max77620.h"
+#include "../rtc/max77620-rtc.h"
 #include "../soc/bpmp.h"
 #include "../soc/i2c.h"
 #include "../soc/pmc.h"

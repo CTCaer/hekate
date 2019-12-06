@@ -28,6 +28,7 @@
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../sec/se.h"
+#include "../sec/se_t210.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"

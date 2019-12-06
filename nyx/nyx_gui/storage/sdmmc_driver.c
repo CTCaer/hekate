@@ -830,7 +830,7 @@ static int _sdmmc_config_dma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
 		trnmode |= TEGRA_MMC_TRNMOD_DATA_XFER_DIR_SEL_READ;
 	if (req->is_auto_cmd12)
 		trnmode = (trnmode & 0xFFF3) | TEGRA_MMC_TRNMOD_AUTO_CMD12;
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 	sdmmc->regs->trnmod = trnmode;
 
 	return 1;
@@ -855,7 +855,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 					break;
 				if (intr & TEGRA_MMC_NORINTSTS_XFER_COMPLETE)
 				{
-					bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY);
+					bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 					return 1; // Transfer complete.
 				}
 				if (intr & TEGRA_MMC_NORINTSTS_DMA_INTERRUPT)

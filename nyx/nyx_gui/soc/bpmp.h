@@ -42,7 +42,7 @@ typedef enum
 	BPMP_CLK_MAX
 } bpmp_freq_t;
 
-void bpmp_mmu_maintenance(u32 op);
+void bpmp_mmu_maintenance(u32 op, bool force);
 void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply);
 void bpmp_mmu_enable();
 void bpmp_mmu_disable();
