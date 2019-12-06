@@ -43,7 +43,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 # Utilities.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	btn.o dirlist.o ianos.o util.o \
-	config.o ini.o \
+	config.o ini.o browser.o \
 )
 
 # Horizon.

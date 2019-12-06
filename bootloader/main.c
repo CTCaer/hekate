@@ -379,7 +379,7 @@ void ini_list_launcher()
 	if (sd_mount())
 	{
 		//Start folder//extn//Menu caption//return containing dir only//return to root//return in ASCII order//
-		path_sec = file_browser("bootloader/ini", ".ini", "Choose folder / INI", true, false, true);
+		path_sec = file_browser("bootloader/ini", ".ini", "Choose folder / INI", true, true, true);
 		if (!path_sec) return;
 		u8 fr1 = 0; u8 fr2 = 0;
 		
