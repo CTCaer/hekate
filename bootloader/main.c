@@ -928,16 +928,13 @@ skip_list:
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
 	if (!h_cfg.sept_run && !(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
-		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_VOL_UP);
+		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
 
-		if (btn & BTN_VOL_DOWN && (!(btn & BTN_VOL_UP)))
+		if (btn & BTN_VOL_DOWN)
 			goto out;
-		
-		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
-			nyx_skip = true;
 	}
 
-	if(nyx_skip) goto out;
+	if(nyx_skip) 
 	
 	payload_path = ini_check_payload_section(cfg_sec);
 
@@ -964,10 +961,13 @@ out:
 		memset(b_cfg.xt_str, 0, sizeof(b_cfg.xt_str));
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID);
 	h_cfg.emummc_force_disable = false;
-
-	if(!nyx_skip)
-		nyx_load_run();
+	btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
 	
+	if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+	nyx_skip = true;	
+	
+	if(!nyx_skip) nyx_load_run();
+	nyx_skip = false;
 	sd_unmount();
 }
 
