@@ -915,7 +915,7 @@ skip_list:
 		}
 		else
 		{
-			gfx_clear_grey(0x1B);
+			gfx_clear(BG_COL);
 			BOOTLOGO = (void *)malloc(0x4000);
 			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
 			gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
