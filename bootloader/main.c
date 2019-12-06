@@ -691,7 +691,7 @@ void auto_launch_firmware()
 
 	if (!h_cfg.sept_run)
 		auto_launch_update();
-	bool nyx_skip = false;
+
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
 	u32 btn = 0;
@@ -915,7 +915,10 @@ skip_list:
 		}
 		else
 		{
-			gfx_clear(BG_COL);
+			gfx_clear_grey(0x1B);
+			BOOTLOGO = (void *)malloc(0x4000);
+			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
+			gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
 		}
 		free(BOOTLOGO);
 	}
@@ -928,17 +931,12 @@ skip_list:
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
 	if (!h_cfg.sept_run && !(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
-		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_VOL_UP);
+		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN);
 
-		if (btn & BTN_VOL_DOWN && (!(btn & BTN_VOL_UP)))
+		if (btn & BTN_VOL_DOWN)
 			goto out;
-		
-		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
-			nyx_skip = true;
 	}
 
-	if(nyx_skip) goto out;
-	
 	payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
@@ -965,9 +963,8 @@ out:
 	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID);
 	h_cfg.emummc_force_disable = false;
 
-	if(!nyx_skip)
-		nyx_load_run();
-	
+	nyx_load_run();
+
 	sd_unmount();
 }
 
