@@ -782,10 +782,19 @@ static void _update_status_bar(void *params)
 	max17050_get_property(MAX17050_VCELL, &batt_volt);
 	max17050_get_property(MAX17050_Current, &batt_curr);
 
+	u32 soc_temp_dec = (soc_temp >> 8);
+	// Enable fan if more than 44 oC.
+	if (soc_temp_dec > 50)
+		set_fan_duty(100);
+	else if (soc_temp_dec > 44)
+		set_fan_duty(53);
+	else
+		set_fan_duty(0);
+
 	//! TODO: Parse time and use offset.
 	// Set time and SoC temperature.
 	s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d",
-		time.hour, time.min, soc_temp >> 8, (soc_temp & 0xFF) / 10);
+		time.hour, time.min, soc_temp_dec, (soc_temp & 0xFF) / 10);
 
 	lv_label_set_array_text(status_bar.time_temp, label, 64);
 
