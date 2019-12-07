@@ -25,19 +25,26 @@
 #include "../mem/minerva.h"
 #include "../gfx/di.h"
 #include "../input/touch.h"
+#include "../power/regulator_5v.h"
 #include "../storage/sdmmc.h"
+#include "../thermal/fan.h"
 #include "../utils/util.h"
 
 extern sdmmc_t sd_sdmmc;
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
-	// Flush and disable MMU.
-	bpmp_mmu_disable();
+	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-	minerva_change_freq(FREQ_204);
 
+	// Deinit touchscreen and 5V regulators.
 	touch_power_off();
+	set_fan_duty(0);
+	regulator_disable_5v(REGULATOR_5V_ALL);
+
+	// Flush/disable MMU cache and set DRAM clock to 204MHz.
+	bpmp_mmu_disable();
+	minerva_change_freq(FREQ_204);
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= (1 << 10); // Enable AHUB clock.
