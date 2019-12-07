@@ -45,6 +45,9 @@
  */
 lv_color_t lv_color_hsv_to_rgb(uint16_t h, uint8_t s, uint8_t v)
 {
+    if(s == 0)
+        return LV_COLOR_MAKE(v, v, v);
+
     h = (uint32_t)((uint32_t)h * 255) / 360;
     s = (uint16_t)((uint16_t)s * 255) / 100;
     v = (uint16_t)((uint16_t)v * 255) / 100;
@@ -52,13 +55,6 @@ lv_color_t lv_color_hsv_to_rgb(uint16_t h, uint8_t s, uint8_t v)
     uint8_t r, g, b;
 
     uint8_t region, remainder, p, q, t;
-
-    if(s == 0) {
-        r = v;
-        g = v;
-        b = v;
-        return LV_COLOR_MAKE(v, v, v);
-    }
 
     region = h / 43;
     remainder = (h - (region * 43)) * 6;
@@ -100,8 +96,7 @@ lv_color_t lv_color_hsv_to_rgb(uint16_t h, uint8_t s, uint8_t v)
             break;
     }
 
-    lv_color_t result = LV_COLOR_MAKE(r, g, b);
-    return result;
+    return LV_COLOR_MAKE(r, g, b);
 }
 
 /**

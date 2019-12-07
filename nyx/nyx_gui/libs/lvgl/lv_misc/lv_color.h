@@ -339,10 +339,10 @@ static inline uint32_t lv_color_to32(lv_color_t color)
 #endif
 }
 
-static inline lv_color_t lv_color_mix(lv_color_t c1, lv_color_t c2, uint8_t mix)
+static inline lv_color_t lv_color_mix(const lv_color_t c1, const lv_color_t c2, uint8_t mix)
 {
     lv_color_t ret;
-#if LV_COLOR_DEPTH != 1
+#if LV_COLOR_DEPTH != 1 && LV_COLOR_DEPTH != 32
     /*LV_COLOR_DEPTH == 8, 16 or 32*/
     ret.red =   (uint16_t)((uint16_t) c1.red * mix + (c2.red * (255 - mix))) >> 8;
 #  if LV_COLOR_DEPTH == 16 && LV_COLOR_16_SWAP
@@ -356,12 +356,15 @@ static inline lv_color_t lv_color_mix(lv_color_t c1, lv_color_t c2, uint8_t mix)
     ret.green = (uint16_t)((uint16_t) c1.green * mix + (c2.green * (255 - mix))) >> 8;
 #  endif
     ret.blue =  (uint16_t)((uint16_t) c1.blue * mix + (c2.blue * (255 - mix))) >> 8;
-# if LV_COLOR_DEPTH == 32
-    ret.alpha = 0xFF;
-# endif
 #else
+#   if LV_COLOR_DEPTH == 32
+    uint32_t rb = (((c1.full & 0x00FF00FF) * mix) + ((c2.full & 0x00FF00FF) * (255 - mix))) >> 8;
+    uint32_t g = (((((c1.full & 0x0000FF00) >> 8) * mix) + (((c2.full & 0x0000FF00) >> 8) * (255 - mix))) >> 8) << 8;
+    ret.full = 0xFF000000 | (0x00FF00FF & rb) | (0x0000FF00 & g);
+#   else
     /*LV_COLOR_DEPTH == 1*/
     ret.full = mix > LV_OPA_50 ? c1.full : c2.full;
+#   endif
 #endif
 
     return ret;
@@ -408,9 +411,13 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
 #endif
 #endif
 
+#if LV_COLOR_DEPTH == 32 // Concatenate into one 32-bit set. 
+#define LV_COLOR_HEX(c) ((lv_color_t){.full = (c | 0xFF000000)})
+#else
 #define LV_COLOR_HEX(c) LV_COLOR_MAKE(((uint32_t)((uint32_t)c >> 16) & 0xFF), \
                                 ((uint32_t)((uint32_t)c >> 8) & 0xFF), \
                                 ((uint32_t) c & 0xFF))
+#endif
 
 /*Usage LV_COLOR_HEX3(0x16C) which means LV_COLOR_HEX(0x1166CC)*/
 #define LV_COLOR_HEX3(c) LV_COLOR_MAKE((((c >> 4) & 0xF0) | ((c >> 8) & 0xF)),   \
