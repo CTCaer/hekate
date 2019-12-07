@@ -270,8 +270,6 @@ int launch_payload(char *path, bool update)
 	if (!update)
 		gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
-	if (!path)
-		return 1;
 
 	if (sd_mount())
 	{
@@ -279,9 +277,8 @@ int launch_payload(char *path, bool update)
 		if (f_open(&fp, path, FA_READ))
 		{
 			EPRINTFARGS("Payload file is missing!\n(%s)", path);
-			sd_unmount();
 
-			return 1;
+			goto out;
 		}
 
 		// Read and copy the payload to our chosen address
@@ -296,15 +293,14 @@ int launch_payload(char *path, bool update)
 		if (f_read(&fp, buf, size, NULL))
 		{
 			f_close(&fp);
-			sd_unmount();
-
-			return 1;
+			
+			goto out;
 		}
 
 		f_close(&fp);
 
 		if (update && is_ipl_updated(buf))
-			return 1;
+			goto out;
 
 		sd_unmount();
 
@@ -338,6 +334,10 @@ int launch_payload(char *path, bool update)
 			(*update_ptr)();
 		}
 	}
+
+out:
+	if (!update)
+		sd_unmount();
 
 	return 1;
 }
