@@ -19,9 +19,6 @@
 
 #include "elfload.h"
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 el_status el_pread(el_ctx *ctx, void *def, size_t nb, size_t offset)
 {
 	return ctx->pread(ctx, def, nb, offset) ? EL_OK : EL_EIO;
@@ -325,5 +322,3 @@ el_status el_relocate(el_ctx *ctx)
 
 	return rv;
 }
-
-#pragma GCC pop_options

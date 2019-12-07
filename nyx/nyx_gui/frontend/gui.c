@@ -327,9 +327,6 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 	return (lv_img_dsc_t *)bitmap;
 }
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn)
 {
 	lv_obj_t *label_btn = lv_obj_get_child(btn, NULL);
@@ -765,8 +762,6 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_ta_set_style(lbl_ver, LV_TA_STYLE_BG, &monospace_text);
 	lv_label_set_text(lbl_ver, version);
 }
-
-#pragma GCC pop_options
 
 static void _update_status_bar(void *params)
 {
@@ -1216,9 +1211,6 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_OFF);
@@ -1597,8 +1589,6 @@ static void _nyx_main_menu(lv_theme_t * th)
 		lv_task_once(task_run_dump);
 	}
 }
-
-#pragma GCC pop_options
 
 void nyx_load_and_run()
 {

@@ -45,9 +45,6 @@ extern void sd_unmount(bool deinit);
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 {
 	lv_style_t *darken;
@@ -1171,5 +1168,3 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_set_style(label_txt6, &hint_small_style);
 	lv_obj_align(label_txt6, btn7, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
-
-#pragma GCC pop_options

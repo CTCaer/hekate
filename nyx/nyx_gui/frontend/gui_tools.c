@@ -41,9 +41,6 @@ extern void sd_unmount(bool deinit);
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 bool get_autorcm_status(bool change)
 {
 	u8 corr_mod_byte0;
@@ -894,5 +891,3 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 
 	lv_tabview_set_tab_act(tv, 0, false);
 }
-
-#pragma GCC pop_options

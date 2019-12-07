@@ -32,9 +32,6 @@ extern hekate_config h_cfg;
 extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 void set_default_configuration()
 {
 	h_cfg.autoboot = 0;
@@ -169,4 +166,3 @@ int create_config_entry()
 	return 0;
 }
 
-#pragma GCC pop_options

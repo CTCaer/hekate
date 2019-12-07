@@ -43,9 +43,6 @@
 
 #define MAX17050_VMAX_TOLERANCE 50 /* 50 mV */
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 int max17050_get_property(enum MAX17050_reg reg, int *value)
 {
 	u16 data;
@@ -267,5 +264,3 @@ int max17050_fix_configuration()
 
 	return 0;
 }
-
-#pragma GCC pop_options

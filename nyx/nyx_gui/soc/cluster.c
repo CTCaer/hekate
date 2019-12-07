@@ -23,9 +23,6 @@
 #include "../power/max77620.h"
 #include "../power/max7762x.h"
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 void _cluster_enable_power()
 {
 	u8 tmp = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO); // Get current pinmuxing
@@ -141,5 +138,3 @@ void cluster_boot_cpu0(u32 entry)
 	// < 5.x: 0x411F000F, Clear CPU{0,1,2,3} POR and CORE, CX0, L2, and DBG reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_CPUG_CMPLX_CLR) = 0x41010001;
 }
-
-#pragma GCC pop_options

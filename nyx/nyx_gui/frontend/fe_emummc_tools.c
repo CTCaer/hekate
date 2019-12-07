@@ -49,9 +49,6 @@ extern hekate_config h_cfg;
 extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
 {
 	sd_mount();
@@ -99,8 +96,6 @@ void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
 
 	f_close(&fp);
 }
-
-#pragma GCC pop_options
 
 static void _update_emummc_base_folder(char *outFilename, u32 sdPathLen, u32 currPartIdx)
 {

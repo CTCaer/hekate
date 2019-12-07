@@ -41,9 +41,6 @@ extern bool sd_mount();
 extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 typedef struct _emmc_backup_buttons_t
 {
 	lv_obj_t *emmc_boot;
@@ -470,5 +467,3 @@ lv_res_t create_window_backup_restore_tool(lv_obj_t *btn)
 
 	return LV_RES_OK;
 }
-
-#pragma GCC pop_options

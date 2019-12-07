@@ -19,10 +19,6 @@
 #include <string.h>
 #include "gfx.h"
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-#pragma GCC optimize ("Os")
-
 static const u8 _gfx_font[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Char 032 ( )
 	0x00, 0x30, 0x30, 0x18, 0x18, 0x00, 0x0C, 0x00, // Char 033 (!)
@@ -481,8 +477,6 @@ void gfx_line(int x0, int y0, int x1, int y1, u32 color)
 		}
 	}
 }
-
-#pragma GCC pop_options
 
 void gfx_set_rect_grey(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {

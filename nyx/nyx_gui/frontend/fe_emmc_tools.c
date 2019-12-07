@@ -53,9 +53,6 @@ extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 static void get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_idx, bool backup)
 {
 	sd_mount();
@@ -143,8 +140,6 @@ static void _update_filename(char *outFilename, u32 sdPathLen, u32 currPartIdx)
 	else
 		itoa(currPartIdx, &outFilename[sdPathLen], 10);
 }
-
-#pragma GCC pop_options
 
 static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32 lba_curr, char *outFilename, emmc_part_t *part)
 {

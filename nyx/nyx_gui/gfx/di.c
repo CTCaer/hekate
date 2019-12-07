@@ -29,10 +29,6 @@
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-#pragma GCC optimize ("Os")
-
 #include "di.inl"
 
 static u32 _display_ver = 0;
@@ -288,4 +284,3 @@ u32 *display_init_framebuffer2()
 	return (u32 *)FB_ADDRESS;
 }
 
-#pragma GCC pop_options

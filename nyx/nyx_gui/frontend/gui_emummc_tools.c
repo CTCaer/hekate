@@ -39,9 +39,6 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 static int part_idx;
 static u32 sector_start;
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 static void _create_window_emummc()
 {
 	emmc_tool_gui_t emmc_tool_gui_ctxt;
@@ -1151,5 +1148,3 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 
 	return LV_RES_OK;
 }
-
-#pragma GCC pop_options

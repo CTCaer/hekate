@@ -26,9 +26,6 @@
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 static inline u32 unstuff_bits(u32 *resp, u32 start, u32 size)
 {
 	const u32 mask = (size < 32 ? 1 << size : 0) - 1;
@@ -1249,5 +1246,3 @@ DPRINTF("[gc] after tuning\n");
 
 	return 1;
 }
-
-#pragma GCC pop_options

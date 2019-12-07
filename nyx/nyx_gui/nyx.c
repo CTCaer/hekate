@@ -169,9 +169,6 @@ int sd_save_to_file(void *buf, u32 size, const char *filename)
 	return 0;
 }
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
 void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
 {
 	sdmmc_storage_t storage2;
@@ -438,5 +435,3 @@ void ipl_main()
 	while (true)
 		bpmp_halt();
 }
-
-#pragma GCC pop_options

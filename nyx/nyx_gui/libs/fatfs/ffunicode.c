@@ -34,10 +34,6 @@
 #define MERGE2(a, b) a ## b
 #define CVTBL(tbl, cp) MERGE2(tbl, cp)
 
-#pragma GCC push_options
-#pragma GCC target ("thumb")
-
-
 /*------------------------------------------------------------------------*/
 /* Code Conversion Tables                                                 */
 /*------------------------------------------------------------------------*/
@@ -625,8 +621,5 @@ DWORD ff_wtoupper (	/* Returns up-converted code point */
 
 	return uni;
 }
-
-#pragma GCC pop_options
-
 
 #endif /* #if FF_USE_LFN */

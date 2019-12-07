@@ -6,7 +6,7 @@ include $(DEVKITARM)/base_rules
 
 ################################################################################
 
-NYX_LOAD_ADDR := 0x40003000
+NYX_LOAD_ADDR := 0x81000000
 NYX_RES_ADDR := 0xEE000000
 NYX_STORAGE_ADDR := 0xED000000
 NYX_MAGIC := 0x43544347 #"GCTC"
