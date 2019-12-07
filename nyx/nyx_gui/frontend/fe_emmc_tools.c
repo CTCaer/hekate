@@ -228,6 +228,9 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 					return 1;
 				}
+
+				se_calc_sha256(hashEm, NULL, bufEm, num << 9, 0, SHA_INIT_HASH, false);
+
 				f_lseek(&fp, (u64)sdFileSector << (u64)9);
 				if (f_read_fast(&fp, bufSd, num << 9))
 				{
@@ -246,7 +249,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 					return 1;
 				}
 
-				se_calc_sha256(hashEm, NULL, bufEm, num << 9, 0, SHA_INIT_HASH, true);
+				se_calc_sha256_finalize(hashEm, NULL);
 				se_calc_sha256(hashSd, NULL, bufSd, num << 9, 0, SHA_INIT_HASH, true);
 				res = memcmp(hashEm, hashSd, 0x10);
 
