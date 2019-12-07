@@ -23,6 +23,7 @@
 #define BTN_POWER    (1 << 0)
 #define BTN_VOL_DOWN (1 << 1)
 #define BTN_VOL_UP   (1 << 2)
+#define BTN_SINGLE   (1 << 7)
 
 u8 btn_read();
 u8 btn_wait();

@@ -60,6 +60,15 @@ void minerva_init()
 	minerva_cfg(mtc_cfg, NULL);
 	mtc_cfg->rate_to = 1600000;
 	minerva_cfg(mtc_cfg, NULL);
+
+	// FSP WAR.
+	mtc_cfg->train_mode = OP_SWITCH;
+	mtc_cfg->rate_to = 800000;
+	minerva_cfg(mtc_cfg, NULL);
+
+	// Switch to max.
+	mtc_cfg->rate_to = 1600000;
+	minerva_cfg(mtc_cfg, NULL);
 }
 
 void minerva_change_freq(minerva_freq_t freq)
