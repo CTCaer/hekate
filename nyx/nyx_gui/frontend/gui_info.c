@@ -886,7 +886,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "-%d mA\n", (~value + 1) / 1000);
 
 	max17050_get_property(MAX17050_VCELL, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+	bool voltage_empty = value < 3200;
+	s_printf(txt_buf + strlen(txt_buf), "%s%d mV%s\n",
+		voltage_empty ? "FFF8000" : "", value,  voltage_empty ? " (Empty!)#" : "");
 
 	max17050_get_property(MAX17050_OCVInternal, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
