@@ -1282,7 +1282,7 @@ void ipl_main()
 	//display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Overclock BPMP.
-	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
+	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
 
 	// Check if we had a panic while in CFW.
 	secmon_exo_check_panic();

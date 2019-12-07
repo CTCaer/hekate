@@ -282,7 +282,7 @@ out:;
 	clock_disable_sor_safe();
 	clock_disable_tsec();
 	bpmp_mmu_enable();
-	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
+	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
 
 	return res;
 }

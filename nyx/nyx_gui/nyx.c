@@ -364,7 +364,7 @@ void load_saved_configuration()
 void nyx_init_load_res()
 {
 	bpmp_mmu_enable();
-	bpmp_clk_rate_set(BPMP_CLK_SUPER_BOOST);
+	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
 
 	// Set bootloader's default configuration.
 	set_default_configuration();

@@ -36,11 +36,14 @@ typedef struct _bpmp_mmu_entry_t
 typedef enum
 {
 	BPMP_CLK_NORMAL,      // 408MHz  0% - 136MHz APB.
-	BPMP_CLK_LOW_BOOST,   // 544MHz 33% - 136MHz APB.
-	BPMP_CLK_MID_BOOST,   // 576MHz 41% - 144MHz APB.
-	BPMP_CLK_SUPER_BOOST, // 608MHz 49% - 152MHz APB.
+	BPMP_CLK_HIGH_BOOST,  // 544MHz 33% - 136MHz APB.
+	BPMP_CLK_SUPER_BOOST, // 576MHz 41% - 144MHz APB.
+	BPMP_CLK_HYPER_BOOST, // 589MHz 44% - 147MHz APB.
+	//BPMP_CLK_DEV_BOOST, // 608MHz 49% - 152MHz APB.
 	BPMP_CLK_MAX
 } bpmp_freq_t;
+
+#define BPMP_CLK_DEFAULT_BOOST BPMP_CLK_HYPER_BOOST
 
 void bpmp_mmu_maintenance(u32 op, bool force);
 void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply);
