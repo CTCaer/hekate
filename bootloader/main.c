@@ -720,7 +720,7 @@ void nyx_load_run()
 	(*nyx_ptr)();
 }
 
-static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char *bootlogoCustomEntry)
+static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry)
 {
 	ini_sec_t *cfg_sec = NULL;
 
@@ -734,13 +734,13 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char *bootlogoCustomEn
 				break;
 		}
 		if (!strcmp("logopath", kv->key))
-			bootlogoCustomEntry = kv->val;
+			*bootlogoCustomEntry = kv->val;
 		if (!strcmp("emummc_force_disable", kv->key))
 			h_cfg.emummc_force_disable = atoi(kv->val);
 	}
 	if (!cfg_sec)
 	{
-		bootlogoCustomEntry = NULL;
+		*bootlogoCustomEntry = NULL;
 		h_cfg.emummc_force_disable = false;
 	}
 
@@ -851,7 +851,7 @@ void auto_launch_firmware()
 					}
 
 					if (boot_from_id)
-						cfg_sec = get_ini_sec_from_id(ini_sec, bootlogoCustomEntry);				
+						cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry);				
 					else if (h_cfg.autoboot == boot_entry_id && configEntry)
 					{
 						cfg_sec = ini_sec;
@@ -891,7 +891,7 @@ void auto_launch_firmware()
 								continue;
 
 							if (boot_from_id)
-								cfg_sec = get_ini_sec_from_id(ini_sec_list, bootlogoCustomEntry);
+								cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry);
 							else if (h_cfg.autoboot == boot_entry_id)
 							{
 								h_cfg.emummc_force_disable = false;
