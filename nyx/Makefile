@@ -84,7 +84,7 @@ CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -
 #CUSTOMDEFINES += -DDEBUG
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
-CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -fno-strict-aliasing -std=gnu11 -Wall $(CUSTOMDEFINES)
+CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall $(CUSTOMDEFINES)
 CFLAGS += -g
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=NYX_LOAD_ADDR=$(NYX_LOAD_ADDR)
 
