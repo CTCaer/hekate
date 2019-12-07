@@ -17,7 +17,7 @@
  */
 
 #include "fan.h"
-#include "../gfx/gfx.h"
+#include "../power/regulator_5v.h"
 #include "../soc/gpio.h"
 #include "../soc/pinmux.h"
 #include "../soc/t210.h"
@@ -29,25 +29,13 @@ void set_fan_duty(u32 duty)
 {
 	if (!fan_init)
 	{
-		// Fan power from internal 5V regulator (battery).
-		PINMUX_AUX(PINMUX_AUX_SATA_LED_ACTIVE) = 3;
-		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
-		
-		// Fan power from USB 5V vdd.
-		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = 3;
-		gpio_config(GPIO_PORT_CC, GPIO_PIN_4, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_HIGH);
-
 		// Fan tachometer.
-		PINMUX_AUX(PINMUX_AUX_CAM1_PWDN) = PINMUX_PULL_UP | PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | 3;
-		gpio_output_enable(GPIO_PORT_S, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
+		PINMUX_AUX(PINMUX_AUX_CAM1_PWDN) = PINMUX_PULL_UP | PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | 1;
 		gpio_config(GPIO_PORT_S, GPIO_PIN_7, GPIO_MODE_GPIO);
+		gpio_output_enable(GPIO_PORT_S, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
 		gpio_write(GPIO_PORT_S, GPIO_PIN_7, GPIO_LOW);
 
-		PWM(PWM_CONTROLLER_PWM_CSR_1) = (1 << 31) | (255 << 16); // Max PWM to disable fan.
+		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24); // Max PWM to disable fan.
 
 		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) = 1; // Set source to PWM1.
 		gpio_config(GPIO_PORT_V, GPIO_PIN_4, GPIO_MODE_SPIO); // Fan power mode.
@@ -63,16 +51,23 @@ void set_fan_duty(u32 duty)
 
 	// If disabled send a 0 duty.
 	if (inv_duty == 236)
+	{
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24);
+		regulator_disable_5v(REGULATOR_5V_FAN);
+	}
 	else // Set PWM duty.
+	{
+		// Fan power supply.
+		regulator_enable_5v(REGULATOR_5V_FAN);
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (inv_duty << 16);
+	}
 }
 
 void get_fan_speed(u32 *duty, u32 *rpm)
 {
 	if (rpm)
 	{
-		u32  irq_count = 0;
+		u32  irq_count = 1;
 		bool should_read = true;
 		bool irq_val = 0;
 
