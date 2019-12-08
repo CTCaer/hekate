@@ -83,9 +83,28 @@ DPRINTF(" kip1 %d:%s @ %08X (%08X)\n", i, kip1->name, (u32)kip1, ki->size);
 
 static const u8 mkey_keyseed_8xx[][0x10] =
 {
-	{0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80}, // Master key 8 encrypted with 9.
-	{0xB8, 0x96, 0x9E, 0x4A, 0x00, 0x0D, 0xD6, 0x28, 0xB3, 0xD1, 0xDB, 0x68, 0x5F, 0xFB, 0xE1, 0x2A}  // Master key 9 encrypted with 10.
+	// Master key 8 encrypted with 9.  (8.1.0 with 9.0.0)
+	{ 0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80 },
+	// Master key 9 encrypted with 10. (9.0.0 with 9.1.0)
+	{ 0xB8, 0x96, 0x9E, 0x4A, 0x00, 0x0D, 0xD6, 0x28, 0xB3, 0xD1, 0xDB, 0x68, 0x5F, 0xFB, 0xE1, 0x2A }
 };
+
+static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)
+{
+	
+	// Decrypt older encrypted mkey.
+	se_aes_crypt_ecb(src_slot, 0, mkey, 0x10, key_seed, 0x10);
+	// Set and unwrap pkg2 key.
+	se_aes_key_clear(9);
+	se_aes_key_set(9, mkey, 0x10);
+	se_aes_unwrap_key(9, 9, package2_keyseed);
+
+	// Decrypt header.
+	se_aes_crypt_ctr(9, tmp_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+
+	// Return if header is valid.
+	return (tmp_test->magic == PKG2_MAGIC);
+}
 
 pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 {
@@ -101,25 +120,58 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	// Skip header.
 	pdata += sizeof(pkg2_hdr_t);
 
-	//! Check if we need to decrypt with newer mkeys. Valid for 8.1.0 and up.
+	//! Check if we need to decrypt with newer mkeys. Valid for sept for 8.1.0 and up.
+	se_aes_crypt_ctr(8, &mkey_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+
+	if (mkey_test.magic == PKG2_MAGIC)
+		goto key_found;
+
+	// Decrypt older pkg2 via new mkeys. 
 	if ((kb >= KB_FIRMWARE_VERSION_810) && (kb < KB_FIRMWARE_VERSION_MAX))
 	{
 		u8 tmp_mkey[0x10];
-		// Decrypt older encrypted mkey.
-		se_aes_crypt_ecb(12, 0, tmp_mkey, 0x10, mkey_keyseed_8xx[KB_FIRMWARE_VERSION_MAX - kb - 1], 0x10);
-		// Set and unwrap pkg2 key.
-		se_aes_key_set(9, tmp_mkey, 0x10);
-		se_aes_unwrap_key(9, 9, package2_keyseed);
+		u8 decr_slot = 12; // Sept mkey.
+		u8 mkey_seeds_cnt = sizeof(mkey_keyseed_8xx) / 0x10;
+		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
+		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (KB_FIRMWARE_VERSION_MAX - kb);
 
-		// Decrypt header and test if it's valid.
-		se_aes_crypt_ctr(9, &mkey_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+		while (mkey_seeds_cnt)
+		{
+			// Decrypt and validate mkey.
+			int res = _pkg2_key_unwrap_validate(&mkey_test, hdr, decr_slot,
+				tmp_mkey, mkey_keyseed_8xx[mkey_seeds_idx - 1]);
 
-		if (mkey_test.magic == PKG2_MAGIC)
-			keyslot = 9;
-		else
-			se_aes_key_clear(9);
+			if (res)
+			{
+				keyslot = 9;
+				goto key_found;
+			}
+			else
+			{
+				// Set current mkey in order to decrypt a lower mkey.
+				mkey_seeds_idx--;
+				se_aes_key_clear(9);
+				se_aes_key_set(9, tmp_mkey, 0x10);
+					
+				decr_slot = 9; // Temp key.
+
+				// Check if we tried last key for that pkg2 version.
+				// And start with a lower mkey in case sept is older.
+				if (mkey_seeds_idx == mkey_seeds_min_idx)
+				{
+					mkey_seeds_cnt--;
+					mkey_seeds_idx = mkey_seeds_cnt;
+					decr_slot = 12; // Sept mkey.
+				}
+
+				// Out of keys. pkg2 is latest or process failed.
+				if (!mkey_seeds_cnt)
+					se_aes_key_clear(9);
+			}
+		}
 	}
 
+key_found:
 	// Decrypt header.
 	se_aes_crypt_ctr(keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	//gfx_hexdump((u32)hdr, hdr, 0x100);
