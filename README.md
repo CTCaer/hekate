@@ -73,6 +73,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1           | Enables Atmosphère patching.                               |
 | nouserexceptions=1     | Disables usermode exception handlers when paired with Exosphère. |
+| userpmu=1              | Allows user access to PMU when paired with Exosphère.      |
 | emummc_force_disable=1 | Disabled emuMMC if it's enabled.                           |
 | stock=1                | Disables unneeded kernel patching when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required to run completely stock. |
 | id=idname              | Identifies boot entry for forced boot via id. Max 7 chars. |
