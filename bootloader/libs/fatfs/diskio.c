@@ -8,11 +8,11 @@
 /*-----------------------------------------------------------------------*/
 
 #include <string.h>
+
+#include "../../../common/memory_map.h"
+
 #include "diskio.h"		/* FatFs lower layer API */
 #include "../../storage/sdmmc.h"
-
-#define SDMMC_UPPER_BUFFER 0xB8000000
-#define DRAM_START         0x80000000
 
 extern sdmmc_storage_t sd_storage;
 

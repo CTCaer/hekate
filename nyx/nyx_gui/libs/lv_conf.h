@@ -18,6 +18,7 @@
 #define LV_CONF_H
 
 #include "../utils/types.h"
+#include "../../../common/memory_map.h"
 /*===================
    Dynamic memory
  *===================*/
@@ -26,9 +27,9 @@
  * to store the graphical objects and other data */
 #define LV_MEM_CUSTOM         0              /*1: use custom malloc/free, 0: use the built-in lv_mem_alloc/lv_mem_free*/
 #if LV_MEM_CUSTOM == 0
-#  define LV_MEM_SIZE         (0x38000U * 1024U) /*Size memory used by `lv_mem_alloc` in bytes (>= 2kB)*/
+#  define LV_MEM_SIZE         NYX_LV_MEM_SZ  /*Size memory used by `lv_mem_alloc` in bytes (>= 2kB)*/
 #  define LV_MEM_ATTR                        /*Complier prefix for big array declaration*/
-#  define LV_MEM_ADR          0xF1000000     /*Set an address for memory pool instead of allocation it as an array. Can be in external SRAM too.*/
+#  define LV_MEM_ADR          NYX_LV_MEM_ADR /*Set an address for memory pool instead of allocation it as an array. Can be in external SRAM too.*/
 #  define LV_MEM_AUTO_DEFRAG  1              /*Automatically defrag on free*/
 #else       /*LV_MEM_CUSTOM*/
 #  define LV_MEM_CUSTOM_INCLUDE "../../../mem/heap.h"   /*Header for the dynamic memory function*/
@@ -86,7 +87,7 @@
  /* Place VDB to a specific address (e.g. in external RAM)
   * 0: allocate automatically into RAM
   * LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`*/
-#define LV_VDB_ADR          0xF0000000
+#define LV_VDB_ADR          NYX_LV_VDB_ADR
 
 /* Use two Virtual Display buffers (VDB) to parallelize rendering and flushing
  * The flushing should use DMA to write the frame buffer in the background */

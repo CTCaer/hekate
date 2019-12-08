@@ -40,6 +40,7 @@
 #include "../soc/hw_init.h"
 #include "../soc/t210.h"
 #include "../storage/sdmmc.h"
+#include "../thermal/fan.h"
 #include "../thermal/tmp451.h"
 #include "../utils/dirlist.h"
 #include "../utils/sprintf.h"
@@ -87,7 +88,7 @@ static void _save_fb_to_bmp()
 	const u32 file_size = 0x384000 + 0x36;
 	u8 *bitmap = malloc(file_size);
 	u32 *fb = malloc(0x384000);
-	u32 *fb_ptr = gfx_ctxt.fb;
+	u32 *fb_ptr = (u32 *)NYX_FB_ADDRESS;
 
 	// Reconstruct FB for bottom-top, landscape bmp.
 	for (u32 x = 0; x < 1280; x++)
@@ -163,7 +164,7 @@ static void _save_fb_to_bmp()
 static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_p)
 {
 	// Draw to framebuffer.
-	gfx_set_rect_land_pitch(gfx_ctxt.fb, (u32 *)color_p, x1, y1, x2, y2); //pitch
+	gfx_set_rect_land_pitch((u32 *)NYX_FB_ADDRESS, (u32 *)color_p, x1, y1, x2, y2); //pitch
 
 	// Check if display init was done. If it's the first big draw, init.
 	if (!disp_init_done && ((x2 - x1 + 1) > 600))

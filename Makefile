@@ -7,7 +7,6 @@ include $(DEVKITARM)/base_rules
 ################################################################################
 
 IPL_LOAD_ADDR := 0x40008000
-NYX_STORAGE_ADDR := 0xED000000
 IPL_MAGIC := 0x43544349 #"ICTC"
 BLVERSION_MAJOR := 5
 BLVERSION_MINOR := 0
@@ -60,7 +59,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 ################################################################################
 
-CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DNYX_STORAGE_ADDR=$(NYX_STORAGE_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
+CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_RESERVED=$(BL_RESERVED)
 #CUSTOMDEFINES += -DMENU_LOGO_ENABLE
 

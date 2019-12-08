@@ -19,6 +19,7 @@
 #include "bpmp.h"
 #include "clock.h"
 #include "t210.h"
+#include "../../common/memory_map.h"
 #include "../utils/util.h"
 
 #define BPMP_CACHE_CONFIG               0x0
@@ -74,8 +75,8 @@
 
 bpmp_mmu_entry_t mmu_entries[] =
 {
-	{ 0x80000000,    0xFFFFFFFF, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true },
-	{ IPL_LOAD_ADDR, 0x40040000, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true }
+	{ DRAM_START, 0xFFFFFFFF, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true },
+	{ IRAM_BASE,  0x4003FFFF, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true }
 };
 
 void bpmp_mmu_maintenance(u32 op, bool force)

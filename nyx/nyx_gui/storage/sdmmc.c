@@ -19,6 +19,7 @@
 #include "sdmmc.h"
 #include "mmc.h"
 #include "sd.h"
+#include "../../../common/memory_map.h"
 #include "../gfx/gfx.h"
 #include "../mem/heap.h"
 #include "../utils/util.h"
@@ -1064,6 +1065,7 @@ void sdmmc_storage_init_wait_sd()
 int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 bus_width, u32 type)
 {
 	int is_version_1 = 0;
+	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
 
 	// Some cards (SanDisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
@@ -1138,13 +1140,9 @@ DPRINTF("[SD] set blocklen to 512\n");
 		return 0;
 DPRINTF("[SD] cleared card detect\n");
 
-	u8 *buf = (u8 *)malloc(512);
 	if (!_sd_storage_get_scr(storage, buf))
-	{
-		free(buf);
 		return 0;
-	}
-		
+
 	//gfx_hexdump(0, storage->raw_scr, 8);
 DPRINTF("[SD] got scr\n");
 
@@ -1152,10 +1150,8 @@ DPRINTF("[SD] got scr\n");
 	if (bus_width == SDMMC_BUS_WIDTH_4 && (storage->scr.bus_widths & 4) && (storage->scr.sda_vsn & 0xF))
 	{
 		if (!_sd_storage_execute_app_cmd_type1(storage, &tmp, SD_APP_SET_BUS_WIDTH, SD_BUS_WIDTH_4, 0, R1_STATE_TRAN))
-		{
-			free(buf);
 			return 0;
-		}
+
 		sdmmc_set_bus_width(storage->sdmmc, SDMMC_BUS_WIDTH_4);
 DPRINTF("[SD] switched to wide bus width\n");
 	}
@@ -1167,19 +1163,14 @@ DPRINTF("[SD] SD does not support wide bus width\n");
 	if (storage->is_low_voltage)
 	{
 		if (!_sd_storage_enable_uhs_low_volt(storage, type, buf))
-		{
-			free(buf);
 			return 0;
-		}
 DPRINTF("[SD] enabled UHS\n");
 	}
 	else if (type != 6 && (storage->scr.sda_vsn & 0xF) != 0)
 	{
 		if (!_sd_storage_enable_hs_high_volt(storage, buf))
-		{
-			free(buf);
 			return 0;
-		}
+
 DPRINTF("[SD] enabled HS\n");
 		storage->csd.busspeed = 25;
 	}
@@ -1192,7 +1183,6 @@ DPRINTF("[SD] enabled HS\n");
 DPRINTF("[SD] got sd status\n");
 	}
 
-	free(buf);
 	return 1;
 }
 

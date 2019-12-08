@@ -548,7 +548,7 @@ static const cfg_op_t cfg_display_framebuffer[32] = {
 	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, //768*2x768*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, 0},
 	{DC_WINBUF_SURFACE_KIND, 0}, //Regular surface.
-	{DC_WINBUF_START_ADDR, FB_ADDRESS}, //Framebuffer address.
+	{DC_WINBUF_START_ADDR, NYX_FB_ADDRESS}, // Framebuffer address.
 	{DC_WINBUF_ADDR_H_OFFSET, 0}, //Linear: 0x383FFC, Block: 0x3813FC
 	{DC_WINBUF_ADDR_V_OFFSET, 1279}, //Linear: 1279, Block: 0
 	{DC_WIN_WIN_OPTIONS, 0},
@@ -583,7 +583,7 @@ static const cfg_op_t cfg_display_framebuffer2[32] = {
 	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(1280 * 2) | LINE_STRIDE(1280 * 4)}, //768*2x768*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, 0},
 	{DC_WINBUF_SURFACE_KIND, BLOCK_HEIGHT(4) | BLOCK}, //Regular surface.
-	{DC_WINBUF_START_ADDR, FB_ADDRESS}, //Framebuffer address.
+	{DC_WINBUF_START_ADDR, NYX_FB_ADDRESS}, // Framebuffer address.
 	{DC_WINBUF_ADDR_H_OFFSET, 0x3813FC}, //Linear: 0x383FFC, Block: 0x3813FC
 	{DC_WINBUF_ADDR_V_OFFSET, 0}, //Linear: 1279, Block: 0
 	{DC_WIN_WIN_OPTIONS, 0},

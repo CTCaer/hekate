@@ -32,10 +32,6 @@
 #include "../utils/sprintf.h"
 #include "../utils/util.h"
 
-#define EMMC_BUF_ALIGNED 0xB5000000
-#define SDXC_BUF_ALIGNED 0xB6000000
-#define MIXD_BUF_ALIGNED 0xB7000000
-
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
 

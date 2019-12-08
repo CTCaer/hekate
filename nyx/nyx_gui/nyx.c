@@ -19,6 +19,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "../../common/memory_map.h"
+
 #include "config/config.h"
 #include "gfx/di.h"
 #include "gfx/gfx.h"
@@ -366,7 +368,7 @@ void nyx_init_load_res()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
-	gfx_init_ctxt((u32 *)FB_ADDRESS, 720, 1280, 720);
+	gfx_init_ctxt((u32 *)NYX_FB_ADDRESS, 720, 1280, 720);
 	gfx_con_init();
 
 	sd_mount();
@@ -390,10 +392,6 @@ void nyx_init_load_res()
 
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 }
-
-#define IPL_STACK_TOP  0x90010000
-#define IPL_HEAP_START 0x90020000
-#define IPL_HEAP_END   0xB5000000
 
 extern void pivot_stack(u32 stack_top);
 

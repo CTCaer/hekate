@@ -19,6 +19,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "../common/memory_map.h"
+
 #include "config/config.h"
 #include "gfx/di.h"
 #include "gfx/gfx.h"
@@ -1231,10 +1233,6 @@ ment_t ment_top[] = {
 };
 
 menu_t menu_top = { ment_top, "hekate - CTCaer mod v5.0.2", 0, 0 };
-
-#define IPL_STACK_TOP  0x90010000
-#define IPL_HEAP_START 0x90020000
-#define IPL_HEAP_END   0xB5000000
 
 extern void pivot_stack(u32 stack_top);
 

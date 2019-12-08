@@ -24,6 +24,7 @@
 #include "gui.h"
 #include "fe_emmc_tools.h"
 #include "fe_emummc_tools.h"
+#include "../../../common/memory_map.h"
 #include "../config/config.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
@@ -34,10 +35,6 @@
 #include "../utils/btn.h"
 #include "../utils/sprintf.h"
 #include "../utils/util.h"
-
-#define EMMC_BUF_ALIGNED 0xB5000000
-#define SDXC_BUF_ALIGNED 0xB6000000
-#define MIXD_BUF_ALIGNED 0xB7000000
 
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128

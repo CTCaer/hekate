@@ -19,6 +19,7 @@
 #include "mc.h"
 #include "emc.h"
 #include "sdram_param_t210.h"
+#include "../../../common/memory_map.h"
 #include "../power/max77620.h"
 #include "../power/max7762x.h"
 #include "../soc/clock.h"
@@ -641,7 +642,7 @@ break_nosleep:
 sdram_params_t *sdram_get_params()
 {
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
-	u8 *buf = (u8 *)0x40030000;
+	u8 *buf = (u8 *)SDRAM_PARAMS_ADDR;
 	LZ_Uncompress(_dram_cfg_lz, buf, sizeof(_dram_cfg_lz));
 	return (sdram_params_t *)&buf[sizeof(sdram_params_t) * _get_sdram_id()];
 #else

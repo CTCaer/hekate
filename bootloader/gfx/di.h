@@ -18,9 +18,8 @@
 #ifndef _DI_H_
 #define _DI_H_
 
+#include "../../common/memory_map.h"
 #include "../utils/types.h"
-
-#define FB_ADDRESS 0xC0000000
 
 /*! Display registers. */
 #define _DIREG(reg) ((reg) * 4)

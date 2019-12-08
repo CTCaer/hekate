@@ -254,7 +254,6 @@ void display_color_screen(u32 color)
 	DISPLAY_A(_DIREG(DC_WIN_CD_WIN_OPTIONS)) = 0;
 	DISPLAY_A(_DIREG(DC_DISP_BLEND_BACKGROUND_COLOR)) = color;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = (DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) & 0xFFFFFFFE) | GENERAL_ACT_REQ;
-
 	usleep(35000);
 
 	display_backlight(true);
@@ -263,11 +262,12 @@ void display_color_screen(u32 color)
 u32 *display_init_framebuffer()
 {
 	// Sanitize framebuffer area.
-	memset((u32 *)FB_ADDRESS, 0, 0x3C0000);
+	memset((u32 *)IPL_FB_ADDRESS, 0, 0x3C0000);
+
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer, 32);
 	usleep(35000);
 
-	return (u32 *)FB_ADDRESS;
+	return (u32 *)IPL_FB_ADDRESS;
 }
 
