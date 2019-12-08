@@ -135,6 +135,7 @@ typedef struct _atm_fatal_error_ctx
 #define  EXO_FLAG_DBG_PRIV    (1 << 1)
 #define  EXO_FLAG_DBG_USER    (1 << 2)
 #define  EXO_FLAG_NO_USER_EXC (1 << 3)
+#define  EXO_FLAG_USER_PMU    (1 << 4)
 
 void config_exosphere(launch_ctxt_t *ctxt)
 {
@@ -171,6 +172,10 @@ void config_exosphere(launch_ctxt_t *ctxt)
 	// Disable proper failure handling.
 	if (ctxt->exo_no_user_exceptions)
 		exoFlags |= EXO_FLAG_NO_USER_EXC;
+
+	// Enable user access to PMU.
+	if (ctxt->exo_user_pmu)
+		exoFlags |= EXO_FLAG_USER_PMU;
 
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;

@@ -201,6 +201,16 @@ static int _config_dis_exo_user_exceptions(launch_ctxt_t *ctxt, const char *valu
 	return 1;
 }
 
+static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Enabled user access to PMU\n");
+		ctxt->exo_user_pmu = true;
+	}
+	return 1;
+}
+
 static int _config_fss(launch_ctxt_t *ctxt, const char *value)
 {
 	return parse_fss(ctxt, value);
@@ -223,6 +233,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "stock", _config_stock },
 	{ "atmosphere", _config_atmosphere },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },
+	{ "userpmu", _config_exo_user_pmu_access },
 	{ "fss0", _config_fss },
 	{ NULL, NULL },
 };
