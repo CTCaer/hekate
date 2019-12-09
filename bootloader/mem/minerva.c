@@ -28,7 +28,7 @@
 
 extern volatile nyx_storage_t *nyx_str;
 
-void minerva_init()
+u32 minerva_init()
 {
 	u32 curr_ram_idx = 0;
 
@@ -37,13 +37,17 @@ void minerva_init()
 	// Set table to nyx storage.
 	mtc_cfg->mtc_table = (emc_table_t *)&nyx_str->mtc_table;
 
-	mtc_cfg->init_done = MTC_NEW_MAGIC;
 	mtc_cfg->sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
+	mtc_cfg->init_done = MTC_NEW_MAGIC; // Initialize mtc table.
+	
 	u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
-	minerva_cfg = (void *)ep_addr;
+
+	// Ensure that Minerva is new.
+	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
+		minerva_cfg = (void *)ep_addr;
 
 	if (!minerva_cfg)
-		return;
+		return 1;
 
 	// Get current frequency
 	for (curr_ram_idx = 0; curr_ram_idx < 10; curr_ram_idx++)
@@ -69,6 +73,8 @@ void minerva_init()
 	// Switch to max.
 	mtc_cfg->rate_to = 1600000;
 	minerva_cfg(mtc_cfg, NULL);
+
+	return 0;
 }
 
 void minerva_change_freq(minerva_freq_t freq)
