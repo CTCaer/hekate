@@ -137,7 +137,7 @@ void free(void *buf)
 void heap_monitor(heap_monitor_t *mon, bool print_node_stats)
 {
 	u32 count = 0;
-	memset(mon, 0, sizeof(heap_monitor));
+	memset(mon, 0, sizeof(heap_monitor_t));
 
 	hnode_t *node = _heap.first;
 	while (true)
