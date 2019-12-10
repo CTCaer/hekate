@@ -54,10 +54,11 @@ enum
 	SVC_GENERIC   = 0,
 	// Generic instruction patches.
 	SVC_VERIFY_DS = 0x10,
-	DEBUG_MODE_EN,
-	ATM_GEN_PATCH,
+	DEBUG_MODE_EN = 0x11,
+	ATM_GEN_PATCH = 0x12,
+	ATM_SYSM_INCR = ATM_GEN_PATCH,
 	// >4 bytes patches. Value is a pointer of a u32 array.
-	ATM_ARR_PATCH,
+	ATM_ARR_PATCH = 0x13,
 };
 
 typedef struct _pkg2_hdr_t
