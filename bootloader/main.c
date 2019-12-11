@@ -252,19 +252,39 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 	}
 }
 
-bool is_ipl_updated(void *buf)
+bool is_ipl_updated(void *buf, char *path, bool force)
 {
 	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));
 
-	if (update_ft->magic == ipl_ver.magic)
-	{
-		if (byte_swap_32(update_ft->version) <= byte_swap_32(ipl_ver.version))
-			return true;
-		return false;
+	// Check if newer version.
+	if (!force && (update_ft->magic == ipl_ver.magic))
+		if (byte_swap_32(update_ft->version) > byte_swap_32(ipl_ver.version))
+			return false;
 
+	// Update if old or broken.
+	if ((force && (update_ft->magic != ipl_ver.magic)) ||
+		(byte_swap_32(update_ft->version) < byte_swap_32(ipl_ver.version)))
+	{
+		FIL fp;
+		volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
+		boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
+		memset(tmp_cfg, 0, sizeof(boot_cfg_t));
+
+		f_open(&fp, path, FA_WRITE | FA_CREATE_ALWAYS);
+		f_write(&fp, (u8 *)reloc->start, reloc->end - reloc->start, NULL);
+		
+		// Write needed tag in case injected ipl uses old versioning.
+		f_write(&fp, "ICTC49", 6, NULL);
+
+		// Reset boot storage configuration.
+		f_lseek(&fp, PATCHED_RELOC_SZ);
+		f_write(&fp, tmp_cfg, sizeof(boot_cfg_t), NULL);
+
+		f_close(&fp);
+		free(tmp_cfg);
 	}
-	else
-		return true;
+
+	return true;
 }
 
 int launch_payload(char *path, bool update)
@@ -301,7 +321,7 @@ int launch_payload(char *path, bool update)
 
 		f_close(&fp);
 
-		if (update && is_ipl_updated(buf))
+		if (update && is_ipl_updated(buf, path, false))
 			goto out;
 
 		sd_unmount();
