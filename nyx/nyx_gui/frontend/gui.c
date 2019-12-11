@@ -721,9 +721,8 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 		"   Copyright (c) 2016 Gabor Kiss-Vamosi"
 	);
 
-
 	lv_obj_t * lbl_octopus = lv_label_create(parent, NULL);
-	lv_obj_align(lbl_octopus, lbl_credits, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI, 0);
+	lv_obj_align(lbl_octopus, lbl_credits, LV_ALIGN_OUT_RIGHT_TOP, -LV_DPI / 10, 0);
 	lv_ta_set_style(lbl_octopus, LV_TA_STYLE_BG, &monospace_text);
 	lv_label_set_recolor(lbl_octopus, true);
 
