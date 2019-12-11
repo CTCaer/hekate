@@ -678,6 +678,8 @@ out:
 	btn_wait();
 }
 
+#define NYX_VER_OFF 0x9C
+
 void nyx_load_run()
 {
 	sd_mount();
@@ -688,6 +690,9 @@ void nyx_load_run()
 
 	sd_unmount();
 
+	u32 expected_nyx_ver = ((NYX_VER_MJ + '0') << 24) | ((NYX_VER_MN + '0') << 16) | ((NYX_VER_HF + '0') << 8);
+	u32 nyx_ver = byte_swap_32(*(u32 *)(nyx + NYX_VER_OFF));
+
 	gfx_clear_grey(0x1B);
 	u8 *BOOTLOGO = (void *)malloc(0x4000);
 	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
@@ -695,16 +700,29 @@ void nyx_load_run()
 	free(BOOTLOGO);
 	display_backlight_brightness(h_cfg.backlight, 1000);
 
+	// Check if Nyx version is old.
+	if (nyx_ver < expected_nyx_ver)
+	{
+		h_cfg.errors |= ERR_SYSOLD_NYX;
+
+		gfx_con_setpos(0, 0);
+		WPRINTF("Old Nyx GUI found! There will be dragons!\n");
+		WPRINTF("\nUpdate your bootloader folder!\n\n");
+		WPRINTF("Press any key...");
+
+		msleep(2000);
+		btn_wait();
+	}
+
+	nyx_str->info.errors = h_cfg.errors;
 	nyx_str->cfg = 0;
 	if (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
 	{
 		b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_DUMP);
 		nyx_str->cfg |= NYX_CFG_DUMP;
 	}
-	if (nyx_str->mtc_cfg.mtc_table)
-		nyx_str->cfg |= NYX_CFG_MINERVA;
 
-	nyx_str->version = ipl_ver.version - 0x303030;
+	nyx_str->version = ipl_ver.version - 0x303030; // Convert ASCII to numbers.
 
 	//memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);
 	volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
@@ -749,7 +767,7 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomE
 	return cfg_sec;
 }
 
-void auto_launch_firmware()
+static void _auto_launch_firmware()
 {
 	if(b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
 	{
@@ -1019,7 +1037,7 @@ skip_list:
 		hos_launch(cfg_sec);
 
 		EPRINTF("\nFailed to launch HOS!");
-		gfx_printf("\nPress any key and try again...\n");
+		gfx_printf("\nPress any key...\n");
 		msleep(500);
 		btn_wait();
 	}
@@ -1038,7 +1056,7 @@ out:
 	sd_unmount();
 }
 
-void patched_rcm_protection()
+static void _patched_rcm_protection()
 {
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -1080,7 +1098,28 @@ void patched_rcm_protection()
 	sdmmc_storage_end(&storage);
 }
 
-void about()
+static void _show_errors()
+{
+	if (h_cfg.errors)
+	{
+		gfx_clear_grey(0x1B);
+		gfx_con_setpos(0, 0);
+		display_backlight_brightness(h_cfg.backlight, 1000);
+
+		if (h_cfg.errors & ERR_LIBSYS_LP0)
+			WPRINTF("Missing LP0 (sleep mode) library!\n");
+		if (h_cfg.errors & ERR_SYSOLD_MTC)
+			WPRINTF("Missing or old Minerva library!\n");
+
+		WPRINTF("\nUpdate your bootloader folder!\n\n");
+		WPRINTF("Press any key...");
+
+		msleep(2000);
+		btn_wait();
+	}
+}
+
+static void _about()
 {
 	static const char credits[] =
 		"\nhekate     (c) 2018 naehrwert, st4rk\n\n"
@@ -1228,7 +1267,7 @@ ment_t ment_top[] = {
 	MDEF_HANDLER("Reboot (RCM)", reboot_rcm),
 	MDEF_HANDLER("Power off", power_off),
 	MDEF_CAPTION("---------------", 0xFF444444),
-	MDEF_HANDLER("About", about),
+	MDEF_HANDLER("About", _about),
 	MDEF_END()
 };
 
@@ -1262,7 +1301,8 @@ void ipl_main()
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
-	minerva_init();
+	if (minerva_init())
+		h_cfg.errors |= ERR_SYSOLD_MTC;
 
 	display_init();
 
@@ -1286,13 +1326,16 @@ void ipl_main()
 	secmon_exo_check_panic();
 
 	// Check if RCM is patched and protect from a possible brick.
-	patched_rcm_protection();
+	_patched_rcm_protection();
 
 	// Load emuMMC configuration from SD.
 	emummc_load_cfg();
 
+	// Show library errors.
+	_show_errors();
+
 	// Load saved configuration and auto boot if enabled.
-	auto_launch_firmware();
+	_auto_launch_firmware();
 
 	minerva_change_freq(FREQ_800);
 

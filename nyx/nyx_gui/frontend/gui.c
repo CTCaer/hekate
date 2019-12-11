@@ -757,7 +757,7 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_obj_align(ctcaer_img, lbl_octopus, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, LV_DPI * 2 / 3);
 
 	char version[32];
-	s_printf(version, "Nyx v%d.%d.%d", BL_VER_MJ, BL_VER_MN, BL_VER_HF);
+	s_printf(version, "Nyx v%d.%d.%d", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF);
 	lv_obj_t * lbl_ver = lv_label_create(parent, NULL);
 	lv_obj_align(lbl_ver, ctcaer_img, LV_ALIGN_OUT_BOTTOM_RIGHT, -LV_DPI / 20, LV_DPI / 4);
 	lv_ta_set_style(lbl_ver, LV_TA_STYLE_BG, &monospace_text);

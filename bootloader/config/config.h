@@ -40,11 +40,6 @@ typedef struct _hekate_config
 	u32  errors;
 } hekate_config;
 
-typedef enum
-{
-	ERR_LIBSYS_LP0 = (1 << 0),
-} hsysmodule_t;
-
 void set_default_configuration();
 int create_config_entry();
 void config_autoboot();
