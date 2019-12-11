@@ -14,7 +14,7 @@ Custom Nintendo Switch bootloader, firmware patcher, and more.
 |  \|__ bootlogo.bmp       | It is used when custom is on and no logopath found. Can be skipped.   |
 |  \|__ hekate_ipl.ini     | Main bootloader configuration and boot entries.                       |
 |  \|__ patches.ini        | Add external patches. Can be skipped. A template can be found [here](./res/patches_template.ini) |
-|  \|__ update.bin         | If newer, it is loaded at boot. For modchips. Can be skipped.         |
+|  \|__ update.bin         | If newer, it is loaded at boot. For modchips. Auto updated. Can be skipped. |
 | bootloader/ini/          | For individual inis. 'More configs...' menu. Autoboot is supported.   |
 | bootloader/res/          | Nyx user resources. Icons and more.                                   |
 |  \|__ background.bmp     | Nyx - custom background.                                              |
