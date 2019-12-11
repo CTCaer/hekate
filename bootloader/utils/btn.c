@@ -81,7 +81,7 @@ u8 btn_wait_timeout(u32 time_ms, u8 mask)
 	};
 
 	// Timed out.
-	if (!single_button)
+	if (!single_button || !time_ms)
 		return (res & mask);
 	else
 		return 0; // Return no button press if single button requested.
