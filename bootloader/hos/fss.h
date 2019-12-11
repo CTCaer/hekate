@@ -19,6 +19,6 @@
 
 #include "hos.h"
 
-int parse_fss(launch_ctxt_t *ctxt, const char *value);
+int parse_fss(launch_ctxt_t *ctxt, const char *path);
 
 #endif

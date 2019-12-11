@@ -30,6 +30,9 @@
 
 extern hekate_config h_cfg;
 
+extern void *sd_file_read(const char *path, u32 *fsize);
+extern bool is_ipl_updated(void *buf, char *path, bool force);
+
 #define FSS0_MAGIC 0x30535346
 #define CNT_TYPE_FSP 0
 #define CNT_TYPE_EXO 1
@@ -62,7 +65,32 @@ typedef struct _fss_content_t
 	char name[0x10];
 } fss_content_t;
 
-int parse_fss(launch_ctxt_t *ctxt, const char *value)
+static void _update_r2p(const char *path)
+{
+	char *r2p_path = malloc(256);
+	u32 path_len = strlen(path);
+	strcpy(r2p_path, path);
+
+	while(path_len)
+	{
+		if ((r2p_path[path_len - 1] == '/') || (r2p_path[path_len - 1] == 0x5C))
+		{
+			r2p_path[path_len] = 0;
+			strcat(r2p_path, "reboot_payload.bin");
+			u8 *r2p_payload = sd_file_read(r2p_path, NULL);
+
+			is_ipl_updated(r2p_payload, r2p_path, h_cfg.updater2p ? true : false);
+
+			free(r2p_payload);
+			break;
+		}
+		path_len--;
+	}
+
+	free(r2p_path);
+}
+
+int parse_fss(launch_ctxt_t *ctxt, const char *path)
 {
 	FIL fp;
 
@@ -78,7 +106,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *value)
 	if (stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
 		return 1;
 
-	if (f_open(&fp, value, FA_READ) != FR_OK)
+	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return 0;
 
 	ctxt->atmosphere = true;
@@ -138,6 +166,8 @@ int parse_fss(launch_ctxt_t *ctxt, const char *value)
 
 		gfx_printf("Done!\n");
 		f_close(&fp);
+
+		_update_r2p(path);
 
 		return 1;
 	}

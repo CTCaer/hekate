@@ -43,6 +43,7 @@ void set_default_configuration()
 	h_cfg.backlight = 100;
 	h_cfg.autohosoff = 0;
 	h_cfg.autonogc = 1;
+	h_cfg.updater2p = 0;
 	h_cfg.brand = NULL;
 	h_cfg.tagline = NULL;
 	h_cfg.errors = 0;
@@ -107,6 +108,9 @@ int create_config_entry()
 	f_puts(lbuf, &fp);
 	f_puts("\nautonogc=", &fp);
 	itoa(h_cfg.autonogc, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\nupdater2p=", &fp);
+	itoa(h_cfg.updater2p, lbuf, 10);
 	f_puts(lbuf, &fp);
 	if (h_cfg.brand)
 	{

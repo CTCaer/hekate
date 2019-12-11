@@ -341,6 +341,8 @@ void load_saved_configuration()
 							h_cfg.autohosoff = atoi(kv->val);
 						else if (!strcmp("autonogc", kv->key))
 							h_cfg.autonogc = atoi(kv->val);
+						else if (!strcmp("updater2p", kv->key))
+							h_cfg.updater2p = atoi(kv->val);
 						else if (!strcmp("brand", kv->key))
 						{
 							h_cfg.brand = malloc(strlen(kv->val) + 1);
