@@ -352,6 +352,8 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	if (!ctxt->pkg1_id)
 	{
 		_hos_crit_error("Unknown pkg1 version.");
+		EHPRINTFARGS("%sNot yet supported HOS version!", 
+			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "Is emuMMC corrupt?\nOr " : "");
 		goto out;
 	}
 	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
