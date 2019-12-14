@@ -71,5 +71,7 @@ typedef struct _rtc_time_t {
 
 void max77620_rtc_get_time(rtc_time_t *time);
 void max77620_rtc_stop_alarm();
+void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time);
+u32 max77620_rtc_date_to_epoch(const rtc_time_t *time, bool hos_encoding);
 
 #endif /* _MFD_MAX77620_RTC_H_ */

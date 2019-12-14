@@ -1,7 +1,8 @@
 /*
  * PMIC Real Time Clock driver for Nintendo Switch's MAX77620-RTC
  *
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2019 shchmue
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -74,4 +75,95 @@ void max77620_rtc_stop_alarm()
 
 	// Update RTC clock from RTC regs.
 	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_UPDATE0_REG, MAX77620_RTC_WRITE_UPDATE);
+}
+
+void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time)
+{
+	u32 tmp, edays, year, month, day;
+
+	// Set time.
+	time->sec = epoch % 60;
+	epoch /= 60;
+	time->min = epoch % 60;
+	epoch /= 60;
+	time->hour = epoch % 24;
+	epoch /= 24;
+
+	// Calculate base date values.
+	tmp = (u32)(((u64)4 * epoch + 102032) / 146097 + 15);
+	tmp = (u32)((u64)epoch + 2442113 + tmp - (tmp >> 2));
+
+	year = (20 * tmp - 2442) / 7305;
+	edays = tmp - 365 * year - (year >> 2);
+	month = edays * 1000 / 30601;
+	day = edays - month * 30 - month * 601 / 1000;
+
+	// Month/Year offset.
+	if(month < 14)
+	{
+		year -= 4716;
+		month--;
+	}
+	else
+	{
+		year -= 4715;
+		month -= 13;
+	}
+
+	// Set date.
+	time->year = year;
+	time->month = month;
+	time->day = day;
+
+	// Set weekday.
+	time->weekday = 0; //! TODO.
+}
+
+u32 max77620_rtc_date_to_epoch(const rtc_time_t *time, bool hos_encoding)
+{
+	u32 year, month, epoch;
+
+	//Year
+	year = time->year;
+	//Month of year
+	month = time->month;
+
+	if (!hos_encoding)
+	{
+		// Month/Year offset.
+		if(month < 3)
+		{
+			month += 12;
+			year--;
+		}
+	}
+	else
+	{
+		year -= 2000;
+		month++;
+
+		// Month/Year offset.
+		if(month < 3)
+		{
+			month += 9;
+			year--;
+		}
+		else
+			month -= 3;
+	}
+
+	epoch = (365 * year) + (year >> 2) - (year / 100) + (year / 400); // Years to days.
+
+	if (!hos_encoding)
+	{
+		epoch += (30 * month) + (3 * (month + 1) / 5) + time->day; // Months to days.
+		epoch -= 719561; // Epoch time is 1/1/1970.
+	}
+	else
+		epoch += (30 * month) + ((3 * month + 2) / 5) + 59 + time->day; // Months to days.
+
+	epoch *= 86400; // Days to seconds.
+	epoch += (3600 * time->hour) + (60 * time->min) + time->sec; // Add hours, minutes and seconds.
+
+	return epoch;
 }
