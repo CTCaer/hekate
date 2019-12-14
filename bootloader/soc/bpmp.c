@@ -22,56 +22,101 @@
 #include "../../common/memory_map.h"
 #include "../utils/util.h"
 
+#define BPMP_MMU_CACHE_LINE_SIZE        0x20
+
 #define BPMP_CACHE_CONFIG               0x0
-#define  CFG_ENABLE                     (1 << 0)
+#define  CFG_ENABLE_CACHE               (1 << 0)
+#define  CFG_ENABLE_SKEW_ASSOC          (1 << 1)
+#define  CFG_DISABLE_RANDOM_ALLOC       (1 << 2)
 #define  CFG_FORCE_WRITE_THROUGH        (1 << 3)
+#define  CFG_NEVER_ALLOCATE             (1 << 6)
+#define  CFG_ENABLE_INTERRUPT           (1 << 7)
+#define  CFG_MMU_TAG_MODE(x)            (x << 8)
+#define   TAG_MODE_PARALLEL             0
+#define   TAG_MODE_TAG_FIRST            1
+#define   TAG_MODE_MMU_FIRST            2
 #define  CFG_DISABLE_WRITE_BUFFER       (1 << 10)
 #define  CFG_DISABLE_READ_BUFFER        (1 << 11)
+#define  CFG_ENABLE_HANG_DETECT         (1 << 12)
 #define  CFG_FULL_LINE_DIRTY            (1 << 13)
 #define  CFG_TAG_CHK_ABRT_ON_ERR        (1 << 14)
+#define  CFG_TAG_CHK_CLR_ERR            (1 << 15)
+#define  CFG_DISABLE_SAMELINE           (1 << 16)
+#define  CFG_OBS_BUS_EN                 (1 << 31)
+
 #define BPMP_CACHE_LOCK                 0x4
+#define  LOCK_LINE(x)                   (1 << x)
+
 #define BPMP_CACHE_SIZE                 0xC
 #define BPMP_CACHE_LFSR                 0x10
+
 #define BPMP_CACHE_TAG_STATUS           0x14
+#define  TAG_STATUS_TAG_CHECK_ERROR     (1 << 0)
+#define  TAG_STATUS_CONFLICT_ADDR_MASK  0xFFFFFFE0
+
 #define BPMP_CACHE_CLKEN_OVERRIDE       0x18
+#define  CLKEN_OVERRIDE_WR_MCCIF_CLKEN  (1 << 0)
+#define  CLKEN_OVERRIDE_RD_MCCIF_CLKEN  (1 << 1)
+
 #define BPMP_CACHE_MAINT_ADDR           0x20
 #define BPMP_CACHE_MAINT_DATA           0x24
+
 #define BPMP_CACHE_MAINT_REQ            0x28
 #define  MAINT_REQ_WAY_BITMAP(x)        ((x) << 8)
 
 #define BPMP_CACHE_INT_MASK             0x40
 #define BPMP_CACHE_INT_CLEAR            0x44
-#define  INT_CLR_MAINT_DONE             (1 << 0)
-
 #define BPMP_CACHE_INT_RAW_EVENT        0x48
-#define  INT_RAW_EVENT_MAINT_DONE      (1 << 0)
 #define BPMP_CACHE_INT_STATUS           0x4C
+#define  INT_MAINT_DONE                 (1 << 0)
+#define  INT_MAINT_ERROR                (1 << 1)
 
 #define BPMP_CACHE_RB_CFG               0x80
 #define BPMP_CACHE_WB_CFG               0x84
 
 #define BPMP_CACHE_MMU_FALLBACK_ENTRY   0xA0
 #define BPMP_CACHE_MMU_SHADOW_COPY_MASK 0xA4
+
 #define BPMP_CACHE_MMU_CFG              0xAC
+#define  MMU_CFG_BLOCK_MAIN_ENTRY_WR    (1 << 0)
 #define  MMU_CFG_SEQ_EN                 (1 << 1)
 #define  MMU_CFG_TLB_EN                 (1 << 2)
+#define  MMU_CFG_SEG_CHECK_ALL_ENTRIES  (1 << 3)
 #define  MMU_CFG_ABORT_STORE_LAST       (1 << 4)
+#define  MMU_CFG_CLR_ABORT              (1 << 5)
+
 #define BPMP_CACHE_MMU_CMD              0xB0
 #define  MMU_CMD_NOP                    0
 #define  MMU_CMD_INIT                   1
 #define  MMU_CMD_COPY_SHADOW            2
+
 #define BPMP_CACHE_MMU_ABORT_STAT       0xB4
+#define  ABORT_STAT_UNIT_MASK           0x7
+#define  ABORT_STAT_UNIT_NONE           0
+#define  ABORT_STAT_UNIT_CACHE          1
+#define  ABORT_STAT_UNIT_SEQ            2
+#define  ABORT_STAT_UNIT_TLB            3
+#define  ABORT_STAT_UNIT_SEG            4
+#define  ABORT_STAT_UNIT_FALLBACK       5
+#define  ABORT_STAT_OVERLAP             (1 << 3)
+#define  ABORT_STAT_ENTRY               (0x1F << 4)
+#define  ABORT_STAT_TYPE_MASK           (3 << 16)
+#define  ABORT_STAT_TYPE_EXE            (0 << 16)
+#define  ABORT_STAT_TYPE_RD             (1 << 16)
+#define  ABORT_STAT_TYPE_WR             (2 << 16)
+#define  ABORT_STAT_SIZE                (3 << 18)
+#define  ABORT_STAT_SEQ                 (1 << 20)
+#define  ABORT_STAT_PROT                (1 << 21)
+
 #define BPMP_CACHE_MMU_ABORT_ADDR       0xB8
 #define BPMP_CACHE_MMU_ACTIVE_ENTRIES   0xBC
 
-#define BPMP_MMU_SHADOW_ENTRY_BASE     (BPMP_CACHE_BASE + 0x400)
-#define BPMP_MMU_MAIN_ENTRY_BASE       (BPMP_CACHE_BASE + 0x800)
-#define  MMU_ENTRY_ADDR_MASK           0xFFFFFFE0
-
-#define  MMU_EN_CACHED                (1 << 0)
-#define  MMU_EN_EXEC                  (1 << 1)
-#define  MMU_EN_READ                  (1 << 2)
-#define  MMU_EN_WRITE                 (1 << 3)
+#define BPMP_MMU_SHADOW_ENTRY_BASE      (BPMP_CACHE_BASE + 0x400)
+#define BPMP_MMU_MAIN_ENTRY_BASE        (BPMP_CACHE_BASE + 0x800)
+#define  MMU_EN_CACHED                  (1 << 0)
+#define  MMU_EN_EXEC                    (1 << 1)
+#define  MMU_EN_READ                    (1 << 2)
+#define  MMU_EN_WRITE                   (1 << 3)
 
 bpmp_mmu_entry_t mmu_entries[] =
 {
@@ -81,15 +126,15 @@ bpmp_mmu_entry_t mmu_entries[] =
 
 void bpmp_mmu_maintenance(u32 op, bool force)
 {
-	if (!force && !(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE))
+	if (!force && !(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE_CACHE))
 		return;
 
-	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = INT_CLR_MAINT_DONE;
+	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = INT_MAINT_DONE;
 
 	// This is a blocking operation.
 	BPMP_CACHE_CTRL(BPMP_CACHE_MAINT_REQ) = MAINT_REQ_WAY_BITMAP(0xF) | op;
 
-	while(!(BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT) & INT_RAW_EVENT_MAINT_DONE))
+	while(!(BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT) & INT_MAINT_DONE))
 		;
 
 	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT);
@@ -104,8 +149,8 @@ void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply)
 
 	if (entry->enable)
 	{
-		mmu_entry->min_addr = entry->min_addr & MMU_ENTRY_ADDR_MASK;
-		mmu_entry->max_addr = entry->max_addr & MMU_ENTRY_ADDR_MASK;
+		mmu_entry->start_addr = ALIGN(entry->start_addr, BPMP_MMU_CACHE_LINE_SIZE);
+		mmu_entry->end_addr = ALIGN_DOWN(entry->end_addr, BPMP_MMU_CACHE_LINE_SIZE);
 		mmu_entry->attr = entry->attr;
 
 		BPMP_CACHE_CTRL(BPMP_CACHE_MMU_SHADOW_COPY_MASK) |= (1 << idx);
@@ -117,7 +162,7 @@ void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply)
 
 void bpmp_mmu_enable()
 {
-	if (BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE)
+	if (BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE_CACHE)
 		return;
 
 	// Init BPMP MMU.
@@ -136,7 +181,8 @@ void bpmp_mmu_enable()
 	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, true);
 
 	// Enable cache.
-	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = CFG_ENABLE | CFG_FORCE_WRITE_THROUGH | CFG_TAG_CHK_ABRT_ON_ERR;
+	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = CFG_ENABLE_CACHE | CFG_FORCE_WRITE_THROUGH |
+		CFG_MMU_TAG_MODE(TAG_MODE_PARALLEL) | CFG_TAG_CHK_ABRT_ON_ERR;
 
 	// HW bug. Invalidate cache again.
 	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
@@ -144,7 +190,7 @@ void bpmp_mmu_enable()
 
 void bpmp_mmu_disable()
 {
-	if (!(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE))
+	if (!(BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) & CFG_ENABLE_CACHE))
 		return;
 
 	// Clean and invalidate cache.
@@ -154,6 +200,9 @@ void bpmp_mmu_disable()
 	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = 0;
 }
 
+// APB clock affects RTC, PWM, MEMFETCH, APE, USB, SOR PWM,
+// I2C host, DC/DSI/DISP. UART gives extra stress.
+// 92: 100% success ratio. 93-94: 595-602MHz has 99% success ratio. 95: 608MHz less.
 const u8 pllc4_divn[] = {
 	0,   // BPMP_CLK_NORMAL:      408MHz  0% - 136MHz APB.
 	85,  // BPMP_CLK_HIGH_BOOST:  544MHz 33% - 136MHz APB.
@@ -164,6 +213,28 @@ const u8 pllc4_divn[] = {
 };
 
 bpmp_freq_t bpmp_clock_set = BPMP_CLK_NORMAL;
+
+void bpmp_clk_rate_get()
+{
+	bool clk_src_is_pllp = ((CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) >> 4) & 3) == 3;
+
+	if (clk_src_is_pllp)
+		bpmp_clock_set = BPMP_CLK_NORMAL;
+	else
+	{
+		bpmp_clock_set = BPMP_CLK_HIGH_BOOST;
+
+		u8 pllc4_divn_curr = CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) >> 4;
+		for (u32 i = 1; i < sizeof(pllc4_divn); i++)
+		{
+			if (pllc4_divn[i] == pllc4_divn_curr)
+			{
+				bpmp_clock_set = i;
+				break;
+			}
+		}
+	}
+}
 
 void bpmp_clk_rate_set(bpmp_freq_t fid)
 {
@@ -179,37 +250,49 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 		{
 			// Restore to PLLP source during PLLC4 configuration.
 			CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333; // PLLP_OUT.
-			// Wait a bit for clock source change.
-			msleep(10);
+			msleep(1); // Wait a bit for clock source change.
 		}
 
+		// Enable Phase and Frequency lock detection.
 		CLOCK(CLK_RST_CONTROLLER_PLLC4_MISC) = PLLC4_MISC_EN_LCKDET;
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) = 4 | (pllc4_divn[fid] << 8) | PLL_BASE_ENABLE; // DIVM: 4, DIVP: 1.
 
+		// Disable PLL and IDDQ in case they are on.
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLL_BASE_ENABLE;
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLC4_BASE_IDDQ;
+		usleep(10);
+
+		// Set PLLC4 dividers.
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) = 4 | (pllc4_divn[fid] << 8);
+
+		// Enable PLLC4 and wait for Phase and Frequency lock.
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLL_BASE_ENABLE; // DIVM: 4, DIVP: 1.
 		while (!(CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) & PLLC4_BASE_LOCK))
 			;
 
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) = (1 << 8) | PLLC4_OUT3_CLKEN; // 1.5 div.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) |= PLLC4_OUT3_RSTN_CLR; // Get divider out of reset.
+		// Disable PLLC4_OUT3, enable reset and set div to 1.5.
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) = (1 << 8);
 
-		// Wait a bit for PLLC4 to stabilize.
-		msleep(10);
-		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / 4.
-		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003323; // PLLC4_OUT3.
+		// Enable PLLC4_OUT3 and bring it out of reset.
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) |= (PLLC4_OUT3_CLKEN | PLLC4_OUT3_RSTN_CLR);
+		msleep(1); // Wait a bit for clock source change.
 
-		bpmp_clock_set = fid;
+		// Set SCLK / HCLK / PCLK.
+		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / (3 + 1). HCLK == SCLK.
+		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003320; // PLLC4_OUT3 and CLKM for idle.
 	}
 	else
 	{
 		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333; // PLLP_OUT.
+		msleep(1); // Wait a bit for clock source change.
+		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / (2 + 1). HCLK == SCLK.
 
-		// Wait a bit for clock source change.
-		msleep(10);
-
-		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / 3.
+		// Disable PLLC4 and PLLC4_OUT3.
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) &= ~(PLLC4_OUT3_RSTN_CLR | PLLC4_OUT3_RSTN_CLR);
 		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLL_BASE_ENABLE;
-		bpmp_clock_set = BPMP_CLK_NORMAL;
+		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLC4_BASE_IDDQ;
+		usleep(10);
 	}
+	bpmp_clock_set = fid;
 }
 
 // The following functions halt BPMP to reduce power while sleeping.
