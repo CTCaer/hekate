@@ -90,11 +90,12 @@ static void _update_r2p(const char *path)
 	free(r2p_path);
 }
 
-int parse_fss(launch_ctxt_t *ctxt, const char *path)
+int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 {
 	FIL fp;
 
 	bool stock = false;
+	int sept_used = 0;
 
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
 	{
@@ -103,13 +104,14 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 				stock = true;
 	}
 
-	if (stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
+	if (!sept_ctxt && stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
 		return 1;
 
 	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return 0;
 
-	ctxt->atmosphere = true;
+	if (!sept_ctxt)
+		ctxt->atmosphere = true;
 
 	void *fss = malloc(f_size(&fp));
 	// Read header.
@@ -135,29 +137,48 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 				continue;
 
 			// Load content to launch context.
-			switch (curr_fss_cnt[i].type)
+			if (!sept_ctxt)
 			{
-			case CNT_TYPE_KIP:
-				if (stock)
+				switch (curr_fss_cnt[i].type)
+				{
+				case CNT_TYPE_KIP:
+					if (stock)
+						continue;
+					merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
+					mkip1->kip1 = content;
+					list_append(&ctxt->kip1_list, &mkip1->link);
+					DPRINTF("Loaded %s.kip1 from FSS0 (size %08X)\n", curr_fss_cnt[i].name, curr_fss_cnt[i].size);
+					break;
+				case CNT_TYPE_EXO:
+					ctxt->secmon_size = curr_fss_cnt[i].size;
+					ctxt->secmon = content;
+					break;
+				case CNT_TYPE_WBT:
+					ctxt->warmboot_size = curr_fss_cnt[i].size;
+					ctxt->warmboot = content;
+					break;
+				default:
 					continue;
-				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
-				mkip1->kip1 = content;
-				list_append(&ctxt->kip1_list, &mkip1->link);
-				DPRINTF("Loaded %s.kip1 from FSS0 (size %08X)\n", curr_fss_cnt[i].name, curr_fss_cnt[i].size);
-				break;
-			case CNT_TYPE_EXO:
-				ctxt->secmon_size = curr_fss_cnt[i].size;
-				ctxt->secmon = content;
-				break;
-			case CNT_TYPE_WBT:
-				ctxt->warmboot_size = curr_fss_cnt[i].size;
-				ctxt->warmboot = content;
-				break;
-			default:
-				continue;
-			// TODO: add more types?
-			// case CNT_TYPE_SP1:
-			// case CNT_TYPE_SP2:
+				}
+			}
+			else
+			{
+				// Load content to launch context.
+				switch (curr_fss_cnt[i].type)
+				{
+				case CNT_TYPE_SP1:
+					memcpy(sept_ctxt->sept_primary, content, curr_fss_cnt[i].size);
+					break;
+				case CNT_TYPE_SP2:
+					if (!memcmp(curr_fss_cnt[i].name, (sept_ctxt->kb < KB_FIRMWARE_VERSION_810) ? "septsecondary00" : "septsecondary01", 15))
+					{
+						memcpy(sept_ctxt->sept_secondary, content, curr_fss_cnt[i].size);
+						sept_used = 1;
+					}
+					break;
+				default:
+					continue;
+				}
 			}
 
 			f_lseek(&fp, curr_fss_cnt[i].offset);
@@ -169,11 +190,22 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 
 		_update_r2p(path);
 
-		return 1;
+		return (!sept_ctxt ? 1 : sept_used);
 	}
 
 	f_close(&fp);
 	free(fss);
+
+	return 0;
+}
+
+int load_sept_from_ffs0(fss0_sept_t *sept_ctxt)
+{
+	LIST_FOREACH_ENTRY(ini_kv_t, kv, &sept_ctxt->cfg_sec->kvs, link)
+	{
+		if (!strcmp("fss0", kv->key))
+			return parse_fss(NULL, kv->val, sept_ctxt);
+	}
 
 	return 0;
 }

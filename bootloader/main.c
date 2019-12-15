@@ -529,7 +529,7 @@ void ini_list_launcher()
 				payload_path = ini_check_payload_section(cfg_sec);
 
 				if (cfg_sec && !payload_path)
-					check_sept();
+					check_sept(cfg_sec);
 
 				if (!cfg_sec)
 				{
@@ -656,7 +656,7 @@ void launch_firmware()
 			}
 
 			if (cfg_sec && !payload_path)
-				check_sept();
+				check_sept(cfg_sec);
 
 			if (!cfg_sec)
 			{
@@ -793,7 +793,7 @@ static void _auto_launch_firmware()
 	{
 		if (!h_cfg.sept_run)
 			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
-		check_sept();
+		check_sept(NULL);
 	}
 
 	if (!h_cfg.sept_run)
@@ -1055,7 +1055,7 @@ skip_list:
 	}
 	else
 	{
-		check_sept();
+		check_sept(cfg_sec);
 		hos_launch(cfg_sec);
 
 		EPRINTF("\nFailed to launch HOS!");

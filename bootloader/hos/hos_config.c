@@ -213,7 +213,7 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 
 static int _config_fss(launch_ctxt_t *ctxt, const char *value)
 {
-	return parse_fss(ctxt, value);
+	return parse_fss(ctxt, value, NULL);
 }
 
 typedef struct _cfg_handler_t

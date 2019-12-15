@@ -30,6 +30,7 @@ Custom Nintendo Switch bootloader, firmware patcher, and more.
 | bootloader/screenshots/  | Folder where Nyx screenshots are saved                                |
 | bootloader/payloads/     | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
 | bootloader/libtools/     | Future reserved                                                       |
+| sept                     | Sept folder. This must be always get updated via the Atmosphère release zip. Needed for tools and booting HOS on 7.0.0 and up. Unused for booting HOS if `fss0=` key is defined. |
 
 **Note**: Sept files for booting 7.0.0 and up are expected at /sept folder at root of sd card.
 
@@ -68,7 +69,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | kernel={SD path}       | Replaces the kernel binary                                 |
 | kip1={SD path}         | Replaces/Adds kernel initial process. Multiple can be set. |
 | kip1={SD folder}/*     | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
-| fss0={SD path}         | Takes a fusee-secondary binary and `extracts` all needed parts from it. |
+| fss0={SD path}         | Takes a fusee-secondary binary and `extracts` all needed parts from it. kips, exosphere, warmboot and sept. |
 | kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or as CSV. If not found, an error will show up |
 | fullsvcperm=1          | Disables SVC verification (full services permission)       |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |

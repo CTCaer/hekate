@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "hos.h"
+#include "fss.h"
 #include "sept.h"
 #include "../config/config.h"
 #include "../gfx/di.h"
@@ -73,7 +74,7 @@ extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
 extern sdmmc_t sd_sdmmc;
 extern sdmmc_storage_t sd_storage;
 
-void check_sept()
+void check_sept(ini_sec_t *cfg_sec)
 {
 	// Check if non-hekate payload is used for sept and restore it.
 	if (h_cfg.sept_run)
@@ -117,7 +118,7 @@ void check_sept()
 	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 	{
 		sdmmc_storage_end(&storage);
-		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off, pkg1_id->kb);
+		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off, pkg1_id->kb, cfg_sec);
 	}
 
 out_free:
@@ -125,9 +126,10 @@ out_free:
 	sdmmc_storage_end(&storage);
 }
 
-int reboot_to_sept(const u8 *tsec_fw, u32 kb)
+int reboot_to_sept(const u8 *tsec_fw, u32 kb, ini_sec_t *cfg_sec)
 {
 	FIL fp;
+	bool fss0_sept_used = false;
 
 	// Copy warmboot reboot code and TSEC fw.
 	u32 tsec_fw_size = 0x3000;
@@ -137,36 +139,50 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 	memcpy((void *)SEPT_PK1T_ADDR, tsec_fw, tsec_fw_size);
 	*(vu32 *)SEPT_TCSZ_ADDR = tsec_fw_size;
 
-	// Copy sept-primary.
-	if (f_open(&fp, "sept/sept-primary.bin", FA_READ))
-		goto error;
+	if (cfg_sec)
+	{
+		fss0_sept_t sept_ctxt;
+		sept_ctxt.kb = kb;
+		sept_ctxt.cfg_sec = cfg_sec;
+		sept_ctxt.sept_primary = (void *)SEPT_STG1_ADDR;
+		sept_ctxt.sept_secondary = (void *)SEPT_STG2_ADDR;
 
-	if (f_read(&fp, (u8 *)SEPT_STG1_ADDR, f_size(&fp), NULL))
-	{
-		f_close(&fp);
-		goto error;
+		fss0_sept_used = load_sept_from_ffs0(&sept_ctxt);
 	}
-	f_close(&fp);
 
-	// Copy sept-secondary.
-	if (kb < KB_FIRMWARE_VERSION_810)
+	if (!fss0_sept_used)
 	{
-		if (f_open(&fp, "sept/sept-secondary_00.enc", FA_READ))
-			if (f_open(&fp, "sept/sept-secondary.enc", FA_READ)) // Try the deprecated version.
-				goto error;
-	}
-	else
-	{
-		if (f_open(&fp, "sept/sept-secondary_01.enc", FA_READ))
+		// Copy sept-primary.
+		if (f_open(&fp, "sept/sept-primary.bin", FA_READ))
 			goto error;
-	}
 
-	if (f_read(&fp, (u8 *)SEPT_STG2_ADDR, f_size(&fp), NULL))
-	{
+		if (f_read(&fp, (u8 *)SEPT_STG1_ADDR, f_size(&fp), NULL))
+		{
+			f_close(&fp);
+			goto error;
+		}
 		f_close(&fp);
-		goto error;
+
+		// Copy sept-secondary.
+		if (kb < KB_FIRMWARE_VERSION_810)
+		{
+			if (f_open(&fp, "sept/sept-secondary_00.enc", FA_READ))
+				if (f_open(&fp, "sept/sept-secondary.enc", FA_READ)) // Try the deprecated version.
+					goto error;
+		}
+		else
+		{
+			if (f_open(&fp, "sept/sept-secondary_01.enc", FA_READ))
+				goto error;
+		}
+
+		if (f_read(&fp, (u8 *)SEPT_STG2_ADDR, f_size(&fp), NULL))
+		{
+			f_close(&fp);
+			goto error;
+		}
+		f_close(&fp);
 	}
-	f_close(&fp);
 
 	b_cfg.boot_cfg |= (BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_SEPT_RUN);
 
