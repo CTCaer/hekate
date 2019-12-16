@@ -76,7 +76,7 @@ typedef struct _uart_t
 
 void uart_init(u32 idx, u32 baud);
 void uart_wait_idle(u32 idx, u32 which);
-void uart_send(u32 idx, u8 *buf, u32 len);
-void uart_recv(u32 idx, u8 *buf, u32 len);
+void uart_send(u32 idx, const u8 *buf, u32 len);
+u32  uart_recv(u32 idx, u8 *buf, u32 len);
 
 #endif
