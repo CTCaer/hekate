@@ -31,14 +31,21 @@ void uart_init(u32 idx, u32 baud)
 	// Misc settings.
 	u32 rate = (8 * baud + 408000000) / (16 * baud);
 	uart->UART_IER_DLAB = 0; // Disable interrupts.
-	uart->UART_MCR = 0; // Disable hardware flow control.
 	uart->UART_LCR = UART_LCR_DLAB | UART_LCR_WORD_LENGTH_8; // Enable DLAB & set 8n1 mode.
 	uart->UART_THR_DLAB = (u8)rate; // Divisor latch LSB.
 	uart->UART_IER_DLAB = (u8)(rate >> 8); // Divisor latch MSB.
 	uart->UART_LCR = UART_LCR_WORD_LENGTH_8; // Disable DLAB.
+	(void)uart->UART_SPR;
 
 	// Setup and flush fifo.
-	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | UART_IIR_FCR_RX_CLR | UART_IIR_FCR_TX_CLR;
+	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO;
+	(void)uart->UART_SPR;
+	usleep(20);
+	uart->UART_MCR = 0; // Disable hardware flow control.
+	usleep(96);
+	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | UART_IIR_FCR_TX_CLR | UART_IIR_FCR_RX_CLR;
+
+	// Wait 3 symbols for baudrate change.
 	usleep(3 * ((baud + 999999) / baud));
 	uart_wait_idle(idx, UART_TX_IDLE | UART_RX_IDLE);
 }
