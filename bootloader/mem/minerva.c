@@ -32,6 +32,7 @@ u32 minerva_init()
 {
 	u32 curr_ram_idx = 0;
 
+	minerva_cfg = NULL;
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 
 	// Set table to nyx storage.
