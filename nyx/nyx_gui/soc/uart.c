@@ -104,3 +104,64 @@ u32 uart_recv(u32 idx, u8 *buf, u32 len)
 
 	return i ? (len ? (i - 1) : i) : 0;
 }
+
+void uart_invert(u32 idx, bool enable, u32 invert_mask)
+{
+	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+
+	if (enable)
+		uart->UART_IRDA_CSR |= invert_mask;
+	else
+		uart->UART_IRDA_CSR &= ~invert_mask;
+	(void)uart->UART_SPR;
+}
+
+u32 uart_get_IIR(u32 idx)
+{
+	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+
+	return uart->UART_IIR_FCR;
+}
+
+void uart_set_IIR(u32 idx)
+{
+	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+
+	uart->UART_IER_DLAB &= ~UART_IER_DLAB_IE_EORD;
+	(void)uart->UART_SPR;
+	uart->UART_IER_DLAB |= UART_IER_DLAB_IE_EORD;
+	(void)uart->UART_SPR;
+}
+
+void uart_empty_fifo(u32 idx, u32 which)
+{
+	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+
+	uart->UART_MCR = 0;
+	(void)uart->UART_SPR;
+	usleep(96);
+
+	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | UART_IIR_FCR_TX_CLR | UART_IIR_FCR_RX_CLR;
+	(void)uart->UART_SPR;
+	usleep(18);
+	u32 tries = 0;
+
+	if (UART_IIR_FCR_TX_CLR & which)
+	{
+		while (tries < 10 && uart->UART_LSR & UART_LSR_TMTY)
+		{
+			tries++;
+			usleep(100);
+		}
+		tries = 0;
+	}
+
+	if (UART_IIR_FCR_RX_CLR & which)
+	{
+		while (tries < 10 && !uart->UART_LSR & UART_LSR_RDR)
+		{
+			tries++;
+			usleep(100);
+		}
+	}
+}

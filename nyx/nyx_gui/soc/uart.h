@@ -78,5 +78,9 @@ void uart_init(u32 idx, u32 baud);
 void uart_wait_idle(u32 idx, u32 which);
 void uart_send(u32 idx, const u8 *buf, u32 len);
 u32  uart_recv(u32 idx, u8 *buf, u32 len);
+void uart_invert(u32 idx, bool enable, u32 invert_mask);
+u32  uart_get_IIR(u32 idx);
+void uart_set_IIR(u32 idx);
+void uart_empty_fifo(u32 idx, u32 which);
 
 #endif
