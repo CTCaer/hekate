@@ -1,4 +1,5 @@
 import re
+import sys
 
 def parse_defs(fname):
 	f = open(fname, "r")
