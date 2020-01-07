@@ -830,7 +830,7 @@ static void _update_status_bar(void *params)
 
 	bool voltage_empty = batt_volt < 3200;
 	s_printf(label + strlen(label), " mA# (%s%d mV%s)",
-		voltage_empty ? "FFF8000" : "", batt_volt,  voltage_empty ? "#" : "");
+		voltage_empty ? "#FF8000" : "", batt_volt,  voltage_empty ? "#" : "");
 
 	lv_label_set_array_text(status_bar.battery_more, label, 64);
 	lv_obj_realign(status_bar.battery_more);
