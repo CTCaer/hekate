@@ -228,6 +228,51 @@ void clock_disable_pwm()
 	clock_disable(&_clock_pwm);
 }
 
+void clock_enable_pllc(u32 divn)
+{
+	u8 pll_divn_curr = (CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) >> 10) & 0xFF;
+
+	// Check if already enabled and configured.
+	if ((CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLLCX_BASE_ENABLE) && (pll_divn_curr == divn))
+		return;
+
+	// Take PLLC out of reset and set basic misc parameters.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) = 
+		((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x80000 << 4); // PLLC_EXT_FRU.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
+
+	// Disable PLL and IDDQ in case they are on.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) &= ~PLLCX_BASE_ENABLE;
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) &= ~PLLC_MISC1_IDDQ;
+	usleep(10);
+
+	// Set PLLC4 dividers.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = 4 | (divn << 10); // DIVM: 4, DIVP: 1.
+
+	// Enable PLLC4 and wait for Phase and Frequency lock.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_ENABLE;
+	while (!(CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLLCX_BASE_LOCK))
+		;
+
+	// Disable PLLC_OUT1, enable reset and set div to 1.5.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) = (1 << 8);
+
+	// Enable PLLC_OUT1 and bring it out of reset.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) |= (PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
+	msleep(1); // Wait a bit for clock source change.
+}
+
+void clock_disable_pllc()
+{
+	// Disable PLLC and PLLC_OUT1.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) &= ~(PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) &= ~PLLCX_BASE_ENABLE;
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_REF_DIS;
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) |= PLLC_MISC1_IDDQ;
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) |= PLLC_MISC_RESET;
+	usleep(10);
+}
+
 #define L_SWR_SDMMC1_RST (1 << 14)
 #define L_SWR_SDMMC2_RST (1 << 9)
 #define L_SWR_SDMMC4_RST (1 << 15)

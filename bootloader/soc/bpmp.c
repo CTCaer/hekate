@@ -253,30 +253,8 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 			msleep(1); // Wait a bit for clock source change.
 		}
 
-		// Take PLLC out of reset and set basic misc parameters.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) = 
-			((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x80000 << 4); // PLLC_EXT_FRU.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
-
-		// Disable PLL and IDDQ in case they are on.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) &= ~PLLCX_BASE_ENABLE;
-		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) &= ~PLLC_MISC1_IDDQ;
-		usleep(10);
-
-		// Set PLLC4 dividers.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = 4 | (pll_divn[fid] << 10); // DIVM: 4, DIVP: 1.
-
-		// Enable PLLC4 and wait for Phase and Frequency lock.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_ENABLE;
-		while (!(CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLLCX_BASE_LOCK))
-			;
-
-		// Disable PLLC_OUT1, enable reset and set div to 1.5.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) = (1 << 8);
-
-		// Enable PLLC_OUT1 and bring it out of reset.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) |= (PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
-		msleep(1); // Wait a bit for clock source change.
+		// Configure and enable PLLC.
+		clock_enable_pllc(pll_divn[fid]);
 
 		// Set SCLK / HCLK / PCLK.
 		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / (3 + 1). HCLK == SCLK.
@@ -288,13 +266,8 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 		msleep(1); // Wait a bit for clock source change.
 		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / (2 + 1). HCLK == SCLK.
 
-		// Disable PLLC and PLLC_OUT1.
-		CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) &= ~(PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
-		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) &= ~PLLCX_BASE_ENABLE;
-		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_REF_DIS;
-		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) |= PLLC_MISC1_IDDQ;
-		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) |= PLLC_MISC_RESET;
-		usleep(10);
+		// Disable PLLC to save power.
+		clock_disable_pllc();
 	}
 	bpmp_clock_set = fid;
 }

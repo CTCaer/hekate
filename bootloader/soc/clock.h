@@ -190,9 +190,11 @@ void clock_enable_coresight();
 void clock_disable_coresight();
 void clock_enable_pwm();
 void clock_disable_pwm();
+void clock_enable_pllc(u32 divn);
+void clock_disable_pllc();
 void clock_sdmmc_config_clock_source(u32 *pout, u32 id, u32 val);
 void clock_sdmmc_get_card_clock_div(u32 *pout, u16 *pdivisor, u32 type);
-int clock_sdmmc_is_not_reset_and_enabled(u32 id);
+int  clock_sdmmc_is_not_reset_and_enabled(u32 id);
 void clock_sdmmc_enable(u32 id, u32 val);
 void clock_sdmmc_disable(u32 id);
 
