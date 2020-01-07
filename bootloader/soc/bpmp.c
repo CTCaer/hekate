@@ -203,7 +203,7 @@ void bpmp_mmu_disable()
 // APB clock affects RTC, PWM, MEMFETCH, APE, USB, SOR PWM,
 // I2C host, DC/DSI/DISP. UART gives extra stress.
 // 92: 100% success ratio. 93-94: 595-602MHz has 99% success ratio. 95: 608MHz less.
-const u8 pllc4_divn[] = {
+const u8 pll_divn[] = {
 	0,   // BPMP_CLK_NORMAL:      408MHz  0% - 136MHz APB.
 	85,  // BPMP_CLK_HIGH_BOOST:  544MHz 33% - 136MHz APB.
 	90,  // BPMP_CLK_SUPER_BOOST: 576MHz 41% - 144MHz APB.
@@ -216,7 +216,7 @@ bpmp_freq_t bpmp_clock_set = BPMP_CLK_NORMAL;
 
 void bpmp_clk_rate_get()
 {
-	bool clk_src_is_pllp = ((CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) >> 4) & 3) == 3;
+	bool clk_src_is_pllp = ((CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) >> 4) & 7) == 3;
 
 	if (clk_src_is_pllp)
 		bpmp_clock_set = BPMP_CLK_NORMAL;
@@ -224,10 +224,10 @@ void bpmp_clk_rate_get()
 	{
 		bpmp_clock_set = BPMP_CLK_HIGH_BOOST;
 
-		u8 pllc4_divn_curr = CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) >> 4;
-		for (u32 i = 1; i < sizeof(pllc4_divn); i++)
+		u8 pll_divn_curr = (CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) >> 10) & 0xFF;
+		for (u32 i = 1; i < sizeof(pll_divn); i++)
 		{
-			if (pllc4_divn[i] == pllc4_divn_curr)
+			if (pll_divn[i] == pll_divn_curr)
 			{
 				bpmp_clock_set = i;
 				break;
@@ -253,43 +253,47 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 			msleep(1); // Wait a bit for clock source change.
 		}
 
-		// Enable Phase and Frequency lock detection.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_MISC) = PLLC4_MISC_EN_LCKDET;
+		// Take PLLC out of reset and set basic misc parameters.
+		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) = 
+			((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x80000 << 4); // PLLC_EXT_FRU.
+		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
 
 		// Disable PLL and IDDQ in case they are on.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLL_BASE_ENABLE;
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLC4_BASE_IDDQ;
+		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) &= ~PLLCX_BASE_ENABLE;
+		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) &= ~PLLC_MISC1_IDDQ;
 		usleep(10);
 
 		// Set PLLC4 dividers.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) = 4 | (pllc4_divn[fid] << 8);
+		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = 4 | (pll_divn[fid] << 10); // DIVM: 4, DIVP: 1.
 
 		// Enable PLLC4 and wait for Phase and Frequency lock.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLL_BASE_ENABLE; // DIVM: 4, DIVP: 1.
-		while (!(CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) & PLLC4_BASE_LOCK))
+		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_ENABLE;
+		while (!(CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLLCX_BASE_LOCK))
 			;
 
-		// Disable PLLC4_OUT3, enable reset and set div to 1.5.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) = (1 << 8);
+		// Disable PLLC_OUT1, enable reset and set div to 1.5.
+		CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) = (1 << 8);
 
-		// Enable PLLC4_OUT3 and bring it out of reset.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) |= (PLLC4_OUT3_CLKEN | PLLC4_OUT3_RSTN_CLR);
+		// Enable PLLC_OUT1 and bring it out of reset.
+		CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) |= (PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
 		msleep(1); // Wait a bit for clock source change.
 
 		// Set SCLK / HCLK / PCLK.
 		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / (3 + 1). HCLK == SCLK.
-		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003320; // PLLC4_OUT3 and CLKM for idle.
+		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003310; // PLLC_OUT1 for active and CLKM for idle.
 	}
 	else
 	{
-		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333; // PLLP_OUT.
+		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003330; // PLLP_OUT for active and CLKM for idle.
 		msleep(1); // Wait a bit for clock source change.
 		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / (2 + 1). HCLK == SCLK.
 
-		// Disable PLLC4 and PLLC4_OUT3.
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_OUT) &= ~(PLLC4_OUT3_RSTN_CLR | PLLC4_OUT3_RSTN_CLR);
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLL_BASE_ENABLE;
-		CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLC4_BASE_IDDQ;
+		// Disable PLLC and PLLC_OUT1.
+		CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) &= ~(PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
+		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) &= ~PLLCX_BASE_ENABLE;
+		CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_REF_DIS;
+		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) |= PLLC_MISC1_IDDQ;
+		CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) |= PLLC_MISC_RESET;
 		usleep(10);
 	}
 	bpmp_clock_set = fid;
