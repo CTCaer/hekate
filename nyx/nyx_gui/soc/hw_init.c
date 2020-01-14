@@ -45,6 +45,7 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 	// Flush/disable MMU cache and set DRAM clock to 204MHz.
 	bpmp_mmu_disable();
 	minerva_change_freq(FREQ_204);
+	nyx_str->mtc_cfg.init_done = 0;
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= (1 << 10); // Enable AHUB clock.
