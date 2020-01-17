@@ -51,7 +51,7 @@ void set_default_configuration()
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 	h_cfg.emummc_force_disable = false;
 
-	sd_power_cycle_time_start = 0xFFFFFFF;
+	sd_power_cycle_time_start = 0;
 }
 
 int create_config_entry()
