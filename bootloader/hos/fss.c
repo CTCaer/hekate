@@ -97,21 +97,21 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 	bool stock = false;
 	int sept_used = 0;
 
-	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
+	if (!sept_ctxt)
 	{
-		if (!strcmp("stock", kv->key))
-			if (kv->val[0] == '1')
-				stock = true;
-	}
+		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
+		{
+			if (!strcmp("stock", kv->key))
+				if (kv->val[0] == '1')
+					stock = true;
+		}
 
-	if (!sept_ctxt && stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
-		return 1;
+		if (ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
+			return 1;
+	}
 
 	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return 0;
-
-	if (!sept_ctxt)
-		ctxt->atmosphere = true;
 
 	void *fss = malloc(f_size(&fp));
 	// Read header.
@@ -127,6 +127,12 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 			"Unpacking and loading components..  ",
 			fss_meta->version >> 24, (fss_meta->version >> 16) & 0xFF, (fss_meta->version >> 8) & 0xFF, fss_meta->git_rev,
 			fss_meta->hos_ver >> 24, (fss_meta->hos_ver >> 16) & 0xFF, (fss_meta->hos_ver >> 8) & 0xFF);
+
+		if (!sept_ctxt)
+		{
+			ctxt->atmosphere = true;
+			ctxt->fss0_hosver = fss_meta->hos_ver;
+		}
 
 		fss_content_t *curr_fss_cnt = (fss_content_t *)(fss + fss_meta->cnt_off);
 		void *content;
