@@ -173,15 +173,18 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 				switch (curr_fss_cnt[i].type)
 				{
 				case CNT_TYPE_SP1:
-					memcpy(sept_ctxt->sept_primary, content, curr_fss_cnt[i].size);
-					break;
+					f_lseek(&fp, curr_fss_cnt[i].offset);
+					f_read(&fp, sept_ctxt->sept_primary, curr_fss_cnt[i].size, NULL);
+					continue;
 				case CNT_TYPE_SP2:
 					if (!memcmp(curr_fss_cnt[i].name, (sept_ctxt->kb < KB_FIRMWARE_VERSION_810) ? "septsecondary00" : "septsecondary01", 15))
 					{
-						memcpy(sept_ctxt->sept_secondary, content, curr_fss_cnt[i].size);
+						f_lseek(&fp, curr_fss_cnt[i].offset);
+						f_read(&fp, sept_ctxt->sept_secondary, curr_fss_cnt[i].size, NULL);
 						sept_used = 1;
+						goto out;
 					}
-					break;
+					continue;
 				default:
 					continue;
 				}
@@ -191,6 +194,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 			f_read(&fp, content, curr_fss_cnt[i].size, NULL);
 		}
 
+out:
 		gfx_printf("Done!\n");
 		f_close(&fp);
 
