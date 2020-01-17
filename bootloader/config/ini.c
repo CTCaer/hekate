@@ -44,7 +44,8 @@ static char *_strdup(char *str)
 u32 _find_section_name(char *lbuf, u32 lblen, char schar)
 {
 	u32 i;
-	for (i = 0; i < lblen  && lbuf[i] != schar && lbuf[i] != '\n' && lbuf[i] != '\r'; i++)
+	// Depends on 'FF_USE_STRFUNC 2' that removes \r.
+	for (i = 0; i < lblen  && lbuf[i] != schar && lbuf[i] != '\n'; i++)
 		;
 	lbuf[i] = 0;
 
@@ -123,8 +124,8 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 			f_gets(lbuf, 512, &fp);
 			lblen = strlen(lbuf);
 
-			// Remove trailing newline.
-			if (lbuf[lblen - 1] == '\n' || lbuf[lblen - 1] == '\r')
+			// Remove trailing newline. Depends on 'FF_USE_STRFUNC 2' that removes \r.
+			if (lblen && lbuf[lblen - 1] == '\n')
 				lbuf[lblen - 1] = 0;
 
 			if (lblen > 2 && lbuf[0] == '[') // Create new section.
@@ -134,24 +135,22 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				csec = _ini_create_section(dst, csec, &lbuf[1], INI_CHOICE);
 				list_init(&csec->kvs);
 			}
-			else if (lblen > 2 && lbuf[0] == '{') //Create new caption.
+			else if (lblen > 1 && lbuf[0] == '{') // Create new caption. Support empty caption '{}'.
 			{
 				_find_section_name(lbuf, lblen, '}');
 
 				csec = _ini_create_section(dst, csec, &lbuf[1], INI_CAPTION);
 				csec->color = 0xFF0AB9E6;
 			}
-			else if (lblen > 2 && lbuf[0] == '#') //Create empty lines and comments.
+			else if (lblen > 2 && lbuf[0] == '#') // Create comment.
 			{
-				_find_section_name(lbuf, lblen, '\0');
-
 				csec = _ini_create_section(dst, csec, &lbuf[1], INI_COMMENT);
 			}
-			else if (lblen < 2)
+			else if (lblen < 2) // Create empty line.
 			{
 				csec = _ini_create_section(dst, csec, NULL, INI_NEWLINE);
 			}
-			else if (csec && csec->type == INI_CHOICE) //Extract key/value.
+			else if (csec && csec->type == INI_CHOICE) // Extract key/value.
 			{
 				u32 i = _find_section_name(lbuf, lblen, '=');
 
