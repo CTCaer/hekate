@@ -40,6 +40,7 @@
 
 extern sdmmc_t sd_sdmmc;
 extern boot_cfg_t b_cfg;
+extern volatile nyx_storage_t *nyx_str;
 
 /*
  * CLK_OSC - 38.4 MHz crystal.

@@ -53,13 +53,14 @@ typedef struct _launch_ctxt_t
 
 	void *pkg2;
 	u32   pkg2_size;
+	bool  new_pkg2;
 
-	bool   new_pkg2;
 	void  *kernel;
 	u32    kernel_size;
 	link_t kip1_list;
 	char*  kip1_patches;
 
+	u32  fss0_hosver;
 	bool svcperm;
 	bool debugmode;
 	bool stock;

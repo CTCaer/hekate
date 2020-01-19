@@ -31,6 +31,7 @@
 #include "../utils/util.h"
 
 extern sdmmc_t sd_sdmmc;
+extern volatile nyx_storage_t *nyx_str;
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
