@@ -1205,7 +1205,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		}
 		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		if (pct != prevPct)
-		{;
+		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
 			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);

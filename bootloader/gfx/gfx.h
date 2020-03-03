@@ -35,7 +35,7 @@ void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol);
 void gfx_con_getpos(u32 *x, u32 *y);
 void gfx_con_setpos(u32 x, u32 y);
 void gfx_putc(char c);
-void gfx_puts(const char *s);
+void gfx_puts(char *s);
 void gfx_printf(const char *fmt, ...);
 void gfx_hexdump(u32 base, const u8 *buf, u32 len);
 

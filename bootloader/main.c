@@ -1305,10 +1305,10 @@ void ipl_main()
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
 	config_hw();
 
-	//Pivot the stack so we have enough space.
+	// Pivot the stack so we have enough space.
 	pivot_stack(IPL_STACK_TOP);
 
-	//Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
+	// Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
 	heap_init(IPL_HEAP_START);
 
 #ifdef DEBUG_UART_PORT

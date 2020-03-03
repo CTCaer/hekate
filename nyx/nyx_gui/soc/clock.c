@@ -19,6 +19,17 @@
 #include "../utils/util.h"
 #include "../storage/sdmmc.h"
 
+/*
+ * CLOCK Peripherals:
+ * L   0 -  31
+ * H  32 -  63
+ * U  64 -  95
+ * V  96 - 127
+ * W 128 - 159
+ * X 160 - 191
+ * Y 192 - 223
+ */
+
 /* clock_t: reset, enable, source, index, clk_src, clk_div */
 
 static const clock_t _clock_uart[] = {
@@ -29,7 +40,7 @@ static const clock_t _clock_uart[] = {
 /* UART E */ { CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_UARTAPE, 20, 0, 2 }
 };
 
-//I2C default parameters - TLOW: 4, THIGH: 2, DEBOUNCE: 0 FM_DIV: 26.
+//I2C default parameters - TLOW: 4, THIGH: 2, DEBOUNCE: 0, FM_DIV: 26.
 static const clock_t _clock_i2c[] = {
 /* I2C1 */ { CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2C1, 12, 0, 19 }, //20.4MHz -> 100KHz
 /* I2C2 */ { CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_RST_CONTROLLER_CLK_SOURCE_I2C2, 22, 0, 4  }, //81.6MHz -> 400KHz
@@ -247,7 +258,7 @@ void clock_enable_pllc(u32 divn)
 	usleep(10);
 
 	// Set PLLC4 dividers.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = 4 | (divn << 10); // DIVM: 4, DIVP: 1.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = (divn << 10) | 4; // DIVM: 4, DIVP: 1.
 
 	// Enable PLLC4 and wait for Phase and Frequency lock.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLLCX_BASE_ENABLE;
@@ -259,7 +270,7 @@ void clock_enable_pllc(u32 divn)
 
 	// Enable PLLC_OUT1 and bring it out of reset.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) |= (PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR);
-	msleep(1); // Wait a bit for clock source change.
+	msleep(1); // Wait a bit for PLL to stabilize.
 }
 
 void clock_disable_pllc()

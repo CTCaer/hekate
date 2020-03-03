@@ -96,14 +96,17 @@ enum MAX17050_reg {
 	MAX17050_K_empty0	= 0x3B,
 	MAX17050_TaskPeriod	= 0x3C,
 	MAX17050_FSTAT		= 0x3D,
-
+	MAX17050_TIMER		= 0x3E,
 	MAX17050_SHDNTIMER	= 0x3F,
+
 	MAX17050_QRTbl30	= 0x42,
+
 	MAX17050_dQacc		= 0x45,
 	MAX17050_dPacc		= 0x46,
 
 	MAX17050_VFSOC0		= 0x48,
 
+	Max17050_QH0		= 0x4C,
 	MAX17050_QH			= 0x4D,
 	MAX17050_QL			= 0x4E,
 
@@ -111,6 +114,8 @@ enum MAX17050_reg {
 	MAX17050_MaxVolt	= 0x51, // Custom ID. Not to be sent to i2c.
 
 	MAX17050_VFSOC0Enable	= 0x60,
+	MAX17050_MODELEnable1	= 0x62,
+	MAX17050_MODELEnable2	= 0x63,
 
 	MAX17050_MODELChrTbl	= 0x80,
 

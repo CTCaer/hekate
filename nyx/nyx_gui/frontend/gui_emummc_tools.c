@@ -857,7 +857,6 @@ out0:;
 	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
 	lv_obj_align(line_sep, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
 
-
 	lv_obj_t *btn = NULL;
 	lv_btn_ext_t *ext;
 	lv_obj_t *btn_label = NULL;

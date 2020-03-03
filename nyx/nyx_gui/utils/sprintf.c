@@ -28,7 +28,7 @@ static void _s_putc(char c)
 	*sout_buf += 1;
 }
 
-static void _s_puts(const char *s)
+static void _s_puts(char *s)
 {
 	for (; *s; s++)
 		_s_putc(*s);

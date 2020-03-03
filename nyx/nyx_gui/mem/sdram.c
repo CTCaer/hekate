@@ -690,7 +690,6 @@ sdram_params_t *sdram_get_params_patched()
 
 void sdram_init()
 {
-	//TODO: sdram_id should be in [0,4].
 	const sdram_params_t *params = (const sdram_params_t *)sdram_get_params();
 
 	// Set DRAM voltage.

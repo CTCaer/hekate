@@ -811,6 +811,7 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 		gfx_printf("Decomping %s KIP1 sect %d of size %d...\n", (const char*)hdr.name, sectIdx, compSize);
 		if (blz_uncompress_srcdest(srcDataPtr, compSize, dstDataPtr, outputSize) == 0)
 		{
+			gfx_con.mute = false;
 			gfx_printf("%kERROR decomping sect %d of %s KIP!%k\n", 0xFFFF0000, sectIdx, (char*)hdr.name, 0xFFCCCCCC);
 			free(newKip);
 
@@ -1075,6 +1076,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 
 								if (!currPatch->length)
 								{
+									gfx_con.mute = false;
 									gfx_printf("%kPatch is empty!%k\n", 0xFFFF0000, 0xFFCCCCCC);
 									return currPatchset->name; // MUST stop here as it's not probably intended.
 								}
@@ -1084,6 +1086,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 								if ((memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0) &&
 									(memcmp(&kipSectData[currOffset], currPatch->dstData, currPatch->length) != 0))
 								{
+									gfx_con.mute = false;
 									gfx_printf("%kPatch data mismatch at 0x%x!%k\n", 0xFFFF0000, currOffset, 0xFFCCCCCC);
 									return currPatchset->name; // MUST stop here as kip is likely corrupt.
 								}

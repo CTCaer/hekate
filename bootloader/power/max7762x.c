@@ -137,6 +137,7 @@ int max77620_regulator_enable(u32 id, int enable)
 	return 1;
 }
 
+// LDO only.
 int max77620_regulator_set_volt_and_flags(u32 id, u32 mv, u8 flags)
 {
 	if (id > REGULATOR_MAX)

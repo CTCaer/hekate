@@ -758,10 +758,11 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
 
 
-		u32 capacity = sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits);
-		s_printf(txt_buf, "#00DDFF v%d.0#\n%02X\n%d MiB\n%d\n%d MB/s (%d MHz)\n%d\nU%d\nV%d\nA%d\n%d",
-			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass, capacity,
-			sd_storage.ssr.bus_width, sd_storage.csd.busspeed, sd_storage.csd.busspeed * 2,
+		s_printf(txt_buf,
+			"#00DDFF v%d.0#\n%02X\n%d MiB\n%d\n%d MB/s (%d MHz)\n%d\nU%d\nV%d\nA%d\n%d",
+			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass, sd_storage.sec_cnt >> 11,
+			sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
+			(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
 			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
 			sd_storage.ssr.app_class, sd_storage.csd.write_protect);
 
@@ -888,7 +889,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	max17050_get_property(MAX17050_VCELL, &value);
 	bool voltage_empty = value < 3200;
 	s_printf(txt_buf + strlen(txt_buf), "%s%d mV%s\n",
-		voltage_empty ? "#FF8000" : "", value,  voltage_empty ? " (Empty!)#" : "");
+		voltage_empty ? "#FF8000 " : "", value,  voltage_empty ? " "SYMBOL_WARNING"#" : "");
 
 	max17050_get_property(MAX17050_OCVInternal, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);

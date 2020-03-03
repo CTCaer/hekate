@@ -394,7 +394,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	if (!h_cfg.se_keygen_done)
 	{
-		tsec_ctxt.fw = (void *)pkg1 + pkg1_id->tsec_off;
+		tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
 		tsec_ctxt.pkg1 = (void *)pkg1;
 		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
 		tsec_ctxt.secmon_base = pkg1_id->secmon_base;

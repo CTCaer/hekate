@@ -257,7 +257,7 @@ void gfx_putc(char c)
 	}
 }
 
-void gfx_puts(const char *s)
+void gfx_puts(char *s)
 {
 	if (!s || gfx_con.mute)
 		return;

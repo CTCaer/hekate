@@ -293,8 +293,6 @@ void print_sdcard_info()
 
 	if (sd_mount())
 	{
-		u32 capacity;
-
 		gfx_printf("%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		gfx_printf(
 			" Vendor ID:  %02x\n"
@@ -311,7 +309,6 @@ void print_sdcard_info()
 			sd_storage.cid.month, sd_storage.cid.year);
 
 		gfx_printf("%kCard-Specific Data V%d.0:%k\n", 0xFF00DDFF, sd_storage.csd.structure + 1, 0xFFCCCCCC);
-		capacity = sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits);
 		gfx_printf(
 			" Cmd Classes:    %02X\n"
 			" Capacity:       %d MiB\n"
@@ -322,7 +319,7 @@ void print_sdcard_info()
 			" Video Class:    V%d\n"
 			" App perf class: A%d\n"
 			" Write Protect:  %d\n\n",
-			sd_storage.csd.cmdclass, capacity,
+			sd_storage.csd.cmdclass, sd_storage.sec_cnt >> 11,
 			sd_storage.ssr.bus_width, sd_storage.csd.busspeed, sd_storage.csd.busspeed * 2,
 			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
 			sd_storage.ssr.app_class, sd_storage.csd.write_protect);

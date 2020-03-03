@@ -271,21 +271,18 @@ void secmon_exo_check_panic()
 	WPRINTFARGS("Title ID:   %08X%08X", (u32)((u64)rpt->title_id >> 32), (u32)rpt->title_id);
 	WPRINTFARGS("Error Desc: %s (0x%x)\n", get_error_desc(rpt->error_desc), rpt->error_desc);
 
-	if (sd_mount())
-	{
-		// Save context to the SD card.
-		char filepath[0x40];
-		f_mkdir("atmosphere/fatal_errors");
-		strcpy(filepath, "/atmosphere/fatal_errors/report_");
-		itoa((u32)((u64)rpt->report_identifier >> 32), filepath + strlen(filepath), 16);
-		itoa((u32)(rpt->report_identifier), filepath + strlen(filepath), 16);
-		strcat(filepath, ".bin");
+	// Save context to the SD card.
+	char filepath[0x40];
+	f_mkdir("atmosphere/fatal_errors");
+	strcpy(filepath, "/atmosphere/fatal_errors/report_");
+	itoa((u32)((u64)rpt->report_identifier >> 32), filepath + strlen(filepath), 16);
+	itoa((u32)(rpt->report_identifier), filepath + strlen(filepath), 16);
+	strcat(filepath, ".bin");
 
-		sd_save_to_file((void *)rpt, sizeof(atm_fatal_error_ctx), filepath);
+	sd_save_to_file((void *)rpt, sizeof(atm_fatal_error_ctx), filepath);
 
-		gfx_con.fntsz = 8;
-		WPRINTFARGS("Report saved to %s\n", filepath);
-	}
+	gfx_con.fntsz = 8;
+	WPRINTFARGS("Report saved to %s\n", filepath);
 
 	// Change magic to invalid, to prevent double-display of error/bootlooping.
 	rpt->magic = 0x0;
