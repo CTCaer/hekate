@@ -44,6 +44,28 @@ static int touch_command(u8 cmd)
 	return 0;
 }
 
+#define X_REAL_MAX 1264
+#define Y_REAL_MAX 704
+#define EDGE_OFFSET 15
+
+static void _touch_compensate_limits(touch_event *event, bool touching)
+{
+	event->x = MAX(event->x, EDGE_OFFSET);
+	event->x = MIN(event->x, X_REAL_MAX);
+	event->x -= EDGE_OFFSET;
+	u32 x_adj = (1280 * 1000) / (X_REAL_MAX - EDGE_OFFSET);
+	event->x = ((u32)event->x * x_adj) / 1000;
+
+	if (touching)
+	{
+		event->y = MAX(event->y, EDGE_OFFSET);
+		event->y = MIN(event->y, Y_REAL_MAX);
+		event->y -= EDGE_OFFSET;
+		u32 y_adj = (720 * 1000) / (Y_REAL_MAX - EDGE_OFFSET);
+		event->y = ((u32)event->y * y_adj) / 1000;
+	}
+}
+
 static void _touch_process_contact_event(touch_event *event, bool touching)
 {
 	event->x = (event->raw[2] << 4) | ((event->raw[4] & STMFTS_MASK_Y_LSB) >> 4);
@@ -58,6 +80,8 @@ static void _touch_process_contact_event(touch_event *event, bool touching)
 	}
 	else
 		event->fingers = 0;
+
+	_touch_compensate_limits(event, touching);
 }
 
 static void _touch_parse_event(touch_event *event)
@@ -184,6 +208,9 @@ int touch_power_on()
 		return 0;
 
 	if (touch_command(STMFTS_SS_HOVER_SENSE_OFF))
+		return 0;
+
+	if (touch_command(STMFTS_MS_KEY_SENSE_OFF))
 		return 0;
 
 	return 1;
