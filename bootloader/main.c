@@ -1269,8 +1269,8 @@ ment_t ment_tools[] = {
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1/2", dump_packages12),
-	MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
-	MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
+	//MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
+	//MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	MDEF_CHGLINE(),
@@ -1296,7 +1296,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate - CTCaer mod v5.1.1", 0, 0 };
+menu_t menu_top = { ment_top, "hekate - CTCaer mod v5.1.2", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
