@@ -29,7 +29,7 @@ static void _heap_create(heap_t *heap, u32 start)
 // Node info is before node address.
 static u32 _heap_alloc(heap_t *heap, u32 size)
 {
-	hnode_t *node, *new;
+	hnode_t *node, *new_node;
 
 	// Align to cache line size.
 	size = ALIGN(size, sizeof(hnode_t));
@@ -49,22 +49,29 @@ static u32 _heap_alloc(heap_t *heap, u32 size)
 	node = heap->first;
 	while (true)
 	{
+		// Check if there's available unused node.
 		if (!node->used && (size <= node->size))
 		{
+			// Size and offset of the new unused node.
 			u32 new_size = node->size - size;
-			new = (hnode_t *)((u32)node + sizeof(hnode_t) + size);
+			new_node = (hnode_t *)((u32)node + sizeof(hnode_t) + size);
 
-			// If there's aligned leftover space, create a new node.
+			// If there's aligned unused space from the old node,
+			// create a new one and set the leftover size.
 			if (new_size >= (sizeof(hnode_t) << 2))
 			{
-				new->size = new_size - sizeof(hnode_t);
-				new->used = 0;
-				new->next = node->next;
-				new->next->prev = new;
-				new->prev = node;
-				node->next = new;
+				new_node->size = new_size - sizeof(hnode_t);
+				new_node->used = 0;
+				new_node->next = node->next;
+
+				// Check that we are not on first node.
+				if (new_node->next)
+					new_node->next->prev = new_node;
+
+				new_node->prev = node;
+				node->next = new_node;
 			}
-			else
+			else // Unused node size is just enough.
 				size += new_size;
 
 			node->size = size;
@@ -72,20 +79,23 @@ static u32 _heap_alloc(heap_t *heap, u32 size)
 
 			return (u32)node + sizeof(hnode_t);
 		}
+
+		// No unused node found, try the next one.
 		if (node->next)
 			node = node->next;
 		else
 			break;
 	}
 
-	new = (hnode_t *)((u32)node + sizeof(hnode_t) + node->size);
-	new->used = 1;
-	new->size = size;
-	new->prev = node;
-	new->next = NULL;
-	node->next = new;
+	// No unused node found, create a new one.
+	new_node = (hnode_t *)((u32)node + sizeof(hnode_t) + node->size);
+	new_node->used = 1;
+	new_node->size = size;
+	new_node->prev = node;
+	new_node->next = NULL;
+	node->next = new_node;
 
-	return (u32)new + sizeof(hnode_t);
+	return (u32)new_node + sizeof(hnode_t);
 }
 
 static void _heap_free(heap_t *heap, u32 addr)
@@ -101,6 +111,7 @@ static void _heap_free(heap_t *heap, u32 addr)
 			{
 				node->prev->size += node->size + sizeof(hnode_t);
 				node->prev->next = node->next;
+
 				if (node->next)
 					node->next->prev = node->prev;
 			}
