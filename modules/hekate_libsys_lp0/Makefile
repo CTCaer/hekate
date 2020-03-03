@@ -7,7 +7,6 @@ include $(DEVKITARM)/base_rules
 TARGET := libsys_lp0
 BUILD := ../../build/$(TARGET)
 OUTPUT := ../../output
-VPATH = $(dir $(wildcard ./*/)) $(dir $(wildcard ./*/*/))
 
 OBJS = $(addprefix $(BUILD)/,\
 	sys_sdramlp0.o \

@@ -16,7 +16,7 @@ TARGET := nyx
 BUILDDIR := ./../build
 OUTPUTDIR := ./../output
 SOURCEDIR = nyx_gui
-VPATH = $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
+VPATH = $(dir $(wildcard ./$(SOURCEDIR)/)) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
 VPATH += $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/*/))
 
 # Main and graphics.
@@ -104,7 +104,11 @@ $(BUILDDIR)/$(TARGET)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/$(TARGET)/%.o: %.S
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJS): $(BUILDDIR)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET):
 	@mkdir -p "$(BUILDDIR)"
 	@mkdir -p "$(BUILDDIR)/$(TARGET)"
 	@mkdir -p "$(OUTPUTDIR)"
-	$(CC) $(CFLAGS) -c $< -o $@

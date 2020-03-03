@@ -16,7 +16,7 @@ TARGET := hekate
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
-VPATH = $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
+VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
 
 # Main and graphics.
 OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
@@ -103,7 +103,11 @@ $(BUILDDIR)/$(TARGET)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/$(TARGET)/%.o: %.S
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJS): $(BUILDDIR)/$(TARGET)
+
+$(BUILDDIR)/$(TARGET):
 	@mkdir -p "$(BUILDDIR)"
 	@mkdir -p "$(BUILDDIR)/$(TARGET)"
 	@mkdir -p "$(OUTPUTDIR)"
-	$(CC) $(CFLAGS) -c $< -o $@

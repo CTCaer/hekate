@@ -7,7 +7,7 @@ include $(DEVKITARM)/base_rules
 TARGET := module_sample
 BUILD := ../../build/$(TARGET)
 OUTPUT := ../../output
-VPATH = $(dir $(wildcard ./*/)) $(dir $(wildcard ./*/*/))
+VPATH = $(dir ./) $(dir $(wildcard ./*/))
 
 OBJS = $(addprefix $(BUILD)/,\
 	module_sample.o \
