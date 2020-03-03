@@ -23,14 +23,18 @@
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
-bool fan_init = false;
-
 void set_fan_duty(u32 duty)
 {
+	static bool fan_init = false;
+	static u16 curr_duty = -1;
+
+	if (curr_duty == duty)
+		return;
+
 	if (!fan_init)
 	{
 		// Fan tachometer.
-		PINMUX_AUX(PINMUX_AUX_CAM1_PWDN) = PINMUX_PULL_UP | PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | 1;
+		PINMUX_AUX(PINMUX_AUX_CAM1_PWDN) = PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP | 1;
 		gpio_config(GPIO_PORT_S, GPIO_PIN_7, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_S, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
 		gpio_write(GPIO_PORT_S, GPIO_PIN_7, GPIO_LOW);
@@ -52,7 +56,7 @@ void set_fan_duty(u32 duty)
 	// If disabled send a 0 duty.
 	if (inv_duty == 236)
 	{
-		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24);
+		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24); // Bit 24 is absolute 0%.
 		regulator_disable_5v(REGULATOR_5V_FAN);
 	}
 	else // Set PWM duty.
@@ -61,6 +65,8 @@ void set_fan_duty(u32 duty)
 		regulator_enable_5v(REGULATOR_5V_FAN);
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (inv_duty << 16);
 	}
+
+	curr_duty = duty;
 }
 
 void get_fan_speed(u32 *duty, u32 *rpm)

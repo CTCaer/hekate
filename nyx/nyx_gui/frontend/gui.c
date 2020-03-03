@@ -782,13 +782,13 @@ static void _update_status_bar(void *params)
 	max17050_get_property(MAX17050_VCELL, &batt_volt);
 	max17050_get_property(MAX17050_Current, &batt_curr);
 
+	// Enable fan if more than 46 oC.
 	u32 soc_temp_dec = (soc_temp >> 8);
-	// Enable fan if more than 44 oC.
-	if (soc_temp_dec > 50)
-		set_fan_duty(100);
-	else if (soc_temp_dec > 44)
-		set_fan_duty(53);
-	else
+	if (soc_temp_dec > 51)
+		set_fan_duty(102);
+	else if (soc_temp_dec > 46)
+		set_fan_duty(51);
+	else if (soc_temp_dec < 40)
 		set_fan_duty(0);
 
 	//! TODO: Parse time and use offset.
