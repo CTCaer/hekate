@@ -877,7 +877,7 @@ out0:;
 		if (emummc_img->part_type[raw_btn_idx] != 0x83)
 		{
 			s_printf(txt_buf, "SD RAW %d", raw_btn_idx + 1);
-			lv_label_set_array_text(btn_label, txt_buf, 32);
+			lv_label_set_text(btn_label, txt_buf);
 		}
 
 		if (!emummc_img->part_sector[raw_btn_idx] || emummc_img->part_type[raw_btn_idx] == 0x83 || !emummc_img->part_path[raw_btn_idx * 128])
@@ -905,7 +905,7 @@ out0:;
 		lv_obj_set_style(lv_desc, &hint_small_style);
 
 		s_printf(txt_buf, "Sector start: 0x%08X\nFolder: %s", emummc_img->part_sector[raw_btn_idx], &emummc_img->part_path[raw_btn_idx * 128]);
-		lv_label_set_array_text(lv_desc, txt_buf, 0x500);
+		lv_label_set_text(lv_desc, txt_buf);
 		lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 	}
 
@@ -1059,7 +1059,7 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 			s_printf(txt_buf, "#00DDFF Type:# SD File\n#00DDFF Base folder:# %s\n#00DDFF Nintendo folder:# %s",
 				emu_info.path ? emu_info.path : "", emu_info.nintendo_path ? emu_info.nintendo_path : "");
 
-		lv_label_set_array_text(label_txt2, txt_buf, 0x200);
+		lv_label_set_text(label_txt2, txt_buf);
 	}
 	else
 	{

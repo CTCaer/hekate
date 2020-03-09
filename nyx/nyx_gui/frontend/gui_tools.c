@@ -190,7 +190,7 @@ static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total,
 			f_chmod(path, 0, AM_ARC);
 
 			if (*ufidx == 0)
-				lv_label_set_array_text(lb_val, path, 256);
+				lv_label_set_text(lb_val, path);
 			*ufidx += 1;
 			if (*ufidx > 9)
 				*ufidx = 0;
@@ -207,7 +207,7 @@ static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total,
 				*total = *total + 1;
 				f_chmod(path, AM_ARC, AM_ARC);
 			}
-			lv_label_set_array_text(lb_val, path, 256);
+			lv_label_set_text(lb_val, path);
 			manual_system_maintenance(true);
 
 			// Enter the directory.
@@ -299,7 +299,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 		s_printf(txt_buf, "#96FF00 Total archive bits fixed:# #FF8000 %d!#", total);
 
-		lv_label_set_array_text(lb_desc2, txt_buf, 0x500);
+		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 		lv_obj_align(desc2, val, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 0);
 	}
@@ -366,7 +366,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n\n", build_date);
 	free(build_date);
-	lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+	lv_label_set_text(lb_desc, txt_buf);
 	manual_system_maintenance(true);
 
 	// Dump package1 in its encrypted state if unknown.
@@ -374,7 +374,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	{
 		s_printf(txt_buf + strlen(txt_buf),
 			"#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &storage);
@@ -382,7 +382,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 			goto out_free;
 
 		s_printf(txt_buf + strlen(txt_buf), "\nEncrypted pkg1 dumped to pkg1_enc.bin");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		goto out_free;
@@ -438,7 +438,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 			"#C7EA46 Warmboot size:       #0x%05X\n\n",
 			hdr->ldr_size, pkg1_id->secmon_base, hdr->sm_size, pkg1_id->warmboot_base, hdr->wb_size);
 
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		// Dump package1.1.
@@ -446,7 +446,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
 		s_printf(txt_buf + strlen(txt_buf), "pkg1 dumped to pkg1_decr.bin\n");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		// Dump nxbootloader.
@@ -454,7 +454,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		if (sd_save_to_file(loader, hdr->ldr_size, path))
 			goto out_free;
 		s_printf(txt_buf + strlen(txt_buf), "NX Bootloader dumped to nxloader.bin\n");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		// Dump secmon.
@@ -462,7 +462,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		if (sd_save_to_file(secmon, hdr->sm_size, path))
 			goto out_free;
 		s_printf(txt_buf + strlen(txt_buf), "Secure Monitor dumped to secmon.bin\n");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		// Dump warmboot.
@@ -470,7 +470,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		if (sd_save_to_file(warmboot, hdr->wb_size, path))
 			goto out_free;
 		s_printf(txt_buf + strlen(txt_buf), "Warmboot dumped to warmboot.bin\n\n");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 	}
 
@@ -507,7 +507,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	if (!pkg2_hdr)
 	{
 		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Pkg2 decryption failed!#");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		goto out;
@@ -519,7 +519,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		"#C7EA46 INI1 size:     #0x%05X\n\n",
 		pkg2_hdr->sec_size[PKG2_SEC_KERNEL], pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
-	lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+	lv_label_set_text(lb_desc, txt_buf);
 	manual_system_maintenance(true);
 
 	// Dump pkg2.1.
@@ -527,7 +527,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
 	s_printf(txt_buf + strlen(txt_buf), "pkg2 dumped to pkg2_decr.bin\n");
-	lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+	lv_label_set_text(lb_desc, txt_buf);
 	manual_system_maintenance(true);
 
 	// Dump kernel.
@@ -535,7 +535,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
 		goto out;
 	s_printf(txt_buf + strlen(txt_buf), "Kernel dumped to kernel.bin\n");
-	lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+	lv_label_set_text(lb_desc, txt_buf);
 	manual_system_maintenance(true);
 
 	// Dump INI1.
@@ -553,7 +553,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		goto out;
 
 	s_printf(txt_buf + strlen(txt_buf), "INI1 dumped to ini1.bin\n\n");
-	lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+	lv_label_set_text(lb_desc, txt_buf);
 	manual_system_maintenance(true);
 
 	char filename[32];
@@ -583,7 +583,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		}
 
 		s_printf(txt_buf + strlen(txt_buf), "%s kip dumped to %s.kip1\n", kip1->name, kip1->name);
-		lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		ptr += kip1_size;
@@ -852,7 +852,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 
 	lv_obj_t *label_txt4 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt4, true);
-	lv_label_set_array_text(label_txt4, txt_buf, 0x1000);
+	lv_label_set_text(label_txt4, txt_buf);
 	free(txt_buf);
 
 	lv_obj_set_style(label_txt4, &hint_small_style);

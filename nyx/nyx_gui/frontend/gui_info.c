@@ -337,7 +337,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
 		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE));
 
-	lv_label_set_array_text(lb_val, txt_buf, 0x1000);
+	lv_label_set_text(lb_val, txt_buf);
 
 	free(txt_buf);
 
@@ -402,7 +402,7 @@ static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 	if (res != 0)
 		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Failed to read ipatches. Error: %d#", res);
 
-	lv_label_set_array_text(lb_desc, txt_buf, 0x1000);
+	lv_label_set_text(lb_desc, txt_buf);
 
 	free(txt_buf);
 
@@ -450,12 +450,12 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	if (!pkg1_id)
 	{
 		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#");
-		lv_label_set_array_text(lb_desc, txt_buf, 0x500);
+		lv_label_set_text(lb_desc, txt_buf);
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 		goto out;
 	}
-	lv_label_set_array_text(lb_desc, txt_buf, 0x500);
+	lv_label_set_text(lb_desc, txt_buf);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 	lv_obj_t *val = lv_cont_create(win, NULL);
@@ -528,9 +528,9 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 		s_printf(txt_buf2, "Error: %x", res);
 	}
 
-	lv_label_set_array_text(lb_desc, txt_buf, 0x500);
+	lv_label_set_text(lb_desc, txt_buf);
 
-	lv_label_set_array_text(lb_val, txt_buf2, 0x500);
+	lv_label_set_text(lb_val, txt_buf2);
 
 out:
 	free(pkg1);
@@ -634,7 +634,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-		lv_label_set_array_text(lb_val, txt_buf, 0x1000);
+		lv_label_set_text(lb_val, txt_buf);
 
 		lv_obj_set_width(lb_val, lv_obj_get_width(val));
 		lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
@@ -679,7 +679,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		}
 		nx_emmc_gpt_free(&gpt);
 
-		lv_label_set_array_text(lb_desc2, txt_buf, 0x1000);
+		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 		lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
 	}
@@ -738,7 +738,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
 			sd_storage.cid.month, sd_storage.cid.year);
 
-		lv_label_set_array_text(lb_val, txt_buf, 0x1000);
+		lv_label_set_text(lb_val, txt_buf);
 
 		lv_obj_set_width(lb_val, lv_obj_get_width(val));
 		lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
@@ -777,7 +777,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
 			sd_storage.ssr.app_class, sd_storage.csd.write_protect);
 
-		lv_label_set_array_text(lb_val2, txt_buf, 0x1000);
+		lv_label_set_text(lb_val2, txt_buf);
 
 		lv_obj_set_width(lb_val2, lv_obj_get_width(val2));
 		lv_obj_align(val2, desc2, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
@@ -822,7 +822,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			(sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512,
 			sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF);
 
-		lv_label_set_array_text(lb_val3, txt_buf, 0x1000);
+		lv_label_set_text(lb_val3, txt_buf);
 
 		lv_obj_set_width(lb_val3, lv_obj_get_width(val3));
 		lv_obj_align(val3, desc3, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
@@ -920,7 +920,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	else
 		s_printf(txt_buf + strlen(txt_buf), "-%d.%d oC\n", (~value + 1) / 10, (~value + 1) % 10);
 
-	lv_label_set_array_text(lb_val, txt_buf, 0x1000);
+	lv_label_set_text(lb_val, txt_buf);
 
 	lv_obj_set_width(lb_val, lv_obj_get_width(val));
 	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
@@ -1006,7 +1006,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		break;
 	}
 
-	lv_label_set_array_text(lb_val2, txt_buf, 0x1000);
+	lv_label_set_text(lb_val2, txt_buf);
 
 	lv_obj_set_width(lb_val2, lv_obj_get_width(val2));
 	lv_obj_align(val2, desc2, LV_ALIGN_OUT_RIGHT_MID, 0, 0);

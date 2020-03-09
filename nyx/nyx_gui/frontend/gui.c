@@ -342,12 +342,12 @@ lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn)
 		if (!(lv_btn_get_state(btn) & LV_BTN_STATE_TGL_REL))
 		{
 			strcat(label_text, "#D0D0D0    OFF#");
-			lv_label_set_array_text(label_btn, label_text, 64);
+			lv_label_set_text(label_btn, label_text);
 		}
 		else
 		{
 			strcat(label_text, "#00FFC9    ON #");
-			lv_label_set_array_text(label_btn, label_text, 64);
+			lv_label_set_text(label_btn, label_text);
 		}
 	}
 	else
@@ -796,7 +796,7 @@ static void _update_status_bar(void *params)
 	s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d",
 		time.hour, time.min, soc_temp_dec, (soc_temp & 0xFF) / 10);
 
-	lv_label_set_array_text(status_bar.time_temp, label, 64);
+	lv_label_set_text(status_bar.time_temp, label);
 
 	lv_obj_realign(status_bar.temp_symbol);
 	lv_obj_realign(status_bar.temp_degrees);
@@ -819,7 +819,7 @@ static void _update_status_bar(void *params)
 	if (charge_status)
 		s_printf(label + strlen(label), " #FFDD00 "SYMBOL_CHARGE"#");
 
-	lv_label_set_array_text(status_bar.battery, label, 64);
+	lv_label_set_text(status_bar.battery, label);
 	lv_obj_realign(status_bar.battery);
 
 	// Set battery current draw and voltage.
@@ -832,7 +832,7 @@ static void _update_status_bar(void *params)
 	s_printf(label + strlen(label), " mA# (%s%d mV%s)",
 		voltage_empty ? "#FF8000 " : "", batt_volt,  voltage_empty ? " "SYMBOL_WARNING"#" : "");
 
-	lv_label_set_array_text(status_bar.battery_more, label, 64);
+	lv_label_set_text(status_bar.battery_more, label);
 	lv_obj_realign(status_bar.battery_more);
 
 	free(label);
@@ -971,12 +971,12 @@ static lv_res_t logs_onoff_toggle(lv_obj_t *btn)
 	if (!launch_logs_enable)
 	{
 		strcat(label_text, "#D0D0D0 OFF#");
-		lv_label_set_array_text(label_btn, label_text, 64);
+		lv_label_set_text(label_btn, label_text);
 	}
 	else
 	{
 		strcat(label_text, "#00FFC9 ON #");
-		lv_label_set_array_text(label_btn, label_text, 64);
+		lv_label_set_text(label_btn, label_text);
 	}
 
 	return LV_RES_OK;
@@ -1170,7 +1170,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
 
 				// Set button's label text.
-				lv_label_set_array_text(launch_ctxt[x + 1], ini_sec->name, strlen(ini_sec->name));
+				lv_label_set_text(launch_ctxt[x + 1], ini_sec->name);
 				lv_obj_set_opa_scale(launch_ctxt[x + 1], LV_OPA_COVER);
 
 				// Set rolling text if name is big.

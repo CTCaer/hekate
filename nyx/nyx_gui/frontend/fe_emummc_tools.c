@@ -195,8 +195,8 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 			// Create next part.
 			s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
-			lv_label_ins_text(gui->label_info, strlen(lv_label_get_text(gui->label_info)) - 3, gui->txt_buf);
 			lv_label_cut_text(gui->label_info, strlen(lv_label_get_text(gui->label_info)) - 3, 3);
+			lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
 			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
@@ -246,7 +246,12 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 				manual_system_maintenance(true);
 			}
 		}
+
+		manual_system_maintenance(false);
+
 		res = f_write_fast(&fp, buf, NX_EMMC_BLOCKSIZE * num);
+
+		manual_system_maintenance(false);
 
 		if (res)
 		{
@@ -265,7 +270,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
+			lv_label_set_text(gui->label_pct, gui->txt_buf);
 			manual_system_maintenance(true);
 
 			prevPct = pct;
@@ -281,6 +286,8 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 			f_sync(&fp);
 			bytesWritten = 0;
 		}
+
+		manual_system_maintenance(false);
 	}
 	lv_bar_set_value(gui->bar, 100);
 	lv_label_set_text(gui->label_pct, " "SYMBOL_DOT" 100%");
@@ -301,12 +308,11 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
+
 	s_printf(txt_buf, "");
-	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_log, txt_buf);
 
 	manual_system_maintenance(true);
-
-	sd_unmount(true);
 
 	if (!sd_mount())
 	{
@@ -364,7 +370,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 		s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 			i, bootPart.name, bootPart.lba_start, bootPart.lba_end);
-		lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+		lv_label_set_text(gui->label_info, txt_buf);
 		s_printf(txt_buf, "%02d: %s... ", i, bootPart.name);
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
@@ -402,7 +408,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	{
 		s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 			i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
-		lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+		lv_label_set_text(gui->label_info, txt_buf);
 		s_printf(txt_buf, "%02d: %s... ", i, rawPart.name);
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
@@ -438,7 +444,7 @@ out_failed:
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
 
-	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_finish, txt_buf);
 
 out:
 	free(txt_buf);
@@ -507,6 +513,9 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 				manual_system_maintenance(true);
 			}
 		}
+
+		manual_system_maintenance(false);
+
 		retryCount = 0;
 
 		// Write data to SD card.
@@ -535,12 +544,15 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 				manual_system_maintenance(true);
 			}
 		}
+
+		manual_system_maintenance(false);
+
 		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
+			lv_label_set_text(gui->label_pct, gui->txt_buf);
 			manual_system_maintenance(true);
 
 			prevPct = pct;
@@ -573,12 +585,11 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
+
 	s_printf(txt_buf, "");
-	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_log, txt_buf);
 
 	manual_system_maintenance(true);
-
-	sd_unmount(true);
 
 	if (!sd_mount())
 	{
@@ -619,7 +630,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 
 		s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 			i, bootPart.name, bootPart.lba_start, bootPart.lba_end);
-		lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+		lv_label_set_text(gui->label_info, txt_buf);
 		s_printf(txt_buf, "%02d: %s... ", i, bootPart.name);
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
@@ -656,7 +667,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	{
 		s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 			i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
-		lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+		lv_label_set_text(gui->label_info, txt_buf);
 		s_printf(txt_buf, "%02d: %s... ", i, rawPart.name);
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
@@ -692,7 +703,7 @@ out_failed:
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
 
-	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_finish, txt_buf);
 
 out:
 	free(txt_buf);

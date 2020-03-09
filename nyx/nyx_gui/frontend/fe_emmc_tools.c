@@ -112,7 +112,7 @@ static lv_obj_t *create_mbox_text(char *text, bool button_ok)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
@@ -194,7 +194,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 		lv_bar_set_style(gui->bar, LV_BAR_STYLE_BG, gui->bar_teal_bg);
 		lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, lv_theme_get_current()->bar.indic);
 		s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-		lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
+		lv_label_set_text(gui->label_pct, gui->txt_buf);
 		manual_system_maintenance(true);
 
 		clmt = f_expand_cltbl(&fp, 0x400000, 0);
@@ -225,7 +225,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 					return 1;
 				}
-
+				manual_system_maintenance(false);
 				se_calc_sha256(hashEm, NULL, bufEm, num << 9, 0, SHA_INIT_HASH, false);
 
 				f_lseek(&fp, (u64)sdFileSector << (u64)9);
@@ -245,7 +245,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 					return 1;
 				}
-
+				manual_system_maintenance(false);
 				se_calc_sha256_finalize(hashEm, NULL);
 				se_calc_sha256(hashSd, NULL, bufSd, num << 9, 0, SHA_INIT_HASH, true);
 				res = memcmp(hashEm, hashSd, 0x10);
@@ -289,10 +289,11 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 			{
 				lv_bar_set_value(gui->bar, pct);
 				s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-				lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
-				manual_system_maintenance(true);
+				lv_label_set_text(gui->label_pct, gui->txt_buf);
 				prevPct = pct;
 			}
+
+			manual_system_maintenance(false);
 
 			lba_curr += num;
 			totalSectorsVer -= num;
@@ -321,7 +322,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 		lv_bar_set_value(gui->bar, pct);
 		s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-		lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
+		lv_label_set_text(gui->label_pct, gui->txt_buf);
 		manual_system_maintenance(true);
 
 		return 0;
@@ -565,12 +566,10 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 
 			// Create next part.
 			s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
-			lv_label_ins_text(gui->label_info,
-				strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path) - 1),
-				gui->txt_buf);
 			lv_label_cut_text(gui->label_info,
-				strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path) - 1),
+				strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
 				strlen(outFilename + strlen(gui->base_path)) + 1);
+			lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 			lbaStartPart = lba_curr;
 			res = f_open(&fp, outFilename, FA_CREATE_ALWAYS | FA_WRITE);
@@ -620,6 +619,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 				manual_system_maintenance(true);
 			}
 		}
+		manual_system_maintenance(false);
 
 		res = f_write_fast(&fp, buf, NX_EMMC_BLOCKSIZE * num);
 
@@ -635,12 +635,15 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 
 			return 0;
 		}
+
+		manual_system_maintenance(false);
+
 		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
+			lv_label_set_text(gui->label_pct, gui->txt_buf);
 			manual_system_maintenance(true);
 
 			prevPct = pct;
@@ -719,14 +722,12 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
+
 	s_printf(txt_buf, "");
-	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_log, txt_buf);
 
 	lv_label_set_static_text(gui->label_info, "Checking for available free space...");
 	manual_system_maintenance(true);
-
-	// Do a reinit to refresh tuning.
-	sd_unmount(true);
 
 	if (!sd_mount())
 	{
@@ -771,7 +772,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 			s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 				i, bootPart.name, bootPart.lba_start, bootPart.lba_end);
-			lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+			lv_label_set_text(gui->label_info, txt_buf);
 			s_printf(txt_buf, "%02d: %s... ", i, bootPart.name);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 			manual_system_maintenance(true);
@@ -812,7 +813,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 				s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 					i, part->name, part->lba_start, part->lba_end);
-				lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+				lv_label_set_text(gui->label_info, txt_buf);
 				s_printf(txt_buf, "%02d: %s... ", i, part->name);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 				manual_system_maintenance(true);
@@ -849,7 +850,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 			{
 				s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 					i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
-				lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+				lv_label_set_text(gui->label_info, txt_buf);
 				s_printf(txt_buf, "%02d: %s... ", i, rawPart.name);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 				manual_system_maintenance(true);
@@ -880,7 +881,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
 
-	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_finish, txt_buf);
 
 out:
 	free(txt_buf);
@@ -944,12 +945,10 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				_update_filename(outFilename, sdPathLen, numSplitParts);
 
 				s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
-				lv_label_ins_text(gui->label_info,
-					strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
-					gui->txt_buf);
 				lv_label_cut_text(gui->label_info,
 					strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
 					strlen(outFilename + strlen(gui->base_path)) + 1);
+				lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
 				if (f_stat(outFilename, &fno) && !gui->raw_emummc)
@@ -1007,12 +1006,10 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	if (use_multipart)
 	{
 		s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
-		lv_label_ins_text(gui->label_info,
-			strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
-			gui->txt_buf);
 		lv_label_cut_text(gui->label_info,
 			strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
 			strlen(outFilename + strlen(gui->base_path)) + 1);
+		lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 		manual_system_maintenance(true);
 	}
 	else
@@ -1123,12 +1120,10 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 			// Read from next part.
 			s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
-			lv_label_ins_text(gui->label_info,
-				strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
-				gui->txt_buf);
 			lv_label_cut_text(gui->label_info,
 				strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
 				strlen(outFilename + strlen(gui->base_path)) + 1);
+			lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
 			lbaStartPart = lba_curr;
@@ -1152,6 +1147,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
 		res = f_read_fast(&fp, buf, num << 9);
+		manual_system_maintenance(false);
 
 		if (res)
 		{
@@ -1170,6 +1166,9 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			res = !sdmmc_storage_write(storage, lba_curr, num, buf);
 		else
 			res = !sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
+
+		manual_system_maintenance(false);
+
 		while (res)
 		{
 			s_printf(gui->txt_buf,
@@ -1202,13 +1201,14 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				res = !sdmmc_storage_write(storage, lba_curr, num, buf);
 			else
 				res = !sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
+			manual_system_maintenance(false);
 		}
 		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
 			lv_bar_set_value(gui->bar, pct);
 			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
-			lv_label_set_array_text(gui->label_pct, gui->txt_buf, 32);
+			lv_label_set_text(gui->label_pct, gui->txt_buf);
 			manual_system_maintenance(true);
 			prevPct = pct;
 		}
@@ -1268,11 +1268,11 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 	char *txt_buf = (char *)malloc(0x1000);
 	gui->txt_buf = txt_buf;
+
 	s_printf(txt_buf, "");
-	lv_label_set_array_text(gui->label_log, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_log, txt_buf);
 
 	manual_system_maintenance(true);
-	sd_unmount(true);
 
 	s_printf(txt_buf,
 		"#FFDD00 This may render your device inoperative!#\n\n"
@@ -1351,7 +1351,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 			s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n\n\n\n",
 				i, bootPart.name, bootPart.lba_start, bootPart.lba_end);
-			lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+			lv_label_set_text(gui->label_info, txt_buf);
 			s_printf(txt_buf, "%02d: %s... ", i, bootPart.name);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 			manual_system_maintenance(true);
@@ -1385,7 +1385,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 		{
 			s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n\n\n\n",
 				i, part->name, part->lba_start, part->lba_end);
-			lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+			lv_label_set_text(gui->label_info, txt_buf);
 			s_printf(txt_buf, "%02d: %s... ", i, part->name);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 			manual_system_maintenance(true);
@@ -1418,7 +1418,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 		{
 			s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n\n\n\n",
 				i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
-			lv_label_set_array_text(gui->label_info, txt_buf, 0x1000);
+			lv_label_set_text(gui->label_info, txt_buf);
 			s_printf(txt_buf, "%02d: %s... ", i, rawPart.name);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 			manual_system_maintenance(true);
@@ -1447,7 +1447,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	else
 		s_printf(txt_buf, "Time taken: %dm %ds.", timer / 60, timer % 60);
 
-	lv_label_set_array_text(gui->label_finish, txt_buf, 0x1000);
+	lv_label_set_text(gui->label_finish, txt_buf);
 
 out:
 	free(txt_buf);
