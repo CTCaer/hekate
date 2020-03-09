@@ -213,6 +213,15 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 
 static int _config_fss(launch_ctxt_t *ctxt, const char *value)
 {
+	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
+	{
+		if (!strcmp("fss0experimental", kv->key))
+		{
+			ctxt->fss0_enable_experimental = *kv->val == '1';
+			break;
+		}
+	}
+
 	return parse_fss(ctxt, value, NULL);
 }
 

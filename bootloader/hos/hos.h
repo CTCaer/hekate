@@ -67,6 +67,7 @@ typedef struct _launch_ctxt_t
 	bool atmosphere;
 	bool exo_no_user_exceptions;
 	bool exo_user_pmu;
+	bool fss0_enable_experimental;
 	bool emuMMC;
 
 	ini_sec_t *cfg;
