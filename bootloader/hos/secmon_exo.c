@@ -121,10 +121,11 @@ typedef struct _atm_fatal_error_ctx
 	u64 stack_dump_size;
 	u64 stack_trace[0x20];
 	u8  stack_dump[0x100];
+	u8  tls[0x100];
 } atm_fatal_error_ctx;
 
 #define ATM_FATAL_ERR_CTX_ADDR 0x4003E000
-#define  ATM_FATAL_MAGIC 0x31454641 // AFE1
+#define  ATM_FATAL_MAGIC 0x30454641 // AFE0
 
 #define ATM_WB_HEADER_OFF 0x244
 #define  ATM_WB_MAGIC 0x30544257
@@ -261,7 +262,8 @@ void secmon_exo_check_panic()
 {
 	volatile atm_fatal_error_ctx *rpt = (atm_fatal_error_ctx *)ATM_FATAL_ERR_CTX_ADDR;
 
-	if (rpt->magic != ATM_FATAL_MAGIC)
+	// Mask magic to maintain compatibility with any AFE version, thanks to additive struct members.
+	if ((rpt->magic & 0xF0FFFFFF) != ATM_FATAL_MAGIC)
 		return;
 
 	gfx_clear_grey(0x1B);
