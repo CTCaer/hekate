@@ -11,6 +11,8 @@
 #include "lv_math.h"
 #include <string.h>
 
+#include <assert.h>
+
 #if LV_MEM_CUSTOM != 0
 #include LV_MEM_CUSTOM_INCLUDE
 #endif
@@ -41,8 +43,10 @@ typedef union {
         MEM_UNIT d_size: 31;    //Size off the data (1 means 4 bytes)
     };
     MEM_UNIT header;            //The header (used + d_size)
-    uint32_t align[7];          //Align header size to 32 bytes
+    uint32_t align[8];          //Align header size to 32 bytes
 } lv_mem_header_t;
+
+static_assert(sizeof(lv_mem_header_t) == 32, "Node header must be 32 bytes!");
 
 typedef struct {
     lv_mem_header_t header;
