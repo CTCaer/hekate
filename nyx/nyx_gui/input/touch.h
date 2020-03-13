@@ -49,7 +49,7 @@
 #define STMFTS_AUTO_CALIBRATION        0xC3
 #define STMFTS_NOISE_WRITE             0xC7
 #define STMFTS_NOISE_READ              0xC8
-#define STMFTS_RW_FB_REG               0xD0 // read data
+#define STMFTS_RW_FRAMEBUFFER_REG      0xD0
 #define STMFTS_SAVE_CX_TUNING          0xFC
 
 #define STMFTS_UNK0 0xB8 //Request compensation
@@ -113,10 +113,17 @@ typedef struct _touch_info {
 	u16 config_ver;
 } touch_info;
 
+typedef struct _touch_fw_info_t {
+	u32 fw_id;
+	u16 ftb_ver;
+	u16 fw_rev;
+} touch_fw_info_t;
+
 int touch_power_on();
 void touch_power_off();
 void touch_poll(touch_event *event);
 touch_event touch_poll_wait();
+int touch_get_fw_info(touch_fw_info_t *fw);
 touch_info touch_get_info();
 
 #endif /* __TOUCH_H_ */

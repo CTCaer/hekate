@@ -41,6 +41,17 @@ static int touch_command(u8 cmd, u8 *buf, u8 size)
 	return 0;
 }
 
+static int touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
+{
+	int res = i2c_send_buf_small(I2C_3, STMFTS_I2C_ADDR, cmd[0], &cmd[1], csize - 1);
+	if (res)
+		res = i2c_recv_buf(buf, size, I2C_3, STMFTS_I2C_ADDR);
+	if (!res)
+		return 1;
+
+	return 0;
+}
+
 #define X_REAL_MAX 1264
 #define Y_REAL_MAX 704
 #define EDGE_OFFSET 15
@@ -160,6 +171,33 @@ touch_info touch_get_info()
 	//	info.chip_id, info.fw_ver >> 8, info.fw_ver & 0xFF, info.config_id, info.config_ver);
 
 	return info;
+}
+
+int touch_get_fw_info(touch_fw_info_t *fw)
+{
+	u8 buf[8] = {0};
+
+	// Get fw address info.
+	u8 cmd[3] = { STMFTS_RW_FRAMEBUFFER_REG, 0, 0x60 };
+	int res = touch_read_reg(cmd, 3, buf, 3);
+	if (!res)
+	{
+		// Get fw info.
+		cmd[1] = buf[2]; cmd[2] = buf[1];
+		res = touch_read_reg(cmd, 3, buf, 8);
+		if (!res)
+		{
+			fw->fw_id = (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8) | buf[4];
+			fw->ftb_ver = (buf[6] << 8) | buf[5];
+		}
+
+		cmd[2]++;
+		res = touch_read_reg(cmd, 3, buf, 8);
+		if (!res)
+			fw->fw_rev = (buf[7] << 8) | buf[6];
+	}
+
+	return res;
 }
 
 int touch_power_on()
