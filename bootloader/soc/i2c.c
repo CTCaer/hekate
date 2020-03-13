@@ -19,7 +19,7 @@
 #include "i2c.h"
 #include "../utils/util.h"
 
-static u32 i2c_addrs[] = {
+static const u32 i2c_addrs[] = {
 	0x7000C000, 0x7000C400, 0x7000C500,
 	0x7000C700, 0x7000D000, 0x7000D100
 };
@@ -119,6 +119,11 @@ int i2c_send_buf_small(u32 idx, u32 x, u32 y, u8 *buf, u32 size)
 	memcpy(tmp + 1, buf, size);
 
 	return _i2c_send_pkt(idx, x, tmp, size + 1);
+}
+
+int i2c_recv_buf(u8 *buf, u32 size, u32 idx, u32 x)
+{
+	return _i2c_recv_pkt(idx, buf, size, x);
 }
 
 int i2c_recv_buf_small(u8 *buf, u32 size, u32 idx, u32 x, u32 y)
