@@ -100,7 +100,7 @@ typedef struct _touch_event {
 	u16  type; // Event type.
 	u16  x;    // Horizontal coordinates.
 	u16  y;    // Vertical coordinates.
-	u8   z;
+	u32  z;
 	u8   fingers;
 	bool touch;
 } touch_event;

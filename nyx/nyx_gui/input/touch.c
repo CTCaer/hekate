@@ -75,7 +75,14 @@ static void _touch_process_contact_event(touch_event *event, bool touching)
 	if (touching)
 	{
 		event->y = (event->raw[3] << 4) | (event->raw[4] & STMFTS_MASK_X_MSB);
-		event->z = event->raw[5];
+
+		event->z = event->raw[5] | (event->raw[6] << 8);
+		event->z = event->z << 6;
+		u16 tmp = 0x40;
+		if ((event->raw[7] & 0x3F) != 1 && (event->raw[7] & 0x3F) != 0x3F)
+			tmp = event->raw[7] & 0x3F;
+		event->z /= tmp + 0x40;
+
 		event->fingers = ((event->raw[1] & STMFTS_MASK_TOUCH_ID) >> 4) + 1;
 	}
 	else
@@ -93,7 +100,7 @@ static void _touch_parse_event(touch_event *event)
 	case STMFTS_EV_MULTI_TOUCH_ENTER:
 	case STMFTS_EV_MULTI_TOUCH_MOTION:
 		_touch_process_contact_event(event, true);
-		if (event->z > 52) // Discard noisy hover touch.
+		if (event->z > 52 && event->z < 255) // Discard noisy hover touch and palm rest.
 			event->touch = true;
 		else
 		{
