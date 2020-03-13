@@ -33,14 +33,11 @@
 #include "../gfx/gfx.h"
 #define DPRINTF(...) gfx_printf(__VA_ARGS__)
 
-static int touch_command(u8 cmd)
+static int touch_command(u8 cmd, u8 *buf, u8 size)
 {
-	int err = i2c_send_byte(I2C_3, STMFTS_I2C_ADDR, cmd, 0);
-	if (!err)
+	int res = i2c_send_buf_small(I2C_3, STMFTS_I2C_ADDR, cmd, buf, size);
+	if (!res)
 		return 1;
-
-	// TODO: Check for completion in event loop
-	msleep(1);
 	return 0;
 }
 
@@ -100,7 +97,7 @@ static void _touch_parse_event(touch_event *event)
 	case STMFTS_EV_MULTI_TOUCH_ENTER:
 	case STMFTS_EV_MULTI_TOUCH_MOTION:
 		_touch_process_contact_event(event, true);
-		if (event->z > 52 && event->z < 255) // Discard noisy hover touch and palm rest.
+		if (event->z < 255) // Reject palm rest.
 			event->touch = true;
 		else
 		{
@@ -193,31 +190,30 @@ int touch_power_on()
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
 		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
 
-	msleep(20);
+	msleep(10);
 
 	// Initialize touchscreen module.
-	if (touch_command(STMFTS_SYSTEM_RESET))
+	u8 cmd[3] = { 0, 0x28, 0x80 }; // System reset cmd.
+	if (touch_command(STMFTS_WRITE_REG, cmd, 3))
+		return 0;
+	msleep(10);
+
+	while (true)
+	{
+		u8 tmp = 0;
+		i2c_recv_buf_small(&tmp, 1, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
+		if (tmp == STMFTS_EV_CONTROLLER_READY)
+			break;
+	}
+
+	cmd[0] = 1;
+	if (touch_command(STMFTS_AUTO_CALIBRATION, cmd, 1))
 		return 0;
 
-	if (touch_command(STMFTS_SLEEP_OUT))
+	if (touch_command(STMFTS_MS_MT_SENSE_ON, NULL, 0))
 		return 0;
 
-	if (touch_command(STMFTS_MS_CX_TUNING))
-		return 0;
-
-	if (touch_command(STMFTS_SS_CX_TUNING))
-		return 0;
-
-	if (touch_command(STMFTS_FULL_FORCE_CALIBRATION))
-		return 0;
-
-	if (touch_command(STMFTS_MS_MT_SENSE_ON))
-		return 0;
-
-	if (touch_command(STMFTS_SS_HOVER_SENSE_OFF))
-		return 0;
-
-	if (touch_command(STMFTS_MS_KEY_SENSE_OFF))
+	if (touch_command(STMFTS_CLEAR_EVENT_STACK, NULL, 0))
 		return 0;
 
 	return 1;
@@ -225,8 +221,6 @@ int touch_power_on()
 
 void touch_power_off()
 {
-	touch_command(STMFTS_SLEEP_IN);
-
 	// Disable touchscreen power.
 	gpio_write(GPIO_PORT_J, GPIO_PIN_7, GPIO_LOW);
 

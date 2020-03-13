@@ -46,6 +46,7 @@
 #define STMFTS_SS_CX_TUNING            0xA4
 #define STMFTS_RELEASEINFO             0xAA
 #define STMFTS_WRITE_REG               0xB6
+#define STMFTS_AUTO_CALIBRATION        0xC3
 #define STMFTS_NOISE_WRITE             0xC7
 #define STMFTS_NOISE_READ              0xC8
 #define STMFTS_RW_FB_REG               0xD0 // read data
