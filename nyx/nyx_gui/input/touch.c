@@ -1,8 +1,8 @@
 /*
- * Touch driver for Nintendo Switch's STMicroelectronics FingerTip touch controller
+ * Touch driver for Nintendo Switch's STM FingerTip S (4cd60d) touch controller
  *
  * Copyright (c) 2018 langerhans
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -50,6 +50,18 @@ static int touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
 		return 1;
 
 	return 0;
+}
+
+static void touch_wait_controller_ready()
+{
+	u32 timeout = get_tmr_ms() + 100;
+	while (true)
+	{
+		u8 tmp = 0;
+		i2c_recv_buf_small(&tmp, 1, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
+		if (tmp == STMFTS_EV_CONTROLLER_READY || get_tmr_ms() > timeout)
+			break;
+	}
 }
 
 #define X_REAL_MAX 1264
@@ -228,7 +240,7 @@ int touch_power_on()
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
 		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
 
-	msleep(10);
+	touch_wait_controller_ready();
 
 	// Initialize touchscreen module.
 	u8 cmd[3] = { 0, 0x28, 0x80 }; // System reset cmd.
@@ -236,13 +248,7 @@ int touch_power_on()
 		return 0;
 	msleep(10);
 
-	while (true)
-	{
-		u8 tmp = 0;
-		i2c_recv_buf_small(&tmp, 1, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
-		if (tmp == STMFTS_EV_CONTROLLER_READY)
-			break;
-	}
+	touch_wait_controller_ready();
 
 	cmd[0] = 1;
 	if (touch_command(STMFTS_AUTO_CALIBRATION, cmd, 1))
