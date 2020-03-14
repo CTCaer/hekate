@@ -1,7 +1,7 @@
 /*
  * Fan driver for Nintendo Switch
  *
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,

@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2011 Samsung Electronics
  * MyungJoo Ham <myungjoo.ham@samsung.com>
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it

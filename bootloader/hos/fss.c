@@ -1,7 +1,7 @@
 /*
  * Atmosphère Fusée Secondary Storage parser.
  *
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
