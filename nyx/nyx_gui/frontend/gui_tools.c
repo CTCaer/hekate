@@ -264,7 +264,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-		char path[256];
+		char *path = malloc(1024);
 		path[0] = 0;
 
 		lv_label_set_static_text(lb_val, "");
@@ -302,6 +302,8 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 		lv_obj_align(desc2, val, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, 0);
+
+		free(path);
 	}
 
 	// Enable buttons.
