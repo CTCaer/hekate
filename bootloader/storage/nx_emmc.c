@@ -31,7 +31,7 @@ void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage)
 	for (u32 i = 0; i < hdr->num_part_ents; i++)
 	{
 		gpt_entry_t *ent = (gpt_entry_t *)(buf + (hdr->part_ent_lba - 1) * NX_EMMC_BLOCKSIZE + i * sizeof(gpt_entry_t));
-		emmc_part_t *part = (emmc_part_t *)malloc(sizeof(emmc_part_t));
+		emmc_part_t *part = (emmc_part_t *)calloc(sizeof(emmc_part_t), 1);
 		part->lba_start = ent->lba_start;
 		part->lba_end = ent->lba_end;
 		part->attrs = ent->attrs;

@@ -37,7 +37,6 @@ void set_fan_duty(u32 duty)
 		PINMUX_AUX(PINMUX_AUX_CAM1_PWDN) = PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP | 1;
 		gpio_config(GPIO_PORT_S, GPIO_PIN_7, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_S, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
-		gpio_write(GPIO_PORT_S, GPIO_PIN_7, GPIO_LOW);
 
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24); // Max PWM to disable fan.
 
@@ -58,12 +57,19 @@ void set_fan_duty(u32 duty)
 	{
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24); // Bit 24 is absolute 0%.
 		regulator_disable_5v(REGULATOR_5V_FAN);
+
+		// Disable fan.
+		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) =
+				PINMUX_INPUT_ENABLE | PINMUX_PARKED |  PINMUX_TRISTATE | PINMUX_PULL_DOWN; // Set source to PWM1.
 	}
 	else // Set PWM duty.
 	{
 		// Fan power supply.
 		regulator_enable_5v(REGULATOR_5V_FAN);
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (inv_duty << 16);
+
+		// Enable fan.
+		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) = 1; // Set source to PWM1.
 	}
 
 	curr_duty = duty;

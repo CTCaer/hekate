@@ -300,6 +300,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 			sdFileSector += num;
 			sparseShouldVerify++;
 
+			// Check for cancellation combo.
 			btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
 			if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
 			{
@@ -660,6 +661,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 			bytesWritten = 0;
 		}
 
+		// Check for cancellation combo.
 		btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
 		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
 		{

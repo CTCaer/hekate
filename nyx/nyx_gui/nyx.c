@@ -400,8 +400,6 @@ void nyx_init_load_res()
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 }
 
-extern void pivot_stack(u32 stack_top);
-
 #if (LV_LOG_PRINTF == 1)
 	#include "soc/clock.h"
 	#include "soc/gpio.h"
@@ -427,7 +425,7 @@ void ipl_main()
 	clock_enable_uart(UART_B);
 	uart_init(UART_B, 115200);
 
-	uart_send(UART_B, (u8 *)"Hekate-NYX: Hello!\r\n", 20);
+	uart_send(UART_B, (u8 *)"hekate-NYX: Hello!\r\n", 20);
 	uart_wait_idle(UART_B, UART_TX_IDLE);
 #endif
 
