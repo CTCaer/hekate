@@ -111,7 +111,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 					stock = true;
 		}
 
-		if (ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
+		if (stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && (!emu_cfg.enabled || h_cfg.emummc_force_disable))
 			return 1;
 	}
 
