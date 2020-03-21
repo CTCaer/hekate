@@ -36,7 +36,7 @@ u32 minerva_init()
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 
 	// Set table to nyx storage.
-	mtc_cfg->mtc_table = (emc_table_t *)&nyx_str->mtc_table;
+	mtc_cfg->mtc_table = (emc_table_t *)nyx_str->mtc_table;
 
 	// Check if Minerva is already initialized.
 	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
@@ -60,6 +60,8 @@ u32 minerva_init()
 		// Ensure that Minerva is new.
 		if (mtc_tmp.init_done == MTC_INIT_MAGIC)
 			minerva_cfg = (void *)ep_addr;
+		else
+			mtc_cfg->init_done = 0;
 
 		// Copy Minerva context to Nyx storage.
 		if (minerva_cfg)

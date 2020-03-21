@@ -57,7 +57,7 @@ typedef struct _nyx_storage_t
 	u8  rsvd[0x800000 - sizeof(nyx_info_t)];
 	nyx_info_t info;
 	mtc_config_t mtc_cfg;
-	emc_table_t mtc_table;
+	emc_table_t mtc_table[10];
 } nyx_storage_t;
 
 u32 get_tmr_us();

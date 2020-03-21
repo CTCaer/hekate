@@ -34,18 +34,21 @@ u32 minerva_init()
 
 	minerva_cfg = NULL;
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+	memset(mtc_cfg, 0, sizeof(mtc_config_t));
 
 	// Set table to nyx storage.
 	mtc_cfg->mtc_table = (emc_table_t *)&nyx_str->mtc_table;
 
 	mtc_cfg->sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
 	mtc_cfg->init_done = MTC_NEW_MAGIC; // Initialize mtc table.
-	
+
 	u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
 
 	// Ensure that Minerva is new.
 	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
 		minerva_cfg = (void *)ep_addr;
+	else
+		mtc_cfg->init_done = 0;
 
 	if (!minerva_cfg)
 		return 1;
