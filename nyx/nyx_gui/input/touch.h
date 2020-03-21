@@ -119,11 +119,12 @@ typedef struct _touch_fw_info_t {
 	u16 fw_rev;
 } touch_fw_info_t;
 
-int touch_power_on();
-void touch_power_off();
 void touch_poll(touch_event *event);
 touch_event touch_poll_wait();
 int touch_get_fw_info(touch_fw_info_t *fw);
 touch_info touch_get_info();
+int touch_execute_autotune();
+int touch_power_on();
+void touch_power_off();
 
 #endif /* __TOUCH_H_ */

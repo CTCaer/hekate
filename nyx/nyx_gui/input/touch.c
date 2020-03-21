@@ -26,6 +26,7 @@
 #include "../power/max77620.h"
 #include "../soc/gpio.h"
 #include "../soc/t210.h"
+#include "../utils/btn.h"
 #include "../utils/util.h"
 #include "touch.h"
 
@@ -52,15 +53,18 @@ static int touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
 	return 0;
 }
 
-static void touch_wait_controller_ready()
+static int touch_wait_event(u8 event, u8 status, u32 timeout)
 {
-	u32 timeout = get_tmr_ms() + 100;
+	u32 timer = get_tmr_ms() + timeout;
 	while (true)
 	{
-		u8 tmp = 0;
-		i2c_recv_buf_small(&tmp, 1, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
-		if (tmp == STMFTS_EV_CONTROLLER_READY || get_tmr_ms() > timeout)
-			break;
+		u8 tmp[8] = {0};
+		i2c_recv_buf_small(tmp, 8, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
+		if (tmp[1] == event && tmp[2] == status)
+			return 0;
+
+		if (get_tmr_ms() > timer)
+			return 1;
 	}
 }
 
@@ -212,8 +216,95 @@ int touch_get_fw_info(touch_fw_info_t *fw)
 	return res;
 }
 
+int touch_sys_reset()
+{
+	u8 cmd[3] = { 0, 0x28, 0x80 }; // System reset cmd.
+	for (u8 retries = 0; retries < 3; retries++)
+	{
+		if (touch_command(STMFTS_WRITE_REG, cmd, 3))
+		{
+			msleep(10);
+			continue;
+		}
+		msleep(10);
+		if (touch_wait_event(STMFTS_EV_CONTROLLER_READY, 0, 20))
+			continue;
+		else
+			return 0;
+	}
+
+	return 1;
+}
+
+int touch_execute_autotune()
+{
+	// Reset touchscreen module.
+	if (touch_sys_reset())
+		return 0;
+
+	// Trim low power oscillator.
+	touch_command(STMFTS_LP_TIMER_CALIB, NULL, 0);
+	msleep(200);
+
+	// Apply Mutual Sense Compensation tuning.
+	if (touch_command(STMFTS_MS_CX_TUNING, NULL, 0))
+		return 0;
+	if (touch_wait_event(STMFTS_EV_STATUS, 1, 2000))
+		return 0;
+
+	// Apply Self Sense Compensation tuning.
+	if (touch_command(STMFTS_SS_CX_TUNING, NULL, 0))
+		return 0;
+	if (touch_wait_event(STMFTS_EV_STATUS, 2, 2000))
+		return 0;
+
+	// Save Compensation data to EEPROM.
+	if (touch_command(STMFTS_SAVE_CX_TUNING, NULL, 0))
+		return 0;
+	if (touch_wait_event(STMFTS_EV_STATUS, 4, 2000))
+		return 0;
+
+	// Enable auto tuning calibration and multi-touch sensing.
+	u8 cmd = 1;
+	if (touch_command(STMFTS_AUTO_CALIBRATION, &cmd, 1))
+		return 0;
+
+	if (touch_command(STMFTS_MS_MT_SENSE_ON, NULL, 0))
+		return 0;
+
+	if (touch_command(STMFTS_CLEAR_EVENT_STACK, NULL, 0))
+		return 0;
+
+	return 1;
+}
+
+static int touch_init()
+{
+	// Initialize touchscreen module.
+	if (touch_sys_reset())
+		return 0;
+
+	// Enable auto tuning calibration and multi-touch sensing.
+	u8 cmd = 1;
+	if (touch_command(STMFTS_AUTO_CALIBRATION, &cmd, 1))
+		return 0;
+
+	if (touch_command(STMFTS_MS_MT_SENSE_ON, NULL, 0))
+		return 0;
+
+	if (touch_command(STMFTS_CLEAR_EVENT_STACK, NULL, 0))
+		return 0;
+
+	return 1;
+}
+
 int touch_power_on()
 {
+	// Enables LDO6 for touchscreen VDD/AVDD supply
+	max77620_regulator_set_volt_and_flags(REGULATOR_LDO6, 2900000, MAX77620_POWER_MODE_NORMAL);
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
+		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
+
 	// Configure touchscreen GPIO.
 	PINMUX_AUX(PINMUX_AUX_DAP4_SCLK) = PINMUX_PULL_DOWN | 1;
 	gpio_config(GPIO_PORT_J, GPIO_PIN_7, GPIO_MODE_GPIO);
@@ -235,32 +326,14 @@ int touch_power_on()
 	clock_enable_i2c(I2C_3);
 	i2c_init(I2C_3);
 
-	// Enables LDO6 for touchscreen VDD/AVDD supply
-	max77620_regulator_set_volt_and_flags(REGULATOR_LDO6, 2900000, MAX77620_POWER_MODE_NORMAL);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
-		MAX77620_LDO_CFG2_ADE_ENABLE | (3 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
+	// Wait for the touchscreen module to get ready.
+	touch_wait_event(STMFTS_EV_CONTROLLER_READY, 0, 20);
 
-	touch_wait_controller_ready();
-
-	// Initialize touchscreen module.
-	u8 cmd[3] = { 0, 0x28, 0x80 }; // System reset cmd.
-	if (touch_command(STMFTS_WRITE_REG, cmd, 3))
-		return 0;
-	msleep(10);
-
-	touch_wait_controller_ready();
-
-	cmd[0] = 1;
-	if (touch_command(STMFTS_AUTO_CALIBRATION, cmd, 1))
-		return 0;
-
-	if (touch_command(STMFTS_MS_MT_SENSE_ON, NULL, 0))
-		return 0;
-
-	if (touch_command(STMFTS_CLEAR_EVENT_STACK, NULL, 0))
-		return 0;
-
-	return 1;
+	u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
+	if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		return touch_execute_autotune();
+	else
+		return touch_init();	
 }
 
 void touch_power_off()
