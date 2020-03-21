@@ -217,9 +217,11 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 #define PATCHED_RELOC_ENTRY 0x40010000
 #define EXT_PAYLOAD_ADDR    0xC0000000
 #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
-#define COREBOOT_ADDR       (0xD0000000 - 0x100000)
+#define COREBOOT_END_ADDR   0xD0000000
 #define CBFS_DRAM_EN_ADDR   0x4003e000
 #define  CBFS_DRAM_MAGIC    0x4452414D // "DRAM"
+
+static void *coreboot_addr;
 
 void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
@@ -234,7 +236,7 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 
 	if (payload_size == 0x7000)
 	{
-		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), (u8 *)COREBOOT_ADDR, 0x7000); //Bootblock
+		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), coreboot_addr, 0x7000); //Bootblock
 		*(vu32 *)CBFS_DRAM_EN_ADDR = CBFS_DRAM_MAGIC;
 	}
 }
@@ -257,7 +259,6 @@ lv_res_t launch_payload(lv_obj_t *list)
 		if (f_open(&fp, path, FA_READ))
 		{
 			EPRINTFARGS("Payload file is missing!\n(%s)", path);
-			sd_unmount(false);
 
 			goto out;
 		}
@@ -269,13 +270,15 @@ lv_res_t launch_payload(lv_obj_t *list)
 		if (size < 0x30000)
 			buf = (void *)RCM_PAYLOAD_ADDR;
 		else
-			buf = (void *)COREBOOT_ADDR;
+		{
+			coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
+			buf = coreboot_addr;
+		}
 
 		if (f_read(&fp, buf, size, NULL))
 		{
 			f_close(&fp);
-			sd_unmount(false);
-
+			
 			goto out;
 		}
 
@@ -304,6 +307,8 @@ lv_res_t launch_payload(lv_obj_t *list)
 	}
 
 out:
+	sd_unmount(false);
+
 	return LV_RES_OK;
 }
 
