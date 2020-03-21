@@ -29,6 +29,7 @@
 #include "../sec/se.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
+#include "../utils/btn.h"
 #include "../utils/sprintf.h"
 #include "../utils/util.h"
 
@@ -213,6 +214,23 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 			totalSize = (u64)((u64)totalSectors << 9);
 			clmt = f_expand_cltbl(&fp, 0x400000, MIN(totalSize, multipartSplitSize));
+		}
+
+		// Check for cancellation combo.
+		u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
+		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		{
+			s_printf(gui->txt_buf, "#FFDD00 The emuMMC was cancelled!#\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
+
+			f_close(&fp);
+			free(clmt);
+			f_unlink(outFilename);
+
+			msleep(1000);
+
+			return 0;
 		}
 
 		retryCount = 0;
@@ -484,6 +502,19 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 	while (totalSectors > 0)
 	{
+		// Check for cancellation combo.
+		u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
+		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		{
+			s_printf(gui->txt_buf, "#FFDD00 The emuMMC was cancelled!#\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
+
+			msleep(1000);
+
+			return 0;
+		}
+
 		retryCount = 0;
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
