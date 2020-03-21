@@ -186,6 +186,9 @@ void _mbist_workaround()
 
 void _config_se_brom()
 {
+	// Enable fuse clock.
+	clock_enable_fuse(true);
+
 	// Skip SBK/SSK if sept was run.
 	if (!(b_cfg.boot_cfg & BOOT_CFG_SEPT_RUN))
 	{
@@ -219,6 +222,11 @@ void _config_se_brom()
 
 void _config_regulators()
 {
+	// Disable SDMMC1 IO power.
+	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
+	max77620_regulator_enable(REGULATOR_LDO2, 0);
+	sd_power_cycle_time_start = get_tmr_ms();
+
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGBBC, MAX77620_CNFGBBC_RESISTOR_1K);
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1,
 		(1 << 6) | (3 << MAX77620_ONOFFCNFG1_MRT_SHIFT)); // PWR delay for forced shutdown off.
