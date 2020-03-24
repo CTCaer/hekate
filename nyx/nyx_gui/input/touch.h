@@ -1,5 +1,5 @@
 /*
- * Touch driver for Nintendo Switch's STM FingerTip S (4cd60d) touch controller
+ * Touch driver for Nintendo Switch's STM FingerTip S (4CD60D) touch controller
  *
  * Copyright (c) 2018 langerhans
  * Copyright (c) 2018-2020 CTCaer
@@ -44,6 +44,7 @@
 #define STMFTS_FULL_FORCE_CALIBRATION  0xA2
 #define STMFTS_MS_CX_TUNING            0xA3
 #define STMFTS_SS_CX_TUNING            0xA4
+#define STMFTS_ITO_CHECK               0xA7
 #define STMFTS_RELEASEINFO             0xAA
 #define STMFTS_WRITE_REG               0xB6
 #define STMFTS_AUTO_CALIBRATION        0xC3
@@ -99,6 +100,27 @@
 #define STMFTS_DATA_MAX_SIZE (STMFTS_EVENT_SIZE * STMFTS_STACK_DEPTH)
 #define STMFTS_MAX_FINGERS   10
 
+typedef enum _touch_ito_error {
+	ITO_NO_ERROR = 0,
+	ITO_FORCE_OPEN,
+	ITO_SENSE_OPEN,
+	ITO_FORCE_SHRT_GND,
+	ITO_SENSE_SHRT_GND,
+	ITO_FORCE_SHRT_VCM,
+	ITO_SENSE_SHRT_VCM,
+	ITO_FORCE_SHRT_FORCE,
+	ITO_SENSE_SHRT_SENSE,
+	ITO_F2E_SENSE,
+	ITO_FPC_FORCE_OPEN,
+	ITO_FPC_SENSE_OPEN,
+	ITO_KEY_FORCE_OPEN,
+	ITO_KEY_SENSE_OPEN,
+	ITO_RESERVED0,
+	ITO_RESERVED1,
+	ITO_RESERVED2,
+	ITO_MAX_ERR_REACHED = 0xFF
+} touch_ito_error;
+
 typedef struct _touch_event {
 	u8   raw[8];
 	u16  type; // Event type.
@@ -126,7 +148,9 @@ void touch_poll(touch_event *event);
 touch_event touch_poll_wait();
 int touch_get_fw_info(touch_fw_info_t *fw);
 touch_info touch_get_info();
+int touch_panel_ito_test(u8 *err);
 int touch_execute_autotune();
+int touch_sense_enable();
 int touch_power_on();
 void touch_power_off();
 

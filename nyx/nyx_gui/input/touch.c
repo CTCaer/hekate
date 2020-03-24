@@ -1,5 +1,5 @@
 /*
- * Touch driver for Nintendo Switch's STM FingerTip S (4cd60d) touch controller
+ * Touch driver for Nintendo Switch's STM FingerTip S (4CD60D) touch controller
  *
  * Copyright (c) 2018 langerhans
  * Copyright (c) 2018-2020 CTCaer
@@ -236,6 +236,46 @@ int touch_sys_reset()
 	return 1;
 }
 
+int touch_panel_ito_test(u8 *err)
+{
+	int res = 0;
+
+	// Reset touchscreen module.
+	if (touch_sys_reset())
+		return res;
+
+	// Do ITO Production test.
+	u8 cmd[2] = { 1, 0 };
+	if (touch_command(STMFTS_ITO_CHECK, cmd, 2))
+		return res;
+
+	u32 timer = get_tmr_ms() + 2000;
+	while (true)
+	{
+		u8 tmp[8] = {0};
+		i2c_recv_buf_small(tmp, 8, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
+		if (tmp[1] == 0xF && tmp[2] == 0x5)
+		{
+			if (err)
+			{
+				err[0] = tmp[3];
+				err[1] = tmp[4];
+			}
+
+			res = 1;
+			break;
+		}
+
+		if (get_tmr_ms() > timer)
+			break;
+	}
+
+	// Reset touchscreen module.
+	touch_sys_reset();
+
+	return res;
+}
+
 int touch_sense_enable()
 {
 	// Enable auto tuning calibration and multi-touch sensing.
@@ -326,9 +366,14 @@ int touch_power_on()
 
 	u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
 	if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
-		return touch_execute_autotune();
-	else
-		return touch_init();	
+	{
+		u8 err[2];
+		if (touch_panel_ito_test(err))
+			if (!err[0] && !err[1])
+				return touch_execute_autotune();
+	}
+
+	return touch_init();	
 }
 
 void touch_power_off()
