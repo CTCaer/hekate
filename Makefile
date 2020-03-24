@@ -78,8 +78,10 @@ NYXDIR := $(wildcard nyx)
 
 all: $(TARGET).bin
 	@echo -n "Payload size is "
-	@wc -c < $(OUTPUTDIR)/$(TARGET).bin
-	@echo "Max size is 126296 Bytes."
+	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET).bin))
+	@echo $(BIN_SIZE)
+	@echo "Max size is     126296 Bytes."
+	@if [ ${BIN_SIZE} -gt 126296 ]; then echo "\e[1;33mPayload size exceeds limit!\e[0m"; fi
 
 clean:
 	@rm -rf $(OBJS)
