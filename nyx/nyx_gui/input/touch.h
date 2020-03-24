@@ -75,9 +75,12 @@
 #define STMFTS_EV_NOISE_WRITE          0x18
 
 #define STMFTS_EV_CONTROLLER_READY     0x10
-#define STMFTS_EV_SLEEP_OUT_CONTROLLER_READY 0x11
 #define STMFTS_EV_STATUS               0x16
 #define STMFTS_EV_DEBUG                0xDB
+
+#define STMFTS_EV_STATUS_MS_CX_TUNING_DONE  1
+#define STMFTS_EV_STATUS_SS_CX_TUNING_DONE  2
+#define STMFTS_EV_STATUS_WRITE_CX_TUNE_DONE 4
 
 /* multi touch related event masks */
 #define STMFTS_MASK_EVENT_ID   0x0F

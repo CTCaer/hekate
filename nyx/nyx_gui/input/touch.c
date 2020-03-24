@@ -236,34 +236,8 @@ int touch_sys_reset()
 	return 1;
 }
 
-int touch_execute_autotune()
+int touch_sense_enable()
 {
-	// Reset touchscreen module.
-	if (touch_sys_reset())
-		return 0;
-
-	// Trim low power oscillator.
-	touch_command(STMFTS_LP_TIMER_CALIB, NULL, 0);
-	msleep(200);
-
-	// Apply Mutual Sense Compensation tuning.
-	if (touch_command(STMFTS_MS_CX_TUNING, NULL, 0))
-		return 0;
-	if (touch_wait_event(STMFTS_EV_STATUS, 1, 2000))
-		return 0;
-
-	// Apply Self Sense Compensation tuning.
-	if (touch_command(STMFTS_SS_CX_TUNING, NULL, 0))
-		return 0;
-	if (touch_wait_event(STMFTS_EV_STATUS, 2, 2000))
-		return 0;
-
-	// Save Compensation data to EEPROM.
-	if (touch_command(STMFTS_SAVE_CX_TUNING, NULL, 0))
-		return 0;
-	if (touch_wait_event(STMFTS_EV_STATUS, 4, 2000))
-		return 0;
-
 	// Enable auto tuning calibration and multi-touch sensing.
 	u8 cmd = 1;
 	if (touch_command(STMFTS_AUTO_CALIBRATION, &cmd, 1))
@@ -278,24 +252,45 @@ int touch_execute_autotune()
 	return 1;
 }
 
+int touch_execute_autotune()
+{
+	// Reset touchscreen module.
+	if (touch_sys_reset())
+		return 0;
+
+	// Trim low power oscillator.
+	if (touch_command(STMFTS_LP_TIMER_CALIB, NULL, 0))
+		return 0;
+	msleep(200);
+
+	// Apply Mutual Sense Compensation tuning.
+	if (touch_command(STMFTS_MS_CX_TUNING, NULL, 0))
+		return 0;
+	if (touch_wait_event(STMFTS_EV_STATUS, STMFTS_EV_STATUS_MS_CX_TUNING_DONE, 2000))
+		return 0;
+
+	// Apply Self Sense Compensation tuning.
+	if (touch_command(STMFTS_SS_CX_TUNING, NULL, 0))
+		return 0;
+	if (touch_wait_event(STMFTS_EV_STATUS, STMFTS_EV_STATUS_SS_CX_TUNING_DONE, 2000))
+		return 0;
+
+	// Save Compensation data to EEPROM.
+	if (touch_command(STMFTS_SAVE_CX_TUNING, NULL, 0))
+		return 0;
+	if (touch_wait_event(STMFTS_EV_STATUS, STMFTS_EV_STATUS_WRITE_CX_TUNE_DONE, 2000))
+		return 0;
+
+	return touch_sense_enable();
+}
+
 static int touch_init()
 {
 	// Initialize touchscreen module.
 	if (touch_sys_reset())
 		return 0;
 
-	// Enable auto tuning calibration and multi-touch sensing.
-	u8 cmd = 1;
-	if (touch_command(STMFTS_AUTO_CALIBRATION, &cmd, 1))
-		return 0;
-
-	if (touch_command(STMFTS_MS_MT_SENSE_ON, NULL, 0))
-		return 0;
-
-	if (touch_command(STMFTS_CLEAR_EVENT_STACK, NULL, 0))
-		return 0;
-
-	return 1;
+	return touch_sense_enable();
 }
 
 int touch_power_on()
