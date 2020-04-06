@@ -37,7 +37,6 @@ void set_default_configuration()
 	h_cfg.autoboot = 0;
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait = 3;
-	h_cfg.verification = 1;
 	h_cfg.se_keygen_done = 0;
 	h_cfg.sbar_time_keeping = 0;
 	h_cfg.backlight = 100;
@@ -96,9 +95,6 @@ int create_config_entry()
 	f_puts(lbuf, &fp);
 	f_puts("\nbootwait=", &fp);
 	itoa(h_cfg.bootwait, lbuf, 10);
-	f_puts(lbuf, &fp);
-	f_puts("\nverification=", &fp);
-	itoa(h_cfg.verification, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\nbacklight=", &fp);
 	itoa(h_cfg.backlight, lbuf, 10);
@@ -447,61 +443,6 @@ void config_bootdelay()
 	free(delay_text);
 
 	if (temp_bootwait == NULL)
-		return;
-	btn_wait();
-}
-
-void config_verification()
-{
-	gfx_clear_grey(0x1B);
-	gfx_con_setpos(0, 0);
-
-	u32 vr_text_size = 64;
-
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
-	u32 *vr_values = (u32 *)malloc(sizeof(u32) * 3);
-	char *vr_text = (char *)malloc(vr_text_size * 3);
-
-	for (u32 j = 0; j < 3; j++)
-	{
-		vr_values[j] = j;
-		ments[j + 2].type = MENT_DATA;
-		ments[j + 2].data = &vr_values[j];
-	}
-
-	ments[0].type = MENT_BACK;
-	ments[0].caption = "Back";
-
-	ments[1].type = MENT_CHGLINE;
-
-	strcpy(vr_text,       " Disable (Fastest - Unsafe)");
-	strcpy(vr_text + 64,  " Sparse  (Fast - Safe)");
-	strcpy(vr_text + 128, " Full    (Slow - Safe)");
-
-	for (u32 i = 0; i < 3; i++)
-	{
-		if (h_cfg.verification != i)
-			vr_text[vr_text_size * i] = ' ';
-		else
-			vr_text[vr_text_size * i] = '*';
-		ments[2 + i].caption = vr_text + (i * vr_text_size);
-	}
-
-	memset(&ments[5], 0, sizeof(ment_t));
-	menu_t menu = {ments, "Backup & Restore verification", 0, 0};
-
-	u32 *temp_verification = (u32 *)tui_do_menu(&menu);
-	if (temp_verification != NULL)
-	{
-		h_cfg.verification = *(u32 *)temp_verification;
-		_save_config();
-	}
-
-	free(ments);
-	free(vr_values);
-	free(vr_text);
-
-	if (temp_verification == NULL)
 		return;
 	btn_wait();
 }

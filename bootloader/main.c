@@ -862,8 +862,6 @@ static void _auto_launch_firmware()
 								h_cfg.autoboot_list = atoi(kv->val);
 							else if (!strcmp("bootwait", kv->key))
 								h_cfg.bootwait = atoi(kv->val);
-							else if (!strcmp("verification", kv->key))
-								h_cfg.verification = atoi(kv->val);
 							else if (!strcmp("backlight", kv->key))
 								h_cfg.backlight = atoi(kv->val);
 							else if (!strcmp("autohosoff", kv->key))
@@ -1270,7 +1268,6 @@ ment_t ment_tools[] = {
 	MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
 	MDEF_MENU("Backup", &menu_backup),
 	MDEF_MENU("Restore", &menu_restore),
-	MDEF_HANDLER("Verification options", config_verification),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	MDEF_HANDLER("Dump package1/2", dump_packages12),

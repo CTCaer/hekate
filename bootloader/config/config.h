@@ -25,7 +25,6 @@ typedef struct _hekate_config
 	u32 autoboot;
 	u32 autoboot_list;
 	u32 bootwait;
-	u32 verification;
 	u32 backlight;
 	u32 autohosoff;
 	u32 autonogc;
@@ -45,7 +44,6 @@ void set_default_configuration();
 int create_config_entry();
 void config_autoboot();
 void config_bootdelay();
-void config_verification();
 void config_backlight();
 void config_auto_hos_poweroff();
 void config_nogc();
