@@ -35,7 +35,10 @@
 #include "mem/heap.h"
 #include "mem/minerva.h"
 #include "mem/sdram.h"
+#include "power/bq24193.h"
+#include "power/max17050.h"
 #include "power/max77620.h"
+#include "power/max7762x.h"
 #include "rtc/max77620-rtc.h"
 #include "soc/bpmp.h"
 #include "soc/fuse.h"
@@ -1147,6 +1150,111 @@ static void _show_errors()
 	}
 }
 
+static void _check_low_battery()
+{
+	int enough_battery;
+	int batt_volt = 3200;
+	int charge_status = 0;
+
+	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
+	max17050_get_property(MAX17050_AvgVCELL, &batt_volt);
+
+	enough_battery = charge_status ? 3250 : 3000;
+
+	if (batt_volt > enough_battery)
+		return;
+
+	// Prepare battery icon resources.
+	u8 *battery_res = malloc(ALIGN(SZ_BATTERY_EMPTY, 0x1000));
+	blz_uncompress_srcdest(BATTERY_EMPTY_BLZ, SZ_BATTERY_EMPTY_BLZ, battery_res, SZ_BATTERY_EMPTY);
+
+	u8 *battery_icon = malloc(0x95A);  // 21x38x3
+	u8 *charging_icon = malloc(0x2F4); // 21x12x3
+	u8 *no_charging_icon = calloc(0x2F4, 1);
+
+	memcpy(charging_icon, battery_res, 0x2F4);
+	memcpy(battery_icon, battery_res + 0x2F4, 0x95A);
+
+	u32 battery_icon_y_pos = 1280 - 16 - Y_BATTERY_EMPTY_BATT;
+	u32 charging_icon_y_pos = 1280 - 16 - Y_BATTERY_EMPTY_BATT - 12 - Y_BATTERY_EMPTY_CHRG;
+	free(battery_res);
+
+	charge_status = !charge_status;
+
+	u32 timer = 0;
+	bool screen_on = false;
+	while (true)
+	{
+		bpmp_msleep(250);
+
+		// Refresh battery stats.
+		int current_charge_status = 0;
+		bq24193_get_property(BQ24193_ChargeStatus, &current_charge_status);
+		max17050_get_property(MAX17050_AvgVCELL, &batt_volt);
+		enough_battery = current_charge_status ? 3250 : 3000;
+
+		if (batt_volt > enough_battery)
+			break;
+
+		// Refresh charging icon.
+		if (screen_on && (charge_status != current_charge_status))
+		{
+			if (current_charge_status)
+				gfx_set_rect_rgb(charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+			else
+				gfx_set_rect_rgb(no_charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+		}
+
+		// Check if it's time to turn off display.
+		if (screen_on && timer < get_tmr_ms())
+		{
+			if (!current_charge_status)
+			{
+				max77620_low_battery_monitor_config(true);
+				power_off();
+			}
+
+			display_end();
+			screen_on = false;
+		}
+
+		// Check if charging status changed or Power button was pressed.
+		if (((charge_status != current_charge_status) || (btn_wait_timeout(0, BTN_POWER) & BTN_POWER)))
+		{
+			if (!screen_on)
+			{
+				display_init();
+				u32 *fb = display_init_framebuffer();
+				gfx_init_ctxt(fb, 720, 1280, 720);
+
+				gfx_set_rect_rgb(battery_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_BATT, 16, battery_icon_y_pos);
+				if (current_charge_status)
+					gfx_set_rect_rgb(charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+				else
+					gfx_set_rect_rgb(no_charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+
+				display_backlight_pwm_init();
+				display_backlight_brightness(100, 1000);
+
+				screen_on = true;
+			}
+
+			timer = get_tmr_ms() + 15000;
+		}
+
+		charge_status = current_charge_status;
+	}
+
+	display_end();
+
+	free(battery_icon);
+	free(charging_icon);
+	free(no_charging_icon);
+	
+	// Re enable Low Battery Monitor shutdown.
+	max77620_low_battery_monitor_config(true);
+}
+
 static void _about()
 {
 	static const char credits[] =
@@ -1317,6 +1425,9 @@ void ipl_main()
 	uart_send(DEBUG_UART_PORT, (u8 *)"hekate: Hello!\r\n", 16);
 	uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
+
+	// Check if battery is enough.
+	_check_low_battery();
 
 	// Set bootloader's default configuration.
 	set_default_configuration();

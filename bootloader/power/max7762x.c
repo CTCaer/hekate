@@ -169,9 +169,9 @@ void max77620_config_default()
 	_max77620_try_set_reg(MAX77620_REG_SD_CFG2, 4);
 }
 
-void max77620_low_battery_monitor_config()
+void max77620_low_battery_monitor_config(bool enable)
 {
 	_max77620_try_set_reg(MAX77620_REG_CNFGGLBL1,
-		MAX77620_CNFGGLBL1_LBDAC_EN | MAX77620_CNFGGLBL1_MPPLD |
+		MAX77620_CNFGGLBL1_LBDAC_EN | (enable ? MAX77620_CNFGGLBL1_MPPLD : 0) |
 		MAX77620_CNFGGLBL1_LBHYST_200 | MAX77620_CNFGGLBL1_LBDAC_2800);
 }

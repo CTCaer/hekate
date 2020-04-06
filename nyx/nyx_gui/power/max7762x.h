@@ -33,7 +33,7 @@
 *  ldo2 | SDMMC1        | 50000   | 800000 | 1800000    | 3300000 |
 *  ldo3 | GC ASIC       | 50000   | 800000 | 3100000    | 3100000 | 3.1V   (pcv)
 *  ldo4 | RTC           | 12500   | 800000 |  850000    |  850000 |
-*  ldo5 | GC ASIC       | 50000   | 800000 | 1800000    | 1800000 | 1.8V   (pcv)
+*  ldo5 | GC Card       | 50000   | 800000 | 1800000    | 1800000 | 1.8V   (pcv)
 *  ldo6 | Touch, ALS    | 50000   | 800000 | 2900000    | 2900000 | 2.9V
 *  ldo7 | XUSB          | 50000   | 800000 | 1050000    | 1050000 |
 *  ldo8 | XUSB, DC      | 50000   | 800000 | 1050000    | 1050000 |
@@ -113,6 +113,6 @@ int max77620_regulator_set_voltage(u32 id, u32 mv);
 int max77620_regulator_enable(u32 id, int enable);
 int max77620_regulator_set_volt_and_flags(u32 id, u32 mv, u8 flags);
 void max77620_config_default();
-void max77620_low_battery_monitor_config();
+void max77620_low_battery_monitor_config(bool enable);
 
 #endif

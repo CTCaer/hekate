@@ -222,6 +222,9 @@ void _config_se_brom()
 
 void _config_regulators()
 {
+	// Disable low battery shutdown monitor.
+	max77620_low_battery_monitor_config(false);
+
 	// Disable SDMMC1 IO power.
 	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
 	max77620_regulator_enable(REGULATOR_LDO2, 0);
@@ -267,9 +270,6 @@ void _config_regulators()
 	i2c_send_byte(I2C_5, MAX77621_GPU_I2C_ADDR, MAX77621_CONTROL2_REG,
 		MAX77621_T_JUNCTION_120 | MAX77621_FT_ENABLE | MAX77621_CKKADV_TRIP_75mV_PER_US_HIST_DIS |
 		MAX77621_CKKADV_TRIP_150mV_PER_US | MAX77621_INDUCTOR_NOMINAL);
-
-	// Enable low battery shutdown monitor for < 2800mV.
-	max77620_low_battery_monitor_config();
 }
 
 void config_hw()

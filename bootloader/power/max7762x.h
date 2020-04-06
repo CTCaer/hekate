@@ -113,6 +113,6 @@ int max77620_regulator_set_voltage(u32 id, u32 mv);
 int max77620_regulator_enable(u32 id, int enable);
 int max77620_regulator_set_volt_and_flags(u32 id, u32 mv, u8 flags);
 void max77620_config_default();
-void max77620_low_battery_monitor_config();
+void max77620_low_battery_monitor_config(bool enable);
 
 #endif
