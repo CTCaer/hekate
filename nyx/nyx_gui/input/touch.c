@@ -373,7 +373,16 @@ int touch_power_on()
 				return touch_execute_autotune();
 	}
 
-	return touch_init();	
+	// Initialize touchscreen.
+	u32 retries = 3;
+	while (retries)
+	{
+		if (touch_init())
+			return 1;
+		retries--;
+	}
+
+	return 0;
 }
 
 void touch_power_off()
