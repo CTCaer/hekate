@@ -1318,8 +1318,8 @@ ment_t ment_options[] = {
 	MDEF_HANDLER("Auto boot", config_autoboot),
 	MDEF_HANDLER("Boot time delay", config_bootdelay),
 	MDEF_HANDLER("Auto NoGC", config_nogc),
-	MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
-	MDEF_HANDLER("Backlight", config_backlight),
+	//MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
+	//MDEF_HANDLER("Backlight", config_backlight),
 	MDEF_END()
 };
 
@@ -1331,7 +1331,7 @@ ment_t ment_cinfo[] = {
 	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
 	MDEF_HANDLER("Ipatches & bootrom info", bootrom_ipatches_info),
 	MDEF_HANDLER("Print fuse info", print_fuseinfo),
-	MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
+	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_HANDLER("Print TSEC keys", print_tsec_key),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
@@ -1381,13 +1381,13 @@ ment_t ment_tools[] = {
 	MDEF_MENU("Backup", &menu_backup),
 	MDEF_MENU("Restore", &menu_restore),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
-	MDEF_HANDLER("Dump package1/2", dump_packages12),
+	//MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
+	//MDEF_HANDLER("Dump package1/2", dump_packages12),
 	//MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
 	//MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
 	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
 	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
-	MDEF_CHGLINE(),
+	//MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Other -------", 0xFFFFDD00),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()
