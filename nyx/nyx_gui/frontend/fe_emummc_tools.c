@@ -217,8 +217,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 		}
 
 		// Check for cancellation combo.
-		u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
-		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 		{
 			s_printf(gui->txt_buf, "#FFDD00 The emuMMC was cancelled!#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -482,7 +481,6 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	lv_label_set_text(gui->label_pct, " "SYMBOL_DOT" 0%");
 	manual_system_maintenance(true);
 
-
 	s_printf(gui->txt_buf, "#96FF00 Base folder:#\n%s\n#96FF00 Partition offset:# #FF8000 0x%08X#",
 		gui->base_path, sd_part_off);
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -503,8 +501,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	while (totalSectors > 0)
 	{
 		// Check for cancellation combo.
-		u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
-		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 		{
 			s_printf(gui->txt_buf, "#FFDD00 The emuMMC was cancelled!#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);

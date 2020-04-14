@@ -34,6 +34,16 @@ u8 btn_read()
 	return res;
 }
 
+u8 btn_read_vol()
+{
+	u8 res = 0;
+	if (!gpio_read(GPIO_PORT_X, GPIO_PIN_7))
+		res |= BTN_VOL_DOWN;
+	if (!gpio_read(GPIO_PORT_X, GPIO_PIN_6))
+		res |= BTN_VOL_UP;
+	return res;
+}
+
 u8 btn_wait()
 {
 	u8 res = 0, btn = btn_read();

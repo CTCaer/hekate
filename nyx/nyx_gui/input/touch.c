@@ -364,8 +364,8 @@ int touch_power_on()
 	// Wait for the touchscreen module to get ready.
 	touch_wait_event(STMFTS_EV_CONTROLLER_READY, 0, 20);
 
-	u32 btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
-	if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+	// Check for forced boot time calibration.
+	if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 	{
 		u8 err[2];
 		if (touch_panel_ito_test(err))

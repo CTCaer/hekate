@@ -143,7 +143,6 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 	FIL fp;
 	FIL hashFp;
 	u8 sparseShouldVerify = 4;
-	u32 btn = 0;
 	u32 prevPct = 200;
 	u32 sdFileSector = 0;
 	int res = 0;
@@ -301,8 +300,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 			sparseShouldVerify++;
 
 			// Check for cancellation combo.
-			btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
-			if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+			if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			{
 				s_printf(gui->txt_buf, "#FFDD00 Verification was cancelled!#\n");
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -352,7 +350,6 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
 	u32 maxSplitParts = 0;
-	u32 btn = 0;
 	bool isSmallSdCard = false;
 	bool partialDumpInProgress = false;
 	int res = 0;
@@ -662,8 +659,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 		}
 
 		// Check for cancellation combo.
-		btn = btn_wait_timeout(0, BTN_VOL_DOWN | BTN_VOL_UP);
-		if ((btn & BTN_VOL_DOWN) && (btn & BTN_VOL_UP))
+		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 		{
 			s_printf(gui->txt_buf, "\n#FFDD00 The backup was cancelled!#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
