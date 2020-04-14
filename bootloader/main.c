@@ -1135,7 +1135,7 @@ static void _show_errors()
 	{
 		gfx_clear_grey(0x1B);
 		gfx_con_setpos(0, 0);
-		display_backlight_brightness(h_cfg.backlight, 1000);
+		display_backlight_brightness(150, 1000);
 
 		if (h_cfg.errors & ERR_LIBSYS_LP0)
 			WPRINTF("Missing LP0 (sleep mode) library!\n");
@@ -1241,6 +1241,10 @@ static void _check_low_battery()
 
 			timer = get_tmr_ms() + 15000;
 		}
+
+		// Check if forcefully continuing.
+		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
+			break;
 
 		charge_status = current_charge_status;
 	}
