@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20190531152432",  8, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //8.1.0
 	{ "20190809135709",  9, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //9.0.0 - 9.0.1
 	{ "20191021113848", 10, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //9.1.0
+	{ "20200303104606", 10, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000, false, NULL, NULL }, //10.0.0
 	{ NULL } //End.
 };
 

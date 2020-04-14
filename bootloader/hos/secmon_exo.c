@@ -162,7 +162,9 @@ void config_exosphere(launch_ctxt_t *ctxt)
 	default:
 		exoFwNo = kb + 1;
 		if (!strcmp(ctxt->pkg1_id->id, "20190314172056") || (kb >= KB_FIRMWARE_VERSION_810))
-			exoFwNo++; // ATM_TARGET_FW_800/810/900.
+			exoFwNo++; // ATM_TARGET_FW_800/810/900/910.
+		if (!strcmp(ctxt->pkg1_id->id, "20200303104606"))
+			exoFwNo++; // ATM_TARGET_FW_1000.
 		break;
 	}
 
