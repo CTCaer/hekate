@@ -223,9 +223,17 @@ void dump_packages12()
 		ini1_off = pkg2_newkern_ini1_start;
 		ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
 	}
-	if (sd_save_to_file(pkg2_hdr->data + ini1_off, ini1_size, path))
+	if (ini1_off)
+	{
+		if (sd_save_to_file(pkg2_hdr->data + ini1_off, ini1_size, path))
+			goto out;
+		gfx_puts("INI1 dumped to ini1.bin\n");
+	}
+	else
+	{
+		gfx_puts("Failed to dump INI1!\n");
 		goto out;
-	gfx_puts("INI1 dumped to ini1.bin\n");
+	}
 
 	gfx_puts("\nDone. Press any key...\n");
 

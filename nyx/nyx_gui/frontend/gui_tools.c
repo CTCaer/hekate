@@ -549,6 +549,13 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		ini1_off = pkg2_newkern_ini1_start;
 		ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
 	}
+
+	if (!ini1_off)
+	{
+		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Failed to dump INI1 and kips!#\n");
+		goto out;
+	}
+
 	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)(pkg2_hdr->data + ini1_off);
 	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);
 	if (sd_save_to_file(ini1, ini1_size, path))

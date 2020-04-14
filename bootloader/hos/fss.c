@@ -43,6 +43,8 @@ extern bool is_ipl_updated(void *buf, char *path, bool force);
 #define CNT_TYPE_KIP 6
 #define CNT_TYPE_BMP 7
 #define CNT_TYPE_EMC 8
+#define CNT_TYPE_KLD 9
+#define CNT_TYPE_KRN 10
 
 #define CNT_FLAG0_EXPERIMENTAL (1 << 0)
 

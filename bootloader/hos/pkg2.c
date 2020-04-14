@@ -692,20 +692,43 @@ static u32 _pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 
 void pkg2_get_newkern_info(u8 *kern_data)
 {
-	u32 info_op = *(u32 *)(kern_data + PKG2_NEWKERN_GET_INI1);
-	pkg2_newkern_ini1_val = ((info_op & 0xFFFF) >> 3) + PKG2_NEWKERN_GET_INI1; // Parse ADR and PC.
+	u32 pkg2_newkern_ini1_off = 0;
+	pkg2_newkern_ini1_start = 0;
+
+	// Find static OP offset that is close to INI1 offset.
+	u32 counter_ops = 0x100;
+	while (counter_ops)
+	{
+		if (*(u32 *)(kern_data + 0x100 - counter_ops) == PKG2_NEWKERN_GET_INI1_HEURISTIC)
+		{
+			pkg2_newkern_ini1_off = 0x100 - counter_ops + 12; // OP found. Add 12 for the INI1 offset.
+			break;
+		}
+
+		counter_ops -= 4;
+	}
+
+	// Offset not found?
+	if (!counter_ops)
+		return;
+
+	u32 info_op = *(u32 *)(kern_data + pkg2_newkern_ini1_off);
+	pkg2_newkern_ini1_val = ((info_op & 0xFFFF) >> 3) + pkg2_newkern_ini1_off; // Parse ADR and PC.
 
 	pkg2_newkern_ini1_start = *(u32 *)(kern_data + pkg2_newkern_ini1_val);
 	pkg2_newkern_ini1_end   = *(u32 *)(kern_data + pkg2_newkern_ini1_val + 0x8);
 }
 
-void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
+bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 {
 	u8 *ptr;
 	// Check for new pkg2 type.
 	if (!pkg2->sec_size[PKG2_SEC_INI1])
 	{
 		pkg2_get_newkern_info(pkg2->data);
+
+		if (!pkg2_newkern_ini1_start)
+			return false;
 
 		ptr = pkg2->data + pkg2_newkern_ini1_start;
 		*new_pkg2 = true;
@@ -726,6 +749,8 @@ void pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 		ptr += ki->size;
 DPRINTF(" kip1 %d:%s @ %08X (%08X)\n", i, kip1->name, (u32)kip1, ki->size);
 	}
+
+	return true;
 }
 
 int pkg2_has_kip(link_t *info, u64 tid)

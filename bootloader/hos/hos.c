@@ -581,7 +581,11 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	LIST_INIT(kip1_info);
-	pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2);
+	if (!pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2))
+	{
+		_hos_crit_error("INI1 parsing failed!");
+		return 0;
+	}
 
 	gfx_printf("Parsed ini1\n");
 
