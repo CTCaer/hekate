@@ -202,19 +202,22 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb, ini_sec_t *cfg_sec)
 				memcpy(tmp_cfg, &b_cfg, sizeof(boot_cfg_t));
 				f_lseek(&fp, PATCHED_RELOC_SZ);
 				f_write(&fp, tmp_cfg, sizeof(boot_cfg_t), NULL);
-				f_close(&fp);
 				update_sept_payload = false;
 			}
+
+			f_close(&fp);
 		}
 		else
+		{
+			f_close(&fp);
 			f_rename("sept/payload.bin", "sept/payload.bak"); // Backup foreign payload.
-
-		f_close(&fp);
+		}
 	}
 
 	if (update_sept_payload)
 	{
 		volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
+		f_mkdir("sept");
 		f_open(&fp, "sept/payload.bin", FA_WRITE | FA_CREATE_ALWAYS);
 		f_write(&fp, (u8 *)reloc->start, reloc->end - reloc->start, NULL);
 		f_close(&fp);
