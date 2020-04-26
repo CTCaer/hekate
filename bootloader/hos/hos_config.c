@@ -211,6 +211,26 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_exo_blank_prodinfo(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Enabled prodinfo blanking\n");
+		ctxt->exo_blank_prodinfo = true;
+	}
+	return 1;
+}
+
+static int _config_exo_allow_cal_write(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Enabled writing to cal on sysMMC\n");
+		ctxt->exo_allow_writing_to_cal_sysmmc = true;
+	}
+	return 1;
+}
+
 static int _config_fss(launch_ctxt_t *ctxt, const char *value)
 {
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
@@ -243,6 +263,8 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "atmosphere", _config_atmosphere },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },
 	{ "userpmu", _config_exo_user_pmu_access },
+	{ "blankprodinfo", _config_exo_blank_prodinfo },
+	{ "allowcalwrite", _config_exo_allow_cal_write },
 	{ "fss0", _config_fss },
 	{ NULL, NULL },
 };

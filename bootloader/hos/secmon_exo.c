@@ -133,10 +133,12 @@ typedef struct _atm_fatal_error_ctx
 // Exosphère mailbox defines.
 #define EXO_CFG_ADDR      0x8000F000
 #define  EXO_MAGIC_VAL        0x304F5845
-#define  EXO_FLAG_DBG_PRIV    (1 << 1)
-#define  EXO_FLAG_DBG_USER    (1 << 2)
-#define  EXO_FLAG_NO_USER_EXC (1 << 3)
-#define  EXO_FLAG_USER_PMU    (1 << 4)
+#define  EXO_FLAG_DBG_PRIV					  (1 << 1)
+#define  EXO_FLAG_DBG_USER					  (1 << 2)
+#define  EXO_FLAG_NO_USER_EXC				  (1 << 3)
+#define  EXO_FLAG_USER_PMU					  (1 << 4)
+#define  EXO_FLAG_BLANK_PRODINFO			  (1 << 5)
+#define  EXO_FLAG_ALLOW_WRITING_TO_CAL_SYSMMC (1 << 6)
 
 void config_exosphere(launch_ctxt_t *ctxt)
 {
@@ -179,6 +181,14 @@ void config_exosphere(launch_ctxt_t *ctxt)
 	// Enable user access to PMU.
 	if (ctxt->exo_user_pmu)
 		exoFlags |= EXO_FLAG_USER_PMU;
+
+	// Blank prodinfo.
+	if (ctxt->exo_blank_prodinfo)
+		exoFlags |= EXO_FLAG_BLANK_PRODINFO;
+
+	// Allow writing to cal on sysMMC.
+	if (ctxt->exo_allow_writing_to_cal_sysmmc)
+		exoFlags |= EXO_FLAG_ALLOW_WRITING_TO_CAL_SYSMMC;
 
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;
