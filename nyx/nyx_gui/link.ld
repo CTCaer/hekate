@@ -6,6 +6,7 @@ SECTIONS {
 	.text : {
 		*(.text._start);
 		*(._ipl_version);
+		*(.text._irq_setup);
 		*(.text*);
 	}
 	.data : {

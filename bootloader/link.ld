@@ -7,6 +7,7 @@ SECTIONS {
 		*(.text._start);
 		*(._boot_cfg);
 		*(._ipl_version);
+		*(.text._irq_setup);
 		*(.text*);
 	}
 	.data : {

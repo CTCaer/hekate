@@ -367,6 +367,59 @@ void load_saved_configuration()
 	}
 }
 
+#define EXCP_EN_ADDR   0x4003FFFC
+#define  EXCP_MAGIC 0x30505645 // EVP0
+#define EXCP_TYPE_ADDR 0x4003FFF8
+#define  EXCP_TYPE_RESET 0x545352 // RST
+#define  EXCP_TYPE_UNDEF 0x464455 // UDF
+#define  EXCP_TYPE_PABRT 0x54424150 // PABT
+#define  EXCP_TYPE_DABRT 0x54424144 // DABT
+#define EXCP_LR_ADDR   0x4003FFF4
+
+static void _show_errors()
+{
+	u32 *excp_enabled = (u32 *)EXCP_EN_ADDR;
+	u32 *excp_type = (u32 *)EXCP_TYPE_ADDR;
+	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
+
+	if (*excp_enabled == EXCP_MAGIC)
+	{
+		gfx_clear_grey(0);
+		gfx_con_setpos(0, 0);
+		display_backlight_brightness(100, 1000);
+
+		WPRINTFARGS("An exception happened (LR %08X):\n", *excp_lr);
+		switch (*excp_type)
+		{
+		case EXCP_TYPE_RESET:
+			WPRINTF("Reset");
+			break;
+		case EXCP_TYPE_UNDEF:
+			WPRINTF("Undefined instruction");
+			break;
+		case EXCP_TYPE_PABRT:
+			WPRINTF("Prefetch abort");
+			break;
+		case EXCP_TYPE_DABRT:
+			WPRINTF("Data abort");
+			break;
+		}
+		WPRINTF("\n");
+
+		// Clear the exception.
+		*excp_lr = 0;
+		*excp_type = 0;
+		*excp_enabled = 0;
+
+		WPRINTF("Press any key...");
+
+		msleep(2000);
+		btn_wait();
+
+		reload_nyx();
+	}
+}
+
 void nyx_init_load_res()
 {
 	bpmp_mmu_enable();
