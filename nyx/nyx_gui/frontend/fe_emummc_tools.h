@@ -20,6 +20,16 @@
 
 #include "gui.h"
 
+typedef struct _emummc_cfg_t
+{
+	int  enabled;
+	u32  sector;
+	u16  id;
+	char *path;
+	char *nintendo_path;
+} emummc_cfg_t;
+
+void load_emummc_cfg(emummc_cfg_t *emu_info);
 void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path);
 void dump_emummc_file(emmc_tool_gui_t *gui);
 void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start);

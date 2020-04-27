@@ -1025,49 +1025,10 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 
 	emummc_tools = (void *)create_win_emummc_tools;
 
-	typedef struct _emummc_cfg_t
-	{
-		int  enabled;
-		u32   sector;
-		u16   id;
-		char *path;
-		char *nintendo_path;
-	} emummc_cfg_t;
-
-	emummc_cfg_t emu_info;
-
 	sd_mount();
 
-	emu_info.enabled = 0;
-	emu_info.sector = 0;
-	emu_info.id = 0;
-	emu_info.path = NULL;
-	emu_info.nintendo_path = NULL;
-
-	// Parse emuMMC configuration.
-	LIST_INIT(ini_sections);
-	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
-	{
-		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
-		{
-			if (!strcmp(ini_sec->name, "emummc"))
-			{
-				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
-				{
-					if (!strcmp("enabled", kv->key))
-						emu_info.enabled = atoi(kv->val);
-					else if (!strcmp("sector", kv->key))
-						emu_info.sector = strtol(kv->val, NULL, 16);
-					else if (!strcmp("id", kv->key))
-						emu_info.id = strtol(kv->val, NULL, 16);
-					else if (!strcmp("path", kv->key))
-						emu_info.path = kv->val;
-					else if (!strcmp("nintendo_path", kv->key))
-						emu_info.nintendo_path = kv->val;
-				}
-			}
-		}
-	}
+	emummc_cfg_t emu_info;
+	load_emummc_cfg(&emu_info);
 
 	sd_unmount(false);
 
