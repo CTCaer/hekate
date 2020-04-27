@@ -35,8 +35,15 @@ extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-static int part_idx;
-static u32 sector_start;
+typedef struct _mbr_ctxt_t
+{
+	u32 available;
+	u32 sector[3];
+	int part_idx;
+	u32 sector_start;
+} mbr_ctxt_t;
+
+static mbr_ctxt_t mbr_ctx;
 
 static void _create_window_emummc()
 {
@@ -118,10 +125,10 @@ static void _create_window_emummc()
 	lv_obj_align(label_finish, bar, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 9 / 20);
 	emmc_tool_gui_ctxt.label_finish = label_finish;
 
-	if (!part_idx)
+	if (!mbr_ctx.part_idx)
 		dump_emummc_file(&emmc_tool_gui_ctxt);
 	else
-		dump_emummc_raw(&emmc_tool_gui_ctxt, part_idx, sector_start);
+		dump_emummc_raw(&emmc_tool_gui_ctxt, mbr_ctx.part_idx, mbr_ctx.sector_start);
 
 	nyx_window_toggle_buttons(win, false);
 }
@@ -138,8 +145,8 @@ static lv_res_t _create_emummc_raw_action(lv_obj_t * btns, const char * txt)
 		_create_window_emummc();
 	}
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	mbox_action(btns, txt);
 
@@ -161,6 +168,8 @@ static void _create_mbox_emummc_raw()
 	char *txt_buf = (char *)malloc(0x500);
 	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 
+	memset(&mbr_ctx, 0, sizeof(mbr_ctxt_t));
+
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 	sd_unmount(false);
@@ -176,15 +185,15 @@ static void _create_mbox_emummc_raw()
 		u8 type = mbr->partitions[i].type;
 		if ((curr_part_size >= (storage.sec_cnt + 0xC000)) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
 		{
-			part_idx = i;
-			sector_start += 0x8000;
+			mbr_ctx.part_idx = i;
+			mbr_ctx.sector_start += 0x8000;
 			break;
 		}
 	}
 
 	sdmmc_storage_end(&storage);
 
-	if (part_idx)
+	if (mbr_ctx.part_idx)
 	{
 		s_printf(txt_buf,
 			"#C7EA46 Found applicable partition: [Part %d]!#\n"
@@ -209,7 +218,7 @@ static void _create_mbox_emummc_raw()
 	free(txt_buf);
 	free(mbr);
 
-	if (part_idx)
+	if (mbr_ctx.part_idx)
 		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_raw_action);
 	else
 		lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
@@ -223,8 +232,8 @@ static lv_res_t _create_emummc_action(lv_obj_t * btns, const char * txt)
 	int btn_idx = lv_btnm_get_pressed(btns);
 	lv_obj_t *bg = lv_obj_get_parent(lv_obj_get_parent(btns));
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	switch (btn_idx)
 	{
@@ -279,7 +288,7 @@ static void _change_raw_emummc_part_type()
 
 static void _migrate_sd_raw_based()
 {
-	sector_start = 2;
+	mbr_ctx.sector_start = 2;
 
 	sd_mount();
 	f_mkdir("emuMMC");
@@ -288,17 +297,17 @@ static void _migrate_sd_raw_based()
 	f_rename("Emutendo", "emuMMC/ER00/Nintendo");
 	FIL fp;
 	f_open(&fp, "emuMMC/ER00/raw_based", FA_CREATE_ALWAYS | FA_WRITE);
-	f_write(&fp, &sector_start, 4, NULL);
+	f_write(&fp, &mbr_ctx.sector_start, 4, NULL);
 	f_close(&fp);
 
-	save_emummc_cfg(1, sector_start, "emuMMC/ER00");
+	save_emummc_cfg(1, mbr_ctx.sector_start, "emuMMC/ER00");
 	sd_unmount(false);
 }
 
 static void _migrate_sd_raw_emummc_based()
 {
 	char *tmp = (char *)malloc(0x80);
-	s_printf(tmp, "emuMMC/RAW%d", part_idx);
+	s_printf(tmp, "emuMMC/RAW%d", mbr_ctx.part_idx);
 
 	sd_mount();
 	f_mkdir("emuMMC");
@@ -308,15 +317,15 @@ static void _migrate_sd_raw_emummc_based()
 	FIL fp;
 	if (!f_open(&fp, tmp, FA_CREATE_ALWAYS | FA_WRITE))
 	{
-		f_write(&fp, &sector_start, 4, NULL);
+		f_write(&fp, &mbr_ctx.sector_start, 4, NULL);
 		f_close(&fp);
 	}
 
-	s_printf(tmp, "emuMMC/RAW%d", part_idx);
+	s_printf(tmp, "emuMMC/RAW%d", mbr_ctx.part_idx);
 
 	_change_raw_emummc_part_type();
 
-	save_emummc_cfg(part_idx, sector_start, tmp);
+	save_emummc_cfg(mbr_ctx.part_idx, mbr_ctx.sector_start, tmp);
 
 	free(tmp);
 
@@ -421,8 +430,8 @@ static lv_res_t _create_emummc_mig1_action(lv_obj_t * btns, const char * txt)
 		break;
 	}
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	mbox_action(btns, txt);
 
@@ -438,8 +447,8 @@ static lv_res_t _create_emummc_mig0_action(lv_obj_t * btns, const char * txt)
 		break;
 	}
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	mbox_action(btns, txt);
 
@@ -455,8 +464,8 @@ static lv_res_t _create_emummc_mig2_action(lv_obj_t * btns, const char * txt)
 		break;
 	}
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	mbox_action(btns, txt);
 
@@ -472,8 +481,8 @@ static lv_res_t _create_emummc_mig3_action(lv_obj_t * btns, const char * txt)
 		break;
 	}
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	mbox_action(btns, txt);
 
@@ -489,8 +498,8 @@ static lv_res_t _create_emummc_mig4_action(lv_obj_t * btns, const char * txt)
 		break;
 	}
 
-	part_idx = 0;
-	sector_start = 0;
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
 
 	mbox_action(btns, txt);
 
@@ -527,29 +536,29 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	bool emummc = false;
 	bool file_based = false;
 	bool em = false;
-	sector_start = 0;
-	part_idx = 0;
+	mbr_ctx.sector_start = 0;
+	mbr_ctx.part_idx = 0;
 
 	for (int i = 1; i < 4; i++)
 	{
-		sector_start = mbr->partitions[i].start_sct;
-		if (sector_start)
+		mbr_ctx.sector_start = mbr->partitions[i].start_sct;
+		if (mbr_ctx.sector_start)
 		{
-			sdmmc_storage_read(&sd_storage, sector_start + 0xC001, 1, efi_part);
+			sdmmc_storage_read(&sd_storage, mbr_ctx.sector_start + 0xC001, 1, efi_part);
 			if (!memcmp(efi_part, "EFI PART", 8))
 			{
-				sector_start += 0x8000;
+				mbr_ctx.sector_start += 0x8000;
 				emummc = true;
-				part_idx = i;
+				mbr_ctx.part_idx = i;
 				break;
 			}
 			else
 			{
-				sdmmc_storage_read(&sd_storage, sector_start + 0x4001, 1, efi_part);
+				sdmmc_storage_read(&sd_storage, mbr_ctx.sector_start + 0x4001, 1, efi_part);
 				if (!memcmp(efi_part, "EFI PART", 8))
 				{
 					emummc = true;
-					part_idx = i;
+					mbr_ctx.part_idx = i;
 					break;
 				}
 			}
@@ -558,7 +567,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 
 	//! TODO: What about unallocated
 
-	if (!part_idx)
+	if (!mbr_ctx.part_idx)
 	{
 		sdmmc_storage_read(&sd_storage, 0x4003, 1, efi_part);
 		if (!memcmp(efi_part, "EFI PART", 8))
