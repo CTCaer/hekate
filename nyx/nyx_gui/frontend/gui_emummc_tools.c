@@ -50,7 +50,7 @@ static void _create_window_emummc()
 	emmc_tool_gui_t emmc_tool_gui_ctxt;
 
 	lv_obj_t *win;
-	if (!part_idx)
+	if (!mbr_ctx.part_idx)
 		win = nyx_create_standard_window(SYMBOL_DRIVE"  Create SD File emuMMC");
 	else
 		win = nyx_create_standard_window(SYMBOL_DRIVE"  Create SD Partition emuMMC");
@@ -139,7 +139,27 @@ static lv_res_t _create_emummc_raw_action(lv_obj_t * btns, const char * txt)
 	int btn_idx = lv_btnm_get_pressed(btns);
 	lv_obj_t *bg = lv_obj_get_parent(lv_obj_get_parent(btns));
 
-	if (!btn_idx)
+	mbr_ctx.sector_start = 0x8000; // Protective offset.
+
+	switch (btn_idx)
+	{
+	case 0:
+		mbr_ctx.part_idx = 1;
+		mbr_ctx.sector_start += mbr_ctx.sector[0];
+		break;
+	case 1:
+		mbr_ctx.part_idx = 2;
+		mbr_ctx.sector_start += mbr_ctx.sector[1];
+		break;
+	case 2:
+		mbr_ctx.part_idx = 3;
+		mbr_ctx.sector_start += mbr_ctx.sector[2];
+		break;
+	default:
+		break;
+	}
+
+	if (btn_idx < 3)
 	{
 		lv_obj_set_style(bg, &lv_style_transp);
 		_create_window_emummc();
@@ -159,8 +179,8 @@ static void _create_mbox_emummc_raw()
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\222Continue", "\222Cancel", "" };
-	static const char *mbox_btn_map2[] = { "\211", "OK", "\211", "" };
+	static const char *mbox_btn_format[] = { "\222Continue", "\222Cancel", "" };
+	static char *mbox_btn_parts[] = { "\262Part 1", "\262Part 2", "\262Part 3", "\222Cancel", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
@@ -178,50 +198,76 @@ static void _create_mbox_emummc_raw()
 	sdmmc_t sdmmc;
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
 
-	for (int i = 1; i < 4; i++)
-	{
-		u32 curr_part_size = mbr->partitions[i].size_sct;
-		sector_start = mbr->partitions[i].start_sct;
-		u8 type = mbr->partitions[i].type;
-		if ((curr_part_size >= (storage.sec_cnt + 0xC000)) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
-		{
-			mbr_ctx.part_idx = i;
-			mbr_ctx.sector_start += 0x8000;
-			break;
-		}
-	}
+	u32 emmc_size_safe = storage.sec_cnt + 0xC000; // eMMC GPP size + BOOT0/1.
 
 	sdmmc_storage_end(&storage);
 
-	if (mbr_ctx.part_idx)
+	for (int i = 1; i < 4; i++)
+	{
+		u32 part_size = mbr->partitions[i].size_sct;
+		u32 part_start = mbr->partitions[i].start_sct;
+		u8  part_type = mbr->partitions[i].type;
+		bool valid_part = (part_type != 0x83) && (part_type != 0xEE); // Skip Linux and GPT (Android) partitions.
+
+		if ((part_size >= emmc_size_safe) && part_start > 0x8000 && valid_part)
+		{
+			mbr_ctx.available |= (1 << (i - 1));
+			mbr_ctx.sector[i - 1] = part_start;
+		}
+	}
+
+	if (mbr_ctx.available)
 	{
 		s_printf(txt_buf,
-			"#C7EA46 Found applicable partition: [Part %d]!#\n"
-			"#FF8000 Do you want to continue?#\n\n", part_idx);
+			"#C7EA46 Found applicable partition(s)!#\n"
+			"#FF8000 Choose a partition to continue:#\n\n");
 	}
 	else
-		s_printf(txt_buf, "Failed to find applicable partition!\n\n");
+		s_printf(txt_buf, "#FFDD00 Failed to find applicable partition!#\n\n");
 
 	s_printf(txt_buf + strlen(txt_buf),
 		"Partition table:\n"
-		"Part 0: Type: %02x, Start: %08x, Size: %08x\n"
-		"Part 1: Type: %02x, Start: %08x, Size: %08x\n"
-		"Part 2: Type: %02x, Start: %08x, Size: %08x\n"
-		"Part 3: Type: %02x, Start: %08x, Size: %08x\n",
+		"#C0C0C0 Part 0: Type: %02x, Start: %08x, Size: %08x#\n"
+		"#%s Part 1: Type: %02x, Start: %08x, Size: %08x#\n"
+		"#%s Part 2: Type: %02x, Start: %08x, Size: %08x#\n"
+		"#%s Part 3: Type: %02x, Start: %08x, Size: %08x#\n",
 		mbr->partitions[0].type, mbr->partitions[0].start_sct, mbr->partitions[0].size_sct,
+			(mbr_ctx.available & 1) ? "C7EA46" : "C0C0C0",
 		mbr->partitions[1].type, mbr->partitions[1].start_sct, mbr->partitions[1].size_sct,
+			(mbr_ctx.available & 2) ? "C7EA46" : "C0C0C0",
 		mbr->partitions[2].type, mbr->partitions[2].start_sct, mbr->partitions[2].size_sct,
+			(mbr_ctx.available & 4) ? "C7EA46" : "C0C0C0",
 		mbr->partitions[3].type, mbr->partitions[3].start_sct, mbr->partitions[3].size_sct);
 
+	if (!mbr_ctx.available)
+		s_printf(txt_buf + strlen(txt_buf),
+			"\n#FF8000 Do you want to partition your SD card?#\n"
+			"#FF8000 (You will be asked on how to proceed)#");
 
 	lv_mbox_set_text(mbox, txt_buf);
 	free(txt_buf);
 	free(mbr);
 
-	if (mbr_ctx.part_idx)
-		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_raw_action);
+	if (mbr_ctx.available)
+	{
+		// Check available partitions and enable the corresponding buttons.
+		if (mbr_ctx.available & 1)
+			mbox_btn_parts[0][0] = '\222';
+		else
+			mbox_btn_parts[0][0] = '\262';
+		if (mbr_ctx.available & 2)
+			mbox_btn_parts[1][0] = '\222';
+		else
+			mbox_btn_parts[1][0] = '\262';
+		if (mbr_ctx.available & 4)
+			mbox_btn_parts[2][0] = '\222';
+		else
+			mbox_btn_parts[2][0] = '\262';
+
+		lv_mbox_add_btns(mbox, (const char **)mbox_btn_parts, _create_emummc_raw_action);
+	}
 	else
-		lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+		lv_mbox_add_btns(mbox, mbox_btn_format, _create_emummc_raw_format);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -243,7 +289,6 @@ static lv_res_t _create_emummc_action(lv_obj_t * btns, const char * txt)
 		break;
 	case 1:
 		_create_mbox_emummc_raw();
-		// if available. have max 3 buttons. if selected and used, ask to use the backup tool.
 		break;
 	}
 
