@@ -72,12 +72,9 @@ static u32 _find_patch_section_name(char *lbuf, u32 lblen, char schar)
 static ini_kip_sec_t *_ini_create_kip_section(link_t *dst, ini_kip_sec_t *ksec, char *name)
 {
 	if (ksec)
-	{
 		list_append(dst, &ksec->link);
-		ksec = NULL;
-	}
 
-	ksec = (ini_kip_sec_t *)malloc(sizeof(ini_kip_sec_t));
+	ksec = (ini_kip_sec_t *)calloc(sizeof(ini_kip_sec_t), 1);
 	u32 i = _find_patch_section_name(name, strlen(name), ':') + 1;
 	ksec->name = _strdup(name);
 
@@ -105,8 +102,8 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 		f_gets(lbuf, 512, &fp);
 		lblen = strlen(lbuf);
 
-		// Remove trailing newline.
-		if (lbuf[lblen - 1] == '\n' || lbuf[lblen - 1] == '\r')
+		// Remove trailing newline. Depends on 'FF_USE_STRFUNC 2' that removes \r.
+		if (lblen && lbuf[lblen - 1] == '\n')
 			lbuf[lblen - 1] = 0;
 
 		if (lblen > 2 && lbuf[0] == '[') // Create new section.
@@ -121,7 +118,7 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 			u32 tmp = 0;
 			u32 i = _find_patch_section_name(lbuf, lblen, '=');
 
-			ini_patchset_t *pt = (ini_patchset_t *)malloc(sizeof(ini_patchset_t));
+			ini_patchset_t *pt = (ini_patchset_t *)calloc(sizeof(ini_patchset_t), 1);
 
 			pt->name = _strdup(&lbuf[1]);
 
@@ -145,13 +142,7 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 				i += tmp + 1;
 				pt->dstData = _htoa(NULL, &lbuf[i], pt->length);
 			}
-			else
-			{
-				pt->offset = 0;
-				pt->length = 0;
-				pt->srcData = NULL;
-				pt->dstData = NULL;
-			}
+
 			list_append(&ksec->pts, &pt->link);
 		}
 	} while (!f_eof(&fp));
