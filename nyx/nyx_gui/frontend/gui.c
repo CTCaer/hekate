@@ -353,9 +353,9 @@ lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn)
 	else
 	{
 		if (!(lv_btn_get_state(btn) & LV_BTN_STATE_TGL_REL))
-			lv_label_set_static_text(label_btn, "#D0D0D0 OFF#");
+			lv_label_set_text(label_btn, "#D0D0D0 OFF#");
 		else
-			lv_label_set_static_text(label_btn, "#00FFC9 ON #");
+			lv_label_set_text(label_btn, "#00FFC9 ON #");
 	}
 
 	return LV_RES_OK;
@@ -639,10 +639,9 @@ void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, co
 	lv_obj_set_width(btn, lv_obj_get_width(parent));
 	lv_btn_set_toggle(btn, true);
 
-
 	lv_label_set_text(label_btn, btn_name);
 
-	lv_label_set_static_text(label_btnsw, "#D0D0D0 OFF#");
+	lv_label_set_text(label_btnsw, "#D0D0D0 OFF#");
 	lv_obj_align(label_btn, btn, LV_ALIGN_IN_LEFT_MID, LV_DPI / 4, 0);
 	lv_obj_align(label_btnsw, btn, LV_ALIGN_IN_RIGHT_MID, -LV_DPI / 4, -LV_DPI / 10);
 
@@ -1061,7 +1060,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	boot_entry_lbl_cont = lv_cont_create(win, NULL);
 	boot_entry_label = lv_label_create(boot_entry_lbl_cont, NULL);
 	lv_obj_set_style(boot_entry_label, &hint_small_style_white);
-	lv_label_set_static_text(boot_entry_label, "");
+	lv_label_set_text(boot_entry_label, "");
 	launch_ctxt[1] = boot_entry_label;
 
 	lv_cont_set_fit(boot_entry_lbl_cont, false, false);
@@ -1231,7 +1230,7 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// Set brand label.
 	lv_obj_t *label_brand = lv_label_create(parent, NULL);
 	lv_label_set_recolor(label_brand, true);
-	lv_label_set_static_text(label_brand, "#00EDBA hekate#");
+	lv_label_set_text(label_brand, "#00EDBA hekate#");
 	lv_obj_set_pos(label_brand, 50, 48);
 
 	// Set tagline label.
@@ -1254,7 +1253,7 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_btn = lv_label_create(btn_launch, NULL);
 	lv_label_set_recolor(label_btn, true);
 	lv_obj_set_style(label_btn, &icons);
-	lv_label_set_static_text(label_btn, "#00EDBA "SYMBOL_DOT"#");
+	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_DOT"#");
 	lv_btn_set_action(btn_launch, LV_BTN_ACTION_CLICK, _create_window_home_launch);
 	lv_obj_set_size(btn_launch, 256, 256);
 	lv_obj_set_pos(btn_launch, 50, 160);
@@ -1262,25 +1261,25 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	lv_obj_t *label_btn2 = lv_label_create(btn_launch, NULL);
 	lv_label_set_recolor(label_btn2, true);
-	lv_label_set_static_text(label_btn2, "#00EDBA Launch#");
+	lv_label_set_text(label_btn2, "#00EDBA Launch#");
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
 	// More Configs button.
 	lv_obj_t *btn_more_cfg = lv_btn_create(parent, btn_launch);
 	label_btn = lv_label_create(btn_more_cfg, label_btn);
-	lv_label_set_static_text(label_btn, "#00EDBA "SYMBOL_CLOCK"#");
+	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_CLOCK"#");
 	lv_btn_set_action(btn_more_cfg, LV_BTN_ACTION_CLICK, _create_window_home_launch);
 	lv_btn_set_layout(btn_more_cfg, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	label_btn2 = lv_label_create(btn_more_cfg, label_btn2);
-	lv_label_set_static_text(label_btn2, "#00EDBA More Configs#");
+	lv_label_set_text(label_btn2, "#00EDBA More Configs#");
 	lv_obj_set_pos(btn_more_cfg, 341, 160);
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
 	// Quick Launch button.
 	// lv_obj_t *btn_quick_launch = lv_btn_create(parent, NULL);
 	// label_btn = lv_label_create(btn_quick_launch, label_btn);
-	// lv_label_set_static_text(label_btn, SYMBOL_EDIT" Quick Launch");
+	// lv_label_set_text(label_btn, SYMBOL_EDIT" Quick Launch");
 	// lv_obj_set_width(btn_quick_launch, 256);
 	// lv_obj_set_pos(btn_quick_launch, 343, 448);
 	// lv_btn_set_action(btn_quick_launch, LV_BTN_ACTION_CLICK, NULL);
@@ -1288,12 +1287,12 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// Payloads button.
 	lv_obj_t *btn_payloads = lv_btn_create(parent, btn_launch);
 	label_btn = lv_label_create(btn_payloads, label_btn);
-	lv_label_set_static_text(label_btn, "#00EDBA "SYMBOL_OK"#");
+	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_OK"#");
 	lv_btn_set_action(btn_payloads, LV_BTN_ACTION_CLICK, _create_mbox_payloads);
 	lv_btn_set_layout(btn_payloads, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	label_btn2 = lv_label_create(btn_payloads, label_btn2);
-	lv_label_set_static_text(label_btn2, "#00EDBA Payloads#");
+	lv_label_set_text(label_btn2, "#00EDBA Payloads#");
 	lv_obj_set_pos(btn_payloads, 632, 160);
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
@@ -1306,13 +1305,13 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// emuMMC manage button.
 	lv_obj_t *btn_emummc = lv_btn_create(parent, btn_launch);
 	label_btn = lv_label_create(btn_emummc, label_btn);
-	lv_label_set_static_text(label_btn, "#00EDBA "SYMBOL_LIST"#");
+	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_LIST"#");
 	lv_btn_set_action(btn_emummc, LV_BTN_ACTION_CLICK,create_win_emummc_tools);
 	lv_btn_set_layout(btn_emummc, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	lv_obj_set_pos(btn_emummc, 959, 160);
 	label_btn2 = lv_label_create(btn_emummc, label_btn2);
-	lv_label_set_static_text(label_btn2, "#00EDBA emuMMC#");
+	lv_label_set_text(label_btn2, "#00EDBA emuMMC#");
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
 	// Create bottom right power buttons.
@@ -1365,34 +1364,34 @@ static void _create_status_bar(lv_theme_t * th)
 	// Battery percentages.
 	lv_obj_t *lbl_battery = lv_label_create(status_bar_bg, NULL);
 	lv_label_set_recolor(lbl_battery, true);
-	lv_label_set_static_text(lbl_battery, " "SYMBOL_DOT" 00.0% "SYMBOL_BATTERY_1" #FFDD00 "SYMBOL_CHARGE"#");
+	lv_label_set_text(lbl_battery, " "SYMBOL_DOT" 00.0% "SYMBOL_BATTERY_1" #FFDD00 "SYMBOL_CHARGE"#");
 	lv_obj_align(lbl_battery, NULL, LV_ALIGN_IN_RIGHT_MID, -LV_DPI * 6 / 11, 0);
 	status_bar.battery = lbl_battery;
 
 	// Amperages, voltages.
 	lbl_battery = lv_label_create(status_bar_bg, lbl_battery);
 	lv_obj_set_style(lbl_battery, &hint_small_style_white);
-	lv_label_set_static_text(lbl_battery, "#96FF00 +0 mA# (0 mV)");
+	lv_label_set_text(lbl_battery, "#96FF00 +0 mA# (0 mV)");
 	lv_obj_align(lbl_battery, status_bar.battery, LV_ALIGN_OUT_LEFT_MID, -LV_DPI / 25, -1);
 	status_bar.battery_more = lbl_battery;
 
 	lv_obj_t *lbl_left = lv_label_create(status_bar_bg, NULL);
-	lv_label_set_static_text(lbl_left, SYMBOL_CLOCK" ");
+	lv_label_set_text(lbl_left, SYMBOL_CLOCK" ");
 	lv_obj_align(lbl_left, NULL, LV_ALIGN_IN_LEFT_MID, LV_DPI * 6 / 11, 0);
 
 	// Time, temperature.
 	lv_obj_t *lbl_time_temp = lv_label_create(status_bar_bg, NULL);
-	lv_label_set_static_text(lbl_time_temp, "00:00 "SYMBOL_DOT" "SYMBOL_TEMPERATURE" 00.0");
+	lv_label_set_text(lbl_time_temp, "00:00 "SYMBOL_DOT" "SYMBOL_TEMPERATURE" 00.0");
 	lv_obj_align(lbl_time_temp, lbl_left, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	status_bar.time_temp = lbl_time_temp;
 
 	lbl_left = lv_label_create(status_bar_bg, NULL);
-	lv_label_set_static_text(lbl_left, " "SYMBOL_DOT);
+	lv_label_set_text(lbl_left, " "SYMBOL_DOT);
 	lv_obj_align(lbl_left, lbl_time_temp, LV_ALIGN_OUT_RIGHT_MID, 0, -LV_DPI / 14);
 	status_bar.temp_symbol = lbl_left;
 
 	lv_obj_t *lbl_degrees = lv_label_create(status_bar_bg, NULL);
-	lv_label_set_static_text(lbl_degrees, "C");
+	lv_label_set_text(lbl_degrees, "C");
 	lv_obj_align(lbl_degrees, lbl_left, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 50, LV_DPI / 14);
 	status_bar.temp_degrees = lbl_degrees;
 

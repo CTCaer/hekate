@@ -333,11 +333,11 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 	if (!sd_mount())
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
 
-	lv_label_set_static_text(gui->label_info, "Checking for available free space...");
+	lv_label_set_text(gui->label_info, "Checking for available free space...");
 	manual_system_maintenance(true);
 
 	// Get SD Card free space for Partial Backup.
@@ -347,7 +347,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	sdmmc_t sdmmc;
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
 	}
 
@@ -621,7 +621,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 
 	if (!sd_mount())
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
 
@@ -629,7 +629,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	sdmmc_t sdmmc;
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
 	}
 

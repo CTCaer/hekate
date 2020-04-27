@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -123,7 +123,7 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 	emmc_tool_gui_ctxt.bar_teal_bg = &bar_teal_bg;
 	emmc_tool_gui_ctxt.bar_white_ind = &bar_white_ind;
 
-	lv_obj_t * bar = lv_bar_create(h1, NULL);
+	lv_obj_t *bar = lv_bar_create(h1, NULL);
 	lv_obj_set_size(bar, LV_DPI * 38 / 10, LV_DPI / 5);
 	lv_bar_set_range(bar, 0, 100);
 	lv_bar_set_value(bar, 0);

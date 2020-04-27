@@ -156,7 +156,6 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 	}
 	_create_window_dump_done(error, "evp_thunks.bin, bootrom_patched.bin, bootrom_unpatched.bin");
 
-
 	return LV_RES_OK;
 }
 
@@ -353,9 +352,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	// Check if patched unit.
 	if (!fuse_check_patched_rcm())
-		lv_label_set_static_text(lb_desc2, "#96FF00 Your unit is exploitable#\n#96FF00 to the RCM bug!#");
+		lv_label_set_text(lb_desc2, "#96FF00 Your unit is exploitable#\n#96FF00 to the RCM bug!#");
 	else
-		lv_label_set_static_text(lb_desc2, "#FF8000 Your unit is patched#\n#FF8000 to the RCM bug!#");
+		lv_label_set_text(lb_desc2, "#FF8000 Your unit is patched#\n#FF8000 to the RCM bug!#");
 
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
@@ -464,7 +463,7 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 	lv_ta_set_style(lb_val, LV_TA_STYLE_BG, &monospace_text);
 
-	lv_label_set_static_text(lb_val, "Please wait...");
+	lv_label_set_text(lb_val, "Please wait...");
 	lv_obj_set_width(lb_val, lv_obj_get_width(val));
 	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	manual_system_maintenance(true);
@@ -561,7 +560,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		lv_label_set_static_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 	}
 	else
@@ -701,7 +700,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 
-	lv_label_set_static_text(lb_desc, "#D4FF00 Please wait...#");
+	lv_label_set_text(lb_desc, "#D4FF00 Please wait...#");
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 	// Disable buttons.
@@ -710,10 +709,10 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	manual_system_maintenance(true);
 
 	if (!sd_mount())
-		lv_label_set_static_text(lb_desc, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 	else
 	{
-		lv_label_set_static_text(lb_desc,
+		lv_label_set_text(lb_desc,
 			"#00DDFF Card IDentification:#\n"
 			"Vendor ID:\n"
 			"OEM ID:\n"
@@ -768,7 +767,6 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 		lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
 
-
 		s_printf(txt_buf,
 			"#00DDFF v%d.0#\n%02X\n%d MiB\n%d\n%d MB/s (%d MHz)\n%d\nU%d\nV%d\nA%d\n%d",
 			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass, sd_storage.sec_cnt >> 11,
@@ -792,17 +790,16 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_set_size(desc3, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 
 		lv_obj_t * lb_desc3 = lv_label_create(desc3, lb_desc);
-
-		lv_label_set_static_text(lb_desc3, "#D4FF00 Acquiring FAT volume info...#");
-
+		lv_label_set_text(lb_desc3, "#D4FF00 Acquiring FAT volume info...#");
 		lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
+
 		lv_obj_align(desc3, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
 
 		manual_system_maintenance(true);
 
 		f_getfree("", &sd_fs.free_clst, NULL);
 
-		lv_label_set_static_text(lb_desc3,
+		lv_label_set_text(lb_desc3,
 			"#00DDFF Found FAT volume:#\n"
 			"Filesystem:\n"
 			"Cluster:\n"

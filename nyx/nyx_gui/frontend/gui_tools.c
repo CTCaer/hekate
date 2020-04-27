@@ -248,15 +248,15 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 	if (!sd_mount())
 	{
-		lv_label_set_static_text(lb_desc, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 	}
 	else
 	{
 		if (!nintendo_folder)
-			lv_label_set_static_text(lb_desc, "#00DDFF Traversing all SD card files!#\nThis may take some time...");
+			lv_label_set_text(lb_desc, "#00DDFF Traversing all SD card files!#\nThis may take some time...");
 		else
-			lv_label_set_static_text(lb_desc, "#00DDFF Traversing all Nintendo files!#\nThis may take some time...");
+			lv_label_set_text(lb_desc, "#00DDFF Traversing all Nintendo files!#\nThis may take some time...");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 		lv_obj_t *val = lv_cont_create(win, NULL);
@@ -267,7 +267,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		char *path = malloc(1024);
 		path[0] = 0;
 
-		lv_label_set_static_text(lb_val, "");
+		lv_label_set_text(lb_val, "");
 		lv_obj_set_width(lb_val, lv_obj_get_width(val));
 		lv_obj_align(val, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
 
@@ -330,7 +330,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	if (!sd_mount())
 	{
-		lv_label_set_static_text(lb_desc, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 
 		goto out_end;
 	}
@@ -354,7 +354,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		lv_label_set_static_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
 		goto out_free;
 	}
@@ -408,7 +408,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
 			{
-				lv_label_set_static_text(lb_desc, "#FFDD00 Failed to run sept#\n");
+				lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept#\n");
 				goto out_free;
 			}
 		}
@@ -830,7 +830,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
 	lv_label_set_recolor(label_btn, true);
-	lv_label_set_static_text(label_btn, SYMBOL_REFRESH"  AutoRCM #00FFC9   ON #");
+	lv_label_set_text(label_btn, SYMBOL_REFRESH"  AutoRCM #00FFC9   ON #");
 	lv_obj_align(btn3, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
 	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_mbox_autorcm_status);
 

@@ -94,7 +94,7 @@ static void _create_window_emummc()
 	lv_obj_align(label_info, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 10);
 	emmc_tool_gui_ctxt.label_info = label_info;
 
-	lv_obj_t * bar = lv_bar_create(h1, NULL);
+	lv_obj_t *bar = lv_bar_create(h1, NULL);
 	lv_obj_set_size(bar, LV_DPI * 38 / 10, LV_DPI / 5);
 	lv_bar_set_range(bar, 0, 100);
 	lv_bar_set_value(bar, 0);

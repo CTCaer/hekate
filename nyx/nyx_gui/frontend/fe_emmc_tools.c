@@ -166,7 +166,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				f_close(&fp);
 
 				s_printf(gui->txt_buf,
-						"#FF0000 Hash file could not be written (error %d)!#\n"
+						"\n#FF0000 Hash file could not be written (error %d)!#\n"
 						"#FF0000 Aborting..#\n", res);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
@@ -211,7 +211,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				if (!sdmmc_storage_read(storage, lba_curr, num, bufEm))
 				{
 					s_printf(gui->txt_buf,
-						"#FF0000 Failed to read %d blocks (@LBA %08X),#\n"
+						"\n#FF0000 Failed to read %d blocks (@LBA %08X),#\n"
 						"#FF0000 from eMMC! Verification failed..#\n",
 						num, lba_curr);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -231,7 +231,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				if (f_read_fast(&fp, bufSd, num << 9))
 				{
 					s_printf(gui->txt_buf,
-						"#FF0000 Failed to read %d blocks (@LBA %08X),#\n"
+						"\n#FF0000 Failed to read %d blocks (@LBA %08X),#\n"
 						"#FF0000 from SD card! Verification failed..#\n",
 						num, lba_curr);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -252,7 +252,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				if (res)
 				{
 					s_printf(gui->txt_buf,
-						"#FF0000 SD & eMMC data (@LBA %08X) do not match!#\n"
+						"\n#FF0000 SD & eMMC data (@LBA %08X) do not match!#\n"
 						"\n#FF0000 Verification failed..#\n",
 						lba_curr);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -724,12 +724,12 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	s_printf(txt_buf, "");
 	lv_label_set_text(gui->label_log, txt_buf);
 
-	lv_label_set_static_text(gui->label_info, "Checking for available free space...");
+	lv_label_set_text(gui->label_info, "Checking for available free space...");
 	manual_system_maintenance(true);
 
 	if (!sd_mount())
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
 
@@ -740,7 +740,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	sdmmc_t sdmmc;
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
 	}
 
@@ -1304,7 +1304,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	u32 btn = btn_wait();
 	if (!(btn & BTN_POWER))
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Restore operation was aborted!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Restore operation was aborted!#");
 		lv_obj_del(warn_mbox_bg);
 		goto out;
 	}
@@ -1313,7 +1313,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 	if (!sd_mount())
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init SD!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
 
@@ -1321,7 +1321,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	sdmmc_t sdmmc;
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
 	{
-		lv_label_set_static_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
 	}
 
