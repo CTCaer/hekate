@@ -45,15 +45,28 @@ typedef struct _mbr_ctxt_t
 
 static mbr_ctxt_t mbr_ctx;
 
+static lv_obj_t *emummc_manage_window;
+static lv_res_t (*emummc_tools)(lv_obj_t *btn);
+
+static lv_res_t _action_emummc_window_close(lv_obj_t *btn)
+{
+	lv_win_close_action(btn);
+	lv_obj_del(emummc_manage_window);
+
+	(*emummc_tools)(NULL);
+
+	return LV_RES_INV;
+}
+
 static void _create_window_emummc()
 {
 	emmc_tool_gui_t emmc_tool_gui_ctxt;
 
 	lv_obj_t *win;
 	if (!mbr_ctx.part_idx)
-		win = nyx_create_standard_window(SYMBOL_DRIVE"  Create SD File emuMMC");
+		win = nyx_create_window_custom_close_btn(SYMBOL_DRIVE"  Create SD File emuMMC", _action_emummc_window_close);
 	else
-		win = nyx_create_standard_window(SYMBOL_DRIVE"  Create SD Partition emuMMC");
+		win = nyx_create_window_custom_close_btn(SYMBOL_DRIVE"  Create SD Partition emuMMC", _action_emummc_window_close);
 
 	//Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -710,10 +723,6 @@ typedef struct _emummc_images_t
 
 static emummc_images_t *emummc_img;
 
-static lv_obj_t *emummc_manage_window;
-
-static lv_res_t (*emummc_tools)(lv_obj_t *btn);
-
 static lv_res_t _save_emummc_cfg_mbox_action(lv_obj_t *btns, const char *txt)
 {
 	free(emummc_img->dirlist);
@@ -789,7 +798,7 @@ static lv_res_t _save_file_emummc_cfg_action(lv_obj_t *btn)
 	return LV_RES_INV;
 }
 
-static lv_res_t _create_change_emummc_window()
+static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 {
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SETTINGS"  Change emuMMC");
 	lv_win_add_btn(win, NULL, SYMBOL_POWER"  Disable", _save_disable_emummc_cfg_action);
@@ -1035,7 +1044,6 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 	emu_info.path = NULL;
 	emu_info.nintendo_path = NULL;
 
-	//! TODO: Always update that info when something was changed.
 	// Parse emuMMC configuration.
 	LIST_INIT(ini_sections);
 	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))

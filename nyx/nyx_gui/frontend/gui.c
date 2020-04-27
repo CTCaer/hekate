@@ -418,6 +418,24 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	return win;
 }
 
+lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t rel_action)
+{
+	static lv_style_t win_bg_style;
+
+	lv_style_copy(&win_bg_style, &lv_style_plain);
+	win_bg_style.body.main_color = LV_COLOR_HEX(0x2D2D2D);// TODO: COLOR_HOS_BG
+	win_bg_style.body.grad_color = win_bg_style.body.main_color;
+
+	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
+	lv_win_set_title(win, win_title);
+	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
+	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
+
+	lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", rel_action);
+
+	return win;
+}
+
 static bool launch_logs_enable = false;
 
 static void _launch_hos(u8 autoboot, u8 autoboot_list)
