@@ -640,8 +640,16 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x81\x7E\xA2\xB0\xB7\x02\xC1\xF3", _fs_patches_1000 },      // FS 10.0.0 exfat
 };
 
+static kip1_id_t *_kip_id_sets = _kip_ids;
+static u32 _kip_id_sets_cnt = sizeof(_kip_ids) / sizeof(_kip_ids[0]);
+
 static void parse_external_kip_patches()
 {
+	static bool ext_patches_done = false;
+
+	if (ext_patches_done)
+		return;
+
 	u32 curr_kip_idx = 0;
 	char path[64];
 	strcpy(path, "bootloader/patches.ini");
@@ -649,77 +657,103 @@ static void parse_external_kip_patches()
 	LIST_INIT(ini_kip_sections);
 	if (ini_patch_parse(&ini_kip_sections, path))
 	{
+		// Copy ids into a new patchset.
+		_kip_id_sets = calloc(sizeof(kip1_id_t), 256); // Max 256 kip ids.
+		memcpy(_kip_id_sets, _kip_ids, sizeof(_kip_ids));
+
 		// Parse patchsets and glue them together.
 		LIST_FOREACH_ENTRY(ini_kip_sec_t, ini_psec, &ini_kip_sections, link)
 		{
-			kip1_id_t* curr_kip = &_kip_ids[curr_kip_idx];
-
-			if (!strcmp(curr_kip->name, ini_psec->name) && !memcmp(curr_kip->hash, ini_psec->hash, 8))
+			kip1_id_t* curr_kip = NULL;
+			bool found = false;
+			for (curr_kip_idx = 0; curr_kip_idx < _kip_id_sets_cnt + 1; curr_kip_idx++)
 			{
-				kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 8); // Max 8 patchsets per kip.
+				curr_kip = &_kip_id_sets[curr_kip_idx];
 
-				u32 curr_patchset_idx;
-				for(curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
+				if (!curr_kip->name)
+					break;
+
+				if (!strcmp(curr_kip->name, ini_psec->name) && !memcmp(curr_kip->hash, ini_psec->hash, 8))
 				{
-					patchsets[curr_patchset_idx].name = curr_kip->patchset[curr_patchset_idx].name;
-					patchsets[curr_patchset_idx].patches = curr_kip->patchset[curr_patchset_idx].patches;
+					found = true;
+					break;
 				}
+			}
 
-				curr_kip->patchset = patchsets;
-				bool first_ext_patch = true;
-				u32 curr_patch_idx = 0;
+			if (!curr_kip)
+				continue;
 
-				// Parse patches and glue them together to a patchset.
-				kip1_patch_t *patches = calloc(sizeof(kip1_patch_t), 16); // Max 16 patches per set.
-				LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
+			// If not found, create a new empty entry.
+			if (!found)
+			{
+				curr_kip->name = ini_psec->name;
+				memcpy(curr_kip->hash, ini_psec->hash, 8);
+				curr_kip->patchset = calloc(sizeof(kip1_patchset_t), 1);
+
+				_kip_id_sets_cnt++;
+			}
+
+			kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 16); // Max 16 patchsets per kip.
+
+			u32 curr_patchset_idx;
+			for(curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
+			{
+				patchsets[curr_patchset_idx].name = curr_kip->patchset[curr_patchset_idx].name;
+				patchsets[curr_patchset_idx].patches = curr_kip->patchset[curr_patchset_idx].patches;
+			}
+
+			curr_kip->patchset = patchsets;
+			bool first_ext_patch = true;
+			u32 curr_patch_idx = 0;
+
+			// Parse patches and glue them together to a patchset.
+			kip1_patch_t *patches = calloc(sizeof(kip1_patch_t), 32); // Max 32 patches per set.
+			LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
+			{
+				if (first_ext_patch)
 				{
-					if (first_ext_patch)
+					first_ext_patch = false;
+					patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
+					strcpy(patchsets[curr_patchset_idx].name, pt->name);
+					patchsets[curr_patchset_idx].patches = patches;
+				}
+				else
+				{
+					// Check if new patchset name is found and create a new set.
+					if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
 					{
-						first_ext_patch = false;
+						curr_patchset_idx++;
+						curr_patch_idx = 0;
+						patches = calloc(sizeof(kip1_patch_t), 16); // Max 16 patches per set.
+
 						patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
 						strcpy(patchsets[curr_patchset_idx].name, pt->name);
 						patchsets[curr_patchset_idx].patches = patches;
 					}
-					else
-					{
-						// Check if new patchset name is found and create a new set.
-						if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
-						{
-							curr_patchset_idx++;
-							curr_patch_idx = 0;
-							patches = calloc(sizeof(kip1_patch_t), 16); // Max 16 patches per set.
-
-							patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
-							strcpy(patchsets[curr_patchset_idx].name, pt->name);
-							patchsets[curr_patchset_idx].patches = patches;
-						}
-					}
-
-					if (pt->length)
-					{
-						patches[curr_patch_idx].offset = pt->offset;
-						patches[curr_patch_idx].length = pt->length;
-
-						patches[curr_patch_idx].srcData = malloc(pt->length);
-						patches[curr_patch_idx].dstData = malloc(pt->length);
-						memcpy(patches[curr_patch_idx].srcData, pt->srcData, pt->length);
-						memcpy(patches[curr_patch_idx].dstData, pt->dstData, pt->length);
-					}
-					else
-						patches[curr_patch_idx].srcData = malloc(1); // Empty patches check. Keep everything else as 0.
-
-					curr_patch_idx++;
 				}
-				curr_patchset_idx++;
-				patchsets[curr_patchset_idx].name = NULL;
-				patchsets[curr_patchset_idx].patches = NULL;
-			}
 
-			curr_kip_idx++;
-			if (!(curr_kip_idx < (sizeof(_kip_ids) / sizeof(_kip_ids[0]))))
-				break;
+				if (pt->length)
+				{
+					patches[curr_patch_idx].offset = pt->offset;
+					patches[curr_patch_idx].length = pt->length;
+
+					patches[curr_patch_idx].srcData = malloc(pt->length);
+					patches[curr_patch_idx].dstData = malloc(pt->length);
+					memcpy(patches[curr_patch_idx].srcData, pt->srcData, pt->length);
+					memcpy(patches[curr_patch_idx].dstData, pt->dstData, pt->length);
+				}
+				else
+					patches[curr_patch_idx].srcData = malloc(1); // Empty patches check. Keep everything else as 0.
+
+				curr_patch_idx++;
+			}
+			curr_patchset_idx++;
+			patchsets[curr_patchset_idx].name = NULL;
+			patchsets[curr_patchset_idx].patches = NULL;
 		}
 	}
+
+	ext_patches_done = true;
 }
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)
@@ -1041,13 +1075,13 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 	{
 		shaBuf[0] = 0; // sha256 for this kip not yet calculated.
-		for (u32 currKipIdx = 0; currKipIdx < (sizeof(_kip_ids) / sizeof(_kip_ids[0])); currKipIdx++)
+		for (u32 currKipIdx = 0; currKipIdx < _kip_id_sets_cnt; currKipIdx++)
 		{
-			if (strncmp((const char*)ki->kip1->name, _kip_ids[currKipIdx].name, sizeof(ki->kip1->name)) != 0)
+			if (strncmp((const char*)ki->kip1->name, _kip_id_sets[currKipIdx].name, sizeof(ki->kip1->name)) != 0)
 				continue;
 
 			u32 bitsAffected = 0;
-			kip1_patchset_t* currPatchset = _kip_ids[currKipIdx].patchset;
+			kip1_patchset_t* currPatchset = _kip_id_sets[currKipIdx].patchset;
 			while (currPatchset != NULL && currPatchset->name != NULL)
 			{
 				for (u32 i = 0; i < numPatches; i++)
@@ -1071,12 +1105,12 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 					memset(shaBuf, 0, sizeof(shaBuf));
 			}
 
-			if (memcmp(shaBuf, _kip_ids[currKipIdx].hash, sizeof(_kip_ids[0].hash)) != 0)
+			if (memcmp(shaBuf, _kip_id_sets[currKipIdx].hash, sizeof(_kip_id_sets[0].hash)) != 0)
 				continue;
 
 			// Find out which sections are affected by the enabled patches, to know which to decompress.
 			bitsAffected = 0;
-			currPatchset = _kip_ids[currKipIdx].patchset;
+			currPatchset = _kip_id_sets[currKipIdx].patchset;
 			while (currPatchset != NULL && currPatchset->name != NULL)
 			{
 				if (currPatchset->patches != NULL)
@@ -1111,7 +1145,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			DPRINTF("%dms %s KIP1 size %d hash %08X\n", (postDecompTime-preDecompTime) / 1000, ki->kip1->name, (int)ki->size, __builtin_bswap32(shaBuf[0]));
 #endif
 
-			currPatchset = _kip_ids[currKipIdx].patchset;
+			currPatchset = _kip_id_sets[currKipIdx].patchset;
 			bool emummc_patch_selected = false;
 			while (currPatchset != NULL && currPatchset->name != NULL)
 			{
@@ -1180,7 +1214,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				}
 				currPatchset++;
 			}
-			if (emummc_patch_selected && !strncmp(_kip_ids[currKipIdx].name, "FS", 2))
+			if (emummc_patch_selected && !strncmp(_kip_id_sets[currKipIdx].name, "FS", 2))
 			{
 				emummc_patch_selected = false;
 				emu_cfg.fs_ver = currKipIdx;
@@ -1215,7 +1249,6 @@ static const u8 mkey_keyseed_8xx[][0x10] =
 
 static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)
 {
-	
 	// Decrypt older encrypted mkey.
 	se_aes_crypt_ecb(src_slot, 0, mkey, 0x10, key_seed, 0x10);
 	// Set and unwrap pkg2 key.
@@ -1276,7 +1309,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 				mkey_seeds_idx--;
 				se_aes_key_clear(9);
 				se_aes_key_set(9, tmp_mkey, 0x10);
-					
+
 				decr_slot = 9; // Temp key.
 
 				// Check if we tried last key for that pkg2 version.
