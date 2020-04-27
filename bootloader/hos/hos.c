@@ -509,6 +509,11 @@ int hos_launch(ini_sec_t *cfg)
 		ctxt.atmosphere = true; // Set atmosphere patching in case of Stock emuMMC and no fss0.
 		config_kip1patch(&ctxt, "emummc");
 	}
+	else if (!emu_cfg.enabled && ctxt.emummc_forced)
+	{
+		_hos_crit_error("emuMMC is forced but not enabled!");
+		return 0;
+	}
 
 	// Check if fuses lower than 4.0.0 or 9.0.0 and if yes apply NO Gamecard patch.
 	// Additionally check if running emuMMC and disable GC if v3 fuses are burnt and HOS is <= 8.1.0.

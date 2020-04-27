@@ -181,6 +181,16 @@ static int _config_stock(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_emummc_forced(launch_ctxt_t *ctxt, const char *value)
+{
+	if (*value == '1')
+	{
+		DPRINTF("Forced emuMMC\n");
+		ctxt->emummc_forced = true;
+	}
+	return 1;
+}
+
 static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
 {
 	if (*value == '1')
@@ -241,9 +251,10 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "debugmode", _config_debugmode },
 	{ "stock", _config_stock },
 	{ "atmosphere", _config_atmosphere },
+	{ "fss0", _config_fss },
+	{ "emummcforce", _config_emummc_forced },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },
 	{ "userpmu", _config_exo_user_pmu_access },
-	{ "fss0", _config_fss },
 	{ NULL, NULL },
 };
 
