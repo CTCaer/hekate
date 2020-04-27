@@ -280,7 +280,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 
 		f_open(&fp, path, FA_WRITE | FA_CREATE_ALWAYS);
 		f_write(&fp, (u8 *)reloc->start, reloc->end - reloc->start, NULL);
-		
+
 		// Write needed tag in case injected ipl uses old versioning.
 		f_write(&fp, "ICTC49", 6, NULL);
 
@@ -326,7 +326,7 @@ int launch_payload(char *path, bool update)
 		if (f_read(&fp, buf, size, NULL))
 		{
 			f_close(&fp);
-			
+
 			goto out;
 		}
 
@@ -476,6 +476,7 @@ void ini_list_launcher()
 {
 	u8 max_entries = 61;
 	char *payload_path = NULL;
+	char *emummc_path = NULL;
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_list_sections);
@@ -539,6 +540,20 @@ void ini_list_launcher()
 
 				payload_path = ini_check_payload_section(cfg_sec);
 
+				if (cfg_sec)
+				{
+					LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+					{
+						if (!strcmp("emummc_force_disable", kv->key))
+							h_cfg.emummc_force_disable = atoi(kv->val);
+						else if (!strcmp("emupath", kv->key))
+							emummc_path = kv->val;
+					}
+				}
+
+				if (emummc_path)
+					emummc_set_path(emummc_path);
+
 				if (cfg_sec && !payload_path)
 					check_sept(cfg_sec);
 
@@ -569,6 +584,13 @@ void ini_list_launcher()
 	else if (!hos_launch(cfg_sec))
 	{
 		EPRINTF("Failed to launch firmware.");
+
+		if (emummc_path)
+		{
+			sd_mount();
+			emummc_load_cfg();
+		}
+
 		btn_wait();
 	}
 
@@ -581,6 +603,7 @@ void launch_firmware()
 {
 	u8 max_entries = 61;
 	char *payload_path = NULL;
+	char *emummc_path = NULL;
 
 	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
@@ -663,8 +686,13 @@ void launch_firmware()
 				{
 					if (!strcmp("emummc_force_disable", kv->key))
 						h_cfg.emummc_force_disable = atoi(kv->val);
+					if (!strcmp("emupath", kv->key))
+						emummc_path = kv->val;
 				}
 			}
+
+			if (emummc_path)
+				emummc_set_path(emummc_path);
 
 			if (cfg_sec && !payload_path)
 				check_sept(cfg_sec);
@@ -699,7 +727,14 @@ void launch_firmware()
 		free(payload_path);
 	}
 	else if (!hos_launch(cfg_sec))
+	{
 		EPRINTF("Failed to launch firmware.");
+		if (emummc_path)
+		{
+			sd_mount();
+			emummc_load_cfg();
+		}
+	}
 
 out:
 	sd_unmount();
@@ -771,7 +806,7 @@ void nyx_load_run()
 	(*nyx_ptr)();
 }
 
-static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry)
+static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry, char **emummc_path)
 {
 	ini_sec_t *cfg_sec = NULL;
 
@@ -788,10 +823,13 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomE
 			*bootlogoCustomEntry = kv->val;
 		if (!strcmp("emummc_force_disable", kv->key))
 			h_cfg.emummc_force_disable = atoi(kv->val);
+		if (!strcmp("emupath", kv->key))
+			*emummc_path = kv->val;
 	}
 	if (!cfg_sec)
 	{
 		*bootlogoCustomEntry = NULL;
+		*emummc_path = NULL;
 		h_cfg.emummc_force_disable = false;
 	}
 
@@ -812,6 +850,7 @@ static void _auto_launch_firmware()
 
 	u8 *BOOTLOGO = NULL;
 	char *payload_path = NULL;
+	char *emummc_path = NULL;
 	u32 btn = 0;
 	bool boot_from_id = (b_cfg.boot_cfg & BOOT_CFG_FROM_ID) && (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN);
 	if (boot_from_id)
@@ -902,7 +941,7 @@ static void _auto_launch_firmware()
 					}
 
 					if (boot_from_id)
-						cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry);				
+						cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
 					else if (h_cfg.autoboot == boot_entry_id && configEntry)
 					{
 						cfg_sec = ini_sec;
@@ -910,8 +949,10 @@ static void _auto_launch_firmware()
 						{
 							if (!strcmp("logopath", kv->key))
 								bootlogoCustomEntry = kv->val;
-							if (!strcmp("emummc_force_disable", kv->key))
+							else if (!strcmp("emummc_force_disable", kv->key))
 								h_cfg.emummc_force_disable = atoi(kv->val);
+							else if (!strcmp("emupath", kv->key))
+								emummc_path = kv->val;
 						}
 					}
 					if (cfg_sec)
@@ -942,7 +983,7 @@ static void _auto_launch_firmware()
 								continue;
 
 							if (boot_from_id)
-								cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry);
+								cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
 							else if (h_cfg.autoboot == boot_entry_id)
 							{
 								h_cfg.emummc_force_disable = false;
@@ -951,8 +992,10 @@ static void _auto_launch_firmware()
 								{
 									if (!strcmp("logopath", kv->key))
 										bootlogoCustomEntry = kv->val;
-									if (!strcmp("emummc_force_disable", kv->key))
+									else if (!strcmp("emummc_force_disable", kv->key))
 										h_cfg.emummc_force_disable = atoi(kv->val);
+									else if (!strcmp("emupath", kv->key))
+										emummc_path = kv->val;
 								}
 							}
 							if (cfg_sec)
@@ -1064,8 +1107,18 @@ skip_list:
 	}
 	else
 	{
+		if (b_cfg.boot_cfg & BOOT_CFG_TO_EMUMMC)
+			emummc_set_path(b_cfg.emummc_path);
+		else if (emummc_path)
+			emummc_set_path(emummc_path);
 		check_sept(cfg_sec);
 		hos_launch(cfg_sec);
+
+		if (emummc_path || b_cfg.boot_cfg & BOOT_CFG_TO_EMUMMC)
+		{
+			sd_mount();
+			emummc_load_cfg();
+		}
 
 		EPRINTF("\nFailed to launch HOS!");
 		gfx_printf("\nPress any key...\n");
@@ -1077,9 +1130,9 @@ out:
 	gfx_con.mute = false;
 
 	// Clear boot reasons from binary.
-	if (b_cfg.boot_cfg & BOOT_CFG_FROM_ID)
+	if (b_cfg.boot_cfg & (BOOT_CFG_FROM_ID | BOOT_CFG_TO_EMUMMC))
 		memset(b_cfg.xt_str, 0, sizeof(b_cfg.xt_str));
-	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID);
+	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID | BOOT_CFG_TO_EMUMMC);
 	h_cfg.emummc_force_disable = false;
 
 	nyx_load_run();
@@ -1254,7 +1307,7 @@ static void _check_low_battery()
 	free(battery_icon);
 	free(charging_icon);
 	free(no_charging_icon);
-	
+
 	// Re enable Low Battery Monitor shutdown.
 	max77620_low_battery_monitor_config(true);
 }

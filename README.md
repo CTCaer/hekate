@@ -75,6 +75,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | fullsvcperm=1          | Disables SVC verification (full services permission)       |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1           | Enables Atmosphère patching.                               |
+| emupath={SD folder}    | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
 | nouserexceptions=1     | Disables usermode exception handlers when paired with Exosphère. |
 | userpmu=1              | Allows user access to PMU when paired with Exosphère.      |
 | emummc_force_disable=1 | Disabled emuMMC if it's enabled.                           |
@@ -97,14 +98,15 @@ This is in case the kips are incompatible between them. If compatible, you can o
 
 hekate has a boot storage in the binary that helps it configure it outside of BPMP enviroment:
 
-| Offset / Name        | Description                                                       |
-| -------------------- | ----------------------------------------------------------------- |
-| '0x94' boot_cfg      | bit0: Force AutoBoot, bit1: Show launch log, bit2: Boot from ID, bit7: sept run. |
-| '0x95' autoboot      | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
-| '0x96' autoboot_list | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
-| '0x97' extra_cfg     | bit7: Force Nyx to run `Dump pkg1/2`.                             |
-| '0x98' id[8]         | When Boot from ID is set, it will search all inis automatically and find the boot entry with that id and boot it. Must be NULL terminated. |
-| '0x98' xt_str[128]   | Depends on the set cfg bits.                                      |
+| Offset / Name           | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: Boot from ID, bit3: `Boot to emuMMC`, bit7: `sept run`. |
+| '0x95' autoboot         | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
+| '0x96' autoboot_list    | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
+| '0x97' extra_cfg        | bit7: Force Nyx to run `Dump pkg1/2`.                             |
+| '0x98' xt_str[128]      | Depends on the set cfg bits.                                      |
+| '0x98' id[8]            | When `Boot from ID` is set, it will search all inis automatically and find the boot entry with that id and boot it. Must be NULL terminated. |
+| '0xA0' emummc_path[120] | When `Boot to emuMMC` is set, it will override the current emuMMC (boot entry or emummc.ini). Must be NULL terminated. |
 
 
 If the main .ini is not found, it is created on the first hekate boot.

@@ -55,6 +55,7 @@ typedef int bool;
 #define BOOT_CFG_AUTOBOOT_EN (1 << 0)
 #define BOOT_CFG_FROM_LAUNCH (1 << 1)
 #define BOOT_CFG_FROM_ID     (1 << 2)
+#define BOOT_CFG_TO_EMUMMC   (1 << 3)
 #define BOOT_CFG_SEPT_RUN    (1 << 7)
 
 #define EXTRA_CFG_KEYS    (1 << 0)
@@ -75,6 +76,7 @@ typedef struct __attribute__((__packed__)) _boot_cfg_t
 		struct
 		{
 			char id[8];
+			char emummc_path[0x78];
 		};
 		u8 xt_str[0x80];
 	};

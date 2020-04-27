@@ -38,7 +38,6 @@ extern void sd_unmount();
 
 void emummc_load_cfg()
 {
-	sd_mount();
 	emu_cfg.enabled = 0;
 	emu_cfg.path = NULL;
 	emu_cfg.nintendo_path = NULL;
@@ -47,7 +46,8 @@ void emummc_load_cfg()
 	emu_cfg.file_based_part_size = 0;
 	emu_cfg.active_part = 0;
 	emu_cfg.fs_ver = 0;
-	emu_cfg.emummc_file_based_path = (char *)malloc(0x80);
+	if (!emu_cfg.emummc_file_based_path)
+		emu_cfg.emummc_file_based_path = (char *)malloc(0x80);
 
 	LIST_INIT(ini_sections);
 	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
@@ -75,6 +75,43 @@ void emummc_load_cfg()
 				break;
 			}
 		}
+	}
+}
+
+void emummc_set_path(char *path)
+{
+	FIL fp;
+	bool found = false;
+
+	strcpy(emu_cfg.emummc_file_based_path, path);
+	strcat(emu_cfg.emummc_file_based_path, "/raw_based");
+
+	if (!f_open(&fp, emu_cfg.emummc_file_based_path, FA_READ))
+	{
+		if (!f_read(&fp, &emu_cfg.sector, 4, NULL))
+			if (emu_cfg.sector)
+				found = true;
+	}
+	else
+	{
+		strcpy(emu_cfg.emummc_file_based_path, path);
+		strcat(emu_cfg.emummc_file_based_path, "/file_based");
+
+		if (!f_stat(emu_cfg.emummc_file_based_path, NULL))
+		{
+			emu_cfg.sector = 0;
+			emu_cfg.path = path;
+
+			found = true;
+		}
+	}
+
+	if (found)
+	{
+		emu_cfg.enabled = 1;
+		emu_cfg.id = 0;
+		strcpy(emu_cfg.nintendo_path, path);
+		strcpy(emu_cfg.nintendo_path, "/Nintendo");
 	}
 }
 
