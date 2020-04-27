@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -352,7 +352,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	if (!ctxt->pkg1_id)
 	{
 		_hos_crit_error("Unknown pkg1 version.");
-		EHPRINTFARGS("%sNot yet supported HOS version!", 
+		EHPRINTFARGS("%sNot yet supported HOS version!",
 			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "Is emuMMC corrupt?\nOr " : "");
 		goto out;
 	}
@@ -434,6 +434,37 @@ static void _free_launch_components(launch_ctxt_t *ctxt)
 	free(ctxt->secmon);
 	free(ctxt->kernel);
 	free(ctxt->kip1_patches);
+}
+
+static bool _get_fs_exfat_compatible(link_t *info)
+{
+	u32 fs_idx;
+	u32 fs_ids_cnt;
+	u32 sha_buf[32 / sizeof(u32)];
+	kip1_id_t *kip_ids;
+
+	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
+	{
+		if (strncmp((const char*)ki->kip1->name, "FS", 2))
+			continue;
+
+		if (!se_calc_sha256(sha_buf, ki->kip1, ki->size))
+			break;
+
+		pkg2_get_ids(&kip_ids, &fs_ids_cnt);
+
+		for (fs_idx = 0; fs_idx < fs_ids_cnt; fs_idx++)
+			if (!memcmp(sha_buf, kip_ids[fs_idx].hash, 8))
+				break;
+
+		// Return false if FAT32 only.
+		if (fs_ids_cnt <= fs_idx && !(fs_idx & 1))
+			return false;
+
+		break;
+	}
+
+	return true;
 }
 
 int hos_launch(ini_sec_t *cfg)
@@ -642,6 +673,15 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
+
+	// Check if FS is compatible with exFAT.
+	if (!ctxt.stock && sd_fs.fs_type == FS_EXFAT && !_get_fs_exfat_compatible(&kip1_info))
+	{
+		_hos_crit_error("Your SD Card is exFAT and the installed\nFS only supports FAT32!");
+
+		_free_launch_components(&ctxt);
+		return 0;
+	}
 
 	// Patch kip1s in memory if needed.
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
