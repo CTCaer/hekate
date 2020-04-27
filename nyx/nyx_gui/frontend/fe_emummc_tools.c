@@ -27,6 +27,7 @@
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../sec/se.h"
+#include "../storage/mbr_gpt.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
@@ -596,9 +597,9 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	// Hide the partition.
 	if (active_part == 2)
 	{
-		u8 *mbr = (u8 *)malloc(0x200);
+		mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 		sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-		mbr[MBR_1ST_PART_TYPE_OFF + (0x10 * part_idx)] = 0xE0;
+		mbr->partitions[part_idx].type = 0xE0;
 		sdmmc_storage_write(&sd_storage, 0, 1, mbr);
 		free(mbr);
 	}

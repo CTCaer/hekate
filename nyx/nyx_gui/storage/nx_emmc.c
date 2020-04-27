@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#include "mbr_gpt.h"
 #include "nx_emmc.h"
 #include "../mem/heap.h"
 #include "../utils/list.h"

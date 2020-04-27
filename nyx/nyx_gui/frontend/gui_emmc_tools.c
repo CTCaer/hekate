@@ -29,7 +29,7 @@
 #include "../mem/heap.h"
 #include "../sec/se.h"
 #include "../soc/fuse.h"
-#include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/sprintf.h"
 #include "../utils/util.h"

@@ -21,6 +21,7 @@
 #include "../config/ini.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
+#include "../storage/mbr_gpt.h"
 #include "../storage/sdmmc.h"
 #include "../utils/dirlist.h"
 #include "../utils/list.h"
@@ -33,8 +34,6 @@ extern sdmmc_storage_t sd_storage;
 extern bool sd_mount();
 extern void sd_unmount(bool deinit);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
-
-#define MBR_1ST_PART_TYPE_OFF 0x1C2
 
 static int part_idx;
 static u32 sector_start;
@@ -160,12 +159,11 @@ static void _create_mbox_emummc_raw()
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
 	char *txt_buf = (char *)malloc(0x500);
-	u8 *mbr = (u8 *)malloc(0x200);
+	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 	sd_unmount(false);
-	memcpy(mbr, mbr + 0x1BE, 0x40);
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -173,9 +171,9 @@ static void _create_mbox_emummc_raw()
 
 	for (int i = 1; i < 4; i++)
 	{
-		u32 curr_part_size = *(u32 *)&mbr[0x0C + (0x10 * i)];
-		sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
-		u8 type = mbr[0x04 + (0x10 * i)];
+		u32 curr_part_size = mbr->partitions[i].size_sct;
+		sector_start = mbr->partitions[i].start_sct;
+		u8 type = mbr->partitions[i].type;
 		if ((curr_part_size >= (storage.sec_cnt + 0xC000)) && sector_start && type != 0x83) //! TODO: For now it skips linux partitions.
 		{
 			part_idx = i;
@@ -201,10 +199,10 @@ static void _create_mbox_emummc_raw()
 		"Part 1: Type: %02x, Start: %08x, Size: %08x\n"
 		"Part 2: Type: %02x, Start: %08x, Size: %08x\n"
 		"Part 3: Type: %02x, Start: %08x, Size: %08x\n",
-		mbr[0x04], *(u32 *)&mbr[0x08], *(u32 *)&mbr[0x0C],
-		mbr[0x14], *(u32 *)&mbr[0x18], *(u32 *)&mbr[0x1C],
-		mbr[0x24], *(u32 *)&mbr[0x28], *(u32 *)&mbr[0x2C],
-		mbr[0x34], *(u32 *)&mbr[0x38], *(u32 *)&mbr[0x3C]);
+		mbr->partitions[0].type, mbr->partitions[0].start_sct, mbr->partitions[0].size_sct,
+		mbr->partitions[1].type, mbr->partitions[1].start_sct, mbr->partitions[1].size_sct,
+		mbr->partitions[2].type, mbr->partitions[2].start_sct, mbr->partitions[2].size_sct,
+		mbr->partitions[3].type, mbr->partitions[3].start_sct, mbr->partitions[3].size_sct);
 
 
 	lv_mbox_set_text(mbox, txt_buf);
@@ -272,9 +270,9 @@ static lv_res_t _create_mbox_emummc_create(lv_obj_t *btn)
 
 static void _change_raw_emummc_part_type()
 {
-	u8 *mbr = (u8 *)malloc(0x200);
+	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-	mbr[MBR_1ST_PART_TYPE_OFF + (0x10 * part_idx)] = 0xE0;
+	mbr->partitions[mbr_ctx.part_idx].type = 0xE0;
 	sdmmc_storage_write(&sd_storage, 0, 1, mbr);
 	free(mbr);
 }
@@ -513,7 +511,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
 	char *txt_buf = (char *)malloc(0x500);
-	u8 *mbr = (u8 *)malloc(0x200);
+	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 	u8 *efi_part = (u8 *)malloc(0x200);
 
 	sd_mount();
@@ -534,7 +532,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 
 	for (int i = 1; i < 4; i++)
 	{
-		sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
+		sector_start = mbr->partitions[i].start_sct;
 		if (sector_start)
 		{
 			sdmmc_storage_read(&sd_storage, sector_start + 0xC001, 1, efi_part);
@@ -747,19 +745,18 @@ static lv_res_t _create_change_emummc_window()
 	emummc_img = malloc(sizeof(emummc_images_t));
 	emummc_img->win = win;
 
-	u8 *mbr = (u8 *)malloc(0x200);
+	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 	char *path = malloc(256);
 
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
-	memcpy(mbr, mbr + 0x1BE, 0x40);
 	memset(emummc_img->part_path, 0, 3 * 128);
 
 	for (int i = 1; i < 4; i++)
 	{
-		emummc_img->part_sector[i - 1] = *(u32 *)&mbr[0x08 + (0x10 * i)];
-		emummc_img->part_end[i - 1] = emummc_img->part_sector[i - 1] + *(u32 *)&mbr[0x0C + (0x10 * i)] - 1;
-		emummc_img->part_type[i - 1] = mbr[0x04 + (0x10 * i)];
+		emummc_img->part_sector[i - 1] = mbr->partitions[i].start_sct;
+		emummc_img->part_end[i - 1] = emummc_img->part_sector[i - 1] + mbr->partitions[i].size_sct - 1;
+		emummc_img->part_type[i - 1] = mbr->partitions[i].type;
 	}
 	free(mbr);
 

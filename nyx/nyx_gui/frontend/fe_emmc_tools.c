@@ -30,6 +30,7 @@
 #include "../mem/heap.h"
 #include "../sec/se.h"
 #include "../sec/se_t210.h"
+#include "../storage/mbr_gpt.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
@@ -53,19 +54,17 @@ extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_st
 static void get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_idx, bool backup)
 {
 	sd_mount();
-	u8 *mbr = (u8 *)malloc(0x200);
+	mbr_t *mbr = (mbr_t *)calloc(sizeof(mbr_t), 1);
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-
-	memcpy(mbr, mbr + 0x1BE, 0x40);
 
 	*part_idx = 0;
 	int i = 0;
 	u32 curr_part_size = 0;
 	for (i = 1; i < 4; i++)
 	{
-		curr_part_size = *(u32 *)&mbr[0x0C + (0x10 * i)];
-		*sector_start = *(u32 *)&mbr[0x08 + (0x10 * i)];
-		u8 type = mbr[0x04 + (0x10 * i)];
+		curr_part_size = mbr->partitions[i].size_sct;
+		*sector_start = mbr->partitions[i].start_sct;
+		u8 type = mbr->partitions[i].type;
 		if ((curr_part_size >= *sector_size) && *sector_start && type != 0x83 && (!backup || type == 0xE0))
 			break;
 	}
