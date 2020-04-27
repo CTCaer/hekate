@@ -28,9 +28,11 @@
 #define VIC_BASE 0x54340000
 #define TSEC_BASE 0x54500000
 #define SOR1_BASE 0x54580000
+#define ICTLR_BASE 0x60004000
 #define TMR_BASE 0x60005000
 #define CLOCK_BASE 0x60006000
 #define FLOW_CTLR_BASE 0x60007000
+#define AHBDMA_BASE 0x60008000
 #define SYSREG_BASE 0x6000C000
 #define SB_BASE (SYSREG_BASE + 0x200)
 #define GPIO_BASE 0x6000D000
@@ -44,6 +46,7 @@
 #define GPIO_8_BASE (GPIO_BASE + 0x700)
 #define EXCP_VEC_BASE 0x6000F000
 #define IPATCH_BASE 0x6001DC00
+#define APBDMA_BASE 0x60020000
 #define APB_MISC_BASE 0x70000000
 #define PINMUX_AUX_BASE 0x70003000
 #define UART_BASE 0x70006000
@@ -56,10 +59,16 @@
 #define SE_BASE 0x70012000
 #define MC_BASE 0x70019000
 #define EMC_BASE 0x7001B000
+#define EMC0_BASE 0x7001E000
+#define EMC1_BASE 0x7001F000
 #define MIPI_CAL_BASE 0x700E3000
 #define CL_DVFS_BASE 0x70110000
 #define I2S_BASE 0x702D1000
+#define ADMA_BASE 0x702E2000
 #define TZRAM_BASE 0x7C010000
+#define USB_BASE 0x7D000000
+#define USB_OTG_BASE USB_BASE
+#define USB1_BASE 0x7D004000
 
 #define _REG(base, off) *(vu32 *)((base) + (off))
 
@@ -70,10 +79,12 @@
 #define VIC(off) _REG(VIC_BASE, off)
 #define TSEC(off) _REG(TSEC_BASE, off)
 #define SOR1(off) _REG(SOR1_BASE, off)
+#define ICTLR(cidx, off) _REG(ICTLR_BASE + (0x100 * cidx), off)
 #define TMR(off) _REG(TMR_BASE, off)
 #define CLOCK(off) _REG(CLOCK_BASE, off)
 #define FLOW_CTLR(off) _REG(FLOW_CTLR_BASE, off)
 #define SYSREG(off) _REG(SYSREG_BASE, off)
+#define AHB_GIZMO(off) _REG(SYSREG_BASE, off)
 #define SB(off) _REG(SB_BASE, off)
 #define GPIO(off) _REG(GPIO_BASE, off)
 #define GPIO_1(off) _REG(GPIO_1_BASE, off)
@@ -96,9 +107,14 @@
 #define SE(off) _REG(SE_BASE, off)
 #define MC(off) _REG(MC_BASE, off)
 #define EMC(off) _REG(EMC_BASE, off)
+#define EMC_CH0(off) _REG(EMC0_BASE, off)
+#define EMC_CH1(off) _REG(EMC1_BASE, off)
 #define MIPI_CAL(off) _REG(MIPI_CAL_BASE, off)
-#define I2S(off) _REG(I2S_BASE, off)
 #define CL_DVFS(off) _REG(CL_DVFS_BASE, off)
+#define I2S(off) _REG(I2S_BASE, off)
+#define ADMA(off) _REG(ADMA_BASE, off)
+#define USB(off) _REG(USB_BASE, off)
+#define USB1(off) _REG(USB1_BASE, off)
 #define TEST_REG(off) _REG(0x0, off)
 
 /* HOST1X registers. */
@@ -116,13 +132,40 @@
 #define EVP_COP_RSVD_VECTOR 0x214
 #define EVP_COP_IRQ_VECTOR 0x218
 #define EVP_COP_FIQ_VECTOR 0x21C
+#define EVP_COP_IRQ_STS 0x220
+
+/*! Primary Interrupt Controller registers. */
+#define PRI_ICTLR_FIR 0x14
+#define PRI_ICTLR_FIR_SET 0x18
+#define PRI_ICTLR_FIR_CLR 0x1C
+#define PRI_ICTLR_CPU_IER 0x20
+#define PRI_ICTLR_CPU_IER_SET 0x24
+#define PRI_ICTLR_CPU_IER_CLR 0x28
+#define PRI_ICTLR_CPU_IEP_CLASS 0x2C
+#define PRI_ICTLR_COP_IER 0x30
+#define PRI_ICTLR_COP_IER_SET 0x34
+#define PRI_ICTLR_COP_IER_CLR 0x38
+#define PRI_ICTLR_COP_IEP_CLASS 0x3C
+
+/*! AHB Gizmo registers. */
+#define AHB_ARBITRATION_PRIORITY_CTRL 0x8
+#define  ARBITRATION_PRIORITY_CTRL_ENB_FAST_REARBITRATE (1 << 6)
+#define AHB_GIZMO_AHB_MEM 0x10
+#define  AHB_MEM_ENB_FAST_REARBITRATE (1 << 2)
+#define AHB_GIZMO_USB 0x20
+#define  AHB_GIZMO_USB_IMMEDIATE (1 << 18)
+#define AHB_AHB_MEM_PREFETCH_CFG1 0xF0
+#define  MEM_PREFETCH_ENABLE (1 << 31)
+#define  MEM_PREFETCH_AHB_MST_USB 6
 
 /*! Misc registers. */
 #define APB_MISC_PP_STRAPPING_OPT_A 0x08
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
 #define APB_MISC_GP_HIDREV 0x804
+#define APB_MISC_GP_AUD_MCLK_CFGPADCTRL 0x8F4
 #define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL 0xA34
 #define APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL 0xA98
+#define APB_MISC_GP_EMMC2_PAD_CFGPADCTRL 0xA9C
 #define APB_MISC_GP_EMMC4_PAD_CFGPADCTRL 0xAB4
 #define APB_MISC_GP_EMMC4_PAD_PUPD_CFGPADCTRL 0xABC
 #define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64
@@ -170,9 +213,14 @@
 /*! TMR registers. */
 #define TIMERUS_CNTR_1US          (0x10 + 0x0)
 #define TIMERUS_USEC_CFG          (0x10 + 0x4)
+#define TIMER_TMR8_TMR_PTV        0x78
 #define TIMER_TMR9_TMR_PTV        0x80
-#define  TIMER_EN     (1 << 31)
-#define  TIMER_PER_EN (1 << 30)
+#define  TIMER_EN          (1 << 31)
+#define  TIMER_PER_EN      (1 << 30)
+#define TIMER_TMR8_TMR_PCR        0x7C
+#define TIMER_TMR9_TMR_PCR        0x8C
+#define  TIMER_INTR_CLR    (1 << 30)
+
 #define TIMER_WDT4_CONFIG         (0x100 + 0x80)
 #define  TIMER_SRC(TMR) (TMR & 0xF)
 #define  TIMER_PER(PER) ((PER & 0xFF) << 4)
@@ -210,13 +258,15 @@
 
 /*! Flow controller registers. */
 #define FLOW_CTLR_HALT_COP_EVENTS  0x4
-#define  HALT_COP_SEC        (1 << 23)
-#define  HALT_COP_MSEC       (1 << 24)
-#define  HALT_COP_USEC       (1 << 25)
-#define  HALT_COP_JTAG       (1 << 28)
-#define  HALT_COP_WAIT_EVENT (1 << 30)
-#define  HALT_COP_WAIT_IRQ   (1 << 31)
-#define  HALT_COP_MAX_CNT    0xFF
+#define  HALT_COP_GIC_IRQ        (1 << 9)
+#define  HALT_COP_LIC_IRQ        (1 << 11)
+#define  HALT_COP_SEC            (1 << 23)
+#define  HALT_COP_MSEC           (1 << 24)
+#define  HALT_COP_USEC           (1 << 25)
+#define  HALT_COP_JTAG           (1 << 28)
+#define  HALT_COP_WAIT_EVENT     (1 << 30)
+#define  HALT_COP_STOP_UNTIL_IRQ (1 << 31)
+#define  HALT_COP_MAX_CNT        0xFF
 #define FLOW_CTLR_HALT_CPU0_EVENTS 0x0
 #define FLOW_CTLR_HALT_CPU1_EVENTS 0x14
 #define FLOW_CTLR_HALT_CPU2_EVENTS 0x1C
@@ -227,5 +277,10 @@
 #define FLOW_CTLR_CPU3_CSR 0x28
 #define FLOW_CTLR_RAM_REPAIR 0x40
 #define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
+
+/*! USB controller registers. */
+#define USB1_UTMIP_BAT_CHRG_CFG0 0x830
+#define  BAT_CHRG_CFG0_OP_SRC_EN    (1 << 3)
+#define  BAT_CHRG_CFG0_PWRDOWN_CHRG (1 << 0)
 
 #endif

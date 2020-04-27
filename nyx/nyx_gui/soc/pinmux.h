@@ -62,6 +62,7 @@
 #define PINMUX_AUX_LCD_BL_PWM      0x1FC
 #define PINMUX_AUX_LCD_BL_EN       0x200
 #define PINMUX_AUX_LCD_RST         0x204
+#define PINMUX_AUX_LCD_GPIO1       0x208
 #define PINMUX_AUX_LCD_GPIO2       0x20C
 #define PINMUX_AUX_TOUCH_INT       0x220
 #define PINMUX_AUX_MOTION_INT      0x224
