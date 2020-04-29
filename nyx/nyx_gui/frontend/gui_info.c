@@ -551,7 +551,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
@@ -651,25 +651,31 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 		LIST_INIT(gpt);
 		nx_emmc_gpt_parse(&gpt, &storage);
-		int gpp_idx = 0;
+
+		u32 idx = 0;
 		LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 		{
-			if (gpp_idx < 2)
+			if (idx > 10)
 			{
-				s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#", gpp_idx++, part->name);
-				if (gpp_idx < 2)
-					s_printf(txt_buf + strlen(txt_buf), " ");
-				s_printf(txt_buf + strlen(txt_buf), " Size: %d MiB (Sect: 0x%4X), Range: %06X-%06X\n",
+				s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Table truncated!#");
+				break;
+			}
+
+			if (part->index < 2)
+			{
+				s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s# ", part->index, part->name);
+				s_printf(txt_buf + strlen(txt_buf), " Size: %d MiB (Sect: 0x%X), Start: %06X\n",
 					(part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
-					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
+					part->lba_end - part->lba_start + 1, part->lba_start);
 			}
 			else
 			{
-				s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#\n    Size: %6d MiB (Sect: 0x%07X), Range: %07X-%07X\n",
-					gpp_idx++, part->name, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
-					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
+				s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#\n    Size: %7d MiB (Sect: 0x%07X), Start: %07X\n",
+					part->index, part->name, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
+					part->lba_end - part->lba_start + 1, part->lba_start);
 			}
 
+			idx++;
 		}
 		nx_emmc_gpt_free(&gpt);
 
