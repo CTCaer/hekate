@@ -1155,7 +1155,7 @@ static void _patched_rcm_protection()
 		return;
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	u8 corr_mod_byte0;
 	int i, sect = 0;

@@ -51,7 +51,7 @@ bool get_autorcm_status(bool change)
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
 	if ((fuse_read_odm(4) & 3) != 3)
@@ -359,7 +359,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		goto out_free;
 	}
 
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	// Read package1.
 	char *build_date = malloc(32);
@@ -477,7 +477,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	}
 
 	// Dump package2.1.
-	sdmmc_storage_set_mmc_partition(&storage, 0);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &storage);

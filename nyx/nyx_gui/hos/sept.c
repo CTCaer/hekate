@@ -93,7 +93,7 @@ void check_sept()
 		EPRINTF("Failed to init eMMC.");
 		goto out_free;
 	}
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	// Read package1.
 	char *build_date = malloc(32);

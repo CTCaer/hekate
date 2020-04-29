@@ -263,7 +263,7 @@ void print_mmc_info()
 			gfx_put_small_sep();
 			gfx_printf("%kGPP (eMMC USER) partition table:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 
-			sdmmc_storage_set_mmc_partition(&storage, 0);
+			sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 			LIST_INIT(gpt);
 			nx_emmc_gpt_parse(&gpt, &storage);
 			int gpp_idx = 0;
@@ -350,7 +350,7 @@ void print_tsec_key()
 
 	// Read package1.
 	u8 *pkg1 = (u8 *)malloc(0x40000);
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	sdmmc_storage_end(&storage);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);

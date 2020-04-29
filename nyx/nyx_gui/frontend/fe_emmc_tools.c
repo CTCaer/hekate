@@ -791,7 +791,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 	if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER) || (dumpType & PART_RAW))
 	{
-		sdmmc_storage_set_mmc_partition(&storage, 0);
+		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 		if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER))
 		{
@@ -1374,7 +1374,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 		gui->base_path = (char *)malloc(strlen(sdPath) + 1);
 		strcpy(gui->base_path, sdPath);
 
-		sdmmc_storage_set_mmc_partition(&storage, 0);
+		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 		LIST_INIT(gpt);
 		nx_emmc_gpt_parse(&gpt, &storage);

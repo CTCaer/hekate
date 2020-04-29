@@ -74,7 +74,7 @@ void dump_packages12()
 		EPRINTF("Failed to init eMMC.");
 		goto out_free;
 	}
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	// Read package1.
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
@@ -169,7 +169,7 @@ void dump_packages12()
 	}
 
 	// Dump package2.1.
-	sdmmc_storage_set_mmc_partition(&storage, 0);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &storage);
@@ -271,7 +271,7 @@ void _toggle_autorcm(bool enable)
 	}
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	int i, sect = 0;
 	u8 corr_mod_byte0;
@@ -344,7 +344,7 @@ void menu_autorcm()
 	}
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, 1);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
 	if ((fuse_read_odm(4) & 3) != 3)

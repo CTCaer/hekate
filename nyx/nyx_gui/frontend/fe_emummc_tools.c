@@ -443,7 +443,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	}
 
 	// Get GP partition size dynamically.
-	sdmmc_storage_set_mmc_partition(&storage, 0);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 	// Get GP partition size dynamically.
 	const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
@@ -713,7 +713,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 		strcpy(sdPath, gui->base_path);
 	}
 
-	sdmmc_storage_set_mmc_partition(&storage, 0);
+	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 	// Get GP partition size dynamically.
 	const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;

@@ -525,7 +525,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 
 	if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER) || (dumpType & PART_RAW))
 	{
-		sdmmc_storage_set_mmc_partition(&storage, 0);
+		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 		if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER))
 		{
@@ -873,7 +873,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 
 	if (restoreType & PART_GP_ALL)
 	{
-		sdmmc_storage_set_mmc_partition(&storage, 0);
+		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 		LIST_INIT(gpt);
 		nx_emmc_gpt_parse(&gpt, &storage);

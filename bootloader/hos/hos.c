@@ -346,7 +346,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 
 	// Read package1.
 	ctxt->pkg1 = (void *)malloc(0x40000);
-	emummc_storage_set_mmc_partition(&storage, 1);
+	emummc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 	emummc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
@@ -387,7 +387,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 		return NULL;
 	}
 
-	emummc_storage_set_mmc_partition(&storage, 0);
+	emummc_storage_set_mmc_partition(&storage, EMMC_GPP);
 
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);

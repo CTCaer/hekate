@@ -103,7 +103,7 @@ void check_sept(ini_sec_t *cfg_sec)
 		goto out_free;
 	}
 
-	emummc_storage_set_mmc_partition(&storage, 1);
+	emummc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	// Read package1.
 	emummc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);

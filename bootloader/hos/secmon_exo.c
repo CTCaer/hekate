@@ -201,7 +201,7 @@ void config_exosphere(launch_ctxt_t *ctxt)
 		u8 *rsa_mod = (u8 *)malloc(512);
 
 		sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
-		sdmmc_storage_set_mmc_partition(&storage, 1);
+		sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 		sdmmc_storage_read(&storage, 1, 1, rsa_mod);
 		sdmmc_storage_end(&storage);
 
