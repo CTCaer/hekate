@@ -904,6 +904,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 			}
 			if (result != SDMMC_MASKINT_NOERROR)
 			{
+				EPRINTFARGS("%08X!", result);
 				_sdmmc_reset(sdmmc);
 				return 0;
 			}
@@ -924,7 +925,11 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 	bool is_data_present = false;
 	if (req)
 	{
-		_sdmmc_config_dma(sdmmc, &blkcnt, req);
+		if (!_sdmmc_config_dma(sdmmc, &blkcnt, req))
+		{
+			EPRINTF("DMA CFG Failed!");
+			return 0;
+		}
 
 		// Flush cache before starting the transfer.
 		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
@@ -936,9 +941,17 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 
 	_sdmmc_enable_interrupts(sdmmc);
 
-	_sdmmc_send_cmd(sdmmc, cmd, is_data_present);
+	if (!_sdmmc_send_cmd(sdmmc, cmd, is_data_present))
+	{
+		EPRINTFARGS("SDMMC: Wrong Response type %08X!\n", cmd->rsp_type);
+		return 0;
+	}
 
 	int result = _sdmmc_wait_response(sdmmc);
+	if (!result)
+	{
+		EPRINTF("SDMMC: Transfer timeout!");
+	}
 	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
 	if (result)
@@ -946,10 +959,20 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		if (cmd->rsp_type)
 		{
 			sdmmc->expected_rsp_type = cmd->rsp_type;
-			_sdmmc_cache_rsp(sdmmc, sdmmc->rsp, 0x10, cmd->rsp_type);
+			result = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, 0x10, cmd->rsp_type);
+			if (!result)
+			{
+				EPRINTFARGS("SDMMC: Unknown response %08X!", sdmmc->rsp[0]);
+			}
 		}
-		if (req)
-			_sdmmc_update_dma(sdmmc);
+		if (req && result)
+		{
+			result = _sdmmc_update_dma(sdmmc);
+			if (!result)
+			{
+				EPRINTF("SDMMC: DMA Update failed!");
+			}
+		}
 	}
 
 	_sdmmc_mask_interrupts(sdmmc);
@@ -969,7 +992,14 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		}
 
 		if (cmd->check_busy || req)
-			return _sdmmc_wait_card_busy(sdmmc);
+		{
+			result = _sdmmc_wait_card_busy(sdmmc);
+			if (!result)
+			{
+				EPRINTF("SDMMC: Busy timeout!");
+			}
+			return result;
+		}
 	}
 
 	return result;
@@ -1056,12 +1086,11 @@ static void _sdmmc_config_emmc(u32 id)
 		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) |= 1; // Enable Schmitt trigger.
 		break;
 	}
-	
 }
 
 int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int auto_cal_enable)
 {
-	static const u32 trim_values[] = { 2, 8, 3, 8 };
+	const u32 trim_values[] = { 2, 8, 3, 8 };
 
 	if (id > SDMMC_4)
 		return 0;
