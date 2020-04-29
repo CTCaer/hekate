@@ -202,12 +202,34 @@ DPRINTF("readwrite: %08X\n", blkcnt);
 
 int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
 {
-	return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 0);
+	// Ensure that buffer resides in DRAM and it's DMA aligned.
+	if (((u32)buf >= DRAM_START) && !((u32)buf % 8))
+		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 0);
+
+	if (num_sectors > (SDMMC_UP_BUF_SZ / 512))
+		return 0;
+
+	u8 *tmp_buf = (u8 *)SDMMC_UPPER_BUFFER;
+	if (_sdmmc_storage_readwrite(storage, sector, num_sectors, tmp_buf, 0))
+	{
+		memcpy(buf, tmp_buf, 512 * num_sectors);
+		return 1;
+	}
+	return 0;
 }
 
 int sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
 {
-	return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 1);
+	// Ensure that buffer resides in DRAM and it's DMA aligned.
+	if (((u32)buf >= DRAM_START) && !((u32)buf % 8))
+		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 1);
+
+	if (num_sectors > (SDMMC_UP_BUF_SZ / 512))
+		return 0;
+
+	u8 *tmp_buf = (u8 *)SDMMC_UPPER_BUFFER;
+	memcpy(tmp_buf, buf, 512 * num_sectors);
+	return _sdmmc_storage_readwrite(storage, sector, num_sectors, tmp_buf, 1);
 }
 
 /*
