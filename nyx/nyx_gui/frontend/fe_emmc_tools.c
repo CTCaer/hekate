@@ -186,7 +186,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 		u32 pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
 		lv_bar_set_value(gui->bar, pct);
 		lv_bar_set_style(gui->bar, LV_BAR_STYLE_BG, gui->bar_teal_bg);
-		lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, lv_theme_get_current()->bar.indic);
+		lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, gui->bar_teal_ind);
 		s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
 		lv_label_set_text(gui->label_pct, gui->txt_buf);
 		manual_system_maintenance(true);

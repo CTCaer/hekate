@@ -108,17 +108,22 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 	lv_obj_align(label_info, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 10);
 	emmc_tool_gui_ctxt.label_info = label_info;
 
-	static lv_style_t bar_teal_bg, bar_white_ind;
+	static lv_style_t bar_teal_bg, bar_teal_ind, bar_white_ind;
 
 	lv_style_copy(&bar_teal_bg, lv_theme_get_current()->bar.bg);
 	bar_teal_bg.body.main_color = LV_COLOR_HEX(0x005a47);
 	bar_teal_bg.body.grad_color = bar_teal_bg.body.main_color;
+
+	lv_style_copy(&bar_teal_ind, lv_theme_get_current()->bar.indic);
+	bar_teal_ind.body.main_color = LV_COLOR_HEX(0x00FFC9);
+	bar_teal_ind.body.grad_color = bar_teal_ind.body.main_color;
 
 	lv_style_copy(&bar_white_ind, lv_theme_get_current()->bar.indic);
 	bar_white_ind.body.main_color = LV_COLOR_HEX(0xF0F0F0);
 	bar_white_ind.body.grad_color = bar_white_ind.body.main_color;
 
 	emmc_tool_gui_ctxt.bar_teal_bg = &bar_teal_bg;
+	emmc_tool_gui_ctxt.bar_teal_ind = &bar_teal_ind;
 	emmc_tool_gui_ctxt.bar_white_ind = &bar_white_ind;
 
 	lv_obj_t *bar = lv_bar_create(h1, NULL);
