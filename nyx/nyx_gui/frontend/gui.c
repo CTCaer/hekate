@@ -730,7 +730,7 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_obj_t * lbl_credits = lv_label_create(parent, NULL);
 
 	lv_obj_align(lbl_credits, NULL, LV_ALIGN_IN_TOP_LEFT, LV_DPI / 2, LV_DPI / 2);
-	lv_ta_set_style(lbl_credits, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lbl_credits, &monospace_text);
 	lv_label_set_recolor(lbl_credits, true);
 	lv_label_set_static_text(lbl_credits,
 		"hekate     (c) 2018 naehrwert, st4rk\n\n"
@@ -758,7 +758,7 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 
 	lv_obj_t * lbl_octopus = lv_label_create(parent, NULL);
 	lv_obj_align(lbl_octopus, lbl_credits, LV_ALIGN_OUT_RIGHT_TOP, -LV_DPI / 10, 0);
-	lv_ta_set_style(lbl_octopus, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lbl_octopus, &monospace_text);
 	lv_label_set_recolor(lbl_octopus, true);
 
 	lv_label_set_static_text(lbl_octopus,
@@ -794,7 +794,7 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	s_printf(version, "Nyx v%d.%d.%d", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF);
 	lv_obj_t * lbl_ver = lv_label_create(parent, NULL);
 	lv_obj_align(lbl_ver, ctcaer_img, LV_ALIGN_OUT_BOTTOM_RIGHT, -LV_DPI / 20, LV_DPI / 4);
-	lv_ta_set_style(lbl_ver, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lbl_ver, &monospace_text);
 	lv_label_set_text(lbl_ver, version);
 }
 

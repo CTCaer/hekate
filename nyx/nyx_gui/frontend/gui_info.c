@@ -228,7 +228,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
-	lv_ta_set_style(lb_desc, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lb_desc, &monospace_text);
 
 	lv_label_set_static_text(lb_desc,
 		"#00DDFF Detailed Info:#\n"
@@ -386,7 +386,7 @@ static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
-	lv_ta_set_style(lb_desc, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lb_desc, &monospace_text);
 
 	char *txt_buf = (char *)malloc(0x1000);
 	ipatches_txt = txt_buf;
@@ -425,7 +425,7 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
-	lv_ta_set_style(lb_desc, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lb_desc, &monospace_text);
 
 	// Read package1.
 	char *build_date = malloc(32);
@@ -456,7 +456,7 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	lv_obj_set_size(val, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 6));
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
-	lv_ta_set_style(lb_val, LV_TA_STYLE_BG, &monospace_text);
+	lv_label_set_style(lb_val, &monospace_text);
 
 	lv_label_set_text(lb_val, "Please wait...");
 	lv_obj_set_width(lb_val, lv_obj_get_width(val));
@@ -637,7 +637,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 4, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
 
 		lv_obj_t * lb_desc2 = lv_label_create(desc2, lb_desc);
-		lv_ta_set_style(lb_desc2, LV_TA_STYLE_BG, &monospace_text);
+		lv_label_set_style(lb_desc2, &monospace_text);
 
 		u32 boot_size = storage.ext_csd.boot_mult << 17;
 		u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
