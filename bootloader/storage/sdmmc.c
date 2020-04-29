@@ -401,7 +401,7 @@ static int _mmc_storage_enable_HS(sdmmc_storage_t *storage, int check)
 	if (check && !_sdmmc_storage_check_status(storage))
 		return 0;
 
-	if (!sdmmc_setup_clock(storage->sdmmc, 2))
+	if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_MMC_HS52))
 		return 0;
 
 DPRINTF("[MMC] switched to HS\n");
@@ -418,10 +418,10 @@ static int _mmc_storage_enable_HS200(sdmmc_storage_t *storage)
 	if (!_mmc_storage_switch(storage, SDMMC_SWITCH(MMC_SWITCH_MODE_WRITE_BYTE, EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS200)))
 		return 0;
 
-	if (!sdmmc_setup_clock(storage->sdmmc, 3))
+	if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_MMC_HS200))
 		return 0;
 
-	if (!sdmmc_config_tuning(storage->sdmmc, 3, MMC_SEND_TUNING_BLOCK_HS200))
+	if (!sdmmc_config_tuning(storage->sdmmc, SDHCI_TIMING_MMC_HS200, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
 
 DPRINTF("[MMC] switched to HS200\n");
@@ -446,7 +446,7 @@ static int _mmc_storage_enable_HS400(sdmmc_storage_t *storage)
 	if (!_mmc_storage_switch(storage, SDMMC_SWITCH(MMC_SWITCH_MODE_WRITE_BYTE, EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS400)))
 		return 0;
 
-	if (!sdmmc_setup_clock(storage->sdmmc, 4))
+	if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_MMC_HS400))
 		return 0;
 
 DPRINTF("[MMC] switched to HS400\n");
@@ -457,22 +457,20 @@ DPRINTF("[MMC] switched to HS400\n");
 
 static int _mmc_storage_enable_highspeed(sdmmc_storage_t *storage, u32 card_type, u32 type)
 {
-	//TODO: this should be a config item.
-	// --v
-	if (!1 || sdmmc_get_voltage(storage->sdmmc) != SDMMC_POWER_1_8)
+	if (sdmmc_get_voltage(storage->sdmmc) != SDMMC_POWER_1_8)
 		goto out;
 
 	if (sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 &&
-		card_type & EXT_CSD_CARD_TYPE_HS400_1_8V && type == 4)
+		card_type & EXT_CSD_CARD_TYPE_HS400_1_8V && type == SDHCI_TIMING_MMC_HS400)
 		return _mmc_storage_enable_HS400(storage);
 
 	if (sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 ||
 		(sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_4
 		&& card_type & EXT_CSD_CARD_TYPE_HS200_1_8V
-		&& (type == 4 || type == 3)))
+		&& (type == SDHCI_TIMING_MMC_HS400 || type == SDHCI_TIMING_MMC_HS200)))
 		return _mmc_storage_enable_HS200(storage);
 
-out:;
+out:
 	if (card_type & EXT_CSD_CARD_TYPE_HS_52)
 		return _mmc_storage_enable_HS(storage, 1);
 
@@ -487,13 +485,13 @@ static int _mmc_storage_enable_bkops(sdmmc_storage_t *storage)
 	return _sdmmc_storage_check_status(storage);
 }
 
-int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 bus_width, u32 type)
+int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type)
 {
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 	storage->rca = 2; //TODO: this could be a config item.
 
-	if (!sdmmc_init(sdmmc, id, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, 0, 0))
+	if (!sdmmc_init(sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID, SDMMC_AUTO_CAL_DISABLE))
 		return 0;
 DPRINTF("[MMC] after init\n");
 
@@ -520,7 +518,7 @@ DPRINTF("[MMC] set relative addr\n");
 DPRINTF("[MMC] got csd\n");
 	_mmc_storage_parse_csd(storage);
 
-	if (!sdmmc_setup_clock(storage->sdmmc, 1))
+	if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_MMC_LS26))
 		return 0;
 DPRINTF("[MMC] after setup clock\n");
 
@@ -558,7 +556,7 @@ DPRINTF("[MMC] got ext_csd\n");
 	/* When auto BKOPS is enabled the mmc device should be powered all the time until we disable this and check status.
 	   Disable it for now until BKOPS disable added to power down sequence at sdmmc_storage_end().
 	   Additionally this works only when we put the device in idle mode which we don't after enabling it. */
-	if (storage->ext_csd.bkops & 0x1 && !(storage->ext_csd.bkops_en & EXT_CSD_BKOPS_LEVEL_2) && 0)
+	if (0 && storage->ext_csd.bkops & 0x1 && !(storage->ext_csd.bkops_en & EXT_CSD_BKOPS_LEVEL_2))
 	{
 		_mmc_storage_enable_bkops(storage);
 DPRINTF("[MMC] BKOPS enabled\n");
@@ -572,7 +570,7 @@ DPRINTF("[MMC] BKOPS disabled\n");
 		return 0;
 DPRINTF("[MMC] succesfully switched to HS mode\n");
 
-	sdmmc_sd_clock_ctrl(storage->sdmmc, 1);
+	sdmmc_sd_clock_ctrl(storage->sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
 	return 1;
 }
@@ -656,6 +654,7 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 			if (cond & SD_OCR_CCS)
 				storage->has_sector_access = 1;
 
+			// Check if card supports 1.8V signaling.
 			if (cond & SD_ROCR_S18A && supports_low_voltage)
 			{
 				//The low voltage regulator configuration is valid for SDMMC1 only.
@@ -826,7 +825,7 @@ DPRINTF("[SD] power limit raised to 800mA\n");
 DPRINTF("[SD] power limit raised to 600mA\n");
 		break;
 	case SD_SET_CURRENT_LIMIT_400:
-DPRINTF("[SD] power limit raised to 800mA\n");
+DPRINTF("[SD] power limit raised to 400mA\n");
 		break;
 	default:
 	case SD_SET_CURRENT_LIMIT_200:
@@ -839,12 +838,12 @@ int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
 	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, 0, hs_type))
 		return 0;
-DPRINTF("[SD] SD supports switch to (U)HS check\n");
+DPRINTF("[SD] supports switch to (U)HS mode\n");
 
 	u32 type_out = buf[16] & 0xF;
 	if (type_out != hs_type)
 		return 0;
-DPRINTF("[SD] SD supports selected (U)HS mode\n");
+DPRINTF("[SD] supports selected (U)HS mode\n");
 
 	if ((((u16)buf[0] << 8) | buf[1]) < 0x320)
 	{
@@ -870,32 +869,51 @@ int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
 		return 0;
 	//gfx_hexdump(0, (u8 *)buf, 64);
 
+	u8  access_mode = buf[13];
+
 	u32 hs_type = 0;
 	switch (type)
 	{
-	case 11: // SDR104.
+	case SDHCI_TIMING_UHS_SDR104:
+	case SDHCI_TIMING_UHS_SDR82:
 		// Fall through if not supported.
-		if (buf[13] & SD_MODE_UHS_SDR104)
+		if (access_mode & SD_MODE_UHS_SDR104)
 		{
-			type = 11;
 			hs_type = UHS_SDR104_BUS_SPEED;
 DPRINTF("[SD] bus speed set to SDR104\n");
-			storage->csd.busspeed = 104;
+			switch (type)
+			{
+			case SDHCI_TIMING_UHS_SDR104:
+				storage->csd.busspeed = 104;
+				break;
+			case SDHCI_TIMING_UHS_SDR82:
+				storage->csd.busspeed = 82;
+				break;
+			}
 			break;
 		}
-	case 10: // SDR50.
-		if (buf[13] & SD_MODE_UHS_SDR50)
+	case SDHCI_TIMING_UHS_SDR50:
+		if (access_mode & SD_MODE_UHS_SDR50)
 		{
-			type = 10;
+			type = SDHCI_TIMING_UHS_SDR50;
 			hs_type = UHS_SDR50_BUS_SPEED;
 DPRINTF("[SD] bus speed set to SDR50\n");
 			storage->csd.busspeed = 50;
 			break;
 		}
-	case 8: // SDR12.
-		if (!(buf[13] & SD_MODE_UHS_SDR12))
+	case SDHCI_TIMING_UHS_SDR25:
+		if (access_mode & SD_MODE_UHS_SDR25)
+		{
+			type = SDHCI_TIMING_UHS_SDR25;
+			hs_type = UHS_SDR50_BUS_SPEED;
+DPRINTF("[SD] bus speed set to SDR25\n");
+			storage->csd.busspeed = 25;
+			break;
+		}
+	case SDHCI_TIMING_UHS_SDR12:
+		if (!(access_mode & SD_MODE_UHS_SDR12))
 			return 0;
-		type = 8;
+		type = SDHCI_TIMING_UHS_SDR12;
 		hs_type = UHS_SDR12_BUS_SPEED;
 DPRINTF("[SD] bus speed set to SDR12\n");
 		storage->csd.busspeed = 12;
@@ -907,7 +925,7 @@ DPRINTF("[SD] bus speed set to SDR12\n");
 
 	if (!_sd_storage_enable_highspeed(storage, hs_type, buf))
 		return 0;
-DPRINTF("[SD] SD card accepted UHS\n");
+DPRINTF("[SD] card accepted UHS\n");
 	if (!sdmmc_setup_clock(storage->sdmmc, type))
 		return 0;
 DPRINTF("[SD] setup clock\n");
@@ -922,16 +940,19 @@ int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
 	//gfx_hexdump(0, (u8 *)buf, 64);
-	if (!(buf[13] & SD_MODE_HIGH_SPEED))
+
+	u8  access_mode = buf[13];
+
+	if (!(access_mode & SD_MODE_HIGH_SPEED))
 		return 1;
 
-	if (!_sd_storage_enable_highspeed(storage, 1, buf))
+	if (!_sd_storage_enable_highspeed(storage, HIGH_SPEED_BUS_SPEED, buf))
 		return 0;
 
 	if (!_sdmmc_storage_check_status(storage))
 		return 0;
 
-	return sdmmc_setup_clock(storage->sdmmc, 7);
+	return sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_SD_HS25);
 }
 
 static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
@@ -1062,7 +1083,7 @@ void sdmmc_storage_init_wait_sd()
 		msleep(100 - sd_poweroff_time);
 }
 
-int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 bus_width, u32 type)
+int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type)
 {
 	int is_version_1 = 0;
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
@@ -1073,7 +1094,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 id, u32 
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, id, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, 5, 0))
+	if (!sdmmc_init(sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, SDMMC_AUTO_CAL_DISABLE))
 		return 0;
 DPRINTF("[SD] after init\n");
 
@@ -1122,7 +1143,7 @@ DPRINTF("[SD] unknown CSD structure %d\n", storage->csd.structure);
 
 	if (!storage->is_low_voltage)
 	{
-		if (!sdmmc_setup_clock(storage->sdmmc, 6))
+		if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_SD_DS12))
 			return 0;
 DPRINTF("[SD] after setup clock\n");
 	}
@@ -1166,7 +1187,7 @@ DPRINTF("[SD] SD does not support wide bus width\n");
 			return 0;
 DPRINTF("[SD] enabled UHS\n");
 	}
-	else if (type != 6 && (storage->scr.sda_vsn & 0xF) != 0)
+	else if (type != SDHCI_TIMING_SD_DS12 && (storage->scr.sda_vsn & 0xF) != 0)
 	{
 		if (!_sd_storage_enable_hs_high_volt(storage, buf))
 			return 0;
@@ -1175,7 +1196,7 @@ DPRINTF("[SD] enabled HS\n");
 		storage->csd.busspeed = 25;
 	}
 
-	sdmmc_sd_clock_ctrl(sdmmc, 1);
+	sdmmc_sd_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
 	// Parse additional card info from sd status.
 	if (_sd_storage_get_ssr(storage, buf))
@@ -1222,17 +1243,17 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, 14, 0))
+	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_DDR52, SDMMC_AUTO_CAL_DISABLE))
 		return 0;
 DPRINTF("[gc] after init\n");
 
 	usleep(1000 + (10000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
-	if (!sdmmc_config_tuning(storage->sdmmc, 14, MMC_SEND_TUNING_BLOCK_HS200))
+	if (!sdmmc_config_tuning(storage->sdmmc, SDHCI_TIMING_MMC_DDR52, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
 DPRINTF("[gc] after tuning\n");
 
-	sdmmc_sd_clock_ctrl(sdmmc, 1);
+	sdmmc_sd_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
 	return 1;
 }

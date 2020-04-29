@@ -435,7 +435,7 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	// Read package1.
 	char *build_date = malloc(32);
 	u8 *pkg1 = (u8 *)malloc(0x40000);
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
 	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	sdmmc_storage_end(&storage);
@@ -558,7 +558,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 	char *txt_buf = (char *)malloc(0x1000);
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));

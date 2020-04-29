@@ -89,7 +89,7 @@ bool sd_mount()
 
 	if (!sd_init_done)
 	{
-		res = !sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11);
+		res = !sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_BUS_WIDTH_4, SDHCI_TIMING_UHS_SDR82);
 		if (!res)
 			sd_init_done = true;
 	}
@@ -183,7 +183,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 
 	if (!storage)
 	{
-		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 			memcpy(emmcSN, "00000000", 9);
 		else
 		{
@@ -278,7 +278,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 		if (f_read(&fp, buf, size, NULL))
 		{
 			f_close(&fp);
-			
+
 			goto out;
 		}
 

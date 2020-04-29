@@ -84,7 +84,7 @@ bool sd_mount()
 	if (sd_mounted)
 		return true;
 
-	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_1, SDMMC_BUS_WIDTH_4, 11))
+	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_BUS_WIDTH_4, SDHCI_TIMING_UHS_SDR82))
 	{
 		gfx_con.mute = false;
 		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.\nOr that SD reader is properly seated!");
@@ -172,7 +172,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 
 	if (!storage)
 	{
-		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 			memcpy(emmcSN, "00000000", 9);
 		else
 		{
@@ -1151,7 +1151,7 @@ static void _patched_rcm_protection()
 		return;
 
 	// Check if AutoRCM is enabled and protect from a permanent brick.
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 		return;
 
 	u8 *tempbuf = (u8 *)malloc(0x200);

@@ -486,7 +486,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
@@ -837,7 +837,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;

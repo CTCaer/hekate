@@ -209,7 +209,7 @@ static void _create_mbox_emummc_raw()
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	u32 emmc_size_safe = storage.sec_cnt + 0xC000; // eMMC GPP size + BOOT0/1.
 
@@ -588,7 +588,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	bool backup = false;
 	bool emummc = false;

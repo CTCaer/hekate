@@ -354,7 +354,7 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 	if (magic == 0xBAADF00D)
 	{
 		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) |= (1 << 22);
-		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, 5, 0);
+		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, 0);
 		clock_disable_cl_dvfs();
 
 		msleep(200);

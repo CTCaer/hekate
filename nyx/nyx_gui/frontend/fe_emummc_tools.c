@@ -376,7 +376,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
@@ -658,7 +658,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;

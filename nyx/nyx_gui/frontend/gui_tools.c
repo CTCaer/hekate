@@ -48,7 +48,7 @@ bool get_autorcm_status(bool change)
 	sdmmc_t sdmmc;
 	bool enabled = false;
 
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&storage, 1);
@@ -352,7 +352,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 

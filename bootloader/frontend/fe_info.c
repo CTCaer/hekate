@@ -145,7 +145,7 @@ void print_mmc_info()
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4))
+	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
@@ -346,7 +346,7 @@ void print_tsec_key()
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_4, SDMMC_BUS_WIDTH_8, 4);
+	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	// Read package1.
 	u8 *pkg1 = (u8 *)malloc(0x40000);
