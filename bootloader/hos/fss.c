@@ -24,13 +24,13 @@
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../storage/emummc.h"
+#include "../storage/nx_sd.h"
 
 #include "../gfx/gfx.h"
 #define DPRINTF(...)
 
 extern hekate_config h_cfg;
 
-extern void *sd_file_read(const char *path, u32 *fsize);
 extern bool is_ipl_updated(void *buf, char *path, bool force);
 
 #define FSS0_MAGIC 0x30535346

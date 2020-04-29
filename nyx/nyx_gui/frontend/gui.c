@@ -39,6 +39,7 @@
 #include "../soc/bpmp.h"
 #include "../soc/hw_init.h"
 #include "../soc/t210.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../thermal/fan.h"
 #include "../thermal/tmp451.h"
@@ -52,11 +53,6 @@ extern volatile nyx_storage_t *nyx_str;
 extern volatile boot_cfg_t *b_cfg;
 
 extern lv_res_t launch_payload(lv_obj_t *list);
-extern bool get_sd_card_removed();
-extern bool sd_mount();
-extern void sd_unmount(bool deinit);
-void *sd_file_read(const char *path, u32 *fsize);
-int sd_save_to_file(void *buf, u32 size, const char *filename);
 
 static bool disp_init_done = false;
 static bool do_reload = false;
@@ -504,7 +500,7 @@ static void _check_sd_card_removed(void *params)
 	// The following checks if SDMMC_1 is initialized.
 	// If yes and card was removed, shows a message box,
 	// that will reload Nyx, when the card is inserted again.
-	if (!do_reload && get_sd_card_removed())
+	if (!do_reload && sd_get_card_removed())
 	{
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
@@ -525,7 +521,7 @@ static void _check_sd_card_removed(void *params)
 	}
 
 	// If in reload state and card was inserted, reload nyx.
-	if (do_reload && !get_sd_card_removed())
+	if (do_reload && !sd_get_card_removed())
 		_reload_nyx();
 }
 

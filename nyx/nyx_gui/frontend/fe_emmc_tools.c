@@ -32,6 +32,7 @@
 #include "../sec/se_t210.h"
 #include "../storage/mbr_gpt.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/sprintf.h"
@@ -42,13 +43,8 @@
 #define HASH_FILENAME_SZ (OUT_FILENAME_SZ + 11) // 11 == strlen(".sha256sums")
 #define SHA256_SZ 0x20
 
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
-extern FATFS sd_fs;
 extern hekate_config h_cfg;
 
-extern bool sd_mount();
-extern void sd_unmount(bool deinit);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static void get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_idx, bool backup)

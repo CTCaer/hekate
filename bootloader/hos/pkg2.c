@@ -28,14 +28,13 @@
 #include "../mem/heap.h"
 #include "../sec/se.h"
 #include "../storage/emummc.h"
+#include "../storage/nx_sd.h"
 #include "../utils/aarch64_util.h"
 
 #include "../gfx/gfx.h"
 
 extern hekate_config h_cfg;
 extern const u8 package2_keyseed[];
-
-extern void *sd_file_read(const char *path, u32 *fsize);
 
 #ifdef KIP1_PATCH_DEBUG
 	#include "../utils/util.h"

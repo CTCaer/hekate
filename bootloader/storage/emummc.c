@@ -24,17 +24,11 @@
 #include "../gfx/gfx.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
+#include "../storage/nx_sd.h"
 #include "../utils/list.h"
 #include "../utils/types.h"
 
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
-extern FATFS sd_fs;
-
 extern hekate_config h_cfg;
-
-extern bool sd_mount();
-extern void sd_unmount();
 
 void emummc_load_cfg()
 {

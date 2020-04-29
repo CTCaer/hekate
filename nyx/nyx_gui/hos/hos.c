@@ -37,12 +37,11 @@
 #include "../soc/smmu.h"
 #include "../soc/t210.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/util.h"
 
 extern hekate_config h_cfg;
-
-extern void sd_unmount(bool deinit);
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

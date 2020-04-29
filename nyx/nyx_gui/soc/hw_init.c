@@ -26,11 +26,11 @@
 #include "../gfx/di.h"
 #include "../input/touch.h"
 #include "../power/regulator_5v.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../thermal/fan.h"
 #include "../utils/util.h"
 
-extern sdmmc_t sd_sdmmc;
 extern volatile nyx_storage_t *nyx_str;
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)

@@ -23,14 +23,13 @@
 #include "../gfx/tui.h"
 #include "../libs/fatfs/ff.h"
 #include "../soc/t210.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/list.h"
 #include "../utils/util.h"
 
 extern hekate_config h_cfg;
-extern bool sd_mount();
-extern void sd_unmount();
 
 void set_default_configuration()
 {

@@ -22,14 +22,13 @@
 #include "fss.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
+#include "../storage/nx_sd.h"
 #include "../utils/dirlist.h"
 
 #include "../gfx/gfx.h"
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
-
-extern void *sd_file_read(const char *path, u32 *fsize);
 
 static int _config_warmboot(launch_ctxt_t *ctxt, const char *value)
 {

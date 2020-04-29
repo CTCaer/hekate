@@ -28,6 +28,7 @@
 #include "../mem/heap.h"
 #include "../sec/se.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/util.h"
@@ -36,13 +37,8 @@
 #define OUT_FILENAME_SZ 128
 #define SHA256_SZ 0x20
 
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
-extern FATFS sd_fs;
 extern hekate_config h_cfg;
 
-extern bool sd_mount();
-extern void sd_unmount();
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 #pragma GCC push_options

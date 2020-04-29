@@ -19,13 +19,12 @@
 #include "../config/ini.h"
 #include "../gfx/di.h"
 #include "../libs/lvgl/lvgl.h"
+#include "../mem/heap.h"
+#include "../storage/nx_sd.h"
 #include "../utils/list.h"
 #include "../utils/types.h"
 
 extern hekate_config h_cfg;
-
-extern bool sd_mount();
-extern void sd_unmount(bool deinit);
 
 static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;

@@ -29,6 +29,7 @@
 #include "../soc/t210.h"
 #include "../storage/emummc.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/types.h"
@@ -65,14 +66,8 @@ extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
 extern const volatile ipl_ver_meta_t ipl_ver;
 
-extern void *sd_file_read(char *path);
-extern bool sd_mount();
-extern void sd_unmount();
 extern bool is_ipl_updated(void *buf);
 extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
-
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
 
 void check_sept(ini_sec_t *cfg_sec)
 {

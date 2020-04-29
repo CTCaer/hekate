@@ -26,15 +26,13 @@
 #include "../mem/heap.h"
 #include "../soc/fuse.h"
 #include "../storage/emummc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/util.h"
 #include "../utils/types.h"
 
 extern hekate_config h_cfg;
-
-extern bool sd_mount();
-extern int sd_save_to_file(void *buf, u32 size, const char *filename);
 
 enum emuMMC_Type
 {

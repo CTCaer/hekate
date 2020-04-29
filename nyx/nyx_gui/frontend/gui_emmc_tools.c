@@ -37,8 +37,6 @@
 extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
 
-extern bool sd_mount();
-extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 typedef struct _emmc_backup_buttons_t

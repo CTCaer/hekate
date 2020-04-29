@@ -48,6 +48,7 @@
 #include "soc/uart.h"
 #include "storage/emummc.h"
 #include "storage/nx_emmc.h"
+#include "storage/nx_sd.h"
 #include "storage/sdmmc.h"
 #include "utils/btn.h"
 #include "utils/dirlist.h"
@@ -57,12 +58,6 @@
 #include "frontend/fe_emmc_tools.h"
 #include "frontend/fe_tools.h"
 #include "frontend/fe_info.h"
-
-//TODO: ugly.
-sdmmc_t sd_sdmmc;
-sdmmc_storage_t sd_storage;
-FATFS sd_fs;
-static bool sd_mounted;
 
 #ifdef MENU_LOGO_ENABLE
 u8 *Kc_MENU_LOGO;
@@ -78,87 +73,6 @@ const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver
 };
 
 volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
-
-bool sd_mount()
-{
-	if (sd_mounted)
-		return true;
-
-	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_BUS_WIDTH_4, SDHCI_TIMING_UHS_SDR82))
-	{
-		gfx_con.mute = false;
-		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.\nOr that SD reader is properly seated!");
-	}
-	else
-	{
-		int res = 0;
-		res = f_mount(&sd_fs, "", 1);
-		if (res == FR_OK)
-		{
-			sd_mounted = 1;
-			return true;
-		}
-		else
-		{
-			gfx_con.mute = false;
-			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\nMake sure that a FAT partition exists..", res);
-		}
-	}
-
-	return false;
-}
-
-void sd_unmount()
-{
-	if (sd_mounted)
-	{
-		f_mount(NULL, "", 1);
-		sdmmc_storage_end(&sd_storage);
-		sd_mounted = false;
-	}
-}
-
-void *sd_file_read(const char *path, u32 *fsize)
-{
-	FIL fp;
-	if (f_open(&fp, path, FA_READ) != FR_OK)
-		return NULL;
-
-	u32 size = f_size(&fp);
-	if (fsize)
-		*fsize = size;
-
-	void *buf = malloc(size);
-
-	if (f_read(&fp, buf, size, NULL) != FR_OK)
-	{
-		free(buf);
-		f_close(&fp);
-
-		return NULL;
-	}
-
-	f_close(&fp);
-
-	return buf;
-}
-
-int sd_save_to_file(void *buf, u32 size, const char *filename)
-{
-	FIL fp;
-	u32 res = 0;
-	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
-	if (res)
-	{
-		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
-		return res;
-	}
-
-	f_write(&fp, buf, size, NULL);
-	f_close(&fp);
-
-	return 0;
-}
 
 void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
 {

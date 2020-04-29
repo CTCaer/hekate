@@ -27,6 +27,7 @@
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/types.h"
@@ -64,9 +65,6 @@ extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
-extern void *sd_file_read(char *path);
-extern void sd_mount();
-extern void sd_unmount(bool deinit);
 extern bool is_ipl_updated(void *buf);
 extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
 

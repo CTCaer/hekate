@@ -32,6 +32,7 @@
 #include "../power/max7762x.h"
 #include "../sec/se.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../soc/fuse.h"
 #include "../utils/btn.h"
@@ -40,9 +41,6 @@
 extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
 
-extern bool sd_mount();
-extern void sd_unmount();
-extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 #pragma GCC push_options

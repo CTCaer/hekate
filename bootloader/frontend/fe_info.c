@@ -34,16 +34,11 @@
 #include "../soc/t210.h"
 #include "../storage/mmc.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/util.h"
 
-extern sdmmc_storage_t sd_storage;
-extern FATFS sd_fs;
-
-extern bool sd_mount();
-extern void sd_unmount();
-extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 #pragma GCC push_options

@@ -29,6 +29,7 @@
 #include "../sec/se.h"
 #include "../soc/fuse.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/sprintf.h"
 #include "../utils/util.h"
@@ -36,9 +37,6 @@
 extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 
-extern bool sd_mount();
-extern void sd_unmount(bool deinit);
-extern int  sd_save_to_file(void *buf, u32 size, const char *filename);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 bool get_autorcm_status(bool change)

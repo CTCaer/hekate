@@ -29,6 +29,7 @@
 #include "../sec/se.h"
 #include "../storage/mbr_gpt.h"
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
 #include "../utils/sprintf.h"
@@ -37,15 +38,7 @@
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
 
-#define MBR_1ST_PART_TYPE_OFF 0x1C2
-
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
-extern FATFS sd_fs;
 extern hekate_config h_cfg;
-
-extern bool sd_mount();
-extern void sd_unmount(bool deinit);
 
 void load_emummc_cfg(emummc_cfg_t *emu_info)
 {

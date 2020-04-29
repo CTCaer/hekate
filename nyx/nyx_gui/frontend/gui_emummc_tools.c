@@ -22,17 +22,13 @@
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../storage/mbr_gpt.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/dirlist.h"
 #include "../utils/list.h"
 #include "../utils/sprintf.h"
 #include "../utils/types.h"
 
-extern sdmmc_t sd_sdmmc;
-extern sdmmc_storage_t sd_storage;
-
-extern bool sd_mount();
-extern void sd_unmount(bool deinit);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 typedef struct _mbr_ctxt_t

@@ -18,20 +18,17 @@
 #include <string.h>
 
 #include "ianos.h"
-#include "../utils/types.h"
-#include "../libs/elfload/elfload.h"
 #include "../../common/common_module.h"
-#include "../mem/heap.h"
 #include "../gfx/gfx.h"
+#include "../libs/elfload/elfload.h"
+#include "../mem/heap.h"
+#include "../storage/nx_sd.h"
+#include "../utils/types.h"
 
 #define IRAM_LIB_ADDR 0x4002B000
 #define DRAM_LIB_ADDR 0xE0000000
 
 extern heap_t _heap;
-
-extern void *sd_file_read(const char *path, u32 *fsize);
-extern bool sd_mount();
-extern void sd_unmount();
 
 void *elfBuf = NULL;
 void *fileBuf = NULL;

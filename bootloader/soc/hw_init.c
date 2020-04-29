@@ -35,10 +35,10 @@
 #include "../power/max7762x.h"
 #include "../sec/se.h"
 #include "../sec/se_t210.h"
+#include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/util.h"
 
-extern sdmmc_t sd_sdmmc;
 extern boot_cfg_t b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
