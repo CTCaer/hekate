@@ -33,7 +33,7 @@ bool sd_get_card_removed()
 	return false;
 }
 
-u32 sd_mode_get()
+u32 sd_get_mode()
 {
 	return sd_mode;
 }

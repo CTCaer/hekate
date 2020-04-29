@@ -367,6 +367,28 @@ lv_res_t mbox_action(lv_obj_t *btns, const char *txt)
 	return LV_RES_INV;
 }
 
+static void nyx_sd_card_issues(void *param)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	lv_mbox_set_text(mbox,
+		"#FF8000 SD Card Issues Check#\n\n"
+		"#FFDD00 Your SD Card is initialized in 1-bit mode!#\n"
+		"#FFDD00 This might mean detached or broken connector!#\n\n"
+		"You might want to check\n#C7EA46 Console Info# -> #C7EA46 SD Card#");
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+}
+
 void nyx_window_toggle_buttons(lv_obj_t *win, bool disable)
 {
 	lv_win_ext_t * ext = lv_obj_get_ext_attr(win);
@@ -1646,6 +1668,13 @@ void nyx_load_and_run()
 
 	// Create main menu
 	_nyx_main_menu(th);
+
+	// Check if sd card issues.
+	if (sd_get_mode() == SD_1BIT_HS25)
+	{
+		lv_task_t *task_run_sd_errors = lv_task_create(nyx_sd_card_issues, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
+		lv_task_once(task_run_sd_errors);
+	}
 
 	while (true)
 		lv_task_handler();

@@ -34,7 +34,7 @@ sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
 
-u32  sd_mode_get();
+u32  sd_get_mode();
 int  sd_init_retry(bool power_cycle);
 bool sd_initialize(bool power_cycle);
 bool sd_mount();
