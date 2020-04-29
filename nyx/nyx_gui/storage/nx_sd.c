@@ -24,6 +24,29 @@
 
 static bool sd_mounted = false;
 static bool sd_init_done = false;
+static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
+static u32  sd_mode = SD_UHS_SDR104;
+
+void sd_error_count_increment(u8 type)
+{
+	switch (type)
+	{
+	case SD_ERROR_INIT_FAIL:
+		sd_errors[0]++;
+		break;
+	case SD_ERROR_RW_FAIL:
+		sd_errors[1]++;
+		break;
+	case SD_ERROR_RW_RETRY:
+		sd_errors[2]++;
+		break;
+	}
+}
+
+u16 *sd_get_error_count()
+{
+	return sd_errors;
+}
 
 bool sd_get_card_removed()
 {
@@ -93,6 +116,8 @@ bool sd_initialize(bool power_cycle)
 		}
 		else
 		{
+			sd_errors[0]++; // Increment init errors.
+
 			if (sd_mode == SD_INIT_FAIL)
 				break;
 			else

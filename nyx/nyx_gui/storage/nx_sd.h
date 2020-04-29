@@ -31,10 +31,19 @@ enum
 	SD_UHS_SDR104 = 4
 };
 
+enum
+{
+	SD_ERROR_INIT_FAIL = 0,
+	SD_ERROR_RW_FAIL   = 1,
+	SD_ERROR_RW_RETRY  = 2
+};
+
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
 
+void sd_error_count_increment(u8 type);
+u16 *sd_get_error_count();
 bool sd_get_card_removed();
 u32  sd_get_mode();
 int  sd_init_retry(bool power_cycle);

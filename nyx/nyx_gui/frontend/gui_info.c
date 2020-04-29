@@ -819,6 +819,36 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_set_width(lb_val3, lv_obj_get_width(val3));
 		lv_obj_align(val3, desc3, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
+		lv_obj_t *desc4 = lv_cont_create(win, NULL);
+		lv_obj_set_size(desc4, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+
+		lv_obj_t * lb_desc4 = lv_label_create(desc4, lb_desc);
+		lv_label_set_text(lb_desc4, "#D4FF00 Acquiring FAT volume info...#");
+		lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
+
+		lv_label_set_text(lb_desc4,
+			"#00DDFF SDMMC1 Error Counts:#\n"
+			"Init fails:\n"
+			"Read/Write fails:\n"
+			"Read/Write errors:"
+		);
+		lv_obj_set_size(desc4, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+		lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
+		lv_obj_align(desc4, val3, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+
+		lv_obj_t *val4 = lv_cont_create(win, NULL);
+		lv_obj_set_size(val4, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+
+		lv_obj_t * lb_val4 = lv_label_create(val4, lb_desc);
+
+		u16 *sd_errors = sd_get_error_count();
+		s_printf(txt_buf, "\n%d\n%d\n%d", sd_errors[0], sd_errors[1], sd_errors[2]);
+
+		lv_label_set_text(lb_val4, txt_buf);
+
+		lv_obj_set_width(lb_val4, lv_obj_get_width(val4));
+		lv_obj_align(val4, desc4, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+
 		free(txt_buf);
 		sd_unmount(false);
 	}
