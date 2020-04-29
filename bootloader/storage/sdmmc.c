@@ -421,7 +421,7 @@ static int _mmc_storage_enable_HS200(sdmmc_storage_t *storage)
 	if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_MMC_HS200))
 		return 0;
 
-	if (!sdmmc_config_tuning(storage->sdmmc, SDHCI_TIMING_MMC_HS200, MMC_SEND_TUNING_BLOCK_HS200))
+	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_HS200, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
 
 DPRINTF("[MMC] switched to HS200\n");
@@ -435,7 +435,7 @@ static int _mmc_storage_enable_HS400(sdmmc_storage_t *storage)
 	if (!_mmc_storage_enable_HS200(storage))
 		return 0;
 
-	sdmmc_get_venclkctl(storage->sdmmc);
+	sdmmc_set_tap_value(storage->sdmmc);
 
 	if (!_mmc_storage_enable_HS(storage, 0))
 		return 0;
@@ -457,7 +457,7 @@ DPRINTF("[MMC] switched to HS400\n");
 
 static int _mmc_storage_enable_highspeed(sdmmc_storage_t *storage, u32 card_type, u32 type)
 {
-	if (sdmmc_get_voltage(storage->sdmmc) != SDMMC_POWER_1_8)
+	if (sdmmc_get_io_power(storage->sdmmc) != SDMMC_POWER_1_8)
 		goto out;
 
 	if (sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 &&
@@ -570,7 +570,7 @@ DPRINTF("[MMC] BKOPS disabled\n");
 		return 0;
 DPRINTF("[MMC] succesfully switched to HS mode\n");
 
-	sdmmc_sd_clock_ctrl(storage->sdmmc, SDMMC_AUTO_CAL_ENABLE);
+	sdmmc_card_clock_ctrl(storage->sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
 	return 1;
 }
@@ -929,7 +929,7 @@ DPRINTF("[SD] card accepted UHS\n");
 	if (!sdmmc_setup_clock(storage->sdmmc, type))
 		return 0;
 DPRINTF("[SD] setup clock\n");
-	if (!sdmmc_config_tuning(storage->sdmmc, type, MMC_SEND_TUNING_BLOCK))
+	if (!sdmmc_tuning_execute(storage->sdmmc, type, MMC_SEND_TUNING_BLOCK))
 		return 0;
 DPRINTF("[SD] config tuning\n");
 	return _sdmmc_storage_check_status(storage);
@@ -1196,7 +1196,7 @@ DPRINTF("[SD] enabled HS\n");
 		storage->csd.busspeed = 25;
 	}
 
-	sdmmc_sd_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
+	sdmmc_card_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
 	// Parse additional card info from sd status.
 	if (_sd_storage_get_ssr(storage, buf))
@@ -1249,11 +1249,11 @@ DPRINTF("[gc] after init\n");
 
 	usleep(1000 + (10000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
-	if (!sdmmc_config_tuning(storage->sdmmc, SDHCI_TIMING_MMC_DDR52, MMC_SEND_TUNING_BLOCK_HS200))
+	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_DDR52, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
 DPRINTF("[gc] after tuning\n");
 
-	sdmmc_sd_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
+	sdmmc_card_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
 	return 1;
 }

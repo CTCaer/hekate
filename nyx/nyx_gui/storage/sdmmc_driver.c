@@ -40,7 +40,7 @@ static const u32 _sdmmc_bases[4] = {
 	0x700B0600,
 };
 
-int sdmmc_get_voltage(sdmmc_t *sdmmc)
+int sdmmc_get_io_power(sdmmc_t *sdmmc)
 {
 	u32 p = sdmmc->regs->pwrcon;
 	if (!(p & SDHCI_POWER_ON))
@@ -52,7 +52,7 @@ int sdmmc_get_voltage(sdmmc_t *sdmmc)
 	return -1;
 }
 
-static int _sdmmc_set_voltage(sdmmc_t *sdmmc, u32 power)
+static int _sdmmc_set_io_power(sdmmc_t *sdmmc, u32 power)
 {
 	u8 pwr = 0;
 
@@ -105,20 +105,21 @@ void sdmmc_set_bus_width(sdmmc_t *sdmmc, u32 bus_width)
 		sdmmc->regs->hostctl |= SDHCI_CTRL_8BITBUS;
 }
 
-void sdmmc_get_venclkctl(sdmmc_t *sdmmc)
+void sdmmc_set_tap_value(sdmmc_t *sdmmc)
 {
 	sdmmc->venclkctl_tap = sdmmc->regs->venclkctl >> 16;
 	sdmmc->venclkctl_set = 1;
 }
 
-static int _sdmmc_config_ven_ceata_clk(sdmmc_t *sdmmc, u32 id)
+static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 {
 	u32 tap_val = 0;
 
-	if (id == SDHCI_TIMING_MMC_HS400)
+	if (type == SDHCI_TIMING_MMC_HS400)
 		sdmmc->regs->venceatactl = (sdmmc->regs->venceatactl & 0xFFFFC0FF) | 0x2800;
 	sdmmc->regs->ventunctl0 &= ~TEGRA_MMC_VNDR_TUN_CTRL0_TAP_VAL_UPDATED_BY_HW;
-	if (id == SDHCI_TIMING_MMC_HS400)
+
+	if (type == SDHCI_TIMING_MMC_HS400)
 	{
 		if (!sdmmc->venclkctl_set)
 			return 0;
@@ -200,9 +201,9 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 }
 
-static int _sdmmc_wait_type4(sdmmc_t *sdmmc)
+static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 {
-	int res = 1, should_disable_sd_clock = 0;
+	int result = 1, should_disable_sd_clock = 0;
 
 	if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
 	{
@@ -218,7 +219,7 @@ static int _sdmmc_wait_type4(sdmmc_t *sdmmc)
 	{
 		if (get_tmr_ms() > timeout)
 		{
-			res = 0;
+			result = 0;
 			goto out;
 		}
 	}
@@ -228,7 +229,7 @@ static int _sdmmc_wait_type4(sdmmc_t *sdmmc)
 	{
 		if (get_tmr_ms() > timeout)
 		{
-			res = 0;
+			result = 0;
 			goto out;
 		}
 	}
@@ -236,7 +237,7 @@ static int _sdmmc_wait_type4(sdmmc_t *sdmmc)
 out:;
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
-	return res;
+	return result;
 }
 
 static void _sdmmc_reset(sdmmc_t *sdmmc)
@@ -258,7 +259,8 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 	}
 
-	_sdmmc_config_ven_ceata_clk(sdmmc, type);
+	_sdmmc_config_tap_val(sdmmc, type);
+
 
 	switch (type)
 	{
@@ -300,11 +302,11 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 
 	_sdmmc_get_clkcon(sdmmc);
 
-	u32 tmp;
+	u32 clock;
 	u16 divisor;
-	clock_sdmmc_get_card_clock_div(&tmp, &divisor, type);
-	clock_sdmmc_config_clock_source(&tmp, sdmmc->id, tmp);
-	sdmmc->divisor = (tmp + divisor - 1) / divisor;
+	clock_sdmmc_get_card_clock_div(&clock, &divisor, type);
+	clock_sdmmc_config_clock_source(&clock, sdmmc->id, clock);
+	sdmmc->divisor = (clock + divisor - 1) / divisor;
 
 	//if divisor != 1 && divisor << 31 -> error
 
@@ -321,37 +323,38 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 
 	if (type == SDHCI_TIMING_MMC_HS400)
-		return _sdmmc_wait_type4(sdmmc);
+		return _sdmmc_dll_cal_execute(sdmmc);
 	return 1;
 }
 
-static void _sdmmc_sd_clock_enable(sdmmc_t *sdmmc)
+static void _sdmmc_card_clock_enable(sdmmc_t *sdmmc)
 {
-	if (!sdmmc->no_sd)
+	if (!sdmmc->auto_cal_enabled)
 	{
 		if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
 			sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 	}
-	sdmmc->sd_clock_enabled = 1;
+	sdmmc->card_clock_enabled = 1;
 }
 
 static void _sdmmc_sd_clock_disable(sdmmc_t *sdmmc)
 {
-	sdmmc->sd_clock_enabled = 0;
+	sdmmc->card_clock_enabled = 0;
 	sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 }
 
-void sdmmc_sd_clock_ctrl(sdmmc_t *sdmmc, int no_sd)
+void sdmmc_card_clock_ctrl(sdmmc_t *sdmmc, int auto_cal_enable)
 {
-	sdmmc->no_sd = no_sd;
-	if (no_sd)
+	sdmmc->auto_cal_enabled = auto_cal_enable;
+	if (auto_cal_enable)
 	{
 		if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
 			return;
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 		return;
 	}
-	if (sdmmc->sd_clock_enabled)
+
+	if (sdmmc->card_clock_enabled)
 		if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
 			sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 }
@@ -435,7 +438,7 @@ int sdmmc_get_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
 	return 1;
 }
 
-static int _sdmmc_wait_prnsts_type0(sdmmc_t *sdmmc, u32 wait_dat)
+static int _sdmmc_wait_cmd_data_inhibit(sdmmc_t *sdmmc, bool wait_dat)
 {
 	_sdmmc_get_clkcon(sdmmc);
 
@@ -461,7 +464,7 @@ static int _sdmmc_wait_prnsts_type0(sdmmc_t *sdmmc, u32 wait_dat)
 	return 1;
 }
 
-static int _sdmmc_wait_prnsts_type1(sdmmc_t *sdmmc)
+static int _sdmmc_wait_card_busy(sdmmc_t *sdmmc)
 {
 	_sdmmc_get_clkcon(sdmmc);
 
@@ -495,10 +498,10 @@ static int _sdmmc_setup_read_small_block(sdmmc_t *sdmmc)
 	return 1;
 }
 
-static int _sdmmc_parse_cmdbuf(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, bool is_data_present)
+static int _sdmmc_send_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, bool is_data_present)
 {
 	u16 cmdflags = 0;
-	
+
 	switch (cmd->rsp_type)
 	{
 	case SDMMC_RSP_TYPE_0:
@@ -530,21 +533,21 @@ static int _sdmmc_parse_cmdbuf(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, bool is_data_pr
 	return 1;
 }
 
-static void _sdmmc_parse_cmd_48(sdmmc_t *sdmmc, u32 cmd)
+static void _sdmmc_send_tuning_cmd(sdmmc_t *sdmmc, u32 cmd)
 {
 	sdmmc_cmd_t cmdbuf;
 	cmdbuf.cmd = cmd;
 	cmdbuf.arg = 0;
 	cmdbuf.rsp_type = SDMMC_RSP_TYPE_1;
 	cmdbuf.check_busy = 0;
-	_sdmmc_parse_cmdbuf(sdmmc, &cmdbuf, true);
+	_sdmmc_send_cmd(sdmmc, &cmdbuf, true);
 }
 
-static int _sdmmc_config_tuning_once(sdmmc_t *sdmmc, u32 cmd)
+static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd)
 {
-	if (sdmmc->no_sd)
+	if (sdmmc->auto_cal_enabled)
 		return 0;
-	if (!_sdmmc_wait_prnsts_type0(sdmmc, 1))
+	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, true))
 		return 0;
 
 	_sdmmc_setup_read_small_block(sdmmc);
@@ -553,7 +556,7 @@ static int _sdmmc_config_tuning_once(sdmmc_t *sdmmc, u32 cmd)
 	sdmmc->regs->norintsts = sdmmc->regs->norintsts;
 	sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 
-	_sdmmc_parse_cmd_48(sdmmc, cmd);
+	_sdmmc_send_tuning_cmd(sdmmc, cmd);
 	_sdmmc_get_clkcon(sdmmc);
 	usleep(1);
 
@@ -584,7 +587,7 @@ static int _sdmmc_config_tuning_once(sdmmc_t *sdmmc, u32 cmd)
 	return 0;
 }
 
-int sdmmc_config_tuning(sdmmc_t *sdmmc, u32 type, u32 cmd)
+int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 {
 	u32 max = 0, flag = 0;
 
@@ -618,7 +621,7 @@ int sdmmc_config_tuning(sdmmc_t *sdmmc, u32 type, u32 cmd)
 
 	for (u32 i = 0; i < max; i++)
 	{
-		_sdmmc_config_tuning_once(sdmmc, cmd);
+		_sdmmc_tuning_execute_once(sdmmc, cmd);
 		if (!(sdmmc->regs->hostctl2 & SDHCI_CTRL_EXEC_TUNING))
 			break;
 	}
@@ -729,17 +732,17 @@ DPRINTF("norintsts %08X; errintsts %08X\n", norintsts, errintsts);
 	return SDMMC_MASKINT_NOERROR;
 }
 
-static int _sdmmc_wait_request(sdmmc_t *sdmmc)
+static int _sdmmc_wait_response(sdmmc_t *sdmmc)
 {
 	_sdmmc_get_clkcon(sdmmc);
 
 	u32 timeout = get_tmr_ms() + 2000;
-	while (1)
+	while (true)
 	{
-		int res = _sdmmc_check_mask_interrupt(sdmmc, NULL, SDHCI_INT_RESPONSE);
-		if (res == SDMMC_MASKINT_MASKED)
+		int result = _sdmmc_check_mask_interrupt(sdmmc, NULL, SDHCI_INT_RESPONSE);
+		if (result == SDMMC_MASKINT_MASKED)
 			break;
-		if (res != SDMMC_MASKINT_NOERROR || get_tmr_ms() > timeout)
+		if (result != SDMMC_MASKINT_NOERROR || get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset(sdmmc);
 			return 0;
@@ -753,7 +756,7 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 {
 	sdmmc_cmd_t cmd;
 
-	if (!_sdmmc_wait_prnsts_type0(sdmmc, 0))
+	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, false))
 		return 0;
 
 	_sdmmc_enable_interrupts(sdmmc);
@@ -763,22 +766,22 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 	cmd.rsp_type = SDMMC_RSP_TYPE_1;
 	cmd.check_busy = 1;
 
-	_sdmmc_parse_cmdbuf(sdmmc, &cmd, false);
+	_sdmmc_send_cmd(sdmmc, &cmd, false);
 
-	int res = _sdmmc_wait_request(sdmmc);
+	int result = _sdmmc_wait_response(sdmmc);
 	_sdmmc_mask_interrupts(sdmmc);
 
-	if (!res)
+	if (!result)
 		return 0;
 
 	_sdmmc_cache_rsp(sdmmc, rsp, 4, SDMMC_RSP_TYPE_1);
 
-	return _sdmmc_wait_prnsts_type1(sdmmc);
+	return _sdmmc_wait_card_busy(sdmmc);
 }
 
 int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 {
-	if (!sdmmc->sd_clock_enabled)
+	if (!sdmmc->card_clock_enabled)
 		return 0;
 
 	bool should_disable_sd_clock = false;
@@ -790,13 +793,13 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 	}
 
-	int res = _sdmmc_stop_transmission_inner(sdmmc, rsp);
+	int result = _sdmmc_stop_transmission_inner(sdmmc, rsp);
 	usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 
-	return res;
+	return result;
 }
 
 static int _sdmmc_config_dma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
@@ -846,13 +849,13 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 		u32 timeout = get_tmr_ms() + 1500;
 		do
 		{
-			int res = 0;
-			while (1)
+			int result = 0;
+			while (true)
 			{
 				u16 intr = 0;
-				res = _sdmmc_check_mask_interrupt(sdmmc, &intr,
+				result = _sdmmc_check_mask_interrupt(sdmmc, &intr,
 					SDHCI_INT_DATA_END | SDHCI_INT_DMA_END);
-				if (res < 0)
+				if (result < 0)
 					break;
 
 				if (intr & SDHCI_INT_DATA_END)
@@ -869,7 +872,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 					sdmmc->dma_addr_next += 0x80000;
 				}
 			}
-			if (res != SDMMC_MASKINT_NOERROR)
+			if (result != SDMMC_MASKINT_NOERROR)
 			{
 				_sdmmc_reset(sdmmc);
 				return 0;
@@ -884,7 +887,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out)
 {
 	int has_req_or_check_busy = req || cmd->check_busy;
-	if (!_sdmmc_wait_prnsts_type0(sdmmc, has_req_or_check_busy))
+	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, has_req_or_check_busy))
 		return 0;
 
 	u32 blkcnt = 0;
@@ -901,12 +904,12 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		is_data_present = false;
 	}
 
-	_sdmmc_parse_cmdbuf(sdmmc, cmd, is_data_present);
+	_sdmmc_send_cmd(sdmmc, cmd, is_data_present);
 
-	int res = _sdmmc_wait_request(sdmmc);
+	int result = _sdmmc_wait_response(sdmmc);
 	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", res,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
-	if (res)
+	if (result)
 	{
 		if (cmd->rsp_type)
 		{
@@ -919,7 +922,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 
 	_sdmmc_mask_interrupts(sdmmc);
 
-	if (res)
+	if (result)
 	{
 		if (req)
 		{
@@ -931,10 +934,15 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		}
 
 		if (cmd->check_busy || req)
-			return _sdmmc_wait_prnsts_type1(sdmmc);
+			return _sdmmc_wait_card_busy(sdmmc);
 	}
 
-	return res;
+	return result;
+}
+
+bool sdmmc_get_sd_inserted()
+{
+	return (!gpio_read(GPIO_PORT_Z, GPIO_PIN_1));
 }
 
 static int _sdmmc_config_sdmmc1()
@@ -947,7 +955,7 @@ static int _sdmmc_config_sdmmc1()
 	usleep(100);
 
 	// Check if SD card is inserted.
-	if(!!gpio_read(GPIO_PORT_Z, GPIO_PIN_1))
+	if(!sdmmc_get_sd_inserted())
 		return 0;
 
 	/*
@@ -992,7 +1000,7 @@ static int _sdmmc_config_sdmmc1()
 	return 1;
 }
 
-int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int no_sd)
+int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int auto_cal_enable)
 {
 	if (id > SDMMC_4)
 		return 0;
@@ -1036,12 +1044,12 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int n
 	if (_sdmmc_enable_internal_clock(sdmmc))
 	{
 		sdmmc_set_bus_width(sdmmc, bus_width);
-		_sdmmc_set_voltage(sdmmc, power);
+		_sdmmc_set_io_power(sdmmc, power);
 
 		if (sdmmc_setup_clock(sdmmc, type))
 		{
-			sdmmc_sd_clock_ctrl(sdmmc, no_sd);
-			_sdmmc_sd_clock_enable(sdmmc);
+			sdmmc_card_clock_ctrl(sdmmc, auto_cal_enable);
+			_sdmmc_card_clock_enable(sdmmc);
 			_sdmmc_get_clkcon(sdmmc);
 
 			return 1;
@@ -1058,7 +1066,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 	{
 		_sdmmc_sd_clock_disable(sdmmc);
 		// Disable SDMMC power.
-		_sdmmc_set_voltage(sdmmc, SDMMC_POWER_OFF);
+		_sdmmc_set_io_power(sdmmc, SDMMC_POWER_OFF);
 
 		// Disable SD card power.
 		if (sdmmc->id == SDMMC_1)
@@ -1085,12 +1093,12 @@ void sdmmc_init_cmd(sdmmc_cmd_t *cmdbuf, u16 cmd, u32 arg, u32 rsp_type, u32 che
 
 int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out)
 {
-	if (!sdmmc->sd_clock_enabled)
+	if (!sdmmc->card_clock_enabled)
 		return 0;
 
 	// Recalibrate periodically for SDMMC1.
-	if (sdmmc->id == SDMMC_1 && sdmmc->no_sd)
-		_sdmmc_autocal_execute(sdmmc, sdmmc_get_voltage(sdmmc));
+	if (sdmmc->id == SDMMC_1 && sdmmc->auto_cal_enabled)
+		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	int should_disable_sd_clock = 0;
 	if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
@@ -1101,13 +1109,13 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 	}
 
-	int res = _sdmmc_execute_cmd_inner(sdmmc, cmd, req, blkcnt_out);
+	int result = _sdmmc_execute_cmd_inner(sdmmc, cmd, req, blkcnt_out);
 	usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 
-	return res;
+	return result;
 }
 
 int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
@@ -1133,7 +1141,7 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 
 	_sdmmc_autocal_config_offset(sdmmc, SDMMC_POWER_1_8);
 	_sdmmc_autocal_execute(sdmmc, SDMMC_POWER_1_8);
-	_sdmmc_set_voltage(sdmmc, SDMMC_POWER_1_8);
+	_sdmmc_set_io_power(sdmmc, SDMMC_POWER_1_8);
 	_sdmmc_get_clkcon(sdmmc);
 	msleep(5);
 
