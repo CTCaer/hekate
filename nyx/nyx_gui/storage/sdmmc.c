@@ -18,6 +18,7 @@
 #include <string.h>
 #include "sdmmc.h"
 #include "mmc.h"
+#include "nx_sd.h"
 #include "sd.h"
 #include "../../../common/memory_map.h"
 #include "../gfx/gfx.h"
@@ -172,25 +173,43 @@ int sdmmc_storage_end(sdmmc_storage_t *storage)
 static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf, u32 is_write)
 {
 	u8 *bbuf = (u8 *)buf;
-
+	bool first_reinit = false;
 	while (num_sectors)
 	{
 		u32 blkcnt = 0;
-		//Retry 9 times on error.
-		u32 retries = 10;
+		// Retry 5 times if failed.
+		u32 retries = 5;
 		do
 		{
+reinit_try:
 			if (_sdmmc_storage_readwrite_ex(storage, &blkcnt, sector, MIN(num_sectors, 0xFFFF), bbuf, is_write))
 				goto out;
 			else
 				retries--;
 
-			msleep(100);
+			msleep(50);
 		} while (retries);
+
+		// Disk IO failure! Reinit SD Card to a lower speed.
+		if (storage->sdmmc->id == SDMMC_1)
+		{
+			int res;
+
+			if (!first_reinit)
+				res = sd_initialize(true);
+			else
+				res = sd_init_retry(true);
+
+			retries = 3;
+			first_reinit = true;
+
+			if (res)
+				goto reinit_try;
+		}
 
 		return 0;
 
-out:;
+out:
 DPRINTF("readwrite: %08X\n", blkcnt);
 		sector += blkcnt;
 		num_sectors -= blkcnt;

@@ -22,10 +22,21 @@
 #include "sdmmc_driver.h"
 #include "../libs/fatfs/ff.h"
 
+enum
+{
+	SD_INIT_FAIL  = 0,
+	SD_1BIT_HS25  = 1,
+	SD_4BIT_HS25  = 2,
+	SD_UHS_SDR82  = 3,
+};
+
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
 
+u32  sd_mode_get();
+int  sd_init_retry(bool power_cycle);
+bool sd_initialize(bool power_cycle);
 bool sd_mount();
 void sd_unmount();
 void *sd_file_read(const char *path, u32 *fsize);

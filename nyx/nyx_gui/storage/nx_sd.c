@@ -33,6 +33,78 @@ bool sd_get_card_removed()
 	return false;
 }
 
+u32 sd_mode_get()
+{
+	return sd_mode;
+}
+
+int sd_init_retry(bool power_cycle)
+{
+	u32 bus_width = SDMMC_BUS_WIDTH_4;
+	u32 type = SDHCI_TIMING_UHS_SDR104;
+
+	// Power cycle SD card.
+	if (power_cycle)
+	{
+		sd_mode--;
+		sdmmc_storage_end(&sd_storage);
+	}
+
+	// Get init parameters.
+	switch (sd_mode)
+	{
+	case SD_INIT_FAIL: // Reset to max.
+		return 0;
+	case SD_1BIT_HS25:
+		bus_width = SDMMC_BUS_WIDTH_1;
+		type = SDHCI_TIMING_SD_HS25;
+		break;
+	case SD_4BIT_HS25:
+		type = SDHCI_TIMING_SD_HS25;
+		break;
+	case SD_UHS_SDR82:
+		type = SDHCI_TIMING_UHS_SDR82;
+		break;
+	case SD_UHS_SDR104:
+		type = SDHCI_TIMING_UHS_SDR104;
+		break;
+	default:
+		sd_mode = SD_UHS_SDR104;
+	}
+
+	return sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
+}
+
+bool sd_initialize(bool power_cycle)
+{
+	if (power_cycle)
+		sdmmc_storage_end(&sd_storage);
+
+	int res = !sd_init_retry(false);
+
+	while (true)
+	{
+		if (!res)
+			return true;
+		else if (!sdmmc_get_sd_inserted()) // SD Card is not inserted.
+		{
+			sd_mode = SD_UHS_SDR104;
+			break;
+		}
+		else
+		{
+			if (sd_mode == SD_INIT_FAIL)
+				break;
+			else
+				res = !sd_init_retry(true);
+		}
+	}
+
+	sdmmc_storage_end(&sd_storage);
+
+	return false;
+}
+
 bool sd_mount()
 {
 	if (sd_mounted)
@@ -41,19 +113,20 @@ bool sd_mount()
 	int res = 0;
 
 	if (!sd_init_done)
-	{
-		res = !sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_BUS_WIDTH_4, SDHCI_TIMING_UHS_SDR82);
-		if (!res)
-			sd_init_done = true;
-	}
+		res = !sd_initialize(false);
 
 	if (res)
 	{
-		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.\nOr that SD reader is properly seated!");
+		EPRINTF("Failed to init SD card.");
+		if (!sdmmc_get_sd_inserted())
+			EPRINTF("Make sure that it is inserted.");
+		else
+			EPRINTF("SD Card Reader is not properly seated!");
 	}
 	else
 	{
-		int res = f_mount(&sd_fs, "", 1);
+		sd_init_done = true;
+		res = f_mount(&sd_fs, "", 1);
 		if (res == FR_OK)
 		{
 			sd_mounted = true;
@@ -70,6 +143,9 @@ bool sd_mount()
 
 void sd_unmount(bool deinit)
 {
+	if (sd_mode == SD_INIT_FAIL)
+		sd_mode = SD_UHS_SDR104;
+
 	if (sd_init_done && sd_mounted)
 	{
 		f_mount(NULL, "", 1);

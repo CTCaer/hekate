@@ -23,24 +23,96 @@
 #include "../mem/heap.h"
 
 static bool sd_mounted = false;
+static u32  sd_mode = SD_UHS_SDR82;
+
+u32 sd_mode_get()
+{
+	return sd_mode;
+}
+
+int sd_init_retry(bool power_cycle)
+{
+	u32 bus_width = SDMMC_BUS_WIDTH_4;
+	u32 type = SDHCI_TIMING_UHS_SDR82;
+
+	// Power cycle SD card.
+	if (power_cycle)
+	{
+		sd_mode--;
+		sdmmc_storage_end(&sd_storage);
+	}
+
+	// Get init parameters.
+	switch (sd_mode)
+	{
+	case SD_INIT_FAIL: // Reset to max.
+		return 0;
+	case SD_1BIT_HS25:
+		bus_width = SDMMC_BUS_WIDTH_1;
+		type = SDHCI_TIMING_SD_HS25;
+		break;
+	case SD_4BIT_HS25:
+		type = SDHCI_TIMING_SD_HS25;
+		break;
+	case SD_UHS_SDR82:
+		type = SDHCI_TIMING_UHS_SDR82;
+		break;
+	default:
+		sd_mode = SD_UHS_SDR82;
+	}
+
+	return sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
+}
+
+bool sd_initialize(bool power_cycle)
+{
+	if (power_cycle)
+		sdmmc_storage_end(&sd_storage);
+
+	int res = !sd_init_retry(false);
+
+	while (true)
+	{
+		if (!res)
+			return true;
+		else if (!sdmmc_get_sd_inserted()) // SD Card is not inserted.
+		{
+			sd_mode = SD_UHS_SDR82;
+			break;
+		}
+		else if (sd_mode == SD_INIT_FAIL)
+			break;
+		else
+			res = !sd_init_retry(true);
+	}
+
+	sdmmc_storage_end(&sd_storage);
+
+	return false;
+}
 
 bool sd_mount()
 {
 	if (sd_mounted)
 		return true;
 
-	if (!sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, SDMMC_BUS_WIDTH_4, SDHCI_TIMING_UHS_SDR82))
+	int res = !sd_initialize(false);
+
+	if (res)
 	{
 		gfx_con.mute = false;
-		EPRINTF("Failed to init SD card.\nMake sure that it is inserted.\nOr that SD reader is properly seated!");
+		EPRINTF("Failed to init SD card.");
+		if (!sdmmc_get_sd_inserted())
+			EPRINTF("Make sure that it is inserted.");
+		else
+			EPRINTF("SD Card Reader is not properly seated!");
 	}
 	else
 	{
-		int res = 0;
 		res = f_mount(&sd_fs, "", 1);
 		if (res == FR_OK)
 		{
-			sd_mounted = 1;
+			sd_mounted = true;
 			return true;
 		}
 		else
@@ -55,6 +127,7 @@ bool sd_mount()
 
 void sd_unmount()
 {
+	sd_mode = SD_UHS_SDR82;
 	if (sd_mounted)
 	{
 		f_mount(NULL, "", 1);
