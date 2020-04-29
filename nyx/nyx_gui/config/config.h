@@ -25,7 +25,6 @@ typedef struct _hekate_config
 	u32 autoboot;
 	u32 autoboot_list;
 	u32 bootwait;
-	u32 verification;
 	u32 backlight;
 	u32 autohosoff;
 	u32 autonogc;
@@ -41,7 +40,14 @@ typedef struct _hekate_config
 	u32  errors;
 } hekate_config;
 
+typedef struct _nyx_config
+{
+	u32 verification;
+} nyx_config;
+
 void set_default_configuration();
+void set_nyx_default_configuration();
 int create_config_entry();
+int create_nyx_config_entry();
 
 #endif /* _CONFIG_H_ */

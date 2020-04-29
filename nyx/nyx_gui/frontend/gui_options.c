@@ -273,7 +273,7 @@ static lv_res_t _slider_brightness_action(lv_obj_t * slider)
 
 static lv_res_t _data_verification_action(lv_obj_t *ddlist)
 {
-	h_cfg.verification = lv_ddlist_get_selected(ddlist);
+	n_cfg.verification = lv_ddlist_get_selected(ddlist);
 
 	return LV_RES_OK;
 }
@@ -388,7 +388,6 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	// Create Auto NoGC button.
 	lv_obj_t *btn2 = lv_btn_create(sw_h2, NULL);
 	nyx_create_onoff_button(th, sw_h2, btn2, SYMBOL_SHRK" Auto NoGC", auto_nogc_toggle, true);
-
 	lv_obj_align(btn2, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 10);
 
 	label_txt2 = lv_label_create(sw_h2, NULL);
@@ -454,7 +453,7 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 		"Sparse (Fast)    \n"
 		"Full (Slow)\n"
 		"Full (Hashes)");
-	lv_ddlist_set_selected(ddlist2, h_cfg.verification);
+	lv_ddlist_set_selected(ddlist2, n_cfg.verification);
 	lv_obj_align(ddlist2, label_txt, LV_ALIGN_OUT_RIGHT_MID, LV_DPI * 3 / 8, 0);
 	lv_ddlist_set_action(ddlist2, _data_verification_action);
 

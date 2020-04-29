@@ -43,7 +43,7 @@
 #define HASH_FILENAME_SZ (OUT_FILENAME_SZ + 11) // 11 == strlen(".sha256sums")
 #define SHA256_SZ 0x20
 
-extern hekate_config h_cfg;
+extern nyx_config n_cfg;
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
@@ -149,7 +149,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
-		if (h_cfg.verification == 3)
+		if (n_cfg.verification == 3)
 		{
 			char hashFilename[HASH_FILENAME_SZ];
 			strncpy(hashFilename, outFilename, OUT_FILENAME_SZ - 1);
@@ -201,7 +201,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 			// Check every time or every 4.
 			// Every 4 protects from fake sd, sector corruption and frequent I/O corruption.
 			// Full provides all that, plus protection from extremely rare I/O corruption.
-			if ((h_cfg.verification >= 2) || !(sparseShouldVerify % 4))
+			if ((n_cfg.verification >= 2) || !(sparseShouldVerify % 4))
 			{
 				if (!sdmmc_storage_read(storage, lba_curr, num, bufEm))
 				{
@@ -214,7 +214,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 					free(clmt);
 					f_close(&fp);
-					if (h_cfg.verification == 3)
+					if (n_cfg.verification == 3)
 						f_close(&hashFp);
 
 					return 1;
@@ -234,7 +234,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 					free(clmt);
 					f_close(&fp);
-					if (h_cfg.verification == 3)
+					if (n_cfg.verification == 3)
 						f_close(&hashFp);
 
 					return 1;
@@ -255,13 +255,13 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 
 					free(clmt);
 					f_close(&fp);
-					if (h_cfg.verification == 3)
+					if (n_cfg.verification == 3)
 						f_close(&hashFp);
 
 					return 1;
 				}
 
-				if (h_cfg.verification == 3)
+				if (n_cfg.verification == 3)
 				{
 					// Transform computed hash to readable hexadecimal
 					char hashStr[SHA256_SZ * 2 + 1];
@@ -505,7 +505,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 			memset(&fp, 0, sizeof(fp));
 			currPartIdx++;
 
-			if (h_cfg.verification)
+			if (n_cfg.verification)
 			{
 				// Verify part.
 				if (_dump_emmc_verify(gui, storage, lbaStartPart, outFilename, part))
@@ -677,7 +677,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t 
 	f_close(&fp);
 	free(clmt);
 
-	if (h_cfg.verification)
+	if (n_cfg.verification)
 	{
 		// Verify last part or single file backup.
 		if (_dump_emmc_verify(gui, storage, lbaStartPart, outFilename, part))
@@ -867,7 +867,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	timer = get_tmr_s() - timer;
 	sdmmc_storage_end(&storage);
 
-	if (res && h_cfg.verification)
+	if (res && n_cfg.verification)
 		s_printf(txt_buf, "Time taken: %dm %ds.\n#96FF00 Finished and verified!#", timer / 60, timer % 60);
 	else if (res)
 		s_printf(txt_buf, "Time taken: %dm %ds.\nFinished!", timer / 60, timer % 60);
@@ -1096,7 +1096,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			memset(&fp, 0, sizeof(fp));
 			currPartIdx++;
 
-			if (h_cfg.verification && !gui->raw_emummc)
+			if (n_cfg.verification && !gui->raw_emummc)
 			{
 				// Verify part.
 				if (_dump_emmc_verify(gui, storage, lbaStartPart, outFilename, part))
@@ -1218,7 +1218,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	f_close(&fp);
 	free(clmt);
 
-	if (h_cfg.verification && !gui->raw_emummc)
+	if (n_cfg.verification && !gui->raw_emummc)
 	{
 		// Verify restored data.
 		if (_dump_emmc_verify(gui, storage, lbaStartPart, outFilename, part))
@@ -1433,7 +1433,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	timer = get_tmr_s() - timer;
 	sdmmc_storage_end(&storage);
 
-	if (res && h_cfg.verification)
+	if (res && n_cfg.verification)
 		s_printf(txt_buf, "Time taken: %dm %ds.\n#96FF00 Finished and verified!#", timer / 60, timer % 60);
 	else if (res)
 		s_printf(txt_buf, "Time taken: %dm %ds.\nFinished!", timer / 60, timer % 60);

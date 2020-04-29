@@ -210,53 +210,62 @@ out:
 void load_saved_configuration()
 {
 	LIST_INIT(ini_sections);
+	LIST_INIT(ini_nyx_sections);
 
+	// Load hekate configuration.
 	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 	{
-		// Load configuration.
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 		{
-			// Skip other ini entries.
-			if (ini_sec->type == INI_CHOICE)
+			// Only parse config section.
+			if (ini_sec->type == INI_CHOICE && !strcmp(ini_sec->name, "config"))
 			{
-				if (!strcmp(ini_sec->name, "config"))
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 				{
-					LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+					if (!strcmp("autoboot", kv->key))
+						h_cfg.autoboot = atoi(kv->val);
+					else if (!strcmp("autoboot_list", kv->key))
+						h_cfg.autoboot_list = atoi(kv->val);
+					else if (!strcmp("bootwait", kv->key))
+						h_cfg.bootwait = atoi(kv->val);
+					else if (!strcmp("backlight", kv->key))
 					{
-						if (!strcmp("autoboot", kv->key))
-							h_cfg.autoboot = atoi(kv->val);
-						else if (!strcmp("autoboot_list", kv->key))
-							h_cfg.autoboot_list = atoi(kv->val);
-						else if (!strcmp("bootwait", kv->key))
-							h_cfg.bootwait = atoi(kv->val);
-						else if (!strcmp("verification", kv->key))
-							h_cfg.verification = atoi(kv->val);
-						else if (!strcmp("backlight", kv->key))
-						{
-							h_cfg.backlight = atoi(kv->val);
-							if (h_cfg.backlight <= 20)
-								h_cfg.backlight = 30;
-						}
-						else if (!strcmp("autohosoff", kv->key))
-							h_cfg.autohosoff = atoi(kv->val);
-						else if (!strcmp("autonogc", kv->key))
-							h_cfg.autonogc = atoi(kv->val);
-						else if (!strcmp("updater2p", kv->key))
-							h_cfg.updater2p = atoi(kv->val);
-						else if (!strcmp("brand", kv->key))
-						{
-							h_cfg.brand = malloc(strlen(kv->val) + 1);
-							strcpy(h_cfg.brand, kv->val);
-						}
-						else if (!strcmp("tagline", kv->key))
-						{
-							h_cfg.tagline = malloc(strlen(kv->val) + 1);
-							strcpy(h_cfg.tagline, kv->val);
-						}
+						h_cfg.backlight = atoi(kv->val);
+						if (h_cfg.backlight <= 20)
+							h_cfg.backlight = 30;
 					}
-
-					continue;
+					else if (!strcmp("autohosoff", kv->key))
+						h_cfg.autohosoff = atoi(kv->val);
+					else if (!strcmp("autonogc", kv->key))
+						h_cfg.autonogc = atoi(kv->val);
+					else if (!strcmp("updater2p", kv->key))
+						h_cfg.updater2p = atoi(kv->val);
+					else if (!strcmp("brand", kv->key))
+						h_cfg.brand = kv->val;
+					else if (!strcmp("tagline", kv->key))
+						h_cfg.tagline = kv->val;
 				}
+
+				break;
+			}
+		}
+	}
+
+	// Load Nyx configuration.
+	if (ini_parse(&ini_nyx_sections, "bootloader/nyx.ini", false))
+	{
+		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_nyx_sections, link)
+		{
+			// Only parse config section.
+			if (ini_sec->type == INI_CHOICE && !strcmp(ini_sec->name, "config"))
+			{
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+				{
+					if (!strcmp("verification", kv->key))
+						n_cfg.verification = atoi(kv->val);
+				}
+
+				break;
 			}
 		}
 	}

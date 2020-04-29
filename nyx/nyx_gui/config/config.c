@@ -30,6 +30,7 @@
 #include "../utils/util.h"
 
 extern hekate_config h_cfg;
+extern nyx_config n_cfg;
 
 void set_default_configuration()
 {
@@ -51,6 +52,11 @@ void set_default_configuration()
 	h_cfg.emummc_force_disable = false;
 
 	sd_power_cycle_time_start = 0;
+}
+
+void set_nyx_default_configuration()
+{
+	n_cfg.verification = 1;
 }
 
 int create_config_entry()
@@ -95,9 +101,6 @@ int create_config_entry()
 	f_puts(lbuf, &fp);
 	f_puts("\nbootwait=", &fp);
 	itoa(h_cfg.bootwait, lbuf, 10);
-	f_puts(lbuf, &fp);
-	f_puts("\nverification=", &fp);
-	itoa(h_cfg.verification, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\nbacklight=", &fp);
 	itoa(h_cfg.backlight, lbuf, 10);
@@ -169,3 +172,28 @@ int create_config_entry()
 	return 0;
 }
 
+int create_nyx_config_entry()
+{
+	if (!sd_mount())
+		return 1;
+
+	char lbuf[32];
+	FIL fp;
+
+	// Make sure that bootloader folder exists.
+	f_mkdir("bootloader");
+
+	if (f_open(&fp, "bootloader/nyx.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
+		return 1;
+
+	// Add config entry.
+	f_puts("[config]\nverification=", &fp);
+	itoa(n_cfg.verification, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\n", &fp);
+
+	f_close(&fp);
+	sd_unmount(false);
+
+	return 0;
+}
