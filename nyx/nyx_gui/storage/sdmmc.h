@@ -23,6 +23,16 @@
 
 u32 sd_power_cycle_time_start;
 
+typedef enum _sdmmc_type
+{
+	MMC_SD   = 0,
+	MMC_EMMC = 1,
+
+	EMMC_GPP   = 0,
+	EMMC_BOOT0 = 1,
+	EMMC_BOOT1 = 2
+} sdmmc_type;
+
 typedef struct _mmc_cid
 {
 	u32 manfid;
