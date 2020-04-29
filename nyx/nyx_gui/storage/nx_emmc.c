@@ -23,28 +23,31 @@
 
 void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage)
 {
-	u8 *buf = (u8 *)malloc(NX_GPT_NUM_BLOCKS * NX_EMMC_BLOCKSIZE);
+	gpt_t *gpt_buf = (gpt_t *)calloc(NX_GPT_NUM_BLOCKS, NX_EMMC_BLOCKSIZE);
 
-	sdmmc_storage_read(storage, NX_GPT_FIRST_LBA, NX_GPT_NUM_BLOCKS, buf);
+	sdmmc_storage_read(storage, NX_GPT_FIRST_LBA, NX_GPT_NUM_BLOCKS, gpt_buf);
 
-	gpt_header_t *hdr = (gpt_header_t *)buf;
-	for (u32 i = 0; i < hdr->num_part_ents; i++)
+	for (u32 i = 0; i < gpt_buf->header.num_part_ents; i++)
 	{
-		gpt_entry_t *ent = (gpt_entry_t *)(buf + (hdr->part_ent_lba - 1) * NX_EMMC_BLOCKSIZE + i * sizeof(gpt_entry_t));
 		emmc_part_t *part = (emmc_part_t *)calloc(sizeof(emmc_part_t), 1);
-		part->lba_start = ent->lba_start;
-		part->lba_end = ent->lba_end;
-		part->attrs = ent->attrs;
+
+		if (gpt_buf->entries[i].lba_start < gpt_buf->header.first_use_lba)
+			continue;
+
+		part->index = i;
+		part->lba_start = gpt_buf->entries[i].lba_start;
+		part->lba_end = gpt_buf->entries[i].lba_end;
+		part->attrs = gpt_buf->entries[i].attrs;
 
 		// ASCII conversion. Copy only the LSByte of the UTF-16LE name.
-		for (u32 i = 0; i < 36; i++)
-			part->name[i] = ent->name[i];
-		part->name[36] = 0;
+		for (u32 j = 0; j < 36; j++)
+			part->name[j] = gpt_buf->entries[i].name[j];
+		part->name[35] = 0;
 
 		list_append(gpt, &part->link);
 	}
 
-	free(buf);
+	free(gpt_buf);
 }
 
 void nx_emmc_gpt_free(link_t *gpt)
