@@ -24,6 +24,7 @@
 #include "gui.h"
 #include "fe_emummc_tools.h"
 #include "../config/config.h"
+#include "../config/ini.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
 #include "../sec/se.h"
@@ -347,7 +348,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	int base_len = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -635,7 +636,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	int res = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -674,6 +675,11 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	memset(&bootPart, 0, sizeof(bootPart));
 	bootPart.lba_start = 0;
 	bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
+
+	// Clear partition start.
+	memset((u8 *)MIXD_BUF_ALIGNED, 0, 0x1000000);
+	sdmmc_storage_write(&sd_storage, sector_start - 0x8000, 0x8000, (u8 *)MIXD_BUF_ALIGNED);
+
 	for (i = 0; i < 2; i++)
 	{
 		strcpy(bootPart.name, "BOOT");

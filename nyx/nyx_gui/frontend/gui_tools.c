@@ -342,8 +342,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	u8 *pkg2 = NULL;
 	u8 kb = 0;
 
-	char *txt_buf  = (char *)malloc(0x1000);
-	char *txt_buf2 = (char *)malloc(0x1000);
+	char *txt_buf  = (char *)malloc(0x4000);
+	char *txt_buf2 = (char *)malloc(0x4000);
 
 	tsec_ctxt_t tsec_ctxt;
 

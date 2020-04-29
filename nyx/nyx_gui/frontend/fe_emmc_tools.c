@@ -713,7 +713,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	int res = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -1259,7 +1259,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	int res = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -1296,8 +1296,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	lv_mbox_set_text(warn_mbox, txt_buf);
 	manual_system_maintenance(true);
 
-	u32 btn = btn_wait();
-	if (!(btn & BTN_POWER))
+	if (!(btn_wait() & BTN_POWER))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Restore operation was aborted!#");
 		lv_obj_del(warn_mbox_bg);

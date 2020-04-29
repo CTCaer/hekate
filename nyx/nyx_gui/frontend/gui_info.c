@@ -265,7 +265,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 
 	// Decode fuses.
 	u8 burntFuses7 = 0;
@@ -729,7 +729,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-		char *txt_buf = (char *)malloc(0x1000);
+		char *txt_buf = (char *)malloc(0x4000);
 
 		s_printf(txt_buf,"\n%02x\n%c%c\n%c%c%c%c%c\n%X\n%X\n%08x\n%02d/%04d",
 			sd_storage.cid.manfid, (sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF,
@@ -898,7 +898,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(0x4000);
 	int value = 0;
 
 	max17050_get_property(MAX17050_RepSOC, &value);
