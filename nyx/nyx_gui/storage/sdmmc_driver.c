@@ -113,10 +113,14 @@ void sdmmc_set_tap_value(sdmmc_t *sdmmc)
 
 static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 {
+	const u32 dqs_trim_val = 0x28;
+	const u32 tap_values[] = { 4, 0, 3, 0 };
+
 	u32 tap_val = 0;
 
 	if (type == SDHCI_TIMING_MMC_HS400)
-		sdmmc->regs->venceatactl = (sdmmc->regs->venceatactl & 0xFFFFC0FF) | 0x2800;
+		sdmmc->regs->vencapover = (sdmmc->regs->vencapover & 0xFFFFC0FF) | (dqs_trim_val << 8);
+
 	sdmmc->regs->ventunctl0 &= ~TEGRA_MMC_VNDR_TUN_CTRL0_TAP_VAL_UPDATED_BY_HW;
 
 	if (type == SDHCI_TIMING_MMC_HS400)
@@ -128,7 +132,6 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 	}
 	else
 	{
-		static const u32 tap_values[] = { 4, 0, 3, 0 };
 		tap_val = tap_values[sdmmc->id];
 	}
 	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xFF00FFFF) | (tap_val << 16);
@@ -184,7 +187,7 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 	usleep(1);
 
 	u32 timeout = get_tmr_ms() + 10;
-	while (sdmmc->regs->autocalcfg & TEGRA_MMC_AUTOCALSTS_AUTO_CAL_ACTIVE)
+	while (sdmmc->regs->autocalsts & TEGRA_MMC_AUTOCALSTS_AUTO_CAL_ACTIVE)
 	{
 		if (get_tmr_ms() > timeout)
 		{
@@ -211,11 +214,11 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 	}
 
-	sdmmc->regs->vendllcal |= TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE;
+	sdmmc->regs->vendllcalcfg |= TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE;
 	_sdmmc_get_clkcon(sdmmc);
 
 	u32 timeout = get_tmr_ms() + 5;
-	while (sdmmc->regs->vendllcal & TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE)
+	while (sdmmc->regs->vendllcalcfg & TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE)
 	{
 		if (get_tmr_ms() > timeout)
 		{
@@ -225,7 +228,7 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 	}
 
 	timeout = get_tmr_ms() + 10;
-	while (sdmmc->regs->dllcfgstatus & TEGRA_MMC_DLLCAL_CFG_STATUS_DLL_ACTIVE)
+	while (sdmmc->regs->vendllcalcfgsts & TEGRA_MMC_DLLCAL_CFG_STATUS_DLL_ACTIVE)
 	{
 		if (get_tmr_ms() > timeout)
 		{
@@ -591,7 +594,6 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 {
 	u32 max = 0, flag = 0;
 
-	sdmmc->regs->field_1C4 = 0;
 	switch (type)
 	{
 	case SDHCI_TIMING_MMC_HS200:
@@ -613,6 +615,8 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 	default:
 		return 0;
 	}
+
+	sdmmc->regs->ventunctl1 = 0; // step_size 1.
 
 	sdmmc->regs->ventunctl0 = (sdmmc->regs->ventunctl0 & 0xFFFF1FFF) | flag; // Tries.
 	sdmmc->regs->ventunctl0 = (sdmmc->regs->ventunctl0 & 0xFFFFE03F) | (1 << 6); // 1x Multiplier.

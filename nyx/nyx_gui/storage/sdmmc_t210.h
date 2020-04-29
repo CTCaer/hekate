@@ -43,56 +43,66 @@ typedef struct _t210_sdmmc_t
 	vu32 rspreg3;
 	vu32 bdata;
 	vu32 prnsts;
-	vu8 hostctl;
-	vu8 pwrcon;
-	vu8 blkgap;
-	vu8 wakcon;
+	vu8  hostctl;
+	vu8  pwrcon;
+	vu8  blkgap;
+	vu8  wakcon;
 	vu16 clkcon;
-	vu8 timeoutcon;
-	vu8 swrst;
+	vu8  timeoutcon;
+	vu8  swrst;
 	vu16 norintsts;
 	vu16 errintsts;
-	vu16 norintstsen;
-	vu16 errintstsen;
-	vu16 norintsigen;
-	vu16 errintsigen;
+	vu16 norintstsen; // Enable irq status.
+	vu16 errintstsen; // Enable irq status.
+	vu16 norintsigen; // Enable irq signal to LIC/GIC.
+	vu16 errintsigen; // Enable irq signal to LIC/GIC.
 	vu16 acmd12errsts;
 	vu16 hostctl2;
 	vu32 capareg;
 	vu32 capareg_1;
 	vu32 maxcurr;
-	vu8 res3[4];
+	vu8  rsvd0[4]; // 4C-4F reserved for more max current.
 	vu16 setacmd12err;
 	vu16 setinterr;
-	vu8 admaerr;
-	vu8 res4[3];
+	vu8  admaerr;
+	vu8  rsvd1[3]; // 55-57 reserved.
 	vu32 admaaddr;
 	vu32 admaaddr_hi;
-	vu8 res5[156];
-	vu16 slotintstatus;
+	vu8  rsvd2[156]; // 60-FB reserved.
+	vu16 slotintsts;
 	vu16 hcver;
 	vu32 venclkctl;
-	vu32 venspictl;
-	vu32 venspiintsts;
-	vu32 venceatactl;
+	vu32 vensysswctl;
+	vu32 venerrintsts;
+	vu32 vencapover;
 	vu32 venbootctl;
 	vu32 venbootacktout;
 	vu32 venbootdattout;
 	vu32 vendebouncecnt;
 	vu32 venmiscctl;
-	vu32 res6[34];
+	vu32 maxcurrover;
+	vu32 maxcurrover_hi;
+	vu32 unk0[32]; // 0x12C
 	vu32 veniotrimctl;
-	vu32 vendllcal;
-	vu8 res7[8];
-	vu32 dllcfgstatus;
+	vu32 vendllcalcfg;
+	vu32 vendllctl0;
+	vu32 vendllctl1;
+	vu32 vendllcalcfgsts;
 	vu32 ventunctl0;
-	vu32 field_1C4;
-	vu8 field_1C8[24];
+	vu32 ventunctl1;
+	vu32 ventunsts0;
+	vu32 ventunsts1;
+	vu32 venclkgatehystcnt;
+	vu32 venpresetval0;
+	vu32 venpresetval1;
+	vu32 venpresetval2;
 	vu32 sdmemcmppadctl;
 	vu32 autocalcfg;
 	vu32 autocalintval;
 	vu32 autocalsts;
 	vu32 iospare;
+	vu32 mcciffifoctl;
+	vu32 timeoutwcoal;
 } t210_sdmmc_t;
 
 #endif

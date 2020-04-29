@@ -199,6 +199,10 @@
 
 #define SDHCI_CAN_64BIT 0x10000000
 
+/*! SDMMC Low power features. */
+#define SDMMC_AUTO_CAL_DISABLE 0
+#define SDMMC_AUTO_CAL_ENABLE  1
+
 /*! Helper for SWITCH command argument. */
 #define SDMMC_SWITCH(mode, index, value) (((mode) << 24) | ((index) << 16) | ((value) << 8))
 
