@@ -942,20 +942,21 @@ static lv_res_t _launch_more_cfg_action(lv_obj_t *btn)
 static lv_res_t _win_launch_close_action(lv_obj_t * btn)
 {
 	// Cleanup icons.
-	lv_btn_ext_t *ext;
-	lv_obj_t *btn_tmp;
-	for (u32 i = 0; i < 16; i += 2)
+	for (u32 i = 0; i < 8; i++)
 	{
-		btn_tmp = launch_ctxt[i];
-		ext = lv_obj_get_ext_attr(btn_tmp);
+		lv_obj_t *btn = launch_ctxt[i * 2];
+		lv_btn_ext_t *ext = lv_obj_get_ext_attr(btn);
 		if (ext->idx)
 		{
-			btn_tmp = lv_obj_get_child(btn_tmp, NULL);
-			lv_img_dsc_t *tmp = (lv_img_dsc_t *)lv_img_get_src(btn_tmp);
+			// This gets latest object, which is the button overlay. So iterate 2 times.
+			lv_obj_t * img = lv_obj_get_child(btn, NULL);
+			img = lv_obj_get_child(btn, img);
+
+			lv_img_dsc_t *src = (lv_img_dsc_t *)lv_img_get_src(img);
 
 			// Avoid freeing base icons.
-			if ((tmp != icon_switch) && (tmp != icon_payload) && (tmp != icon_lakka))
-				free(tmp);
+			if ((src != icon_switch) && (src != icon_payload) && (src != icon_lakka))
+				free(src);
 		}
 	}
 
