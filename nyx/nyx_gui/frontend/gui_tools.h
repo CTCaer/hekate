@@ -22,7 +22,7 @@
 lv_obj_t *ums_mbox;
 
 void create_tab_tools(lv_theme_t *th, lv_obj_t *parent);
-void sept_run_dump();
+void sept_run_dump(void *param);
 bool get_autorcm_status(bool change);
 lv_res_t action_ums_sd(lv_obj_t *btn);
 

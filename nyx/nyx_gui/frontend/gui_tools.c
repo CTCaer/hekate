@@ -1325,7 +1325,7 @@ out_end:
 	return LV_RES_OK;
 }
 
-void sept_run_dump()
+void sept_run_dump(void *param)
 {
 	_create_window_dump_pk12_tool(NULL);
 }
@@ -1369,7 +1369,8 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_txt2,
 		"Allows you to backup your eMMC partitions individually or as\n"
 		"a whole raw image to your SD card.\n"
-		"#FF8000 Supports SD cards from 4GB and up. FAT32 and exFAT.#");
+		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
+		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1385,7 +1386,8 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_txt2,
 		"Allows you to restore your eMMC/emuMMC partitions individually\n"
 		"or as a whole raw image from your SD card.\n"
-		"#FF8000 Supports SD cards from 4GB and up. FAT32 and exFAT. #");
+		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
+		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1596,6 +1598,12 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 
 	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" Dump Pkg1/2 "SYMBOL_DOT" USB Tools");
 	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Archive bit "SYMBOL_DOT" AutoRCM "SYMBOL_DOT" Touch Tuning");
+
+	lv_obj_t *line_sep = lv_line_create(tv, NULL);
+	static const lv_point_t line_pp[] = { {0, 0}, { 0, LV_DPI / 4} };
+	lv_line_set_points(line_sep, line_pp, 2);
+	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
+	lv_obj_align(line_sep, tv, LV_ALIGN_IN_BOTTOM_MID, -1, -LV_DPI * 2 / 12);
 
 	_create_tab_tools_emmc_pkg12(th, tab1);
 	_create_tab_tools_arc_autorcm(th, tab2);
