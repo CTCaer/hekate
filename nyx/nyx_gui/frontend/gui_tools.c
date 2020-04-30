@@ -768,27 +768,13 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 */
 	return LV_RES_OK;
 }
-static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total, u32 hos_folder, u32 check_first_run)
+
+static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 {
 	FRESULT res;
 	DIR dir;
 	u32 dirLength = 0;
 	static FILINFO fno;
-
-	if (check_first_run)
-	{
-		// Read file attributes.
-		res = f_stat(path, &fno);
-		if (res != FR_OK)
-			return res;
-
-		// Check if archive bit is set.
-		if (fno.fattrib & AM_ARC)
-		{
-			*(u32 *)total = *(u32 *)total + 1;
-			f_chmod(path, 0, AM_ARC);
-		}
-	}
 
 	// Open directory.
 	res = f_opendir(&dir, path);
@@ -808,43 +794,33 @@ static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total,
 		if (res != FR_OK || fno.fname[0] == 0)
 			break;
 
-		// Skip official Nintendo dir if started from root.
-		if (!hos_folder && !strcmp(fno.fname, "Nintendo"))
-			continue;
-
 		// Set new directory or file.
 		memcpy(&path[dirLength], "/", 1);
-		memcpy(&path[dirLength + 1], fno.fname, strlen(fno.fname) + 1);
-
-		// Check if archive bit is set.
-		if (fno.fattrib & AM_ARC)
-		{
-			*total = *total + 1;
-			f_chmod(path, 0, AM_ARC);
-
-			if (*ufidx == 0)
-				lv_label_set_text(lb_val, path);
-			*ufidx += 1;
-			if (*ufidx > 9)
-				*ufidx = 0;
-		}
-
-		manual_system_maintenance(true);
+		strcpy(&path[dirLength + 1], fno.fname);
 
 		// Is it a directory?
 		if (fno.fattrib & AM_DIR)
 		{
-			// Set archive bit to NCA folders.
-			if (hos_folder && !strcmp(fno.fname + strlen(fno.fname) - 4, ".nca"))
+			// Set archive bit to folders with 3 char extension suffix.
+			if (fno.fname[strlen(fno.fname) - 4] == '.')
 			{
-				*total = *total + 1;
-				f_chmod(path, AM_ARC, AM_ARC);
+				if (!(fno.fattrib & AM_ARC))
+				{
+					total[0]++;
+					f_chmod(path, AM_ARC, AM_ARC);
+				}
 			}
+			else if (fno.fattrib & AM_ARC) // If not, clear the archive bit.
+			{
+				total[1]++;
+				f_chmod(path, 0, AM_ARC);
+			}
+
 			lv_label_set_text(lb_val, path);
 			manual_system_maintenance(true);
 
 			// Enter the directory.
-			res = _fix_attributes(ufidx, lb_val, path, total, hos_folder, 0);
+			res = _fix_attributes(lb_val, path, total);
 			if (res != FR_OK)
 				break;
 		}
@@ -857,17 +833,7 @@ static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total,
 
 static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 {
-	lv_obj_t *win;
-
-	// Find which was called and set window's title.
-	bool nintendo_folder = false;
-	if (strcmp(lv_label_get_text(lv_obj_get_child(btn, NULL)), SYMBOL_COPY"  Unset archive bit"))
-		nintendo_folder = true;
-
-	if (!nintendo_folder)
-		win = nyx_create_standard_window(SYMBOL_COPY" Unset archive bit (except Nintendo folder)");
-	else
-		win = nyx_create_standard_window(SYMBOL_COPY" Fix archive bit (Nintendo folder)");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Fix Archive Bit (All folders)");
 
 	// Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -886,10 +852,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 	}
 	else
 	{
-		if (!nintendo_folder)
-			lv_label_set_text(lb_desc, "#00DDFF Traversing all SD card files!#\nThis may take some time...");
-		else
-			lv_label_set_text(lb_desc, "#00DDFF Traversing all Nintendo files!#\nThis may take some time...");
+		lv_label_set_text(lb_desc, "#00DDFF Traversing all SD card files!#\nThis may take some time...");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 		lv_obj_t *val = lv_cont_create(win, NULL);
@@ -904,23 +867,8 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		lv_obj_set_width(lb_val, lv_obj_get_width(val));
 		lv_obj_align(val, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
 
-		u32 total = 0;
-
-		if (!nintendo_folder)
-			path[0] = 0;
-		else
-			strcpy(path, "Nintendo");
-
-		u32 ufidx = 0;
-
-		_fix_attributes(&ufidx, lb_val, path, &total, nintendo_folder, nintendo_folder);
-
-		// Also fix the emuMMC Nintendo folders.
-		if (nintendo_folder)
-		{
-			strcpy(path, "emuMMC");
-			_fix_attributes(&ufidx, lb_val, path, &total, nintendo_folder, nintendo_folder);
-		}
+		u32 total[2] = { 0 };
+		_fix_attributes(lb_val, path, total);
 
 		sd_unmount(false);
 
@@ -930,7 +878,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 		char *txt_buf = (char *)malloc(0x500);
 
-		s_printf(txt_buf, "#96FF00 Total archive bits fixed:# #FF8000 %d!#", total);
+		s_printf(txt_buf, "#96FF00 Total archive bits fixed:# #FF8000 %d unset, %d set!#", total[1], total[0]);
 
 		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
@@ -1410,34 +1358,19 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	}
 	lv_obj_t *label_btn = lv_label_create(btn, NULL);
 	lv_btn_set_fit(btn, true, true);
-	lv_label_set_static_text(label_btn, SYMBOL_COPY"  Unset archive bit");
+	lv_label_set_static_text(label_btn, SYMBOL_DIRECTORY"  Fix Archive Bit");
 	lv_obj_align(btn, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
 	lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _create_window_unset_abit_tool);
 
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to unset the archive bit for all folders except the\n"
-		"root and emuMMC \'Nintendo\' folders.\n"
-		"#FF8000 If you want the Nintendo folders, use the below option.#");
-	lv_obj_set_style(label_txt2, &hint_small_style);
-	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
-
-	// Create Fix archive bit - Nintendo button.
-	lv_obj_t *btn2 = lv_btn_create(h1, btn);
-	label_btn = lv_label_create(btn2, NULL);
-	lv_label_set_static_text(label_btn, SYMBOL_DIRECTORY"  Fix archive bit - Nintendo");
-	lv_obj_align(btn2, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
-	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_window_unset_abit_tool);
-
-	label_txt2 = lv_label_create(h1, NULL);
-	lv_label_set_recolor(label_txt2, true);
-	lv_label_set_static_text(label_txt2,
-		"Allows you to fix your \'Nintendo\' folder's archive bits.\n"
-		"This will also fix the \'Nintendo\' folders found in emuMMC.\n"
+		"Allows you to fix the archive bit for all folders including\n"
+		"the root and emuMMC \'Nintendo\' folders.\n"
+		"#C7EA46 It sets the archive bit to folders named with ##FF8000 .[ext]#\n"
 		"#FF8000 Use that option when you have corruption messages.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
-	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
 	// Create Others container.
 	lv_obj_t *h2 = _create_container(parent);
@@ -1487,7 +1420,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	char *txt_buf = (char *)malloc(0x1000);
 
 	s_printf(txt_buf,
-		"Allows you to enter RCM without using #C7EA46 VOL-# + #C7EA46 HOME# (jig).\n"
+		"Allows you to enter RCM without using #C7EA46 VOL+# & #C7EA46 HOME# (jig).\n"
 		"#FF8000 It can restore all versions of AutoRCM whenever requested.#\n"
 		"#FF3C28 This corrupts your BCT and you can't boot without a custom#\n"
 		"#FF3C28 bootloader.#");
@@ -1528,7 +1461,7 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 	lv_tabview_set_sliding(tv, false);
 	lv_tabview_set_btns_pos(tv, LV_TABVIEW_BTNS_POS_BOTTOM);
 
-	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" Package1/2");
+	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" Dump Pkg1/2 "SYMBOL_DOT" USB Tools");
 	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Archive bit "SYMBOL_DOT" AutoRCM");
 
 	_create_tab_tools_emmc_pkg12(th, tab1);
