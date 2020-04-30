@@ -116,7 +116,7 @@ _reset:
 	LDR R1, =0x30505645 /* EVP0 */
 	STR R1, [R0]        /* EVP0 in EXCP_EN_ADDR */
 	LDR R0, =EXCP_LR_ADDR
-	MOV R1, LR 
+	MOV R1, LR
 	STR R1, [R0]        /* Save LR in EXCP_LR_ADDR */
 	LDR R0, =__bss_start
 	EOR R1, R1, R1

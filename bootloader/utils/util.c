@@ -24,12 +24,11 @@
 #include "../soc/i2c.h"
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
+#include "../storage/nx_sd.h"
 
 #define USE_RTC_TIMER
 
 extern volatile nyx_storage_t *nyx_str;
-
-extern void sd_unmount();
 
 u32 get_tmr_s()
 {
@@ -117,7 +116,7 @@ void reboot_rcm()
 
 	nyx_str->mtc_cfg.init_done = 0;
 
-	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
+	PMC(APBDEV_PMC_SCRATCH0) = PMC_SCRATCH0_MODE_RCM;
 	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
 
 	while (true)
@@ -128,6 +127,8 @@ void power_off()
 {
 	sd_unmount();
 	display_end();
+	
+	nyx_str->mtc_cfg.init_done = 0;
 
 	// Stop the alarm, in case we injected and powered off too fast.
 	max77620_rtc_stop_alarm();

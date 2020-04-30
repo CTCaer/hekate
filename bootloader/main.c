@@ -1121,18 +1121,18 @@ static void _show_errors()
 		display_backlight_brightness(150, 1000);
 
 		if (h_cfg.errors & ERR_LIBSYS_LP0)
-			WPRINTF("Missing LP0 (sleep mode) library!\n");
+			WPRINTF("Missing LP0 (sleep mode) lib!\n");
 		if (h_cfg.errors & ERR_SYSOLD_MTC)
-			WPRINTF("Missing or old Minerva library!\n");
+			WPRINTF("Missing or old Minerva lib!\n");
 
 		if (h_cfg.errors & ~ERR_EXCEPT_ENB)
 		{
-			WPRINTF("\nUpdate your bootloader folder!\n\n");
+			WPRINTF("\nUpdate bootloader folder!\n\n");
 		}
 
 		if (h_cfg.errors & ERR_EXCEPT_ENB)
 		{
-			WPRINTFARGS("An exception happened (LR %08X):\n", *excp_lr);
+			WPRINTFARGS("An exception occurred (LR %08X):\n", *excp_lr);
 			switch (*excp_type)
 			{
 			case EXCP_TYPE_RESET:
@@ -1340,17 +1340,17 @@ ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
-	MDEF_HANDLER("Ipatches & bootrom info", bootrom_ipatches_info),
-	MDEF_HANDLER("Print fuse info", print_fuseinfo),
-	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
-	MDEF_HANDLER("Print TSEC keys", print_tsec_key),
+	MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
+	MDEF_HANDLER("Fuses", print_fuseinfo),
+	//MDEF_HANDLER("KFuses", print_kfuseinfo),
+	MDEF_HANDLER("TSEC keys", print_tsec_key),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
-	MDEF_HANDLER("Print eMMC info", print_mmc_info),
-	MDEF_HANDLER("Print SD Card info", print_sdcard_info),
+	MDEF_HANDLER("eMMC", print_mmc_info),
+	MDEF_HANDLER("SD Card", print_sdcard_info),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Misc ------", 0xFF0AB9E6),
-	MDEF_HANDLER("Print battery info", print_battery_info),
+	MDEF_HANDLER("Battery", print_battery_info),
 	MDEF_END()
 };
 

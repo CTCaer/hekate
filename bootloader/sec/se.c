@@ -275,7 +275,6 @@ int se_aes_xts_crypt(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u
 	return 1;
 }
 
-// se_calc_sha256() was derived from Atmosphère's se_calculate_sha256.
 int se_calc_sha256(void *dst, const void *src, u32 src_size)
 {
 	int res;

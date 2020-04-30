@@ -116,7 +116,6 @@ static const u8 mkey_keyseed_8xx[][0x10] =
 
 static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)
 {
-	
 	// Decrypt older encrypted mkey.
 	se_aes_crypt_ecb(src_slot, 0, mkey, 0x10, key_seed, 0x10);
 	// Set and unwrap pkg2 key.
@@ -177,7 +176,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 				mkey_seeds_idx--;
 				se_aes_key_clear(9);
 				se_aes_key_set(9, tmp_mkey, 0x10);
-					
+
 				decr_slot = 9; // Temp key.
 
 				// Check if we tried last key for that pkg2 version.

@@ -800,13 +800,13 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 
 static void _update_status_bar(void *params)
 {
-	char *label = (char *)malloc(64);
+	char *label = (char *)malloc(128);
 
-	u16 soc_temp;
-	u32 batt_percent;
-	int charge_status;
-	int batt_volt;
-	int batt_curr;
+	u16 soc_temp = 0;
+	u32 batt_percent = 0;
+	int charge_status = 0;
+	int batt_volt = 0;
+	int batt_curr = 0;
 	rtc_time_t time;
 
 	// Get sensor data.
@@ -1119,7 +1119,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	}
 
 	// Parse ini boot entries and set buttons/icons.
-	char *tmp_path = calloc(0x80, 1);
+	char *tmp_path = malloc(1024);
 	LIST_INIT(ini_sections);
 	if (sd_mount())
 	{
@@ -1133,7 +1133,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		if (ini_parse_success)
 		{
 			// Iterate to all boot entries and load icons.
-			u32 i = 1, x = 0;
+			u32 i = 1, curr_btn_idx = 0;
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 			{
 				if (!strcmp(ini_sec->name, "config") || (ini_sec->type != INI_CHOICE))
@@ -1171,7 +1171,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 					bmp = bmp_to_lvimg_obj(icon_path);
 
 				// Enable button.
-				lv_obj_set_opa_scale(launch_ctxt[x], LV_OPA_COVER);
+				lv_obj_set_opa_scale(launch_ctxt[curr_btn_idx], LV_OPA_COVER);
 
 				// Default to switch logo if no icon found at all.
 				if (!bmp)
@@ -1180,12 +1180,12 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				//Set icon.
 				if (bmp)
 				{
-					img = lv_img_create(launch_ctxt[x], NULL);
+					img = lv_img_create(launch_ctxt[curr_btn_idx], NULL);
 					lv_img_set_src(img, bmp);
 				}
 
 				// Add button mask/radius and align icon.
-				lv_obj_t *btn = lv_btn_create(launch_ctxt[x], NULL);
+				lv_obj_t *btn = lv_btn_create(launch_ctxt[curr_btn_idx], NULL);
 				lv_obj_set_size(btn, 200, 200);
 				lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_home_transp_rel);
 				lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
@@ -1195,7 +1195,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				// Set autoboot index.
 				ext = lv_obj_get_ext_attr(btn);
 				ext->idx = i;
-				ext = lv_obj_get_ext_attr(launch_ctxt[x]); // Redundancy.
+				ext = lv_obj_get_ext_attr(launch_ctxt[curr_btn_idx]); // Redundancy.
 				ext->idx = i;
 
 				// Set action.
@@ -1205,15 +1205,15 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
 
 				// Set button's label text.
-				lv_label_set_text(launch_ctxt[x + 1], ini_sec->name);
-				lv_obj_set_opa_scale(launch_ctxt[x + 1], LV_OPA_COVER);
+				lv_label_set_text(launch_ctxt[curr_btn_idx + 1], ini_sec->name);
+				lv_obj_set_opa_scale(launch_ctxt[curr_btn_idx + 1], LV_OPA_COVER);
 
 				// Set rolling text if name is big.
 				if (strlen(ini_sec->name) > 22)
 					lv_label_set_long_mode(boot_entry_label, LV_LABEL_LONG_ROLL);
 
 				i++;
-				x += 2;
+				curr_btn_idx += 2;
 
 				if (i > max_entries)
 					break;
@@ -1477,9 +1477,9 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	hint_small_style_white.text.font = &interui_20;
 
 	lv_style_copy(&monospace_text, &lv_style_plain);
-	monospace_text.body.main_color = LV_COLOR_HEX(0x1b1b1b);
-	monospace_text.body.grad_color = LV_COLOR_HEX(0x1b1b1b);
-	monospace_text.body.border.color = LV_COLOR_HEX(0x1b1b1b);
+	monospace_text.body.main_color = LV_COLOR_HEX(0x1B1B1B);
+	monospace_text.body.grad_color = LV_COLOR_HEX(0x1B1B1B);
+	monospace_text.body.border.color = LV_COLOR_HEX(0x1B1B1B);
 	monospace_text.body.border.width = 0;
 	monospace_text.body.opa = LV_OPA_TRANSP;
 	monospace_text.text.color = LV_COLOR_HEX(0xD8D8D8);

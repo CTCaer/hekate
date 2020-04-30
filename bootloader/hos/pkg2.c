@@ -642,6 +642,12 @@ static kip1_id_t _kip_ids[] =
 static kip1_id_t *_kip_id_sets = _kip_ids;
 static u32 _kip_id_sets_cnt = sizeof(_kip_ids) / sizeof(_kip_ids[0]);
 
+void pkg2_get_ids(kip1_id_t **ids, u32 *entries)
+{
+	*ids = _kip_id_sets;
+	*entries = _kip_id_sets_cnt;
+}
+
 static void parse_external_kip_patches()
 {
 	static bool ext_patches_done = false;

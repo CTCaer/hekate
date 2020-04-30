@@ -380,8 +380,11 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 #define	AM_RDO	0x01	/* Read only */
 #define	AM_HID	0x02	/* Hidden */
 #define	AM_SYS	0x04	/* System */
+#define	AM_VOL	0x08	/* Volume */
 #define AM_DIR	0x10	/* Directory */
 #define AM_ARC	0x20	/* Archive */
+#define AM_DEV	0x40	/* Device */
+#define AM_RVD	0x80	/* Reserved */
 
 
 #ifdef __cplusplus

@@ -186,7 +186,7 @@ static void label_init(void)
     sec.text.color = LV_COLOR_HEX(0xFF5500);
 
 	lv_style_copy(&hint, &prim);
-	hint.text.color = LV_COLOR_HEX3(0xCCC);
+	hint.text.color = LV_COLOR_HEX(0xCCCCCC);
 
 	theme.label.prim = &prim;
 	theme.label.sec = &sec;
@@ -199,7 +199,7 @@ static void img_init(void)
 #if USE_LV_IMG != 0
 	static lv_style_t img_light, img_dark;
 	lv_style_copy(&img_light, &def);
-    img_light.image.color = LV_COLOR_HEX(0xffffff);
+	img_light.image.color = LV_COLOR_WHITE;
 	img_light.image.intense = LV_OPA_80;
 
 	lv_style_copy(&img_dark, &def);
@@ -302,7 +302,7 @@ static void sw_init(void)
 	sw_knob_off.body.main_color = LV_COLOR_HEX(0xDADADA);
 	sw_knob_off.body.grad_color = sw_knob_off.body.main_color;
 	sw_knob_off.body.border.width = 1;
-	sw_knob_off.body.border.color = LV_COLOR_HEX3(0x999);
+	sw_knob_off.body.border.color = LV_COLOR_HEX(0x999999);
 	sw_knob_off.body.border.opa = LV_OPA_COVER;
 
 	theme.sw.bg = &sw_bg;
@@ -321,7 +321,7 @@ static void lmeter_init(void)
 	lmeter.body.main_color = lv_color_hsv_to_rgb(_hue, 75, 90);
 	lmeter.body.grad_color = lmeter.body.main_color;
 	lmeter.body.padding.hor = LV_DPI / 10; // Scale line length.
-	lmeter.line.color = LV_COLOR_HEX3(0x999);
+	lmeter.line.color = LV_COLOR_HEX(0x999999);
 	lmeter.line.width = 2;
 
 	theme.lmeter = &lmeter;
@@ -338,8 +338,8 @@ static void gauge_init(void)
 	gauge.body.grad_color = gauge.body.main_color;
 	gauge.body.padding.hor = LV_DPI / 16; // Scale line length.
 	gauge.body.padding.inner = LV_DPI / 8;
-	gauge.body.border.color = LV_COLOR_HEX3(0x999);
-	gauge.text.color = LV_COLOR_HEX3(0xddd);
+	gauge.body.border.color = LV_COLOR_HEX(0x999999);
+	gauge.text.color = LV_COLOR_HEX(0xDDDDDD);
 	gauge.line.width = 3;
 	gauge.line.color = lv_color_hsv_to_rgb(_hue, 95, 70);
 
@@ -428,7 +428,7 @@ static void cb_init(void)
 	rel.body.shadow.width = 3;
 
 	lv_style_copy(&pr, &rel);
-	pr.body.main_color = LV_COLOR_HEX3(0xCCC);
+	pr.body.main_color = LV_COLOR_HEX(0xCCCCCC);
 	pr.body.grad_color = pr.body.main_color;
 	pr.body.shadow.width = 3;
 
@@ -462,18 +462,18 @@ static void btnm_init(void)
 	bg.body.padding.hor = 0;
 	bg.body.padding.ver = 0;
 	bg.body.padding.inner = 0;
-	bg.text.color = LV_COLOR_HEX3(0x555);
+	bg.text.color = LV_COLOR_HEX(0x555555);
 
 	lv_style_copy(&rel, theme.panel);
 	rel.body.border.part = LV_BORDER_FULL | LV_BORDER_INTERNAL;
 	rel.body.border.width = 1;
-	rel.body.border.color = LV_COLOR_HEX3(0xBBB);
+	rel.body.border.color = LV_COLOR_HEX(0xBBBBBB);
 	rel.body.empty = 1;
 	rel.body.shadow.width = 0;
 
 	lv_style_copy(&pr, &rel);
 	pr.glass = 0;
-	pr.body.main_color = LV_COLOR_HEX3(0xDDD);
+	pr.body.main_color = LV_COLOR_HEX(0xDDDDDD);
 	pr.body.grad_color = pr.body.main_color;
 	pr.body.border.width = 0;
 	pr.body.empty = 0;
@@ -508,7 +508,7 @@ static void kb_init(void)
 	static lv_style_t bg, rel;
 
 	lv_style_copy(&bg, theme.btnm.bg);
-	bg.text.color = LV_COLOR_HEX3(0xCCC);
+	bg.text.color = LV_COLOR_HEX(0xCCCCCC);
 
 	lv_style_copy(&rel, &lv_style_transp);
 	rel.text.font = _font;
@@ -565,9 +565,9 @@ static void ta_init(void)
 	oneline.body.radius = 0;
 	oneline.body.border.part = LV_BORDER_BOTTOM;
 	oneline.body.border.width = 3;
-	oneline.body.border.color = LV_COLOR_HEX3(0x555);
+	oneline.body.border.color = LV_COLOR_HEX(0x555555);
 	oneline.body.border.opa = LV_OPA_COVER;
-	oneline.text.color = LV_COLOR_HEX3(0x888);
+	oneline.text.color = LV_COLOR_HEX(0x888888);
 
     theme.ta.area = theme.panel;
 	theme.ta.oneline = &oneline;
@@ -676,7 +676,7 @@ static void roller_init(void)
 	roller_bg.text.line_space = LV_DPI / 8;
 	roller_bg.text.font = _font;
 	roller_bg.glass = 0;
-	roller_bg.text.color = LV_COLOR_HEX3(0x444);
+	roller_bg.text.color = LV_COLOR_HEX(0x444444);
 
 	lv_style_copy(&roller_sel, &roller_bg);
 	roller_sel.text.color = COLOR_HOS_TURQUOISE;
@@ -705,7 +705,7 @@ static void tabview_init(void)
 	btn_bg.body.radius = 0;
 	btn_bg.body.empty = 1;
 	btn_bg.body.border.width = 0;
-	btn_bg.body.border.color = LV_COLOR_HEX3(0xDDD);
+	btn_bg.body.border.color = LV_COLOR_HEX(0xDDDDDD);
 	btn_bg.body.border.part = LV_BORDER_BOTTOM;
 	btn_bg.body.border.opa = LV_OPA_COVER;
 	btn_bg.body.shadow.width = 0;
@@ -726,7 +726,7 @@ static void tabview_init(void)
 	pr.body.border.width = 0;
 	pr.body.empty = 0;
 	pr.body.radius = 0;
-	pr.body.border.color = LV_COLOR_HEX3(0x888);
+	pr.body.border.color = LV_COLOR_HEX(0x888888);
 	pr.body.border.part = LV_BORDER_BOTTOM;
 	pr.body.border.opa = LV_OPA_COVER;
 	pr.text.color = COLOR_HOS_TURQUOISE;
@@ -788,7 +788,7 @@ static void win_init(void)
 	header.body.grad_color = header.body.main_color;
 	header.body.radius = 0;
 	header.body.border.width = 0;
-	header.body.border.color = LV_COLOR_HEX3(0xDDD);
+	header.body.border.color = LV_COLOR_HEX(0xDDDDDD);
 	header.body.border.part = LV_BORDER_BOTTOM;
 	header.body.border.opa = LV_OPA_COVER;
 	header.body.shadow.width = 0;

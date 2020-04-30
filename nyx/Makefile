@@ -21,7 +21,7 @@ VPATH += $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/)) $(dir $(wildcard ./$(SOURCEDIR
 
 # Main and graphics.
 OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	start.o \
+	start.o exception_handlers.o \
 	nyx.o heap.o \
 	gfx.o \
 	gui.o gui_info.o gui_tools.o gui_options.o gui_emmc_tools.o gui_emummc_tools.o \
@@ -30,9 +30,10 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Hardware.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	bpmp.o clock.o cluster.o di.o gpio.o i2c.o mc.o sdram.o pinmux.o se.o smmu.o tsec.o uart.o \
-	fuse.o kfuse.o minerva.o \
-	sdmmc.o sdmmc_driver.o \
+	bpmp.o clock.o cluster.o di.o gpio.o i2c.o irq.o pinmux.o se.o smmu.o tsec.o uart.o \
+	fuse.o kfuse.o \
+	mc.o sdram.o minerva.o \
+	sdmmc.o sdmmc_driver.o nx_emmc.o nx_sd.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o regulator_5v.o \
 	touch.o tmp451.o fan.o \
 	hw_init.o \

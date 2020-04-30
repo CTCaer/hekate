@@ -31,6 +31,7 @@ typedef enum
 	ERR_LIBSYS_LP0 = (1 << 0),
 	ERR_SYSOLD_NYX = (1 << 1),
 	ERR_SYSOLD_MTC = (1 << 2),
+	ERR_EXCEPT_ENB = (1 << 31),
 } hekate_errors_t;
 
 #define byte_swap_32(num) (((num >> 24) & 0xff) | ((num << 8) & 0xff0000) | \

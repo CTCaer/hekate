@@ -149,6 +149,7 @@ int  pkg2_has_kip(link_t *info, u64 tid);
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1);
 void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
+void pkg2_get_ids(kip1_id_t **ids, u32 *entries);
 const char* pkg2_patch_kips(link_t *info, char* patchNames);
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash);

@@ -522,7 +522,7 @@ int hos_launch(ini_sec_t *cfg)
 			((fuse_read_odm(7) & 0x400) && (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_810))))
 		config_kip1patch(&ctxt, "nogc");
 
-	gfx_printf("Loaded pkg1 & keyblob\n");
+	gfx_printf("Loaded config, pkg1 and keyblob\n");
 
 	// Generate keys.
 	if (!h_cfg.se_keygen_done)
@@ -590,7 +590,7 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		// Else we patch it to allow for an unsigned package2 and patched kernel.
 		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
-		gfx_printf("%kPatching Security Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kPatching Secure Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 		for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 	}
@@ -680,7 +680,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Check if FS is compatible with exFAT.
 	if (!ctxt.stock && sd_fs.fs_type == FS_EXFAT && !_get_fs_exfat_compatible(&kip1_info))
 	{
-		_hos_crit_error("Your SD Card is exFAT and the installed\nFS only supports FAT32!");
+		_hos_crit_error("SD Card is exFAT and the installed\nFS only supports FAT32!");
 
 		_free_launch_components(&ctxt);
 		return 0;
@@ -781,9 +781,6 @@ int hos_launch(ini_sec_t *cfg)
 	// Start from DRAM ready signal and reset outgoing value.
 	secmon_mb->in = bootStateDramPkg2;
 	secmon_mb->out = 0;
-
-	// Free allocated memory.
-	_free_launch_components(&ctxt);
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
 	display_end();

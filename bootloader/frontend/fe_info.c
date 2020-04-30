@@ -153,21 +153,6 @@ void print_mmc_info()
 		gfx_printf("%kCID:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		switch (storage.csd.mmca_vsn)
 		{
-		case 0: /* MMC v1.0 - v1.2 */
-		case 1: /* MMC v1.4 */
-			gfx_printf(
-				" Vendor ID:  %03X\n"
-				" Model:      %c%c%c%c%c%c%c\n"
-				" HW rev:     %X\n"
-				" FW rev:     %X\n"
-				" S/N:        %03X\n"
-				" Month/Year: %02d/%04d\n\n",
-				storage.cid.manfid,
-				storage.cid.prod_name[0], storage.cid.prod_name[1],	storage.cid.prod_name[2],
-				storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
-				storage.cid.prod_name[6], storage.cid.hwrev, storage.cid.fwrev,
-				storage.cid.serial, storage.cid.month, storage.cid.year);
-			break;
 		case 2: /* MMC v2.0 - v2.2 */
 		case 3: /* MMC v3.1 - v3.3 */
 		case 4: /* MMC v4 */
@@ -185,7 +170,6 @@ void print_mmc_info()
 				storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
 			break;
 		default:
-			EPRINTFARGS("eMMC has unknown MMCA version %d", storage.csd.mmca_vsn);
 			break;
 		}
 
@@ -351,7 +335,7 @@ void print_tsec_key()
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
-		EPRINTF("Unknown pkg1 version for reading\nTSEC firmware.");
+		EPRINTF("Unknown pkg1 version.");
 		goto out_wait;
 	}
 
@@ -443,7 +427,7 @@ void print_fuel_gauge_info()
 {
 	int value = 0;
 
-	gfx_printf("%kFuel Gauge IC Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%kFuel Gauge Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 
 	max17050_get_property(MAX17050_RepSOC, &value);
 	gfx_printf("Capacity now:           %3d%\n", value >> 8);
@@ -495,7 +479,7 @@ void print_battery_charger_info()
 {
 	int value = 0;
 
-	gfx_printf("%k\n\nBattery Charger IC Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%k\n\nBattery Charger Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
 
 	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
 	gfx_printf("Input voltage limit:       %4d mV\n", value);

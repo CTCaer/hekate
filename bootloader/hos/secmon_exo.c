@@ -180,9 +180,7 @@ void config_exosphere(launch_ctxt_t *ctxt)
 
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;
-
 	exo_cfg->fwno = exoFwNo;
-
 	exo_cfg->flags = exoFlags;
 
 	// If warmboot is lp0fw, add in RSA modulus.

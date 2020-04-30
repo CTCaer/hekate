@@ -54,6 +54,7 @@
 u8 *Kc_MENU_LOGO;
 #endif //MENU_LOGO_ENABLE
 
+nyx_config n_cfg;
 hekate_config h_cfg;
 
 const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
@@ -292,7 +293,7 @@ static void _show_errors()
 		gfx_con_setpos(0, 0);
 		display_backlight_brightness(100, 1000);
 
-		WPRINTFARGS("An exception happened (LR %08X):\n", *excp_lr);
+		WPRINTFARGS("An exception occurred (LR %08X):\n", *excp_lr);
 		switch (*excp_type)
 		{
 		case EXCP_TYPE_RESET:
@@ -331,9 +332,13 @@ void nyx_init_load_res()
 
 	// Set bootloader's default configuration.
 	set_default_configuration();
+	set_nyx_default_configuration();
 
 	gfx_init_ctxt((u32 *)NYX_FB_ADDRESS, 720, 1280, 720);
 	gfx_con_init();
+
+	// Show exception errors if any.
+	_show_errors();
 
 	sd_mount();
 
