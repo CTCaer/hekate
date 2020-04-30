@@ -123,6 +123,12 @@ static void _save_fb_to_bmp()
 	lv_obj_set_width(mbox, LV_DPI * 4);
 	lv_obj_set_top(mbox, true);
 	lv_obj_align(mbox, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
+
+	// Capture effect.
+	display_backlight_brightness(255, 100);
+	msleep(150);
+	display_backlight_brightness(h_cfg.backlight - 20, 100);
+
 	manual_system_maintenance(true);
 
 	memcpy(bitmap + 0x36, fb, 0x384000);
