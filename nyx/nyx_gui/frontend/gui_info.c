@@ -333,8 +333,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	lv_label_set_text(lb_val, txt_buf);
 
-	free(txt_buf);
-
 	lv_obj_set_width(lb_val, lv_obj_get_width(val));
 	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
@@ -345,15 +343,64 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc2, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc2, true);
 
+
+	// Display info.
+	u32 display_id = ((nyx_str->info.disp_id >> 8) & 0xFF00) | (nyx_str->info.disp_id & 0xFF);
+
+	s_printf(txt_buf, "#00DDFF Display Panel:#\n#FF8000 Model:# ");
+
+	switch (display_id)
+	{
+	case PANEL_JDI_LAM062M109A:
+		s_printf(txt_buf + strlen(txt_buf), "JDI LAM062M109A");
+		break;
+	case PANEL_JDI_LPM062M326A:
+		s_printf(txt_buf + strlen(txt_buf), "JDI LPM062M326A");
+		break;
+	case PANEL_INL_P062CCA_AZ1:
+		s_printf(txt_buf + strlen(txt_buf), "InnoLux P062CCA-AZ1");
+		break;
+	case PANEL_AUO_A062TAN01:
+		s_printf(txt_buf + strlen(txt_buf), "AUO A062TAN01");
+		break;
+	case PANEL_INL_P062CCA_AZ2:
+		s_printf(txt_buf + strlen(txt_buf), "InnoLux P062CCA-AZ2");
+		break;
+	case PANEL_AUO_A062TAN02:
+		s_printf(txt_buf + strlen(txt_buf), "AUO A062TAN02");
+		break;
+	default:
+		switch (display_id & 0xFF)
+		{
+		case PANEL_JDI_LPM062M:
+			s_printf(txt_buf + strlen(txt_buf), "JDI ");
+			break;
+		case (PANEL_INL_P062CCA_AZ1 & 0xFF):
+			s_printf(txt_buf + strlen(txt_buf), "InnoLux ");
+			break;
+		case (PANEL_AUO_A062TAN01 & 0xFF):
+			s_printf(txt_buf + strlen(txt_buf), "AUO ");
+			break;
+		}
+		s_printf(txt_buf + strlen(txt_buf), "Unknown");
+		break;
+	}
+
+	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# [%02X] %02X [%02X]",
+		nyx_str->info.disp_id & 0xFF, (nyx_str->info.disp_id >> 8) & 0xFF, (nyx_str->info.disp_id >> 16) & 0xFF);
+
 	// Check if patched unit.
 	if (!fuse_check_patched_rcm())
-		lv_label_set_text(lb_desc2, "#96FF00 Your unit is exploitable#\n#96FF00 to the RCM bug!#");
+		s_printf(txt_buf + strlen(txt_buf), "\n\n#96FF00 Your unit is exploitable#\n#96FF00 to the RCM bug!#");
 	else
-		lv_label_set_text(lb_desc2, "#FF8000 Your unit is patched#\n#FF8000 to the RCM bug!#");
+		s_printf(txt_buf + strlen(txt_buf), "\n\n#FF8000 Your unit is patched#\n#FF8000 to the RCM bug!#");
+
+	lv_label_set_text(lb_desc2, txt_buf);
+
+	free(txt_buf);
 
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
-	lv_label_set_align(lb_desc2, LV_LABEL_ALIGN_CENTER);
 
 	return LV_RES_OK;
 }
