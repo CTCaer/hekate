@@ -343,11 +343,82 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc2, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc2, true);
 
+	// DRAM info.
+	emc_mr_data_t ram_vendor = sdram_read_mrx(MR5_MAN_ID);
+	emc_mr_data_t ram_rev0 = sdram_read_mrx(MR6_REV_ID1);
+	emc_mr_data_t ram_rev1 = sdram_read_mrx(MR7_REV_ID2);
+	emc_mr_data_t ram_density = sdram_read_mrx(MR8_DENSITY);
+	s_printf(txt_buf, "#00DDFF LPDDR4 SDRAM ##FF8000 Slot 0 | Slot 1:#\n#FF8000 Vendor:# ");
+	switch (ram_vendor.dev0_ch0)
+	{
+	case 1:
+		s_printf(txt_buf + strlen(txt_buf), "Samsung");
+		break;
+	case 6:
+		s_printf(txt_buf + strlen(txt_buf), "Hynix");
+		break;
+	case 255:
+		s_printf(txt_buf + strlen(txt_buf), "Micron");
+		break;
+	default:
+		s_printf(txt_buf + strlen(txt_buf), "Unknown");
+		break;
+	}
+	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", ram_vendor.dev0_ch0);
+	switch (ram_vendor.dev1_ch0)
+	{
+	case 1:
+		s_printf(txt_buf + strlen(txt_buf), "Samsung");
+		break;
+	case 6:
+		s_printf(txt_buf + strlen(txt_buf), "Hynix");
+		break;
+	case 255:
+		s_printf(txt_buf + strlen(txt_buf), "Micron");
+		break;
+	default:
+		s_printf(txt_buf + strlen(txt_buf), "Unknown");
+		break;
+	}
+	s_printf(txt_buf + strlen(txt_buf), " (%d)\n#FF8000 Rev ID:# %04X #FF8000 |# %04X\n#FF8000 Density:# ",
+		ram_vendor.dev1_ch0, (ram_rev0.dev0_ch0 << 8) | ram_rev1.dev0_ch0, (ram_rev0.dev1_ch0 << 8) | ram_rev1.dev1_ch0);
+	switch ((ram_density.dev0_ch0 & 0x3C) >> 2)
+	{
+	case 2:
+		s_printf(txt_buf + strlen(txt_buf), "4 x 512MB");
+		break;
+	case 3:
+		s_printf(txt_buf + strlen(txt_buf), "4 x 768MB");
+		break;
+	case 4:
+		s_printf(txt_buf + strlen(txt_buf), "4 x 1GB");
+		break;
+	default:
+		s_printf(txt_buf + strlen(txt_buf), "4 x Unk");
+		break;
+	}
+	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", (ram_density.dev0_ch0 & 0x3C) >> 2);
+	switch ((ram_density.dev1_ch0 & 0x3C) >> 2)
+	{
+	case 2:
+		s_printf(txt_buf + strlen(txt_buf), "4 x 512MB");
+		break;
+	case 3:
+		s_printf(txt_buf + strlen(txt_buf), "4 x 768MB");
+		break;
+	case 4:
+		s_printf(txt_buf + strlen(txt_buf), "4 x 1GB");
+		break;
+	default:
+		s_printf(txt_buf + strlen(txt_buf), "2 x Unk");
+		break;
+	}
+	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.dev1_ch0 & 0x3C) >> 2);
 
 	// Display info.
 	u32 display_id = ((nyx_str->info.disp_id >> 8) & 0xFF00) | (nyx_str->info.disp_id & 0xFF);
 
-	s_printf(txt_buf, "#00DDFF Display Panel:#\n#FF8000 Model:# ");
+	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Display Panel:#\n#FF8000 Model:# ");
 
 	switch (display_id)
 	{
