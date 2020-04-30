@@ -336,7 +336,7 @@ void nyx_init_load_res()
 	set_default_configuration();
 	set_nyx_default_configuration();
 
-	gfx_init_ctxt((u32 *)NYX_FB_ADDRESS, 720, 1280, 720);
+	gfx_init_ctxt((u32 *)LOG_FB_ADDRESS, 1280, 656, 656);
 	gfx_con_init();
 
 	// Show exception errors if any.

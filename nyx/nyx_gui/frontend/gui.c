@@ -95,6 +95,7 @@ static void _nyx_disp_init()
 {
 	display_backlight_brightness(0, 1000);
 	display_init_framebuffer_pitch();
+	display_init_framebuffer_log();
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }
 
@@ -195,6 +196,7 @@ static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const
 }
 
 static touch_event touchpad;
+static bool console_enabled = false;
 
 static bool _fts_touch_read(lv_indev_data_t *data)
 {
@@ -205,6 +207,21 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	{
 		_save_fb_to_bmp();
 		msleep(200);
+	}
+
+	if (console_enabled)
+	{
+		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
+		gfx_con_setpos(32, 638);
+		gfx_con.fntsz = 8;
+		gfx_printf("x: %4d, y: %4d | z: %3d | ", touchpad.x, touchpad.y, touchpad.z);
+		gfx_printf("1: %02x, 2: %02x, 3: %02x, ", touchpad.raw[1], touchpad.raw[2], touchpad.raw[3]);
+		gfx_printf("4: %02X, 5: %02x, 6: %02x, 7: %02x",
+			touchpad.raw[4], touchpad.raw[5], touchpad.raw[6], touchpad.raw[7]);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+		gfx_con.fntsz = 16;
+
+		return false;
 	}
 
 	// Always set touch points.
@@ -281,6 +298,49 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		data->state = LV_INDEV_STATE_PR;
 	else
 		data->state = LV_INDEV_STATE_REL;
+
+	// Enable console.
+	if (jc_pad->plus || jc_pad->minus)
+	{
+		if (((u32)get_tmr_ms() - jc_drv_ctx.console_timeout) > 1000)
+		{
+			if (!console_enabled)
+			{
+				display_activate_console();
+				console_enabled = true;
+				gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
+				gfx_con_setpos(964, 630);
+				gfx_printf("Press -/+ to close");
+				gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+			}
+			else
+			{
+				display_deactivate_console();
+				console_enabled = false;
+			}
+
+			jc_drv_ctx.console_timeout = get_tmr_ms();
+		}
+
+		data->state = LV_INDEV_STATE_REL;
+		return false;
+	}
+
+	if (console_enabled)
+	{
+		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
+		gfx_con_setpos(32, 630);
+		gfx_con.fntsz = 8;
+		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %0d | cx: %03X - %03x, cy: %03X - %03x",
+			jc_pad->lstick_x, jc_pad->lstick_y, jc_pad->buttons,
+			jc_pad->batt_info_l, jc_pad->batt_info_r,
+			jc_drv_ctx.cx_min, jc_drv_ctx.cx_max, jc_drv_ctx.cy_min, jc_drv_ctx.cy_max);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+		gfx_con.fntsz = 16;
+
+		data->state = LV_INDEV_STATE_REL;
+		return false;
+	}
 
 	// Calculate new cursor position.
 	if (jc_pad->lstick_x <= jc_drv_ctx.cx_max && jc_pad->lstick_x >= jc_drv_ctx.cx_min)
