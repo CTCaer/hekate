@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019-2020 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file lv_kb.c
@@ -58,6 +73,13 @@ static const char * kb_map_num[] = {
     "4", "5", "6", "\202"SYMBOL_OK, "\n",
     "7", "8", "9", "\202Bksp", "\n",
     "+/-", "0", ".", SYMBOL_LEFT, SYMBOL_RIGHT, ""
+};
+
+static const char * kb_map_hex[] = {
+	"1", "2", "3", "A", "D", "\212", "\n",
+	"4", "5", "6", "B", "E", "\202Bksp", "\n",
+	"7", "8", "9", "C", "F", "\202"SYMBOL_OK, "\n",
+	"\211", "0", "\213", SYMBOL_LEFT, SYMBOL_RIGHT, ""
 };
 /**********************
  *      MACROS
@@ -183,6 +205,7 @@ void lv_kb_set_mode(lv_obj_t * kb, lv_kb_mode_t mode)
     ext->mode = mode;
     if(mode == LV_KB_MODE_TEXT) lv_btnm_set_map(kb, kb_map_lc);
     else if(mode == LV_KB_MODE_NUM) lv_btnm_set_map(kb, kb_map_num);
+	else if (mode == LV_KB_MODE_HEX) lv_btnm_set_map(kb, kb_map_hex);
 }
 
 

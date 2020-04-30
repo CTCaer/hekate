@@ -336,7 +336,7 @@
 #define USE_LV_BTNM     1
 
 /*Keyboard (dependencies: lv_btnm)*/
-#define USE_LV_KB       0
+#define USE_LV_KB       1
 
 /*Check box (dependencies: lv_btn, lv_label)*/
 #define USE_LV_CB       1
