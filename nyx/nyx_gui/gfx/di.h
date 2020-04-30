@@ -529,6 +529,9 @@ void display_backlight_brightness(u32 brightness, u32 step_delay);
 /*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
 u32 *display_init_framebuffer_pitch();
 u32 *display_init_framebuffer_block();
+u32 *display_init_framebuffer_log();
+void display_activate_console();
+void display_deactivate_console();
 void display_init_cursor(void *crs_fb, u32 size);
 void display_set_pos_cursor(u32 x, u32 y);
 void display_deinit_cursor();

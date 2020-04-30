@@ -340,7 +340,8 @@ void display_color_screen(u32 color)
 u32 *display_init_framebuffer_pitch()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch, 32);
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch, 34);
+
 	usleep(35000);
 
 	return (u32 *)NYX_FB_ADDRESS;
@@ -349,11 +350,58 @@ u32 *display_init_framebuffer_pitch()
 u32 *display_init_framebuffer_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_block, 32);
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_block, 34);
 
 	usleep(35000);
 
 	return (u32 *)NYX_FB_ADDRESS;
+}
+
+u32 *display_init_framebuffer_log()
+{
+	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_log, 20);
+
+	return (u32 *)LOG_FB_ADDRESS;
+}
+
+void display_activate_console()
+{
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window C.
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = WIN_ENABLE; // Enable window DD.
+	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0xFF80;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+
+	for (u32 i = 0xFF80; i < 0x10000; i++)
+	{
+		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+		usleep(1000);
+	}
+
+	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+}
+
+void display_deactivate_console()
+{
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window C.
+
+	for (u32 i = 0xFFFF; i > 0xFF7F; i--)
+	{
+		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+		usleep(500);
+	}
+
+	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0; // Disable window DD.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 }
 
 void display_init_cursor(void *crs_fb, u32 size)
