@@ -99,6 +99,68 @@ static void _nyx_disp_init()
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }
 
+static void _save_log_to_bmp(u32 bmp_tmr_name)
+{
+	const u32 file_size = 0x334000 + 0x36;
+	u8 *bitmap = malloc(file_size);
+	u32 *fb = malloc(0x334000);
+	u32 *fb_ptr = (u32 *)LOG_FB_ADDRESS;
+
+	// Reconstruct FB for bottom-top, landscape bmp.
+	for (int x = 1279; x > - 1; x--)
+	{
+		for (int y = 655; y > -1; y--)
+			fb[y * 1280 + x] = *fb_ptr++;
+	}
+
+	manual_system_maintenance(true);
+
+	memcpy(bitmap + 0x36, fb, 0x334000);
+
+	typedef struct _bmp_t
+	{
+		u16 magic;
+		u32 size;
+		u32 rsvd;
+		u32 data_off;
+		u32 hdr_size;
+		u32 width;
+		u32 height;
+		u16 planes;
+		u16 pxl_bits;
+		u32 comp;
+		u32 img_size;
+		u32 res_h;
+		u32 res_v;
+		u64 rsvd2;
+	} __attribute__((packed)) bmp_t;
+
+	bmp_t *bmp = (bmp_t *)bitmap;
+
+	bmp->magic    = 0x4D42;
+	bmp->size     = file_size;
+	bmp->rsvd     = 0;
+	bmp->data_off = 0x36;
+	bmp->hdr_size = 40;
+	bmp->width    = 1280;
+	bmp->height   = 656;
+	bmp->planes   = 1;
+	bmp->pxl_bits = 32;
+	bmp->comp     = 0;
+	bmp->img_size = 0x334000;
+	bmp->res_h    = 2834;
+	bmp->res_v    = 2834;
+	bmp->rsvd2    = 0;
+
+	char path[0x80];
+	strcpy(path, "bootloader/screenshots");
+	s_printf(path + strlen(path), "/screen_%08X_log.bmp", bmp_tmr_name);
+	sd_save_to_file(bitmap, file_size, path);
+
+	free(bitmap);
+	free(fb);
+}
+
 static void _save_fb_to_bmp()
 {
 	if (do_reload)
@@ -174,8 +236,12 @@ static void _save_fb_to_bmp()
 
 	strcpy(path, "bootloader/screenshots");
 	f_mkdir(path);
-	s_printf(path + strlen(path), "/screen_%08X.bmp", get_tmr_us());
+	u32 bmp_tmr_name = get_tmr_us();
+	s_printf(path + strlen(path), "/screen_%08X.bmp", bmp_tmr_name);
 	sd_save_to_file(bitmap, file_size, path);
+
+	_save_log_to_bmp(bmp_tmr_name);
+
 	sd_unmount(false);
 
 	free(bitmap);
