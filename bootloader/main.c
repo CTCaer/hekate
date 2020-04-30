@@ -1338,14 +1338,14 @@ ment_t ment_options[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_HANDLER("Auto boot", config_autoboot),
-	MDEF_HANDLER("Boot time delay", config_bootdelay),
-	MDEF_HANDLER("Auto NoGC", config_nogc),
+	//MDEF_HANDLER("Boot delay", config_bootdelay),
+	//MDEF_HANDLER("Auto NoGC", config_nogc),
 	//MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
-	//MDEF_HANDLER("Backlight", config_backlight),
+	MDEF_HANDLER("Backlight", config_backlight),
 	MDEF_END()
 };
 
-menu_t menu_options = { ment_options, "Launch Options", 0, 0 };
+menu_t menu_options = { ment_options, "Options", 0, 0 };
 
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
@@ -1353,8 +1353,8 @@ ment_t ment_cinfo[] = {
 	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
 	MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
 	MDEF_HANDLER("Fuses", print_fuseinfo),
-	//MDEF_HANDLER("KFuses", print_kfuseinfo),
-	MDEF_HANDLER("TSEC keys", print_tsec_key),
+	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
+	//MDEF_HANDLER("Print TSEC keys", print_tsec_key),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
 	MDEF_HANDLER("eMMC", print_mmc_info),
@@ -1399,10 +1399,10 @@ menu_t menu_backup = { ment_backup, "Backup Options", 0, 0 };
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
-	MDEF_MENU("Backup", &menu_backup),
-	MDEF_MENU("Restore", &menu_restore),
-	MDEF_CHGLINE(),
+	//MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
+	//MDEF_MENU("Backup", &menu_backup),
+	//MDEF_MENU("Restore", &menu_restore),
+	//MDEF_CHGLINE(),
 	//MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	//MDEF_HANDLER("Dump package1/2", dump_packages12),
 	//MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
