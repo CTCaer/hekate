@@ -561,6 +561,96 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
+{
+	FIL fp;
+	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info();
+
+	int error = !sd_mount();
+
+	char *data = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(0x1000);
+
+	if (!error)
+	{
+		// Save binary dump.
+		memcpy(data, &jc_pad->bt_conn_l, sizeof(jc_bt_conn_t));
+		memcpy(data + sizeof(jc_bt_conn_t), &jc_pad->bt_conn_r, sizeof(jc_bt_conn_t));
+
+		f_mkdir("switchroot");
+		error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin");
+
+		// Save readable dump.
+		jc_bt_conn_t *bt = &jc_pad->bt_conn_l;
+		s_printf(data,
+			"[joycon_00]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
+			"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
+			"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n\n",
+			bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
+			bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
+			bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
+			bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
+		bt = &jc_pad->bt_conn_r;
+		s_printf(data + strlen(data),
+			"[joycon_01]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
+			"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
+			"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
+			bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
+			bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
+			bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
+			bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
+
+		if (!error)
+			error = f_open(&fp, "switchroot/joycon_mac.ini", FA_WRITE | FA_CREATE_ALWAYS);
+		if (!error)
+		{
+			f_puts(data, &fp);
+			f_close(&fp);
+		}
+
+		sd_unmount(false);
+	}
+
+	lv_style_t *darken;
+	darken = (lv_style_t *)malloc(sizeof(lv_style_t));
+	lv_style_copy(darken, &lv_style_plain);
+	darken->body.main_color = LV_COLOR_BLACK;
+	darken->body.grad_color = darken->body.main_color;
+	darken->body.opa = LV_OPA_30;
+
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+
+	u32 joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
+	if (jc_pad->bt_conn_r.type)
+		joycon_found++;
+
+	if (error)
+		s_printf(txt_buf, "#FFDD00 Failed to dump to# Joy-Con pairing info#FFDD00 !#\nError: %d", error);
+	else
+		s_printf(txt_buf,
+			"Dumping to SD card finished!\n"
+			"Found %d Joycon!\n\n"
+			"Saved to: #C7EA46 switchroot/joycon_mac.bin/ini#", joycon_found);
+	lv_mbox_set_text(mbox, txt_buf);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	free(txt_buf);
+	free(data);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _home_screen_action(lv_obj_t *ddlist)
 {
 	n_cfg.home_screen = lv_ddlist_get_selected(ddlist);
@@ -698,6 +788,25 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 
 	label_sep = lv_label_create(sw_h3, NULL);
 	lv_label_set_static_text(label_sep, "");
+
+	// Create Dump Joy-Con BT button.
+	lv_obj_t *btn3 = lv_btn_create(sw_h3, NULL);
+	lv_obj_t *label_btn3 = lv_label_create(btn3, NULL);
+	lv_btn_set_fit(btn3, true, true);
+	lv_label_set_static_text(label_btn3, SYMBOL_DOWNLOAD" Dump Joy-Con BT");
+	lv_obj_align(btn3, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -LV_DPI / 3);
+	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _joycon_info_dump_action);
+
+	label_txt2 = lv_label_create(sw_h3, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"Allows you to save the Switch and Joy-Con MAC addresses\n"
+		"and the LTKs associated with them. For #C7EA46 Android# and #C7EA46 Linux#.");
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+
+	line_sep = lv_line_create(sw_h3, line_sep);
+	lv_obj_align(line_sep, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 4);
 
 	// Create Backup/Restore Verification list.
 	label_txt = lv_label_create(sw_h3, NULL);
