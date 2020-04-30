@@ -18,19 +18,28 @@
 #include <stdlib.h>
 
 #include "gui.h"
+#include "gui_tools.h"
 #include "gui_emmc_tools.h"
+#include "fe_emummc_tools.h"
+#include "../../../common/memory_map.h"
 #include "../config/config.h"
+#include "../gfx/di.h"
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
 #include "../hos/sept.h"
+#include "../input/touch.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
+#include "../mem/minerva.h"
 #include "../sec/se.h"
+#include "../soc/bpmp.h"
 #include "../soc/fuse.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
+#include "../usb/usbd.h"
+#include "../utils/btn.h"
 #include "../utils/sprintf.h"
 #include "../utils/util.h"
 
@@ -38,6 +47,24 @@ extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+
+static lv_obj_t *_create_container(lv_obj_t *parent)
+{
+	static lv_style_t h_style;
+	lv_style_copy(&h_style, &lv_style_transp);
+	h_style.body.padding.inner = 0;
+	h_style.body.padding.hor = LV_DPI - (LV_DPI / 4);
+	h_style.body.padding.ver = LV_DPI / 6;
+
+	lv_obj_t *h1 = lv_cont_create(parent, NULL);
+	lv_cont_set_style(h1, &h_style);
+	lv_cont_set_fit(h1, false, true);
+	lv_obj_set_width(h1, (LV_HOR_RES / 9) * 4);
+	lv_obj_set_click(h1, false);
+	lv_cont_set_layout(h1, LV_LAYOUT_OFF);
+
+	return h1;
+}
 
 bool get_autorcm_status(bool change)
 {
@@ -133,6 +160,514 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\211", "\262Close", "\211", "" };
+	static const char *mbox_btn_map2[] = { "\211", "\222Close", "\211", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	char *text_buf = malloc(0x1000);
+
+	s_printf(text_buf, "#FF8000 USB Mass Storage#\n\n#C7EA46 Device:# ");
+
+	if (usbs->type == MMC_SD)
+	{
+		switch (usbs->partition)
+		{
+		case 0:
+			s_printf(text_buf + strlen(text_buf), "SD Card");
+			break;
+		case EMMC_GPP + 1:
+			s_printf(text_buf + strlen(text_buf), "emuMMC GPP");
+			break;
+		case EMMC_BOOT0 + 1:
+			s_printf(text_buf + strlen(text_buf), "emuMMC BOOT0");
+			break;
+		case EMMC_BOOT1 + 1:
+			s_printf(text_buf + strlen(text_buf), "emuMMC BOOT1");
+			break;
+		}
+	}
+	else
+	{
+		switch (usbs->partition)
+		{
+		case EMMC_GPP + 1:
+			s_printf(text_buf + strlen(text_buf), "eMMC GPP");
+			break;
+		case EMMC_BOOT0 + 1:
+			s_printf(text_buf + strlen(text_buf), "eMMC BOOT0");
+			break;
+		case EMMC_BOOT1 + 1:
+			s_printf(text_buf + strlen(text_buf), "eMMC BOOT1");
+			break;
+		}
+	}
+
+	lv_mbox_set_text(mbox, text_buf);
+
+	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_status, true);
+	lv_label_set_text(lbl_status, " ");
+	usbs->label = (void *)lbl_status;
+
+	lv_obj_t *lbl_tip = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_tip, true);
+	if (!usbs->ro)
+	{
+		if (usbs->type == MMC_SD)
+		{
+			lv_label_set_static_text(lbl_tip,
+				"Note: To end it, #C7EA46 safely eject# from inside the OS.\n"
+				"       #FFDD00 DO NOT remove the cable!#");
+		}
+		else
+		{
+			lv_label_set_static_text(lbl_tip,
+				"Note: To end it, #C7EA46 safely eject# from inside the OS.\n"
+				"       #FFDD00 If it's not mounted, you might need to remove the cable!#");
+		}
+	}
+	else
+	{
+		lv_label_set_static_text(lbl_tip,
+			"Note: To end it, #C7EA46 safely eject# from inside the OS\n"
+			"       or by removing the cable!#");
+	}
+	lv_obj_set_style(lbl_tip, &hint_small_style);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	usb_device_gadget_ums(usbs);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+
+	ums_mbox = dark_bg;
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_ums_error(int error)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	switch (error)
+	{
+	case 1:
+		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 Error mounting SD Card!#");
+		break;
+	case 2:
+		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 No emuMMC found active!#");
+		break;
+	case 3:
+		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 Active emuMMC is not partition based!#");
+		break;
+	}
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
+static void usb_gadget_set_text(void *lbl, const char *text)
+{
+	lv_label_set_text((lv_obj_t *)lbl, text);
+	manual_system_maintenance(true);
+}
+
+
+/*
+static lv_res_t _action_hid_touch(lv_obj_t *btn)
+{
+	// Reduce BPMP, RAM and backlight and power off SDMMC1 to conserve power.
+	sd_unmount(true);
+	minerva_change_freq(FREQ_800);
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	display_backlight_brightness(10, 1000);
+
+	usb_ctxt_t usbs;
+	usbs.type = USB_HID_TOUCHPAD;
+	usbs.system_maintenance = &manual_system_maintenance;
+	usbs.set_text = &usb_gadget_set_text;
+
+	_create_mbox_hid(&usbs);
+
+	// Restore BPMP, RAM and backlight.
+	minerva_change_freq(FREQ_1600);
+	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
+	display_backlight_brightness(h_cfg.backlight - 20, 1000);
+
+	return LV_RES_OK;
+}
+*/
+
+static bool usb_msc_emmc_read_only;
+lv_res_t action_ums_sd(lv_obj_t *btn)
+{
+	usb_ctxt_t usbs;
+	usbs.type = MMC_SD;
+	usbs.partition = 0;
+	usbs.offset = 0;
+	usbs.sectors = 0;
+	usbs.ro = 0;
+	usbs.system_maintenance = &manual_system_maintenance;
+	usbs.set_text = &usb_gadget_set_text;
+
+	_create_mbox_ums(&usbs);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _action_ums_emmc_boot0(lv_obj_t *btn)
+{
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
+	usb_ctxt_t usbs;
+	usbs.type = MMC_EMMC;
+	usbs.partition = EMMC_BOOT0 + 1;
+	usbs.offset = 0;
+	usbs.sectors = 0x2000;
+	usbs.ro = usb_msc_emmc_read_only;
+	usbs.system_maintenance = &manual_system_maintenance;
+	usbs.set_text = &usb_gadget_set_text;
+
+	_create_mbox_ums(&usbs);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _action_ums_emmc_boot1(lv_obj_t *btn)
+{
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
+	usb_ctxt_t usbs;
+	usbs.type = MMC_EMMC;
+	usbs.partition = EMMC_BOOT1 + 1;
+	usbs.offset = 0;
+	usbs.sectors = 0x2000;
+	usbs.ro = usb_msc_emmc_read_only;
+	usbs.system_maintenance = &manual_system_maintenance;
+	usbs.set_text = &usb_gadget_set_text;
+
+	_create_mbox_ums(&usbs);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _action_ums_emmc_gpp(lv_obj_t *btn)
+{
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
+	usb_ctxt_t usbs;
+	usbs.type = MMC_EMMC;
+	usbs.partition = EMMC_GPP + 1;
+	usbs.offset = 0;
+	usbs.sectors = 0;
+	usbs.ro = usb_msc_emmc_read_only;
+	usbs.system_maintenance = &manual_system_maintenance;
+	usbs.set_text = &usb_gadget_set_text;
+
+	_create_mbox_ums(&usbs);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _action_ums_emuemmc_boot0(lv_obj_t *btn)
+{
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
+	usb_ctxt_t usbs;
+
+	int error = !sd_mount();
+	if (!error)
+	{
+		emummc_cfg_t emu_info;
+		load_emummc_cfg(&emu_info);
+
+		error = 2;
+		if (emu_info.enabled)
+		{
+			error = 3;
+			if (emu_info.sector)
+			{
+				error = 0;
+				usbs.offset = emu_info.sector;
+			}
+		}
+	}
+	sd_unmount(false);
+
+	if (error)
+		_create_mbox_ums_error(error);
+	else
+	{
+		usbs.type = MMC_SD;
+		usbs.partition = EMMC_BOOT0 + 1;
+		usbs.sectors = 0x2000;
+		usbs.ro = usb_msc_emmc_read_only;
+		usbs.system_maintenance = &manual_system_maintenance;
+		usbs.set_text = &usb_gadget_set_text;
+		_create_mbox_ums(&usbs);
+	}
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _action_ums_emuemmc_boot1(lv_obj_t *btn)
+{
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
+	usb_ctxt_t usbs;
+
+	int error = !sd_mount();
+	if (!error)
+	{
+		emummc_cfg_t emu_info;
+		load_emummc_cfg(&emu_info);
+
+		error = 2;
+		if (emu_info.enabled)
+		{
+			error = 3;
+			if (emu_info.sector)
+			{
+				error = 0;
+				usbs.offset = emu_info.sector + 0x2000;
+			}
+		}
+	}
+	sd_unmount(false);
+
+	if (error)
+		_create_mbox_ums_error(error);
+	else
+	{
+		usbs.type = MMC_SD;
+		usbs.partition = EMMC_BOOT1 + 1;
+		usbs.sectors = 0x2000;
+		usbs.ro = usb_msc_emmc_read_only;
+		usbs.system_maintenance = &manual_system_maintenance;
+		usbs.set_text = &usb_gadget_set_text;
+		_create_mbox_ums(&usbs);
+	}
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
+{
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
+	usb_ctxt_t usbs;
+
+	int error = !sd_mount();
+	if (!error)
+	{
+		emummc_cfg_t emu_info;
+		load_emummc_cfg(&emu_info);
+
+		error = 2;
+		if (emu_info.enabled)
+		{
+			error = 3;
+			if (emu_info.sector)
+			{
+				error = 1;
+				usbs.offset = emu_info.sector + 0x4000;
+
+				u8 *gpt = malloc(512);
+				if (sdmmc_storage_read(&sd_storage, usbs.offset + 1, 1, gpt))
+				{
+					if (!memcmp(gpt, "EFI PART", 8))
+					{
+						error = 0;
+						usbs.sectors = *(u32 *)(gpt + 0x20) + 1; // Backup LBA + 1.
+					}
+				}
+			}
+		}
+	}
+	sd_unmount(false);
+
+	if (error)
+		_create_mbox_ums_error(error);
+	else
+	{
+		usbs.type = MMC_SD;
+		usbs.partition = EMMC_GPP + 1;
+		usbs.ro = usb_msc_emmc_read_only;
+		usbs.system_maintenance = &manual_system_maintenance;
+		usbs.set_text = &usb_gadget_set_text;
+		_create_mbox_ums(&usbs);
+	}
+
+	return LV_RES_OK;
+}
+static lv_res_t _emmc_read_only_toggle(lv_obj_t *btn)
+{
+	nyx_generic_onoff_toggle(btn);
+
+	usb_msc_emmc_read_only = lv_btn_get_state(btn) & LV_BTN_STATE_TGL_REL ? 1 : 0;
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
+{
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_USB" USB Tools");
+
+	usb_msc_emmc_read_only = true;
+
+	static lv_style_t h_style;
+	lv_style_copy(&h_style, &lv_style_transp);
+	h_style.body.padding.inner = 0;
+	h_style.body.padding.hor = LV_DPI - (LV_DPI / 4);
+	h_style.body.padding.ver = LV_DPI / 9;
+
+	// Create USB Mass Storage container.
+	lv_obj_t *h1 = lv_cont_create(win, NULL);
+	lv_cont_set_style(h1, &h_style);
+	lv_cont_set_fit(h1, false, true);
+	lv_obj_set_width(h1, (LV_HOR_RES / 9) * 5);
+	lv_obj_set_click(h1, false);
+	lv_cont_set_layout(h1, LV_LAYOUT_OFF);
+
+	lv_obj_t *label_sep = lv_label_create(h1, NULL);
+	lv_label_set_static_text(label_sep, "");
+
+	lv_obj_t *label_txt = lv_label_create(h1, NULL);
+	lv_label_set_static_text(label_txt, "USB Mass Storage");
+	lv_obj_set_style(label_txt, lv_theme_get_current()->label.prim);
+	lv_obj_align(label_txt, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -LV_DPI * 3 / 10);
+
+	lv_obj_t *line_sep = lv_line_create(h1, NULL);
+	static const lv_point_t line_pp[] = { {0, 0}, { LV_HOR_RES - (LV_DPI - (LV_DPI / 4)) * 2, 0} };
+	lv_line_set_points(line_sep, line_pp, 2);
+	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
+	lv_obj_align(line_sep, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
+
+	// Create UMS buttons.
+	lv_obj_t *btn1 = lv_btn_create(h1, NULL);
+	lv_obj_t *label_btn = lv_label_create(btn1, NULL);
+	lv_btn_set_fit(btn1, true, true);
+	lv_label_set_static_text(label_btn, SYMBOL_SD"  SD Card");
+
+	lv_obj_align(btn1, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
+	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, action_ums_sd);
+
+	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"Allows you to mount your SD Card to a PC/Phone.\n"
+		"#C7EA46 All operating systems are supported. Access is# #FF8000 Read/Write.#");
+
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn1, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+
+	// Create RAW GPP button.
+	lv_obj_t *btn_gpp = lv_btn_create(h1, btn1);
+	label_btn = lv_label_create(btn_gpp, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_CHIP"  eMMC RAW GPP");
+	lv_obj_align(btn_gpp, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn_gpp, LV_BTN_ACTION_CLICK, _action_ums_emmc_gpp);
+
+	lv_obj_t *btn_boot0 = lv_btn_create(h1, btn1);
+	label_btn = lv_label_create(btn_boot0, NULL);
+	lv_label_set_static_text(label_btn, "BOOT0");
+	lv_obj_align(btn_boot0, btn_gpp, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 10, 0);
+	lv_btn_set_action(btn_boot0, LV_BTN_ACTION_CLICK, _action_ums_emmc_boot0);
+
+	lv_obj_t *btn_boot1 = lv_btn_create(h1, btn1);
+	label_btn = lv_label_create(btn_boot1, NULL);
+	lv_label_set_static_text(label_btn, "BOOT1");
+	lv_obj_align(btn_boot1, btn_boot0, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 10, 0);
+	lv_btn_set_action(btn_boot1, LV_BTN_ACTION_CLICK, _action_ums_emmc_boot1);
+
+	lv_obj_t *btn_emu_gpp = lv_btn_create(h1, btn1);
+	label_btn = lv_label_create(btn_emu_gpp, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_MODULES_ALT"  emu RAW GPP");
+	lv_obj_align(btn_emu_gpp, btn_gpp, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn_emu_gpp, LV_BTN_ACTION_CLICK, _action_ums_emuemmc_gpp);
+
+	lv_obj_t *btn_emu_boot0 = lv_btn_create(h1, btn1);
+	label_btn = lv_label_create(btn_emu_boot0, NULL);
+	lv_label_set_static_text(label_btn, "BOOT0");
+	lv_obj_align(btn_emu_boot0, btn_boot0, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn_emu_boot0, LV_BTN_ACTION_CLICK, _action_ums_emuemmc_boot0);
+
+	lv_obj_t *btn_emu_boot1 = lv_btn_create(h1, btn1);
+	label_btn = lv_label_create(btn_emu_boot1, NULL);
+	lv_label_set_static_text(label_btn, "BOOT1");
+	lv_obj_align(btn_emu_boot1, btn_boot1, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn_emu_boot1, LV_BTN_ACTION_CLICK, _action_ums_emuemmc_boot1);
+
+	label_txt2 = lv_label_create(h1, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"Allows you to mount your eMMC/emuMMC.\n"
+		"#C7EA46 Default access is# #FF8000 read-only.#");
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn_emu_gpp, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+
+	lv_obj_t *h_write = lv_cont_create(win, NULL);
+	lv_cont_set_style(h_write, &h_style);
+	lv_cont_set_fit(h_write, false, true);
+	lv_obj_set_width(h_write, (LV_HOR_RES / 9) * 2);
+	lv_obj_set_click(h_write, false);
+	lv_cont_set_layout(h_write, LV_LAYOUT_OFF);
+	lv_obj_align(h_write, label_txt2, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 10, 0);
+
+	lv_obj_t *btn_write_access = lv_btn_create(h_write, NULL);
+	nyx_create_onoff_button(lv_theme_get_current(), h_write,
+		btn_write_access, SYMBOL_EDIT" Read-Only", _emmc_read_only_toggle, false);
+	lv_btn_set_state(btn_write_access, LV_BTN_STATE_TGL_REL);
+	_emmc_read_only_toggle(btn_write_access);
+
+	// Create USB Input Devices container.
+	lv_obj_t *h2 = lv_cont_create(win, NULL);
+	lv_cont_set_style(h2, &h_style);
+	lv_cont_set_fit(h2, false, true);
+	lv_obj_set_width(h2, (LV_HOR_RES / 9) * 3);
+	lv_obj_set_click(h2, false);
+	lv_cont_set_layout(h2, LV_LAYOUT_OFF);
+	lv_obj_align(h2, h1, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI * 17 / 29, 0);
+
+	label_sep = lv_label_create(h2, NULL);
+	lv_label_set_static_text(label_sep, "");
+
+	lv_obj_t *label_txt3 = lv_label_create(h2, NULL);
+	lv_label_set_static_text(label_txt3, "USB Input Devices");
+	lv_obj_set_style(label_txt3, lv_theme_get_current()->label.prim);
+	lv_obj_align(label_txt3, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -LV_DPI * 4 / 21);
+
+	line_sep = lv_line_create(h2, line_sep);
+	lv_obj_align(line_sep, label_txt3, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
+
+	return LV_RES_OK;
+}
 static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total, u32 hos_folder, u32 check_first_run)
 {
 	FRESULT res;
@@ -629,24 +1164,6 @@ void sept_run_dump()
 	_create_window_dump_pk12_tool(NULL);
 }
 
-static lv_obj_t *_create_container(lv_obj_t *parent)
-{
-	static lv_style_t h_style;
-	lv_style_copy(&h_style, &lv_style_transp);
-	h_style.body.padding.inner = 0;
-	h_style.body.padding.hor = LV_DPI - (LV_DPI / 4);
-	h_style.body.padding.ver = LV_DPI / 6;
-
-	lv_obj_t *h1 = lv_cont_create(parent, NULL);
-	lv_cont_set_style(h1, &h_style);
-	lv_cont_set_fit(h1, false, true);
-	lv_obj_set_width(h1, (LV_HOR_RES / 9) * 4);
-	lv_obj_set_click(h1, false);
-	lv_cont_set_layout(h1, LV_LAYOUT_OFF);
-
-	return h1;
-}
-
 static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
@@ -738,13 +1255,29 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
 		"Allows you to dump and decrypt pkg1 and pkg2 and further\n"
-		"split it up into their individual parts. It also dumps the kip1.\n\n");
+		"split it up into their individual parts. It also dumps the kip1.\n");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
 	label_sep = lv_label_create(h2, NULL);
 	lv_label_set_static_text(label_sep, "");
 	lv_obj_align(label_sep, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 11 / 7);
+
+	// Create USB Tools button.
+	lv_obj_t *btn4 = lv_btn_create(h2, btn3);
+	label_btn = lv_label_create(btn4, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_USB"  USB Tools");
+	lv_obj_align(btn4, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, _create_window_usb_tools);
+
+	label_txt4 = lv_label_create(h2, NULL);
+	lv_label_set_recolor(label_txt4, true);
+	lv_label_set_static_text(label_txt4,
+		"#C7EA46 USB mass storage#, #C7EA46 gamepad# and other USB tools.\n"
+		"Mass storage can mount SD, eMMC and emuMMC. The\n"
+		"gamepad transforms your Switch into an input device.#");
+	lv_obj_set_style(label_txt4, &hint_small_style);
+	lv_obj_align(label_txt4, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
 
 static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
