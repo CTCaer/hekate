@@ -12,6 +12,7 @@
 #include "diskio.h"		/* FatFs lower layer API */
 #include "../../../../common/memory_map.h"
 #include "../../storage/nx_sd.h"
+#include "../../storage/ramdisk.h"
 #include "../../storage/sdmmc.h"
 
 /*-----------------------------------------------------------------------*/
@@ -44,7 +45,15 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	return sdmmc_storage_read(&sd_storage, sector, count, buff) ? RES_OK : RES_ERROR;
+	switch (pdrv)
+	{
+	case DRIVE_SD:
+		return sdmmc_storage_read(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+	case DRIVE_RAM:
+		return ram_disk_read(sector, count, (void *)buff);
+	}
+
+	return RES_ERROR;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -57,17 +66,74 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+	switch (pdrv)
+	{
+	case DRIVE_SD:
+		return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+	case DRIVE_RAM:
+		return ram_disk_write(sector, count, (void *)buff);
+	}
+
+	return RES_ERROR;
 }
 
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
+static u32 part_rsvd_size = 0;
 DRESULT disk_ioctl (
 	BYTE pdrv,		/* Physical drive nmuber (0..) */
 	BYTE cmd,		/* Control code */
 	void *buff		/* Buffer to send/receive control data */
 )
 {
+	DWORD *buf = (DWORD *)buff;
+
+	if (pdrv == DRIVE_SD)
+	{
+		switch (cmd)
+		{
+		case GET_SECTOR_COUNT:
+			*buf = sd_storage.sec_cnt - part_rsvd_size;
+			break;
+		case GET_BLOCK_SIZE:
+			*buf = 32768; // Align to 16MB.
+			break;
+		}
+	}
+	else if (pdrv == DRIVE_RAM)
+	{
+		switch (cmd)
+		{
+		case GET_SECTOR_COUNT:
+			*buf = RAM_DISK_SZ >> 9; // 1GB.
+			break;
+		case GET_BLOCK_SIZE:
+			*buf = 2048; // Align to 1MB.
+			break;
+		}
+	}
+
+	return RES_OK;
+}
+
+DRESULT disk_set_info (
+	BYTE pdrv,		/* Physical drive nmuber (0..) */
+	BYTE cmd,		/* Control code */
+	void *buff		/* Buffer to send/receive control data */
+)
+{
+	DWORD *buf = (DWORD *)buff;
+
+	if (pdrv == DRIVE_SD)
+	{
+		switch (cmd)
+		{
+		case SET_SECTOR_COUNT:
+			part_rsvd_size = *buf;
+			break;
+		}
+	}
+
 	return RES_OK;
 }

@@ -151,7 +151,7 @@ bool sd_mount()
 	else
 	{
 		sd_init_done = true;
-		res = f_mount(&sd_fs, "", 1);
+		res = f_mount(&sd_fs, "sd:", 1);
 		if (res == FR_OK)
 		{
 			sd_mounted = true;
@@ -173,7 +173,7 @@ void sd_unmount(bool deinit)
 
 	if (sd_init_done && sd_mounted)
 	{
-		f_mount(NULL, "", 1);
+		f_mount(NULL, "sd:", 1);
 		sd_mounted = false;
 	}
 	if (sd_init_done && deinit)

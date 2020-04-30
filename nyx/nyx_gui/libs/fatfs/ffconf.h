@@ -38,7 +38,7 @@
 /  f_findnext(). (0:Disable, 1:Enable 2:Enable with matching altname[] too) */
 
 
-#define FF_USE_MKFS		0
+#define FF_USE_MKFS		1
 /* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
 
 #define FF_FASTFS 1
@@ -60,7 +60,7 @@
 /  (0:Disable or 1:Enable) Also FF_FS_READONLY needs to be 0 to enable this option. */
 
 
-#define FF_USE_LABEL	0
+#define FF_USE_LABEL	1
 /* This option switches volume label functions, f_getlabel() and f_setlabel().
 /  (0:Disable or 1:Enable) */
 
@@ -155,7 +155,7 @@
 */
 
 
-#define FF_FS_RPATH		0
+#define FF_FS_RPATH		1
 /* This option configures support for relative path.
 /
 /   0: Disable relative path and remove related functions.
@@ -168,12 +168,13 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_VOLUMES		1
+#define FF_VOLUMES		2
 /* Number of volumes (logical drives) to be used. (1-10) */
 
 
-#define FF_STR_VOLUME_ID	0
-#define FF_VOLUME_STRS		"sd"
+#define FF_STR_VOLUME_ID	1
+// Order is important. Any change to order, must also be reflected to diskio drive enum.
+#define FF_VOLUME_STRS		"sd","ram"
 /* FF_STR_VOLUME_ID switches support for volume ID in arbitrary strings.
 /  When FF_STR_VOLUME_ID is set to 1 or 2, arbitrary strings can be used as drive
 /  number in the path name. FF_VOLUME_STRS defines the volume ID strings for each
@@ -241,7 +242,7 @@
 /  Note that enabling exFAT discards ANSI C (C89) compatibility. */
 
 
-#define FF_FS_NORTC		1
+#define FF_FS_NORTC		0
 #define FF_NORTC_MON	1
 #define FF_NORTC_MDAY	1
 #define FF_NORTC_YEAR	2019
