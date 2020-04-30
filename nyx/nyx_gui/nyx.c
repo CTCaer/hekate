@@ -121,7 +121,7 @@ static void *coreboot_addr;
 
 void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
-	memcpy((u8 *)payload_src, (u8 *)NYX_LOAD_ADDR, PATCHED_RELOC_SZ);
+	memcpy((u8 *)payload_src, (u8 *)nyx_str->hekate, PATCHED_RELOC_SZ);
 
 	volatile reloc_meta_t *relocator = (reloc_meta_t *)(payload_src + RELOC_META_OFF);
 
@@ -295,6 +295,8 @@ static void _show_errors()
 		gfx_con_setpos(0, 0);
 		display_backlight_brightness(100, 1000);
 
+		display_activate_console();
+
 		WPRINTFARGS("An exception occurred (LR %08X):\n", *excp_lr);
 		switch (*excp_type)
 		{
@@ -330,6 +332,7 @@ static void _show_errors()
 void nyx_init_load_res()
 {
 	bpmp_mmu_enable();
+	bpmp_clk_rate_get();
 	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
 
 	// Set bootloader's default configuration.
