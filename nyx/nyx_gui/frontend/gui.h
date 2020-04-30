@@ -55,6 +55,7 @@ lv_style_t mbox_darken;
 
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);
 lv_res_t mbox_action(lv_obj_t * btns, const char * txt);
+bool nyx_emmc_check_battery_enough();
 void nyx_window_toggle_buttons(lv_obj_t *win, bool disable);
 lv_obj_t *nyx_create_standard_window(const char *win_title);
 void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, const char *btn_name, lv_action_t action, bool transparent);

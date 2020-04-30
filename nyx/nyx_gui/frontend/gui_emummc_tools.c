@@ -308,6 +308,9 @@ static lv_res_t _create_emummc_action(lv_obj_t * btns, const char * txt)
 
 static lv_res_t _create_mbox_emummc_create(lv_obj_t *btn)
 {
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);

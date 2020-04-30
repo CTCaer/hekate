@@ -367,6 +367,39 @@ lv_res_t mbox_action(lv_obj_t *btns, const char *txt)
 	return LV_RES_INV;
 }
 
+bool nyx_emmc_check_battery_enough()
+{
+	int batt_volt = 4000;
+
+	max17050_get_property(MAX17050_VCELL, &batt_volt);
+
+	if (batt_volt < 3650)
+	{
+		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+		lv_obj_set_style(dark_bg, &mbox_darken);
+		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+		static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+		lv_mbox_set_recolor_text(mbox, true);
+
+		lv_mbox_set_text(mbox,
+			"#FF8000 Battery Check#\n\n"
+			"#FFDD00 Battery is not enough to carry on#\n"
+			"#FFDD00 with selected operation!#\n\n"
+			"Charge to at least #C7EA46 3650 mV#, and try again!");
+
+		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_set_top(mbox, true);
+
+		return false;
+	}
+
+	return true;
+}
+
 static void nyx_sd_card_issues(void *param)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);

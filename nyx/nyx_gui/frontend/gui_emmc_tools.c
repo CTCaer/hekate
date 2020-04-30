@@ -177,6 +177,9 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 
 static lv_res_t _emmc_backup_buttons_decider(lv_obj_t *btn)
 {
+	if (!nyx_emmc_check_battery_enough())
+		return LV_RES_OK;
+
 	char *win_label = lv_label_get_text(lv_obj_get_child(btn, NULL));
 
 	if (emmc_btn_ctxt.emmc_boot == btn)
