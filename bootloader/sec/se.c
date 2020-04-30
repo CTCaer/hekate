@@ -195,6 +195,24 @@ int se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, 
 	return _se_execute(OP_START, dst, dst_size, src, src_size);
 }
 
+int se_aes_crypt_cbc(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size)
+{
+	if (enc)
+	{
+		SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_ALG(ALG_AES_ENC) | SE_CONFIG_DST(DST_MEMORY);
+		SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_VCTRAM_SEL(VCTRAM_PREVAHB) |
+			SE_CRYPTO_CORE_SEL(CORE_ENCRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM);
+	}
+	else
+	{
+		SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_DEC_ALG(ALG_AES_DEC) | SE_CONFIG_DST(DST_MEMORY);
+		SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_VCTRAM_SEL(VCTRAM_PREVAHB) |
+			SE_CRYPTO_CORE_SEL(CORE_DECRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM);
+	}
+	SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
+	return _se_execute(OP_START, dst, dst_size, src, src_size);
+}
+
 int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
 {
 	return se_aes_crypt_ecb(ks, enc, dst, 0x10, src, 0x10);
@@ -301,3 +319,76 @@ int se_calc_sha256(void *dst, const void *src, u32 src_size)
 	return res;
 }
 
+int se_gen_prng128(void *dst)
+{
+	// Setup config for X931 PRNG.
+	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_RNG) | SE_CONFIG_DST(DST_MEMORY);
+	SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_HASH(HASH_DISABLE) | SE_CRYPTO_XOR_POS(XOR_BYPASS) | SE_CRYPTO_INPUT_SEL(INPUT_RANDOM);
+
+	SE(SE_RNG_CONFIG_REG_OFFSET) = SE_RNG_CONFIG_SRC(RNG_SRC_ENTROPY) | SE_RNG_CONFIG_MODE(RNG_MODE_NORMAL);
+	//SE(SE_RNG_SRC_CONFIG_REG_OFFSET) =
+	//		SE_RNG_SRC_CONFIG_ENT_SRC(RNG_SRC_RO_ENT_ENABLE) | SE_RNG_SRC_CONFIG_ENT_SRC_LOCK(RNG_SRC_RO_ENT_LOCK_ENABLE);
+	SE(SE_RNG_RESEED_INTERVAL_REG_OFFSET) = 1;
+
+	SE(SE_BLOCK_COUNT_REG_OFFSET) = (16 >> 4) - 1;
+
+	// Trigger the operation.
+	return _se_execute(OP_START, dst, 16, NULL, 0);
+}
+
+void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
+{
+	u8 *aligned_buf = (u8 *)ALIGN((u32)buf, 0x40);
+
+	// Set Secure Random Key.
+	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_RNG) | SE_CONFIG_DST(DST_SRK);
+	SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(0) | SE_CRYPTO_CORE_SEL(CORE_ENCRYPT) | SE_CRYPTO_INPUT_SEL(INPUT_RANDOM);
+	SE(SE_RNG_CONFIG_REG_OFFSET) = SE_RNG_CONFIG_SRC(RNG_SRC_ENTROPY) | SE_RNG_CONFIG_MODE(RNG_MODE_FORCE_RESEED);
+	SE(SE_CRYPTO_LAST_BLOCK) = 0;
+	_se_execute(OP_START, NULL, 0, NULL, 0);
+
+	// Save AES keys.
+	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_AES_ENC) | SE_CONFIG_DST(DST_MEMORY);
+
+	for (u32 i = 0; i < TEGRA_SE_KEYSLOT_COUNT; i++)
+	{
+		SE(SE_CONTEXT_SAVE_CONFIG_REG_OFFSET) = SE_CONTEXT_SAVE_SRC(AES_KEYTABLE) |
+			(i << SE_KEY_INDEX_SHIFT) | SE_CONTEXT_SAVE_WORD_QUAD(KEYS_0_3);
+
+		SE(SE_CRYPTO_LAST_BLOCK) = 0;
+		_se_execute(OP_CTX_SAVE, aligned_buf, 0x10, NULL, 0);
+		memcpy(keys + i * keysize, aligned_buf, 0x10);
+
+		if (keysize > 0x10)
+		{
+			SE(SE_CONTEXT_SAVE_CONFIG_REG_OFFSET) = SE_CONTEXT_SAVE_SRC(AES_KEYTABLE) |
+				(i << SE_KEY_INDEX_SHIFT) | SE_CONTEXT_SAVE_WORD_QUAD(KEYS_4_7);
+
+			SE(SE_CRYPTO_LAST_BLOCK) = 0;
+			_se_execute(OP_CTX_SAVE, aligned_buf, 0x10, NULL, 0);
+			memcpy(keys + i * keysize + 0x10, aligned_buf, 0x10);
+		}
+	}
+
+	// Save SRK to PMC secure scratches.
+	SE(SE_CONTEXT_SAVE_CONFIG_REG_OFFSET) = SE_CONTEXT_SAVE_SRC(SRK);
+	SE(0x80) = 0; // SE_CRYPTO_LAST_BLOCK
+	_se_execute(OP_CTX_SAVE, NULL, 0, NULL, 0);
+
+	// End context save.
+	SE(SE_CONFIG_REG_OFFSET) = 0;
+	_se_execute(OP_CTX_SAVE, NULL, 0, NULL, 0);
+
+	// Get SRK.
+	u32 srk[4];
+	srk[0] = PMC(0xC0);
+	srk[1] = PMC(0xC4);
+	srk[2] = PMC(0x224);
+	srk[3] = PMC(0x228);
+
+	// Decrypt context.
+	se_aes_key_clear(3);
+	se_aes_key_set(3, srk, 0x10);
+	se_aes_crypt_cbc(3, 0, keys, TEGRA_SE_KEYSLOT_COUNT * keysize, keys, TEGRA_SE_KEYSLOT_COUNT * keysize);
+	se_aes_key_clear(3);
+}
