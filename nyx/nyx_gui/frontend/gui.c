@@ -205,8 +205,17 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	// Take a screenshot if 3 fingers.
 	if (touchpad.fingers > 2)
 	{
-		_save_fb_to_bmp();
-		msleep(200);
+		// Disallow screenshots if less than 2s passed.
+		static u32 timer = 0;
+		if (get_tmr_ms() > timer)
+		{
+			_save_fb_to_bmp();
+			timer = get_tmr_ms() + 2000;
+		}
+
+		data->state = LV_INDEV_STATE_REL;
+
+		return false;
 	}
 
 	if (console_enabled)
