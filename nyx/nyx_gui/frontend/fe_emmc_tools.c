@@ -295,6 +295,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				lv_bar_set_value(gui->bar, pct);
 				s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
 				lv_label_set_text(gui->label_pct, gui->txt_buf);
+				manual_system_maintenance(true);
 				prevPct = pct;
 			}
 
