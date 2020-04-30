@@ -22,6 +22,7 @@
 #include "../power/max77620.h"
 #include "../rtc/max77620-rtc.h"
 #include "../soc/bpmp.h"
+#include "../soc/hw_init.h"
 #include "../soc/i2c.h"
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
@@ -135,10 +136,8 @@ void panic(u32 val)
 
 void reboot_normal()
 {
-	bpmp_mmu_disable();
-
 	sd_unmount(true);
-	display_end();
+	reconfig_hw_workaround(false, 0);
 
 	nyx_str->mtc_cfg.init_done = 0;
 
@@ -147,14 +146,10 @@ void reboot_normal()
 
 void reboot_rcm()
 {
-	bpmp_mmu_disable();
-
 	sd_unmount(true);
-	display_end();
+	reconfig_hw_workaround(false, 0);
 
-	nyx_str->mtc_cfg.init_done = 0;
-
-	PMC(APBDEV_PMC_SCRATCH0) = 2; // Reboot into rcm.
+	PMC(APBDEV_PMC_SCRATCH0) = PMC_SCRATCH0_MODE_RCM;
 	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
 
 	while (true)
@@ -164,7 +159,7 @@ void reboot_rcm()
 void power_off()
 {
 	sd_unmount(true);
-	display_end();
+	reconfig_hw_workaround(false, 0);
 
 	// Stop the alarm, in case we injected and powered off too fast.
 	max77620_rtc_stop_alarm();

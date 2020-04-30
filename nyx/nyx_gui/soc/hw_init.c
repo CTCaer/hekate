@@ -21,9 +21,11 @@
 #include "clock.h"
 #include "gpio.h"
 #include "pmc.h"
+#include "uart.h"
 #include "t210.h"
 #include "../mem/minerva.h"
 #include "../gfx/di.h"
+#include "../input/joycon.h"
 #include "../input/touch.h"
 #include "../power/regulator_5v.h"
 #include "../storage/nx_sd.h"
@@ -38,10 +40,13 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
-	// Deinit touchscreen and 5V regulators.
+	// Deinit touchscreen, 5V regulators and Joy-Con.
 	touch_power_off();
 	set_fan_duty(0);
+	jc_deinit();
 	regulator_disable_5v(REGULATOR_5V_ALL);
+	clock_disable_uart(UART_B);
+	clock_disable_uart(UART_C);
 
 	// Flush/disable MMU cache and set DRAM clock to 204MHz.
 	bpmp_mmu_disable();
