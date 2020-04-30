@@ -113,18 +113,21 @@ If the main .ini is not found, it is created on the first hekate boot.
 
 
 ```
-hekate     (C) 2018 naehrwert, st4rk
-CTCaer mod (C) 2018 CTCaer.
+hekate  (c) 2018,      naehrwert, st4rk.
+        (c) 2018-2020, CTCaer.
+
+Nyx GUI (c) 2019-2020, CTCaer.
 
 Thanks to: derrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8.
 Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
 
 Open source and free packages used:
- - FatFs R0.13a, Copyright (C) 2017, ChaN
- - bcl-1.2.0, Copyright (C) 2003-2006, Marcus Geelnard
+ - FatFs R0.13a, Copyright (c) 2017, ChaN
+ - bcl-1.2.0, Copyright (c) 2003-2006, Marcus Geelnard
  - Atmosphère (Exosphere types/panic, prc id kernel patches),
-   Copyright (C) 2018-2019, Atmosphère-NX
- - elfload, Copyright (C) 2014 Owen Shepherd, Copyright (C) 2018 M4xw
+   Copyright (c) 2018-2019, Atmosphère-NX
+ - elfload, Copyright (c) 2014 Owen Shepherd, Copyright (c) 2018 M4xw
+ - Littlev Graphics Library, Copyright (c) 2016 Gabor Kiss-Vamosi
 
                          ___
                       .-'   `'.

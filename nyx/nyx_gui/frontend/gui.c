@@ -1059,8 +1059,10 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_label_set_style(lbl_credits, &monospace_text);
 	lv_label_set_recolor(lbl_credits, true);
 	lv_label_set_static_text(lbl_credits,
-		"hekate     (c) 2018 naehrwert, st4rk\n\n"
-		"CTCaer mod (c) 2018 CTCaer\n"
+		"#C7EA46 hekate#  (c) 2018,      #C7EA46 naehrwert#, #C7EA46 st4rk#\n"
+		"        (c) 2018-2020, #C7EA46 CTCaer#\n"
+		"\n"
+		"#C7EA46 Nyx GUI# (c) 2019-2020, #C7EA46 CTCaer#\n"
 		"\n"
 		"Thanks to: #00CCFF derrek, nedwill, plutoo, #\n"
 		"           #00CCFF shuffle2, smea, thexyz, yellows8 #\n"
