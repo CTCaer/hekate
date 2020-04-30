@@ -1257,6 +1257,8 @@ out_end:
 }
 
 static lv_obj_t *launch_ctxt[16];
+static lv_obj_t *launch_bg = NULL;
+static bool launch_bg_done = false;
 
 static lv_res_t _launch_more_cfg_action(lv_obj_t *btn)
 {
@@ -1292,21 +1294,49 @@ static lv_res_t _win_launch_close_action(lv_obj_t * btn)
 
 	lv_obj_del(win);
 
+	if (n_cfg.home_screen && !launch_bg_done && hekate_bg)
+	{
+		lv_obj_set_opa_scale_enable(launch_bg, true);
+		lv_obj_set_opa_scale(launch_bg, LV_OPA_TRANSP);
+		//if (launch_bg)
+		//	lv_obj_del(launch_bg); //! TODO: Find why it hangs.
+		launch_bg_done = true;
+	}
+
 	return LV_RES_INV;
 }
 
-lv_obj_t *create_window_launch(const char *win_title)
+static lv_obj_t *create_window_launch(const char *win_title)
 {
-	static lv_style_t win_bg_style;
+	static lv_style_t win_bg_style, win_header;
 
 	lv_style_copy(&win_bg_style, &lv_style_plain);
 	win_bg_style.body.main_color = lv_theme_get_current()->bg->body.main_color;
 	win_bg_style.body.grad_color = win_bg_style.body.main_color;
 
+	if (n_cfg.home_screen && !launch_bg_done && hekate_bg)
+	{
+		lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
+		lv_img_set_src(img, hekate_bg);
+
+		launch_bg = img;
+	}
+
 	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
 	lv_win_set_title(win, win_title);
-	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
+
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
+
+	if (n_cfg.home_screen && !launch_bg_done && hekate_bg)
+	{
+		lv_style_copy(&win_header, lv_theme_get_current()->win.header);
+		win_header.body.opa = LV_OPA_TRANSP;
+
+		win_bg_style.body.opa = LV_OPA_TRANSP;
+		lv_win_set_style(win, LV_WIN_STYLE_HEADER, &win_header);
+	}
+
+	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 
 	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_launch_close_action);
 
@@ -1388,10 +1418,28 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_obj_t *win;
 
 	bool more_cfg = false;
-	if (strcmp(lv_label_get_text(lv_obj_get_child(btn, NULL)),"#00EDBA Launch#"))
-		more_cfg = true;
+	bool combined_cfg = false;
+	if (btn)
+	{
+		if (strcmp(lv_label_get_text(lv_obj_get_child(btn, NULL)) + 8,"Launch#"))
+			more_cfg = true;
+	}
+	else
+	{
+		switch (n_cfg.home_screen)
+		{
+		case 1: // All configs.
+			combined_cfg = true;
+			break;
+		case 3: // More configs
+			more_cfg = true;
+			break;
+		}
+	}
 
-	if (!more_cfg)
+	if (!btn)
+		win = create_window_launch(SYMBOL_GPS" hekate - Launch");
+	else if (!more_cfg)
 		win = create_window_launch(SYMBOL_GPS" Launch");
 	else
 		win = create_window_launch(SYMBOL_GPS" More Configurations");
@@ -1449,7 +1497,9 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 
 	// Parse ini boot entries and set buttons/icons.
 	char *tmp_path = malloc(1024);
+	u32 curr_btn_idx = 0; // Active buttons.
 	LIST_INIT(ini_sections);
+
 	if (sd_mount())
 	{
 		// Choose what to parse.
@@ -1459,10 +1509,21 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		else
 			ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
 
+		if (combined_cfg && !ini_parse_success)
+		{
+ini_parsing:
+			// Reinit list.
+			ini_sections.prev = &ini_sections;
+			ini_sections.next = &ini_sections;
+			ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+			more_cfg = true;
+		}
+
 		if (ini_parse_success)
 		{
 			// Iterate to all boot entries and load icons.
-			u32 i = 1, curr_btn_idx = 0;
+			u32 i = 1;
+
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 			{
 				if (!strcmp(ini_sec->name, "config") || (ini_sec->type != INI_CHOICE))
@@ -1544,16 +1605,16 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 				i++;
 				curr_btn_idx += 2;
 
-				if (i > max_entries)
+				if (curr_btn_idx >= (max_entries * 2))
 					break;
 			}
-			if (i < 2)
-				no_boot_entries = true;
 		}
-		else
-			no_boot_entries = true;
+		// Reiterate the loop with more cfgs if combined.
+		if (combined_cfg && (curr_btn_idx < 16) && !more_cfg)
+			goto ini_parsing;
 	}
-	else
+
+	if (curr_btn_idx < 2)
 		no_boot_entries = true;
 
 	sd_unmount(false);
@@ -1984,6 +2045,8 @@ static void _nyx_main_menu(lv_theme_t * th)
 		lv_task_t *task_run_ums = lv_task_create(nyx_run_ums, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, (void *)&nyx_str->cfg);
 		lv_task_once(task_run_ums);
 	}
+	else if (n_cfg.home_screen)
+		_create_window_home_launch(NULL);
 }
 
 void nyx_load_and_run()

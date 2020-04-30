@@ -264,6 +264,8 @@ void load_saved_configuration()
 				{
 					if (!strcmp("themecolor", kv->key))
 						n_cfg.themecolor = atoi(kv->val);
+					else if (!strcmp("homescreen", kv->key))
+						n_cfg.home_screen = atoi(kv->val);
 					else if (!strcmp("verification", kv->key))
 						n_cfg.verification = atoi(kv->val);
 				}
