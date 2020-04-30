@@ -24,6 +24,8 @@
 #ifndef __MAX17050_H_
 #define __MAX17050_H_
 
+#include "../utils/types.h"
+
 #define MAX17050_STATUS_BattAbsent    (1 << 3)
 #define MAX17050_DEFAULT_SNS_RESISTOR 10000
 
@@ -128,5 +130,6 @@ enum MAX17050_reg {
 
 int max17050_get_property(enum MAX17050_reg reg, int *value);
 int max17050_fix_configuration();
+u32 max17050_get_cached_batt_volt();
 
 #endif /* __MAX17050_H_ */

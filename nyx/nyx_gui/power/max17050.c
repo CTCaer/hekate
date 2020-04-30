@@ -43,6 +43,12 @@
 
 #define MAX17050_VMAX_TOLERANCE 50 /* 50 mV */
 
+static u32 battery_voltage = 0;
+u32 max17050_get_cached_batt_volt()
+{
+	return battery_voltage;
+}
+
 int max17050_get_property(enum MAX17050_reg reg, int *value)
 {
 	u16 data;
@@ -71,6 +77,7 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 	case MAX17050_VCELL: // Voltage now.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_VCELL);
 		*value = data * 625 / 8 / 1000;
+		battery_voltage = *value;
 		break;
 	case MAX17050_AvgVCELL: // Voltage avg.
 		i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, MAX17050_AvgVCELL);

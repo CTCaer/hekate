@@ -28,6 +28,7 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 		case BQ24193_InputVoltageLimit: // Input voltage limit (mV).
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_InputSource);
 			data = (data & BQ24193_INCONFIG_VINDPM_MASK) >> 3;
+			*value = 0;
 			*value += ((data >> 0) & 1) ? 80 : 0;
 			*value += ((data >> 1) & 1) ? 160 : 0;
 			*value += ((data >> 2) & 1) ? 320 : 0;
@@ -74,6 +75,7 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 		case BQ24193_FastChargeCurrentLimit: // Fast charge current limit (mA).
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_ChrgCurr);
 			data = (data & BQ24193_CHRGCURR_ICHG_MASK) >> 2;
+			*value = 0;
 			*value += ((data >> 0) & 1) ? 64 : 0;
 			*value += ((data >> 1) & 1) ? 128 : 0;
 			*value += ((data >> 2) & 1) ? 256 : 0;
@@ -89,6 +91,7 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 		case BQ24193_ChargeVoltageLimit: // Charge voltage limit (mV).
 			data = i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_ChrgVolt);
 			data = (data & BQ24193_CHRGVOLT_VREG) >> 2;
+			*value = 0;
 			*value += ((data >> 0) & 1) ? 16 : 0;
 			*value += ((data >> 1) & 1) ? 32 : 0;
 			*value += ((data >> 2) & 1) ? 64 : 0;
