@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LV_THEME_MATERIAL_H
-#define LV_THEME_MATERIAL_H
+#ifndef LV_THEME_HEKATE_H
+#define LV_THEME_HEKATE_H
 
 #ifdef __cplusplus
 extern "C" {

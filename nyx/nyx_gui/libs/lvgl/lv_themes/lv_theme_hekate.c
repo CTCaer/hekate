@@ -25,14 +25,18 @@
  *      DEFINES
  *********************/
 #define DEF_RADIUS             4
-#define COLOR_SHADOW_LIGHT     LV_COLOR_HEX3(0xAAA)
+#define COLOR_SHADOW_LIGHT     LV_COLOR_HEX(0xAAAAAA)
 #define COLOR_SHADOW_DARK      LV_COLOR_HEX(0x1F1F1F)
-#define COLOR_HOS_TURQUOISE    LV_COLOR_HEX(0x00FFC9)
-#define COLOR_HOS_TEAL_LIGHTER LV_COLOR_HEX(0x00EDBA)
-#define COLOR_HOS_TEAL_LIGHT   LV_COLOR_HEX(0x00B78F)
-#define COLOR_HOS_TEAL         LV_COLOR_HEX(0x00A273)
+#define COLOR_HOS_TURQUOISE    (lv_color_hsv_to_rgb(_hue, 100, 100)) // 0x00FFC9
+#define COLOR_HOS_TEAL_LIGHTER (lv_color_hsv_to_rgb(_hue, 100,  93)) // 0x00EDBA
+#define COLOR_HOS_TEAL_LIGHT   (lv_color_hsv_to_rgb(_hue, 100,  72)) // 0x00B78F
+#define COLOR_HOS_TEAL         (lv_color_hsv_to_rgb(_hue, 100,  64)) // 0x00A273
+#define COLOR_HOS_ORANGE       LV_COLOR_HEX(0xFF5500)
+#define COLOR_HOS_BG_DARKER    LV_COLOR_HEX(0x1B1B1B)
+#define COLOR_HOS_BG_DARK      LV_COLOR_HEX(0x222222)
 #define COLOR_HOS_BG           LV_COLOR_HEX(0x2D2D2D)
 #define COLOR_HOS_BG_LIGHT     LV_COLOR_HEX(0x3D3D3D)
+#define COLOR_HOS_LIGHT_BORDER LV_COLOR_HEX(0x4D4D4D)
 #define COLOR_HOS_TXT_WHITE    LV_COLOR_HEX(0xFBFBFB)
 
 /**********************
@@ -87,7 +91,7 @@ static void basic_init(void)
 	panel.body.main_color = COLOR_HOS_BG;
 	panel.body.grad_color = COLOR_HOS_BG;
 	panel.body.border.width = 1;
-    panel.body.border.color = LV_COLOR_HEX(0x4D4D4D);
+	panel.body.border.color = COLOR_HOS_LIGHT_BORDER;
 	panel.body.border.opa = LV_OPA_COVER;
 	panel.body.shadow.color = COLOR_SHADOW_LIGHT;
 	panel.body.shadow.type = LV_SHADOW_BOTTOM;
@@ -158,7 +162,7 @@ static void btn_init(void)
 	tgl_pr.body.shadow.width = 0;
 
 	lv_style_copy(&ina, &rel);
-    ina.body.main_color = LV_COLOR_HEX(0x1B1B1B);
+	ina.body.main_color = COLOR_HOS_BG_DARK;
 	ina.body.grad_color = ina.body.main_color;
 	//ina.body.shadow.width = 0;
 	ina.text.color = LV_COLOR_HEX(0x888888);
@@ -183,7 +187,7 @@ static void label_init(void)
 	prim.text.color = COLOR_HOS_TXT_WHITE;
 
 	lv_style_copy(&sec, &prim);
-    sec.text.color = LV_COLOR_HEX(0xFF5500);
+	sec.text.color = COLOR_HOS_ORANGE;
 
 	lv_style_copy(&hint, &prim);
 	hint.text.color = LV_COLOR_HEX(0xCCCCCC);
@@ -203,7 +207,7 @@ static void img_init(void)
 	img_light.image.intense = LV_OPA_80;
 
 	lv_style_copy(&img_dark, &def);
-    img_dark.image.color = LV_COLOR_HEX(0x1B1B1B);
+	img_dark.image.color = COLOR_HOS_BG_DARKER;
 	img_dark.image.intense = LV_OPA_80;
 
 
@@ -246,7 +250,7 @@ static void bar_init(void)
 	static lv_style_t bar_bg, bar_indic;
 
 	lv_style_copy(&bar_bg, &def);
-    bar_bg.body.main_color = LV_COLOR_HEX(0x4D4D4D);
+	bar_bg.body.main_color = COLOR_HOS_LIGHT_BORDER;
 	bar_bg.body.grad_color = bar_bg.body.main_color;
 	bar_bg.body.radius = 3;
 	bar_bg.body.border.width = 0;
@@ -488,16 +492,14 @@ static void btnm_init(void)
 	tgl_pr.body.grad_color = tgl_pr.body.main_color;
 	tgl_pr.body.border.width = 0;
 
-	lv_style_copy(&ina, &pr);
-	ina.body.main_color = LV_COLOR_HEX3(0xCCC);
-	ina.body.grad_color = ina.body.main_color;
+	lv_style_copy(&ina, theme.btn.ina);
 
 	theme.btnm.bg = &bg;
 	theme.btnm.btn.rel = &rel;
 	theme.btnm.btn.pr = &pr;
 	theme.btnm.btn.tgl_rel = &tgl_rel;
 	theme.btnm.btn.tgl_pr = &tgl_pr;
-	theme.btnm.btn.ina = &def;
+	theme.btnm.btn.ina = &ina;
 #endif
 }
 
@@ -509,6 +511,11 @@ static void kb_init(void)
 
 	lv_style_copy(&bg, theme.btnm.bg);
 	bg.text.color = LV_COLOR_HEX(0xCCCCCC);
+	bg.body.border.width = 0;
+	bg.body.radius = 0;
+	bg.body.shadow.color = COLOR_SHADOW_DARK;
+	bg.body.shadow.type = LV_SHADOW_BOTTOM;
+	bg.body.shadow.width = 4;
 
 	lv_style_copy(&rel, &lv_style_transp);
 	rel.text.font = _font;
@@ -558,7 +565,13 @@ static void page_init(void)
 static void ta_init(void)
 {
 #if USE_LV_TA
-    static lv_style_t oneline;
+	static lv_style_t panel, oneline;
+
+	lv_style_copy(&panel, theme.panel);
+	panel.body.border.width = 0;
+	panel.body.shadow.color = COLOR_SHADOW_DARK;
+	panel.body.shadow.type = LV_SHADOW_FULL;
+	panel.body.shadow.width = 3;
 
 	lv_style_copy(&oneline, &def);
 	oneline.body.empty = 1;
@@ -569,7 +582,7 @@ static void ta_init(void)
 	oneline.body.border.opa = LV_OPA_COVER;
 	oneline.text.color = LV_COLOR_HEX(0x888888);
 
-    theme.ta.area = theme.panel;
+	theme.ta.area = &panel;
 	theme.ta.oneline = &oneline;
 	theme.ta.cursor = NULL; // Let library to calculate the cursor's style.
 	theme.ta.sb = &sb;
@@ -626,7 +639,7 @@ static void list_init(void)
 	tgl_pr.body.border.width = 0;
 
 	lv_style_copy(&ina, &pr);
-    ina.body.main_color = LV_COLOR_HEX(0x1B1B1B);
+	ina.body.main_color = COLOR_HOS_BG_DARK;
 	ina.body.grad_color = ina.body.main_color;
 
 	theme.list.sb = &sb;

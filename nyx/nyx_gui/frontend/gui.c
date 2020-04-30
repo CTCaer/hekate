@@ -423,7 +423,7 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	static lv_style_t win_bg_style;
 
 	lv_style_copy(&win_bg_style, &lv_style_plain);
-	win_bg_style.body.main_color = LV_COLOR_HEX(0x2D2D2D);// TODO: COLOR_HOS_BG
+	win_bg_style.body.main_color = lv_theme_get_current()->bg->body.main_color;
 	win_bg_style.body.grad_color = win_bg_style.body.main_color;
 
 	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
@@ -441,7 +441,7 @@ lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t 
 	static lv_style_t win_bg_style;
 
 	lv_style_copy(&win_bg_style, &lv_style_plain);
-	win_bg_style.body.main_color = LV_COLOR_HEX(0x2D2D2D);// TODO: COLOR_HOS_BG
+	win_bg_style.body.main_color = lv_theme_get_current()->bg->body.main_color;
 	win_bg_style.body.grad_color = win_bg_style.body.main_color;
 
 	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
@@ -972,7 +972,7 @@ lv_obj_t *create_window_launch(const char *win_title)
 	static lv_style_t win_bg_style;
 
 	lv_style_copy(&win_bg_style, &lv_style_plain);
-	win_bg_style.body.main_color = LV_COLOR_HEX(0x2D2D2D);// TODO: COLOR_HOS_BG
+	win_bg_style.body.main_color = lv_theme_get_current()->bg->body.main_color;
 	win_bg_style.body.grad_color = win_bg_style.body.main_color;
 
 	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
@@ -1547,8 +1547,8 @@ static void _nyx_main_menu(lv_theme_t * th)
 	lv_obj_t *cnr = lv_cont_create(scr, NULL);
 	static lv_style_t base_bg_style;
 	lv_style_copy(&base_bg_style, &lv_style_plain_color);
-	base_bg_style.body.main_color = LV_COLOR_HEX(0x2D2D2D);
-	base_bg_style.body.grad_color = LV_COLOR_HEX(0x2D2D2D);
+	base_bg_style.body.main_color = th->bg->body.main_color;
+	base_bg_style.body.grad_color = base_bg_style.body.main_color;
 	lv_cont_set_style(cnr, &base_bg_style);
 	lv_obj_set_size(cnr, LV_HOR_RES, LV_VER_RES);
 
