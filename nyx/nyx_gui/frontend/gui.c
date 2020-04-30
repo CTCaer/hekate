@@ -2115,5 +2115,8 @@ void nyx_load_and_run()
 	}
 
 	while (true)
+	{
 		lv_task_handler();
+		bpmp_usleep(HALT_COP_MAX_CNT);
+	}
 }
