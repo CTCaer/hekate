@@ -29,6 +29,7 @@
 #include "../config/ini.h"
 #include "../gfx/di.h"
 #include "../gfx/gfx.h"
+#include "../input/joycon.h"
 #include "../input/touch.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
@@ -67,6 +68,26 @@ typedef struct _gui_status_bar_ctx
 	lv_obj_t *battery;
 	lv_obj_t *battery_more;
 } gui_status_bar_ctx;
+
+typedef struct _jc_lv_driver_t
+{
+	lv_indev_t *indev;
+	bool centering_done;
+	u16 cx_max;
+	u16 cx_min;
+	u16 cy_max;
+	u16 cy_min;
+	s16 pos_x;
+	s16 pos_y;
+	s16 pos_last_x;
+	s16 pos_last_y;
+	lv_obj_t *cursor;
+	u32 cursor_timeout;
+	bool cursor_hidden;
+	u32 console_timeout;
+} jc_lv_driver_t;
+
+static jc_lv_driver_t jc_drv_ctx;
 
 static gui_status_bar_ctx status_bar;
 
@@ -207,6 +228,126 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 		else
 			data->state = LV_INDEV_STATE_REL;
 		break;
+	}
+
+	return false; // No buffering so no more data read.
+}
+
+static bool _jc_virt_mouse_read(lv_indev_data_t *data)
+{
+	// Poll Joy-Con.
+	jc_gamepad_rpt_t *jc_pad = joycon_poll();
+
+	if (!jc_pad)
+	{
+		data->state = LV_INDEV_STATE_REL;
+		return false;
+	}
+
+	// Take a screenshot if Capture button is pressed.
+	if (jc_pad->cap)
+	{
+		_save_fb_to_bmp();
+		msleep(1000);
+	}
+
+	// Calibrate left stick.
+	if (!jc_drv_ctx.centering_done)
+	{
+		if (jc_pad->conn_l
+			&& jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
+			&& jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
+		{
+			jc_drv_ctx.cx_max = jc_pad->lstick_x + 0x72;
+			jc_drv_ctx.cx_min = jc_pad->lstick_x - 0x72;
+			jc_drv_ctx.cy_max = jc_pad->lstick_y + 0x72;
+			jc_drv_ctx.cy_min = jc_pad->lstick_y - 0x72;
+			jc_drv_ctx.centering_done = true;
+			jc_drv_ctx.cursor_timeout = 0;
+		}
+		else
+		{
+			data->state = LV_INDEV_STATE_REL;
+			return false;
+		}
+	}
+
+	// Re-calibrate on disconnection.
+	if (!jc_pad->conn_l)
+		jc_drv_ctx.centering_done = 0;
+
+	// Set button presses.
+	if (jc_pad->a || jc_pad->zl || jc_pad->zr)
+		data->state = LV_INDEV_STATE_PR;
+	else
+		data->state = LV_INDEV_STATE_REL;
+
+	// Calculate new cursor position.
+	if (jc_pad->lstick_x <= jc_drv_ctx.cx_max && jc_pad->lstick_x >= jc_drv_ctx.cx_min)
+		jc_drv_ctx.pos_x += 0;
+	else if (jc_pad->lstick_x > jc_drv_ctx.cx_max)
+		jc_drv_ctx.pos_x += ((jc_pad->lstick_x - jc_drv_ctx.cx_max) / 30);
+	else
+		jc_drv_ctx.pos_x -= ((jc_drv_ctx.cx_min - jc_pad->lstick_x) / 30);
+
+	if (jc_pad->lstick_y <= jc_drv_ctx.cy_max && jc_pad->lstick_y >= jc_drv_ctx.cy_min)
+		jc_drv_ctx.pos_y += 0;
+	else if (jc_pad->lstick_y > jc_drv_ctx.cy_max)
+		jc_drv_ctx.pos_y -= ((jc_pad->lstick_y - jc_drv_ctx.cy_max) / 30);
+	else
+		jc_drv_ctx.pos_y += ((jc_drv_ctx.cy_min - jc_pad->lstick_y) / 30);
+
+	// Ensure value inside screen limits.
+	if (jc_drv_ctx.pos_x < 0)
+		jc_drv_ctx.pos_x = 0;
+	else if (jc_drv_ctx.pos_x > 1279)
+		jc_drv_ctx.pos_x = 1279;
+
+	if (jc_drv_ctx.pos_y < 0)
+		jc_drv_ctx.pos_y = 0;
+	else if (jc_drv_ctx.pos_y > 719)
+		jc_drv_ctx.pos_y = 719;
+
+	// Set cursor position.
+	data->point.x = jc_drv_ctx.pos_x;
+	data->point.y = jc_drv_ctx.pos_y;
+
+	// Auto hide cursor.
+	if (jc_drv_ctx.pos_x != jc_drv_ctx.pos_last_x || jc_drv_ctx.pos_y != jc_drv_ctx.pos_last_y)
+	{
+		jc_drv_ctx.pos_last_x = jc_drv_ctx.pos_x;
+		jc_drv_ctx.pos_last_y = jc_drv_ctx.pos_y;
+
+		jc_drv_ctx.cursor_hidden = false;
+		jc_drv_ctx.cursor_timeout = get_tmr_ms();
+		lv_indev_set_cursor(jc_drv_ctx.indev, jc_drv_ctx.cursor);
+
+		// Un hide cursor.
+		lv_obj_set_opa_scale_enable(jc_drv_ctx.cursor, false);
+	}
+	else
+	{
+		if (!jc_drv_ctx.cursor_hidden)
+		{
+			if (((u32)get_tmr_ms() - jc_drv_ctx.cursor_timeout) > 3000)
+			{
+				// Remove cursor and hide it.
+				lv_indev_set_cursor(jc_drv_ctx.indev, NULL);
+				lv_obj_set_opa_scale_enable(jc_drv_ctx.cursor, true);
+				lv_obj_set_opa_scale(jc_drv_ctx.cursor, LV_OPA_TRANSP);
+
+				jc_drv_ctx.cursor_hidden = true;
+			}
+		}
+		else
+			data->state = LV_INDEV_STATE_REL; // Ensure that no clicks are allowed.
+	}
+
+	if (jc_pad->b && close_btn)
+	{
+		lv_action_t close_btn_action = lv_btn_get_action(close_btn, LV_BTN_ACTION_CLICK);
+		close_btn_action(close_btn);
+		close_btn = NULL;
 	}
 
 	return false; // No buffering so no more data read.
@@ -1709,6 +1850,17 @@ void nyx_load_and_run()
 	disp_drv.disp_flush = _disp_fb_flush;
 	lv_disp_drv_register(&disp_drv);
 
+	// Initialize Joy-Con.
+	lv_task_t *task_jc_init_hw = lv_task_create(jc_init_hw, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
+	lv_task_once(task_jc_init_hw);
+	lv_indev_drv_t indev_drv_jc;
+	lv_indev_drv_init(&indev_drv_jc);
+	indev_drv_jc.type = LV_INDEV_TYPE_POINTER;
+	indev_drv_jc.read = _jc_virt_mouse_read;
+	memset(&jc_drv_ctx, 0, sizeof(jc_lv_driver_t));
+	jc_drv_ctx.indev = lv_indev_drv_register(&indev_drv_jc);
+	close_btn = NULL;
+
 	// Initialize touch.
 	touch_power_on();
 	lv_indev_drv_t indev_drv_touch;
@@ -1727,6 +1879,11 @@ void nyx_load_and_run()
 
 	// Create main menu
 	_nyx_main_menu(th);
+
+	jc_drv_ctx.cursor = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_src(jc_drv_ctx.cursor, &touch_cursor);
+	lv_obj_set_opa_scale(jc_drv_ctx.cursor, LV_OPA_TRANSP);
+	lv_obj_set_opa_scale_enable(jc_drv_ctx.cursor, true);
 
 	// Check if sd card issues.
 	if (sd_get_mode() == SD_1BIT_HS25)

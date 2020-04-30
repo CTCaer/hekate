@@ -35,7 +35,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	mc.o sdram.o minerva.o \
 	sdmmc.o sdmmc_driver.o nx_emmc.o nx_sd.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o regulator_5v.o \
-	touch.o tmp451.o fan.o \
+	touch.o joycon.o tmp451.o fan.o \
 	hw_init.o \
 )
 
