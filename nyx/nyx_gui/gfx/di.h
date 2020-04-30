@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2019 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -187,6 +187,13 @@
 #define  CSC_ENABLE   (1 << 18)
 #define  WIN_ENABLE   (1 << 30)
 
+#define DC_WIN_BUFFER_CONTROL 0x702
+#define  BUFFER_CONTROL_HOST  0
+#define  BUFFER_CONTROL_VI    1
+#define  BUFFER_CONTROL_EPP   2
+#define  BUFFER_CONTROL_MPEGE 3
+#define  BUFFER_CONTROL_SB2D  4
+
 #define DC_WIN_COLOR_DEPTH 0x703
 #define  WIN_COLOR_DEPTH_P1             0x0
 #define  WIN_COLOR_DEPTH_P2             0x1
@@ -336,6 +343,7 @@
 
 #define DSI_PAD_CONTROL_CD 0x4C
 #define DSI_VIDEO_MODE_CONTROL 0x4E
+#define  DSI_CMD_PKT_VID_ENABLE 1
 
 #define DSI_PAD_CONTROL_1 0x4F
 #define DSI_PAD_CONTROL_2 0x50
@@ -349,7 +357,39 @@
 #define DSI_PAD_CONTROL_4 0x52
 #define DSI_INIT_SEQ_DATA_15 0x5F
 
-#define MIPI_CAL_MIPI_BIAS_PAD_CFG2 0x60
+/*! MIPI registers. */
+#define MIPI_CAL_MIPI_CAL_CTRL          (0x00 / 0x4)
+#define MIPI_CAL_CIL_MIPI_CAL_STATUS    (0x08 / 0x4)
+#define MIPI_CAL_CILA_MIPI_CAL_CONFIG   (0x14 / 0x4)
+#define MIPI_CAL_CILB_MIPI_CAL_CONFIG   (0x18 / 0x4)
+#define MIPI_CAL_CILC_MIPI_CAL_CONFIG   (0x1C / 0x4)
+#define MIPI_CAL_CILD_MIPI_CAL_CONFIG   (0x20 / 0x4)
+#define MIPI_CAL_CILE_MIPI_CAL_CONFIG   (0x24 / 0x4)
+#define MIPI_CAL_CILF_MIPI_CAL_CONFIG   (0x28 / 0x4)
+#define MIPI_CAL_DSIA_MIPI_CAL_CONFIG   (0x38 / 0x4)
+#define MIPI_CAL_DSIB_MIPI_CAL_CONFIG   (0x3C / 0x4)
+#define MIPI_CAL_DSIC_MIPI_CAL_CONFIG   (0x40 / 0x4)
+#define MIPI_CAL_DSID_MIPI_CAL_CONFIG   (0x44 / 0x4)
+#define MIPI_CAL_MIPI_BIAS_PAD_CFG0     (0x58 / 0x4)
+#define MIPI_CAL_MIPI_BIAS_PAD_CFG1     (0x5C / 0x4)
+#define MIPI_CAL_MIPI_BIAS_PAD_CFG2     (0x60 / 0x4)
+#define MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2 (0x64 / 0x4)
+#define MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2 (0x68 / 0x4)
+#define MIPI_CAL_DSIC_MIPI_CAL_CONFIG_2 (0x70 / 0x4)
+#define MIPI_CAL_DSID_MIPI_CAL_CONFIG_2 (0x74 / 0x4)
+
+/*! MIPI CMDs. */
+#define MIPI_DSI_DCS_SHORT_WRITE 0x05
+#define MIPI_DSI_DCS_READ 0x06
+#define MIPI_DSI_DCS_SHORT_WRITE_PARAM 0x15
+#define MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE 0x37
+#define MIPI_DSI_DCS_LONG_WRITE 0x39
+
+/*! MIPI DCS CMDs. */
+#define MIPI_DCS_GET_DISPLAY_ID   0x04
+#define MIPI_DCS_ENTER_SLEEP_MODE 0x10
+#define MIPI_DCS_EXIT_SLEEP_MODE  0x11
+#define MIPI_DCS_SET_DISPLAY_ON   0x29
 
 void display_init();
 void display_backlight_pwm_init();
@@ -363,7 +403,7 @@ void display_backlight(bool enable);
 void display_backlight_brightness(u32 brightness, u32 step_delay);
 
 /*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
-u32 *display_init_framebuffer();
-u32 *display_init_framebuffer2();
+u32 *display_init_framebuffer_pitch();
+u32 *display_init_framebuffer_block();
 
 #endif

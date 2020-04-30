@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018 CTCaer
+* Copyright (c) 2018-2019 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -15,16 +15,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//Clock config.
-static const cfg_op_t _display_config_1[4] = {
-	{0x4E, 0x40000000}, //CLK_RST_CONTROLLER_CLK_SOURCE_DISP1
-	{0x34, 0x4830A001}, //CLK_RST_CONTROLLER_PLLD_BASE
-	{0x36, 0x20},       //CLK_RST_CONTROLLER_PLLD_MISC1
-	{0x37, 0x2D0AAA}    //CLK_RST_CONTROLLER_PLLD_MISC
-};
-
 //Display A config.
-static const cfg_op_t _display_config_2[94] = {
+static const cfg_op_t _display_dc_setup_win_config[94] = {
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
@@ -128,7 +120,7 @@ static const cfg_op_t _display_config_2[94] = {
 };
 
 //DSI Init config.
-static const cfg_op_t _display_config_3[61] = { 
+static const cfg_op_t _display_dsi_init_config[61] = {
 	{DSI_WR_DATA, 0},
 	{DSI_INT_ENABLE, 0},
 	{DSI_INT_STATUS, 0},
@@ -192,14 +184,14 @@ static const cfg_op_t _display_config_3[61] = {
 	{DSI_INIT_SEQ_CONTROL, 0}
 };
 
-//DSI config (if ver == 0x10).
-static const cfg_op_t _display_config_4[43] = {
-	{DSI_WR_DATA, 0x439},
-	{DSI_WR_DATA, 0x9483FFB9},
+//DSI panel config.
+static const cfg_op_t _display_init_config_jdi[43] = {
+	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x9483FFB9}, // Enable extension cmd. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0xBD15},
+	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x0BD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x1939},
+	{DSI_WR_DATA, 0x1939},     // MIPI_DSI_DCS_LONG_WRITE: 25 bytes.
 	{DSI_WR_DATA, 0xAAAAAAD8},
 	{DSI_WR_DATA, 0xAAAAAAEB},
 	{DSI_WR_DATA, 0xAAEBAAAA},
@@ -208,9 +200,9 @@ static const cfg_op_t _display_config_4[43] = {
 	{DSI_WR_DATA, 0xAAEBAAAA},
 	{DSI_WR_DATA, 0xAA},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x1BD15},
+	{DSI_WR_DATA, 0x01BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x1BD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x2739},
+	{DSI_WR_DATA, 0x2739},     // MIPI_DSI_DCS_LONG_WRITE: 39 bytes.
 	{DSI_WR_DATA, 0xFFFFFFD8},
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFFFF},
@@ -222,25 +214,25 @@ static const cfg_op_t _display_config_4[43] = {
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFF},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x2BD15},
+	{DSI_WR_DATA, 0x02BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x2BD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0xF39},
+	{DSI_WR_DATA, 0xF39},      // MIPI_DSI_DCS_LONG_WRITE: 15 bytes.
 	{DSI_WR_DATA, 0xFFFFFFD8},
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFF},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0xBD15},
+	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x0BD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x6D915},
+	{DSI_WR_DATA, 0x06D915},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x6D9.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x439},
-	{DSI_WR_DATA, 0xB9},
+	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x000000B9}, // Disable extension cmd.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
-//DSI config.
-static const cfg_op_t _display_config_5[21] = {
+//DSI packet config.
+static const cfg_op_t _display_dsi_packet_config[21] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PHY_TIMING_0, 0x6070601},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
@@ -264,15 +256,8 @@ static const cfg_op_t _display_config_5[21] = {
 	{DSI_HOST_CONTROL, 0},
 };
 
-//Clock config.
-static const cfg_op_t _display_config_6[3] = {
-	{0x34, 0x4810C001}, //CLK_RST_CONTROLLER_PLLD_BASE
-	{0x36, 0x20},       //CLK_RST_CONTROLLER_PLLD_MISC1
-	{0x37, 0x2DFC00}    //CLK_RST_CONTROLLER_PLLD_MISC
-};
-
-//DSI config.
-static const cfg_op_t _display_config_7[10] = {
+//DSI mode config.
+static const cfg_op_t _display_dsi_mode_config[10] = {
 	{DSI_TRIGGER, 0},
 	{DSI_CONTROL, 0},
 	{DSI_SOL_DELAY, 6},
@@ -286,17 +271,17 @@ static const cfg_op_t _display_config_7[10] = {
 };
 
 //MIPI CAL config.
-static const cfg_op_t _display_config_8[6] = {
-	{0x18, 0},          // MIPI_CAL_MIPI_BIAS_PAD_CFG2
-	{0x02, 0xF3F10000}, // MIPI_CAL_CIL_MIPI_CAL_STATUS
-	{0x16, 0},          // MIPI_CAL_MIPI_BIAS_PAD_CFG0
-	{0x18, 0},          // MIPI_CAL_MIPI_BIAS_PAD_CFG2
-	{0x18, 0x10010},    // MIPI_CAL_MIPI_BIAS_PAD_CFG2
-	{0x17, 0x300}       // MIPI_CAL_MIPI_BIAS_PAD_CFG1
+static const cfg_op_t _display_mipi_pad_cal_config[6] = {
+	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0},
+	{MIPI_CAL_CIL_MIPI_CAL_STATUS, 0xF3F10000},
+	{MIPI_CAL_MIPI_BIAS_PAD_CFG0,  0},
+	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0},
+	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0x10010},
+	{MIPI_CAL_MIPI_BIAS_PAD_CFG1,  0x300}
 };
 
 //DSI config.
-static const cfg_op_t _display_config_9[4] = {
+static const cfg_op_t _display_dsi_pad_cal_config[4] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PAD_CONTROL_2, 0},
 	{DSI_PAD_CONTROL_3, DSI_PAD_PREEMP_PD_CLK(0x3) | DSI_PAD_PREEMP_PU_CLK(0x3) | DSI_PAD_PREEMP_PD(0x03) | DSI_PAD_PREEMP_PU(0x3)},
@@ -304,27 +289,27 @@ static const cfg_op_t _display_config_9[4] = {
 };
 
 //MIPI CAL config.
-static const cfg_op_t _display_config_10[16] = {
-	{0x0E, 0x200200}, // MIPI_CAL_DSIA_MIPI_CAL_CONFIG
-	{0x0F, 0x200200}, // MIPI_CAL_DSIB_MIPI_CAL_CONFIG
-	{0x19, 0x200002}, // MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2
-	{0x1A, 0x200002}, // MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2
-	{0x05, 0},        // MIPI_CAL_CILA_MIPI_CAL_CONFIG
-	{0x06, 0},        // MIPI_CAL_CILB_MIPI_CAL_CONFIG
-	{0x07, 0},        // MIPI_CAL_CILC_MIPI_CAL_CONFIG
-	{0x08, 0},        // MIPI_CAL_CILD_MIPI_CAL_CONFIG
-	{0x09, 0},        // MIPI_CAL_CILE_MIPI_CAL_CONFIG
-	{0x0A, 0},        // MIPI_CAL_CILF_MIPI_CAL_CONFIG
-	{0x10, 0},        // MIPI_CAL_DSIC_MIPI_CAL_CONFIG
-	{0x11, 0},        // MIPI_CAL_DSID_MIPI_CAL_CONFIG
-	{0x1A, 0},        // MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2
-	{0x1C, 0},        // MIPI_CAL_DSIC_MIPI_CAL_CONFIG_2
-	{0x1D, 0},        // MIPI_CAL_DSID_MIPI_CAL_CONFIG_2
-	{0, 0x2A000001}   // MIPI_CAL_DSIA_MIPI_CAL_CONFIG
+static const cfg_op_t _display_mipi_apply_dsi_cal_config[16] = {
+	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200200},
+	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200200},
+	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x200002},
+	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x200002},
+	{MIPI_CAL_CILA_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_CILB_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_CILC_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_CILD_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_CILE_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_CILF_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_DSIC_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_DSID_MIPI_CAL_CONFIG,   0},
+	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0},
+	{MIPI_CAL_DSIC_MIPI_CAL_CONFIG_2, 0},
+	{MIPI_CAL_DSID_MIPI_CAL_CONFIG_2, 0},
+	{MIPI_CAL_MIPI_CAL_CTRL,          0x2A000001}
 };
 
 //Display A config.
-static const cfg_op_t _display_config_11[113] = {
+static const cfg_op_t _display_video_disp_controller_enable_config[113] = {
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
@@ -449,7 +434,7 @@ static const cfg_op_t _display_config_11[113] = {
 };
 
 ////Display A config.
-static const cfg_op_t _display_config_12[17] = {
+static const cfg_op_t _display_video_disp_controller_disable_config[17] = {
 	{DC_DISP_FRONT_PORCH, 0xA0088},
 	{DC_CMD_INT_MASK, 0},
 	{DC_CMD_STATE_ACCESS, 0},
@@ -470,7 +455,7 @@ static const cfg_op_t _display_config_12[17] = {
 };
 
 //DSI config.
-static const cfg_op_t _display_config_13[16] = {
+static const cfg_op_t _display_dsi_timing_deinit_config[16] = {
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PHY_TIMING_0, 0x6070601},
@@ -490,11 +475,11 @@ static const cfg_op_t _display_config_13[16] = {
 };
 
 //DSI config (if ver == 0x10).
-static const cfg_op_t _display_config_14[22] = {
-	{DSI_WR_DATA, 0x439},
-	{DSI_WR_DATA, 0x9483FFB9},
+static const cfg_op_t _display_deinit_config_jdi[22] = {
+	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x9483FFB9}, // Enable extension cmd. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x2139},
+	{DSI_WR_DATA, 0x2139},     // MIPI_DSI_DCS_LONG_WRITE: 33 bytes.
 	{DSI_WR_DATA, 0x191919D5},
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
@@ -505,60 +490,60 @@ static const cfg_op_t _display_config_14[22] = {
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0xB39},
-	{DSI_WR_DATA, 0x4F0F41B1},
+	{DSI_WR_DATA, 0xB39},      // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
+	{DSI_WR_DATA, 0x4F0F41B1}, // Set Power control.
 	{DSI_WR_DATA, 0xF179A433},
-	{DSI_WR_DATA, 0x2D81},
+	{DSI_WR_DATA, 0x002D81},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x439},
-	{DSI_WR_DATA, 0xB9},
+	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x000000B9}, // Disable extension cmd.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
 //Display A config.
 static const cfg_op_t cfg_display_one_color[8] = {
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT}, //Enable window A.
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT}, //Enable window B.
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT}, //Enable window C.
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
-	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY} //DISPLAY_CTRL_MODE: continuous display.
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
+	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY} // Continuous display.
 };
 
 //Display A config.
 static const cfg_op_t cfg_display_framebuffer[32] = {
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT}, //Enable window C.
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT}, //Enable window B.
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT}, //Enable window A.
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
-	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8}, //T_A8R8G8B8 //NX Default: T_A8B8G8R8, WIN_COLOR_DEPTH_R8G8B8A8
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
+	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8}, //NX Default: T_A8B8G8R8, WIN_COLOR_DEPTH_R8G8B8A8
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_WIN_POSITION, 0}, //(0,0)
 	{DC_WIN_H_INITIAL_DDA, 0},
 	{DC_WIN_V_INITIAL_DDA, 0},
-	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(2880)}, //Pre-scaled size: 1280x2880 bytes.
-	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)},
-	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(720)}, //Window size: 1280 vertical lines x 720 horizontal pixels.
-	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, //768*2x768*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
-	{DC_WIN_BUFFER_CONTROL, 0},
-	{DC_WINBUF_SURFACE_KIND, 0}, //Regular surface.
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(2880)},
+	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)}, // 1.0x
+	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(720)},
+	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
+	{DC_WINBUF_SURFACE_KIND, PITCH},
 	{DC_WINBUF_START_ADDR, IPL_FB_ADDRESS}, // Framebuffer address.
 	{DC_WINBUF_ADDR_H_OFFSET, 0},
 	{DC_WINBUF_ADDR_V_OFFSET, 0},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
 	{DC_WIN_WIN_OPTIONS, 0},
-	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE}, //DSI_ENABLE
-	{DC_WIN_WIN_OPTIONS, WIN_ENABLE}, //Enable window AD.
-	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY}, //DISPLAY_CTRL_MODE: continuous display.
-	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE}, //General update; window A update.
-	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ} //General activation request; window A activation request.
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
+	{DC_WIN_WIN_OPTIONS, WIN_ENABLE}, // Enable window AD.
+	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY}, // Continuous display.
+	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE},
+	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
 };
