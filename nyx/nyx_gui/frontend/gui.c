@@ -1978,6 +1978,12 @@ static void _nyx_main_menu(lv_theme_t * th)
 		lv_task_t *task_run_dump = lv_task_create(sept_run_dump, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
 		lv_task_once(task_run_dump);
 	}
+	else if (nyx_str->cfg & NYX_CFG_UMS)
+	{
+		nyx_str->cfg &= ~(NYX_CFG_UMS);
+		lv_task_t *task_run_ums = lv_task_create(nyx_run_ums, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, (void *)&nyx_str->cfg);
+		lv_task_once(task_run_ums);
+	}
 }
 
 void nyx_load_and_run()

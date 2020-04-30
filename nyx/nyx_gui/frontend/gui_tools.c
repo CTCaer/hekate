@@ -592,6 +592,43 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 
 	return LV_RES_OK;
 }
+
+void nyx_run_ums(void *param)
+{
+	u32 *cfg = (u32 *)param;
+
+	u8 type = (*cfg) >> 24;
+	*cfg = *cfg & 0xFFFFFF;
+
+	// Disable read only flag.
+	usb_msc_emmc_read_only = false;
+
+	switch (type)
+	{
+	case NYX_UMS_SD_CARD:
+		action_ums_sd(NULL);
+		break;
+	case NYX_UMS_EMMC_BOOT0:
+		_action_ums_emmc_boot0(NULL);
+		break;
+	case NYX_UMS_EMMC_BOOT1:
+		_action_ums_emmc_boot1(NULL);
+		break;
+	case NYX_UMS_EMMC_GPP:
+		_action_ums_emmc_gpp(NULL);
+		break;
+	case NYX_UMS_EMUMMC_BOOT0:
+		_action_ums_emuemmc_boot0(NULL);
+		break;
+	case NYX_UMS_EMUMMC_BOOT1:
+		_action_ums_emuemmc_boot1(NULL);
+		break;
+	case NYX_UMS_EMUMMC_GPP:
+		_action_ums_emuemmc_gpp(NULL);
+		break;
+	}
+}
+
 static lv_res_t _emmc_read_only_toggle(lv_obj_t *btn)
 {
 	nyx_generic_onoff_toggle(btn);

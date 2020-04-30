@@ -696,10 +696,19 @@ void nyx_load_run()
 
 	nyx_str->info.errors = h_cfg.errors;
 	nyx_str->cfg = 0;
-	if (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
+	if (b_cfg.extra_cfg)
 	{
-		b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_DUMP);
-		nyx_str->cfg |= NYX_CFG_DUMP;
+		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
+		{
+			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_DUMP);
+			nyx_str->cfg |= NYX_CFG_DUMP;
+		}
+		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
+		{
+			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_UMS);
+			nyx_str->cfg |= NYX_CFG_UMS;
+			nyx_str->cfg |= b_cfg.ums << 24;
+		}
 	}
 
 	nyx_str->version = ipl_ver.version - 0x303030; // Convert ASCII to numbers.
@@ -758,6 +767,8 @@ static void _auto_launch_firmware()
 			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 		check_sept(NULL);
 	}
+	else if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
+		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 
 	if (!h_cfg.sept_run)
 		auto_launch_update();
