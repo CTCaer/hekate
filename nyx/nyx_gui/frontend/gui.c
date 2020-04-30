@@ -1139,6 +1139,11 @@ static void _update_status_bar(void *params)
 
 	// Get sensor data.
 	max77620_rtc_get_time(&time);
+	if (n_cfg.timeoff)
+	{
+		u32 epoch = (u32)((s32)max77620_rtc_date_to_epoch(&time, true) + (s32)n_cfg.timeoff);
+		max77620_rtc_epoch_to_date(epoch, &time);
+	}
 	soc_temp = tmp451_get_soc_temp(false);
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
 	max17050_get_property(MAX17050_RepSOC, (int *)&batt_percent);
@@ -1154,7 +1159,6 @@ static void _update_status_bar(void *params)
 	else if (soc_temp_dec < 40)
 		set_fan_duty(0);
 
-	//! TODO: Parse time and use offset.
 	// Set time and SoC temperature.
 	s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d",
 		time.hour, time.min, soc_temp_dec, (soc_temp & 0xFF) / 10);
