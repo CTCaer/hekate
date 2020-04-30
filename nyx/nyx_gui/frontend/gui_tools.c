@@ -160,6 +160,50 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\211", "\262Close", "\211", "" };
+	static const char *mbox_btn_map2[] = { "\211", "\222Close", "\211", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	char *text_buf = malloc(0x1000);
+
+	s_printf(text_buf, "#FF8000 HID Emulation#\n\n#C7EA46 Device:# ");
+
+	if (usbs->type == USB_HID_GAMEPAD)
+		s_printf(text_buf + strlen(text_buf), "Gamepad");
+	else
+		s_printf(text_buf + strlen(text_buf), "Touchpad");
+
+	lv_mbox_set_text(mbox, text_buf);
+
+	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_status, true);
+	lv_label_set_text(lbl_status, " ");
+	usbs->label = (void *)lbl_status;
+
+	lv_obj_t *lbl_tip = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_tip, true);
+	lv_label_set_static_text(lbl_tip, "Note: To end it, press #C7EA46 L3# + #C7EA46 HOME# or remove the cable.");
+	lv_obj_set_style(lbl_tip, &hint_small_style);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	usb_device_gadget_hid(usbs);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -292,6 +336,28 @@ static void usb_gadget_set_text(void *lbl, const char *text)
 	manual_system_maintenance(true);
 }
 
+static lv_res_t _action_hid_jc(lv_obj_t *btn)
+{
+	// Reduce BPMP, RAM and backlight and power off SDMMC1 to conserve power.
+	sd_unmount(true);
+	minerva_change_freq(FREQ_800);
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	display_backlight_brightness(10, 1000);
+
+	usb_ctxt_t usbs;
+	usbs.type = USB_HID_GAMEPAD;
+	usbs.system_maintenance = &manual_system_maintenance;
+	usbs.set_text = &usb_gadget_set_text;
+
+	_create_mbox_hid(&usbs);
+
+	// Restore BPMP, RAM and backlight.
+	minerva_change_freq(FREQ_1600);
+	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
+	display_backlight_brightness(h_cfg.backlight - 20, 1000);
+
+	return LV_RES_OK;
+}
 
 /*
 static lv_res_t _action_hid_touch(lv_obj_t *btn)
@@ -666,6 +732,40 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	line_sep = lv_line_create(h2, line_sep);
 	lv_obj_align(line_sep, label_txt3, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
 
+	// Create Gamepad button.
+	lv_obj_t *btn3 = lv_btn_create(h2, NULL);
+	label_btn = lv_label_create(btn3, NULL);
+	lv_btn_set_fit(btn3, true, true);
+	lv_label_set_static_text(label_btn, SYMBOL_CIRCUIT"  Gamepad");
+	lv_obj_align(btn3, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
+	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _action_hid_jc);
+
+	lv_obj_t *label_txt4 = lv_label_create(h2, NULL);
+	lv_label_set_recolor(label_txt4, true);
+	lv_label_set_static_text(label_txt4,
+		"Plug-in your Joy-Con and convert your device\n"
+		"into a gamepad for your PC/Phone.\n"
+		"#C7EA46 Needs both Joy-Con in order to function.#");
+
+	lv_obj_set_style(label_txt4, &hint_small_style);
+	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+/*
+	// Create Touchpad button.
+	lv_obj_t *btn4 = lv_btn_create(h2, btn1);
+	label_btn = lv_label_create(btn4, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_KEYBOARD"  Touchpad");
+	lv_obj_align(btn4, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, _action_hid_touch);
+	lv_btn_set_state(btn4, LV_BTN_STATE_INA);
+
+	label_txt4 = lv_label_create(h2, NULL);
+	lv_label_set_recolor(label_txt4, true);
+	lv_label_set_static_text(label_txt4,
+		"Control your PC via your device touchscreen.\n"
+		"#C7EA46 Two fingers tap acts like a# #FF8000 Right click##C7EA46 .#\n");
+	lv_obj_set_style(label_txt4, &hint_small_style);
+	lv_obj_align(label_txt4, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+*/
 	return LV_RES_OK;
 }
 static int _fix_attributes(u32 *ufidx, lv_obj_t *lb_val, char *path, u32 *total, u32 hos_folder, u32 check_first_run)
