@@ -60,8 +60,8 @@ _reloc_ipl:
 	BX R3
 
 _real_start:
-	/* Initially, we place our stack in IRAM but will move it to SDRAM later. */
-	LDR SP, =0x90010000
+	/* We place our stack in SDRAM. */
+	LDR SP, =0x83100000
 	LDR R0, =__bss_start
 	EOR R1, R1, R1
 	LDR R2, =__bss_end
