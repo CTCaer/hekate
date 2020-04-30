@@ -17,6 +17,7 @@
 
 #include "util.h"
 #include "../gfx/di.h"
+#include "../mem/heap.h"
 #include "../mem/minerva.h"
 #include "../power/max77620.h"
 #include "../rtc/max77620-rtc.h"
@@ -24,12 +25,11 @@
 #include "../soc/i2c.h"
 #include "../soc/pmc.h"
 #include "../soc/t210.h"
+#include "../storage/nx_sd.h"
 
 #define USE_RTC_TIMER
 
 extern volatile nyx_storage_t *nyx_str;
-
-extern void sd_unmount(bool deinit);
 
 u32 get_tmr_s()
 {
@@ -80,6 +80,43 @@ void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops)
 {
 	for(u32 i = 0; i < num_ops; i++)
 		base[ops[i].off] = ops[i].val;
+}
+
+u32 crc32_calc(u32 crc, const u8 *buf, u32 len)
+{
+	const u8 *p, *q;
+	static u32 *table = NULL;
+
+	// Calculate CRC table.
+	if (!table)
+	{
+		table = calloc(256, sizeof(u32));
+		for (u32 i = 0; i < 256; i++)
+		{
+			u32 rem = i;
+			for (u32 j = 0; j < 8; j++)
+			{
+				if (rem & 1)
+				{
+					rem >>= 1;
+					rem ^= 0xedb88320;
+				}
+				else
+					rem >>= 1;
+			}
+			table[i] = rem;
+		}
+	}
+
+	crc = ~crc;
+	q = buf + len;
+	for (p = buf; p < q; p++)
+	{
+		u8 oct = *p;
+		crc = (crc >> 8) ^ table[(crc & 0xff) ^ oct];
+	}
+
+	return ~crc;
 }
 
 void panic(u32 val)
