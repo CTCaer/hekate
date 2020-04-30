@@ -77,6 +77,7 @@ int  usb_device_write_ep1_in(u8 *buf, u32 len, u32 *bytes_written, bool sync);
 int  usb_device_ep1_in_writing_finish(u32 *pending_bytes);
 bool usb_device_get_suspended();
 
+int  usb_device_gadget_ums(usb_ctxt_t *usbs);
 bool usb_device_get_max_lun(u8 max_lun);
 bool usb_device_get_hid_report();
 u32  usb_device_get_port_status();
