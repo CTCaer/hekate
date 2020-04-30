@@ -56,10 +56,10 @@
 typedef union {
     struct {
         MEM_UNIT used: 1;       //1: if the entry is used
-        MEM_UNIT d_size: 31;    //Size off the data (1 means 4 bytes)
+        MEM_UNIT d_size: 31;    //Size of the data
     };
     MEM_UNIT header;            //The header (used + d_size)
-    uint32_t align[8];          //Align header size to 32 bytes
+    MEM_UNIT align[8];          //Align header size to MEM_UNIT * 8 bytes
 } lv_mem_header_t;
 
 static_assert(sizeof(lv_mem_header_t) == 32, "Node header must be 32 bytes!");
@@ -130,10 +130,10 @@ void * lv_mem_alloc(uint32_t size)
         return &zero_mem;
     }
 
-    /*Round the size up to 32*/
-    if(size & 0x1F) {
-        size = size & (~0x1F);
-        size += 0x20;
+    /*Round the size to lv_mem_header_t*/
+    if(size & (sizeof(lv_mem_header_t) - 1)) {
+        size = size & (~(sizeof(lv_mem_header_t) - 1));
+        size += sizeof(lv_mem_header_t);
     }
 
     void * alloc = NULL;
@@ -233,6 +233,12 @@ void lv_mem_free(const void * data)
 
 void * lv_mem_realloc(void * data_p, uint32_t new_size)
 {
+    /*Round the size to lv_mem_header_t*/
+    if(new_size & (sizeof(lv_mem_header_t) - 1)) {
+        new_size = new_size & (~(sizeof(lv_mem_header_t) - 1));
+        new_size += sizeof(lv_mem_header_t);
+    }
+
     /*data_p could be previously freed pointer (in this case it is invalid)*/
     if(data_p != NULL) {
         lv_mem_ent_t * e = (lv_mem_ent_t *)((uint8_t *) data_p - sizeof(lv_mem_header_t));
@@ -444,13 +450,6 @@ static void * ent_alloc(lv_mem_ent_t * e, uint32_t size)
  */
 static void ent_trunc(lv_mem_ent_t * e, uint32_t size)
 {
-
-    /*Round the size up to 32*/
-    if(size & 0x1F) {
-        size = size & (~0x1F);
-        size += 0x20;
-    }
-
     /*Don't let empty space only for a header without data*/
     if(e->header.d_size == size + sizeof(lv_mem_header_t)) {
         size = e->header.d_size;
