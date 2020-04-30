@@ -893,6 +893,124 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
+{
+	int res = 0;
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	char *txt_buf = malloc(0x1000);
+	strcpy(txt_buf, "#FF8000 Don't touch the screen!#\n\nThe tuning process will start in ");
+	u32 text_idx = strlen(txt_buf);
+	lv_mbox_set_text(mbox, txt_buf);
+
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	lv_mbox_set_text(mbox,
+		"#FFDD00 Warning: Only run this if you really have issues!#\n\n"
+		"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.");
+	manual_system_maintenance(true);
+
+	if (!(btn_wait() & BTN_POWER))
+		goto out;
+
+	manual_system_maintenance(true);
+	lv_mbox_set_text(mbox, txt_buf);
+
+	u32 seconds = 5;
+	while (seconds)
+	{
+		s_printf(txt_buf + text_idx, "%d seconds...", seconds);
+		lv_mbox_set_text(mbox, txt_buf);
+		manual_system_maintenance(true);
+		msleep(1000);
+		seconds--;
+	}
+
+	u8 err[2];
+	if (touch_panel_ito_test(err))
+	{
+		if (!err[0] && !err[1])
+		{
+			res = touch_execute_autotune();
+			if (res)
+				goto out;
+		}
+		else
+		{
+			touch_sense_enable();
+
+			s_printf(txt_buf, "#FFFF00 ITO Test: ");
+			switch (err[0])
+			{
+			case ITO_FORCE_OPEN:
+				s_printf(txt_buf + strlen(txt_buf), "Force Open");
+				break;
+			case ITO_SENSE_OPEN:
+				s_printf(txt_buf + strlen(txt_buf), "Sense Open");
+				break;
+			case ITO_FORCE_SHRT_GND:
+				s_printf(txt_buf + strlen(txt_buf), "Force Short to GND");
+				break;
+			case ITO_SENSE_SHRT_GND:
+				s_printf(txt_buf + strlen(txt_buf), "Sense Short to GND");
+				break;
+			case ITO_FORCE_SHRT_VCM:
+				s_printf(txt_buf + strlen(txt_buf), "Force Short to VDD");
+				break;
+			case ITO_SENSE_SHRT_VCM:
+				s_printf(txt_buf + strlen(txt_buf), "Sense Short to VDD");
+				break;
+			case ITO_FORCE_SHRT_FORCE:
+				s_printf(txt_buf + strlen(txt_buf), "Force Short to Force");
+				break;
+			case ITO_SENSE_SHRT_SENSE:
+				s_printf(txt_buf + strlen(txt_buf), "Sense Short to Sense");
+				break;
+			case ITO_F2E_SENSE:
+				s_printf(txt_buf + strlen(txt_buf), "Force Short to Sense");
+				break;
+			case ITO_FPC_FORCE_OPEN:
+				s_printf(txt_buf + strlen(txt_buf), "FPC Force Open");
+				break;
+			case ITO_FPC_SENSE_OPEN:
+				s_printf(txt_buf + strlen(txt_buf), "FPC Sense Open");
+				break;
+			default:
+				s_printf(txt_buf + strlen(txt_buf), "Unknown");
+				break;
+
+			}
+			s_printf(txt_buf + strlen(txt_buf), " (%d), Chn: %d#\n\n", err[0], err[1]);
+			s_printf(txt_buf + strlen(txt_buf), "#FFFF00 The touchscreen calibration failed!");
+			lv_mbox_set_text(mbox, txt_buf);
+			goto out2;
+		}
+	}
+
+	touch_sense_enable();
+
+out:
+	if (res)
+		lv_mbox_set_text(mbox, "#C7EA46 The touchscreen calibration finished!");
+	else
+		lv_mbox_set_text(mbox, "#FFFF00 The touchscreen calibration failed!");
+
+out2:
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+
+	free(txt_buf);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 {
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_MODULES" Dump package1/2");
@@ -1372,6 +1490,21 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
+	// Create Fix touch calibration button.
+	lv_obj_t *btn2 = lv_btn_create(h1, btn);
+	label_btn = lv_label_create(btn2, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_KEYBOARD"  Calibrate Touchscreen");
+	lv_obj_align(btn2, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_mbox_fix_touchscreen);
+
+	label_txt2 = lv_label_create(h1, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"Allows you to calibrate your touchscreen module.\n"
+		"#FF8000 This fixes any issues with touchscreen in Nyx and HOS.#");
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+
 	// Create Others container.
 	lv_obj_t *h2 = _create_container(parent);
 	lv_obj_align(h2, h1, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
@@ -1462,7 +1595,7 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 	lv_tabview_set_btns_pos(tv, LV_TABVIEW_BTNS_POS_BOTTOM);
 
 	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" Dump Pkg1/2 "SYMBOL_DOT" USB Tools");
-	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Archive bit "SYMBOL_DOT" AutoRCM");
+	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Archive bit "SYMBOL_DOT" AutoRCM "SYMBOL_DOT" Touch Tuning");
 
 	_create_tab_tools_emmc_pkg12(th, tab1);
 	_create_tab_tools_arc_autorcm(th, tab2);
