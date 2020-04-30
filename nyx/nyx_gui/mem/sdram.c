@@ -31,6 +31,8 @@
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
+#define CONFIG_SDRAM_KEEP_ALIVE
+
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
 #include "../libs/compr/lz.h"
 #include "sdram_config_lz.inl"
@@ -117,10 +119,14 @@ static void _sdram_config(const sdram_params_t *params)
 	CLOCK(CLK_RST_CONTROLLER_PLLM_MISC1) = params->pllm_setup_control;
 	CLOCK(CLK_RST_CONTROLLER_PLLM_MISC2) = 0;
 
-	// u32 tmp = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | ((params->pllm_post_divider & 0xFFFF) << 20);
-	// CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = tmp;
-	// CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = tmp | 0x40000000;
-	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | 0x40000000 | ((params->pllm_post_divider & 0xFFFF) << 20);
+#ifdef CONFIG_SDRAM_KEEP_ALIVE
+	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) =
+		(params->pllm_feedback_divider << 8) | params->pllm_input_divider | ((params->pllm_post_divider & 0xFFFF) << 20) | PLLCX_BASE_ENABLE;
+#else
+	u32 pllm_div = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | ((params->pllm_post_divider & 0xFFFF) << 20);
+	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = pllm_div;
+	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = pllm_div | PLLCX_BASE_ENABLE;
+#endif
 
 	u32 wait_end = get_tmr_us() + 300;
 	while (!(CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) & 0x8000000))
@@ -553,9 +559,9 @@ break_nosleep:
 	// ZQ CAL setup (not actually issuing ZQ CAL now).
 	if (params->emc_zcal_warm_cold_boot_enables & 1)
 	{
-		if (params->memory_type == 2)
+		if (params->memory_type == MEMORY_TYPE_DDR3L)
 			EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt << 3;
-		if (params->memory_type == 3)
+		if (params->memory_type == MEMORY_TYPE_LPDDR4)
 		{
 			EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
 			EMC(EMC_ZCAL_MRW_CMD) = params->emc_zcal_mrw_cmd;
@@ -571,7 +577,7 @@ break_nosleep:
 
 	// Set clock enable signal.
 	u32 pin_gpio_cfg = (params->emc_pin_gpio_enable << 16) | (params->emc_pin_gpio << 12);
-	if (params->memory_type == 2 || params->memory_type == 3)
+	if (params->memory_type == MEMORY_TYPE_DDR3L || params->memory_type == MEMORY_TYPE_LPDDR4)
 	{
 		EMC(EMC_PIN) = pin_gpio_cfg;
 		(void)EMC(EMC_PIN);
@@ -580,9 +586,9 @@ break_nosleep:
 		(void)EMC(EMC_PIN);
 	}
 
-	if (params->memory_type == 3)
+	if (params->memory_type == MEMORY_TYPE_LPDDR4)
 		usleep(params->emc_pin_extra_wait + 2000);
-	else if (params->memory_type == 2)
+	else if (params->memory_type == MEMORY_TYPE_DDR3L)
 		usleep(params->emc_pin_extra_wait + 500);
 
 	// Enable clock enable signal.
@@ -591,15 +597,15 @@ break_nosleep:
 	usleep(params->emc_pin_program_wait);
 
 	// Send NOP (trigger just needs to be non-zero).
-	if (params->memory_type != 3)
+	if (params->memory_type != MEMORY_TYPE_LPDDR4)
 		EMC(EMC_NOP) = (params->emc_dev_select << 30) + 1;
 
 	// On coldboot w/LPDDR2/3, wait 200 uSec after asserting CKE high.
-	if (params->memory_type == 1)
+	if (params->memory_type == MEMORY_TYPE_LPDDR2)
 		usleep(params->emc_pin_extra_wait + 200);
 
 	// Init zq calibration,
-	if (params->memory_type == 3)
+	if (params->memory_type == MEMORY_TYPE_LPDDR4)
 	{
 		// Patch 6 using BCT spare variables.
 		if (params->emc_bct_spare10)
@@ -640,7 +646,7 @@ break_nosleep:
 	PMC(APBDEV_PMC_DDR_CFG) = params->pmc_ddr_cfg;
 
 	// Start periodic ZQ calibration (LPDDRx only).
-	if (params->memory_type - 1 <= 2)
+	if (params->memory_type && params->memory_type <= MEMORY_TYPE_LPDDR4)
 	{
 		EMC(EMC_ZCAL_INTERVAL) = params->emc_zcal_interval;
 		EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;

@@ -232,6 +232,7 @@
 #define EMC_COMP_PAD_SW_CTRL                      0x57c
 #define EMC_REQ_CTRL                              0x2b0
 #define EMC_EMC_STATUS                            0x2b4
+#define  EMC_STATUS_MRR_DIVLD (1 << 20)
 #define EMC_CFG_2                                 0x2b8
 #define EMC_CFG_DIG_DLL                           0x2bc
 #define EMC_CFG_DIG_DLL_PERIOD                    0x2c0
