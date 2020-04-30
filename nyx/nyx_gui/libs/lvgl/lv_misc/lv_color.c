@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2019-2020 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /**
  * @file lv_color.c
  *
@@ -11,6 +27,8 @@
 /*********************
  *      DEFINES
  *********************/
+
+#define HUE_DEGREE 512
 
 /**********************
  *      TYPEDEFS
@@ -43,35 +61,54 @@
  * @param v value [0..100]
  * @return the given RGB color in RGB (with LV_COLOR_DEPTH depth)
  */
-lv_color_t lv_color_hsv_to_rgb(uint16_t h, uint8_t s, uint8_t v)
+lv_color_t lv_color_hsv_to_rgb(uint16_t hue, uint8_t sat, uint8_t val)
 {
-    if(s == 0)
-        return LV_COLOR_MAKE(v, v, v);
-
-    h = (uint32_t)((uint32_t)h * 255) / 360;
-    s = (uint16_t)((uint16_t)s * 255) / 100;
-    v = (uint16_t)((uint16_t)v * 255) / 100;
-
     uint8_t r, g, b;
 
-    uint8_t region, remainder, p, q, t;
+    uint32_t h = (hue * 360 * HUE_DEGREE -1) / 360;
+    uint32_t s = sat * 255 / 100;
+    uint32_t v = val * 255 / 100;
+    uint32_t p = (256 * v - s * v) / 256;
+    uint32_t region = h / (60 * 512);
+    
+    if(sat == 0)
+        return LV_COLOR_MAKE(v, v, v);
 
-    region = h / 43;
-    remainder = (h - (region * 43)) * 6;
+    if (region & 1)
+    {
+        uint32_t q = (256 * 60 * HUE_DEGREE * v - h * s * v + 60 * HUE_DEGREE * s * v * region) /
+            (256 * 60 * HUE_DEGREE);
 
-    p = (v * (255 - s)) >> 8;
-    q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-    t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
-
-    switch(region) {
-        case 0:
-            r = v;
-            g = t;
-            b = p;
-            break;
+        switch (region)
+        {
         case 1:
             r = q;
             g = v;
+            b = p;
+            break;
+        case 3:
+            r = p;
+            g = q;
+            b = v;
+            break;
+        case 5:
+        default:
+            r = v;
+            g = p;
+            b = q;
+            break;
+        }
+    }
+    else
+    {
+        uint32_t t = (256 * 60 * HUE_DEGREE * v + h * s * v - 60 * HUE_DEGREE * s * v * (region + 1)) /
+            (256 * 60 * HUE_DEGREE);
+
+        switch (region)
+        {
+        case 0:
+            r = v;
+            g = t;
             b = p;
             break;
         case 2:
@@ -79,21 +116,13 @@ lv_color_t lv_color_hsv_to_rgb(uint16_t h, uint8_t s, uint8_t v)
             g = v;
             b = t;
             break;
-        case 3:
-            r = p;
-            g = q;
-            b = v;
-            break;
         case 4:
+        default:
             r = t;
             g = p;
             b = v;
             break;
-        default:
-            r = v;
-            g = p;
-            b = q;
-            break;
+        }
     }
 
     return LV_COLOR_MAKE(r, g, b);

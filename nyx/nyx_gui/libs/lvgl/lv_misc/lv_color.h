@@ -432,7 +432,7 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
  * @param v value [0..100]
  * @return the given RGB color in RGB (with LV_COLOR_DEPTH depth)
  */
-lv_color_t lv_color_hsv_to_rgb(uint16_t h, uint8_t s, uint8_t v);
+lv_color_t lv_color_hsv_to_rgb(uint16_t hue, uint8_t sat, uint8_t val);
 
 /**
  * Convert an RGB color to HSV
