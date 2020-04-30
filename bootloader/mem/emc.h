@@ -2,6 +2,7 @@
  * arch/arm/mach-tegra/tegra21_emc.h
  *
  * Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2019-2020, CTCaer.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -663,5 +664,29 @@
 #define EMC_PMC_SCRATCH1                          0x440
 #define EMC_PMC_SCRATCH2                          0x444
 #define EMC_PMC_SCRATCH3                          0x448
+
+#define EMC_STATUS_UPDATE_TIMEOUT 1000
+
+typedef enum _emc_mr_t
+{
+	MR5_MAN_ID  = 5,
+	MR6_REV_ID1 = 6,
+	MR7_REV_ID2 = 7,
+	MR8_DENSITY = 8,
+} emc_mr_t;
+
+enum
+{
+	EMC_CHAN0 = 0,
+	EMC_CHAN1 = 1
+};
+
+typedef struct _emc_mr_data_t
+{
+	u8 dev0_ch0;
+	u8 dev0_ch1;
+	u8 dev1_ch0;
+	u8 dev1_ch1;
+} emc_mr_data_t;
 
 #endif

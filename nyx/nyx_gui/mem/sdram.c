@@ -40,7 +40,57 @@
 
 static u32 _get_sdram_id()
 {
-	return (fuse_read_odm(4) & 0x38) >> 3;
+	return ((fuse_read_odm(4) & 0x38) >> 3);
+}
+
+static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
+{
+	bool err = true;
+
+	for (s32 i = 0; i < EMC_STATUS_UPDATE_TIMEOUT; i++)
+	{
+		if (emc_channel)
+		{
+			if (emc_channel != 1)
+				goto done;
+
+			if (((EMC_CH1(reg_offset) & bit_mask) != 0) == updated_state)
+			{
+				err = false;
+				break;
+			}
+		}
+		else if (((EMC(reg_offset) & bit_mask) != 0) == updated_state)
+		{
+			err = false;
+			break;
+		}
+		usleep(1);
+	}
+
+done:
+	return err;
+}
+
+static void _sdram_req_mrr_data(u32 data, bool dual_channel)
+{
+	EMC(EMC_MRR) = data;
+	_sdram_wait_emc_status(EMC_EMC_STATUS, EMC_STATUS_MRR_DIVLD, true, EMC_CHAN0);
+	if (dual_channel)
+		_sdram_wait_emc_status(EMC_EMC_STATUS, EMC_STATUS_MRR_DIVLD, true, EMC_CHAN1);
+}
+
+emc_mr_data_t sdram_read_mrx(emc_mr_t mrx)
+{
+	emc_mr_data_t data;
+	_sdram_req_mrr_data((1 << 31) | (mrx << 16), EMC_CHAN0);
+	data.dev0_ch0 = EMC(EMC_MRR) & 0xFF;
+	data.dev0_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
+	_sdram_req_mrr_data((1 << 30) | (mrx << 16), EMC_CHAN1);
+	data.dev1_ch0 = EMC(EMC_MRR) & 0xFF;
+	data.dev1_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
+
+	return data;
 }
 
 static void _sdram_config(const sdram_params_t *params)
@@ -85,7 +135,7 @@ break_nosleep:
 	if (params->emc_clock_source_dll)
 		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL) = params->emc_clock_source_dll;
 	if (params->clear_clock2_mc1)
-		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = 0x40000000;
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = 0x40000000; // Clear Reset to MC1.
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = 0x2000001; // Enable EMC and MEM clocks.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = 0x4000;    // Enable EMC_DLL clock.

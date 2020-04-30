@@ -17,11 +17,13 @@
 #ifndef _SDRAM_H_
 #define _SDRAM_H_
 
+#include "emc.h"
 #include "sdram_param_t210.h"
 
 void sdram_init();
 sdram_params_t *sdram_get_params();
 sdram_params_t *sdram_get_params_patched();
 void sdram_lp0_save_params(const void *params);
+emc_mr_data_t sdram_read_mrx(emc_mr_t mrx);
 
 #endif
