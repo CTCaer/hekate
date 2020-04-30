@@ -276,6 +276,29 @@ int touch_panel_ito_test(u8 *err)
 	return res;
 }
 
+int touch_get_fb_info(u8 *buf)
+{
+	u8 tmp[5];
+
+	u8 cmd[3] = { STMFTS_RW_FRAMEBUFFER_REG, 0, 0 };
+	int res = 0;
+
+
+	for (u32 i = 0; i < 0x10000; i+=4)
+	{
+		if (!res)
+		{
+			cmd[1] = (i >> 8) & 0xFF;
+			cmd[2] = i & 0xFF;
+			memset(tmp, 0xCC, 5);
+			res = touch_read_reg(cmd, 3, tmp, 5);
+			memcpy(&buf[i], tmp + 1, 4);
+		}
+	}
+
+	return res;
+}
+
 int touch_sense_enable()
 {
 	// Enable auto tuning calibration and multi-touch sensing.
