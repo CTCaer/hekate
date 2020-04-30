@@ -20,6 +20,7 @@
 #include "../config/config.h"
 #include "../config/ini.h"
 #include "../gfx/di.h"
+#include "../input/joycon.h"
 #include "../libs/lvgl/lvgl.h"
 #include "../mem/heap.h"
 #include "../storage/nx_sd.h"
@@ -52,6 +53,20 @@ static lv_res_t auto_nogc_toggle(lv_obj_t *btn)
 	h_cfg.autonogc = !h_cfg.autonogc;
 
 	if (!h_cfg.autonogc)
+		lv_btn_set_state(btn, LV_BTN_STATE_REL);
+	else
+		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
+
+	nyx_generic_onoff_toggle(btn);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _update_r2p_action(lv_obj_t *btn)
+{
+	h_cfg.updater2p = !h_cfg.updater2p;
+
+	if (!h_cfg.updater2p)
 		lv_btn_set_state(btn, LV_BTN_STATE_REL);
 	else
 		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
@@ -1011,50 +1026,33 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	line_sep = lv_line_create(sw_h3, line_sep);
 	lv_obj_align(line_sep, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 4);
 
-	// Create Backup/Restore Verification list.
-	label_txt = lv_label_create(sw_h3, NULL);
-	lv_label_set_static_text(label_txt, SYMBOL_MODULES_ALT" Data Verification");
-	lv_obj_set_style(label_txt, th->label.prim);
-	lv_obj_align(label_txt, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
-
-	lv_obj_t *ddlist2 = lv_ddlist_create(sw_h3, NULL);
-	lv_obj_set_top(ddlist2, true);
-	lv_ddlist_set_draw_arrow(ddlist2, true);
-	lv_ddlist_set_options(ddlist2,
-		"Off (Fastest)\n"
-		"Sparse (Fast)    \n"
-		"Full (Slow)\n"
-		"Full (Hashes)");
-	lv_ddlist_set_selected(ddlist2, n_cfg.verification);
-	lv_obj_align(ddlist2, label_txt, LV_ALIGN_OUT_RIGHT_MID, LV_DPI * 3 / 8, 0);
-	lv_ddlist_set_action(ddlist2, _data_verification_action);
-
-	if (hekate_bg)
-	{
-		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_BG, &ddlist_transp_bg);
-		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_BGO, &ddlist_transp_bg);
-		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_PR, &ddlist_transp_sel);
-		lv_ddlist_set_style(ddlist2, LV_DDLIST_STYLE_SEL, &ddlist_transp_sel);
-	}
+	// Create Update r2p button.
+	lv_obj_t *btn4 = lv_btn_create(sw_h3, NULL);
+	nyx_create_onoff_button(th, sw_h3, btn4, SYMBOL_REFRESH" Update Reboot 2 Payload", _update_r2p_action, true);
+	lv_obj_align(btn4, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 10);
 
 	label_txt2 = lv_label_create(sw_h3, NULL);
-	lv_label_set_static_text(label_txt2, "Set the type of data verification done for backup and restore.\n"
-		"Can be canceled without losing the backup/restore.\n\n\n\n");
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"If #FF8000 FSS0# is used in the selected boot entry, the reboot 2 payload\n"
+		"binary will be checked and forced to be updated to hekate.\n\n\n\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
-	lv_obj_align(label_txt2, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+	lv_obj_align(label_txt2, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 12);
 
 	// Set default loaded states.
 	if (h_cfg.autohosoff)
 		lv_btn_set_state(btn3, LV_BTN_STATE_TGL_REL);
 	if (h_cfg.autonogc)
 		lv_btn_set_state(btn2, LV_BTN_STATE_TGL_REL);
+	if (h_cfg.updater2p)
+		lv_btn_set_state(btn4, LV_BTN_STATE_TGL_REL);
 
 	nyx_generic_onoff_toggle(btn2);
 	nyx_generic_onoff_toggle(btn3);
+	nyx_generic_onoff_toggle(btn4);
 	_autoboot_hide_delay_action(btn);
 
 	lv_obj_set_top(l_cont, true); // Set the ddlist container at top.
 	lv_obj_set_parent(ddlist, l_cont); // Reorder ddlist.
 	lv_obj_set_top(ddlist, true);
-	lv_obj_set_top(ddlist2, true);
 }
