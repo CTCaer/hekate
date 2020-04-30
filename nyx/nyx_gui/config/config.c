@@ -37,7 +37,6 @@ void set_default_configuration()
 	h_cfg.autoboot = 0;
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait = 3;
-	h_cfg.verification = 1;
 	h_cfg.se_keygen_done = 0;
 	h_cfg.sbar_time_keeping = 0;
 	h_cfg.backlight = 100;
@@ -47,6 +46,7 @@ void set_default_configuration()
 	h_cfg.brand = NULL;
 	h_cfg.tagline = NULL;
 	h_cfg.errors = 0;
+	h_cfg.eks = NULL;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 	h_cfg.emummc_force_disable = false;

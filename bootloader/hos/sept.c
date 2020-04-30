@@ -71,6 +71,8 @@ extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
 
 void check_sept(ini_sec_t *cfg_sec)
 {
+	hos_eks_get();
+
 	// Check if non-hekate payload is used for sept and restore it.
 	if (h_cfg.sept_run)
 	{
@@ -112,6 +114,14 @@ void check_sept(ini_sec_t *cfg_sec)
 
 	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 	{
+		u8 key_idx = pkg1_id->kb - KB_FIRMWARE_VERSION_700;
+		if (h_cfg.eks && (h_cfg.eks->enabled & (1 << key_idx)))
+		{
+			h_cfg.sept_run = true;
+			EMC(EMC_SCRATCH0) |= EMC_SEPT_RUN;
+			goto out_free;
+		}
+
 		sdmmc_storage_end(&storage);
 		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off, pkg1_id->kb, cfg_sec);
 	}

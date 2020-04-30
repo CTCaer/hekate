@@ -24,6 +24,8 @@
 #include "../config/ini.h"
 #include "../sec/tsec.h"
 
+#include <assert.h>
+
 #define KB_FIRMWARE_VERSION_100_200 0
 #define KB_FIRMWARE_VERSION_300 1
 #define KB_FIRMWARE_VERSION_301 2
@@ -38,6 +40,35 @@
 #define KB_FIRMWARE_VERSION_MAX KB_FIRMWARE_VERSION_910
 
 #define HOS_PKG11_MAGIC 0x31314B50
+#define HOS_EKS_MAGIC   0x30534B45
+
+typedef struct _exo_ctxt_t
+{
+	bool no_user_exceptions;
+	bool user_pmu;
+	bool *cal0_blank;
+	bool *cal0_allow_writes_sys;
+} exo_ctxt_t;
+
+typedef struct _hos_eks_keys_t
+{
+	u8 dkg[0x10];
+	u8 mkk[0x10];
+	u8 fdk[0x10];
+	u8 dkk[0x10];
+} hos_eks_keys_t;
+
+typedef struct _hos_eks_mbr_t
+{
+	u32 magic;
+	u32 enabled;
+	u32 sbk_low[2];
+	hos_eks_keys_t keys[6];
+	u32 magic2;
+	u32 rsvd2[3];
+} hos_eks_mbr_t;
+
+static_assert(sizeof(hos_eks_mbr_t) < 424, "HOS EKS storage bigger than MBR!");
 
 typedef struct _launch_ctxt_t
 {
@@ -80,7 +111,10 @@ typedef struct _merge_kip_t
 	link_t link;
 } merge_kip_t;
 
-int hos_launch(ini_sec_t *cfg);
-int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt);
+void hos_eks_get();
+void hos_eks_save(u32 kb);
+void hos_eks_clear(u32 kb);
+int  hos_launch(ini_sec_t *cfg);
+int  hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt);
 
 #endif

@@ -183,7 +183,114 @@ void _sysctr0_reset()
 	SYSCTR0(SYSCTR0_COUNTERID11) = 0;
 }
 
-int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
+void hos_eks_get()
+{
+	// Check if EKS already found and parsed.
+	if (!h_cfg.eks)
+	{
+		u8 *mbr = calloc(512 , 1);
+
+		// Read EKS blob.
+		sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+
+		// Decrypt EKS blob.
+		hos_eks_mbr_t *eks = (hos_eks_mbr_t *)(mbr + 0x10);
+		se_aes_crypt_ecb(14, 0, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+
+		// Check if valid and for this unit.
+		if (eks->enabled &&
+			eks->magic == HOS_EKS_MAGIC &&
+			eks->magic2 == HOS_EKS_MAGIC &&
+			eks->sbk_low[0] == FUSE(FUSE_PRIVATE_KEY0) &&
+			eks->sbk_low[1] == FUSE(FUSE_PRIVATE_KEY1))
+		{
+			h_cfg.eks = eks;
+			return;
+		}
+
+		free(mbr);
+	}
+}
+
+void hos_eks_save(u32 kb)
+{
+	if (kb >= KB_FIRMWARE_VERSION_700)
+	{
+		// Only 6 Master keys for now.
+		u8 key_idx = kb - KB_FIRMWARE_VERSION_700;
+		if (key_idx > 5)
+			return;
+
+		if (!h_cfg.eks)
+			h_cfg.eks = calloc(512 , 1);
+
+		// If matching blob doesn't exist, create it.
+		if (!(h_cfg.eks->enabled & (1 << key_idx)))
+		{
+			// Get keys.
+			u8 *keys = (u8 *)calloc(0x1000, 1);
+			se_get_aes_keys(keys + 0x800, keys, 0x10);
+
+			// Set magic and personalized info.
+			h_cfg.eks->magic = HOS_EKS_MAGIC;
+			h_cfg.eks->magic2 = HOS_EKS_MAGIC;
+			h_cfg.eks->enabled |= 1 << key_idx;
+			h_cfg.eks->sbk_low[0] = FUSE(FUSE_PRIVATE_KEY0);
+			h_cfg.eks->sbk_low[1] = FUSE(FUSE_PRIVATE_KEY1);
+
+			// Copy new keys.
+			memcpy(h_cfg.eks->keys[key_idx].dkg, keys + 10 * 0x10, 0x10);
+			memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * 0x10, 0x10);
+			memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
+			memcpy(h_cfg.eks->keys[key_idx].dkk, keys + 15 * 0x10, 0x10);
+
+			// Encrypt EKS.
+			u8 *eks = calloc(512 , 1);
+			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
+			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+
+			// Write EKS to SD.
+			u8 *mbr = calloc(512 , 1);
+			sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+			memcpy(mbr + 0x10, eks, sizeof(hos_eks_mbr_t));
+			sdmmc_storage_write(&sd_storage, 0, 1, mbr);
+
+			free(eks);
+			free(mbr);
+			free(keys);
+		}
+	}
+}
+
+void hos_eks_clear(u32 kb)
+{
+	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
+	{
+		// Check if Current Master key is enabled.
+		u8 key_idx = kb - KB_FIRMWARE_VERSION_700;
+		if (h_cfg.eks->enabled & (1 << key_idx))
+		{
+			// Disable current Master key version.
+			h_cfg.eks->enabled &= ~(1 << key_idx);
+
+			// Encrypt EKS.
+			u8 *eks = calloc(512 , 1);
+			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
+			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+
+			// Write EKS to SD.
+			u8 *mbr = calloc(512 , 1);
+			sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+			memcpy(mbr + 0x10, eks, sizeof(hos_eks_mbr_t));
+			sdmmc_storage_write(&sd_storage, 0, 1, mbr);
+
+			free(eks);
+			free(mbr);
+		}
+	}
+}
+
+int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 {
 	u8 tmp[0x20];
 	u32 retries = 0;
@@ -226,7 +333,27 @@ int keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 	}
 
 	if (kb >= KB_FIRMWARE_VERSION_700)
+	{
+		// Use HOS EKS if it exists.
+		u8 key_idx = kb - KB_FIRMWARE_VERSION_700;
+		if (h_cfg.eks && (h_cfg.eks->enabled & (1 << key_idx)))
+		{
+			// Set Device keygen key to slot 10.
+			se_aes_key_set(10, h_cfg.eks->keys[key_idx].dkg, 0x10);
+			// Set Master key to slot 12.
+			se_aes_key_set(12, h_cfg.eks->keys[key_idx].mkk, 0x10);
+			// Set FW Device key key to slot 13.
+			se_aes_key_set(13, h_cfg.eks->keys[key_idx].fdk, 0x10);
+			// Set Device key to slot 15.
+			se_aes_key_set(15, h_cfg.eks->keys[key_idx].dkk, 0x10);
+
+			// Lock FDK.
+			se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
+		}
+
+		se_aes_key_clear(8);
 		se_aes_unwrap_key(8, 12, package2_keyseed);
+	}
 	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
 		// Set TSEC key.
@@ -538,7 +665,7 @@ int hos_launch(ini_sec_t *cfg)
 			return 0;
 		}
 
-		if (!keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt, &ctxt))
+		if (!hos_keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt, &ctxt))
 			return 0;
 		gfx_printf("Generated keys\n");
 		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
@@ -610,9 +737,16 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		_hos_crit_error("Pkg2 decryption failed!");
 		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
+		{
 			EPRINTF("Is Sept updated?");
+
+			// Clear EKS slot, in case something went wrong with sept keygen.
+			hos_eks_clear(ctxt.pkg1_id->kb);
+		}
 		return 0;
 	}
+	else if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
+		hos_eks_save(ctxt.pkg1_id->kb); // Save EKS slot if it doesn't exist.
 
 	LIST_INIT(kip1_info);
 	if (!pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2))

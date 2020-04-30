@@ -45,6 +45,7 @@ void set_default_configuration()
 	h_cfg.brand = NULL;
 	h_cfg.tagline = NULL;
 	h_cfg.errors = 0;
+	h_cfg.eks = NULL;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
 	h_cfg.rcm_patched = true;
 	h_cfg.emummc_force_disable = false;

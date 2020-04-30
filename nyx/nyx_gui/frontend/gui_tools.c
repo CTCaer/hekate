@@ -510,8 +510,13 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
+		// Clear EKS slot, in case something went wrong with sept keygen.
+		hos_eks_clear(kb);
+
 		goto out;
 	}
+	else if (kb >= KB_FIRMWARE_VERSION_700)
+		hos_eks_save(kb); // Save EKS slot if it doesn't exist.
 
 	// Display info.
 	s_printf(txt_buf + strlen(txt_buf),
