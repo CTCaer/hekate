@@ -1019,17 +1019,27 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 			if ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
 			{
-				s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match,#\n#FF0000 eMMC's selected part size!#\n");
-				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+				lv_obj_t *warn_mbox_bg = create_mbox_text(
+					"#FF8000 Size of SD Card split backup does not match,#\n#FF8000 eMMC's selected part size!#\n\n"
+					"#FFDD00 Your backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
+					"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
 				manual_system_maintenance(true);
 
-				return 0;
+				if (!(btn_wait() & BTN_POWER))
+				{
+					lv_obj_del(warn_mbox_bg);
+					s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match,#\n#FF0000 eMMC's selected part size!#\n");
+					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+					manual_system_maintenance(true);
+
+					return 0;
+				}
+				lv_obj_del(warn_mbox_bg);
+
+				totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
 			}
-			else
-			{
-				use_multipart = true;
-				_update_filename(outFilename, sdPathLen, 0);
-			}
+			use_multipart = true;
+			_update_filename(outFilename, sdPathLen, 0);
 		}
 	}
 
@@ -1071,16 +1081,26 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	{
 		if (!gui->raw_emummc)
 		{
-			s_printf(gui->txt_buf, "\n#FF0000 Size of the SD Card backup does not match,#\n#FF0000 eMMC's selected part size.#\n", res);
-			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			lv_obj_t *warn_mbox_bg = create_mbox_text(
+				"#FF8000 Size of the SD Card backup does not match,#\n#FF8000 eMMC's selected part size!#\n\n"
+				"#FFDD00 Your backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
+				"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
 			manual_system_maintenance(true);
 
-			f_close(&fp);
+			if (!(btn_wait() & BTN_POWER))
+			{
+				lv_obj_del(warn_mbox_bg);
+				s_printf(gui->txt_buf, "\n#FF0000 Size of the SD Card backup does not match,#\n#FF0000 eMMC's selected part size.#\n", res);
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+				manual_system_maintenance(true);
 
-			return 0;
+				f_close(&fp);
+
+				return 0;
+			}
+			lv_obj_del(warn_mbox_bg);
 		}
-		else
-			totalSectors = (u32)((u64)f_size(&fp) >> (u64)9);
+		totalSectors = (u32)((u64)f_size(&fp) >> (u64)9);
 	}
 	else
 	{
@@ -1109,8 +1129,8 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 	if (gui->raw_emummc)
 	{
-		get_valid_partition(&sector_start, &sector_size, &part_idx, false);
-		if (!part_idx)
+		_get_valid_partition(&sector_start, &sector_size, &part_idx, false);
+		if (!part_idx || !sector_size)
 		{
 			s_printf(gui->txt_buf, "#FFDD00 Failed to find a partition...#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -1470,7 +1490,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	timer = get_tmr_s() - timer;
 	sdmmc_storage_end(&storage);
 
-	if (res && n_cfg.verification)
+	if (res && n_cfg.verification && !gui->raw_emummc)
 		s_printf(txt_buf, "Time taken: %dm %ds.\n#96FF00 Finished and verified!#", timer / 60, timer % 60);
 	else if (res)
 		s_printf(txt_buf, "Time taken: %dm %ds.\nFinished!", timer / 60, timer % 60);
