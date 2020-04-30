@@ -24,6 +24,21 @@
 /*! Display registers. */
 #define _DIREG(reg) ((reg) * 4)
 
+// Display controller scratch registers.
+#define DC_D_WINBUF_DD_SCRATCH_REGISTER_0 0xED
+#define DC_D_WINBUF_DD_SCRATCH_REGISTER_1 0xEE
+#define DC_T_WINBUF_TD_SCRATCH_REGISTER_0 0x16D
+#define DC_T_WINBUF_TD_SCRATCH_REGISTER_1 0x16E
+#define DC_COM_SCRATCH_REGISTER_A 0x325
+#define DC_COM_SCRATCH_REGISTER_B 0x326
+#define DC_A_WINBUF_AD_SCRATCH_REGISTER_0 0xBED
+#define DC_A_WINBUF_AD_SCRATCH_REGISTER_1 0xBEE
+#define DC_B_WINBUF_BD_SCRATCH_REGISTER_0 0xDED
+#define DC_B_WINBUF_BD_SCRATCH_REGISTER_1 0xDEE
+#define DC_C_WINBUF_CD_SCRATCH_REGISTER_0 0xFED
+#define DC_C_WINBUF_CD_SCRATCH_REGISTER_1 0xFEE
+
+// DC_CMD non-shadowed command/sync registers.
 #define DC_CMD_GENERAL_INCR_SYNCPT 0x00
 
 #define DC_CMD_GENERAL_INCR_SYNCPT_CNTRL 0x01
@@ -50,6 +65,7 @@
 #define  PM0_ENABLE (1 << 16)
 #define  PM1_ENABLE (1 << 18)
 
+#define DC_CMD_INT_STATUS 0x37
 #define DC_CMD_INT_MASK 0x38
 #define DC_CMD_INT_ENABLE 0x39
 
@@ -62,11 +78,13 @@
 #define  WIN_A_ACT_REQ   (1 <<  1)
 #define  WIN_B_ACT_REQ   (1 <<  2)
 #define  WIN_C_ACT_REQ   (1 <<  3)
+#define  WIN_D_ACT_REQ   (1 <<  4)
 #define  CURSOR_ACT_REQ  (1 <<  7)
 #define  GENERAL_UPDATE  (1 <<  8)
 #define  WIN_A_UPDATE    (1 <<  9)
 #define  WIN_B_UPDATE    (1 << 10)
 #define  WIN_C_UPDATE    (1 << 11)
+#define  WIN_D_UPDATE    (1 << 12)
 #define  CURSOR_UPDATE   (1 << 15)
 #define  NC_HOST_TRIG    (1 << 24)
 
@@ -74,15 +92,38 @@
 #define  WINDOW_A_SELECT (1 << 4)
 #define  WINDOW_B_SELECT (1 << 5)
 #define  WINDOW_C_SELECT (1 << 6)
+#define  WINDOW_D_SELECT (1 << 7)
 
 #define DC_CMD_REG_ACT_CONTROL 0x043
 
+// DC_D_WIN_DD window D instance of DC_WIN
+#define DC_D_WIN_DD_WIN_OPTIONS 0x80
+#define DC_D_WIN_DD_COLOR_DEPTH 0x83
+#define DC_D_WIN_DD_POSITION    0x84
+#define DC_D_WIN_DD_SIZE        0x85
+#define DC_D_WIN_DD_LINE_STRIDE 0x8A
+#define DC_D_WIN_DD_BLEND_LAYER_CONTROL 0x96
+#define DC_D_WIN_DD_BLEND_MATCH_SELECT  0x97
+#define DC_D_WIN_DD_BLEND_ALPHA_1BIT    0x99
+
+// DC_D_WINBUF_DD window D instance of DC_WINBUF
+#define DC_D_WINBUF_DD_START_ADDR    0xC0
+#define DC_D_WINBUF_DD_ADDR_H_OFFSET 0xC6
+#define DC_D_WINBUF_DD_ADDR_V_OFFSET 0xC8
+#define DC_D_WINBUF_DD_START_ADDR_HI 0xCD
+#define DC_D_WINBUF_DD_MEMFETCH_CONTROL 0xEB
+
+// DC_T_WIN_TD macro for using DD defines.
+#define _DC_T(reg) ((reg) + 0x80)
+
+// DC_COM non-shadowed registers.
 #define DC_COM_CRC_CONTROL 0x300
 #define DC_COM_PIN_OUTPUT_ENABLE(x) (0x302 + (x))
 #define DC_COM_PIN_OUTPUT_POLARITY(x) (0x306 + (x))
 
 #define DC_COM_DSC_TOP_CTL 0x33E
 
+// DC_DISP shadowed registers.
 #define DC_DISP_DISP_WIN_OPTIONS 0x402
 #define  HDMI_ENABLE     (1 << 30)
 #define  DSI_ENABLE      (1 << 29)
@@ -161,6 +202,32 @@
 #define  DE_CONTROL_EARLY        (3 << 2)
 #define  DE_CONTROL_ACTIVE_BLANK (4 << 2)
 
+// Cursor configuration registers.
+#define DC_DISP_CURSOR_FOREGROUND    0x43C
+#define DC_DISP_CURSOR_BACKGROUND    0x43D
+#define  CURSOR_COLOR(r,g,b) (((r) & 0xFF) | (((g) & 0xFF) << 8) | (((b) & 0xFF) << 16))
+
+#define DC_DISP_CURSOR_START_ADDR    0x43E
+#define  CURSOR_CLIPPING(w) ((w) << 28)
+#define   CURSOR_CLIP_WIN_A 1
+#define   CURSOR_CLIP_WIN_B 2
+#define   CURSOR_CLIP_WIN_C 3
+#define  CURSOR_SIZE_32  (0 << 24)
+#define  CURSOR_SIZE_64  (1 << 24)
+#define  CURSOR_SIZE_128 (2 << 24)
+#define  CURSOR_SIZE_256 (3 << 24)
+#define DC_DISP_CURSOR_POSITION      0x440
+#define DC_DISP_CURSOR_START_ADDR_HI 0x4EC
+#define DC_DISP_BLEND_CURSOR_CONTROL 0x4F1
+#define  CURSOR_BLEND_2BIT     (0 << 24)
+#define  CURSOR_BLEND_R8G8B8A8 (1 << 24)
+#define  CURSOR_BLEND_SRC_FACTOR(n) ((n) << 8)
+#define  CURSOR_BLEND_DST_FACTOR(n) ((n) << 16)
+#define   CURSOR_BLEND_ZRO 0
+#define   CURSOR_BLEND_K1  1
+#define   CURSOR_BLEND_NK1 2
+// End of cursor cfg regs.
+
 #define DC_DISP_DC_MCCIF_FIFOCTRL 0x480
 #define DC_DISP_SD_BL_PARAMETERS 0x4D7
 #define DC_DISP_SD_BL_CONTROL 0x4DC
@@ -218,8 +285,9 @@
 #define  WIN_COLOR_DEPTH_YCbCr422RA     0x18
 #define  WIN_COLOR_DEPTH_YUV422RA       0x19
 
-#define DC_WIN_BUFFER_CONTROL 0x702
 #define DC_WIN_POSITION 0x704
+#define  H_POSITION(x) (((x) & 0xFfff) <<  0)
+#define  V_POSITION(x) (((x) & 0x1fff) << 16)
 
 #define DC_WIN_SIZE 0x705
 #define  H_SIZE(x) (((x) & 0x1fff) <<  0)
@@ -240,6 +308,42 @@
 #define  LINE_STRIDE(x)	   (x)
 #define  UV_LINE_STRIDE(x) (((x) & 0xffff) << 16)
 #define DC_WIN_DV_CONTROL 0x70E
+
+#define DC_WINBUF_BLEND_LAYER_CONTROL 0x716
+#define  WIN_K1(x) (((x) & 0xff) << 8)
+#define  WIN_K2(x) (((x) & 0xff) << 16)
+#define  WIN_BLEND_ENABLE (0 << 24)
+#define  WIN_BLEND_BYPASS (1 << 24)
+
+#define DC_WINBUF_BLEND_MATCH_SELECT 0x717
+#define  WIN_BLEND_FACT_SRC_COLOR_MATCH_SEL_ZERO             (0 << 0)
+#define  WIN_BLEND_FACT_SRC_COLOR_MATCH_SEL_ONE              (1 << 0)
+#define  WIN_BLEND_FACT_SRC_COLOR_MATCH_SEL_K1               (2 << 0)
+#define  WIN_BLEND_FACT_SRC_COLOR_MATCH_SEL_K1_TIMES_DST     (3 << 0)
+#define  WIN_BLEND_FACT_SRC_COLOR_MATCH_SEL_NEG_K1_TIMES_DST (4 << 0)
+#define  WIN_BLEND_FACT_SRC_COLOR_MATCH_SEL_K1_TIMES_SRC     (5 << 0)
+
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_ZERO             (0 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_ONE              (1 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_K1               (2 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_K2               (3 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_K1_TIMES_DST     (4 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_NEG_K1_TIMES_DST (5 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_NEG_K1_TIMES_SRC (6 << 4)
+#define  WIN_BLEND_FACT_DST_COLOR_MATCH_SEL_NEG_K1           (7 << 4)
+
+#define  WIN_BLEND_FACT_SRC_ALPHA_MATCH_SEL_ZERO             (0 << 8)
+#define  WIN_BLEND_FACT_SRC_ALPHA_MATCH_SEL_K1               (1 << 8)
+#define  WIN_BLEND_FACT_SRC_ALPHA_MATCH_SEL_K2               (2 << 8)
+
+#define  WIN_BLEND_FACT_DST_ALPHA_MATCH_SEL_ZERO             (0 << 12)
+#define  WIN_BLEND_FACT_DST_ALPHA_MATCH_SEL_ONE              (1 << 12)
+#define  WIN_BLEND_FACT_DST_ALPHA_MATCH_SEL_NEG_K1_TIMES_SRC (2 << 12)
+#define  WIN_BLEND_FACT_DST_ALPHA_MATCH_SEL_K2               (3 << 12)
+
+#define DC_WINBUF_BLEND_ALPHA_1BIT 0x719
+#define  WIN_ALPHA_1BIT_WEIGHT0(x) (((x) & 0xff) << 0)
+#define  WIN_ALPHA_1BIT_WEIGHT1(x) (((x) & 0xff) << 8)
 
 /*! The following registers are A/B/C shadows of the 0xBC0/0xDC0/0xFC0 registers (see DISPLAY_WINDOW_HEADER). */
 #define DC_WINBUF_START_ADDR 0x800
@@ -422,5 +526,8 @@ void display_backlight_brightness(u32 brightness, u32 step_delay);
 
 /*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
 u32 *display_init_framebuffer();
+void display_init_cursor(void *crs_fb, u32 size);
+void display_set_pos_cursor(u32 x, u32 y);
+void display_deinit_cursor();
 
 #endif

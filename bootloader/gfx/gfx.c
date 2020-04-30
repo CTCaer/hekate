@@ -219,7 +219,7 @@ void gfx_putc(char c)
 		else if (c == '\n')
 		{
 			gfx_con.x = 0;
-			gfx_con.y +=16;
+			gfx_con.y += 16;
 			if (gfx_con.y > gfx_ctxt.height - 16)
 				gfx_con.y = 0;
 		}
