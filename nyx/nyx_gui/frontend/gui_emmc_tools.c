@@ -246,21 +246,13 @@ static lv_res_t _emmc_backup_buttons_raw_toggle(lv_obj_t *btn)
 	else // Backup/Restore from and to emuMMC.
 	{
 		if (!emmc_btn_ctxt.restore)
-		{
 			lv_label_set_static_text(lv_obj_get_child(emmc_btn_ctxt.emmc_boot, NULL), SYMBOL_UPLOAD"  SD emuMMC BOOT0 & BOOT1");
-			lv_obj_set_click(emmc_btn_ctxt.emmc_boot, false);
-			lv_btn_set_state(emmc_btn_ctxt.emmc_boot, LV_BTN_STATE_INA);
-		}
 		else
 			lv_label_set_static_text(lv_obj_get_child(emmc_btn_ctxt.emmc_boot, NULL), SYMBOL_DOWNLOAD"  SD emuMMC BOOT0 & BOOT1");
 		lv_obj_realign(emmc_btn_ctxt.emmc_boot);
 
 		if (!emmc_btn_ctxt.restore)
-		{
 			lv_label_set_static_text(lv_obj_get_child(emmc_btn_ctxt.emmc_raw_gpp, NULL), SYMBOL_DOWNLOAD"  SD emuMMC RAW GPP");
-			lv_obj_set_click(emmc_btn_ctxt.emmc_raw_gpp, false);
-			lv_btn_set_state(emmc_btn_ctxt.emmc_raw_gpp, LV_BTN_STATE_INA);
-		}
 		else
 			lv_label_set_static_text(lv_obj_get_child(emmc_btn_ctxt.emmc_raw_gpp, NULL), SYMBOL_DOWNLOAD"  SD emuMMC RAW GPP");
 		lv_obj_realign(emmc_btn_ctxt.emmc_raw_gpp);
