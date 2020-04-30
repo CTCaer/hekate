@@ -319,6 +319,9 @@ void config_hw()
 	sdram_init();
 
 	bpmp_mmu_enable();
+
+	// Clear flags from PMC_SCRATCH0
+	PMC(APBDEV_PMC_SCRATCH0) &= ~PMC_SCRATCH0_MODE_PAYLOAD;
 }
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
