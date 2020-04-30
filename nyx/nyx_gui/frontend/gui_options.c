@@ -25,6 +25,7 @@
 #include "../utils/types.h"
 
 extern hekate_config h_cfg;
+extern nyx_config n_cfg;
 
 static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
@@ -86,7 +87,7 @@ lv_obj_t *create_window_autoboot(const char *win_title)
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_autoboot_close_action);
+	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_autoboot_close_action);
 
 	return win;
 }

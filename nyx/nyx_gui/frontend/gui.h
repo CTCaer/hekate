@@ -40,6 +40,7 @@ lv_style_t monospace_text;
 
 lv_obj_t *payload_list;
 lv_obj_t *autorcm_btn;
+lv_obj_t *close_btn;
 
 lv_img_dsc_t *icon_switch;
 lv_img_dsc_t *icon_payload;
@@ -54,11 +55,14 @@ lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 lv_style_t mbox_darken;
 
 char *text_color;
+
+void reload_nyx();
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);
 lv_res_t mbox_action(lv_obj_t * btns, const char * txt);
 bool nyx_emmc_check_battery_enough();
 void nyx_window_toggle_buttons(lv_obj_t *win, bool disable);
 lv_obj_t *nyx_create_standard_window(const char *win_title);
+lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t rel_action);
 void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, const char *btn_name, lv_action_t action, bool transparent);
 lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn);
 void manual_system_maintenance(bool refresh);

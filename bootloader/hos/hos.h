@@ -100,7 +100,7 @@ typedef struct _launch_ctxt_t
 	bool exo_no_user_exceptions;
 	bool exo_user_pmu;
 	bool fss0_enable_experimental;
-	bool emuMMC;
+	bool emummc_forced;
 
 	ini_sec_t *cfg;
 } launch_ctxt_t;

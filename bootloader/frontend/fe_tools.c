@@ -119,7 +119,7 @@ void dump_packages12()
 		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 		// Decrypt.
-		keygen(keyblob, kb, &tsec_ctxt, NULL);
+		hos_keygen(keyblob, kb, &tsec_ctxt, NULL);
 		if (kb <= KB_FIRMWARE_VERSION_600)
 			h_cfg.se_keygen_done = 1;
 		free(keyblob);

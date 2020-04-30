@@ -416,7 +416,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 		// Decrypt.
-		keygen(keyblob, kb, &tsec_ctxt);
+		hos_keygen(keyblob, kb, &tsec_ctxt);
 		if (kb <= KB_FIRMWARE_VERSION_600)
 			h_cfg.se_keygen_done = 1;
 		free(keyblob);

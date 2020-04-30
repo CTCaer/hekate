@@ -468,7 +468,7 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", lv_win_close_action);
+	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", lv_win_close_action);
 
 	return win;
 }
@@ -486,7 +486,7 @@ lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t 
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", rel_action);
+	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", rel_action);
 
 	return win;
 }
@@ -510,7 +510,7 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 	(*main_ptr)();
 }
 
-static void _reload_nyx()
+void reload_nyx()
 {
 	b_cfg->boot_cfg = BOOT_CFG_AUTOBOOT_EN;
 	b_cfg->autoboot = 0;
@@ -532,7 +532,7 @@ static void _reload_nyx()
 static lv_res_t reload_action(lv_obj_t *btns, const char *txt)
 {
 	if (!lv_btnm_get_pressed(btns))
-		_reload_nyx();
+		reload_nyx();
 
 	return mbox_action(btns, txt);
 }
@@ -581,7 +581,7 @@ static void _check_sd_card_removed(void *params)
 
 	// If in reload state and card was inserted, reload nyx.
 	if (do_reload && !sd_get_card_removed())
-		_reload_nyx();
+		reload_nyx();
 }
 
 static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
@@ -1017,7 +1017,7 @@ lv_obj_t *create_window_launch(const char *win_title)
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_launch_close_action);
+	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_launch_close_action);
 
 	return win;
 }
