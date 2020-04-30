@@ -262,7 +262,9 @@ void load_saved_configuration()
 			{
 				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 				{
-					if (!strcmp("verification", kv->key))
+					if (!strcmp("themecolor", kv->key))
+						n_cfg.themecolor = atoi(kv->val);
+					else if (!strcmp("verification", kv->key))
 						n_cfg.verification = atoi(kv->val);
 				}
 

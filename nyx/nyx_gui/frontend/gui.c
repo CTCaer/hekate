@@ -49,8 +49,9 @@
 #include "../utils/util.h"
 
 extern hekate_config h_cfg;
-extern volatile nyx_storage_t *nyx_str;
+extern nyx_config n_cfg;
 extern volatile boot_cfg_t *b_cfg;
+extern volatile nyx_storage_t *nyx_str;
 
 extern lv_res_t launch_payload(lv_obj_t *list);
 
@@ -342,7 +343,7 @@ lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn)
 		}
 		else
 		{
-			strcat(label_text, "#00FFC9    ON #");
+			s_printf(label_text, "%s%s%s", label_text, text_color, "    ON #");
 			lv_label_set_text(label_btn, label_text);
 		}
 	}
@@ -351,7 +352,10 @@ lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn)
 		if (!(lv_btn_get_state(btn) & LV_BTN_STATE_TGL_REL))
 			lv_label_set_text(label_btn, "#D0D0D0 OFF#");
 		else
-			lv_label_set_text(label_btn, "#00FFC9 ON #");
+		{
+			s_printf(label_text, "%s%s", text_color, " ON #");
+			lv_label_set_text(label_btn, label_text);
+		}
 	}
 
 	return LV_RES_OK;
@@ -1044,7 +1048,7 @@ static lv_res_t logs_onoff_toggle(lv_obj_t *btn)
 	}
 	else
 	{
-		strcat(label_text, "#00FFC9 ON #");
+		s_printf(label_text, "%s%s%s", label_text, text_color, " ON #");
 		lv_label_set_text(label_btn, label_text);
 	}
 
@@ -1297,10 +1301,13 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	lv_page_set_scrl_fit(parent, false, false);
 	lv_page_set_scrl_height(parent, 592);
 
+	char btn_colored_text[64];
+
 	// Set brand label.
 	lv_obj_t *label_brand = lv_label_create(parent, NULL);
 	lv_label_set_recolor(label_brand, true);
-	lv_label_set_text(label_brand, "#00EDBA hekate#");
+	s_printf(btn_colored_text, "%s%s", text_color, " hekate#");
+	lv_label_set_text(label_brand, btn_colored_text);
 	lv_obj_set_pos(label_brand, 50, 48);
 
 	// Set tagline label.
@@ -1323,7 +1330,8 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_btn = lv_label_create(btn_launch, NULL);
 	lv_label_set_recolor(label_btn, true);
 	lv_obj_set_style(label_btn, &icons);
-	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_DOT"#");
+	s_printf(btn_colored_text, "%s%s", text_color, " "SYMBOL_DOT"#");
+	lv_label_set_text(label_btn, btn_colored_text);
 	lv_btn_set_action(btn_launch, LV_BTN_ACTION_CLICK, _create_window_home_launch);
 	lv_obj_set_size(btn_launch, 256, 256);
 	lv_obj_set_pos(btn_launch, 50, 160);
@@ -1331,18 +1339,21 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	lv_obj_t *label_btn2 = lv_label_create(btn_launch, NULL);
 	lv_label_set_recolor(label_btn2, true);
-	lv_label_set_text(label_btn2, "#00EDBA Launch#");
+	s_printf(btn_colored_text, "%s%s", text_color, " Launch#");
+	lv_label_set_text(label_btn2, btn_colored_text);
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
 	// More Configs button.
 	lv_obj_t *btn_more_cfg = lv_btn_create(parent, btn_launch);
 	label_btn = lv_label_create(btn_more_cfg, label_btn);
-	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_CLOCK"#");
+	s_printf(btn_colored_text, "%s%s", text_color, " "SYMBOL_CLOCK"#");
+	lv_label_set_text(label_btn, btn_colored_text);
 	lv_btn_set_action(btn_more_cfg, LV_BTN_ACTION_CLICK, _create_window_home_launch);
 	lv_btn_set_layout(btn_more_cfg, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	label_btn2 = lv_label_create(btn_more_cfg, label_btn2);
-	lv_label_set_text(label_btn2, "#00EDBA More Configs#");
+	s_printf(btn_colored_text, "%s%s", text_color, " More Configs#");
+	lv_label_set_text(label_btn2, btn_colored_text);
 	lv_obj_set_pos(btn_more_cfg, 341, 160);
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
@@ -1357,12 +1368,14 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// Payloads button.
 	lv_obj_t *btn_payloads = lv_btn_create(parent, btn_launch);
 	label_btn = lv_label_create(btn_payloads, label_btn);
-	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_OK"#");
+	s_printf(btn_colored_text, "%s%s", text_color, " "SYMBOL_OK"#");
+	lv_label_set_text(label_btn, btn_colored_text);
 	lv_btn_set_action(btn_payloads, LV_BTN_ACTION_CLICK, _create_mbox_payloads);
 	lv_btn_set_layout(btn_payloads, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	label_btn2 = lv_label_create(btn_payloads, label_btn2);
-	lv_label_set_text(label_btn2, "#00EDBA Payloads#");
+	s_printf(btn_colored_text, "%s%s", text_color, " Payloads#");
+	lv_label_set_text(label_btn2, btn_colored_text);
 	lv_obj_set_pos(btn_payloads, 632, 160);
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
@@ -1375,13 +1388,15 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// emuMMC manage button.
 	lv_obj_t *btn_emummc = lv_btn_create(parent, btn_launch);
 	label_btn = lv_label_create(btn_emummc, label_btn);
-	lv_label_set_text(label_btn, "#00EDBA "SYMBOL_LIST"#");
+	s_printf(btn_colored_text, "%s%s", text_color, " "SYMBOL_LIST"#");
+	lv_label_set_text(label_btn, btn_colored_text);
 	lv_btn_set_action(btn_emummc, LV_BTN_ACTION_CLICK,create_win_emummc_tools);
 	lv_btn_set_layout(btn_emummc, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	lv_obj_set_pos(btn_emummc, 959, 160);
 	label_btn2 = lv_label_create(btn_emummc, label_btn2);
-	lv_label_set_text(label_btn2, "#00EDBA emuMMC#");
+	s_printf(btn_colored_text, "%s%s", text_color, " emuMMC#");
+	lv_label_set_text(label_btn2, btn_colored_text);
 	lv_obj_align(label_btn2, NULL, LV_ALIGN_IN_TOP_MID, 0, 174);
 
 	// Create bottom right power buttons.
@@ -1560,6 +1575,10 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	tabview_btn_tgl_pr.body.main_color = LV_COLOR_HEX(0xFFFFFF);
 	tabview_btn_tgl_pr.body.grad_color = tabview_btn_tgl_pr.body.main_color;
 	tabview_btn_tgl_pr.body.opa = 35;
+
+	lv_color_t tmp_color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
+	text_color = malloc(32);
+	s_printf(text_color, "#%06X", tmp_color.full & 0xFFFFFF);
 }
 
 static void _nyx_main_menu(lv_theme_t * th)
@@ -1695,9 +1714,8 @@ void nyx_load_and_run()
 	// Initialize temperature sensor.
 	tmp451_init();
 
-	//Set the theme.
-	//! TODO: Finish theme support.
-	lv_theme_t *th = lv_theme_hekate_init(167, NULL);
+	// Set hekate theme based on chosen hue.
+	lv_theme_t *th = lv_theme_hekate_init(n_cfg.themecolor, NULL);
 	lv_theme_set_current(th);
 
 	// Create main menu

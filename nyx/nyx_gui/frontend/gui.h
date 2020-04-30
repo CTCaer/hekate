@@ -53,6 +53,7 @@ lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 
 lv_style_t mbox_darken;
 
+char *text_color;
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);
 lv_res_t mbox_action(lv_obj_t * btns, const char * txt);
 bool nyx_emmc_check_battery_enough();

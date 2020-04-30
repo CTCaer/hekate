@@ -44,6 +44,7 @@ typedef struct _hekate_config
 
 typedef struct _nyx_config
 {
+	u32 themecolor;
 	u32 verification;
 } nyx_config;
 

@@ -56,6 +56,7 @@ void set_default_configuration()
 
 void set_nyx_default_configuration()
 {
+	n_cfg.themecolor = 167;
 	n_cfg.verification = 1;
 }
 
@@ -187,7 +188,10 @@ int create_nyx_config_entry()
 		return 1;
 
 	// Add config entry.
-	f_puts("[config]\nverification=", &fp);
+	f_puts("[config]\nthemecolor=", &fp);
+	itoa(n_cfg.themecolor, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\nverification=", &fp);
 	itoa(n_cfg.verification, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\n", &fp);
