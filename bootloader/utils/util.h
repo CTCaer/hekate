@@ -45,7 +45,7 @@ typedef struct _cfg_op_t
 
 typedef struct _nyx_info_t
 {
-	u32 rsvd;
+	u32 disp_id;
 	u32 errors;
 } nyx_info_t;
 

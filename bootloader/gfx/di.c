@@ -31,7 +31,9 @@
 
 #include "di.inl"
 
-static u32 _display_ver = 0;
+extern volatile nyx_storage_t *nyx_str;
+
+static u32 _display_id = 0;
 
 static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 {
@@ -39,6 +41,15 @@ static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 	while (get_tmr_us() < end && DSI(off) & mask)
 		;
 	usleep(5);
+}
+
+static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
+{
+	DSI(_DSIREG(DSI_WR_DATA)) = (param << 8) | cmd;
+	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+
+	if (wait)
+		usleep(wait);
 }
 
 void display_init()
@@ -107,12 +118,10 @@ void display_init()
 
 	// Setups DSI packet configuration and request display id.
 	DSI(_DSIREG(DSI_BTA_TIMING)) = 0x50204;
-	DSI(_DSIREG(DSI_WR_DATA)) = 0x337; // MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE
-	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, 3, 0);
 	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
-	DSI(_DSIREG(DSI_WR_DATA)) = 0x406; // MIPI_DCS_GET_DISPLAY_ID
-	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, MIPI_DCS_GET_DISPLAY_ID, 0);
 	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	DSI(_DSIREG(DSI_HOST_CONTROL)) = DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_IMM_BTA | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC;
@@ -120,19 +129,50 @@ void display_init()
 
 	usleep(5000);
 
-	_display_ver = DSI(_DSIREG(DSI_RD_DATA));
-	if (_display_ver == 0x10)
+	// MIPI_DCS_GET_DISPLAY_ID reply is a long read, size 3 u32.
+	for (u32 i = 0; i < 3; i++)
+		_display_id = DSI(_DSIREG(DSI_RD_DATA)); // Skip ack and msg type info and get the payload (display id).
+
+	// Save raw Display ID to Nyx storage.
+	nyx_str->info.disp_id = _display_id;
+
+	// Decode Display ID.
+	_display_id = ((_display_id >> 8) & 0xFF00) | (_display_id & 0xFF);
+
+	if ((_display_id & 0xFF) == PANEL_JDI_LPM062M)
+		_display_id = PANEL_JDI_LPM062M;
+
+	// Initialize display panel.
+	switch (_display_id)
+	{
+	case PANEL_JDI_LPM062M:
 		exec_cfg((u32 *)DSI_BASE, _display_init_config_jdi, 43);
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
+		break;
+	case PANEL_INL_P062CCA_AZ1:
+	case PANEL_AUO_A062TAN01:
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // Enable extension cmd. (Pass: FF 83 94).
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		usleep(5000);
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x739;          // MIPI_DSI_DCS_LONG_WRITE: 7 bytes.
+		if (_display_id == PANEL_INL_P062CCA_AZ1)
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // Set Power control. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
+		else
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x143209;       // (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32).
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		usleep(5000);
+		break;
+	case PANEL_INL_P062CCA_AZ2:
+	case PANEL_AUO_A062TAN02:
+	default: // Allow spare part displays to work.
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 120000);
+		break;
+	}
 
-	DSI(_DSIREG(DSI_WR_DATA)) = 0x1105; // MIPI_DCS_EXIT_SLEEP_MODE
-	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
-
-	usleep(180000);
-
-	DSI(_DSIREG(DSI_WR_DATA)) = 0x2905; // MIPI_DCS_SET_DISPLAY_ON
-	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
-
-	usleep(20000);
+	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
 	// Configure PLLD for DISP1.
 	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 460.8 MHz.
@@ -216,13 +256,38 @@ void display_end()
 	usleep(10000);
 
 	// De-initialize display panel.
-	if (_display_ver == 0x10)
+	switch (_display_id)
+	{
+	case PANEL_JDI_LPM062M:
 		exec_cfg((u32 *)DSI_BASE, _display_deinit_config_jdi, 22);
+		break;
+	case PANEL_AUO_A062TAN01:
+		exec_cfg((u32 *)DSI_BASE, _display_deinit_config_auo, 37);
+		break;
+	case PANEL_INL_P062CCA_AZ2:
+	case PANEL_AUO_A062TAN02:
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x439; // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9; // Enable extension cmd. (Pass: FF 83 94).
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		usleep(5000);
+		// Set Power.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39; // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
+		if (_display_id == PANEL_INL_P062CCA_AZ2)
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // Set Power control. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
+		else
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+		// Set Power control. (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31; // Set Power control. (Unknown).
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		usleep(5000);
+		break;
+	case PANEL_INL_P062CCA_AZ1:
+	default:
+		break;
+	}
 
-	DSI(_DSIREG(DSI_WR_DATA)) = 0x1005; // MIPI_DCS_ENTER_SLEEP_MODE
-	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
-
-	usleep(50000);
+	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE, 50000);
 
 	// Disable display and backlight pins.
 	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); //Backlight Reset disable.

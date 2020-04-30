@@ -500,6 +500,53 @@ static const cfg_op_t _display_deinit_config_jdi[22] = {
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
+static const cfg_op_t _display_deinit_config_auo[37] = {
+	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x9483FFB9}, // Enable extension cmd. (Pass: FF 83 94).
+	{DSI_TRIGGER, DSI_TRIGGER_HOST},
+	{DSI_WR_DATA, 0x2C39},     // MIPI_DSI_DCS_LONG_WRITE: 44 bytes.
+	{DSI_WR_DATA, 0x191919D5},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_TRIGGER, DSI_TRIGGER_HOST},
+	{DSI_WR_DATA, 0x2C39},     // MIPI_DSI_DCS_LONG_WRITE: 44 bytes.
+	{DSI_WR_DATA, 0x191919D6},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_WR_DATA, 0x19191919},
+	{DSI_TRIGGER, DSI_TRIGGER_HOST},
+	{DSI_WR_DATA, 0xB39},      // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
+	{DSI_WR_DATA, 0x711148B1}, // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+	// Set Power control. (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
+	{DSI_WR_DATA, 0x71143209},
+	{DSI_WR_DATA, 0x114D31},   // Set Power control. (Unknown).
+	{DSI_TRIGGER, DSI_TRIGGER_HOST},
+	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x000000B9}, // Disable extension cmd.
+	{DSI_TRIGGER, DSI_TRIGGER_HOST}
+};
+
+static const cfg_op_t _display_init_config_invert[3] = {
+	{DSI_WR_DATA, 0x239},
+	{DSI_WR_DATA, 0x02C1}, // INV_EN.
+	{DSI_TRIGGER, DSI_TRIGGER_HOST},
+};
+
 //Display A config.
 static const cfg_op_t cfg_display_one_color[8] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
