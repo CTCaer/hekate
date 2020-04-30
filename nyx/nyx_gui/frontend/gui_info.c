@@ -17,10 +17,14 @@
  */
 
 #include "gui.h"
+#include "../gfx/di.h"
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
 #include "../libs/fatfs/ff.h"
+#include "../input/touch.h"
+#include "../mem/emc.h"
 #include "../mem/heap.h"
+#include "../mem/sdram.h"
 #include "../power/bq24193.h"
 #include "../power/max17050.h"
 #include "../sec/tsec.h"
@@ -37,6 +41,8 @@
 #include "../utils/util.h"
 
 #define SECTORS_TO_MIB_COEFF 11
+
+extern volatile nyx_storage_t *nyx_str;
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
@@ -219,7 +225,7 @@ static lv_res_t _tsec_keys_dump_window_action(lv_obj_t * btn)
 
 static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Cached fuses Info");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" HW & Cached Fuses Info");
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump fuses", _fuse_dump_window_action);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
@@ -256,7 +262,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"LOT Code 1:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
-		"Y Coordinate:"
+		"Y Coordinate:\n"
+		"#FF8000 Chip ID Revision:#"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
@@ -311,11 +318,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		lot_code0 <<= 6;
 	}
 
+	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
 		"\n%X - %s - %s\n%d - %s\n%d - %d\n%08X%08X%08X%08X\n%08X\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
-		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d",
+		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
+		"ID: %02X, Major: A0%d, Minor: %d",
 		FUSE(FUSE_SKU_INFO), odm4 & 0x10000 ? "Mariko" : "Erista", (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
 		dram_id, dram_man, burntFuses7, burntFuses6,
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
@@ -329,7 +338,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_SOC_SPEEDO_0_CALIB), FUSE(FUSE_SOC_SPEEDO_1_CALIB), FUSE(FUSE_SOC_SPEEDO_2_CALIB),
 		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB),
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
-		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE));
+		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
+		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
 
 	lv_label_set_text(lb_val, txt_buf);
 
@@ -1218,7 +1228,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_sep, "");
 
 	lv_obj_t *label_txt = lv_label_create(h1, NULL);
-	lv_label_set_static_text(label_txt, "SoC Info");
+	lv_label_set_static_text(label_txt, "SoC & HW Info");
 	lv_obj_set_style(label_txt, th->label.prim);
 	lv_obj_align(label_txt, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, 0);
 
@@ -1268,7 +1278,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *btn3 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
-	lv_label_set_static_text(label_btn, SYMBOL_CIRCUIT"  Fuses ");
+	lv_label_set_static_text(label_btn, SYMBOL_CIRCUIT"  HW & Fuses");
 	lv_obj_align(btn3, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 2);
 	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_window_fuses_info_status);
 
@@ -1276,15 +1286,15 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *btn4 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn4, NULL);
 	lv_label_set_static_text(label_btn, SYMBOL_SHUFFLE"  KFuses");
-	lv_obj_align(btn4, btn3, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI * 123 / 100, 0);
+	lv_obj_align(btn4, btn3, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI * 46 / 100, 0);
 	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, _kfuse_dump_window_action);
 
 	lv_obj_t *label_txt4 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
-		"View and dump your cached fuses and KFuses.\n"
-		"Fuses contain info about your SoC and device and KFuses\n"
-		"contain downstream and upstream HDCP keys used by HDMI.");
+		"View and dump your cached #C7EA46 Fuses# and #C7EA46 KFuses#.\n"
+		"Fuses contain info about your SoC and device and KFuses contain HDCP.\n"
+		"You can also see info about #C7EA46 DRAM#, #C7EA46 Screen# and #C7EA46 Touch panel#.");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
