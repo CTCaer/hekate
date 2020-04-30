@@ -37,6 +37,7 @@
 #include "../storage/nx_emmc.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
+#include "../utils/btn.h"
 #include "../utils/sprintf.h"
 #include "../utils/util.h"
 
@@ -698,10 +699,147 @@ out:
 	return LV_RES_OK;
 }
 
+static lv_res_t _create_mbox_benchmark(bool sd_bench)
+{
+	sdmmc_t emmc_sdmmc;
+	sdmmc_storage_t emmc_storage;
+	sdmmc_storage_t *storage;
+
+	lv_style_t *darken;
+	darken = (lv_style_t *)malloc(sizeof(lv_style_t));
+	lv_style_copy(darken, &lv_style_plain);
+	darken->body.main_color = LV_COLOR_BLACK;
+	darken->body.grad_color = darken->body.main_color;
+	darken->body.opa = LV_OPA_30;
+
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 7 * 5);
+
+	char *txt_buf = (char *)malloc(0x1000);
+
+	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[3 x %s raw reads. Cancel: VOL- & VOL+]\n",
+		sd_bench ? "SD Card" : "eMMC", sd_bench ? "2GB" : "8GB");
+
+	lv_mbox_set_text(mbox, txt_buf);
+
+	lv_obj_t * bar = lv_bar_create(mbox, NULL);
+	lv_obj_set_size(bar, LV_DPI * 2, LV_DPI / 5);
+	lv_bar_set_range(bar, 0, 100);
+	lv_bar_set_value(bar, 0);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+	manual_system_maintenance(true);
+
+	int res = 0;
+
+	if (sd_bench)
+	{
+		storage = &sd_storage;
+		res = !sd_mount();
+	}
+	else
+	{
+		storage = &emmc_storage;
+		res = !sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+		if (!res)
+			sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	}
+
+	if (res)
+		lv_mbox_set_text(mbox, "#FFDD00 Failed to init Storage!#");
+	else
+	{
+		u32 iters = 3;
+		u32 sector_num = 0x8000;
+		u32 data_scts = sd_bench ? 0x400000 : 0x1000000; // SD 2GB or eMMC 8GB.
+		u32 offset_chunk_start = ALIGN_DOWN(storage->sec_cnt / 3, sector_num);
+		if (storage->sec_cnt < 0xC00000)
+			iters -= 2; // 4GB card.
+
+		for (u32 iter_curr = 0; iter_curr < iters; iter_curr++)
+		{
+			u32 pct = 0;
+			u32 prevPct = 200;
+			u32 lba_curr = 0;
+			u32 sector = offset_chunk_start * iter_curr;
+			u32 data_remaining = data_scts;
+
+			u32 timer = get_tmr_ms();
+
+			s_printf(txt_buf + strlen(txt_buf), "\n");
+			lv_mbox_set_text(mbox, txt_buf);
+
+			while (data_remaining)
+			{
+				// Read 16MB chunks.
+				sdmmc_storage_read(storage, sector + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+				manual_system_maintenance(false);
+				data_remaining -= sector_num;
+				lba_curr += sector_num;
+
+				pct = (lba_curr * 100) / data_scts;
+				if (pct != prevPct)
+				{
+					lv_bar_set_value(bar, pct);
+					manual_system_maintenance(true);
+
+					prevPct = pct;
+
+					if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
+						break;
+				}
+			}
+			timer = get_tmr_ms() - timer;
+			timer -= sd_bench ? 175 : 185; // Compensate 175ms/185ms for maintenance/drawing/calc ops.
+
+			lv_bar_set_value(bar, 100);
+			u32 rate_1k = (sd_bench ? (2048 * 1000 * 1000) : (u64)((u64)8192 * 1000 * 1000)) / timer;
+			s_printf(txt_buf + strlen(txt_buf),
+				"#C7EA46 %d#: Offset: #C7EA46 %08X#, Time: #C7EA46 %d.%02ds#, Rate: #C7EA46 %d.%02d MB/s#",
+				iter_curr, sector, timer / 1000, (timer % 1000) / 10, rate_1k / 1000, (rate_1k % 1000) / 10);
+			lv_mbox_set_text(mbox, txt_buf);
+			lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+			manual_system_maintenance(true);
+		}
+
+		lv_obj_del(bar);
+
+		if (sd_bench)
+			sd_unmount(false);
+		else
+			sdmmc_storage_end(&emmc_storage);
+	}
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_emmc_bench(lv_obj_t * btn)
+{
+	_create_mbox_benchmark(false);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_sd_bench(lv_obj_t * btn)
+{
+	_create_mbox_benchmark(true);
+
+	return LV_RES_OK;
+}
 
 static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 {
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Internal eMMC Info");
+	lv_win_add_btn(win, NULL, SYMBOL_CHIP" Benchmark", _create_mbox_emmc_bench);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
 	lv_obj_set_size(desc, LV_HOR_RES / 2 / 6 * 2, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
@@ -855,6 +993,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 {
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SD" microSD Card Info");
+	lv_win_add_btn(win, NULL, SYMBOL_SD" Benchmark", _create_mbox_sd_bench);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
 	lv_obj_set_size(desc, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 7) * 5 / 2);
@@ -1342,8 +1481,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt5 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt5, true);
 	lv_label_set_static_text(label_txt5,
-		"View info about your eMMC or microSD and additionally\n"
-		"view their partition list and info.");
+		"View info about your eMMC or microSD and their partition list.\n"
+		"Additionally you can benchmark read speeds.");
 	lv_obj_set_style(label_txt5, &hint_small_style);
 	lv_obj_align(label_txt5, btn5, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
