@@ -19,6 +19,7 @@
 
 #include "gui.h"
 #include "gui_tools.h"
+#include "gui_tools_partition_manager.h"
 #include "gui_emmc_tools.h"
 #include "fe_emummc_tools.h"
 #include "../../../common/memory_map.h"
@@ -1611,6 +1612,21 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_sep = lv_label_create(h2, NULL);
 	lv_label_set_static_text(label_sep, "");
 	lv_obj_align(label_sep, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 11 / 7);
+
+	// Create Partition SD Card button.
+	lv_obj_t *btn4 = lv_btn_create(h2, btn);
+	label_btn = lv_label_create(btn4, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_SD"  Partition SD Card");
+	lv_obj_align(btn4, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, create_window_partition_manager);
+
+	label_txt2 = lv_label_create(h2, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"Allows you to partition your SD Card for using it with #C7EA46 emuMMC#,\n"
+		"#C7EA46 Android# and #C7EA46 Linux#. You can also flash Linux and Android.");
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
 
 void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)

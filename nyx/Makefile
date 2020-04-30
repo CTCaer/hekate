@@ -24,7 +24,7 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	start.o exception_handlers.o \
 	nyx.o heap.o \
 	gfx.o \
-	gui.o gui_info.o gui_tools.o gui_options.o gui_emmc_tools.o gui_emummc_tools.o \
+	gui.o gui_info.o gui_tools.o gui_options.o gui_emmc_tools.o gui_emummc_tools.o gui_tools_partition_manager.o \
 	fe_emummc_tools.o fe_emmc_tools.o \
 )
 
@@ -33,7 +33,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	bpmp.o clock.o cluster.o di.o gpio.o i2c.o irq.o pinmux.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o \
 	mc.o sdram.o minerva.o ramdisk.o \
-	sdmmc.o sdmmc_driver.o nx_emmc.o nx_sd.o \
+	sdmmc.o sdmmc_driver.o nx_emmc.o nx_emmc_bis.o nx_sd.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o regulator_5v.o \
 	touch.o joycon.o tmp451.o fan.o \
 	usbd.o usb_gadget_ums.o usb_gadget_hid.o \
@@ -56,7 +56,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 # Libraries.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	diskio.o ff.o ffunicode.o ffsystem.o \
-	elfload.o elfreloc_arm.o \
+	elfload.o elfreloc_arm.o blz.o \
 	lv_group.o lv_indev.o lv_obj.o lv_refr.o lv_style.o lv_vdb.o \
 	lv_draw.o lv_draw_rbasic.o lv_draw_vbasic.o lv_draw_arc.o lv_draw_img.o \
 	lv_draw_label.o lv_draw_line.o lv_draw_rect.o lv_draw_triangle.o \

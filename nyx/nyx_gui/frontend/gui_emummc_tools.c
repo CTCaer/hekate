@@ -18,6 +18,8 @@
 
 #include "gui.h"
 #include "fe_emummc_tools.h"
+#include "gui_tools_partition_manager.h"
+#include "../../../common/memory_map.h"
 #include "../config/ini.h"
 #include "../libs/fatfs/ff.h"
 #include "../mem/heap.h"
@@ -144,6 +146,22 @@ static void _create_window_emummc()
 	nyx_window_toggle_buttons(win, false);
 }
 
+static lv_res_t _create_emummc_raw_format(lv_obj_t * btns, const char * txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	// Delete parent mbox.
+	mbox_action(btns, txt);
+
+	// Create partition window.
+	if (!btn_idx)
+		create_window_partition_manager(btns);
+
+	mbr_ctx.part_idx = 0;
+	mbr_ctx.sector_start = 0;
+
+	return LV_RES_INV;
+}
 
 static lv_res_t _create_emummc_raw_action(lv_obj_t * btns, const char * txt)
 {
