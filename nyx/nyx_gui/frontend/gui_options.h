@@ -19,6 +19,7 @@
 
 #include "../libs/lvgl/lvgl.h"
 
+lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn);
 void create_tab_options(lv_theme_t *th, lv_obj_t *parent);
 
 #endif
