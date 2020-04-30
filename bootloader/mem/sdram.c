@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
+
 #include "mc.h"
 #include "emc.h"
 #include "sdram_param_t210.h"
@@ -29,8 +31,6 @@
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
-#define CONFIG_SDRAM_COMPRESS_CFG
-
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
 #include "../libs/compr/lz.h"
 #include "sdram_config_lz.inl"
@@ -40,13 +40,7 @@
 
 static u32 _get_sdram_id()
 {
-	u32 sdram_id = (fuse_read_odm(4) & 0x38) >> 3;
-
-	// Check if id is proper.
-	if (sdram_id > 7)
-		sdram_id = 0;
-
-	return sdram_id;
+	return ((fuse_read_odm(4) & 0x38) >> 3);
 }
 
 static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
@@ -691,18 +685,47 @@ break_nosleep:
 	MC(MC_SEC_CARVEOUT_REG_CTRL) = params->mc_sec_carveout_protect_write_access;
 	MC(MC_MTS_CARVEOUT_REG_CTRL) = params->mc_mts_carveout_reg_ctrl;
 
-	//Disable write access to a bunch of EMC registers.
+	// Disable write access to a bunch of EMC registers.
 	MC(MC_EMEM_CFG_ACCESS_CTRL) = 1;
 }
 
+#ifndef CONFIG_SDRAM_COMPRESS_CFG
+static void _sdram_patch_model_params(u32 dramid, u32 *params)
+{
+	for (u32 i = 0; i < sizeof(sdram_cfg_vendor_patches) / sizeof(sdram_vendor_patch_t); i++)
+		if (sdram_cfg_vendor_patches[i].dramid & DRAM_ID(dramid))
+			params[sdram_cfg_vendor_patches[i].addr] = sdram_cfg_vendor_patches[i].val;
+}
+#endif
+
 sdram_params_t *sdram_get_params()
 {
+	// Check if id is proper.
+	u32 dramid = _get_sdram_id();
+	if (dramid > 6)
+		dramid = 0;
+
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
 	u8 *buf = (u8 *)SDRAM_PARAMS_ADDR;
 	LZ_Uncompress(_dram_cfg_lz, buf, sizeof(_dram_cfg_lz));
-	return (sdram_params_t *)&buf[sizeof(sdram_params_t) * _get_sdram_id()];
+	return (sdram_params_t *)&buf[sizeof(sdram_params_t) * dramid];
 #else
-	return _dram_cfgs[_get_sdram_id()];
+	sdram_params_t *buf = (sdram_params_t *)SDRAM_PARAMS_ADDR;
+	memcpy(buf, &_dram_cfg_0_samsung_4gb, sizeof(sdram_params_t));
+	switch (dramid)
+	{
+	case DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH:
+	case DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT:
+		break;
+	case DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN:
+	case DRAM_4GB_COPPER_UNK_3:
+	case DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH:
+	case DRAM_4GB_COPPER_UNK_5:
+	case DRAM_4GB_COPPER_UNK_6:
+		_sdram_patch_model_params(dramid, (u32 *)buf);
+		break;
+	}
+	return buf;
 #endif
 }
 
