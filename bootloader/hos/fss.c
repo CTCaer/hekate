@@ -33,22 +33,28 @@ extern hekate_config h_cfg;
 
 extern bool is_ipl_updated(void *buf, char *path, bool force);
 
+// FSS0 Magic and Meta header offset.
 #define FSS0_MAGIC 0x30535346
+#define FSS0_META_OFFSET 0x4
+
+// FSS0 Content Types.
 #define CNT_TYPE_FSP 0
-#define CNT_TYPE_EXO 1
-#define CNT_TYPE_WBT 2
-#define CNT_TYPE_RBT 3
-#define CNT_TYPE_SP1 4
-#define CNT_TYPE_SP2 5
-#define CNT_TYPE_KIP 6
+#define CNT_TYPE_EXO 1  // Exosphere (Secure Monitor).
+#define CNT_TYPE_WBT 2  // Warmboot (SC7Exit fw).
+#define CNT_TYPE_RBT 3  // Rebootstub (Warmboot based reboot fw).
+#define CNT_TYPE_SP1 4  // Sept Primary (TSEC and Sept Secondary loader).
+#define CNT_TYPE_SP2 5  // Sept Secondary (Acts as pkg11 and derives keys).
+#define CNT_TYPE_KIP 6  // KIP1 (Used for replacement or addition).
 #define CNT_TYPE_BMP 7
 #define CNT_TYPE_EMC 8
-#define CNT_TYPE_KLD 9
-#define CNT_TYPE_KRN 10
+#define CNT_TYPE_KLD 9  // Kernel Loader.
+#define CNT_TYPE_KRN 10 // Kernel.
 
+// FSS0 Content Flags.
 #define CNT_FLAG0_EXPERIMENTAL (1 << 0)
 
-typedef struct _fss_t
+// FSS0 Meta Header.
+typedef struct _fss_meta_t
 {
 	u32 magic;
 	u32 size;
@@ -58,8 +64,9 @@ typedef struct _fss_t
 	u32 hos_ver;
 	u32 version;
 	u32 git_rev;
-} fss_t;
+} fss_meta_t;
 
+// FSS0 Content Header.
 typedef struct _fss_content_t
 {
 	u32 offset;
@@ -121,12 +128,15 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 		return 0;
 
 	void *fss = malloc(f_size(&fp));
-	// Read header.
-	f_read(&fp, fss, 0x400, NULL);
 
-	u32 fss_entry = *(u32 *)(fss + 4);
-	fss_t *fss_meta = (fss_t *)(fss + fss_entry);
+	// Read first 1024 bytes of the fss file.
+	f_read(&fp, fss, 1024, NULL);
 
+	// Get FSS0 Meta header offset.
+	u32 fss_meta_addr = *(u32 *)(fss + FSS0_META_OFFSET);
+	fss_meta_t *fss_meta = (fss_meta_t *)(fss + fss_meta_addr);
+
+	// Check if valid FSS0 and parse it.
 	if (fss_meta->magic == FSS0_MAGIC)
 	{
 		gfx_printf("Found FSS0, Atmosphere %d.%d.%d-%08x\n"
@@ -141,20 +151,25 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 			ctxt->fss0_hosver = fss_meta->hos_ver;
 		}
 
+		// Parse FSS0 contents.
 		fss_content_t *curr_fss_cnt = (fss_content_t *)(fss + fss_meta->cnt_off);
 		void *content;
 		for (u32 i = 0; i < fss_meta->cnt_count; i++)
 		{
 			content = (void *)(fss + curr_fss_cnt[i].offset);
+
+			// Check if offset is inside limits.
 			if ((curr_fss_cnt[i].offset + curr_fss_cnt[i].size) > fss_meta->size)
 				continue;
 
+			// If content is experimental and experimental flag is not enabled, skip it.
 			if ((curr_fss_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !ctxt->fss0_enable_experimental)
 				continue;
 
-			// Load content to launch context.
+			// Parse content.
 			if (!sept_ctxt)
 			{
+				// Prepare content context.
 				switch (curr_fss_cnt[i].type)
 				{
 				case CNT_TYPE_KIP:
@@ -176,16 +191,20 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 				default:
 					continue;
 				}
+
+				// Load content to launch context.
+				f_lseek(&fp, curr_fss_cnt[i].offset);
+				f_read(&fp, content, curr_fss_cnt[i].size, NULL);
 			}
 			else
 			{
-				// Load content to launch context.
+				// Load sept content directly to launch context.
 				switch (curr_fss_cnt[i].type)
 				{
 				case CNT_TYPE_SP1:
 					f_lseek(&fp, curr_fss_cnt[i].offset);
 					f_read(&fp, sept_ctxt->sept_primary, curr_fss_cnt[i].size, NULL);
-					continue;
+					break;
 				case CNT_TYPE_SP2:
 					if (!memcmp(curr_fss_cnt[i].name, (sept_ctxt->kb < KB_FIRMWARE_VERSION_810) ? "septsecondary00" : "septsecondary01", 15))
 					{
@@ -194,14 +213,11 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 						sept_used = 1;
 						goto out;
 					}
-					continue;
+					break;
 				default:
-					continue;
+					break;
 				}
 			}
-
-			f_lseek(&fp, curr_fss_cnt[i].offset);
-			f_read(&fp, content, curr_fss_cnt[i].size, NULL);
 		}
 
 out:
