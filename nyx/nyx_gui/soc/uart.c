@@ -15,6 +15,7 @@
 */
 
 #include "../soc/uart.h"
+#include "../soc/clock.h"
 #include "../soc/t210.h"
 #include "../utils/util.h"
 
@@ -28,12 +29,15 @@ void uart_init(u32 idx, u32 baud)
 	// Make sure no data is being sent.
 	uart_wait_idle(idx, UART_TX_IDLE);
 
+	// Set clock.
+	bool clk_type = clock_uart_use_src_div(idx, baud);
+
 	// Misc settings.
-	u32 rate = (8 * baud + 408000000) / (16 * baud);
+	u32 div = clk_type ? ((8 * baud + 408000000) / (16 * baud)) : 1; // DIV_ROUND_CLOSEST.
 	uart->UART_IER_DLAB = 0; // Disable interrupts.
 	uart->UART_LCR = UART_LCR_DLAB | UART_LCR_WORD_LENGTH_8; // Enable DLAB & set 8n1 mode.
-	uart->UART_THR_DLAB = (u8)rate; // Divisor latch LSB.
-	uart->UART_IER_DLAB = (u8)(rate >> 8); // Divisor latch MSB.
+	uart->UART_THR_DLAB = (u8)div; // Divisor latch LSB.
+	uart->UART_IER_DLAB = (u8)(div >> 8); // Divisor latch MSB.
 	uart->UART_LCR = UART_LCR_WORD_LENGTH_8; // Disable DLAB.
 	(void)uart->UART_SPR;
 

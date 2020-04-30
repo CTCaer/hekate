@@ -128,6 +128,29 @@ void clock_enable_uart(u32 idx)
 	clock_enable(&_clock_uart[idx]);
 }
 
+void clock_disable_uart(u32 idx)
+{
+	clock_disable(&_clock_uart[idx]);
+}
+
+#define UART_SRC_CLK_DIV_EN (1 << 24)
+
+int clock_uart_use_src_div(u32 idx, u32 baud)
+{
+	u32 clk_src_div = CLOCK(_clock_uart[idx].source) & 0xE0000000;
+
+	if (baud == 1000000)
+		CLOCK(_clock_uart[idx].source) = clk_src_div | UART_SRC_CLK_DIV_EN | 49;
+	else
+	{
+		CLOCK(_clock_uart[idx].source) = clk_src_div | 2;
+
+		return 1;
+	}
+
+	return 0;
+}
+
 void clock_enable_i2c(u32 idx)
 {
 	clock_enable(&_clock_i2c[idx]);

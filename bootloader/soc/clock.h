@@ -169,6 +169,8 @@ void clock_disable(const clock_t *clk);
 /*! Clock control for specific hardware portions. */
 void clock_enable_fuse(bool enable);
 void clock_enable_uart(u32 idx);
+void clock_disable_uart(u32 idx);
+int  clock_uart_use_src_div(u32 idx, u32 baud);
 void clock_enable_i2c(u32 idx);
 void clock_disable_i2c(u32 idx);
 void clock_enable_se();
