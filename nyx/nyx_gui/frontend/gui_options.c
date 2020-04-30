@@ -71,6 +71,8 @@ static lv_res_t _win_autoboot_close_action(lv_obj_t * btn)
 
 	lv_obj_del(win);
 
+	close_btn = NULL;
+
 	return LV_RES_INV;
 }
 

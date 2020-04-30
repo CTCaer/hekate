@@ -455,6 +455,13 @@ void nyx_window_toggle_buttons(lv_obj_t *win, bool disable)
 	}
 }
 
+lv_res_t lv_win_close_action_custom(lv_obj_t * btn)
+{
+    close_btn = NULL;
+
+    return lv_win_close_action(btn);
+}
+
 lv_obj_t *nyx_create_standard_window(const char *win_title)
 {
 	static lv_style_t win_bg_style;
@@ -468,7 +475,7 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", lv_win_close_action);
+	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", lv_win_close_action_custom);
 
 	return win;
 }

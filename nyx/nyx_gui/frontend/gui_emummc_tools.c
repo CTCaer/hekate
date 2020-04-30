@@ -51,6 +51,8 @@ static lv_res_t _action_emummc_window_close(lv_obj_t *btn)
 
 	(*emummc_tools)(NULL);
 
+	close_btn = NULL;
+
 	return LV_RES_INV;
 }
 
