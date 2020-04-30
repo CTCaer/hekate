@@ -35,6 +35,8 @@ extern volatile nyx_storage_t *nyx_str;
 
 static u32 _display_id = 0;
 
+void display_end();
+
 static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 {
 	u32 end = get_tmr_us() + timeout;
@@ -54,6 +56,10 @@ static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
 
 void display_init()
 {
+	// Check if display is already initialized.
+	if (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) & 0x18000000)
+		display_end();
+
 	// Power on.
 	max77620_regulator_set_volt_and_flags(REGULATOR_LDO0, 1200000, MAX77620_POWER_MODE_NORMAL); // Configure to 1.2V.
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO7, MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH | MAX77620_CNFG_GPIO_DRV_PUSHPULL);
