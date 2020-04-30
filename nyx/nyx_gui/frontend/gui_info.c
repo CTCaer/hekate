@@ -389,6 +389,40 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# [%02X] %02X [%02X]",
 		nyx_str->info.disp_id & 0xFF, (nyx_str->info.disp_id >> 8) & 0xFF, (nyx_str->info.disp_id >> 16) & 0xFF);
 
+	touch_fw_info_t touch_fw;
+
+	if (!touch_get_fw_info(&touch_fw))
+	{
+		s_printf(txt_buf + strlen(txt_buf), "\n\n#00DDFF Touch Panel:#\n#FF8000 Model:# ");
+		switch (touch_fw.fw_id)
+		{
+		case 0x100100:
+			s_printf(txt_buf + strlen(txt_buf), "NTD 4CD 1601");
+			break;
+		case 0x00120100:
+		case 0x32000001:
+			s_printf(txt_buf + strlen(txt_buf), "NTD 4CD 1801");
+			break;
+		case 0x001A0300:
+		case 0x32000102:
+			s_printf(txt_buf + strlen(txt_buf), "NTD 4CD 2602");
+			break;
+		case 0x00290100:
+		case 0x32000302:
+			s_printf(txt_buf + strlen(txt_buf), "NTD 4CD 3801");
+			break;
+		case 0x31051820:
+		case 0x32000402:
+			s_printf(txt_buf + strlen(txt_buf), "NTD 4CD XXXX");
+			break;
+		default:
+			s_printf(txt_buf + strlen(txt_buf), "Unknown");
+		}
+
+		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %X\n#FF8000 FTB ver:# %04X\n#FF8000 FW rev:# %04X",
+			touch_fw.fw_id, touch_fw.ftb_ver, touch_fw.fw_rev);
+	}
+
 	// Check if patched unit.
 	if (!fuse_check_patched_rcm())
 		s_printf(txt_buf + strlen(txt_buf), "\n\n#96FF00 Your unit is exploitable#\n#96FF00 to the RCM bug!#");
