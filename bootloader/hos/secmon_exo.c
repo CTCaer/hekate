@@ -130,17 +130,22 @@ typedef struct _atm_fatal_error_ctx
 
 // Exosphère mailbox defines.
 #define EXO_CFG_ADDR      0x8000F000
-#define  EXO_MAGIC_VAL        0x304F5845
-#define  EXO_FLAG_DBG_PRIV    (1 << 1)
-#define  EXO_FLAG_DBG_USER    (1 << 2)
-#define  EXO_FLAG_NO_USER_EXC (1 << 3)
-#define  EXO_FLAG_USER_PMU    (1 << 4)
+#define  EXO_MAGIC_VAL           0x304F5845
+#define  EXO_FLAG_DBG_PRIV        (1 << 1)
+#define  EXO_FLAG_DBG_USER        (1 << 2)
+#define  EXO_FLAG_NO_USER_EXC     (1 << 3)
+#define  EXO_FLAG_USER_PMU        (1 << 4)
+#define  EXO_FLAG_CAL0_BLANKING   (1 << 5)
+#define  EXO_FLAG_CAL0_WRITES_SYS (1 << 6)
 
 void config_exosphere(launch_ctxt_t *ctxt)
 {
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;
 	u32 kb = ctxt->pkg1_id->kb;
+	bool user_debug = false;
+	bool cal0_blanking = false;
+	bool cal0_allow_writes_sys = false;
 
 	memset((exo_cfg_t *)EXO_CFG_ADDR, 0, sizeof(exo_cfg_t));
 
@@ -166,17 +171,65 @@ void config_exosphere(launch_ctxt_t *ctxt)
 		break;
 	}
 
+	if (!ctxt->stock)
+	{
+		// Parse exosphere.ini.
+		LIST_INIT(ini_sections);
+		if (ini_parse(&ini_sections, "exosphere.ini", false))
+		{
+			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+			{
+				// Only parse exosphere section.
+				if (!(ini_sec->type == INI_CHOICE) || strcmp(ini_sec->name, "exosphere"))
+					continue;
+
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+				{
+					if (!strcmp("debugmode_user", kv->key))
+						user_debug = atoi(kv->val);
+					else if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
+					{
+						if (!strcmp("blank_prodinfo_emummc", kv->key))
+							cal0_blanking = atoi(kv->val);
+					}
+					else
+					{
+						if (!strcmp("blank_prodinfo_sysmmc", kv->key))
+							cal0_blanking = atoi(kv->val);
+						else if (!strcmp("allow_writing_to_cal_sysmmc", kv->key))
+							cal0_allow_writes_sys = atoi(kv->val);
+					}
+				}
+				break;
+			}
+		}
+	}
+
 	// To avoid problems, make private debug mode always on if not semi-stock.
 	if (!ctxt->stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))
 		exoFlags |= EXO_FLAG_DBG_PRIV;
 
+	// Enable user debug.
+	if (user_debug)
+		exoFlags |= EXO_FLAG_DBG_USER;
+
 	// Disable proper failure handling.
-	if (ctxt->exo_no_user_exceptions)
+	if (ctxt->exo_cfg.no_user_exceptions)
 		exoFlags |= EXO_FLAG_NO_USER_EXC;
 
 	// Enable user access to PMU.
-	if (ctxt->exo_user_pmu)
+	if (ctxt->exo_cfg.user_pmu)
 		exoFlags |= EXO_FLAG_USER_PMU;
+
+	// Check if exo ini value is overridden and enable prodinfo blanking.
+	if ((ctxt->exo_cfg.cal0_blank && *ctxt->exo_cfg.cal0_blank)
+			|| (!ctxt->exo_cfg.cal0_blank && cal0_blanking))
+		exoFlags |= EXO_FLAG_CAL0_BLANKING;
+
+	// Check if exo ini value is overridden and allow prodinfo writes.
+	if ((ctxt->exo_cfg.cal0_allow_writes_sys && *ctxt->exo_cfg.cal0_allow_writes_sys)
+			|| (!ctxt->exo_cfg.cal0_allow_writes_sys && cal0_allow_writes_sys))
+		exoFlags |= EXO_FLAG_CAL0_WRITES_SYS;
 
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;
