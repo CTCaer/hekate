@@ -787,7 +787,7 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 	b_cfg->boot_cfg = BOOT_CFG_AUTOBOOT_EN;
 	if (launch_logs_enable)
 		b_cfg->boot_cfg |= BOOT_CFG_FROM_LAUNCH;
-	b_cfg->autoboot = autoboot;
+	b_cfg->autoboot = autoboot & ~0x80;
 	b_cfg->autoboot_list = autoboot_list;
 
 	void (*main_ptr)() = (void *)nyx_str->hekate;
@@ -795,6 +795,10 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 	sd_unmount(true);
 
 	reconfig_hw_workaround(false, 0);
+
+	// Mitigate L4T Joy-Con driver issue.
+	if ((autoboot & 0x80) && h_cfg.bootwait < 2)
+		msleep((2 - h_cfg.bootwait) * 1000);
 
 	(*main_ptr)();
 }
@@ -1534,7 +1538,7 @@ ini_parsing:
 					continue;
 
 				icon_path = NULL;
-				bool payload = false;
+				u32 payload = 0;
 				lv_img_dsc_t *bmp = NULL;
 				lv_obj_t *img = NULL;
 
@@ -1544,7 +1548,13 @@ ini_parsing:
 					if (!strcmp("icon", kv->key))
 						icon_path = kv->val;
 					else if (!strcmp("payload", kv->key))
-						payload = true;
+					{
+						payload = 1;
+
+						// Mitigate L4T Joy-Con driver issue.
+						if (!memcmp(kv->val + strlen(kv->val) - 3, "rom", 3))
+							payload = 2;
+					}
 				}
 
 				// If icon not found, check res folder for section_name.bmp.
@@ -1588,9 +1598,9 @@ ini_parsing:
 
 				// Set autoboot index.
 				ext = lv_obj_get_ext_attr(btn);
-				ext->idx = i;
+				ext->idx = payload != 2 ? i : (i | 0x80);
 				ext = lv_obj_get_ext_attr(launch_ctxt[curr_btn_idx]); // Redundancy.
-				ext->idx = i;
+				ext->idx = payload != 2 ? i : (i | 0x80);
 
 				// Set action.
 				if (!more_cfg)
