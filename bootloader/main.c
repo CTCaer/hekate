@@ -1432,7 +1432,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate - CTCaer mod v5.1.4", 0, 0 };
+menu_t menu_top = { ment_top, "hekate - CTCaer mod v5.2.0", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
