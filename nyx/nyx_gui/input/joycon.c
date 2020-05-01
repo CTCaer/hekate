@@ -590,9 +590,20 @@ void jc_deinit()
 	u8 data = HCI_STATE_SLEEP;
 
 	if (jc_r.connected)
+	{
 		jc_send_hid_cmd(UART_B, JC_HID_SUBCMD_HCI_STATE, &data, 1);
+		msleep(1);
+		jc_rcv_pkt(&jc_r);
+	}
 	if (jc_l.connected)
+	{
 		jc_send_hid_cmd(UART_C, JC_HID_SUBCMD_HCI_STATE, &data, 1);
+		msleep(1);
+		jc_rcv_pkt(&jc_l);
+	}
+
+	jc_power_supply(UART_B, false);
+	jc_power_supply(UART_C, false);
 }
 
 static void jc_init_conn(joycon_ctxt_t *jc)
