@@ -839,9 +839,6 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf("Rebuilt & loaded pkg2\n");
 
-	// Unmount SD card.
-	sd_unmount();
-
 	gfx_printf("\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
 	// Clear pkg1/pkg2 keys.
@@ -895,6 +892,9 @@ int hos_launch(ini_sec_t *cfg)
 	// Config Exosphère if booting full Atmosphère.
 	if (ctxt.atmosphere && ctxt.secmon)
 		config_exosphere(&ctxt);
+
+	// Unmount SD card.
+	sd_unmount();
 
 	// Finalize MC carveout.
 	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)
