@@ -352,12 +352,9 @@ static void _clock_disable_pllc4(u32 mask)
 	if (pllc4_enabled & PLLC4_IN_USE)
 		return;
 
-	//FIXME: This causes issues with L4T/TWRP.
-	return;
-
 	// Disable PLLC4.
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLCX_BASE_ENABLE;
-	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLCX_BASE_REF_DIS | PLLC4_BASE_IDDQ;
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLC4_BASE_IDDQ;
 
 	pllc4_enabled = 0;
 }
