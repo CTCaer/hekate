@@ -1585,6 +1585,15 @@ ini_parsing:
 				if (bmp)
 				{
 					img = lv_img_create(launch_ctxt[curr_btn_idx], NULL);
+
+					if (icon_path && strlen(icon_path) > 13 && !memcmp(icon_path + strlen(icon_path) - 13, "_colorize", 9)) {
+						static lv_style_t style;
+						lv_style_copy(&style, &lv_style_plain);
+						style.image.color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
+						style.image.intense = LV_OPA_COVER;
+						lv_img_set_style(img, &style);
+					}
+					
 					lv_img_set_src(img, bmp);
 				}
 
