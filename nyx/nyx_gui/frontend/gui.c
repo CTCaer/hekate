@@ -1503,6 +1503,12 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		launch_ctxt[btn_idx + 1] = boot_entry_label;
 	}
 
+	// Create colorized icon style based on its parrent style.
+	static lv_style_t img_style;
+	lv_style_copy(&img_style, &lv_style_plain);
+	img_style.image.color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
+	img_style.image.intense = LV_OPA_COVER;
+
 	// Parse ini boot entries and set buttons/icons.
 	char *tmp_path = malloc(1024);
 	u32 curr_btn_idx = 0; // Active buttons.
@@ -1510,6 +1516,10 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 
 	if (sd_mount())
 	{
+		// Check if we use custom system icons.
+		bool icon_sw_custom = !f_stat("bootloader/res/icon_switch_custom.bmp", NULL);
+		bool icon_pl_custom = !f_stat("bootloader/res/icon_payload_custom.bmp", NULL);
+
 		// Choose what to parse.
 		bool ini_parse_success = false;
 		if (!more_cfg)
@@ -1539,6 +1549,7 @@ ini_parsing:
 
 				icon_path = NULL;
 				u32 payload = 0;
+				bool img_colorize = false;
 				lv_img_dsc_t *bmp = NULL;
 				lv_obj_t *img = NULL;
 
@@ -1568,32 +1579,43 @@ ini_parsing:
 						if (!strcmp(ini_sec->name, "Lakka"))
 							bmp = icon_lakka;
 						else if (payload)
+						{
 							bmp = icon_payload;
+
+							if (!icon_pl_custom)
+								img_colorize = true;
+						}
 					}
 				}
 				else
+				{
 					bmp = bmp_to_lvimg_obj(icon_path);
+
+					// Check if colorization is enabled.
+					if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 8, "_hue", 4))
+						img_colorize = true;
+				}
 
 				// Enable button.
 				lv_obj_set_opa_scale(launch_ctxt[curr_btn_idx], LV_OPA_COVER);
 
 				// Default to switch logo if no icon found at all.
 				if (!bmp)
+				{
 					bmp = icon_switch;
+
+					if (!icon_sw_custom)
+						img_colorize = true;
+				}
 
 				//Set icon.
 				if (bmp)
 				{
 					img = lv_img_create(launch_ctxt[curr_btn_idx], NULL);
 
-					if (icon_path && strlen(icon_path) > 13 && !memcmp(icon_path + strlen(icon_path) - 13, "_colorize", 9)) {
-						static lv_style_t style;
-						lv_style_copy(&style, &lv_style_plain);
-						style.image.color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
-						style.image.intense = LV_OPA_COVER;
-						lv_img_set_style(img, &style);
-					}
-					
+					if (img_colorize)
+						lv_img_set_style(img, &img_style);
+
 					lv_img_set_src(img, bmp);
 				}
 

@@ -361,8 +361,18 @@ void nyx_init_load_res()
 	f_read(&fp, (void *)NYX_RES_ADDR, f_size(&fp), NULL);
 	f_close(&fp);
 
-	icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch.bmp");
-	icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload.bmp");
+	// If no custom switch icon exists, load normal.
+	if (f_stat("bootloader/res/icon_switch_custom.bmp", NULL))
+		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch.bmp");
+	else
+		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch_custom.bmp");
+
+	// If no custom payload icon exists, load normal.
+	if (f_stat("bootloader/res/icon_payload_custom.bmp", NULL))
+		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload.bmp");
+	else
+		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload_custom.bmp");
+
 	icon_lakka = bmp_to_lvimg_obj("bootloader/res/icon_lakka.bmp");
 	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
 
