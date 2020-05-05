@@ -373,7 +373,7 @@ void nyx_init_load_res()
 	else
 		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload_custom.bmp");
 
-	icon_lakka = bmp_to_lvimg_obj("bootloader/res/icon_lakka.bmp");
+	// Load background resource if any.
 	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
 
 	sd_unmount(false);

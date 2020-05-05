@@ -1293,7 +1293,7 @@ static lv_res_t _win_launch_close_action(lv_obj_t * btn)
 			lv_img_dsc_t *src = (lv_img_dsc_t *)lv_img_get_src(img);
 
 			// Avoid freeing base icons.
-			if ((src != icon_switch) && (src != icon_payload) && (src != icon_lakka))
+			if ((src != icon_switch) && (src != icon_payload))
 				free(src);
 		}
 	}
@@ -1576,15 +1576,18 @@ ini_parsing:
 					bmp = bmp_to_lvimg_obj(tmp_path);
 					if (!bmp)
 					{
-						if (!strcmp(ini_sec->name, "Lakka"))
-							bmp = icon_lakka;
-						else if (payload)
-						{
-							bmp = icon_payload;
+						s_printf(tmp_path, "bootloader/res/%s_hue.bmp", ini_sec->name);
+						bmp = bmp_to_lvimg_obj(tmp_path);
+						if (bmp)
+							img_colorize = true;
+					}
 
-							if (!icon_pl_custom)
-								img_colorize = true;
-						}
+					if (!bmp && payload)
+					{
+						bmp = icon_payload;
+
+						if (!icon_pl_custom)
+							img_colorize = true;
 					}
 				}
 				else
