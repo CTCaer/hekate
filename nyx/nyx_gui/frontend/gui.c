@@ -1145,7 +1145,7 @@ static void _update_status_bar(void *params)
 	max77620_rtc_get_time(&time);
 	if (n_cfg.timeoff)
 	{
-		u32 epoch = (u32)((s32)max77620_rtc_date_to_epoch(&time, true) + (s32)n_cfg.timeoff);
+		u32 epoch = (u32)((s32)max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff);
 		max77620_rtc_epoch_to_date(epoch, &time);
 	}
 	soc_temp = tmp451_get_soc_temp(false);

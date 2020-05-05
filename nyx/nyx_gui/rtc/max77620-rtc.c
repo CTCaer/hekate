@@ -119,7 +119,7 @@ void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time)
 	time->weekday = 0; //! TODO.
 }
 
-u32 max77620_rtc_date_to_epoch(const rtc_time_t *time, bool hos_encoding)
+u32 max77620_rtc_date_to_epoch(const rtc_time_t *time)
 {
 	u32 year, month, epoch;
 
@@ -128,39 +128,17 @@ u32 max77620_rtc_date_to_epoch(const rtc_time_t *time, bool hos_encoding)
 	//Month of year
 	month = time->month;
 
-	if (!hos_encoding)
+	// Month/Year offset.
+	if(month < 3)
 	{
-		// Month/Year offset.
-		if(month < 3)
-		{
-			month += 12;
-			year--;
-		}
-	}
-	else
-	{
-		year -= 2000;
-		month++;
-
-		// Month/Year offset.
-		if(month < 3)
-		{
-			month += 9;
-			year--;
-		}
-		else
-			month -= 3;
+		month += 12;
+		year--;
 	}
 
 	epoch = (365 * year) + (year >> 2) - (year / 100) + (year / 400); // Years to days.
 
-	if (!hos_encoding)
-	{
-		epoch += (30 * month) + (3 * (month + 1) / 5) + time->day; // Months to days.
-		epoch -= 719561; // Epoch time is 1/1/1970.
-	}
-	else
-		epoch += (30 * month) + ((3 * month + 2) / 5) + 59 + time->day; // Months to days.
+	epoch += (30 * month) + (3 * (month + 1) / 5) + time->day; // Months to days.
+	epoch -= 719561; // Epoch time is 1/1/1970.
 
 	epoch *= 86400; // Days to seconds.
 	epoch += (3600 * time->hour) + (60 * time->min) + time->sec; // Add hours, minutes and seconds.
