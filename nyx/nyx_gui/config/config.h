@@ -45,9 +45,10 @@ typedef struct _hekate_config
 typedef struct _nyx_config
 {
 	u32 themecolor;
-	s32 timeoff;
+	u32 timeoff;
 	u32 home_screen;
 	u32 verification;
+	u32 ums_emmc_rw;
 } nyx_config;
 
 void set_default_configuration();

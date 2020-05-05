@@ -270,6 +270,8 @@ void load_saved_configuration()
 						n_cfg.home_screen = atoi(kv->val);
 					else if (!strcmp("verification", kv->key))
 						n_cfg.verification = atoi(kv->val);
+					else if (!strcmp("umsemmcrw", kv->key))
+						n_cfg.ums_emmc_rw = atoi(kv->val) == 1;
 				}
 
 				break;

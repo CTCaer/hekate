@@ -46,6 +46,7 @@
 
 extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
+extern nyx_config n_cfg;
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
@@ -643,8 +644,6 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 {
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_USB" USB Tools");
 
-	usb_msc_emmc_read_only = true;
-
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);
 	h_style.body.padding.inner = 0;
@@ -747,7 +746,8 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	lv_obj_t *btn_write_access = lv_btn_create(h_write, NULL);
 	nyx_create_onoff_button(lv_theme_get_current(), h_write,
 		btn_write_access, SYMBOL_EDIT" Read-Only", _emmc_read_only_toggle, false);
-	lv_btn_set_state(btn_write_access, LV_BTN_STATE_TGL_REL);
+	if (!n_cfg.ums_emmc_rw)
+		lv_btn_set_state(btn_write_access, LV_BTN_STATE_TGL_REL);
 	_emmc_read_only_toggle(btn_write_access);
 
 	// Create USB Input Devices container.
