@@ -194,7 +194,7 @@ int create_nyx_config_entry()
 	itoa(n_cfg.themecolor, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\ntimeoff=", &fp);
-	itoa(n_cfg.timeoff, lbuf, 10);
+	itoa(n_cfg.timeoff, lbuf, 16);
 	f_puts(lbuf, &fp);
 	f_puts("\nhomescreen=", &fp);
 	itoa(n_cfg.home_screen, lbuf, 10);
