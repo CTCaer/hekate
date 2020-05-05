@@ -1740,6 +1740,25 @@ static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	}
 }
 
+static inline void _system_maintainance(usbd_gadget_ums_t *ums)
+{
+	static u32 timer_dram = 0;
+	static u32 timer_status_bar = 0;
+
+	u32 time = get_tmr_ms();
+
+	if (timer_dram < time)
+	{
+		minerva_periodic_training();
+		timer_dram = get_tmr_ms() + 100;
+	}
+	else if (timer_status_bar < time)
+	{
+		ums->system_maintenance(true);
+		timer_status_bar = get_tmr_ms() + 30000;
+	}
+}
+
 int usb_device_gadget_ums(usb_ctxt_t *usbs)
 {
 	int res = 0;
@@ -1818,7 +1837,8 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 
 	do
 	{
-		minerva_periodic_training();
+		// Do DRAM training and update system tasks.
+		_system_maintainance(&ums);
 
 		// Check for force unmount button combo.
 		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
