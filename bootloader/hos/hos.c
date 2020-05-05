@@ -39,6 +39,7 @@
 #include "../soc/smmu.h"
 #include "../soc/t210.h"
 #include "../storage/emummc.h"
+#include "../storage/mbr_gpt.h"
 #include "../storage/nx_emmc.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
@@ -51,8 +52,7 @@ extern hekate_config h_cfg;
 #define DPRINTF(...)
 
 #define EHPRINTFARGS(text, args...) \
-	({ display_backlight_brightness(h_cfg.backlight, 1000); \
-		gfx_con.mute = false; \
+	({  gfx_con.mute = false; \
 		gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC); })
 
 #define PKG2_LOAD_ADDR 0xA9800000
@@ -103,8 +103,6 @@ static void _hos_crit_error(const char *text)
 {
 	gfx_con.mute = false;
 	gfx_printf("%k%s%k\n", 0xFFFF0000, text, 0xFFCCCCCC);
-
-	display_backlight_brightness(h_cfg.backlight, 1000);
 }
 
 static void _se_lock(bool lock_se)
@@ -183,15 +181,42 @@ void _sysctr0_reset()
 	SYSCTR0(SYSCTR0_COUNTERID11) = 0;
 }
 
+bool hos_eks_rw_try(u8 *buf, bool write)
+{
+	mbr_t *mbr = (mbr_t *)buf;
+	for (u32 i = 0; i < 3; i++)
+	{
+		if (!write)
+		{
+			if (sdmmc_storage_read(&sd_storage, 0, 1, mbr))
+			{
+				if (mbr->partitions[0].status != 0xFF &&
+					mbr->partitions[0].start_sct &&
+					mbr->partitions[0].size_sct)
+					return true;
+				else
+					return false;
+			}
+		}
+		else
+		{
+			if (sdmmc_storage_write(&sd_storage, 0, 1, mbr))
+				return true;
+		}
+	}
+
+	return false;
+}
+
 void hos_eks_get()
 {
 	// Check if EKS already found and parsed.
 	if (!h_cfg.eks)
 	{
-		u8 *mbr = calloc(512 , 1);
-
 		// Read EKS blob.
-		sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+		u8 *mbr = calloc(512 , 1);
+		if (!hos_eks_rw_try(mbr, false))
+			goto out;
 
 		// Decrypt EKS blob.
 		hos_eks_mbr_t *eks = (hos_eks_mbr_t *)(mbr + 0x10);
@@ -208,6 +233,7 @@ void hos_eks_get()
 			return;
 		}
 
+out:
 		free(mbr);
 	}
 }
@@ -221,12 +247,29 @@ void hos_eks_save(u32 kb)
 		if (key_idx > 5)
 			return;
 
+		bool new_eks = false;
 		if (!h_cfg.eks)
+		{
 			h_cfg.eks = calloc(512 , 1);
+			new_eks = true;
+		}
 
 		// If matching blob doesn't exist, create it.
 		if (!(h_cfg.eks->enabled & (1 << key_idx)))
 		{
+			// Read EKS blob.
+			u8 *mbr = calloc(512 , 1);
+			if (!hos_eks_rw_try(mbr, false))
+			{
+				if (new_eks)
+				{
+					free(h_cfg.eks);
+					h_cfg.eks = NULL;
+				}
+
+				goto out;
+			}
+
 			// Get keys.
 			u8 *keys = (u8 *)calloc(0x1000, 1);
 			se_get_aes_keys(keys + 0x800, keys, 0x10);
@@ -244,20 +287,21 @@ void hos_eks_save(u32 kb)
 			memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
 			memcpy(h_cfg.eks->keys[key_idx].dkk, keys + 15 * 0x10, 0x10);
 
-			// Encrypt EKS.
+			// Encrypt EKS blob.
 			u8 *eks = calloc(512 , 1);
 			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
-			// Write EKS to SD.
-			u8 *mbr = calloc(512 , 1);
-			sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+			// Write EKS blob to SD.
+			memset(mbr, 0, 0x10);
 			memcpy(mbr + 0x10, eks, sizeof(hos_eks_mbr_t));
-			sdmmc_storage_write(&sd_storage, 0, 1, mbr);
+			hos_eks_rw_try(mbr, true);
+
 
 			free(eks);
-			free(mbr);
 			free(keys);
+out:
+			free(mbr);
 		}
 	}
 }
@@ -270,21 +314,25 @@ void hos_eks_clear(u32 kb)
 		u8 key_idx = kb - KB_FIRMWARE_VERSION_700;
 		if (h_cfg.eks->enabled & (1 << key_idx))
 		{
+			// Read EKS blob.
+			u8 *mbr = calloc(512 , 1);
+			if (!hos_eks_rw_try(mbr, false))
+				goto out;
+
 			// Disable current Master key version.
 			h_cfg.eks->enabled &= ~(1 << key_idx);
 
-			// Encrypt EKS.
+			// Encrypt EKS blob.
 			u8 *eks = calloc(512 , 1);
 			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
-			// Write EKS to SD.
-			u8 *mbr = calloc(512 , 1);
-			sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+			// Write EKS blob to SD.
 			memcpy(mbr + 0x10, eks, sizeof(hos_eks_mbr_t));
-			sdmmc_storage_write(&sd_storage, 0, 1, mbr);
+			hos_eks_rw_try(mbr, true);
 
 			free(eks);
+out:
 			free(mbr);
 		}
 	}
@@ -477,8 +525,8 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	if (!ctxt->pkg1_id)
 	{
 		_hos_crit_error("Unknown pkg1 version.");
-		EHPRINTFARGS("%sNot yet supported HOS version!",
-			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "Is emuMMC corrupt?\nOr " : "");
+		EHPRINTFARGS("HOS version not supported!%s",
+			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "\nOr emuMMC corrupt!" : "");
 		goto out;
 	}
 	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
@@ -489,7 +537,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 
 	res = 1;
 
-out:;
+out:
 	sdmmc_storage_end(&storage);
 	return res;
 }
@@ -731,7 +779,10 @@ int hos_launch(ini_sec_t *cfg)
 	// Read package2.
 	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
 	if (!bootConfigBuf)
+	{
+		_hos_crit_error("Pkg2 read failed!");
 		return 0;
+	}
 
 	gfx_printf("Read pkg2\n");
 

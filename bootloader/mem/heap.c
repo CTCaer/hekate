@@ -136,7 +136,7 @@ void *malloc(u32 size)
 void *calloc(u32 num, u32 size)
 {
 	void *res = (void *)_heap_alloc(&_heap, num * size);
-	memset(res, 0, num * size);
+	memset(res, 0, ALIGN(num * size, sizeof(hnode_t))); // Clear the aligned size.
 	return res;
 }
 
@@ -164,7 +164,7 @@ void heap_monitor(heap_monitor_t *mon, bool print_node_stats)
 				count, node->used, (u32)node + sizeof(hnode_t), node->size);
 
 		count++;
-		
+
 		if (node->next)
 			node = node->next;
 		else

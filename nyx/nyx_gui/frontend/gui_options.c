@@ -531,15 +531,8 @@ static lv_res_t _create_mbox_clock_edit_action(lv_obj_t * btns, const char * txt
 
 static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 {
-	lv_style_t *darken;
-	darken = malloc(sizeof(lv_style_t));
-	lv_style_copy(darken, &lv_style_plain);
-	darken->body.main_color = LV_COLOR_BLACK;
-	darken->body.grad_color = darken->body.main_color;
-	darken->body.opa = LV_OPA_30;
-
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
-	lv_obj_set_style(dark_bg, darken);
+	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char * mbox_btn_map[] = { "\211", "\222Done", "\222Cancel", "\211", "" };
@@ -626,15 +619,8 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 		sd_unmount(false);
 	}
 
-	lv_style_t *darken;
-	darken = (lv_style_t *)malloc(sizeof(lv_style_t));
-	lv_style_copy(darken, &lv_style_plain);
-	darken->body.main_color = LV_COLOR_BLACK;
-	darken->body.grad_color = darken->body.main_color;
-	darken->body.opa = LV_OPA_30;
-
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
-	lv_obj_set_style(dark_bg, darken);
+	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };

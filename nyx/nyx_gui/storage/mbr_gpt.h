@@ -39,7 +39,7 @@ typedef struct _mbr_part_t
 
 typedef struct _mbr_t
 {
-	u8  bootstrap[0x1B8];
+	u8  bootstrap[440];
 	u32 signature;
 	u16 copy_protected;
 	mbr_part_t partitions[4];

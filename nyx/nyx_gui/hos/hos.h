@@ -68,7 +68,7 @@ typedef struct _hos_eks_mbr_t
 	u32 rsvd2[3];
 } hos_eks_mbr_t;
 
-static_assert(sizeof(hos_eks_mbr_t) < 424, "HOS EKS storage bigger than MBR!");
+static_assert(sizeof(hos_eks_mbr_t) == 416, "HOS EKS storage bigger than MBR!");
 
 typedef struct _launch_ctxt_t
 {
