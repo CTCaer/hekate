@@ -465,8 +465,11 @@ void ini_list_launcher()
 					}
 				}
 
-				if (emummc_path)
-					emummc_set_path(emummc_path);
+				if (emummc_path && !emummc_set_path(emummc_path))
+				{
+					EPRINTF("emupath is wrong!");
+					goto wrong_emupath;
+				}
 
 				if (cfg_sec && !payload_path)
 					check_sept(cfg_sec);
@@ -497,15 +500,13 @@ void ini_list_launcher()
 	}
 	else if (!hos_launch(cfg_sec))
 	{
-		EPRINTF("Failed to launch firmware.");
-
+wrong_emupath:
+		EPRINTF("Failed to launch HOS.");
 		if (emummc_path)
 		{
 			sd_mount();
 			emummc_load_cfg();
 		}
-
-		btn_wait();
 	}
 
 out:
@@ -605,8 +606,11 @@ void launch_firmware()
 				}
 			}
 
-			if (emummc_path)
-				emummc_set_path(emummc_path);
+			if (emummc_path && !emummc_set_path(emummc_path))
+			{
+				EPRINTF("emupath is wrong!");
+				goto wrong_emupath;
+			}
 
 			if (cfg_sec && !payload_path)
 				check_sept(cfg_sec);
@@ -642,7 +646,8 @@ void launch_firmware()
 	}
 	else if (!hos_launch(cfg_sec))
 	{
-		EPRINTF("Failed to launch firmware.");
+wrong_emupath:
+		EPRINTF("Failed to launch HOS.");
 		if (emummc_path)
 		{
 			sd_mount();
@@ -1034,8 +1039,13 @@ skip_list:
 	{
 		if (b_cfg.boot_cfg & BOOT_CFG_TO_EMUMMC)
 			emummc_set_path(b_cfg.emummc_path);
-		else if (emummc_path)
-			emummc_set_path(emummc_path);
+		else if (emummc_path && !emummc_set_path(emummc_path))
+		{
+			gfx_con.mute = false;
+			EPRINTF("emupath is wrong!");
+			goto wrong_emupath;
+		}
+
 		check_sept(cfg_sec);
 		hos_launch(cfg_sec);
 
@@ -1045,6 +1055,8 @@ skip_list:
 			emummc_load_cfg();
 		}
 
+wrong_emupath:
+		display_backlight_brightness(h_cfg.backlight, 1000);
 		EPRINTF("\nFailed to launch HOS!");
 		gfx_printf("\nPress any key...\n");
 		msleep(500);

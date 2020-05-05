@@ -72,7 +72,7 @@ void emummc_load_cfg()
 	}
 }
 
-void emummc_set_path(char *path)
+bool emummc_set_path(char *path)
 {
 	FIL fp;
 	bool found = false;
@@ -105,8 +105,10 @@ void emummc_set_path(char *path)
 		emu_cfg.enabled = 1;
 		emu_cfg.id = 0;
 		strcpy(emu_cfg.nintendo_path, path);
-		strcpy(emu_cfg.nintendo_path, "/Nintendo");
+		strcat(emu_cfg.nintendo_path, "/Nintendo");
 	}
+
+	return found;
 }
 
 static int emummc_raw_get_part_off(int part_idx)
