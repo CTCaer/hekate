@@ -5842,7 +5842,7 @@ FRESULT f_mkfs (
 	UINT len			/* Size of working buffer [byte] */
 )
 {
-	const UINT n_fats = 1;		/* Number of FATs for FAT/FAT32 volume (1 or 2) */
+	const UINT n_fats = 2;		/* Number of FATs for FAT/FAT32 volume (1 or 2) */
 	const UINT n_rootdir = 512;	/* Number of root directory entries for FAT volume */
 	static const WORD cst[] = {1, 4, 16, 64, 256, 512, 0};	/* Cluster size boundary for FAT volume (4Ks unit) */
 	static const WORD cst32[] = {1, 2, 4, 8, 16, 32, 0};	/* Cluster size boundary for FAT32 volume (128Ks unit) */
@@ -6130,6 +6130,9 @@ FRESULT f_mkfs (
 			if (fmt == FS_FAT32) {		/* FAT32: Move FAT base */
 				sz_rsv += n; b_fat += n;
 			} else {					/* FAT: Expand FAT size */
+				if (n % n_fats) {	/* Adjust fractional error if needed */
+					n--; sz_rsv++; b_fat++;
+				}
 				sz_fat += n / n_fats;
 			}
 

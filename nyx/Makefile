@@ -63,7 +63,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	lv_hal_disp.o lv_hal_indev.o lv_hal_tick.o \
 	interui_20.o interui_30.o ubuntu_mono.o hekate_symbol_20.o hekate_symbol_30.o hekate_symbol_120.o lv_font_builtin.o \
 	lv_anim.o lv_area.o lv_circ.o lv_color.o lv_font.o lv_ll.o lv_math.o lv_mem.o lv_task.o lv_txt.o lv_gc.o \
-	lv_bar.o lv_btn.o lv_btnm.o lv_cb.o lv_cont.o lv_ddlist.o lv_img.o lv_kb.o lv_label.o lv_line.o lv_list.o lv_lmeter.o lv_mbox.o \
+	lv_bar.o lv_btn.o lv_btnm.o lv_cb.o lv_cont.o lv_ddlist.o lv_img.o lv_label.o lv_line.o lv_list.o lv_lmeter.o lv_mbox.o \
 	lv_page.o lv_roller.o lv_slider.o lv_sw.o lv_tabview.o lv_ta.o lv_win.o lv_log.o lv_imgbtn.o \
 	lv_theme.o lv_theme_hekate.o \
 )
