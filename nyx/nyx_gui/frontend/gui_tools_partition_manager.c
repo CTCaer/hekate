@@ -1335,12 +1335,14 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	if (f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000))
 	{
 		// Retry.
-		if (f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000))
+		u32 error = f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000);
+		if (error)
 		{
 			// Failed to format.
-			lv_label_set_text(lbl_status,
-				"#FFDD00 Error:# Failed to format disk!\n\n"
-				"Remove the SD card and check that is OK. If not, format it and press any key!");
+			s_printf((char *)buf, "#FFDD00 Error:# Failed to format disk (%d)!\n\n"
+				"Remove the SD card and check that is OK.\nIf not, format it, reinsert it and\npress #FF8000 POWER#!", error);
+			lv_label_set_text(lbl_status, (char *)buf);
+			lv_label_set_text(lbl_paths[0], " ");
 			manual_system_maintenance(true);
 
 			sd_unmount(true);
