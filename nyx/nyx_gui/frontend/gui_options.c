@@ -23,6 +23,7 @@
 #include "../input/joycon.h"
 #include "../libs/lvgl/lvgl.h"
 #include "../mem/heap.h"
+#include "../rtc/max77620-rtc.h"
 #include "../storage/nx_sd.h"
 #include "../utils/list.h"
 #include "../utils/sprintf.h"
@@ -516,13 +517,61 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-lv_obj_t *epoch_ta;
-static lv_res_t _create_mbox_clock_edit_action(lv_obj_t * btns, const char * txt)
+typedef struct _time_edit_obj_t
+{
+	lv_obj_t *year;
+	lv_obj_t *month;
+	lv_obj_t *day;
+	lv_obj_t *hour;
+	lv_obj_t *min;
+} time_edit_obj_t;
+
+time_edit_obj_t clock_ctxt;
+
+static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
 
 	if (btn_idx == 1)
-		n_cfg.timeoff = strtol(lv_ta_get_text(epoch_ta), NULL, 16);
+	{
+		rtc_time_t time;
+		max77620_rtc_get_time(&time);
+		u32 epoch = max77620_rtc_date_to_epoch(&time);
+
+		u32 year = lv_roller_get_selected(clock_ctxt.year);
+		u32 month = lv_roller_get_selected(clock_ctxt.month) + 1;
+		u32 day = lv_roller_get_selected(clock_ctxt.day) + 1;
+		u32 hour = lv_roller_get_selected(clock_ctxt.hour);
+		u32 min = lv_roller_get_selected(clock_ctxt.min);
+
+		switch (month)
+		{
+		case 2:
+			if (!(year % 4) && day > 29)
+				day = 29;
+			else if (day > 28)
+				day = 28;
+			break;
+		case 4:
+		case 6:
+		case 8:
+		case 10:
+		case 12:
+			if (day > 30)
+				day = 30;
+			break;
+		}
+
+		time.year = year + 2020;
+		time.month = month;
+		time.day = day;
+		time.hour = hour;
+		time.min = min;
+
+		u32 new_epoch = max77620_rtc_date_to_epoch(&time);
+
+		n_cfg.timeoff = new_epoch - epoch;
+	}
 
 	mbox_action(btns, txt);
 
@@ -540,28 +589,94 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	lv_mbox_set_text(mbox, "Type the #C7EA46 epoch# offset in HEX s32:");
+	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time#");
 
-	lv_obj_t *ta = lv_ta_create(mbox, NULL);
-	lv_obj_set_size(ta, LV_HOR_RES / 5, LV_VER_RES / 10);
-	lv_obj_align(ta, NULL, LV_ALIGN_IN_TOP_RIGHT, -LV_DPI / 10, LV_DPI / 10);
-	lv_ta_set_cursor_type(ta, LV_CURSOR_LINE);
-	lv_ta_set_one_line(ta, true);
-	epoch_ta = ta;
+	rtc_time_t time;
+	max77620_rtc_get_time(&time);
+	if (n_cfg.timeoff)
+	{
+		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
+		max77620_rtc_epoch_to_date(epoch, &time);
+	}
+	if (time.year < 2020)
+		time.year = 2020;
+	else if (time.year > 2030)
+		time.year = 2030;
 
-	static char epoch_off[16];
-	s_printf(epoch_off, "%X", n_cfg.timeoff);
-	lv_ta_set_text(ta, epoch_off);
-	lv_ta_set_max_length(ta, 8);
+	time.year -= 2020;
 
-	lv_obj_t *kb = lv_kb_create(mbox, NULL);
-	lv_obj_set_size(kb, 2 * LV_HOR_RES / 3, LV_VER_RES / 3);
-	lv_obj_align(kb, ta, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, LV_DPI);
-	lv_kb_set_mode(kb, LV_KB_MODE_HEX);
-	lv_kb_set_ta(kb, ta);
-	lv_kb_set_cursor_manage(kb, true);
+	lv_obj_t *h1 = lv_cont_create(mbox, NULL);
+	lv_cont_set_fit(h1, true, true);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_clock_edit_action); // Important. After set_text.
+	lv_obj_t *roller_year = lv_roller_create(h1, NULL);
+	lv_roller_set_options(roller_year,
+		"2020\n"
+		"2021\n"
+		"2022\n"
+		"2023\n"
+		"2024\n"
+		"2025\n"
+		"2026\n"
+		"2027\n"
+		"2028\n"
+		"2029\n"
+		"2030");
+	lv_roller_set_selected(roller_year, time.year, false);
+	lv_roller_set_visible_row_count(roller_year, 3);
+	clock_ctxt.year = roller_year;
+
+	lv_obj_t *roller_month = lv_roller_create(h1, roller_year);
+	lv_roller_set_options(roller_month,
+		"January\n"
+		"February\n"
+		"March\n"
+		"April\n"
+		"May\n"
+		"June\n"
+		"July\n"
+		"August\n"
+		"September\n"
+		"October\n"
+		"November\n"
+		"December");
+	lv_roller_set_selected(roller_month, time.month - 1, false);
+	lv_obj_align(roller_month, roller_year, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	clock_ctxt.month = roller_month;
+
+	static char days[256];
+	days[0] = 0;
+	for (u32 i = 1; i < 32; i++)
+		s_printf(days + strlen(days), " %d \n", i);
+	days[strlen(days) - 1] = 0;
+	lv_obj_t *roller_day = lv_roller_create(h1, roller_year);
+	lv_roller_set_options(roller_day, days);
+	lv_roller_set_selected(roller_day, time.day - 1, false);
+	lv_obj_align(roller_day, roller_month, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	clock_ctxt.day = roller_day;
+
+	static char hours[256];
+	hours[0] = 0;
+	for (u32 i = 0; i < 24; i++)
+		s_printf(hours + strlen(hours), " %d \n", i);
+	hours[strlen(hours) - 1] = 0;
+	lv_obj_t *roller_hour = lv_roller_create(h1, roller_year);
+	lv_roller_set_options(roller_hour, hours);
+	lv_roller_set_selected(roller_hour, time.hour, false);
+	lv_obj_align(roller_hour, roller_day, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+	clock_ctxt.hour = roller_hour;
+
+	static char minutes[512];
+	minutes[0] = 0;
+	for (u32 i = 0; i < 60; i++)
+		s_printf(minutes + strlen(minutes), " %02d \n", i);
+	minutes[strlen(minutes) - 1] = 0;
+	lv_obj_t *roller_minute = lv_roller_create(h1, roller_year);
+	lv_roller_set_options(roller_minute, minutes);
+	lv_roller_set_selected(roller_minute, time.min, false);
+	lv_obj_align(roller_minute, roller_hour, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	clock_ctxt.min = roller_minute;
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _action_clock_edit); // Important. After set_text.
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -767,23 +882,16 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	lv_obj_t *btn2 = lv_btn_create(sw_h2, NULL);
 	lv_obj_t *label_btn2 = lv_label_create(btn2, NULL);
 	lv_btn_set_fit(btn2, true, true);
-	lv_label_set_static_text(label_btn2, SYMBOL_CLOCK" Clock (HOS)");
+	lv_label_set_static_text(label_btn2, SYMBOL_CLOCK" Clock (Offset)");
 	lv_obj_align(btn2, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
-	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_mbox_clock_edit); //TODO: Add support.
-	lv_btn_set_state(btn2, LV_BTN_STATE_INA); //TODO: Add support.
-
-	lv_obj_t *btn4 = lv_btn_create(sw_h2, btn2);
-	label_btn2 = lv_label_create(btn4, NULL);
-	lv_label_set_static_text(label_btn2, " "SYMBOL_EDIT" Manually  ");
-	lv_obj_align(btn4, btn2, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 8, 0);
-	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, _create_mbox_clock_edit);
-	lv_btn_set_state(btn4, LV_BTN_STATE_REL);
+	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_mbox_clock_edit);
 
 	label_txt2 = lv_label_create(sw_h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"#FF8000 Clock (HOS):# #C7EA46 Change clock offset based on what HOS uses.#\n"
-		"#FF8000 Manually:# #C7EA46 Edit the clock offset manually.#");
+		"Change clock offset manually.\n"
+		"#C7EA46 The entered Date and Time will be converted to an offset#\n"
+		"#C7EA46 automatically. This will be also used for FatFS operations.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
 
