@@ -839,8 +839,13 @@ static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 		// Is it a directory?
 		if (fno.fattrib & AM_DIR)
 		{
+			// Check if it's a HOS single file folder.
+			strcat(path, "/00");
+			bool is_hos_special = !f_stat(path, NULL);
+			path[strlen(path) - 3] = 0;
+
 			// Set archive bit to folders with 3 char extension suffix.
-			if (fno.fname[strlen(fno.fname) - 4] == '.')
+			if (is_hos_special && fno.fname[strlen(fno.fname) - 4] == '.')
 			{
 				if (!(fno.fattrib & AM_ARC))
 				{
