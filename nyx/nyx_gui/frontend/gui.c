@@ -1835,6 +1835,8 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 	lv_mbox_add_btns(mbox, mbox_btn_map, NULL);
 	lv_obj_set_top(mbox, true);
 
+	nyx_options_clear_ini_changes_made();
+
 	return LV_RES_OK;
 }
 
@@ -1900,6 +1902,44 @@ static void _create_status_bar(lv_theme_t * th)
 	lv_btn_set_action(btn_mid, LV_BTN_ACTION_CLICK, _save_options_action);
 }
 
+static lv_res_t _create_mbox_save_changes_action(lv_obj_t *btns, const char * txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	mbox_action(btns, txt);
+
+	if (!btn_idx)
+		_save_options_action(NULL);
+
+	return LV_RES_INV;
+}
+
+void nyx_check_ini_changes()
+{
+	if (nyx_options_get_ini_changes_made())
+	{
+		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+		lv_obj_set_style(dark_bg, &mbox_darken);
+		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+		static const char * mbox_btn_map[] = { "\222Save", "\222Cancel", "" };
+		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+		lv_mbox_set_recolor_text(mbox, true);
+
+		lv_mbox_set_text(mbox,
+			"#FF8000 Main configuration#\n\n"
+			"You changed your configuration!\n\n"
+			"Do you want to save it?");
+
+		lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_save_changes_action);
+		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_set_top(mbox, true);
+
+		nyx_options_clear_ini_changes_made();
+	}
+}
+
 static lv_res_t _show_hide_save_button(lv_obj_t *tv, uint16_t tab_idx)
 {
 	if (tab_idx == 4) // Options.
@@ -1912,6 +1952,8 @@ static lv_res_t _show_hide_save_button(lv_obj_t *tv, uint16_t tab_idx)
 		lv_obj_set_opa_scale(status_bar.mid, LV_OPA_0);
 		lv_obj_set_click(status_bar.mid, false);
 	}
+
+	nyx_check_ini_changes();
 
 	return LV_RES_OK;
 }

@@ -35,9 +35,22 @@ extern nyx_config n_cfg;
 static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
 
+static bool ini_changes_made = false;
+
+void nyx_options_clear_ini_changes_made()
+{
+	ini_changes_made = false;
+}
+
+bool nyx_options_get_ini_changes_made()
+{
+	return ini_changes_made;
+}
+
 static lv_res_t auto_hos_poweroff_toggle(lv_obj_t *btn)
 {
 	h_cfg.autohosoff = !h_cfg.autohosoff;
+	ini_changes_made = true;
 
 	if (!h_cfg.autohosoff)
 		lv_btn_set_state(btn, LV_BTN_STATE_REL);
@@ -52,6 +65,7 @@ static lv_res_t auto_hos_poweroff_toggle(lv_obj_t *btn)
 static lv_res_t auto_nogc_toggle(lv_obj_t *btn)
 {
 	h_cfg.autonogc = !h_cfg.autonogc;
+	ini_changes_made = true;
 
 	if (!h_cfg.autonogc)
 		lv_btn_set_state(btn, LV_BTN_STATE_REL);
@@ -66,6 +80,7 @@ static lv_res_t auto_nogc_toggle(lv_obj_t *btn)
 static lv_res_t _update_r2p_action(lv_obj_t *btn)
 {
 	h_cfg.updater2p = !h_cfg.updater2p;
+	ini_changes_made = true;
 
 	if (!h_cfg.updater2p)
 		lv_btn_set_state(btn, LV_BTN_STATE_REL);
@@ -118,6 +133,7 @@ static lv_res_t _autoboot_disable_action(lv_obj_t *btn)
 {
 	h_cfg.autoboot = 0;
 	h_cfg.autoboot_list = 0;
+	ini_changes_made = true;
 
 	lv_btn_set_state(autoboot_btn, LV_BTN_STATE_REL);
 	nyx_generic_onoff_toggle(autoboot_btn);
@@ -135,6 +151,7 @@ static lv_res_t _autoboot_enable_main_action(lv_obj_t *btn)
 {
 	h_cfg.autoboot = lv_list_get_btn_index(auto_main_list, btn) + 1;
 	h_cfg.autoboot_list = 0;
+	ini_changes_made = true;
 
 	lv_btn_set_state(autoboot_btn, LV_BTN_STATE_TGL_REL);
 	nyx_generic_onoff_toggle(autoboot_btn);
@@ -151,6 +168,7 @@ static lv_res_t _autoboot_enable_more_action(lv_obj_t *btn)
 {
 	h_cfg.autoboot = lv_list_get_btn_index(auto_more_list, btn) + 1;
 	h_cfg.autoboot_list = 1;
+	ini_changes_made = true;
 
 	lv_btn_set_state(autoboot_btn, LV_BTN_STATE_TGL_REL);
 	nyx_generic_onoff_toggle(autoboot_btn);
@@ -281,6 +299,7 @@ static lv_res_t _autoboot_hide_delay_action(lv_obj_t *btn)
 static lv_res_t _autoboot_delay_action(lv_obj_t *ddlist)
 {
 	h_cfg.bootwait = lv_ddlist_get_selected(ddlist);
+	ini_changes_made = true;
 
 	return LV_RES_OK;
 }
@@ -289,6 +308,7 @@ static lv_res_t _slider_brightness_action(lv_obj_t * slider)
 {
 	display_backlight_brightness(lv_slider_get_value(slider) - 20, 0);
 	h_cfg.backlight = lv_slider_get_value(slider);
+	ini_changes_made = true;
 
 	return LV_RES_OK;
 }
