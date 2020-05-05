@@ -223,7 +223,7 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_cfg.cal0_blank = calloc(1, 1);
+	ctxt->exo_cfg.cal0_blank = calloc(sizeof(bool), 1);
 
 	if (*value == '1')
 	{
@@ -236,7 +236,7 @@ static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_cal0_writes_enable(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_cfg.cal0_allow_writes_sys = calloc(1, 1);
+	ctxt->exo_cfg.cal0_allow_writes_sys = calloc(sizeof(bool), 1);
 
 	if (*value == '1')
 	{

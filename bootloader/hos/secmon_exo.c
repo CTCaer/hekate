@@ -221,12 +221,12 @@ void config_exosphere(launch_ctxt_t *ctxt)
 	if (ctxt->exo_cfg.user_pmu)
 		exoFlags |= EXO_FLAG_USER_PMU;
 
-	// Check if exo ini value is overridden and enable prodinfo blanking.
+	// Enable prodinfo blanking. Check if exo ini value is overridden. If not, check if enabled in exo ini.
 	if ((ctxt->exo_cfg.cal0_blank && *ctxt->exo_cfg.cal0_blank)
 			|| (!ctxt->exo_cfg.cal0_blank && cal0_blanking))
 		exoFlags |= EXO_FLAG_CAL0_BLANKING;
 
-	// Check if exo ini value is overridden and allow prodinfo writes.
+	// Allow prodinfo writes. Check if exo ini value is overridden. If not, check if enabled in exo ini.
 	if ((ctxt->exo_cfg.cal0_allow_writes_sys && *ctxt->exo_cfg.cal0_allow_writes_sys)
 			|| (!ctxt->exo_cfg.cal0_allow_writes_sys && cal0_allow_writes_sys))
 		exoFlags |= EXO_FLAG_CAL0_WRITES_SYS;
