@@ -1579,7 +1579,23 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		lv_label_set_text(part_info.lbl_emu, lbl_text);
 	}
 	else
-		lv_slider_set_value(slider, 0);
+	{
+		int new_slider_val;
+		switch (part_info.emu_size)
+		{
+		case 29856:
+			new_slider_val = 1;
+			break;
+		case 59712:
+			new_slider_val = 2;
+			break;
+		case 0:
+		default:
+			new_slider_val = 0;
+			break;
+		}
+		lv_slider_set_value(slider, new_slider_val);
+	}
 
 	_update_partition_bar();
 
