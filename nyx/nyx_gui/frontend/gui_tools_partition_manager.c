@@ -223,6 +223,7 @@ static void _prepare_and_flash_mbr_gpt()
 		mbr.partitions[mbr_idx].type = 0x83; // Linux system partition.
 		mbr.partitions[mbr_idx].start_sct = 0x8000 + (part_info.hos_size << 11);
 		mbr.partitions[mbr_idx].size_sct = part_info.l4t_size << 11;
+		sdmmc_storage_write(&sd_storage, mbr.partitions[mbr_idx].start_sct, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		mbr_idx++;
 	}
 
@@ -301,6 +302,7 @@ static void _prepare_and_flash_mbr_gpt()
 			gpt.entries[gpt_idx].lba_start = curr_part_lba;
 			gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.l4t_size << 11) - 1;
 			memcpy(gpt.entries[gpt_idx].name, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6);
+			sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 
 			curr_part_lba += (part_info.l4t_size << 11);
 			gpt_idx++;
@@ -313,6 +315,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x200000 - 1; // 1GB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'v', 0, 'e', 0, 'n', 0, 'd', 0, 'o', 0, 'r', 0 }, 12);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x200000;
 		gpt_idx++;
 
@@ -323,6 +326,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x400000 - 1; // 2GB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'A', 0, 'P', 0, 'P', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x400000;
 		gpt_idx++;
 
@@ -333,6 +337,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x10000 - 1; // 32MB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x10000;
 		gpt_idx++;
 
@@ -343,6 +348,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x20000 - 1; // 64MB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x20000;
 		gpt_idx++;
 
@@ -353,6 +359,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x800 - 1; // 1MB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x800;
 		gpt_idx++;
 
@@ -363,6 +370,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x8000 - 1; // 16MB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'M', 0, 'D', 0, 'A', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear 16MB.
 		curr_part_lba += 0x8000;
 		gpt_idx++;
 
@@ -373,6 +381,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x15E000 - 1; // 700MB.
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'C', 0, 'A', 0, 'C', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x15E000;
 		gpt_idx++;
 
@@ -388,6 +397,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.entries[gpt_idx].lba_start = curr_part_lba;
 		gpt.entries[gpt_idx].lba_end = curr_part_lba + user_size - 1;
 		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'U', 0, 'D', 0, 'A', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += user_size;
 		gpt_idx++;
 
