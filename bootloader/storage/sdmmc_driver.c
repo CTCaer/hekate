@@ -32,6 +32,8 @@
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
+u32 sd_power_cycle_time_start;
+
 /*! SCMMC controller base addresses. */
 static const u32 _sdmmc_bases[4] = {
 	0x700B0000,

@@ -25,6 +25,11 @@
 static bool sd_mounted = false;
 static u32  sd_mode = SD_UHS_SDR82;
 
+
+sdmmc_t sd_sdmmc;
+sdmmc_storage_t sd_storage;
+FATFS sd_fs;
+
 u32 sd_get_mode()
 {
 	return sd_mode;

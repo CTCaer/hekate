@@ -38,9 +38,9 @@ enum
 	SD_ERROR_RW_RETRY  = 2
 };
 
-sdmmc_t sd_sdmmc;
-sdmmc_storage_t sd_storage;
-FATFS sd_fs;
+extern sdmmc_t sd_sdmmc;
+extern sdmmc_storage_t sd_storage;
+extern FATFS sd_fs;
 
 void sd_error_count_increment(u8 type);
 u16 *sd_get_error_count();

@@ -47,7 +47,7 @@ typedef struct _emummc_cfg_t
 	int fs_ver;
 } emummc_cfg_t;
 
-emummc_cfg_t emu_cfg;
+extern emummc_cfg_t emu_cfg;
 
 void emummc_load_cfg();
 bool emummc_set_path(char *path);

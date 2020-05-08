@@ -59,6 +59,28 @@ extern lv_res_t launch_payload(lv_obj_t *list);
 static bool disp_init_done = false;
 static bool do_reload = false;
 
+lv_style_t hint_small_style;
+lv_style_t hint_small_style_white;
+lv_style_t monospace_text;
+
+lv_obj_t *payload_list;
+lv_obj_t *autorcm_btn;
+lv_obj_t *close_btn;
+
+lv_img_dsc_t *icon_switch;
+lv_img_dsc_t *icon_payload;
+lv_img_dsc_t *icon_lakka;
+
+lv_img_dsc_t *hekate_bg;
+
+lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr;
+lv_style_t ddlist_transp_bg, ddlist_transp_sel;
+lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
+
+lv_style_t mbox_darken;
+
+char *text_color;
+
 typedef struct _gui_status_bar_ctx
 {
 	lv_obj_t *mid;

@@ -21,7 +21,7 @@
 #include "../utils/types.h"
 #include "sdmmc_driver.h"
 
-u32 sd_power_cycle_time_start;
+extern u32 sd_power_cycle_time_start;
 
 typedef enum _sdmmc_type
 {

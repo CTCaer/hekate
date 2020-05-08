@@ -30,9 +30,9 @@ enum
 	SD_UHS_SDR82  = 3,
 };
 
-sdmmc_t sd_sdmmc;
-sdmmc_storage_t sd_storage;
-FATFS sd_fs;
+extern sdmmc_t sd_sdmmc;
+extern sdmmc_storage_t sd_storage;
+extern FATFS sd_fs;
 
 u32  sd_get_mode();
 int  sd_init_retry(bool power_cycle);

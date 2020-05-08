@@ -36,9 +36,9 @@ typedef struct _emmc_part_t
 	link_t link;
 } emmc_part_t;
 
-sdmmc_t emmc_sdmmc;
-sdmmc_storage_t emmc_storage;
-FATFS emmc_fs;
+extern sdmmc_t emmc_sdmmc;
+extern sdmmc_storage_t emmc_storage;
+extern FATFS emmc_fs;
 
 void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage);
 void nx_emmc_gpt_free(link_t *gpt);

@@ -29,6 +29,8 @@
 #include "../utils/types.h"
 
 extern hekate_config h_cfg;
+emummc_cfg_t emu_cfg;
+
 
 void emummc_load_cfg()
 {
