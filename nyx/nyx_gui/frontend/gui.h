@@ -34,27 +34,27 @@ typedef struct _emmc_tool_gui_t
 	bool raw_emummc;
 } emmc_tool_gui_t;
 
-lv_style_t hint_small_style;
-lv_style_t hint_small_style_white;
-lv_style_t monospace_text;
+extern lv_style_t hint_small_style;
+extern lv_style_t hint_small_style_white;
+extern lv_style_t monospace_text;
 
-lv_obj_t *payload_list;
-lv_obj_t *autorcm_btn;
-lv_obj_t *close_btn;
+extern lv_obj_t *payload_list;
+extern lv_obj_t *autorcm_btn;
+extern lv_obj_t *close_btn;
 
-lv_img_dsc_t *icon_switch;
-lv_img_dsc_t *icon_payload;
-lv_img_dsc_t *icon_lakka;
+extern lv_img_dsc_t *icon_switch;
+extern lv_img_dsc_t *icon_payload;
+extern lv_img_dsc_t *icon_lakka;
 
-lv_img_dsc_t *hekate_bg;
+extern lv_img_dsc_t *hekate_bg;
 
-lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr;
-lv_style_t ddlist_transp_bg, ddlist_transp_sel;
-lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
+extern lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr;
+extern lv_style_t ddlist_transp_bg, ddlist_transp_sel;
+extern lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 
-lv_style_t mbox_darken;
+extern lv_style_t mbox_darken;
 
-char *text_color;
+extern char *text_color;
 
 void reload_nyx();
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);

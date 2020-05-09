@@ -27,6 +27,7 @@
 #include "../soc/t210.h"
 
 extern volatile nyx_storage_t *nyx_str;
+void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
 
 u32 minerva_init()
 {

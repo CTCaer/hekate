@@ -39,6 +39,8 @@ extern hekate_config h_cfg;
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
+lv_obj_t *ums_mbox;
+
 typedef struct _emmc_backup_buttons_t
 {
 	lv_obj_t *emmc_boot;

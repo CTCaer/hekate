@@ -27,6 +27,10 @@ static bool sd_init_done = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
 static u32  sd_mode = SD_UHS_SDR104;
 
+sdmmc_t sd_sdmmc;
+sdmmc_storage_t sd_storage;
+FATFS sd_fs;
+
 void sd_error_count_increment(u8 type)
 {
 	switch (type)

@@ -30,9 +30,9 @@
 #define PKG2_NEWKERN_GET_INI1_HEURISTIC 0xD2800015 // Offset of OP + 12 is the INI1 offset.
 #define PKG2_NEWKERN_START 0x800
 
-u32 pkg2_newkern_ini1_val;
-u32 pkg2_newkern_ini1_start;
-u32 pkg2_newkern_ini1_end;
+extern u32 pkg2_newkern_ini1_val;
+extern u32 pkg2_newkern_ini1_start;
+extern u32 pkg2_newkern_ini1_end;
 
 typedef struct _pkg2_hdr_t
 {
