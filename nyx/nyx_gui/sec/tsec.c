@@ -29,9 +29,11 @@
 #include "../mem/heap.h"
 #include "../mem/mc.h"
 #include "../utils/util.h"
-#include "../hos/hos.h"
 
 // #include "../gfx/gfx.h"
+
+#define PKG11_MAGIC 0x31314B50
+#define KB_TSEC_FW_EMU_COMPAT 6 // KB ID for HOS 6.2.0.
 
 static int _tsec_dma_wait_idle()
 {
@@ -104,7 +106,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	}
 
 	// Load firmware or emulate memio environment for newer TSEC fw.
-	if (kb == KB_FIRMWARE_VERSION_620)
+	if (kb == KB_TSEC_FW_EMU_COMPAT)
 		TSEC(TSEC_DMATRFBASE) = (u32)tsec_ctxt->fw >> 8;
 	else
 	{
@@ -123,7 +125,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		}
 	}
 
-	if (kb == KB_FIRMWARE_VERSION_620)
+	if (kb == KB_TSEC_FW_EMU_COMPAT)
 	{
 		// Init SMMU translation for TSEC.
 		pdir = smmu_init_for_tsec();
@@ -185,14 +187,14 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	TSEC(TSEC_BOOTVEC) = 0;
 	TSEC(TSEC_CPUCTL) = TSEC_CPUCTL_STARTCPU;
 
-	if (kb == KB_FIRMWARE_VERSION_620)
+	if (kb == KB_TSEC_FW_EMU_COMPAT)
 	{
 		u32 start = get_tmr_us();
 		u32 k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
 		u32 key[16] = {0};
 		u32 kidx = 0;
 
-		while (*pkg11_magic_off != HOS_PKG11_MAGIC)
+		while (*pkg11_magic_off != PKG11_MAGIC)
 		{
 			smmu_flush_all();
 
