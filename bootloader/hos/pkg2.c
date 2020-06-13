@@ -1248,7 +1248,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	return NULL;
 }
 
-static const u8 mkey_keyseed_8xx[][0x10] =
+static const u8 mkey_vector_8xx[][0x10] =
 {
 	// Master key 8 encrypted with 9.  (8.1.0 with 9.0.0)
 	{ 0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80 },
@@ -1286,18 +1286,18 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	// Skip header.
 	pdata += sizeof(pkg2_hdr_t);
 
-	//! Check if we need to decrypt with newer mkeys. Valid for sept for 8.1.0 and up.
+	// Check if we need to decrypt with newer mkeys. Valid for sept for 8.1.0 and up.
 	se_aes_crypt_ctr(8, &mkey_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 
 	if (mkey_test.magic == PKG2_MAGIC)
 		goto key_found;
 
-	// Decrypt older pkg2 via new mkeys. 
+	// Decrypt older pkg2 via new mkeys.
 	if ((kb >= KB_FIRMWARE_VERSION_810) && (kb < KB_FIRMWARE_VERSION_MAX))
 	{
 		u8 tmp_mkey[0x10];
 		u8 decr_slot = 12; // Sept mkey.
-		u8 mkey_seeds_cnt = sizeof(mkey_keyseed_8xx) / 0x10;
+		u8 mkey_seeds_cnt = sizeof(mkey_vector_8xx) / 0x10;
 		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
 		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (KB_FIRMWARE_VERSION_MAX - kb);
 
@@ -1305,7 +1305,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 		{
 			// Decrypt and validate mkey.
 			int res = _pkg2_key_unwrap_validate(&mkey_test, hdr, decr_slot,
-				tmp_mkey, mkey_keyseed_8xx[mkey_seeds_idx - 1]);
+				tmp_mkey, mkey_vector_8xx[mkey_seeds_idx - 1]);
 
 			if (res)
 			{

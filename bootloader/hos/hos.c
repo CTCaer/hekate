@@ -58,8 +58,8 @@ extern hekate_config h_cfg;
 #define PKG2_LOAD_ADDR 0xA9800000
 
  // Secmon mailbox.
-#define SECMON_MB_ADDR  0x40002EF8
-#define SECMON7_MB_ADDR 0x400000F8
+#define SECMON_MAILBOX_ADDR  0x40002EF8
+#define SECMON7_MAILBOX_ADDR 0x400000F8
 typedef struct _secmon_mailbox_t
 {
 	//  < 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
@@ -70,12 +70,12 @@ typedef struct _secmon_mailbox_t
 } secmon_mailbox_t;
 
 static const u8 keyblob_keyseeds[][0x10] = {
-	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, //1.0.0
-	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, //3.0.0
-	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, //3.0.1
-	{ 0x2D, 0x1F, 0x48, 0x80, 0xED, 0xEC, 0xED, 0x3E, 0x3C, 0xF2, 0x48, 0xB5, 0x65, 0x7D, 0xF7, 0xBE }, //4.0.0
-	{ 0xBB, 0x5A, 0x01, 0xF9, 0x88, 0xAF, 0xF5, 0xFC, 0x6C, 0xFF, 0x07, 0x9E, 0x13, 0x3C, 0x39, 0x80 }, //5.0.0
-	{ 0xD8, 0xCC, 0xE1, 0x26, 0x6A, 0x35, 0x3F, 0xCC, 0x20, 0xF3, 0x2D, 0x3B, 0x51, 0x7D, 0xE9, 0xC0 }  //6.0.0
+	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
+	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, // 3.0.0.
+	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, // 3.0.1.
+	{ 0x2D, 0x1F, 0x48, 0x80, 0xED, 0xEC, 0xED, 0x3E, 0x3C, 0xF2, 0x48, 0xB5, 0x65, 0x7D, 0xF7, 0xBE }, // 4.0.0.
+	{ 0xBB, 0x5A, 0x01, 0xF9, 0x88, 0xAF, 0xF5, 0xFC, 0x6C, 0xFF, 0x07, 0x9E, 0x13, 0x3C, 0x39, 0x80 }, // 5.0.0.
+	{ 0xD8, 0xCC, 0xE1, 0x26, 0x6A, 0x35, 0x3F, 0xCC, 0x20, 0xF3, 0x2D, 0x3B, 0x51, 0x7D, 0xE9, 0xC0 }  // 6.0.0.
 };
 
 static const u8 cmac_keyseed[0x10] =
@@ -87,7 +87,7 @@ static const u8 master_keyseed_retail[0x10] =
 static const u8 console_keyseed[0x10] =
 	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
 
-const u8 package2_keyseed[] =
+const u8 package2_keyseed[0x10] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
 static const u8 master_keyseed_4xx_5xx_610[0x10] =
@@ -572,7 +572,6 @@ DPRINTF("Parsed GPT\n");
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	//TODO: implement memalign for DMA buffers.
 	static const u32 BCT_SIZE = 0x4000;
 	bctBuf = (u8 *)malloc(BCT_SIZE);
 	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
@@ -591,7 +590,7 @@ DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
 	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, ctxt->pkg2);
-out:;
+out:
 	nx_emmc_gpt_free(&gpt);
 	sdmmc_storage_end(&storage);
 
@@ -642,11 +641,12 @@ static bool _get_fs_exfat_compatible(link_t *info)
 
 int hos_launch(ini_sec_t *cfg)
 {
-	minerva_change_freq(FREQ_1600);
+	u8 kb;
 	launch_ctxt_t ctxt;
 	tsec_ctxt_t tsec_ctxt;
-	volatile secmon_mailbox_t *secmon_mb;
+	volatile secmon_mailbox_t *secmon_mailbox;
 
+	minerva_change_freq(FREQ_1600);
 	memset(&ctxt, 0, sizeof(launch_ctxt_t));
 	memset(&tsec_ctxt, 0, sizeof(tsec_ctxt_t));
 	list_init(&ctxt.kip1_list);
@@ -657,7 +657,7 @@ int hos_launch(ini_sec_t *cfg)
 		gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	gfx_printf("Initializing...\n\n");
+	gfx_puts("Initializing...\n\n");
 
 	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
@@ -694,14 +694,14 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		u32 fuses = fuse_read_odm(7);
 		if ((h_cfg.autonogc &&
-				((!(fuses & ~0xF) && (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_400)) || // LAFW v2.
-				(!(fuses & ~0x3FF) && (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_900)))) // LAFW v3.
+				((!(fuses & ~0xF) && (kb >= KB_FIRMWARE_VERSION_400)) || // LAFW v2.
+				(!(fuses & ~0x3FF) && (kb >= KB_FIRMWARE_VERSION_900)))) // LAFW v3.
 			|| ((emu_cfg.enabled && !h_cfg.emummc_force_disable) &&
-				((fuses & 0x400) && (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_810))))
+				((fuses & 0x400) && (kb <= KB_FIRMWARE_VERSION_810))))
 			config_kip1patch(&ctxt, "nogc");
 	}
 
-	gfx_printf("Loaded config, pkg1 and keyblob\n");
+	gfx_puts("Loaded config, pkg1 and keyblob\n");
 
 	// Generate keys.
 	if (!h_cfg.se_keygen_done)
@@ -711,29 +711,29 @@ int hos_launch(ini_sec_t *cfg)
 		tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
 		tsec_ctxt.secmon_base = ctxt.pkg1_id->secmon_base;
 
-		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
+		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
 			_hos_crit_error("Failed to run sept");
 			return 0;
 		}
 
-		if (!hos_keygen(ctxt.keyblob, ctxt.pkg1_id->kb, &tsec_ctxt, &ctxt))
+		if (!hos_keygen(ctxt.keyblob, kb, &tsec_ctxt, &ctxt))
 			return 0;
-		gfx_printf("Generated keys\n");
-		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+		gfx_puts("Generated keys\n");
+		if (kb <= KB_FIRMWARE_VERSION_600)
 			h_cfg.se_keygen_done = 1;
 	}
 
 	// Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
-		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+		if (kb <= KB_FIRMWARE_VERSION_600)
 			pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
 
-		if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && !(emu_cfg.enabled && !h_cfg.emummc_force_disable))
+		if (kb <= KB_FIRMWARE_VERSION_620 && !(emu_cfg.enabled && !h_cfg.emummc_force_disable))
 		{
 			pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
-			gfx_printf("Decrypted & unpacked pkg1\n");
+			gfx_puts("Decrypted & unpacked pkg1\n");
 		}
 		else
 		{
@@ -747,7 +747,7 @@ int hos_launch(ini_sec_t *cfg)
 		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
 	else
 	{
-		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
+		if (kb >= KB_FIRMWARE_VERSION_700)
 		{
 			_hos_crit_error("No warmboot provided!");
 			return 0;
@@ -774,7 +774,7 @@ int hos_launch(ini_sec_t *cfg)
 			*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 	}
 
-	gfx_printf("Loaded warmboot and secmon\n");
+	gfx_puts("Loaded warmboot and secmon\n");
 
 	// Read package2.
 	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
@@ -784,24 +784,24 @@ int hos_launch(ini_sec_t *cfg)
 		return 0;
 	}
 
-	gfx_printf("Read pkg2\n");
+	gfx_puts("Read pkg2\n");
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
-	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2, ctxt.pkg1_id->kb);
+	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2, kb);
 	if (!pkg2_hdr)
 	{
 		_hos_crit_error("Pkg2 decryption failed!");
-		if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
+		if (kb >= KB_FIRMWARE_VERSION_700)
 		{
 			EPRINTF("Is Sept updated?");
 
 			// Clear EKS slot, in case something went wrong with sept keygen.
-			hos_eks_clear(ctxt.pkg1_id->kb);
+			hos_eks_clear(kb);
 		}
 		return 0;
 	}
-	else if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
-		hos_eks_save(ctxt.pkg1_id->kb); // Save EKS slot if it doesn't exist.
+	else if (kb >= KB_FIRMWARE_VERSION_700)
+		hos_eks_save(kb); // Save EKS slot if it doesn't exist.
 
 	LIST_INIT(kip1_info);
 	if (!pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2))
@@ -810,7 +810,7 @@ int hos_launch(ini_sec_t *cfg)
 		return 0;
 	}
 
-	gfx_printf("Parsed ini1\n");
+	gfx_puts("Parsed ini1\n");
 
 	// Use the kernel included in package2 in case we didn't load one already.
 	if (!ctxt.kernel)
@@ -888,7 +888,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info, ctxt.new_pkg2);
 
-	gfx_printf("Rebuilt & loaded pkg2\n");
+	gfx_puts("Rebuilt & loaded pkg2\n");
 
 	gfx_printf("\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
@@ -896,19 +896,22 @@ int hos_launch(ini_sec_t *cfg)
 	se_aes_key_clear(8);
 	se_aes_key_clear(11);
 
-	// Finalize per firmware keys.
+	// Set initial mailbox values.
 	int bootStateDramPkg2 = 0;
 	int bootStatePkg2Continue = 0;
 
+	// Set warmboot PA address ids for 3.0.0 - 3.0.2.
+	if (kb == KB_FIRMWARE_VERSION_300)
+		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
+	else if (kb == KB_FIRMWARE_VERSION_301)
+		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
+
+	// Finalize per firmware key access.
 	switch (ctxt.pkg1_id->kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
 	case KB_FIRMWARE_VERSION_300:
 	case KB_FIRMWARE_VERSION_301:
-		if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_300)
-			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
-		else if (ctxt.pkg1_id->kb == KB_FIRMWARE_VERSION_301)
-			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_TBL_DIS_KEY_LOCK_FLAG);
 		se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_TBL_DIS_KEY_LOCK_FLAG);
 		bootStateDramPkg2 = 2;
@@ -926,7 +929,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Clear BCT area for retail units and copy it over if dev unit.
-	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_500)
+	if (kb <= KB_FIRMWARE_VERSION_500)
 	{
 		memset((void *)0x4003D000, 0, 0x3000);
 		if ((fuse_read_odm(4) & 3) == 3)
@@ -948,28 +951,28 @@ int hos_launch(ini_sec_t *cfg)
 	sd_end();
 
 	// Finalize MC carveout.
-	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)
+	if (kb <= KB_FIRMWARE_VERSION_301)
 		mc_config_carveout();
 
 	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise lock bootrom and ipatches.
-	_se_lock(ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_600);
+	_se_lock(kb <= KB_FIRMWARE_VERSION_600);
 
 	// Reset sysctr0 counters.
-	if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_620)
+	if (kb >= KB_FIRMWARE_VERSION_620)
 		_sysctr0_reset();
 
 	// < 4.0.0 pkg1.1 locks PMC scratches.
-	//_pmc_scratch_lock(ctxt.pkg1_id->kb);
+	//_pmc_scratch_lock(kb);
 
 	// Set secmon mailbox address.
-	if (ctxt.pkg1_id->kb >= KB_FIRMWARE_VERSION_700)
-		secmon_mb = (secmon_mailbox_t *)SECMON7_MB_ADDR;
+	if (kb >= KB_FIRMWARE_VERSION_700)
+		secmon_mailbox = (secmon_mailbox_t *)SECMON7_MAILBOX_ADDR;
 	else
-		secmon_mb = (secmon_mailbox_t *)SECMON_MB_ADDR;
+		secmon_mailbox = (secmon_mailbox_t *)SECMON_MAILBOX_ADDR;
 
 	// Start from DRAM ready signal and reset outgoing value.
-	secmon_mb->in = bootStateDramPkg2;
-	secmon_mb->out = 0;
+	secmon_mailbox->in = bootStateDramPkg2;
+	secmon_mailbox->out = 0;
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
 	display_end();
@@ -990,11 +993,11 @@ int hos_launch(ini_sec_t *cfg)
 		smmu_exit();
 	else
 		ccplex_boot_cpu0(ctxt.pkg1_id->secmon_base);
-	while (!secmon_mb->out)
+	while (!secmon_mailbox->out)
 		; // A usleep(1) only works when in IRAM or with a trained DRAM.
 
 	// Signal pkg2 ready and continue boot.
-	secmon_mb->in = bootStatePkg2Continue;
+	secmon_mailbox->in = bootStatePkg2Continue;
 
 	// Halt ourselves in waitevent state and resume if there's JTAG activity.
 	while (true)
