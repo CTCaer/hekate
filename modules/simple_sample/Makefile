@@ -15,7 +15,7 @@ OBJS = $(addprefix $(BUILD)/,\
 )
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
-CFLAGS = $(ARCH) -O2 -nostdlib -fpie -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 -Wall $(CUSTOMDEFINES)
+CFLAGS = $(ARCH) -O2 -nostdlib -fpie -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc
 
 .PHONY: clean all
