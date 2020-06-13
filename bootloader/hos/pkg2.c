@@ -1110,7 +1110,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 
 			if (shaBuf[0] == 0)
 			{
-				if (!se_calc_sha256(shaBuf, ki->kip1, ki->size))
+				if (!se_calc_sha256_oneshot(shaBuf, ki->kip1, ki->size))
 					memset(shaBuf, 0, sizeof(shaBuf));
 			}
 
@@ -1148,7 +1148,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 
 #ifdef DEBUG_PRINTING
 			u32 postDecompTime = get_tmr_us();
-			if (!se_calc_sha256(shaBuf, ki->kip1, ki->size))
+			if (!se_calc_sha256_oneshot(shaBuf, ki->kip1, ki->size))
 				memset(shaBuf, 0, sizeof(shaBuf));
 
 			DPRINTF("%dms %s KIP1 size %d hash %08X\n", (postDecompTime-preDecompTime) / 1000, ki->kip1->name, (int)ki->size, __builtin_bswap32(shaBuf[0]));

@@ -621,7 +621,7 @@ static bool _get_fs_exfat_compatible(link_t *info)
 		if (strncmp((const char*)ki->kip1->name, "FS", 2))
 			continue;
 
-		if (!se_calc_sha256(sha_buf, ki->kip1, ki->size))
+		if (!se_calc_sha256_oneshot(sha_buf, ki->kip1, ki->size))
 			break;
 
 		pkg2_get_ids(&kip_ids, &fs_ids_cnt);
@@ -823,9 +823,9 @@ int hos_launch(ini_sec_t *cfg)
 			u8 kernel_hash[0x20];
 			// Hash only Kernel when it embeds INI1.
 			if (!ctxt.new_pkg2)
-				se_calc_sha256(kernel_hash, ctxt.kernel, ctxt.kernel_size);
+				se_calc_sha256_oneshot(kernel_hash, ctxt.kernel, ctxt.kernel_size);
 			else
-				se_calc_sha256(kernel_hash, ctxt.kernel + PKG2_NEWKERN_START,
+				se_calc_sha256_oneshot(kernel_hash, ctxt.kernel + PKG2_NEWKERN_START,
 					pkg2_newkern_ini1_start - PKG2_NEWKERN_START);
 
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
@@ -945,7 +945,7 @@ int hos_launch(ini_sec_t *cfg)
 		config_exosphere(&ctxt);
 
 	// Unmount SD card.
-	sd_unmount();
+	sd_end();
 
 	// Finalize MC carveout.
 	if (ctxt.pkg1_id->kb <= KB_FIRMWARE_VERSION_301)

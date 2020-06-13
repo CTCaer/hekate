@@ -341,7 +341,7 @@ static void usb_gadget_set_text(void *lbl, const char *text)
 static lv_res_t _action_hid_jc(lv_obj_t *btn)
 {
 	// Reduce BPMP, RAM and backlight and power off SDMMC1 to conserve power.
-	sd_unmount(true);
+	sd_end();
 	minerva_change_freq(FREQ_800);
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 	display_backlight_brightness(10, 1000);
@@ -365,7 +365,7 @@ static lv_res_t _action_hid_jc(lv_obj_t *btn)
 static lv_res_t _action_hid_touch(lv_obj_t *btn)
 {
 	// Reduce BPMP, RAM and backlight and power off SDMMC1 to conserve power.
-	sd_unmount(true);
+	sd_end();
 	minerva_change_freq(FREQ_800);
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 	display_backlight_brightness(10, 1000);
@@ -484,7 +484,7 @@ static lv_res_t _action_ums_emuemmc_boot0(lv_obj_t *btn)
 			}
 		}
 	}
-	sd_unmount(false);
+	sd_unmount();
 
 	if (error)
 		_create_mbox_ums_error(error);
@@ -526,7 +526,7 @@ static lv_res_t _action_ums_emuemmc_boot1(lv_obj_t *btn)
 			}
 		}
 	}
-	sd_unmount(false);
+	sd_unmount();
 
 	if (error)
 		_create_mbox_ums_error(error);
@@ -578,7 +578,7 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 			}
 		}
 	}
-	sd_unmount(false);
+	sd_unmount();
 
 	if (error)
 		_create_mbox_ums_error(error);
@@ -913,7 +913,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		u32 total[2] = { 0 };
 		_fix_attributes(lb_val, path, total);
 
-		sd_unmount(false);
+		sd_unmount();
 
 		lv_obj_t *desc2 = lv_cont_create(win, NULL);
 		lv_obj_set_size(desc2, LV_HOR_RES * 10 / 11, LV_VER_RES - (LV_DPI * 11 / 7) * 4);
@@ -1357,7 +1357,7 @@ out_free:
 	free(txt_buf);
 	free(txt_buf2);
 	sdmmc_storage_end(&storage);
-	sd_unmount(false);
+	sd_unmount();
 
 	if (kb >= KB_FIRMWARE_VERSION_620)
 		se_aes_key_clear(8);

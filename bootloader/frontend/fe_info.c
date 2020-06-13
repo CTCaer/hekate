@@ -93,7 +93,7 @@ void print_fuseinfo()
 			if (!sd_save_to_file((u8 *)words, sizeof(words), path))
 				gfx_puts("\nfuse_array_raw.bin saved!\n");
 
-			sd_unmount();
+			sd_end();
 		}
 
 		btn_wait();
@@ -123,7 +123,7 @@ void print_kfuseinfo()
 			emmcsn_path_impl(path, "/dumps", "kfuses.bin", NULL);
 			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, path))
 				gfx_puts("\nDone!\n");
-			sd_unmount();
+			sd_end();
 		}
 
 		btn_wait();
@@ -308,7 +308,7 @@ void print_sdcard_info()
 		gfx_printf("%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
 				0xFF00DDFF, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
 				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
-		sd_unmount();
+		sd_end();
 	}
 
 	btn_wait();
@@ -410,7 +410,7 @@ void print_tsec_key()
 			emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
 			if (!sd_save_to_file(keys, 0x10 * 2, path))
 				gfx_puts("\nDone!\n");
-			sd_unmount();
+			sd_end();
 		}
 	}
 	else
@@ -576,7 +576,7 @@ void print_battery_info()
 				EPRINTF("\nError creating fuel.bin file.");
 			else
 				gfx_puts("\nDone!\n");
-			sd_unmount();
+			sd_end();
 		}
 
 		btn_wait();
@@ -645,7 +645,7 @@ void bootrom_ipatches_info()
 
 			memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
 
-			sd_unmount();
+			sd_end();
 		}
 
 		btn_wait();

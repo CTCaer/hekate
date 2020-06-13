@@ -28,17 +28,29 @@ enum
 	SD_1BIT_HS25  = 1,
 	SD_4BIT_HS25  = 2,
 	SD_UHS_SDR82  = 3,
+	SD_UHS_SDR104 = 4
+};
+
+enum
+{
+	SD_ERROR_INIT_FAIL = 0,
+	SD_ERROR_RW_FAIL   = 1,
+	SD_ERROR_RW_RETRY  = 2
 };
 
 extern sdmmc_t sd_sdmmc;
 extern sdmmc_storage_t sd_storage;
 extern FATFS sd_fs;
 
+void sd_error_count_increment(u8 type);
+u16 *sd_get_error_count();
+bool sd_get_card_removed();
 u32  sd_get_mode();
 int  sd_init_retry(bool power_cycle);
 bool sd_initialize(bool power_cycle);
 bool sd_mount();
 void sd_unmount();
+void sd_end();
 void *sd_file_read(const char *path, u32 *fsize);
 int  sd_save_to_file(void *buf, u32 size, const char *filename);
 

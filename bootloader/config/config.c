@@ -161,7 +161,7 @@ int create_config_entry()
 	}
 
 	f_close(&fp);
-	sd_unmount();
+	sd_end();
 
 	return 0;
 }
@@ -268,7 +268,7 @@ out2:;
 	free(boot_values);
 	free(boot_text);
 
-	sd_unmount();
+	sd_end();
 }
 
 void config_autoboot()
@@ -380,7 +380,7 @@ out2:;
 	free(boot_values);
 	free(boot_text);
 
-	sd_unmount();
+	sd_end();
 
 	if (temp_autoboot == NULL)
 		return;

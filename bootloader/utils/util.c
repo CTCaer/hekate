@@ -137,7 +137,7 @@ void reboot_normal()
 {
 	bpmp_mmu_disable();
 
-	sd_unmount();
+	sd_end();
 	display_end();
 
 	nyx_str->mtc_cfg.init_done = 0;
@@ -149,7 +149,7 @@ void reboot_rcm()
 {
 	bpmp_mmu_disable();
 
-	sd_unmount();
+	sd_end();
 	display_end();
 
 	nyx_str->mtc_cfg.init_done = 0;
@@ -163,7 +163,7 @@ void reboot_rcm()
 
 void power_off()
 {
-	sd_unmount();
+	sd_end();
 	display_end();
 	
 	nyx_str->mtc_cfg.init_done = 0;

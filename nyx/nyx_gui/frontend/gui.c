@@ -264,7 +264,7 @@ static void _save_fb_to_bmp()
 
 	_save_log_to_bmp(bmp_tmr_name);
 
-	sd_unmount(false);
+	sd_unmount();
 
 	free(bitmap);
 	free(fb);
@@ -814,7 +814,7 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 
 	void (*main_ptr)() = (void *)nyx_str->hekate;
 
-	sd_unmount(true);
+	sd_end();
 
 	reconfig_hw_workaround(false, 0);
 
@@ -834,7 +834,7 @@ void reload_nyx()
 
 	void (*main_ptr)() = (void *)nyx_str->hekate;
 
-	sd_unmount(true);
+	sd_end();
 
 	reconfig_hw_workaround(false, 0);
 
@@ -1262,7 +1262,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 	strcpy(dir, "bootloader/payloads");
 
 	char *filelist = dirlist(dir, NULL, false, false);
-	sd_unmount(false);
+	sd_unmount();
 
 	u32 i = 0;
 
@@ -1687,7 +1687,7 @@ ini_parsing:
 	if (curr_btn_idx < 2)
 		no_boot_entries = true;
 
-	sd_unmount(false);
+	sd_unmount();
 
 	free(tmp_path);
 

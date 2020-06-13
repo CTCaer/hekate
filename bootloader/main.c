@@ -119,7 +119,7 @@ void check_power_off_from_hos()
 	u8 hosWakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
 	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
-		sd_unmount();
+		sd_end();
 
 		// Stop the alarm, in case we injected too fast.
 		max77620_rtc_stop_alarm();
@@ -249,7 +249,7 @@ int launch_payload(char *path, bool update)
 		if (update && is_ipl_updated(buf, path, false))
 			goto out;
 
-		sd_unmount();
+		sd_end();
 
 		if (size < 0x30000)
 		{
@@ -284,7 +284,7 @@ int launch_payload(char *path, bool update)
 
 out:
 	if (!update)
-		sd_unmount();
+		sd_end();
 
 	return 1;
 }
@@ -353,7 +353,7 @@ void launch_tools()
 				free(ments);
 				free(dir);
 				free(filelist);
-				sd_unmount();
+				sd_end();
 
 				return;
 			}
@@ -380,7 +380,7 @@ void launch_tools()
 	}
 
 out:
-	sd_unmount();
+	sd_end();
 	free(dir);
 
 	btn_wait();
@@ -618,7 +618,7 @@ void launch_firmware()
 			if (!cfg_sec)
 			{
 				free(ments);
-				sd_unmount();
+				sd_end();
 				return;
 			}
 
@@ -656,7 +656,7 @@ wrong_emupath:
 	}
 
 out:
-	sd_unmount();
+	sd_end();
 
 	h_cfg.emummc_force_disable = false;
 
@@ -673,7 +673,7 @@ void nyx_load_run()
 	if (!nyx)
 		return;
 
-	sd_unmount();
+	sd_end();
 
 	u32 expected_nyx_ver = ((NYX_VER_MJ + '0') << 24) | ((NYX_VER_MN + '0') << 16) | ((NYX_VER_HF + '0') << 8);
 	u32 nyx_ver = byte_swap_32(*(u32 *)(nyx + NYX_VER_OFF));
@@ -1074,7 +1074,7 @@ out:
 
 	nyx_load_run();
 
-	sd_unmount();
+	sd_end();
 }
 
 static void _patched_rcm_protection()

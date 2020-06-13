@@ -171,7 +171,7 @@ int create_config_entry()
 	}
 
 	f_close(&fp);
-	sd_unmount(false);
+	sd_unmount();
 
 	return 0;
 }
@@ -209,7 +209,7 @@ int create_nyx_config_entry()
 	f_puts("\n", &fp);
 
 	f_close(&fp);
-	sd_unmount(false);
+	sd_unmount();
 
 	return 0;
 }

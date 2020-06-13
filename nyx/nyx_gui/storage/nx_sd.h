@@ -49,7 +49,8 @@ u32  sd_get_mode();
 int  sd_init_retry(bool power_cycle);
 bool sd_initialize(bool power_cycle);
 bool sd_mount();
-void sd_unmount(bool deinit);
+void sd_unmount();
+void sd_end();
 void *sd_file_read(const char *path, u32 *fsize);
 int  sd_save_to_file(void *buf, u32 size, const char *filename);
 

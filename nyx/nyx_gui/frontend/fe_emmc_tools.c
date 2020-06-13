@@ -919,11 +919,11 @@ out:
 	free(txt_buf);
 	free(gui->base_path);
 	if (!partial_sd_full_unmount)
-		sd_unmount(false);
+		sd_unmount();
 	else
 	{
 		partial_sd_full_unmount = false;
-		sd_unmount(true);
+		sd_end();
 	}
 }
 
@@ -1503,5 +1503,5 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 out:
 	free(txt_buf);
 	free(gui->base_path);
-	sd_unmount(false);
+	sd_unmount();
 }

@@ -120,7 +120,7 @@ bool sd_initialize(bool power_cycle)
 		}
 		else
 		{
-			sd_errors[0]++; // Increment init errors.
+			sd_errors[SD_ERROR_INIT_FAIL]++;
 
 			if (sd_mode == SD_INIT_FAIL)
 				break;
@@ -146,6 +146,7 @@ bool sd_mount()
 
 	if (res)
 	{
+		gfx_con.mute = false;
 		EPRINTF("Failed to init SD card.");
 		if (!sdmmc_get_sd_inserted())
 			EPRINTF("Make sure that it is inserted.");
@@ -163,6 +164,7 @@ bool sd_mount()
 		}
 		else
 		{
+			gfx_con.mute = false;
 			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\nMake sure that a FAT partition exists..", res);
 		}
 	}
@@ -170,7 +172,7 @@ bool sd_mount()
 	return false;
 }
 
-void sd_unmount(bool deinit)
+static void _sd_deinit(bool deinit)
 {
 	if (sd_mode == SD_INIT_FAIL)
 		sd_mode = SD_UHS_SDR104;
@@ -186,6 +188,9 @@ void sd_unmount(bool deinit)
 		sd_init_done = false;
 	}
 }
+
+void sd_unmount() { _sd_deinit(false); }
+void sd_end()     { _sd_deinit(true); }
 
 void *sd_file_read(const char *path, u32 *fsize)
 {

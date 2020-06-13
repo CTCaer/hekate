@@ -277,7 +277,7 @@ static void _create_autoboot_window()
 		}
 	}
 
-	sd_unmount(false);
+	sd_unmount();
 }
 
 static lv_res_t _autoboot_hide_delay_action(lv_obj_t *btn)
@@ -751,7 +751,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 			f_close(&fp);
 		}
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);

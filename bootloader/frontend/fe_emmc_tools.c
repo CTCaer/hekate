@@ -574,7 +574,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 		gfx_printf("\n%kFinished and verified!%k\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 
 out:
-	sd_unmount();
+	sd_end();
 	btn_wait();
 }
 
@@ -911,7 +911,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 		gfx_printf("\n%kFinished and verified!%k\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 
 out:
-	sd_unmount();
+	sd_end();
 	btn_wait();
 }
 

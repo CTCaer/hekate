@@ -136,7 +136,7 @@ void panic(u32 val)
 
 void reboot_normal()
 {
-	sd_unmount(true);
+	sd_end();
 	reconfig_hw_workaround(false, 0);
 
 	nyx_str->mtc_cfg.init_done = 0;
@@ -146,7 +146,7 @@ void reboot_normal()
 
 void reboot_rcm()
 {
-	sd_unmount(true);
+	sd_end();
 	reconfig_hw_workaround(false, 0);
 
 	PMC(APBDEV_PMC_SCRATCH0) = PMC_SCRATCH0_MODE_RCM;
@@ -158,7 +158,7 @@ void reboot_rcm()
 
 void power_off()
 {
-	sd_unmount(true);
+	sd_end();
 	reconfig_hw_workaround(false, 0);
 
 	// Stop the alarm, in case we injected and powered off too fast.

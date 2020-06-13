@@ -23,12 +23,41 @@
 #include "../mem/heap.h"
 
 static bool sd_mounted = false;
+static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
 static u32  sd_mode = SD_UHS_SDR82;
-
 
 sdmmc_t sd_sdmmc;
 sdmmc_storage_t sd_storage;
 FATFS sd_fs;
+
+void sd_error_count_increment(u8 type)
+{
+	switch (type)
+	{
+	case SD_ERROR_INIT_FAIL:
+		sd_errors[0]++;
+		break;
+	case SD_ERROR_RW_FAIL:
+		sd_errors[1]++;
+		break;
+	case SD_ERROR_RW_RETRY:
+		sd_errors[2]++;
+		break;
+	}
+}
+
+u16 *sd_get_error_count()
+{
+	return sd_errors;
+}
+
+bool sd_get_card_removed()
+{
+	if (!sdmmc_get_sd_inserted())
+		return true;
+
+	return false;
+}
 
 u32 sd_get_mode()
 {
@@ -85,10 +114,15 @@ bool sd_initialize(bool power_cycle)
 			sd_mode = SD_UHS_SDR82;
 			break;
 		}
-		else if (sd_mode == SD_INIT_FAIL)
-			break;
 		else
-			res = !sd_init_retry(true);
+		{
+			sd_errors[SD_ERROR_INIT_FAIL]++;
+
+			if (sd_mode == SD_INIT_FAIL)
+				break;
+			else
+				res = !sd_init_retry(true);
+		}
 	}
 
 	sdmmc_storage_end(&sd_storage);
@@ -130,9 +164,11 @@ bool sd_mount()
 	return false;
 }
 
-void sd_unmount()
+static void _sd_deinit()
 {
-	sd_mode = SD_UHS_SDR82;
+	if (sd_mode == SD_INIT_FAIL)
+		sd_mode = SD_UHS_SDR82;
+
 	if (sd_mounted)
 	{
 		f_mount(NULL, "", 1);
@@ -140,6 +176,9 @@ void sd_unmount()
 		sd_mounted = false;
 	}
 }
+
+void sd_unmount() { _sd_deinit(); }
+void sd_end()     { _sd_deinit(); }
 
 void *sd_file_read(const char *path, u32 *fsize)
 {

@@ -511,7 +511,7 @@ static lv_res_t _action_delete_linux_installer_files(lv_obj_t * btns, const char
 			idx++;
 		}
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	return LV_RES_INV;
@@ -701,7 +701,7 @@ exit:
 			lv_mbox_add_btns(mbox, mbox_btn_map2, _action_delete_linux_installer_files);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	return LV_RES_INV;
@@ -838,7 +838,7 @@ error:
 exit:
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_OK;
 }
@@ -860,7 +860,7 @@ static lv_res_t _action_reboot_twrp(lv_obj_t * btns, const char * txt)
 
 		void (*main_ptr)() = (void *)nyx_str->hekate;
 
-		sd_unmount(true);
+		sd_end();
 
 		reconfig_hw_workaround(false, 0);
 
@@ -1104,7 +1104,7 @@ error:
 
 		free(txt_buf);
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	return LV_RES_INV;
@@ -1345,7 +1345,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 			lv_label_set_text(lbl_paths[0], " ");
 			manual_system_maintenance(true);
 
-			sd_unmount(true);
+			sd_end();
 
 			while (!(btn_wait() & BTN_POWER));
 
@@ -1416,7 +1416,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	manual_system_maintenance(true);
 	_prepare_and_flash_mbr_gpt();
 
-	sd_unmount(false);
+	sd_unmount();
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Done!");
 	manual_system_maintenance(true);
 
@@ -1891,7 +1891,7 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 
 	memcpy(&mbr[1], &mbr[0], sizeof(mbr_t));
 
-	sd_unmount(false);
+	sd_unmount();
 
 	if (memcmp(&gpt.header.signature, "EFI PART", 8))
 	{
@@ -2013,7 +2013,7 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 		// Write MBR.
 		sd_mount();
 		sdmmc_storage_write(&sd_storage, 0, 1, &mbr[1]);
-		sd_unmount(false);
+		sd_unmount();
 		lv_label_set_text(lbl_status, "#96FF00 The new Hybrid MBR was written successfully!#");
 	}
 	else
@@ -2289,7 +2289,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	free(txt_buf);
 
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_OK;
 }

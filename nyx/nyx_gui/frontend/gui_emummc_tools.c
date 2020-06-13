@@ -221,7 +221,7 @@ static void _create_mbox_emummc_raw()
 
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-	sd_unmount(false);
+	sd_unmount();
 
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
@@ -406,7 +406,7 @@ static void _migrate_sd_raw_emummc_based()
 
 	free(tmp);
 
-	sd_unmount(false);
+	sd_unmount();
 }
 
 static void _migrate_sd_file_based()
@@ -442,7 +442,7 @@ static void _migrate_sd_file_based()
 	free(path2);
 
 	save_emummc_cfg(0, 0, "emuMMC/EF00");
-	sd_unmount(false);
+	sd_unmount();
 }
 
 static void _migrate_sd_backup_file_based()
@@ -492,7 +492,7 @@ static void _migrate_sd_backup_file_based()
 	free(path3);
 
 	save_emummc_cfg(0, 0, "emuMMC/BK00");
-	sd_unmount(false);
+	sd_unmount();
 }
 
 static lv_res_t _create_emummc_mig1_action(lv_obj_t * btns, const char * txt)
@@ -603,8 +603,6 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
-	memcpy(mbr, mbr + 0x1BE, 0x40);
-
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
@@ -675,7 +673,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	else
 		backup = false;
 
-	sd_unmount(false);
+	sd_unmount();
 	sdmmc_storage_end(&storage);
 
 	if (backup)
@@ -794,7 +792,7 @@ static lv_res_t _save_raw_emummc_cfg_action(lv_obj_t * btn)
 	}
 
 	_create_emummc_saved_mbox();
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_INV;
 }
@@ -803,7 +801,7 @@ static lv_res_t _save_disable_emummc_cfg_action(lv_obj_t * btn)
 {
 	save_emummc_cfg(0, 0, NULL);
 	_create_emummc_saved_mbox();
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_INV;
 }
@@ -812,7 +810,7 @@ static lv_res_t _save_file_emummc_cfg_action(lv_obj_t *btn)
 {
 	save_emummc_cfg(0, 0, lv_list_get_btn_text(btn));
 	_create_emummc_saved_mbox();
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_INV;
 }
@@ -1032,7 +1030,7 @@ out0:;
 
 out1:
 	free(path);
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_OK;
 }
@@ -1049,7 +1047,7 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 	emummc_cfg_t emu_info;
 	load_emummc_cfg(&emu_info);
 
-	sd_unmount(false);
+	sd_unmount();
 
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);

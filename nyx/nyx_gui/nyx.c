@@ -180,7 +180,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 
 		f_close(&fp);
 
-		sd_unmount(true);
+		sd_end();
 
 		if (size < 0x30000)
 		{
@@ -203,7 +203,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 	}
 
 out:
-	sd_unmount(false);
+	sd_unmount();
 
 	return LV_RES_OK;
 }
@@ -378,7 +378,7 @@ void nyx_init_load_res()
 	// Load background resource if any.
 	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
 
-	sd_unmount(false);
+	sd_unmount();
 
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 }

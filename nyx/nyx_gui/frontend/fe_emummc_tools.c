@@ -491,7 +491,7 @@ out_failed:
 out:
 	free(txt_buf);
 	free(gui->base_path);
-	sd_unmount(false);
+	sd_unmount();
 }
 
 static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part_idx, u32 sd_part_off, sdmmc_storage_t *storage, emmc_part_t *part)
@@ -766,5 +766,5 @@ out_failed:
 out:
 	free(txt_buf);
 	free(gui->base_path);
-	sd_unmount(false);
+	sd_unmount();
 }

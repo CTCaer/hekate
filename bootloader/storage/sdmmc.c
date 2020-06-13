@@ -187,6 +187,8 @@ reinit_try:
 			else
 				retries--;
 
+			sd_error_count_increment(SD_ERROR_RW_RETRY);
+
 			msleep(50);
 		} while (retries);
 
@@ -194,10 +196,17 @@ reinit_try:
 		if (storage->sdmmc->id == SDMMC_1)
 		{
 			int res;
+
+			sd_error_count_increment(SD_ERROR_RW_FAIL);
+
 			if (!first_reinit)
 				res = sd_initialize(true);
 			else
+			{
 				res = sd_init_retry(true);
+				if (!res)
+					sd_error_count_increment(SD_ERROR_INIT_FAIL);
+			}
 
 			retries = 3;
 			first_reinit = true;

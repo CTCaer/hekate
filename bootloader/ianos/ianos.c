@@ -76,7 +76,7 @@ uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleCon
 	fileBuf = sd_file_read(path, NULL);
 
 	if (sdmount)
-		sd_unmount();
+		sd_end();
 
 	if (!fileBuf)
 		goto elfLoadFinalOut;
@@ -94,7 +94,7 @@ uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleCon
 	case EXEC_ELF:
 	case AR64_ELF:
 		elfBuf = (void *)DRAM_LIB_ADDR;
-		sd_unmount();
+		sd_end();
 		break;
 	default:
 		elfBuf = malloc(ctx.memsz); // Aligned to 0x10 by default.

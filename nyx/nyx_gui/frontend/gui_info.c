@@ -104,7 +104,7 @@ static lv_res_t _battery_dump_window_action(lv_obj_t * btn)
 		emmcsn_path_impl(path, "/dumps", "fuel_gauge.bin", NULL);
 		error = sd_save_to_file((u8 *)buf, 0x200, path);
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	_create_window_dump_done(error, "fuel_gauge.bin");
@@ -147,7 +147,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 
 		memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 	_create_window_dump_done(error, "evp_thunks.bin, bootrom_patched.bin, bootrom_unpatched.bin");
 
@@ -170,7 +170,7 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 		if (!error)
 			error = res;
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 	_create_window_dump_done(error, "fuse_cached.bin, fuse_array_raw.bin");
 
@@ -191,7 +191,7 @@ static lv_res_t _kfuse_dump_window_action(lv_obj_t * btn)
 		emmcsn_path_impl(path, "/dumps", "kfuses.bin", NULL);
 		error = sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, path);
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	_create_window_dump_done(error, "kfuses.bin");
@@ -210,7 +210,7 @@ static lv_res_t _tsec_keys_dump_window_action(lv_obj_t * btn)
 		emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
 		error = sd_save_to_file(tsec_keys, 0x10 * 2, path);
 
-		sd_unmount(false);
+		sd_unmount();
 	}
 	_create_window_dump_done(error, "tsec_keys.bin");
 
@@ -798,7 +798,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		lv_obj_del(bar);
 
 		if (sd_bench)
-			sd_unmount(false);
+			sd_unmount();
 		else
 			sdmmc_storage_end(&emmc_storage);
 	}
@@ -1143,7 +1143,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_align(val4, desc4, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
 
 		free(txt_buf);
-		sd_unmount(false);
+		sd_unmount();
 	}
 
 	nyx_window_toggle_buttons(win, false);

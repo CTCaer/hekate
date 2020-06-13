@@ -244,7 +244,7 @@ out_free:
 	free(loader);
 	free(pkg2);
 	sdmmc_storage_end(&storage);
-	sd_unmount();
+	sd_end();
 
 	if (kb >= KB_FIRMWARE_VERSION_620)
 		se_aes_key_clear(8);
@@ -499,7 +499,7 @@ void _fix_sd_attr(u32 type)
 		gfx_printf("Traversing all %s files!\nThis may take some time...\n\n", label);
 		_fix_attributes(path, &total, type, type);
 		gfx_printf("%kTotal archive bits cleared: %d!%k\n\nDone! Press any key...", 0xFF96FF00, total, 0xFFCCCCCC);
-		sd_unmount();
+		sd_end();
 	}
 	btn_wait();
 }
