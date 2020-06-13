@@ -915,7 +915,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 	else
 	{
-		memset((void *)0x4003F000, 0, 0x1000);
+		memset((void *)0x4003F800, 0, 0x800);
 		if ((fuse_read_odm(4) & 3) == 3)
 			memcpy((void *)0x4003F800, bootConfigBuf, 0x800);
 	}
