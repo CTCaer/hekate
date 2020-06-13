@@ -32,48 +32,32 @@ PATCHSET_DEF(_secmon_1_patchset,
 	// Patch the relocator to be able to run from SM_100_ADR.
 	{ 0x1E0, _ADRP(0, 0x7C013000 - _PAGEOFF(SM_100_ADR)) },
 	//Patch package2 decryption and signature/hash checks.
-	{ 0x9F0 + 0xADC, _NOP() }, //Header signature.
-	{ 0x9F0 + 0xB8C, _NOP() }, //Version.
-	{ 0x9F0 + 0xBB0, _NOP() }  //Sections SHA2.
+	{ 0x9F0 + 0xADC, _NOP() } // Header signature.
 );
 
 PATCHSET_DEF(_secmon_2_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xAC8 + 0xAAC, _NOP() }, //Header signature.
-	{ 0xAC8 + 0xB3C, _NOP() }, //Version.
-	{ 0xAC8 + 0xB58, _NOP() }  //Sections SHA2.
+	{ 0xAC8 + 0xAAC, _NOP() } // Header signature.
 );
 
 PATCHSET_DEF(_secmon_3_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xAC8 + 0xA30, _NOP() }, //Header signature.
-	{ 0xAC8 + 0xAB4, _NOP() }, //package2 structure.
-	{ 0xAC8 + 0xAC0, _NOP() }, //Version.
-	{ 0xAC8 + 0xADC, _NOP() }  //Sections SHA2.
+	{ 0xAC8 + 0xA30, _NOP() } // Header signature.
 );
 
 PATCHSET_DEF(_secmon_4_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0x2300 + 0x5D80, _NOP() }, //package2 structure.
-	{ 0x2300 + 0x5D8C, _NOP() }, //Version.
-	{ 0x2300 + 0x5EFC, _NOP() }, //Header signature.
-	{ 0xAC8 + 0xA2C,   _NOP() }  //Sections SHA2.
+	{ 0x2300 + 0x5EFC, _NOP() } // Header signature.
 );
 
 PATCHSET_DEF(_secmon_5_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xDA8 + 0x9D8, _NOP() }, //package2 structure.
-	{ 0xDA8 + 0x9E4, _NOP() }, //Version.
-	{ 0xDA8 + 0xC9C, _NOP() }, //Header signature.
-	{ 0xDA8 + 0x1038, _NOP() } //Sections SHA2.
+	{ 0xDA8 + 0xC9C, _NOP() } // Header signature.
 );
 
 PATCHSET_DEF(_secmon_6_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xDC8 + 0x820, _NOP() },  //package2 structure.
-	{ 0xDC8 + 0x82C, _NOP() },  //Version.
-	{ 0xDC8 + 0xE90, _NOP() },  //Header signature.
-	{ 0xDC8 + 0x112C, _NOP() }  //Sections SHA2.
+	{ 0xDC8 + 0xE90, _NOP() } // Header signature.
 	// Fix sleep mode for debug.
 	// { 0x1A68 + 0x3854, 0x94000E45 }, //gpio_config_for_uart.
 	// { 0x1A68 + 0x3858, 0x97FFFC0F }, //clkrst_reboot_uarta.
@@ -86,10 +70,7 @@ PATCHSET_DEF(_secmon_6_patchset,
 
 PATCHSET_DEF(_secmon_620_patchset,
 	// Patch package2 decryption and signature/hash checks.
-	{ 0xDC8 + 0x604, _NOP() }, //package2 structure.
-	{ 0xDC8 + 0x610, _NOP() }, //Version.
-	{ 0xDC8 + 0xC74, _NOP() }, //Header signature.
-	{ 0xDC8 + 0xF10, _NOP() }  //Sections SHA2.
+	{ 0xDC8 + 0xC74, _NOP() } // Header signature.
 	// Fix sleep mode for debug.
 	// { 0x2AC8 + 0x3854, 0x94000F42 }, //gpio_config_for_uart.
 	// { 0x2AC8 + 0x3858, 0x97FFFC0F }, //clkrst_reboot_uarta.
