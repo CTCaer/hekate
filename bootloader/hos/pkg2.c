@@ -1395,7 +1395,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 	return ini1_size;
 }
 
-void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2)
+void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2, u8 kb)
 {
 	u8 *pdst = (u8 *)dst;
 
@@ -1406,13 +1406,19 @@ void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_i
 	// Header.
 	pkg2_hdr_t *hdr = (pkg2_hdr_t *)pdst;
 	memset(hdr, 0, sizeof(pkg2_hdr_t));
-	pdst += sizeof(pkg2_hdr_t);
+
+	// Set initial header values.
 	hdr->magic = PKG2_MAGIC;
+	hdr->bl_ver = 0;
+	hdr->pkg2_ver = 0xFF;
+
 	if (!new_pkg2)
 		hdr->base = 0x10000000;
 	else
 		hdr->base = 0x60000;
 DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
+
+	pdst += sizeof(pkg2_hdr_t);
 
 	// Kernel.
 	memcpy(pdst, kernel, kernel_size);
@@ -1436,9 +1442,20 @@ DPRINTF("kernel encrypted\n");
 		ini1_size = _pkg2_ini1_build(pdst, hdr, kips_info, new_pkg2);
 DPRINTF("INI1 encrypted\n");
 
+	// Calculate SHA256 over encrypted Kernel and INI1.
+	u8 *pk2_hash_data = (u8 *)dst + 0x100 + sizeof(pkg2_hdr_t);
+	se_calc_sha256_oneshot(&hdr->sec_sha256[0x20 * PKG2_SEC_KERNEL],
+		(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_KERNEL]);
+	pk2_hash_data += hdr->sec_size[PKG2_SEC_KERNEL];
+	se_calc_sha256_oneshot(&hdr->sec_sha256[0x20 * PKG2_SEC_INI1],
+		(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_INI1]);
+
 	//Encrypt header.
+	u8 key_ver = kb ? kb + 1 : 0;
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
+	hdr->ctr[4] = key_ver;
 	se_aes_crypt_ctr(8, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	memset(hdr->ctr, 0 , 0x10);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
+	hdr->ctr[4] = key_ver;
 }

@@ -41,7 +41,8 @@ typedef struct _pkg2_hdr_t
 	u32 magic;
 	u32 base;
 	u32 pad0;
-	u16 version;
+	u8  pkg2_ver;
+	u8  bl_ver;
 	u16 pad1;
 	u32 sec_size[4];
 	u32 sec_off[4];

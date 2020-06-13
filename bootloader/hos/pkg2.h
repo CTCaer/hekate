@@ -68,7 +68,8 @@ typedef struct _pkg2_hdr_t
 	u32 magic;
 	u32 base;
 	u32 pad0;
-	u16 version;
+	u8  pkg2_ver;
+	u8  bl_ver;
 	u16 pad1;
 	u32 sec_size[4];
 	u32 sec_off[4];
@@ -154,6 +155,6 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames);
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash);
 pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb);
-void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2);
+void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2, u8 kb);
 
 #endif

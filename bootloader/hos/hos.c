@@ -864,7 +864,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Rebuild and encrypt package2.
-	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info, ctxt.new_pkg2);
+	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info, ctxt.new_pkg2, kb);
 
 	gfx_puts("Rebuilt & loaded pkg2\n");
 
@@ -885,7 +885,7 @@ int hos_launch(ini_sec_t *cfg)
 		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 
 	// Finalize per firmware key access.
-	switch (ctxt.pkg1_id->kb)
+	switch (kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
 	case KB_FIRMWARE_VERSION_300:
