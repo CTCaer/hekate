@@ -23,6 +23,13 @@ typedef enum {
 	RES_PARERR		/* 4: Invalid Parameter */
 } DRESULT;
 
+typedef enum {
+	DRIVE_SD   = 0,
+	DRIVE_RAM  = 1,
+	DRIVE_EMMC = 2,
+	DRIVE_BIS  = 3
+} DDRIVE;
+
 
 /*---------------------------------------*/
 /* Prototypes for disk control functions */
@@ -33,6 +40,7 @@ DSTATUS disk_status (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+DRESULT disk_set_info (BYTE pdrv, BYTE cmd, void *buff);
 
 
 /* Disk Status Bits (DSTATUS) */

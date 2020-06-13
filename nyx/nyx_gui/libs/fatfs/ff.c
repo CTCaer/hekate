@@ -3906,11 +3906,11 @@ FRESULT f_read (
 
 
 
-#ifdef FF_FASTFS
+#if FF_FASTFS && FF_USE_FASTSEEK
 /*-----------------------------------------------------------------------*/
 /* Fast Read Aligned Sized File Without a Cache                         */
 /*-----------------------------------------------------------------------*/
-#if FF_USE_FASTSEEK
+
 FRESULT f_read_fast (
 	FIL* fp,			/* Pointer to the file object */
 	const void* buff,	/* Pointer to the data to be written */
@@ -3987,7 +3987,6 @@ FRESULT f_read_fast (
 
 	LEAVE_FF(fs, FR_OK);
 }
-#endif
 #endif
 
 
@@ -4132,11 +4131,11 @@ FRESULT f_write (
 
 
 
-#ifdef FF_FASTFS
+#if FF_FASTFS && FF_USE_FASTSEEK
 /*-----------------------------------------------------------------------*/
 /* Fast Write Aligned Sized File Without a Cache                         */
 /*-----------------------------------------------------------------------*/
-#if FF_USE_FASTSEEK
+
 FRESULT f_write_fast (
 	FIL* fp,			/* Pointer to the file object */
 	const void* buff,	/* Pointer to the data to be written */
@@ -4218,7 +4217,6 @@ FRESULT f_write_fast (
 
 	LEAVE_FF(fs, FR_OK);
 }
-#endif
 #endif
 
 
@@ -4680,8 +4678,7 @@ FRESULT f_lseek (
 
 
 
-#ifdef FF_FASTFS
-#if FF_USE_FASTSEEK
+#if FF_FASTFS && FF_USE_FASTSEEK
 /*-----------------------------------------------------------------------*/
 /* Seek File Read/Write Pointer                                          */
 /*-----------------------------------------------------------------------*/
@@ -4707,7 +4704,6 @@ DWORD *f_expand_cltbl (
 
 	return fp->cltbl;
 }
-#endif
 #endif
 
 

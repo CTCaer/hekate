@@ -84,3 +84,31 @@ u8 btn_wait_timeout(u32 time_ms, u8 mask)
 
 	return res;
 }
+
+u8 btn_wait_timeout_single(u32 time_ms, u8 mask)
+{
+	u8 single_button = mask & BTN_SINGLE;
+	mask &= ~BTN_SINGLE;
+
+	u32 timeout = get_tmr_ms() + time_ms;
+	u8 res = btn_read();
+
+	while (get_tmr_ms() < timeout)
+	{
+		if ((res & mask) == mask)
+		{
+			if (single_button && (res & ~mask)) // Undesired button detected.
+				res = btn_read();
+			else
+				return (res & mask);
+		}
+		else
+			res = btn_read();
+	};
+
+	// Timed out.
+	if (!single_button || !time_ms)
+		return (res & mask);
+	else
+		return 0; // Return no button press if single button requested.
+}

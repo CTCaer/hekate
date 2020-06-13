@@ -15,15 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define DRAM_CFG_SIZE 1896
+
 #define DRAM_ID(x) (1 << (x))
 
 #define DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH       0
 #define DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN      1
 #define DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT 2
-#define DRAM_4GB_COPPER_UNK_3                  3 // Samsung?
+#define DRAM_4GB_COPPER_SAMSUNG                3
 #define DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH       4
-#define DRAM_4GB_COPPER_UNK_5                  5 // Samsung?
-#define DRAM_4GB_COPPER_UNK_6                  6 // Samsung?
+#define DRAM_4GB_COPPER_HYNIX                  5
+#define DRAM_4GB_COPPER_MICRON                 6
 
 typedef struct _sdram_vendor_patch_t
 {
@@ -658,11 +660,22 @@ static const sdram_params_t _dram_cfg_0_samsung_4gb = {
 };
 
 static const sdram_vendor_patch_t sdram_cfg_vendor_patches[] = {
-	{ 0x0000003A,  59, DRAM_ID(6) },              // emc_rfc. Auto refresh.
-	{ 0x0000001D,  60, DRAM_ID(6) },              // emc_rfc_pb. Bank Auto refresh.
+	// Hynix timing config.
 	{ 0x0000000D,  67, DRAM_ID(1) | DRAM_ID(5) }, // emc_r2w.
 	{ 0x00000001,  91, DRAM_ID(1) | DRAM_ID(5) }, // emc_puterm_extra.
 	{ 0x80000000,  92, DRAM_ID(1) | DRAM_ID(5) }, // emc_puterm_width.
+	{ 0x00000210, 317, DRAM_ID(1) | DRAM_ID(5) }, // emc_pmacro_data_rx_term_mode.
+	{ 0x00000005, 368, DRAM_ID(1) | DRAM_ID(5) }, // mc_emem_arb_timing_r2w.
+
+	// Samsung 6GB density config.
+	{ 0x000C0302, 347, DRAM_ID(4) },              // mc_emem_adr_cfg_dev0. 768MB sub-partition density.
+	{ 0x000C0302, 348, DRAM_ID(4) },              // mc_emem_adr_cfg_dev1. 768MB sub-partition density.
+	{ 0x00001800, 353, DRAM_ID(4) },              // mc_emem_cfg. 6GB total density.
+
+#ifdef CONFIG_SDRAM_COPPER_SUPPORT
+	// Copper prototype Samsung/Hynix/Micron timing configs.
+	{ 0x0000003A,  59, DRAM_ID(6) },              // emc_rfc. Auto refresh.
+	{ 0x0000001D,  60, DRAM_ID(6) },              // emc_rfc_pb. Bank Auto refresh.
 	{ 0x00000012, 108, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_rw2pden.
 	{ 0x0000003B, 112, DRAM_ID(6) },              // emc_txsr.
 	{ 0x0000003B, 113, DRAM_ID(6) },              // emc_txsr_dll.
@@ -687,11 +700,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches[] = {
 	{ 0x00000015, 237, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_4.
 	{ 0x00000012, 295, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_cmd_brlshft2.
 	{ 0x00000012, 296, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_cmd_brlshft3.
-	{ 0x00000210, 317, DRAM_ID(1) | DRAM_ID(5) }, // emc_pmacro_data_rx_term_mode.
-	{ 0x000C0302, 347, DRAM_ID(4) },              // mc_emem_adr_cfg_dev0. 768MB sub-partition density.
-	{ 0x000C0302, 348, DRAM_ID(4) },              // mc_emem_adr_cfg_dev1. 768MB sub-partition density.
-	{ 0x00001800, 353, DRAM_ID(4) },              // mc_emem_cfg. 6GB total density.
-	{ 0x00000005, 368, DRAM_ID(1) | DRAM_ID(5) }, // mc_emem_arb_timing_r2w.
 	{ 0x00000007, 370, DRAM_ID(6) },              // mc_emem_arb_timing_rfcpb. Bank refresh.
-	{ 0x72A30504, 373, DRAM_ID(6) }               // mc_emem_arb_misc0.
+	{ 0x72A30504, 373, DRAM_ID(6) },              // mc_emem_arb_misc0.
+#endif
 };

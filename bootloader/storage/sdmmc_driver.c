@@ -30,9 +30,13 @@
 #include "../utils/util.h"
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
+//#define ERROR_EXTRA_PRINTING
 #define DPRINTF(...)
 
-u32 sd_power_cycle_time_start;
+#ifdef NYX
+#define ERROR_EXTRA_PRINTING
+#define SDMMC_EMMC_OC
+#endif
 
 /*! SCMMC controller base addresses. */
 static const u32 _sdmmc_bases[4] = {
@@ -222,7 +226,11 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 }
 
+#ifdef SDMMC_EMMC_OC
+static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc, bool overclock)
+#else
 static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
+#endif
 {
 	int result = 1, should_disable_sd_clock = 0;
 
@@ -231,6 +239,11 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 		should_disable_sd_clock = 1;
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 	}
+
+#ifdef SDMMC_EMMC_OC
+	if (sdmmc->id == SDMMC_4 && overclock)
+		sdmmc->regs->vendllcalcfg = sdmmc->regs->vendllcalcfg &= 0xFFFFC07F | (0x7C << 7); // Add -4 TX_DLY_CODE_OFFSET if HS533.
+#endif
 
 	sdmmc->regs->vendllcalcfg |= TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE;
 	_sdmmc_get_clkcon(sdmmc);
@@ -345,7 +358,15 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 
 	if (type == SDHCI_TIMING_MMC_HS400)
+	{
+#ifdef SDMMC_EMMC_OC
+		bool overclock_en = clock > 208000;
+		return _sdmmc_dll_cal_execute(sdmmc, overclock_en);
+#else
 		return _sdmmc_dll_cal_execute(sdmmc);
+#endif
+	}
+
 	return 1;
 }
 
@@ -906,7 +927,9 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 			}
 			if (result != SDMMC_MASKINT_NOERROR)
 			{
-				DPRINTF("%08X!\n", result);
+#ifdef ERROR_EXTRA_PRINTING
+				EPRINTFARGS("%08X!", result);
+#endif
 				_sdmmc_reset(sdmmc);
 				return 0;
 			}
@@ -929,7 +952,9 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 	{
 		if (!_sdmmc_config_dma(sdmmc, &blkcnt, req))
 		{
-			DPRINTF("SDMMC: DMA Wrong cfg!\n");
+#ifdef ERROR_EXTRA_PRINTING
+			EPRINTF("SDMMC: DMA Wrong cfg!");
+#endif
 			return 0;
 		}
 
@@ -945,14 +970,18 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 
 	if (!_sdmmc_send_cmd(sdmmc, cmd, is_data_present))
 	{
-		DPRINTF("SDMMC: Wrong Response type %08X!\n", cmd->rsp_type);
+#ifdef ERROR_EXTRA_PRINTING
+		EPRINTFARGS("SDMMC: Wrong Response type %08X!", cmd->rsp_type);
+#endif
 		return 0;
 	}
 
 	int result = _sdmmc_wait_response(sdmmc);
 	if (!result)
 	{
-		DPRINTF("SDMMC: Transfer timeout!\n");
+#ifdef ERROR_EXTRA_PRINTING
+		EPRINTF("SDMMC: Transfer timeout!");
+#endif
 	}
 	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
@@ -964,7 +993,9 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 			result = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, 0x10, cmd->rsp_type);
 			if (!result)
 			{
-				DPRINTF("SDMMC: Unknown response %08X!\n", sdmmc->rsp[0]);
+#ifdef ERROR_EXTRA_PRINTING
+				EPRINTFARGS("SDMMC: Unknown response %08X!", sdmmc->rsp[0]);
+#endif
 			}
 		}
 		if (req && result)
@@ -972,7 +1003,9 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 			result = _sdmmc_update_dma(sdmmc);
 			if (!result)
 			{
-				DPRINTF("SDMMC: DMA Update failed!\n");
+#ifdef ERROR_EXTRA_PRINTING
+				EPRINTF("SDMMC: DMA Update failed!");
+#endif
 			}
 		}
 	}
@@ -998,7 +1031,9 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 			result = _sdmmc_wait_card_busy(sdmmc);
 			if (!result)
 			{
-				DPRINTF("SDMMC: Busy timeout!\n");
+#ifdef ERROR_EXTRA_PRINTING
+				EPRINTF("SDMMC: Busy timeout!");
+#endif
 			}
 			return result;
 		}

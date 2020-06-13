@@ -202,7 +202,7 @@ break_nosleep:
 	EMC(EMC_SWIZZLE_RANK1_BYTE2) = params->emc_swizzle_rank1_byte2;
 	EMC(EMC_SWIZZLE_RANK1_BYTE3) = params->emc_swizzle_rank1_byte3;
 
-	// Patch 4 using BCT spare variables.
+	// Patch 3 using BCT spare variables.
 	if (params->emc_bct_spare6)
 		*(vu32 *)params->emc_bct_spare6 = params->emc_bct_spare7;
 
@@ -345,7 +345,7 @@ break_nosleep:
 	// Common pad macro (cpm).
 	EMC(EMC_PMACRO_COMMON_PAD_TX_CTRL) = (params->emc_pmacro_common_pad_tx_ctrl & 1) | 0xE;
 
-	// Patch 3 using BCT spare variables.
+	// Patch 4 using BCT spare variables.
 	if (params->emc_bct_spare4)
 		*(vu32 *)params->emc_bct_spare4 = params->emc_bct_spare5;
 
@@ -723,11 +723,14 @@ sdram_params_t *sdram_get_params()
 	case DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH:
 	case DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT:
 		break;
+
 	case DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN:
-	case DRAM_4GB_COPPER_UNK_3:
 	case DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH:
-	case DRAM_4GB_COPPER_UNK_5:
-	case DRAM_4GB_COPPER_UNK_6:
+#ifdef CONFIG_SDRAM_COPPER_SUPPORT
+	case DRAM_4GB_COPPER_SAMSUNG:
+	case DRAM_4GB_COPPER_HYNIX:
+	case DRAM_4GB_COPPER_MICRON:
+#endif
 		_sdram_patch_model_params(dramid, (u32 *)buf);
 		break;
 	}

@@ -18,10 +18,11 @@
 #define _NX_EMMC_H_
 
 #include "sdmmc.h"
+#include "../libs/fatfs/ff.h"
 #include "../utils/types.h"
 #include "../utils/list.h"
 
-#define NX_GPT_FIRST_LBA 1
+#define NX_GPT_FIRST_LBA  1
 #define NX_GPT_NUM_BLOCKS 33
 #define NX_EMMC_BLOCKSIZE 512
 
@@ -34,6 +35,10 @@ typedef struct _emmc_part_t
 	char name[37];
 	link_t link;
 } emmc_part_t;
+
+extern sdmmc_t emmc_sdmmc;
+extern sdmmc_storage_t emmc_storage;
+extern FATFS emmc_fs;
 
 void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage);
 void nx_emmc_gpt_free(link_t *gpt);

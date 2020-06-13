@@ -47,7 +47,7 @@ void set_default_configuration()
 	h_cfg.errors = 0;
 	h_cfg.eks = NULL;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
-	h_cfg.rcm_patched = true;
+	h_cfg.rcm_patched = fuse_check_patched_rcm();
 	h_cfg.emummc_force_disable = false;
 
 	sd_power_cycle_time_start = 0;

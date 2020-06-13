@@ -113,7 +113,6 @@ typedef struct _sdram_params
 
 	/* Specifies the value for EMC_AUTO_CAL_CONFIG3 */
 	u32 emc_auto_cal_config3;
-
 	u32 emc_auto_cal_config4;
 	u32 emc_auto_cal_config5;
 	u32 emc_auto_cal_config6;

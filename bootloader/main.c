@@ -318,7 +318,7 @@ void launch_tools()
 
 		memcpy(dir, "bootloader/payloads", 20);
 
-		filelist = dirlist(dir, NULL, false);
+		filelist = dirlist(dir, NULL, false, false);
 
 		u32 i = 0;
 
@@ -1022,7 +1022,7 @@ skip_list:
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
 	if (!h_cfg.sept_run && !(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
-		btn = btn_wait_timeout(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_SINGLE);
+		btn = btn_wait_timeout_single(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_SINGLE);
 
 		if (btn & BTN_VOL_DOWN)
 			goto out;
@@ -1081,8 +1081,6 @@ static void _patched_rcm_protection()
 {
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
-
-	h_cfg.rcm_patched = fuse_check_patched_rcm();
 
 	if (!h_cfg.rcm_patched)
 		return;
@@ -1253,12 +1251,12 @@ static void _check_low_battery()
 		}
 
 		// Check if charging status changed or Power button was pressed.
-		if (((charge_status != current_charge_status) || (btn_wait_timeout(0, BTN_POWER) & BTN_POWER)))
+		if ((charge_status != current_charge_status) || (btn_wait_timeout_single(0, BTN_POWER) & BTN_POWER))
 		{
 			if (!screen_on)
 			{
 				display_init();
-				u32 *fb = display_init_framebuffer();
+				u32 *fb = display_init_framebuffer_pitch();
 				gfx_init_ctxt(fb, 720, 1280, 720);
 
 				gfx_set_rect_rgb(battery_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_BATT, 16, battery_icon_y_pos);
@@ -1350,9 +1348,9 @@ ment_t ment_options[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_HANDLER("Auto boot", config_autoboot),
-	//MDEF_HANDLER("Boot delay", config_bootdelay),
-	//MDEF_HANDLER("Auto NoGC", config_nogc),
-	//MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
+	MDEF_HANDLER("Boot delay", config_bootdelay),
+	MDEF_HANDLER("Auto NoGC", config_nogc),
+	MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
 	MDEF_HANDLER("Backlight", config_backlight),
 	MDEF_END()
 };
@@ -1431,7 +1429,7 @@ menu_t menu_tools = { ment_tools, "Tools", 0, 0 };
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
-	MDEF_MENU("Options", &menu_options),
+	//MDEF_MENU("Options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
@@ -1482,7 +1480,7 @@ void ipl_main()
 
 	display_init();
 
-	u32 *fb = display_init_framebuffer();
+	u32 *fb = display_init_framebuffer_pitch();
 	gfx_init_ctxt(fb, 720, 1280, 720);
 
 #ifdef MENU_LOGO_ENABLE

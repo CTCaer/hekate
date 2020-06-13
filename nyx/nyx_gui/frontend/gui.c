@@ -116,7 +116,7 @@ static gui_status_bar_ctx status_bar;
 static void _nyx_disp_init()
 {
 	display_backlight_brightness(0, 1000);
-	display_init_framebuffer_pitch();
+	display_init_framebuffer_pitch_inv();
 	display_init_framebuffer_log();
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }

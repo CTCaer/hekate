@@ -27,6 +27,7 @@
 #include "../soc/t210.h"
 
 extern volatile nyx_storage_t *nyx_str;
+
 void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
 
 u32 minerva_init()
@@ -35,6 +36,41 @@ u32 minerva_init()
 
 	minerva_cfg = NULL;
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+
+#ifdef NYX
+	// Set table to nyx storage.
+	mtc_cfg->mtc_table = (emc_table_t *)nyx_str->mtc_table;
+
+	// Check if Minerva is already initialized.
+	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
+	{
+		mtc_cfg->train_mode = OP_PERIODIC_TRAIN; // Retrain if needed.
+		u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
+		minerva_cfg = (void *)ep_addr;
+
+		return 0;
+	}
+	else
+	{
+		mtc_config_t mtc_tmp;
+
+		mtc_tmp.mtc_table = mtc_cfg->mtc_table;
+		mtc_tmp.sdram_id = (fuse_read_odm(4) >> 3) & 0x1F;
+		mtc_tmp.init_done = MTC_NEW_MAGIC;
+
+		u32 ep_addr = ianos_loader(false, "bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_tmp);
+
+		// Ensure that Minerva is new.
+		if (mtc_tmp.init_done == MTC_INIT_MAGIC)
+			minerva_cfg = (void *)ep_addr;
+		else
+			mtc_cfg->init_done = 0;
+
+		// Copy Minerva context to Nyx storage.
+		if (minerva_cfg)
+			memcpy(mtc_cfg, (void *)&mtc_tmp, sizeof(mtc_config_t));
+	}
+#else
 	memset(mtc_cfg, 0, sizeof(mtc_config_t));
 
 	// Set table to nyx storage.
@@ -50,6 +86,7 @@ u32 minerva_init()
 		minerva_cfg = (void *)ep_addr;
 	else
 		mtc_cfg->init_done = 0;
+#endif
 
 	if (!minerva_cfg)
 		return 1;

@@ -384,6 +384,11 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 	return res;
 }
 
+int se_calc_sha256_oneshot(void *hash, const void *src, u32 src_size)
+{
+	return se_calc_sha256(hash, NULL, src, src_size, 0, SHA_INIT_HASH, true);
+}
+
 int se_calc_sha256_finalize(void *hash, u32 *msg_left)
 {
 	u32 *hash32 = (u32 *)hash;

@@ -79,7 +79,7 @@ void uart_send(u32 idx, const u8 *buf, u32 len)
 		while (!(uart->UART_LSR & UART_LSR_THRE))
 			;
 		uart->UART_THR_DLAB = buf[i];
-	};
+	}
 }
 
 u32 uart_recv(u32 idx, u8 *buf, u32 len)

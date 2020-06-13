@@ -252,7 +252,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				}
 				manual_system_maintenance(false);
 				se_calc_sha256_finalize(hashEm, NULL);
-				se_calc_sha256(hashSd, NULL, bufSd, num << 9, 0, SHA_INIT_HASH, true);
+				se_calc_sha256_oneshot(hashSd, bufSd, num << 9);
 				res = memcmp(hashEm, hashSd, 0x10);
 
 				if (res)

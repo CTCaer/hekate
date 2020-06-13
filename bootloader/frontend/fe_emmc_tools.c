@@ -95,8 +95,8 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 					return 1;
 				}
 
-				se_calc_sha256(hashEm, bufEm, num << 9);
-				se_calc_sha256(hashSd, bufSd, num << 9);
+				se_calc_sha256_oneshot(hashEm, bufEm, num << 9);
+				se_calc_sha256_oneshot(hashSd, bufSd, num << 9);
 				res = memcmp(hashEm, hashSd, 0x10);
 
 				if (res)

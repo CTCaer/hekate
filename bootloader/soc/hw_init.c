@@ -25,18 +25,23 @@
 #include "i2c.h"
 #include "pinmux.h"
 #include "pmc.h"
-#include "t210.h"
 #include "uart.h"
+#include "t210.h"
+#include "../input/joycon.h"
+#include "../input/touch.h"
 #include "../gfx/di.h"
 #include "../mem/mc.h"
 #include "../mem/minerva.h"
 #include "../mem/sdram.h"
-#include "../power/max77620.h"
-#include "../power/max7762x.h"
 #include "../sec/se.h"
 #include "../sec/se_t210.h"
+#include "../power/max77620.h"
+#include "../power/max7762x.h"
+#include "../gfx/di.h"
+#include "../power/regulator_5v.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
+#include "../thermal/fan.h"
 #include "../utils/util.h"
 
 extern boot_cfg_t b_cfg;
@@ -326,9 +331,21 @@ void config_hw()
 
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 {
-	// Flush and disable MMU.
-	bpmp_mmu_disable();
+	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+
+#ifdef NYX
+	// Deinit touchscreen, 5V regulators and Joy-Con.
+	touch_power_off();
+	set_fan_duty(0);
+	jc_deinit();
+	regulator_disable_5v(REGULATOR_5V_ALL);
+	clock_disable_uart(UART_B);
+	clock_disable_uart(UART_C);
+#endif
+
+	// Flush/disable MMU cache and set DRAM clock to 204MHz.
+	bpmp_mmu_disable();
 	minerva_change_freq(FREQ_204);
 	nyx_str->mtc_cfg.init_done = 0;
 

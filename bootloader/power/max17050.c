@@ -43,9 +43,6 @@
 
 #define MAX17050_VMAX_TOLERANCE 50 /* 50 mV */
 
-#pragma GCC push_options
-#pragma GCC optimize ("Os")
-
 static u32 battery_voltage = 0;
 u32 max17050_get_cached_batt_volt()
 {
@@ -274,5 +271,3 @@ int max17050_fix_configuration()
 
 	return 0;
 }
-
-#pragma GCC pop_options

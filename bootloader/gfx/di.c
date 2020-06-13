@@ -145,13 +145,13 @@ void display_init()
 	// Decode Display ID.
 	_display_id = ((_display_id >> 8) & 0xFF00) | (_display_id & 0xFF);
 
-	if ((_display_id & 0xFF) == PANEL_JDI_LPM062M)
-		_display_id = PANEL_JDI_LPM062M;
+	if ((_display_id & 0xFF) == PANEL_JDI_XXX062M)
+		_display_id = PANEL_JDI_XXX062M;
 
 	// Initialize display panel.
 	switch (_display_id)
 	{
-	case PANEL_JDI_LPM062M:
+	case PANEL_JDI_XXX062M:
 		exec_cfg((u32 *)DSI_BASE, _display_init_config_jdi, 43);
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 		break;
@@ -264,7 +264,7 @@ void display_end()
 	// De-initialize display panel.
 	switch (_display_id)
 	{
-	case PANEL_JDI_LPM062M:
+	case PANEL_JDI_XXX062M:
 		exec_cfg((u32 *)DSI_BASE, _display_deinit_config_jdi, 22);
 		break;
 	case PANEL_AUO_A062TAN01:
@@ -337,15 +337,111 @@ void display_color_screen(u32 color)
 	display_backlight(true);
 }
 
-u32 *display_init_framebuffer()
+u32 *display_init_framebuffer_pitch()
 {
 	// Sanitize framebuffer area.
 	memset((u32 *)IPL_FB_ADDRESS, 0, 0x3C0000);
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer, 32);
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch, 32);
 	usleep(35000);
 
 	return (u32 *)IPL_FB_ADDRESS;
 }
 
+u32 *display_init_framebuffer_pitch_inv()
+{
+	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch_inv, 34);
+
+	usleep(35000);
+
+	return (u32 *)NYX_FB_ADDRESS;
+}
+
+u32 *display_init_framebuffer_block()
+{
+	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_block, 34);
+
+	usleep(35000);
+
+	return (u32 *)NYX_FB_ADDRESS;
+}
+
+u32 *display_init_framebuffer_log()
+{
+	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
+	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_log, 20);
+
+	return (u32 *)LOG_FB_ADDRESS;
+}
+
+void display_activate_console()
+{
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window C.
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = WIN_ENABLE; // Enable window DD.
+	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0xFF80;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+
+	for (u32 i = 0xFF80; i < 0x10000; i++)
+	{
+		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+		usleep(1000);
+	}
+
+	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+}
+
+void display_deactivate_console()
+{
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window C.
+
+	for (u32 i = 0xFFFF; i > 0xFF7F; i--)
+	{
+		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+		usleep(500);
+	}
+
+	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0; // Disable window DD.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+}
+
+void display_init_cursor(void *crs_fb, u32 size)
+{
+	// Setup cursor.
+	DISPLAY_A(_DIREG(DC_DISP_CURSOR_START_ADDR)) = CURSOR_CLIPPING(CURSOR_CLIP_WIN_A) | size | ((u32)crs_fb >> 10);
+	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) =
+		CURSOR_BLEND_R8G8B8A8 | CURSOR_BLEND_DST_FACTOR(CURSOR_BLEND_K1) | CURSOR_BLEND_SRC_FACTOR(CURSOR_BLEND_K1) | 0xFF;
+
+	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) |= CURSOR_ENABLE;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | CURSOR_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
+}
+
+void display_set_pos_cursor(u32 x, u32 y)
+{
+	DISPLAY_A(_DIREG(DC_DISP_CURSOR_POSITION)) = x | (y << 16);
+
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | CURSOR_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
+}
+
+void display_deinit_cursor()
+{
+	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) = 0;
+	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) &= ~CURSOR_ENABLE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | CURSOR_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
+}

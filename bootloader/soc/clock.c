@@ -276,7 +276,7 @@ void clock_enable_pllc(u32 divn)
 		return;
 
 	// Take PLLC out of reset and set basic misc parameters.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) = 
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) =
 		((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x80000 << 4); // PLLC_EXT_FRU.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
 
@@ -310,6 +310,53 @@ void clock_disable_pllc()
 	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_1) |= PLLC_MISC1_IDDQ;
 	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) |= PLLC_MISC_RESET;
 	usleep(10);
+}
+
+#define PLLC4_ENABLED (1 << 31)
+#define PLLC4_IN_USE  (~PLLC4_ENABLED)
+
+u32 pllc4_enabled = 0;
+
+static void _clock_enable_pllc4(u32 mask)
+{
+	pllc4_enabled |= mask;
+
+	if (pllc4_enabled & PLLC4_ENABLED)
+		return;
+
+	// Enable Phase and Frequency lock detection.
+	//CLOCK(CLK_RST_CONTROLLER_PLLC4_MISC) = PLLC4_MISC_EN_LCKDET;
+
+	// Disable PLL and IDDQ in case they are on.
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLCX_BASE_ENABLE;
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLC4_BASE_IDDQ;
+	usleep(10);
+
+	// Set PLLC4 dividers.
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) = (104 << 8) | 4; // DIVM: 4, DIVP: 1.
+
+	// Enable PLLC4 and wait for Phase and Frequency lock.
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLCX_BASE_ENABLE;
+	while (!(CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) & PLLCX_BASE_LOCK))
+		;
+
+	msleep(1); // Wait a bit for PLL to stabilize.
+
+	pllc4_enabled |= PLLC4_ENABLED;
+}
+
+static void _clock_disable_pllc4(u32 mask)
+{
+	pllc4_enabled &= ~mask;
+
+	if (pllc4_enabled & PLLC4_IN_USE)
+		return;
+
+	// Disable PLLC4.
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLCX_BASE_ENABLE;
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLC4_BASE_IDDQ;
+
+	pllc4_enabled = 0;
 }
 
 #define L_SWR_SDMMC1_RST (1 << 14)
@@ -501,16 +548,32 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 val)
 		divisor = 14; // 8 div.
 		break;
 	case 100000:
-		*pclock = 90667;
-		divisor = 7;  // 4.5 div.
+		source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
+		*pclock = 99840;
+		divisor = 2;  // 2 div.
 		break;
 	case 164000:
 		*pclock = 163200;
 		divisor = 3;  // 2.5 div.
 		break;
-	case 200000:
-		*pclock = 204000;
-		divisor = 2;  // 2 div.
+	case 200000: // 240MHz evo+.
+		switch (id)
+		{
+		case SDMMC_1:
+			source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
+			break;
+		case SDMMC_2:
+			source = SDMMC4_CLOCK_SRC_PLLC4_OUT2_LJ;
+			break;
+		case SDMMC_3:
+			source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
+			break;
+		case SDMMC_4:
+			source = SDMMC4_CLOCK_SRC_PLLC4_OUT2_LJ;
+			break;
+		}
+		*pclock = 199680;
+		divisor = 0;  // 1 div.
 		break;
 	default:
 		*pclock = 24728;
@@ -519,6 +582,10 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 val)
 
 	_clock_sdmmc_table[id].clock = val;
 	_clock_sdmmc_table[id].real_clock = *pclock;
+
+	// Enable PLLC4 if in use by any SDMMC.
+	if (source)
+		_clock_enable_pllc4(1 << id);
 
 	// Set SDMMC legacy timeout clock.
 	_clock_sdmmc_config_legacy_tm();
@@ -642,4 +709,5 @@ void clock_sdmmc_disable(u32 id)
 	_clock_sdmmc_set_reset(id);
 	_clock_sdmmc_clear_enable(id);
 	_clock_sdmmc_is_reset(id);
+	_clock_disable_pllc4(1 << id);
 }

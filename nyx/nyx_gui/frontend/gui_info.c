@@ -447,7 +447,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	default:
 		switch (display_id & 0xFF)
 		{
-		case PANEL_JDI_LPM062M:
+		case PANEL_JDI_XXX062M:
 			s_printf(txt_buf + strlen(txt_buf), "JDI ");
 			break;
 		case (PANEL_INL_P062CCA_AZ1 & 0xFF):

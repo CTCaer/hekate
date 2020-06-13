@@ -506,7 +506,7 @@
 
 enum
 {
-	PANEL_JDI_LPM062M     = 0x10,
+	PANEL_JDI_XXX062M     = 0x10,
 	PANEL_JDI_LAM062M109A = 0x0910,
 	PANEL_JDI_LPM062M326A = 0x2610,
 	PANEL_INL_P062CCA_AZ1 = 0x0F20,
@@ -528,6 +528,7 @@ void display_backlight_brightness(u32 brightness, u32 step_delay);
 
 /*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
 u32 *display_init_framebuffer_pitch();
+u32 *display_init_framebuffer_pitch_inv();
 u32 *display_init_framebuffer_block();
 u32 *display_init_framebuffer_log();
 void display_activate_console();

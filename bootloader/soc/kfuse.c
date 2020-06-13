@@ -18,9 +18,6 @@
 #include "../soc/clock.h"
 #include "../soc/t210.h"
 
-#pragma GCC push_options
-#pragma GCC optimize ("Os")
-
 int kfuse_wait_ready()
 {
 	// Wait for KFUSE to finish init and verification of data.
@@ -48,9 +45,7 @@ int kfuse_read(u32 *buf)
 
 	res = 1;
 
-out:;
+out:
 	clock_disable_kfuse();
 	return res;
 }
-
-#pragma GCC pop_options

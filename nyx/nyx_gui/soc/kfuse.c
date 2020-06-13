@@ -45,7 +45,7 @@ int kfuse_read(u32 *buf)
 
 	res = 1;
 
-out:;
+out:
 	clock_disable_kfuse();
 	return res;
 }

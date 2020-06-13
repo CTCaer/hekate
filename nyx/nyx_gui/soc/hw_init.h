@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -19,6 +20,7 @@
 
 #include "../utils/types.h"
 
+void config_hw();
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic);
 
 #endif

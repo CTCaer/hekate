@@ -723,11 +723,14 @@ sdram_params_t *sdram_get_params()
 	case DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH:
 	case DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT:
 		break;
+
 	case DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN:
-	case DRAM_4GB_COPPER_UNK_3:
 	case DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH:
-	case DRAM_4GB_COPPER_UNK_5:
-	case DRAM_4GB_COPPER_UNK_6:
+#ifdef CONFIG_SDRAM_COPPER_SUPPORT
+	case DRAM_4GB_COPPER_SAMSUNG:
+	case DRAM_4GB_COPPER_HYNIX:
+	case DRAM_4GB_COPPER_MICRON:
+#endif
 		_sdram_patch_model_params(dramid, (u32 *)buf);
 		break;
 	}

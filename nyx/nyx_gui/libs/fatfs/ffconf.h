@@ -41,14 +41,16 @@
 #define FF_USE_MKFS		1
 /* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
 
+
+#define FF_USE_FASTSEEK	0
+/* This option switches fast seek function. (0:Disable or 1:Enable) */
+
 #define FF_FASTFS 1
 
-#ifdef FF_FASTFS
+#if FF_FASTFS
+#undef FF_USE_FASTSEEK
 #define FF_USE_FASTSEEK	1
-#else
-#define FF_USE_FASTSEEK	0
 #endif
-/* This option switches fast seek function. (0:Disable or 1:Enable) */
 
 
 #define FF_USE_EXPAND	0
@@ -245,7 +247,7 @@
 #define FF_FS_NORTC		0
 #define FF_NORTC_MON	1
 #define FF_NORTC_MDAY	1
-#define FF_NORTC_YEAR	2019
+#define FF_NORTC_YEAR	2020
 /* The option FF_FS_NORTC switches timestamp function. If the system does not have
 /  any RTC function or valid timestamp is not needed, set FF_FS_NORTC = 1 to disable
 /  the timestamp function. Every object modified by FatFs will have a fixed timestamp

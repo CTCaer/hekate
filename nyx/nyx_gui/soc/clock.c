@@ -276,7 +276,7 @@ void clock_enable_pllc(u32 divn)
 		return;
 
 	// Take PLLC out of reset and set basic misc parameters.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) = 
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) =
 		((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x80000 << 4); // PLLC_EXT_FRU.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
 
@@ -315,7 +315,7 @@ void clock_disable_pllc()
 #define PLLC4_ENABLED (1 << 31)
 #define PLLC4_IN_USE  (~PLLC4_ENABLED)
 
-static u32 pllc4_enabled = 0;
+u32 pllc4_enabled = 0;
 
 static void _clock_enable_pllc4(u32 mask)
 {

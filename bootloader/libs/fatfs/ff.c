@@ -3906,6 +3906,92 @@ FRESULT f_read (
 
 
 
+#if FF_FASTFS && FF_USE_FASTSEEK
+/*-----------------------------------------------------------------------*/
+/* Fast Read Aligned Sized File Without a Cache                         */
+/*-----------------------------------------------------------------------*/
+
+FRESULT f_read_fast (
+	FIL* fp,			/* Pointer to the file object */
+	const void* buff,	/* Pointer to the data to be written */
+	UINT btr			/* Number of bytes to read */
+)
+{
+	FRESULT res;
+	FATFS *fs;
+	UINT csize_bytes;
+	DWORD clst;
+	UINT count = 0;
+	FSIZE_t work_sector = 0;
+	FSIZE_t sector_base = 0;
+	BYTE *wbuff = (BYTE*)buff;
+
+	// TODO support sector reading inside a cluster
+
+	res = validate(&fp->obj, &fs);			/* Check validity of the file object */
+	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) {
+		EFSPRINTF("FOV");
+		LEAVE_FF(fs, res);	/* Check validity */
+	}
+
+	if (!(fp->flag & FA_READ)) LEAVE_FF(fs, FR_DENIED); /* Check access mode */
+	FSIZE_t remain = fp->obj.objsize - fp->fptr;
+	if (btr > remain) btr = (UINT)remain;		/* Truncate btr by remaining bytes */
+
+	csize_bytes = fs->csize * SS(fs);
+
+	if (!fp->fptr) {	/* On the top of the file? */
+		clst = fp->obj.sclust;	/* Follow from the origin */
+	} else {
+		if (fp->cltbl) clst = clmt_clust(fp, fp->fptr);	/* Get cluster# from the CLMT */
+		else { EFSPRINTF("CLTBL"); ABORT(fs, FR_CLTBL_NO_INIT); }
+	}
+	if (clst < 2) { EFSPRINTF("CCHK"); ABORT(fs, FR_INT_ERR); }
+	else if (clst == 0xFFFFFFFF) { EFSPRINTF("DSKC"); ABORT(fs, FR_DISK_ERR); }
+
+	fp->clust = clst;	/* Set working cluster */
+
+	sector_base = clst2sect(fs, fp->clust);
+	count += fs->csize;
+	btr -= csize_bytes;
+	fp->fptr += csize_bytes;
+
+	while (btr) {
+		clst = clmt_clust(fp, fp->fptr);	/* Get cluster# from the CLMT */
+
+		if (clst < 2) { EFSPRINTF("CCHK2"); ABORT(fs, FR_INT_ERR); }
+		else if (clst == 0xFFFFFFFF) { EFSPRINTF("DSKC"); ABORT(fs, FR_DISK_ERR); }
+
+		fp->clust = clst;
+
+		work_sector = clst2sect(fs, fp->clust);
+		if ((work_sector - sector_base) == count) count += fs->csize;
+		else {
+			if (disk_read(fs->pdrv, wbuff, sector_base, count) != RES_OK) ABORT(fs, FR_DISK_ERR);
+			wbuff += count * SS(fs);
+
+			sector_base = work_sector;
+			count = fs->csize;
+		}
+
+		fp->fptr += MIN(btr, csize_bytes);
+		btr -= MIN(btr, csize_bytes);
+
+		// TODO: what about if data is smaller than cluster?
+		// Must read-write back that cluster.
+
+		if (!btr) {	/* Final cluster/sectors read. */
+			if (disk_read(fs->pdrv, wbuff, sector_base, count) != RES_OK) ABORT(fs, FR_DISK_ERR);
+		}
+	}
+
+	LEAVE_FF(fs, FR_OK);
+}
+#endif
+
+
+
+
 #if !FF_FS_READONLY
 /*-----------------------------------------------------------------------*/
 /* Write File                                                            */
@@ -4041,6 +4127,97 @@ FRESULT f_write (
 
 	LEAVE_FF(fs, FR_OK);
 }
+
+
+
+
+#if FF_FASTFS && FF_USE_FASTSEEK
+/*-----------------------------------------------------------------------*/
+/* Fast Write Aligned Sized File Without a Cache                         */
+/*-----------------------------------------------------------------------*/
+
+FRESULT f_write_fast (
+	FIL* fp,			/* Pointer to the file object */
+	const void* buff,	/* Pointer to the data to be written */
+	UINT btw			/* Number of bytes to write */
+)
+{
+	FRESULT res;
+	FATFS *fs;
+	UINT csize_bytes;
+	DWORD clst;
+	UINT count = 0;
+	FSIZE_t work_sector = 0;
+	FSIZE_t sector_base = 0;
+	const BYTE *wbuff = (const BYTE*)buff;
+
+	// TODO support sector writing inside a cluster
+
+	res = validate(&fp->obj, &fs);			/* Check validity of the file object */
+	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) {
+		EFSPRINTF("FOV");
+		LEAVE_FF(fs, res);	/* Check validity */
+	}
+
+	if (!(fp->flag & FA_WRITE)) LEAVE_FF(fs, FR_DENIED);	/* Check access mode */
+	/* Check fptr wrap-around (file size cannot reach 4 GiB at FAT volume) */
+	if ((!FF_FS_EXFAT || fs->fs_type != FS_EXFAT) && (DWORD)(fp->fptr + btw) < (DWORD)fp->fptr) {
+		btw = (UINT)(0xFFFFFFFF - (DWORD)fp->fptr);
+	}
+
+	csize_bytes = fs->csize * SS(fs);
+
+	if (!fp->fptr) {	/* On the top of the file? */
+		clst = fp->obj.sclust;	/* Follow from the origin */
+	} else {
+		if (fp->cltbl) clst = clmt_clust(fp, fp->fptr);	/* Get cluster# from the CLMT */
+		else { EFSPRINTF("CLTBL"); ABORT(fs, FR_CLTBL_NO_INIT); }
+	}
+
+	if (clst < 2) { EFSPRINTF("CCHK"); ABORT(fs, FR_INT_ERR); }
+	else if (clst == 0xFFFFFFFF) { EFSPRINTF("DERR"); ABORT(fs, FR_DISK_ERR); }
+
+	fp->clust = clst;	/* Set working cluster */
+
+	sector_base = clst2sect(fs, fp->clust);
+	count += fs->csize;
+	btw -= csize_bytes;
+	fp->fptr += csize_bytes;
+
+	while (btw) {
+		clst = clmt_clust(fp, fp->fptr);	/* Get cluster# from the CLMT */
+
+		if (clst < 2) { EFSPRINTF("CCHK2"); ABORT(fs, FR_INT_ERR); }
+		else if (clst == 0xFFFFFFFF) { EFSPRINTF("DERR"); ABORT(fs, FR_DISK_ERR); }
+
+		fp->clust = clst;
+
+		work_sector = clst2sect(fs, fp->clust);
+		if ((work_sector - sector_base) == count) count += fs->csize;
+		else {
+			if (disk_write(fs->pdrv, wbuff, sector_base, count) != RES_OK) ABORT(fs, FR_DISK_ERR);
+			wbuff += count * SS(fs);
+
+			sector_base = work_sector;
+			count = fs->csize;
+		}
+
+		fp->fptr += MIN(btw, csize_bytes);
+		btw -= MIN(btw, csize_bytes);
+
+		// what about if data is smaller than cluster?
+		// Probably must read-write back that cluster.
+		if (!btw) {	/* Final cluster/sectors write. */
+			if (disk_write(fs->pdrv, wbuff, sector_base, count) != RES_OK) ABORT(fs, FR_DISK_ERR);
+			fp->flag &= (BYTE)~FA_DIRTY;
+		}
+	}
+
+	fp->flag |= FA_MODIFIED;	/* Set file change flag */
+
+	LEAVE_FF(fs, FR_OK);
+}
+#endif
 
 
 
@@ -4498,6 +4675,37 @@ FRESULT f_lseek (
 
 	LEAVE_FF(fs, res);
 }
+
+
+
+#if FF_FASTFS && FF_USE_FASTSEEK
+/*-----------------------------------------------------------------------*/
+/* Seek File Read/Write Pointer                                          */
+/*-----------------------------------------------------------------------*/
+
+DWORD *f_expand_cltbl (
+	FIL* fp,		/* Pointer to the file object */
+	UINT tblsz,		/* Size of table */
+	FSIZE_t ofs		/* File pointer from top of file */
+)
+{
+	if (fp->flag & FA_WRITE) f_lseek(fp, ofs);	/* Expand file if write is enabled */
+	if (!fp->cltbl) {	/* Allocate memory for cluster link table */
+		fp->cltbl = (DWORD *)ff_memalloc(tblsz);
+		fp->cltbl[0] = tblsz;
+	}
+	if (f_lseek(fp, CREATE_LINKMAP)) {	/* Create cluster link table */
+		ff_memfree(fp->cltbl);
+		fp->cltbl = NULL;
+		EFSPRINTF("CLTBLSZ");
+		return NULL;
+	}
+	f_lseek(fp, 0);
+
+	return fp->cltbl;
+}
+#endif
+
 
 
 
