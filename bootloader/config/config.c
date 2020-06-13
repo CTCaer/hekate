@@ -37,7 +37,6 @@ void set_default_configuration()
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait = 3;
 	h_cfg.se_keygen_done = 0;
-	h_cfg.sbar_time_keeping = 0;
 	h_cfg.backlight = 100;
 	h_cfg.autohosoff = 0;
 	h_cfg.autonogc = 1;

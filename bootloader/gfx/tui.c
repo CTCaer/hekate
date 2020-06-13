@@ -35,15 +35,16 @@ extern hekate_config h_cfg;
 void tui_sbar(bool force_update)
 {
 	u32 cx, cy;
+	static u32 sbar_time_keeping = 0;
 
-	u32 timePassed = get_tmr_s() - h_cfg.sbar_time_keeping;
+	u32 timePassed = get_tmr_s() - sbar_time_keeping;
 	if (!force_update)
 		if (timePassed < 5)
 			return;
 
 	u8 prevFontSize = gfx_con.fntsz;
 	gfx_con.fntsz = 16;
-	h_cfg.sbar_time_keeping = get_tmr_s();
+	sbar_time_keeping = get_tmr_s();
 
 	u32 battPercent = 0;
 	int battVoltCurr = 0;
