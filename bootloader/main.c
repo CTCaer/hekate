@@ -1181,7 +1181,7 @@ static void _show_errors()
 static void _check_low_battery()
 {
 	int enough_battery;
-	int batt_volt = 3200;
+	int batt_volt = 3500;
 	int charge_status = 0;
 
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
@@ -1190,7 +1190,7 @@ static void _check_low_battery()
 	enough_battery = charge_status ? 3250 : 3000;
 
 	if (batt_volt > enough_battery)
-		return;
+		goto out;
 
 	// Prepare battery icon resources.
 	u8 *battery_res = malloc(ALIGN(SZ_BATTERY_EMPTY, 0x1000));
@@ -1283,6 +1283,7 @@ static void _check_low_battery()
 	free(charging_icon);
 	free(no_charging_icon);
 
+out:
 	// Re enable Low Battery Monitor shutdown.
 	max77620_low_battery_monitor_config(true);
 }
