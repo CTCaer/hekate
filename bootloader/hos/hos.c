@@ -502,69 +502,36 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_c
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 {
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-
-	int res = emummc_storage_init_mmc(&storage, &sdmmc);
-
-	if (res)
-	{
-		if (res == 2)
-			_hos_crit_error("Failed to init eMMC");
-		else
-			_hos_crit_error("Failed to init emuMMC");
-
-		return 0;
-	}
-
 	// Read package1.
 	ctxt->pkg1 = (void *)malloc(0x40000);
-	emummc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
-	emummc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	emummc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
 		_hos_crit_error("Unknown pkg1 version.");
 		EHPRINTFARGS("HOS version not supported!%s",
 			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "\nOr emuMMC corrupt!" : "");
-		goto out;
+		return 0;
 	}
 	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	emummc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+	emummc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 
-	res = 1;
-
-out:
-	sdmmc_storage_end(&storage);
-	return res;
+	return 1;
 }
 
 static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 {
 	u8 *bctBuf = NULL;
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
 
-	int res = emummc_storage_init_mmc(&storage, &sdmmc);
-
-	if (res)
-	{
-		if (res == 2)
-			_hos_crit_error("Failed to init eMMC");
-		else
-			_hos_crit_error("Failed to init emuMMC");
-
-		return NULL;
-	}
-
-	emummc_storage_set_mmc_partition(&storage, EMMC_GPP);
+	emummc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &storage);
+	nx_emmc_gpt_parse(&gpt, &emmc_storage);
 DPRINTF("Parsed GPT\n");
 	// Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
@@ -574,25 +541,24 @@ DPRINTF("Parsed GPT\n");
 	// Read in package2 header and get package2 real size.
 	static const u32 BCT_SIZE = 0x4000;
 	bctBuf = (u8 *)malloc(BCT_SIZE);
-	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
+	nx_emmc_part_read(&emmc_storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
 	u32 *hdr = (u32 *)(bctBuf + 0x100);
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
 DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 
 	// Read in Boot Config.
 	memset(bctBuf, 0, BCT_SIZE);
-	nx_emmc_part_read(&storage, pkg2_part, 0, BCT_SIZE / NX_EMMC_BLOCKSIZE, bctBuf);
+	nx_emmc_part_read(&emmc_storage, pkg2_part, 0, BCT_SIZE / NX_EMMC_BLOCKSIZE, bctBuf);
 
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
-	nx_emmc_part_read(&storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE,
+	nx_emmc_part_read(&emmc_storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, ctxt->pkg2);
 out:
 	nx_emmc_gpt_free(&gpt);
-	sdmmc_storage_end(&storage);
 
 	return bctBuf;
 }
@@ -659,15 +625,27 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_puts("Initializing...\n\n");
 
+	// Initialize eMMC/emuMMC.
+	int res = emummc_storage_init_mmc(&emmc_storage, &emmc_sdmmc);
+	if (res)
+	{
+		if (res == 2)
+			_hos_crit_error("Failed to init eMMC");
+		else
+			_hos_crit_error("Failed to init emuMMC");
+
+		goto error;
+	}
+
 	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
-		return 0;
+		goto error;
 
 	// Try to parse config if present.
 	if (ctxt.cfg && !parse_boot_config(&ctxt))
 	{
 		_hos_crit_error("Wrong ini cfg or missing files!");
-		return 0;
+		goto error;
 	}
 
 	// Enable emummc patching.
@@ -676,7 +654,7 @@ int hos_launch(ini_sec_t *cfg)
 		if (ctxt.stock)
 		{
 			_hos_crit_error("Stock emuMMC is not supported yet!");
-			return 0;
+			goto error;
 		}
 
 		ctxt.atmosphere = true; // Set atmosphere patching in case of Stock emuMMC and no fss0.
@@ -685,7 +663,7 @@ int hos_launch(ini_sec_t *cfg)
 	else if (!emu_cfg.enabled && ctxt.emummc_forced)
 	{
 		_hos_crit_error("emuMMC is forced but not enabled!");
-		return 0;
+		goto error;
 	}
 
 	// Check if fuses lower than 4.0.0 or 9.0.0 and if yes apply NO Gamecard patch.
@@ -714,11 +692,11 @@ int hos_launch(ini_sec_t *cfg)
 		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
 			_hos_crit_error("Failed to run sept");
-			return 0;
+			goto error;
 		}
 
 		if (!hos_keygen(ctxt.keyblob, kb, &tsec_ctxt, &ctxt))
-			return 0;
+			goto error;
 		gfx_puts("Generated keys\n");
 		if (kb <= KB_FIRMWARE_VERSION_600)
 			h_cfg.se_keygen_done = 1;
@@ -738,7 +716,7 @@ int hos_launch(ini_sec_t *cfg)
 		else
 		{
 			_hos_crit_error("No mandatory secmon or warmboot provided!");
-			return 0;
+			goto error;
 		}
 	}
 
@@ -750,7 +728,7 @@ int hos_launch(ini_sec_t *cfg)
 		if (kb >= KB_FIRMWARE_VERSION_700)
 		{
 			_hos_crit_error("No warmboot provided!");
-			return 0;
+			goto error;
 		}
 		// Else we patch it to allow downgrading.
 		patch_t *warmboot_patchset = ctxt.pkg1_id->warmboot_patchset;
@@ -781,7 +759,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!bootConfigBuf)
 	{
 		_hos_crit_error("Pkg2 read failed!");
-		return 0;
+		goto error;
 	}
 
 	gfx_puts("Read pkg2\n");
@@ -798,7 +776,7 @@ int hos_launch(ini_sec_t *cfg)
 			// Clear EKS slot, in case something went wrong with sept keygen.
 			hos_eks_clear(kb);
 		}
-		return 0;
+		goto error;
 	}
 	else if (kb >= KB_FIRMWARE_VERSION_700)
 		hos_eks_save(kb); // Save EKS slot if it doesn't exist.
@@ -807,7 +785,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2))
 	{
 		_hos_crit_error("INI1 parsing failed!");
-		return 0;
+		goto error;
 	}
 
 	gfx_puts("Parsed ini1\n");
@@ -833,7 +811,7 @@ int hos_launch(ini_sec_t *cfg)
 			{
 				_hos_crit_error("Failed to identify kernel!");
 
-				return 0;
+				goto error;
 			}
 
 			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
@@ -872,7 +850,7 @@ int hos_launch(ini_sec_t *cfg)
 		_hos_crit_error("SD Card is exFAT and the installed\nFS only supports FAT32!");
 
 		_free_launch_components(&ctxt);
-		return 0;
+		goto error;
 	}
 
 	// Patch kip1s in memory if needed.
@@ -882,7 +860,7 @@ int hos_launch(ini_sec_t *cfg)
 		EHPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
 
 		_free_launch_components(&ctxt);
-		return 0; // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
+		goto error; // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
 	}
 
 	// Rebuild and encrypt package2.
@@ -947,8 +925,9 @@ int hos_launch(ini_sec_t *cfg)
 	if (ctxt.atmosphere && ctxt.secmon)
 		config_exosphere(&ctxt);
 
-	// Unmount SD card.
+	// Unmount SD card and eMMC.
 	sd_end();
+	sdmmc_storage_end(&emmc_storage);
 
 	// Finalize MC carveout.
 	if (kb <= KB_FIRMWARE_VERSION_301)
@@ -1003,5 +982,7 @@ int hos_launch(ini_sec_t *cfg)
 	while (true)
 		bpmp_halt();
 
+error:
+	sdmmc_storage_end(&emmc_storage);
 	return 0;
 }
