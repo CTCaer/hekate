@@ -89,23 +89,26 @@ clean:
 	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+	@$(MAKE) -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(NYXDIR):
-	$(MAKE) -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+	@$(MAKE) -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR)
 	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
 	@printf ICTC49 >> $(OUTPUTDIR)/$@
 
 $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
-	$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
+	@$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
+	@echo "hekate was built with the following flags:\nCFLAGS:  "$(CFLAGS)"\nLDFLAGS: "$(LDFLAGS)
 
 $(BUILDDIR)/$(TARGET)/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	@echo Building $@
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILDDIR)/$(TARGET)/%.o: %.S
-	$(CC) $(CFLAGS) -c $< -o $@
+	@echo Building $@
+	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJS): $(BUILDDIR)/$(TARGET)
 
