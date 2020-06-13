@@ -216,6 +216,7 @@ int launch_payload(char *path, bool update)
 		FIL fp;
 		if (f_open(&fp, path, FA_READ))
 		{
+			gfx_con.mute = 0;
 			EPRINTFARGS("Payload file is missing!\n(%s)", path);
 
 			goto out;
@@ -1030,6 +1031,7 @@ skip_list:
 	{
 		launch_payload(payload_path, false);
 		free(payload_path);
+		goto payload_error;
 	}
 	else
 	{
@@ -1045,16 +1047,19 @@ skip_list:
 		check_sept(cfg_sec);
 		hos_launch(cfg_sec);
 
+wrong_emupath:
+		EPRINTF("\nFailed to launch HOS!");
+
 		if (emummc_path || b_cfg.boot_cfg & BOOT_CFG_TO_EMUMMC)
 		{
 			sd_mount();
 			emummc_load_cfg();
 		}
 
-wrong_emupath:
-		display_backlight_brightness(h_cfg.backlight, 1000);
-		EPRINTF("\nFailed to launch HOS!");
+payload_error:
+		gfx_con.mute = 0;
 		gfx_printf("\nPress any key...\n");
+		display_backlight_brightness(h_cfg.backlight, 1000);
 		msleep(500);
 		btn_wait();
 	}
