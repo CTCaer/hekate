@@ -42,14 +42,6 @@
 #define HOS_PKG11_MAGIC 0x31314B50
 #define HOS_EKS_MAGIC   0x30534B45
 
-typedef struct _exo_ctxt_t
-{
-	bool no_user_exceptions;
-	bool user_pmu;
-	bool *cal0_blank;
-	bool *cal0_allow_writes_sys;
-} exo_ctxt_t;
-
 typedef struct _hos_eks_keys_t
 {
 	u8 dkg[0x10];

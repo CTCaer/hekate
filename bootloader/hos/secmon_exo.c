@@ -214,21 +214,21 @@ void config_exosphere(launch_ctxt_t *ctxt)
 		exoFlags |= EXO_FLAG_DBG_USER;
 
 	// Disable proper failure handling.
-	if (ctxt->exo_cfg.no_user_exceptions)
+	if (ctxt->exo_ctx.no_user_exceptions)
 		exoFlags |= EXO_FLAG_NO_USER_EXC;
 
 	// Enable user access to PMU.
-	if (ctxt->exo_cfg.user_pmu)
+	if (ctxt->exo_ctx.user_pmu)
 		exoFlags |= EXO_FLAG_USER_PMU;
 
 	// Enable prodinfo blanking. Check if exo ini value is overridden. If not, check if enabled in exo ini.
-	if ((ctxt->exo_cfg.cal0_blank && *ctxt->exo_cfg.cal0_blank)
-			|| (!ctxt->exo_cfg.cal0_blank && cal0_blanking))
+	if ((ctxt->exo_ctx.cal0_blank && *ctxt->exo_ctx.cal0_blank)
+			|| (!ctxt->exo_ctx.cal0_blank && cal0_blanking))
 		exoFlags |= EXO_FLAG_CAL0_BLANKING;
 
 	// Allow prodinfo writes. Check if exo ini value is overridden. If not, check if enabled in exo ini.
-	if ((ctxt->exo_cfg.cal0_allow_writes_sys && *ctxt->exo_cfg.cal0_allow_writes_sys)
-			|| (!ctxt->exo_cfg.cal0_allow_writes_sys && cal0_allow_writes_sys))
+	if ((ctxt->exo_ctx.cal0_allow_writes_sys && *ctxt->exo_ctx.cal0_allow_writes_sys)
+			|| (!ctxt->exo_ctx.cal0_allow_writes_sys && cal0_allow_writes_sys))
 		exoFlags |= EXO_FLAG_CAL0_WRITES_SYS;
 
 	// Set mailbox values.

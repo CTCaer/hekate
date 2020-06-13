@@ -68,7 +68,7 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 
 		u32 dirlen = 0;
 		dir[strlen(dir) - 2] = 0;
-		char *filelist = dirlist(dir, "*.kip*", false);
+		char *filelist = dirlist(dir, "*.kip*", false, false);
 
 		strcat(dir, "/");
 		dirlen = strlen(dir);
@@ -205,7 +205,7 @@ static int _config_dis_exo_user_exceptions(launch_ctxt_t *ctxt, const char *valu
 	if (*value == '1')
 	{
 		DPRINTF("Disabled exosphere user exception handlers\n");
-		ctxt->exo_cfg.no_user_exceptions = true;
+		ctxt->exo_ctx.no_user_exceptions = true;
 	}
 	return 1;
 }
@@ -215,7 +215,7 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 	if (*value == '1')
 	{
 		DPRINTF("Enabled user access to PMU\n");
-		ctxt->exo_cfg.user_pmu = true;
+		ctxt->exo_ctx.user_pmu = true;
 	}
 	return 1;
 }
@@ -223,12 +223,12 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_cfg.cal0_blank = calloc(sizeof(bool), 1);
+	ctxt->exo_ctx.cal0_blank = calloc(sizeof(bool), 1);
 
 	if (*value == '1')
 	{
 		DPRINTF("Enabled prodinfo blanking\n");
-		*ctxt->exo_cfg.cal0_blank = true;
+		*ctxt->exo_ctx.cal0_blank = true;
 	}
 	return 1;
 }
@@ -236,12 +236,12 @@ static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_cal0_writes_enable(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_cfg.cal0_allow_writes_sys = calloc(sizeof(bool), 1);
+	ctxt->exo_ctx.cal0_allow_writes_sys = calloc(sizeof(bool), 1);
 
 	if (*value == '1')
 	{
 		DPRINTF("Enabled prodinfo writes\n");
-		*ctxt->exo_cfg.cal0_allow_writes_sys = true;
+		*ctxt->exo_ctx.cal0_allow_writes_sys = true;
 	}
 
 	return 1;

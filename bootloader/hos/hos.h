@@ -100,7 +100,7 @@ typedef struct _launch_ctxt_t
 	bool fss0_enable_experimental;
 	bool emummc_forced;
 
-	exo_ctxt_t exo_cfg;
+	exo_ctxt_t exo_ctx;
 
 	ini_sec_t *cfg;
 } launch_ctxt_t;
