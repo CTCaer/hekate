@@ -22,14 +22,6 @@
 #include "../power/max17050.h"
 #include "../utils/util.h"
 
-#ifdef MENU_LOGO_ENABLE
-extern u8 *Kc_MENU_LOGO;
-#define X_MENU_LOGO       119
-#define Y_MENU_LOGO        57
-#define X_POS_MENU_LOGO   577
-#define Y_POS_MENU_LOGO  1179
-#endif //MENU_LOGO_ENABLE
-
 extern hekate_config h_cfg;
 
 void tui_sbar(bool force_update)
@@ -103,11 +95,6 @@ void *tui_do_menu(menu_t *menu)
 
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	tui_sbar(true);
-
-#ifdef MENU_LOGO_ENABLE
-	gfx_set_rect_rgb(Kc_MENU_LOGO,
-		X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 
 	while (true)
 	{
@@ -210,10 +197,6 @@ void *tui_do_menu(menu_t *menu)
 			}
 			gfx_con.fntsz = 16;
 			gfx_clear_partial_grey(0x1B, 0, 1256);
-#ifdef MENU_LOGO_ENABLE
-			gfx_set_rect_rgb(Kc_MENU_LOGO,
-				X_MENU_LOGO, Y_MENU_LOGO, X_POS_MENU_LOGO, Y_POS_MENU_LOGO);
-#endif //MENU_LOGO_ENABLE
 		}
 		tui_sbar(false);
 	}

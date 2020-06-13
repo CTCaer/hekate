@@ -59,10 +59,6 @@
 #include "frontend/fe_tools.h"
 #include "frontend/fe_info.h"
 
-#ifdef MENU_LOGO_ENABLE
-u8 *Kc_MENU_LOGO;
-#endif //MENU_LOGO_ENABLE
-
 hekate_config h_cfg;
 boot_cfg_t __attribute__((section ("._boot_cfg"))) b_cfg;
 const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
@@ -1482,11 +1478,6 @@ void ipl_main()
 
 	u32 *fb = display_init_framebuffer_pitch();
 	gfx_init_ctxt(fb, 720, 1280, 720);
-
-#ifdef MENU_LOGO_ENABLE
-	Kc_MENU_LOGO = (u8 *)malloc(ALIGN(SZ_MENU_LOGO, 0x1000));
-	blz_uncompress_srcdest(Kc_MENU_LOGO_blz, SZ_MENU_LOGO_BLZ, Kc_MENU_LOGO, SZ_MENU_LOGO);
-#endif
 
 	gfx_con_init();
 
