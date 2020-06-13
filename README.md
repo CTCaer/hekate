@@ -1,9 +1,9 @@
-# hekate - CTCaer mod
+# hekate - Nyx
 
 ![Image of Hekate](https://user-images.githubusercontent.com/3665130/60391760-bc1e8c00-9afe-11e9-8b7a-b065873081b2.png)
 
 
-Custom Nintendo Switch bootloader, firmware patcher, and more.
+Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many more.
 
 
 ## Bootloader folders and files
@@ -30,7 +30,7 @@ Custom Nintendo Switch bootloader, firmware patcher, and more.
 | bootloader/screenshots/  | Folder where Nyx screenshots are saved                                |
 | bootloader/payloads/     | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
 | bootloader/libtools/     | Future reserved                                                       |
-| sept                     | Sept folder. This must be always get updated via the Atmosphère release zip. Needed for tools and booting HOS on 7.0.0 and up. Unused for booting HOS if `fss0=` key is defined. |
+| sept                     | Sept folder. This must always get updated via the Atmosphère release zip. Needed for tools and booting HOS on 7.0.0 and up. Unused for booting HOS if `fss0=` key is defined. |
 
 **Note**: Sept files for booting 7.0.0 and up are expected at /sept folder at root of sd card.
 
@@ -87,7 +87,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | atmosphere=1           | Enables Atmosphère patching.                               |
 | emupath={SD folder}    | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
 | emummcforce=1          | Forces the use of emuMMC. If emummc.ini is disabled or not found, then it causes an error. |
-| emummc_force_disable=1 | Disables emuMMC if it's enabled.                           |
+| emummc_force_disable=1 | Disables emuMMC, if it's enabled.                           |
 | stock=1                | Disables unneeded kernel patching when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
 | id=idname              | Identifies boot entry for forced boot via id. Max 7 chars. |
 | payload={SD path}      | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
@@ -120,11 +120,12 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 
 | Offset / Name           | Description                                                       |
 | ----------------------- | ----------------------------------------------------------------- |
-| '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: Boot from ID, bit3: `Boot to emuMMC`, bit7: `sept run`. |
+| '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: `Boot from ID`, bit3: `Boot to emuMMC`, bit6: `Boot to UMS`, bit7: `sept run`. |
 | '0x95' autoboot         | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
 | '0x96' autoboot_list    | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
 | '0x97' extra_cfg        | bit7: Force Nyx to run `Dump pkg1/2`.                             |
 | '0x98' xt_str[128]      | Depends on the set cfg bits.                                      |
+| '0x98' ums[1]           | When `Boot to UMS` is set, it will launch the selected UMS. 0: SD, 1: eMMC BOOT0, 2: eMMC BOOT1, 3: eMMC GPP, 4: emuMMC BOOT0, 5: emuMMC BOOT1, 6: emuMMC GPP,  |
 | '0x98' id[8]            | When `Boot from ID` is set, it will search all inis automatically and find the boot entry with that id and boot it. Must be NULL terminated. |
 | '0xA0' emummc_path[120] | When `Boot to emuMMC` is set, it will override the current emuMMC (boot entry or emummc.ini). Must be NULL terminated. |
 
