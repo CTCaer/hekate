@@ -154,6 +154,16 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 	return 0;
 }
 
+void bq24193_enable_charger()
+{
+	u8 reg = bq24193_get_reg(BQ24193_PORConfig);
+
+	reg &= ~BQ24193_PORCONFIG_CHGCONFIG_MASK;
+	reg |= BQ24193_PORCONFIG_CHGCONFIG_CHARGER_EN;
+
+	i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_PORConfig, reg);
+}
+
 void bq24193_fake_battery_removal()
 {
 	// Disable watchdog to keep BATFET disabled.

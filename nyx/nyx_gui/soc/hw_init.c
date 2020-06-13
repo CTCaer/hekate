@@ -323,6 +323,9 @@ void config_hw()
 	i2c_init(I2C_1);
 	i2c_init(I2C_5);
 
+	// Enable charger in case it's disabled.
+	bq24193_enable_charger();
+
 	_config_regulators();
 
 	_config_pmc_scratch(); // Missing from 4.x+

@@ -30,6 +30,7 @@
 #define BQ24193_PORCONFIG_BOOST_MASK       (1<<0)
 #define BQ24193_PORCONFIG_SYSMIN_MASK      (7<<1)
 #define BQ24193_PORCONFIG_CHGCONFIG_MASK   (3<<4)
+#define BQ24193_PORCONFIG_CHGCONFIG_CHARGER_EN (1<<4)
 #define BQ24193_PORCONFIG_I2CWATCHDOG_MASK (1<<6)
 #define BQ24193_PORCONFIG_RESET_MASK       (1<<7)
 
@@ -114,6 +115,7 @@ enum BQ24193_reg_prop {
 };
 
 int bq24193_get_property(enum BQ24193_reg_prop prop, int *value);
+void bq24193_enable_charger();
 void bq24193_fake_battery_removal();
 
 #endif /* __BQ24193_H_ */
