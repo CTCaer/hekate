@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../soc/cluster.h"
+#include "../soc/ccplex.h"
 #include "../soc/i2c.h"
 #include "../soc/clock.h"
 #include "../utils/util.h"
@@ -23,7 +23,7 @@
 #include "../power/max77620.h"
 #include "../power/max7762x.h"
 
-void _cluster_enable_power()
+void _ccplex_enable_power()
 {
 	u8 tmp = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO); // Get current pinmuxing
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO, tmp & ~(1 << 5)); // Disable GPIO5 pinmuxing.
@@ -40,7 +40,7 @@ void _cluster_enable_power()
 	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_DVC_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_0_95V);
 }
 
-int _cluster_pmc_enable_partition(u32 part, int enable)
+int _ccplex_pmc_enable_partition(u32 part, int enable)
 {
 	u32 part_mask = 1 << part;
 	u32 desired_state = enable << part;
@@ -73,12 +73,12 @@ int _cluster_pmc_enable_partition(u32 part, int enable)
 	return 1;
 }
 
-void cluster_boot_cpu0(u32 entry)
+void ccplex_boot_cpu0(u32 entry)
 {
 	// Set ACTIVE_CLUSER to FAST.
 	FLOW_CTLR(FLOW_CTLR_BPMP_CLUSTER_CONTROL) &= 0xFFFFFFFE;
 
-	_cluster_enable_power();
+	_ccplex_enable_power();
 
 	if (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & 0x40000000)) // PLLX_ENABLE.
 	{
@@ -107,11 +107,11 @@ void cluster_boot_cpu0(u32 entry)
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
 	// Enable CPU rail.
-	_cluster_pmc_enable_partition(0, 1);
+	_ccplex_pmc_enable_partition(0, 1);
 	// Enable cluster 0 non-CPU.
-	_cluster_pmc_enable_partition(15, 1);
+	_ccplex_pmc_enable_partition(15, 1);
 	// Enable CE0.
-	_cluster_pmc_enable_partition(14, 1);
+	_ccplex_pmc_enable_partition(14, 1);
 
 	// Request and wait for RAM repair.
 	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = 1;

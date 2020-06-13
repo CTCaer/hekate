@@ -33,7 +33,7 @@
 #include "../sec/se_t210.h"
 #include "../sec/tsec.h"
 #include "../soc/bpmp.h"
-#include "../soc/cluster.h"
+#include "../soc/ccplex.h"
 #include "../soc/fuse.h"
 #include "../soc/pmc.h"
 #include "../soc/smmu.h"
@@ -989,7 +989,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (smmu_is_used())
 		smmu_exit();
 	else
-		cluster_boot_cpu0(ctxt.pkg1_id->secmon_base);
+		ccplex_boot_cpu0(ctxt.pkg1_id->secmon_base);
 	while (!secmon_mb->out)
 		; // A usleep(1) only works when in IRAM or with a trained DRAM.
 

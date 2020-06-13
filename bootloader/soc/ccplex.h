@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CLUSTER_H_
-#define _CLUSTER_H_
+#ifndef _CCPLEX_H_
+#define _CCPLEX_H_
 
 #include "../utils/types.h"
 
-void cluster_boot_cpu0(u32 entry);
+void ccplex_boot_cpu0(u32 entry);
 
 #endif

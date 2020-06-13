@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "smmu.h"
-#include "../soc/cluster.h"
+#include "../soc/ccplex.h"
 #include "../soc/t210.h"
 #include "../mem/mc_t210.h"
 #include "../utils/util.h"
@@ -92,7 +92,7 @@ void smmu_enable()
 	if (smmu_used)
 		return;
 
-	cluster_boot_cpu0((u32)smmu_payload);
+	ccplex_boot_cpu0((u32)smmu_payload);
 	smmu_used = true;
 	msleep(150);
 
