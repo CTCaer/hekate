@@ -350,11 +350,8 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 	SE(SE_SHA_MSG_LEFT_3_REG_OFFSET) = 0;
 
 	// If we hash in chunks, copy over the intermediate.
-	if (sha_cfg == SHA_CONTINUE)
+	if (sha_cfg == SHA_CONTINUE && msg_left)
 	{
-		if (!msg_left)
-			return 0;
-
 		// Restore message left to process.
 		SE(SE_SHA_MSG_LEFT_0_REG_OFFSET) = msg_left[0];
 		SE(SE_SHA_MSG_LEFT_1_REG_OFFSET) = msg_left[1];
