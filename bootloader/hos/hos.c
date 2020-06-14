@@ -333,7 +333,7 @@ out:
 
 int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt)
 {
-	u8 tmp[0x20];
+	u8 tmp[0x30];
 	u32 retries = 0;
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
@@ -418,12 +418,12 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_c
 			// Decrypt keyblob and set keyslots
 			se_aes_crypt_block_ecb(12, 0, tmp + 0x20, keyblob_keyseeds[0]);
 			se_aes_unwrap_key(15, 14, tmp + 0x20);
-			se_aes_unwrap_key(14, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
 
 			se_aes_unwrap_key(13, 13, master_keyseed_620);
 			se_aes_unwrap_key(12, 13, master_keyseed_retail);
-			se_aes_unwrap_key(10, 13, master_keyseed_4xx_5xx_610);
+			se_aes_unwrap_key(14, 13, master_keyseed_4xx_5xx_610);
 
 			// Package2 key.
 			se_aes_unwrap_key(8, 12, package2_keyseed);
@@ -636,6 +636,8 @@ int hos_launch(ini_sec_t *cfg)
 	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
 		goto error;
+
+	kb = ctxt.pkg1_id->kb;
 
 	// Try to parse config if present.
 	if (ctxt.cfg && !parse_boot_config(&ctxt))
