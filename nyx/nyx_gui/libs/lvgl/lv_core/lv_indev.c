@@ -357,7 +357,10 @@ static void indev_pointer_proc(lv_indev_t * i, lv_indev_data_t * data)
     if(i->cursor != NULL &&
             (i->proc.last_point.x != data->point.x ||
              i->proc.last_point.y != data->point.y)) {
-        lv_obj_set_pos(i->cursor, data->point.x, data->point.y);
+        /*Use cursor's center as pointer*/
+        uint32_t off_x = lv_obj_get_width(i->cursor) >> 1;
+        uint32_t off_y = lv_obj_get_height(i->cursor) >> 1;
+        lv_obj_set_pos(i->cursor, data->point.x - off_x, data->point.y - off_y);
     }
 
     i->proc.act_point.x = data->point.x;
