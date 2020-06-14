@@ -320,6 +320,25 @@ static lv_res_t _data_verification_action(lv_obj_t *ddlist)
 	return LV_RES_OK;
 }
 
+static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
+{
+	static const char * mbox_btn_map[] = {"\211", "\222OK!", "\211", ""};
+	lv_obj_t * mbox = lv_mbox_create(lv_scr_act(), NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	int res = !create_nyx_config_entry();
+
+	if (res)
+		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
+	else
+		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#FFDD00 Failed to save the configuration#\n#FFDD00 to sd card!#");
+	lv_mbox_add_btns(mbox, mbox_btn_map, NULL);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
 void create_flat_button(lv_obj_t *parent, lv_obj_t *btn, lv_color_t color, lv_action_t action)
 {
 	lv_style_t *btn_onoff_rel_hos_style = malloc(sizeof(lv_style_t));
@@ -598,6 +617,14 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 	return LV_RES_INV;
 }
 
+static lv_res_t _action_clock_edit_save(lv_obj_t *btns, const char * txt)
+{
+	_action_clock_edit(btns, txt);
+	_save_nyx_options_action(NULL);
+
+	return LV_RES_INV;
+}
+
 static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -609,7 +636,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time#");
+	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time# for Nyx\nThis will not alter the actual HW clock!");
 
 	rtc_time_t time;
 	max77620_rtc_get_time(&time);
@@ -696,12 +723,18 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_obj_align(roller_minute, roller_hour, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	clock_ctxt.min = roller_minute;
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, _action_clock_edit); // Important. After set_text.
+	// If btn is empty, save options also because it was launched from boot.
+	lv_mbox_add_btns(mbox, mbox_btn_map, btn ? _action_clock_edit : _action_clock_edit_save);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
 	return LV_RES_OK;
+}
+
+void first_time_clock_edit(void *param)
+{
+	_create_mbox_clock_edit(NULL);
 }
 
 static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
@@ -790,25 +823,6 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 static lv_res_t _home_screen_action(lv_obj_t *ddlist)
 {
 	n_cfg.home_screen = lv_ddlist_get_selected(ddlist);
-
-	return LV_RES_OK;
-}
-
-static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
-{
-	static const char * mbox_btn_map[] = {"\211", "\222OK!", "\211", ""};
-	lv_obj_t * mbox = lv_mbox_create(lv_scr_act(), NULL);
-	lv_mbox_set_recolor_text(mbox, true);
-
-	int res = !create_nyx_config_entry();
-
-	if (res)
-		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
-	else
-		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#FFDD00 Failed to save the configuration#\n#FFDD00 to sd card!#");
-	lv_mbox_add_btns(mbox, mbox_btn_map, NULL);
-	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
-	lv_obj_set_top(mbox, true);
 
 	return LV_RES_OK;
 }
