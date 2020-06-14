@@ -645,6 +645,7 @@ int hos_launch(ini_sec_t *cfg)
 {
 	u8 kb;
 	launch_ctxt_t ctxt;
+	bool exo_new = false;
 	tsec_ctxt_t tsec_ctxt;
 	volatile secmon_mailbox_t *secmon_mailbox;
 
@@ -718,6 +719,11 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	gfx_puts("Loaded config, pkg1 and keyblob\n");
+
+	// Check if secmon is new exosphere.
+	if (ctxt.secmon)
+		exo_new = !memcmp((void *)((u8 *)ctxt.secmon + ctxt.secmon_size - 4), "LENY", 4);
+	h_cfg.aes_slots_new = exo_new;
 
 	// Generate keys.
 	if (!h_cfg.se_keygen_done)
@@ -929,8 +935,8 @@ int hos_launch(ini_sec_t *cfg)
 	else if (kb == KB_FIRMWARE_VERSION_301)
 		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 
-	// Finalize per firmware key access.
-	switch (kb)
+	// Finalize per firmware key access. Skip access control if new exosphere.
+	switch (kb | (exo_new << 7))
 	{
 	case KB_FIRMWARE_VERSION_100_200:
 	case KB_FIRMWARE_VERSION_300:
@@ -952,7 +958,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Clear BCT area for retail units and copy it over if dev unit.
-	if (kb <= KB_FIRMWARE_VERSION_500)
+	if (kb <= KB_FIRMWARE_VERSION_500 && !exo_new)
 	{
 		memset((void *)0x4003D000, 0, 0x3000);
 		if ((fuse_read_odm(4) & 3) == 3)
@@ -979,7 +985,7 @@ int hos_launch(ini_sec_t *cfg)
 		mc_config_carveout();
 
 	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise lock bootrom and ipatches.
-	_se_lock(kb <= KB_FIRMWARE_VERSION_600);
+	_se_lock(kb <= KB_FIRMWARE_VERSION_600 && !exo_new);
 
 	// Reset sysctr0 counters.
 	if (kb >= KB_FIRMWARE_VERSION_620)
@@ -989,7 +995,7 @@ int hos_launch(ini_sec_t *cfg)
 	//_pmc_scratch_lock(kb);
 
 	// Set secmon mailbox address.
-	if (kb >= KB_FIRMWARE_VERSION_700)
+	if (kb >= KB_FIRMWARE_VERSION_700 || exo_new)
 		secmon_mailbox = (secmon_mailbox_t *)SECMON7_MAILBOX_ADDR;
 	else
 		secmon_mailbox = (secmon_mailbox_t *)SECMON_MAILBOX_ADDR;
