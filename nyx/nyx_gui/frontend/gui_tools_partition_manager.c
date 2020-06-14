@@ -1331,16 +1331,26 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	disk_set_info(DRIVE_SD, SET_SECTOR_COUNT, &part_rsvd_size);
 	u8 *buf = malloc(0x400000);
 
-	u32 cluster_size = part_info.hos_size < 2560 ? 4096 : 65536;
-	if (f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000))
+	u32 cluster_size = 65536;
+	u32 mkfs_error = f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000);
+	if (mkfs_error)
 	{
-		// Retry.
-		u32 error = f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000);
-		if (error)
+		// Retry by halving cluster size.
+		while (cluster_size > 4096)
+		{
+			cluster_size /= 2;
+			mkfs_error = f_mkfs("sd:", FM_FAT32, cluster_size, buf, 0x400000);
+
+			if (!mkfs_error)
+				break;
+		}
+
+		if (mkfs_error)
 		{
 			// Failed to format.
 			s_printf((char *)buf, "#FFDD00 Error:# Failed to format disk (%d)!\n\n"
-				"Remove the SD card and check that is OK.\nIf not, format it, reinsert it and\npress #FF8000 POWER#!", error);
+				"Remove the SD card and check that is OK.\nIf not, format it, reinsert it and\npress #FF8000 POWER#!", mkfs_error);
+
 			lv_label_set_text(lbl_status, (char *)buf);
 			lv_label_set_text(lbl_paths[0], " ");
 			manual_system_maintenance(true);
