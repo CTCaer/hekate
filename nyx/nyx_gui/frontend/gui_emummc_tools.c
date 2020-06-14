@@ -236,7 +236,9 @@ static void _create_mbox_emummc_raw()
 		u32 part_size = mbr->partitions[i].size_sct;
 		u32 part_start = mbr->partitions[i].start_sct;
 		u8  part_type = mbr->partitions[i].type;
-		bool valid_part = (part_type != 0x83) && (part_type != 0xEE); // Skip Linux and GPT (Android) partitions.
+
+		// Skip Linux, GPT (Android) and SFD partitions.
+		bool valid_part = (part_type != 0x83) && (part_type != 0xEE) && (part_type != 0xFF);
 
 		if ((part_size >= emmc_size_safe) && part_start > 0x8000 && valid_part)
 		{
