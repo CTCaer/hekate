@@ -53,6 +53,7 @@
 #define  HCI_STATE_PAIR      0x02
 #define  HCI_STATE_HOME      0x04
 #define JC_HID_SUBCMD_SPI_READ   0x10
+#define  SPI_READ_OFFSET     0x20
 #define JC_HID_SUBCMD_RUMBLE_CTL 0x48
 #define JC_HID_SUBCMD_SND_RUMBLE 0xFF
 
@@ -309,13 +310,7 @@ void jc_send_hid_cmd(u8 uart, u8 subcmd, u8 *data, u16 size)
 
 		u8 pkt_size = sizeof(jc_hid_out_rpt_t) + size;
 
-		if (subcmd != JC_HID_SUBCMD_SPI_READ)
-			jc_send_hid_output_rpt(uart, (u8 *)hid_pkt, pkt_size);
-		else
-		{
-			jc_send_hid_output_rpt(UART_B, (u8 *)hid_pkt, pkt_size);
-			jc_send_hid_output_rpt(UART_C, (u8 *)hid_pkt, pkt_size);
-		}
+		jc_send_hid_output_rpt(uart, (u8 *)hid_pkt, pkt_size);
 	}
 }
 
@@ -380,7 +375,7 @@ static void jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
 			jc_hid_in_pair_data_t *pair_data = (jc_hid_in_pair_data_t *)spi_info->data;
 
 			// Check if we reply is pairing info.
-			if (spi_info->addr == 0x2000 && spi_info->size == 0x1A && pair_data->magic == 0x95)
+			if (spi_info->size == 0x1A && pair_data->magic == 0x95 && pair_data->size == 0x22)
 			{
 				bt_conn->type = jc->type;
 
@@ -439,7 +434,7 @@ static void jc_rcv_pkt(joycon_ctxt_t *jc)
 	if ((uart_irq & 0x8) != 0x8)
 		return;
 
-	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, 0);
+	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, 0x100);
 
 	// Check valid size and uart reply magic.
 	if (len > 7 && !memcmp(jc->buf, "\x19\x81\x03", 3))
@@ -503,7 +498,27 @@ static void jc_req_nx_pad_status(joycon_ctxt_t *jc)
 	jc->last_status_req_time = get_tmr_ms() + 15;
 }
 
-jc_gamepad_rpt_t *jc_get_bt_pairing_info()
+static bool _jc_validate_pairing_info(u8 *buf, bool *is_hos)
+{
+	u8 crc = 0;
+	for (u32 i = 0; i < 0x22; i++)
+		crc += buf[4 + i];
+
+	crc += 0x68; // Host is Switch.
+
+	if ((crc ^ 0x55) == buf[2])
+		*is_hos = true;
+
+	crc -= 0x68;
+	crc += 0x08; // Host is PC.
+
+	if (*is_hos || (crc ^ 0x55) == buf[2])
+		return true;
+
+	return false;
+}
+
+jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 {
 	u8 retries;
 	jc_bt_conn_t *bt_conn;
@@ -522,9 +537,13 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info()
 		jc_rcv_pkt(&jc_l);
 	}
 
-	jc_hid_in_spi_read_t subcmd_data;
-	subcmd_data.addr = 0x2000;
-	subcmd_data.size = 0x1A;
+	jc_hid_in_spi_read_t subcmd_data_l;
+	subcmd_data_l.addr = 0x2000;
+	subcmd_data_l.size = 0x1A;
+
+	jc_hid_in_spi_read_t subcmd_data_r;
+	subcmd_data_r.addr = 0x2000;
+	subcmd_data_r.size = 0x1A;
 
 	// Turn off Joy-Con detect.
 	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
@@ -533,46 +552,94 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info()
 	bool jc_r_found = jc_r.connected ? false : true;
 	bool jc_l_found = jc_l.connected ? false : true;
 
-	u32 total_retries = 5;
+	u32 total_retries = 10;
 retry:
 	retries = 10;
 	while (retries)
 	{
-		if (jc_l.last_status_req_time < get_tmr_ms())
+		u32 time_now = get_tmr_ms();
+		if ((!jc_l_found && jc_l.last_status_req_time < time_now) || (!jc_r_found && jc_r.last_status_req_time < time_now))
 		{
-			jc_send_hid_cmd(0, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data, 5);
-			jc_l.last_status_req_time = get_tmr_ms() + 15;
-			jc_r.last_status_req_time = get_tmr_ms() + 15;
-			retries--;
-		}
+			if (!jc_l_found)
+			{
+				jc_send_hid_cmd(jc_l.uart, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data_l, 5);
+				jc_l.last_status_req_time = get_tmr_ms() + 15;
+			}
 
-		if (!jc_r_found)
-		{
-			memset(jc_r.buf, 0, 0x100);
-			jc_rcv_pkt(&jc_r);
+			if (!jc_r_found)
+			{
+				jc_send_hid_cmd(jc_r.uart, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data_r, 5);
+				jc_r.last_status_req_time = get_tmr_ms() + 15;
+			}
+
+			retries--;
 		}
 
 		if (!jc_l_found)
 		{
 			memset(jc_l.buf, 0, 0x100);
 			jc_rcv_pkt(&jc_l);
+
+			bool is_hos = false;
+			if (_jc_validate_pairing_info(&jc_l.buf[SPI_READ_OFFSET], &is_hos))
+			{
+				bool is_active = jc_l.buf[SPI_READ_OFFSET] == 0x95;
+
+				if (!is_active)
+					subcmd_data_l.addr += 0x26; // Get next slot.
+				else
+					jc_l_found = true; // Entry is active.
+
+				if (jc_l_found && is_hos)
+					*is_l_hos = true;
+			}
 		}
+
+		if (!jc_r_found)
+		{
+			memset(jc_r.buf, 0, 0x100);
+			jc_rcv_pkt(&jc_r);
+
+			bool is_hos = false;
+			if (_jc_validate_pairing_info(&jc_r.buf[SPI_READ_OFFSET], &is_hos))
+			{
+				bool is_active = jc_r.buf[SPI_READ_OFFSET] == 0x95;
+
+				if (!is_active)
+					subcmd_data_r.addr += 0x26; // Get next slot.
+				else
+					jc_r_found = true; // Entry is active.
+
+				if (jc_r_found && is_hos)
+					*is_r_hos = true;
+			}
+		}
+
+		if (jc_l_found && jc_r_found)
+			break;
 	}
 
-	if (jc_l.connected &&
-		memcmp(&jc_gamepad.bt_conn_l.ltk[0], "\x00\x00\x00\x00", 4) &&
-		memcmp(&jc_gamepad.bt_conn_l.ltk[8], "\x00\x00\x00\x00", 4))
-		jc_l_found = true;
-
-	if (jc_r.connected &&
-		memcmp(&jc_gamepad.bt_conn_r.ltk[0], "\x00\x00\x00\x00", 4) &&
-		memcmp(&jc_gamepad.bt_conn_r.ltk[8], "\x00\x00\x00\x00", 4))
-		jc_r_found = true;
-
-	if (total_retries && (!jc_l_found || !jc_r_found))
+	if (!jc_l_found || !jc_r_found)
 	{
-		total_retries--;
-		goto retry;
+		if (total_retries)
+		{
+			total_retries--;
+			goto retry;
+		}
+
+		if (!jc_l_found)
+		{
+			bt_conn = &jc_gamepad.bt_conn_l;
+			memset(bt_conn->host_mac, 0, 6);
+			memset(bt_conn->ltk, 0, 16);
+		}
+
+		if (!jc_r_found)
+		{
+			bt_conn = &jc_gamepad.bt_conn_r;
+			memset(bt_conn->host_mac, 0, 6);
+			memset(bt_conn->ltk, 0, 16);
+		}
 	}
 
 	// Turn Joy-Con detect on.
@@ -592,13 +659,11 @@ void jc_deinit()
 	if (jc_r.connected)
 	{
 		jc_send_hid_cmd(UART_B, JC_HID_SUBCMD_HCI_STATE, &data, 1);
-		msleep(1);
 		jc_rcv_pkt(&jc_r);
 	}
 	if (jc_l.connected)
 	{
 		jc_send_hid_cmd(UART_C, JC_HID_SUBCMD_HCI_STATE, &data, 1);
-		msleep(1);
 		jc_rcv_pkt(&jc_l);
 	}
 

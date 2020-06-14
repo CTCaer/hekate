@@ -740,7 +740,18 @@ void first_time_clock_edit(void *param)
 static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 {
 	FIL fp;
-	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info();
+	bool is_l_hos = false;
+	bool is_r_hos = false;
+	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info(&is_l_hos, &is_r_hos);
+
+	// Count valid joycon.
+	u32 joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
+	if (jc_pad->bt_conn_r.type)
+		joycon_found++;
+
+	// Reset PC based for dumping.
+	jc_pad->bt_conn_l.type = is_l_hos ? jc_pad->bt_conn_l.type : 0;
+	jc_pad->bt_conn_r.type = is_r_hos ? jc_pad->bt_conn_r.type : 0;
 
 	int error = !sd_mount();
 
@@ -796,17 +807,50 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 
-	u32 joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
-	if (jc_pad->bt_conn_r.type)
-		joycon_found++;
-
-	if (error)
-		s_printf(txt_buf, "#FFDD00 Failed to dump to# Joy-Con pairing info#FFDD00 !#\nError: %d", error);
-	else
+	if (!error)
+	{
 		s_printf(txt_buf,
 			"Dumping to SD card finished!\n"
-			"Found %d Joycon!\n\n"
-			"Saved to: #C7EA46 switchroot/joycon_mac.bin/ini#", joycon_found);
+			"Saved to: #C7EA46 switchroot/joycon_mac.[bin/ini]#\n\n");
+
+		bool success = true;
+
+		// Check if pairing info was found.
+		if (joycon_found == 2)
+			s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
+		else
+		{
+			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
+			success = false;
+		}
+
+		// Check if pairing was done in HOS.
+		if (is_l_hos && is_r_hos)
+			s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Both pairing data are HOS based!#");
+		else if (!is_l_hos && is_r_hos)
+		{
+			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# #FFDD00 Left# pairing data is not HOS based!");
+			success = false;
+		}
+		else if (is_l_hos && !is_r_hos)
+		{
+			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# #FFDD00 Right# pairing data is not HOS based!");
+			success = false;
+		}
+		else
+		{
+			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# #FFDD00 No# pairing data is HOS based!");
+			success = false;
+		}
+
+		if (!success)
+			s_printf(txt_buf + strlen(txt_buf),
+				"\n\n#FFDD00 Make sure that both Joy-Con are connected,#\n"
+				"#FFDD00 and that you paired them in HOS!#");
+	}
+	else
+		s_printf(txt_buf, "#FFDD00 Failed to dump Joy-Con pairing info!#\n#FFDD00 Error: %d#", error);
+
 	lv_mbox_set_text(mbox, txt_buf);
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.

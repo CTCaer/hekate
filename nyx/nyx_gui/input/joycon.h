@@ -93,6 +93,6 @@ void jc_power_supply(u8 uart, bool enable);
 void jc_init_hw();
 void jc_deinit();
 jc_gamepad_rpt_t *joycon_poll();
-jc_gamepad_rpt_t *jc_get_bt_pairing_info();
+jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos);
 
 #endif
