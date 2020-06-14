@@ -121,14 +121,29 @@ static void _nyx_disp_init()
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }
 
-static void _save_log_to_bmp(u32 bmp_tmr_name)
+static void _save_log_to_bmp(char *fname)
 {
-	const u32 file_size = 0x334000 + 0x36;
-	u8 *bitmap = malloc(file_size);
-	u32 *fb = malloc(0x334000);
 	u32 *fb_ptr = (u32 *)LOG_FB_ADDRESS;
 
+	// Check if there's log written.
+	bool log_changed = false;
+	for (u32 i = 0; i < 0xCD000; i++)
+	{
+		if (fb_ptr[i] != 0)
+		{
+			log_changed = true;
+			break;
+		}
+	}
+
+	if (!log_changed)
+		return;
+
+	const u32 file_size = 0x334000 + 0x36;
+	u8 *bitmap = malloc(file_size);
+
 	// Reconstruct FB for bottom-top, landscape bmp.
+	u32 *fb = malloc(0x334000);
 	for (int x = 1279; x > - 1; x--)
 	{
 		for (int y = 655; y > -1; y--)
@@ -176,7 +191,7 @@ static void _save_log_to_bmp(u32 bmp_tmr_name)
 
 	char path[0x80];
 	strcpy(path, "bootloader/screenshots");
-	s_printf(path + strlen(path), "/screen_%08X_log.bmp", bmp_tmr_name);
+	s_printf(path + strlen(path), "/nyx%s_log.bmp", fname);
 	sd_save_to_file(bitmap, file_size, path);
 
 	free(bitmap);
@@ -258,11 +273,22 @@ static void _save_fb_to_bmp()
 
 	strcpy(path, "bootloader/screenshots");
 	f_mkdir(path);
-	u32 bmp_tmr_name = get_tmr_us();
-	s_printf(path + strlen(path), "/screen_%08X.bmp", bmp_tmr_name);
+
+	// Create date/time name.
+	char fname[32];
+	rtc_time_t time;
+	max77620_rtc_get_time(&time);
+	if (n_cfg.timeoff)
+	{
+		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
+		max77620_rtc_epoch_to_date(epoch, &time);
+	}
+	s_printf(fname, "%04d%02d%02d_%02d%02d%02d", time.year, time.month, time.day, time.hour, time.min, time.sec);
+
+	s_printf(path + strlen(path), "/nyx%s.bmp", fname);
 	sd_save_to_file(bitmap, file_size, path);
 
-	_save_log_to_bmp(bmp_tmr_name);
+	_save_log_to_bmp(fname);
 
 	sd_unmount();
 
