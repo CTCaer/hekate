@@ -982,7 +982,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	lv_win_add_btn(win, NULL, SYMBOL_SD" Benchmark", _create_mbox_sd_bench);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
-	lv_obj_set_size(desc, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 7) * 5 / 2);
+	lv_obj_set_size(desc, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
@@ -1012,7 +1012,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		);
 
 		lv_obj_t *val = lv_cont_create(win, NULL);
-		lv_obj_set_size(val, LV_HOR_RES / 9 * 2, LV_VER_RES - (LV_DPI * 11 / 7) * 5 / 2);
+		lv_obj_set_size(val, LV_HOR_RES / 9 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
@@ -1031,7 +1031,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 		lv_obj_t *desc2 = lv_cont_create(win, NULL);
-		lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 2, LV_VER_RES - (LV_DPI * 11 / 7) * 5 / 2);
+		lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 		lv_obj_t * lb_desc2 = lv_label_create(desc2, lb_desc);
 
@@ -1039,6 +1039,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			"#00DDFF Card-Specific Data#\n"
 			"Cmd Classes:\n"
 			"Capacity:\n"
+			"Capacity (LBA):\n"
 			"Bus Width:\n"
 			"Current Rate:\n"
 			"Speed Class:\n"
@@ -1051,13 +1052,13 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
 
 		lv_obj_t *val2 = lv_cont_create(win, NULL);
-		lv_obj_set_size(val2, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 7) * 5 / 2);
+		lv_obj_set_size(val2, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 		lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
 
 		s_printf(txt_buf,
-			"#00DDFF v%d.0#\n%02X\n%d MiB\n%d\n%d MB/s (%d MHz)\n%d\nU%d\nV%d\nA%d\n%d",
-			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass, sd_storage.sec_cnt >> 11,
+			"#00DDFF v%d.0#\n%02X\n%d MiB\n%X\n%d\n%d MB/s (%d MHz)\n%d\nU%d\nV%d\nA%d\n%d",
+			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass, sd_storage.sec_cnt >> 11, sd_storage.sec_cnt,
 			sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
 			(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
 			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
@@ -1072,7 +1073,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		static const lv_point_t line_pp[] = { {0, 0}, { LV_HOR_RES - (LV_DPI - (LV_DPI / 4)) * 12, 0} };
 		lv_line_set_points(line_sep, line_pp, 2);
 		lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
-		lv_obj_align(line_sep, desc, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 410 / 100, LV_DPI / 5);
+		lv_obj_align(line_sep, desc, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 410 / 100, LV_DPI / 7);
 
 		lv_obj_t *desc3 = lv_cont_create(win, NULL);
 		lv_obj_set_size(desc3, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
