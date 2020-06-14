@@ -447,49 +447,71 @@ static void _migrate_sd_file_based()
 
 static void _migrate_sd_backup_file_based()
 {
+	char *emu_path = (char *)malloc(128);
+	char *parts_path = (char *)malloc(128);
+	char *backup_path = (char *)malloc(128);
+	char *backup_file_path = (char *)malloc(128);
+
 	sd_mount();
 	f_mkdir("emuMMC");
-	f_mkdir("emuMMC/BK00");
-	f_mkdir("emuMMC/BK00/eMMC");
+
+	strcpy(emu_path, "emuMMC/BK");
+	u32 base_len = strlen(emu_path);
+
+	for (int j = 0; j < 100; j++)
+	{
+		update_emummc_base_folder(emu_path, base_len, j);
+		if(f_stat(emu_path, NULL) == FR_NO_FILE)
+			break;
+	}
+	base_len = strlen(emu_path);
+
+	f_mkdir(emu_path);
+	strcat(emu_path, "/eMMC");
+	f_mkdir(emu_path);
 
 	FIL fp;
+	strcpy(emu_path + base_len, "/file_based");
 	f_open(&fp, "emuMMC/BK00/file_based", FA_CREATE_ALWAYS | FA_WRITE);
 	f_close(&fp);
 
-	char *path = (char *)malloc(128);
-	char *path2 = (char *)malloc(128);
-	char *path3 = (char *)malloc(128);
+	emmcsn_path_impl(backup_path, "", "", NULL);
 
-	emmcsn_path_impl(path, "", "", NULL);
+	s_printf(backup_file_path, "%s/BOOT0", backup_path);
+	strcpy(emu_path + base_len, "/eMMC/BOOT0");
+	f_rename(backup_file_path, emu_path);
 
-	s_printf(path2, "%s/BOOT0", path);
-	f_rename(path2, "emuMMC/BK00/eMMC/BOOT0");
-
-	s_printf(path2, "%s/BOOT1", path);
-	f_rename(path2, "emuMMC/BK00/eMMC/BOOT1");
+	s_printf(backup_file_path, "%s/BOOT1", backup_path);
+	strcpy(emu_path + base_len, "/eMMC/BOOT1");
+	f_rename(backup_file_path, emu_path);
 
 	bool multipart = false;
-	s_printf(path2, "%s/rawnand.bin", path);
+	s_printf(backup_file_path, "%s/rawnand.bin", backup_path);
 
-	if(f_stat(path2, NULL))
+	if(f_stat(backup_file_path, NULL))
 		multipart = true;
 
 	if (!multipart)
-		f_rename(path2, "emuMMC/BK00/eMMC/00");
+	{
+		strcpy(emu_path + base_len, "/eMMC/00");
+		f_rename(backup_file_path, emu_path);
+	}
 	else
 	{
+		emu_path[base_len] = 0;
 		for (int i = 0; i < 32; i++)
 		{
-			s_printf(path2, "%s/rawnand.bin.%02d", path, i);
-			s_printf(path3, "emuMMC/BK00/eMMC/%02d", i);
-			if (f_rename(path2, path3))
+			s_printf(backup_file_path, "%s/rawnand.bin.%02d", backup_path, i);
+			s_printf(parts_path, "%s/eMMC/%02d", emu_path, i);
+			if (f_rename(backup_file_path, parts_path))
 				break;
 		}
 	}
 
-	free(path);
-	free(path2);
-	free(path3);
+	free(emu_path);
+	free(parts_path);
+	free(backup_path);
+	free(backup_file_path);
 
 	save_emummc_cfg(0, 0, "emuMMC/BK00");
 	sd_unmount();
