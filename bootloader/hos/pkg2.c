@@ -1095,11 +1095,12 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 			{
 				for (u32 i = 0; i < numPatches; i++)
 				{
+					// Continue if patch name does not match.
 					if (strcmp(currPatchset->name, patches[i]) != 0)
-					{
-						bitsAffected = i + 1;
-						break;
-					}
+						continue;
+
+					bitsAffected = i + 1;
+					break;
 				}
 				currPatchset++;
 			}
