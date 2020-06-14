@@ -261,7 +261,7 @@ static void _prepare_and_flash_mbr_gpt()
 	{
 		mbr.partitions[mbr_idx].type = 0xEE; // GPT protective partition.
 		mbr.partitions[mbr_idx].start_sct = 1;
-		mbr.partitions[mbr_idx].size_sct = part_info.total_sct - 1;
+		mbr.partitions[mbr_idx].size_sct = sd_storage.sec_cnt - 1;
 		mbr_idx++;
 
 		// Set GPT header.
@@ -269,9 +269,9 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.header.revision = 0x10000;
 		gpt.header.size = 92;
 		gpt.header.my_lba = 1;
-		gpt.header.alt_lba = part_info.total_sct - 1;
+		gpt.header.alt_lba = sd_storage.sec_cnt - 1;
 		gpt.header.first_use_lba = (sizeof(mbr_t) + sizeof(gpt_t)) >> 9;
-		gpt.header.last_use_lba = part_info.total_sct - 0x800 - 1; // part_info.total_sct - 33 is start of backup gpt partition entries.
+		gpt.header.last_use_lba = sd_storage.sec_cnt - 0x800 - 1; // sd_storage.sec_cnt - 33 is start of backup gpt partition entries.
 		se_gen_prng128(random_number);
 		memcpy(gpt.header.disk_guid, random_number, 10);
 		memcpy(gpt.header.disk_guid + 10, "NYXGPT", 6);
@@ -435,9 +435,9 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt.header.crc32 = crc32_calc(0, (const u8 *)&gpt.header, gpt.header.size);
 
 		memcpy(&gpt_hdr_backup, &gpt.header, sizeof(gpt_header_t));
-		gpt_hdr_backup.my_lba = part_info.total_sct - 1;
+		gpt_hdr_backup.my_lba = sd_storage.sec_cnt - 1;
 		gpt_hdr_backup.alt_lba = 1;
-		gpt_hdr_backup.part_ent_lba = part_info.total_sct - 33;
+		gpt_hdr_backup.part_ent_lba = sd_storage.sec_cnt - 33;
 		gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
 		gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
@@ -534,7 +534,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 		static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
-		static const char *mbox_btn_map2[] = { "\223Delete Installation Files", "\221OK", "\211", "" };
+		static const char *mbox_btn_map2[] = { "\223Delete Installation Files", "\221OK", "" };
 		lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 		lv_mbox_set_recolor_text(mbox, true);
 		lv_obj_set_width(mbox, LV_HOR_RES / 10 * 5);
