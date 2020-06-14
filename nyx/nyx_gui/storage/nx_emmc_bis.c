@@ -2,7 +2,7 @@
  * eMMC BIS driver for Nintendo Switch
  *
  * Copyright (c) 2019 shchmue
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -26,7 +26,7 @@
 #include "../storage/sdmmc.h"
 #include "../utils/types.h"
 
-#define MAX_SEC_CACHE_ENTRIES 64
+#define MAX_SEC_CACHE_ENTRIES 1500
 
 typedef struct _sector_cache_t
 {
@@ -37,9 +37,11 @@ typedef struct _sector_cache_t
 	u8  align[8];
 } sector_cache_t;
 
-static u32 sector_idx = 0;
-static sector_cache_t *sector_cache = NULL;
+static u8 ks_crypt = 0;
+static u8 ks_tweak = 0;
+static u32 sector_cache_cnt = 0;
 static emmc_part_t *system_part = NULL;
+static sector_cache_t *sector_cache = (sector_cache_t *)NX_BIS_CACHE_ADDR;
 
 static void _gf256_mul_x_le(u8 *block)
 {
@@ -90,7 +92,7 @@ static int _nx_aes_xts_crypt_sec(u32 ks1, u32 ks2, u32 enc, u8 *tweak, bool rege
 		pdst += 0x10;
 	}
 
-	se_aes_crypt_ecb(ks2, 0, dst, sec_size, src, sec_size);
+	se_aes_crypt_ecb(ks2, enc, dst, sec_size, src, sec_size);
 
 	memcpy(tweak, tmp_tweak, 0x10);
 
@@ -107,25 +109,23 @@ static int _nx_aes_xts_crypt_sec(u32 ks1, u32 ks2, u32 enc, u8 *tweak, bool rege
 	return 1;
 }
 
-int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
+static int nx_emmc_bis_read_block(u32 sector, u32 count, void *buff)
 {
 	if (!system_part)
 		return 3; // Not ready.
 
 	static u32 prev_cluster = -1;
 	static u32 prev_sector = 0;
-	__attribute__ ((aligned (16))) static u8 tweak[0x10];
-
-	u32 tweak_exp = 0;
-	bool regen_tweak = true, cache_sector = false;
-
-	if (!sector_cache)
-		sector_cache = (sector_cache_t *)NX_BIS_CACHE_ADDR;
+	static u8 tweak[0x10];
 
 	u32 cache_idx = 0;
+	u32 tweak_exp = 0;
+	bool regen_tweak = true;
+	bool cache_sector = false;
+
 	if (count == 1)
 	{
-		for ( ; cache_idx < sector_idx; cache_idx++)
+		for ( ; cache_idx < sector_cache_cnt; cache_idx++)
 		{
 			if (sector_cache[cache_idx].sector == sector)
 			{
@@ -139,12 +139,12 @@ int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
 			}
 		}
 		// add to cache
-		if (cache_idx == sector_idx && cache_idx < MAX_SEC_CACHE_ENTRIES)
+		if (cache_idx == sector_cache_cnt && cache_idx < MAX_SEC_CACHE_ENTRIES)
 		{
 			sector_cache[cache_idx].sector = sector;
 			sector_cache[cache_idx].visit_cnt++;
 			cache_sector = true;
-			sector_idx++;
+			sector_cache_cnt++;
 		}
 	}
 
@@ -163,8 +163,8 @@ int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
 		else // Sector in same cluster and before or same as last sector.
 			tweak_exp = sector % 0x20;
 
-		// FatFS will never pull more than a cluster.
-		_nx_aes_xts_crypt_sec(9, 8, 0, tweak, regen_tweak, tweak_exp, prev_cluster, buff, buff, count << 9);
+		// Maximum one cluster (1 XTS crypto block 16KB).
+		_nx_aes_xts_crypt_sec(ks_tweak, ks_crypt, 0, tweak, regen_tweak, tweak_exp, prev_cluster, buff, buff, count << 9);
 		if (cache_sector)
 		{
 			memcpy(sector_cache[cache_idx].data, buff, 0x200);
@@ -179,7 +179,47 @@ int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
 	return 1;
 }
 
+int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
+{
+	int res = 1;
+	u8 *buf = (u8 *)buff;
+	u32 curr_sct = sector;
+
+	while (count)
+	{
+		u32 sct_cnt = MIN(count, 0x20);
+		res = nx_emmc_bis_read_block(curr_sct, sct_cnt, buf);
+		if (res)
+			return 1;
+
+		count -= sct_cnt;
+		curr_sct += sct_cnt;
+		buf += 512 * sct_cnt;
+	}
+
+	return res;
+}
+
 void nx_emmc_bis_init(emmc_part_t *part)
 {
 	system_part = part;
+	sector_cache_cnt = 0;
+
+	switch (part->index)
+	{
+	case 0:  // PRODINFO.
+	case 1:  // PRODINFOF.
+		ks_crypt = 0;
+		ks_tweak = 1;
+		break;
+	case 8:  // SAFE.
+		ks_crypt = 2;
+		ks_tweak = 3;
+		break;
+	case 9:  // SYSTEM.
+	case 10: // USER.
+		ks_crypt = 4;
+		ks_tweak = 5;
+		break;
+	}
 }

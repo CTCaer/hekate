@@ -84,7 +84,7 @@
 
 // NX BIS driver sector cache.
 #define NX_BIS_CACHE_ADDR 0xFEE00000
-#define  NX_BIS_CACHE_SZ      0x8800
+#define  NX_BIS_CACHE_SZ    0x100000
 
 // USB buffers.
 #define USBD_ADDR                 0xFEF00000
