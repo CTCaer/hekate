@@ -107,7 +107,6 @@ void check_sept(ini_sec_t *cfg_sec)
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
-		gfx_con.fntsz = 16;
 		EPRINTF("Unknown pkg1 version.");
 		goto out_free;
 	}
@@ -172,8 +171,7 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb, ini_sec_t *cfg_sec)
 		if (kb < KB_FIRMWARE_VERSION_810)
 		{
 			if (f_open(&fp, "sept/sept-secondary_00.enc", FA_READ))
-				if (f_open(&fp, "sept/sept-secondary.enc", FA_READ)) // Try the deprecated version.
-					goto error;
+				goto error;
 		}
 		else
 		{

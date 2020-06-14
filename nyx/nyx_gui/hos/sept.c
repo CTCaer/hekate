@@ -93,6 +93,7 @@ void check_sept()
 		EPRINTF("Failed to init eMMC.");
 		goto out_free;
 	}
+
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	// Read package1.
@@ -102,7 +103,6 @@ void check_sept()
 	free(build_date);
 	if (!pkg1_id)
 	{
-		gfx_con.fntsz = 16;
 		EPRINTF("Unknown pkg1 version.");
 		goto out_free;
 	}
@@ -153,8 +153,7 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 	if (kb < KB_FIRMWARE_VERSION_810)
 	{
 		if (f_open(&fp, "sept/sept-secondary_00.enc", FA_READ))
-			if (f_open(&fp, "sept/sept-secondary.enc", FA_READ)) // Try the deprecated version.
-				goto error;
+			goto error;
 	}
 	else
 	{
