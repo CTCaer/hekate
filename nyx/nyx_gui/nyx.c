@@ -384,9 +384,9 @@ void nyx_init_load_res()
 }
 
 #if (LV_LOG_PRINTF == 1)
-	#include "soc/clock.h"
-	#include "soc/gpio.h"
-	#include "soc/pinmux.h"
+	#include <soc/clock.h>
+	#include <soc/gpio.h>
+	#include <soc/pinmux.h>
 #endif
 
 void ipl_main()
