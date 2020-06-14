@@ -844,8 +844,8 @@ static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 			bool is_hos_special = !f_stat(path, NULL);
 			path[strlen(path) - 3] = 0;
 
-			// Set archive bit to folders with 3 char extension suffix.
-			if (is_hos_special && fno.fname[strlen(fno.fname) - 4] == '.')
+			// Set archive bit to HOS single file folders.
+			if (is_hos_special)
 			{
 				if (!(fno.fattrib & AM_ARC))
 				{
