@@ -2258,7 +2258,11 @@ void nyx_load_and_run()
 
 	while (true)
 	{
+		minerva_change_freq(FREQ_1600);  // Takes 295us.
+
 		lv_task_handler();
-		bpmp_usleep(HALT_COP_MAX_CNT);
+
+		minerva_change_freq(FREQ_800);   // Takes 80us. Saves 280mW.
+		//bpmp_usleep(HALT_COP_MAX_CNT); // Taskes 200us. Saves 75mW.
 	}
 }

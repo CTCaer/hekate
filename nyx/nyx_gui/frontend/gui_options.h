@@ -21,6 +21,7 @@
 
 void nyx_options_clear_ini_changes_made();
 bool nyx_options_get_ini_changes_made();
+void first_time_clock_edit(void *param);
 lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn);
 void create_tab_options(lv_theme_t *th, lv_obj_t *parent);
 
