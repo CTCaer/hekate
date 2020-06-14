@@ -22,6 +22,7 @@
 #include "../gfx/gfx.h"
 #include "../gfx/tui.h"
 #include "../libs/fatfs/ff.h"
+#include "../soc/fuse.h"
 #include "../soc/t210.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"

@@ -378,7 +378,7 @@ static void _migrate_sd_raw_based()
 	f_close(&fp);
 
 	save_emummc_cfg(1, mbr_ctx.sector_start, "emuMMC/ER00");
-	sd_unmount(false);
+	sd_unmount();
 }
 
 static void _migrate_sd_raw_emummc_based()
