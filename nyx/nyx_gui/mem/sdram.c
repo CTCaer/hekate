@@ -42,7 +42,7 @@
 
 static u32 _get_sdram_id()
 {
-	return ((fuse_read_odm(4) & 0x38) >> 3);
+	return ((fuse_read_odm(4) & 0xF8) >> 3);
 }
 
 static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
@@ -202,7 +202,7 @@ break_nosleep:
 	EMC(EMC_SWIZZLE_RANK1_BYTE2) = params->emc_swizzle_rank1_byte2;
 	EMC(EMC_SWIZZLE_RANK1_BYTE3) = params->emc_swizzle_rank1_byte3;
 
-	// Patch 4 using BCT spare variables.
+	// Patch 3 using BCT spare variables.
 	if (params->emc_bct_spare6)
 		*(vu32 *)params->emc_bct_spare6 = params->emc_bct_spare7;
 
@@ -345,7 +345,7 @@ break_nosleep:
 	// Common pad macro (cpm).
 	EMC(EMC_PMACRO_COMMON_PAD_TX_CTRL) = (params->emc_pmacro_common_pad_tx_ctrl & 1) | 0xE;
 
-	// Patch 3 using BCT spare variables.
+	// Patch 4 using BCT spare variables.
 	if (params->emc_bct_spare4)
 		*(vu32 *)params->emc_bct_spare4 = params->emc_bct_spare5;
 

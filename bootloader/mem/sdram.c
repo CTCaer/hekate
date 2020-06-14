@@ -42,7 +42,7 @@
 
 static u32 _get_sdram_id()
 {
-	return ((fuse_read_odm(4) & 0x38) >> 3);
+	return ((fuse_read_odm(4) & 0xF8) >> 3);
 }
 
 static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
