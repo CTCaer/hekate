@@ -99,6 +99,7 @@ typedef struct _launch_ctxt_t
 	link_t kip1_list;
 	char*  kip1_patches;
 
+	u32  fss0_ver;
 	u32  fss0_hosver;
 	bool svcperm;
 	bool debugmode;

@@ -138,6 +138,8 @@ typedef struct _atm_fatal_error_ctx
 #define  EXO_FLAG_CAL0_BLANKING   (1 << 5)
 #define  EXO_FLAG_CAL0_WRITES_SYS (1 << 6)
 
+#define EXO_FW_VER(mj, mn, rv) (((mj) << 24) | ((mn) << 16) | ((rv) << 8))
+
 void config_exosphere(launch_ctxt_t *ctxt)
 {
 	u32 exoFwNo = 0;
@@ -151,6 +153,7 @@ void config_exosphere(launch_ctxt_t *ctxt)
 
 	volatile exo_cfg_t *exo_cfg = (exo_cfg_t *)EXO_CFG_ADDR;
 
+	// Old exosphere target versioning.
 	switch (kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
@@ -171,9 +174,52 @@ void config_exosphere(launch_ctxt_t *ctxt)
 		break;
 	}
 
+	// New exosphere target versioning.
+	if (!ctxt->fss0_ver || ((ctxt->fss0_ver >> 8) > 0xC00)) // 0.12.0.
+	{
+		// Feed old versioning.
+		switch (exoFwNo)
+		{
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 6:
+			exoFwNo = EXO_FW_VER(exoFwNo, 0, 0);
+			break;
+		case 5:
+			if (!ctxt->exo_ctx.fs_is_510)
+				exoFwNo = EXO_FW_VER(5, 0, 0);
+			else
+				exoFwNo = EXO_FW_VER(5, 1, 0);
+			break;
+		case 7:
+			exoFwNo = EXO_FW_VER(6, 2, 0);
+			break;
+		case 8:
+			exoFwNo = EXO_FW_VER(7, 0, 0);
+			break;
+		case 9:
+			exoFwNo = EXO_FW_VER(8, 0, 0);
+			break;
+		case 10:
+			exoFwNo = EXO_FW_VER(8, 1, 0);
+			break;
+		case 11:
+			exoFwNo = EXO_FW_VER(9, 0, 0);
+			break;
+		case 12:
+			exoFwNo = EXO_FW_VER(9, 1, 0);
+			break;
+		case 13:
+			exoFwNo = EXO_FW_VER(10, 0, 0);
+			break;
+		}
+	}
+
+	// Parse exosphere.ini.
 	if (!ctxt->stock)
 	{
-		// Parse exosphere.ini.
 		LIST_INIT(ini_sections);
 		if (ini_parse(&ini_sections, "exosphere.ini", false))
 		{

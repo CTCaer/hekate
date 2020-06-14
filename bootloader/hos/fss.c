@@ -148,6 +148,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 		if (!sept_ctxt)
 		{
 			ctxt->atmosphere = true;
+			ctxt->fss0_ver = fss_meta->version;
 			ctxt->fss0_hosver = fss_meta->hos_ver;
 		}
 
