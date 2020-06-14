@@ -26,6 +26,7 @@
 #include "../mem/heap.h"
 #include "../soc/fuse.h"
 #include "../storage/emummc.h"
+#include "../storage/nx_emmc.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
 #include "../utils/btn.h"
@@ -289,16 +290,11 @@ void config_exosphere(launch_ctxt_t *ctxt)
 	{
 		wb_cfg->fwno = exoFwNo;
 
-		sdmmc_storage_t storage;
-		sdmmc_t sdmmc;
-
 		// Set warmboot binary rsa modulus.
 		u8 *rsa_mod = (u8 *)malloc(512);
 
-		sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
-		sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
-		sdmmc_storage_read(&storage, 1, 1, rsa_mod);
-		sdmmc_storage_end(&storage);
+		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+		sdmmc_storage_read(&emmc_storage, 1, 1, rsa_mod);
 
 		// Patch AutoRCM out.
 		if ((fuse_read_odm(4) & 3) != 3)
