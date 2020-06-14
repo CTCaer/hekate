@@ -60,6 +60,14 @@ u32 fuse_read_odm(u32 idx)
 	return FUSE(FUSE_RESERVED_ODMX(idx));
 }
 
+u32 fuse_read_odm_keygen_rev()
+{
+	if ((fuse_read_odm(4) & 0x800) && fuse_read_odm(0) == 0x8E61ECAE && fuse_read_odm(1) == 0xF2BA3BB2)
+		return (fuse_read_odm(2) & 0x1F);
+
+	return 0;
+}
+
 void fuse_wait_idle()
 {
 	u32 ctrl;

@@ -77,6 +77,7 @@
 
 void fuse_disable_program();
 u32 fuse_read_odm(u32 idx);
+u32 fuse_read_odm_keygen_rev();
 void fuse_wait_idle();
 int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
 int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);
