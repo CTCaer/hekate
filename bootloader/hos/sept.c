@@ -113,11 +113,13 @@ void check_sept(ini_sec_t *cfg_sec)
 
 	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 	{
-		u8 key_idx = pkg1_id->kb - KB_FIRMWARE_VERSION_700;
-		if (h_cfg.eks && (h_cfg.eks->enabled & (1 << key_idx)))
+		u32 key_idx = 0;
+		if (pkg1_id->kb >= KB_FIRMWARE_VERSION_810)
+			key_idx = 1;
+
+		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= pkg1_id->kb)
 		{
 			h_cfg.sept_run = true;
-			EMC(EMC_SCRATCH0) |= EMC_SEPT_RUN;
 			goto out_free;
 		}
 
