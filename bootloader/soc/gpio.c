@@ -16,7 +16,6 @@
  */
 
 #include "gpio.h"
-#include "irq.h"
 #include "t210.h"
 
 #define GPIO_BANK_IDX(port)      (port >> 2)
@@ -37,9 +36,18 @@
 #define GPIO_INT_ENB_MASKED_OFFSET(port) (0xD0 + ((port >> 2) << 8) + ((port % 4) << 2))
 #define GPIO_INT_LVL_MASKED_OFFSET(port) (0xE0 + ((port >> 2) << 8) + ((port % 4) << 2))
 
+#define GPIO_IRQ_BANK1 32
+#define GPIO_IRQ_BANK2 33
+#define GPIO_IRQ_BANK3 34
+#define GPIO_IRQ_BANK4 35
+#define GPIO_IRQ_BANK5 55
+#define GPIO_IRQ_BANK6 87
+#define GPIO_IRQ_BANK7 89
+#define GPIO_IRQ_BANK8 125
+
 static u8 gpio_bank_irq_ids[8] = {
-	IRQ_GPIO1, IRQ_GPIO2, IRQ_GPIO3, IRQ_GPIO4,
-	IRQ_GPIO5, IRQ_GPIO6, IRQ_GPIO7, IRQ_GPIO8
+	GPIO_IRQ_BANK1, GPIO_IRQ_BANK2, GPIO_IRQ_BANK3, GPIO_IRQ_BANK4,
+	GPIO_IRQ_BANK5, GPIO_IRQ_BANK6, GPIO_IRQ_BANK7, GPIO_IRQ_BANK8
 };
 
 void gpio_config(u32 port, u32 pins, int mode)
