@@ -29,20 +29,24 @@
 #include "../utils/types.h"
 
 extern hekate_config h_cfg;
-emummc_cfg_t emu_cfg;
+emummc_cfg_t emu_cfg = { 0 };
 
 void emummc_load_cfg()
 {
 	emu_cfg.enabled = 0;
 	emu_cfg.path = NULL;
-	emu_cfg.nintendo_path = NULL;
 	emu_cfg.sector = 0;
 	emu_cfg.id = 0;
 	emu_cfg.file_based_part_size = 0;
 	emu_cfg.active_part = 0;
 	emu_cfg.fs_ver = 0;
+	if (!emu_cfg.nintendo_path)
+		emu_cfg.nintendo_path = (char *)malloc(0x80);
 	if (!emu_cfg.emummc_file_based_path)
 		emu_cfg.emummc_file_based_path = (char *)malloc(0x80);
+
+	emu_cfg.nintendo_path[0] = 0;
+	emu_cfg.emummc_file_based_path[0] = 0;
 
 	LIST_INIT(ini_sections);
 	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
@@ -65,7 +69,7 @@ void emummc_load_cfg()
 					else if (!strcmp("path", kv->key))
 						emu_cfg.path = kv->val;
 					else if (!strcmp("nintendo_path", kv->key))
-						emu_cfg.nintendo_path = kv->val;
+						strcpy(emu_cfg.nintendo_path, kv->val);
 				}
 				break;
 			}
@@ -170,8 +174,10 @@ out:
 
 int emummc_storage_end(sdmmc_storage_t *storage)
 {
-	sd_end();
-	sdmmc_storage_end(storage);
+	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
+		sdmmc_storage_end(storage);
+	else
+		sd_end();
 
 	return 1;
 }
