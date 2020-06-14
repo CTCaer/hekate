@@ -98,10 +98,9 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 
 	SE(SE_OPERATION_REG_OFFSET) = SE_OPERATION(op);
 
-	int res = 1;
 	if (is_oneshot)
 	{
-		res = _se_wait();
+		int res = _se_wait();
 
 		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
@@ -109,9 +108,11 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 			free(ll_src);
 		if (dst)
 			free(ll_dst);
+
+		return res;
 	}
 
-	return res;
+	return 1;
 }
 
 static int _se_execute_finalize()
@@ -134,6 +135,11 @@ static int _se_execute_finalize()
 	return res;
 }
 
+static int _se_execute_oneshot(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
+{
+	return _se_execute(op, dst, dst_size, src, src_size, true);
+}
+
 static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
 	if (!src || !dst)
@@ -145,7 +151,7 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = 0;
 
 	memcpy(block, src, src_size);
-	int res = _se_execute(op, block, 0x10, block, 0x10, true);
+	int res = _se_execute_oneshot(op, block, 0x10, block, 0x10);
 	memcpy(dst, block, dst_size);
 
 	free(block);
@@ -177,6 +183,11 @@ void se_key_acc_ctrl(u32 ks, u32 flags)
 		SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) &= ~(1 << ks);
 }
 
+u32 se_key_acc_ctrl_get(u32 ks)
+{
+	return SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 4 * ks);
+}
+
 void se_aes_key_set(u32 ks, void *key, u32 size)
 {
 	u32 *data = (u32 *)key;
@@ -203,7 +214,7 @@ int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input)
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = 0;
 	SE(SE_CRYPTO_KEYTABLE_DST_REG_OFFSET) = SE_CRYPTO_KEYTABLE_DST_KEY_INDEX(ks_dst);
 
-	return _se_execute(OP_START, NULL, 0, input, 0x10, true);
+	return _se_execute_oneshot(OP_START, NULL, 0, input, 0x10);
 }
 
 int se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size)
@@ -219,7 +230,7 @@ int se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, 
 		SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_CORE_SEL(CORE_DECRYPT);
 	}
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
-	return _se_execute(OP_START, dst, dst_size, src, src_size, true);
+	return _se_execute_oneshot(OP_START, dst, dst_size, src, src_size);
 }
 
 int se_aes_crypt_cbc(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size)
@@ -237,7 +248,7 @@ int se_aes_crypt_cbc(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, 
 			SE_CRYPTO_CORE_SEL(CORE_DECRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM);
 	}
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
-	return _se_execute(OP_START, dst, dst_size, src, src_size, true);
+	return _se_execute_oneshot(OP_START, dst, dst_size, src, src_size);
 }
 
 int se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src)
@@ -259,7 +270,7 @@ int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_s
 	if (src_size_aligned)
 	{
 		SE(SE_BLOCK_COUNT_REG_OFFSET) = (src_size >> 4) - 1;
-		if (!_se_execute(OP_START, dst, dst_size, src, src_size_aligned, true))
+		if (!_se_execute_oneshot(OP_START, dst, dst_size, src, src_size_aligned))
 			return 0;
 	}
 
@@ -419,7 +430,7 @@ int se_gen_prng128(void *dst)
 	SE(SE_BLOCK_COUNT_REG_OFFSET) = (16 >> 4) - 1;
 
 	// Trigger the operation.
-	return _se_execute(OP_START, dst, 16, NULL, 0, true);
+	return _se_execute_oneshot(OP_START, dst, 16, NULL, 0);
 }
 
 void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
@@ -431,7 +442,7 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 	SE(SE_CRYPTO_REG_OFFSET) = SE_CRYPTO_KEY_INDEX(0) | SE_CRYPTO_CORE_SEL(CORE_ENCRYPT) | SE_CRYPTO_INPUT_SEL(INPUT_RANDOM);
 	SE(SE_RNG_CONFIG_REG_OFFSET) = SE_RNG_CONFIG_SRC(RNG_SRC_ENTROPY) | SE_RNG_CONFIG_MODE(RNG_MODE_FORCE_RESEED);
 	SE(SE_CRYPTO_LAST_BLOCK) = 0;
-	_se_execute(OP_START, NULL, 0, NULL, 0, true);
+	_se_execute_oneshot(OP_START, NULL, 0, NULL, 0);
 
 	// Save AES keys.
 	SE(SE_CONFIG_REG_OFFSET) = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_AES_ENC) | SE_CONFIG_DST(DST_MEMORY);
@@ -442,7 +453,7 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 			(i << SE_KEY_INDEX_SHIFT) | SE_CONTEXT_SAVE_WORD_QUAD(KEYS_0_3);
 
 		SE(SE_CRYPTO_LAST_BLOCK) = 0;
-		_se_execute(OP_CTX_SAVE, aligned_buf, 0x10, NULL, 0, true);
+		_se_execute_oneshot(OP_CTX_SAVE, aligned_buf, 0x10, NULL, 0);
 		memcpy(keys + i * keysize, aligned_buf, 0x10);
 
 		if (keysize > 0x10)
@@ -451,7 +462,7 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 				(i << SE_KEY_INDEX_SHIFT) | SE_CONTEXT_SAVE_WORD_QUAD(KEYS_4_7);
 
 			SE(SE_CRYPTO_LAST_BLOCK) = 0;
-			_se_execute(OP_CTX_SAVE, aligned_buf, 0x10, NULL, 0, true);
+			_se_execute_oneshot(OP_CTX_SAVE, aligned_buf, 0x10, NULL, 0);
 			memcpy(keys + i * keysize + 0x10, aligned_buf, 0x10);
 		}
 	}
@@ -459,11 +470,11 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 	// Save SRK to PMC secure scratches.
 	SE(SE_CONTEXT_SAVE_CONFIG_REG_OFFSET) = SE_CONTEXT_SAVE_SRC(SRK);
 	SE(0x80) = 0; // SE_CRYPTO_LAST_BLOCK
-	_se_execute(OP_CTX_SAVE, NULL, 0, NULL, 0, true);
+	_se_execute_oneshot(OP_CTX_SAVE, NULL, 0, NULL, 0);
 
 	// End context save.
 	SE(SE_CONFIG_REG_OFFSET) = 0;
-	_se_execute(OP_CTX_SAVE, NULL, 0, NULL, 0, true);
+	_se_execute_oneshot(OP_CTX_SAVE, NULL, 0, NULL, 0);
 
 	// Get SRK.
 	u32 srk[4];

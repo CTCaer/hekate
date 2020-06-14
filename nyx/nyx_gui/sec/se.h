@@ -21,6 +21,7 @@
 
 void se_rsa_acc_ctrl(u32 rs, u32 flags);
 void se_key_acc_ctrl(u32 ks, u32 flags);
+u32  se_key_acc_ctrl_get(u32 ks);
 void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize);
 void se_aes_key_set(u32 ks, void *key, u32 size);
 void se_aes_key_clear(u32 ks);
