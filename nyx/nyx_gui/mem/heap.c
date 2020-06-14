@@ -128,6 +128,11 @@ void heap_init(u32 base)
 	_heap_create(&_heap, base);
 }
 
+void heap_copy(heap_t *heap)
+{
+	memcpy(&_heap, heap, sizeof(heap_t));
+}
+
 void *malloc(u32 size)
 {
 	return (void *)_heap_alloc(&_heap, size);

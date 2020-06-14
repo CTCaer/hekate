@@ -22,6 +22,7 @@
 #include "../../common/common_heap.h"
 
 void heap_init(u32 base);
+void heap_copy(heap_t *heap);
 void *malloc(u32 size);
 void *calloc(u32 num, u32 size);
 void free(void *buf);
