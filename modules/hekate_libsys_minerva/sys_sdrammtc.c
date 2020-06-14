@@ -3856,13 +3856,13 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 {
 	switch (mtc_cfg->sdram_id)
 	{
-	case 1:
+	case DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN:
 		memcpy(mtc_cfg->mtc_table, nx_abca2_2_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
 		break;
-	case 0:
-	case 2:
-	case 3:
-	case 4:
+	case DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH:
+	case DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT:
+	case DRAM_4GB_COPPER_SAMSUNG:
+	case DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH:
 	default:
 		memcpy(mtc_cfg->mtc_table, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
 		break;

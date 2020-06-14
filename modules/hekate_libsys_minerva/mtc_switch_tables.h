@@ -20,6 +20,14 @@
 #ifndef _MTC_SWITCH_TABLES_H_
 #define _MTC_SWITCH_TABLES_H_
 
+#define DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH       0
+#define DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN      1
+#define DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT 2
+#define DRAM_4GB_COPPER_SAMSUNG                3
+#define DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH       4
+#define DRAM_4GB_COPPER_HYNIX                  5
+#define DRAM_4GB_COPPER_MICRON                 6
+
 // nx_abca2_0_3 and nx_abca2_1. For sdram ids 0,2,3,4
 static const unsigned char nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6[49280] =
 {
