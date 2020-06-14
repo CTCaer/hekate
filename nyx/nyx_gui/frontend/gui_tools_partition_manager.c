@@ -2112,6 +2112,9 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	part_info.total_sct = sd_storage.sec_cnt;
 	u32 extra_sct = 0x8000 + 0x400000; // Reserved 16MB alignment for FAT partition + 2GB.
 
+	// Set initial HOS partition size, so the correct cluster size can be selected.
+	part_info.hos_size = (part_info.total_sct >> 11) - 16; // Important if there's no slider change.
+
 	// Read current MBR.
 	mbr_t mbr = { 0 };
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
