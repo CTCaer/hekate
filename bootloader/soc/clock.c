@@ -349,12 +349,15 @@ static void _clock_disable_pllc4(u32 mask)
 {
 	pllc4_enabled &= ~mask;
 
-	if (pllc4_enabled & PLLC4_IN_USE)
+	// Check if currently in use or disabled.
+	if ((pllc4_enabled & PLLC4_IN_USE) || !(pllc4_enabled & PLLC4_ENABLED))
 		return;
 
 	// Disable PLLC4.
+	msleep(1); // Wait at least 1ms to prevent glitching.
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLLCX_BASE_ENABLE;
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLC4_BASE_IDDQ;
+	usleep(10);
 
 	pllc4_enabled = 0;
 }
