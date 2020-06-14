@@ -44,6 +44,7 @@
 
 typedef struct _exo_ctxt_t
 {
+	bool fs_is_510;
 	bool no_user_exceptions;
 	bool user_pmu;
 	bool *cal0_blank;

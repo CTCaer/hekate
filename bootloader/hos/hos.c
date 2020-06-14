@@ -610,7 +610,7 @@ static void _free_launch_components(launch_ctxt_t *ctxt)
 	free(ctxt->kip1_patches);
 }
 
-static bool _get_fs_exfat_compatible(link_t *info)
+static bool _get_fs_exfat_compatible(link_t *info, bool *fs_is_510)
 {
 	u32 fs_idx;
 	u32 fs_ids_cnt;
@@ -630,6 +630,10 @@ static bool _get_fs_exfat_compatible(link_t *info)
 		for (fs_idx = 0; fs_idx < fs_ids_cnt; fs_idx++)
 			if (!memcmp(sha_buf, kip_ids[fs_idx].hash, 8))
 				break;
+
+		// Check if it's 5.1.0.
+		if ((fs_idx & ~1) == 16)
+			*fs_is_510 = true;
 
 		// Return false if FAT32 only.
 		if (fs_ids_cnt <= fs_idx && !(fs_idx & 1))
@@ -888,13 +892,18 @@ int hos_launch(ini_sec_t *cfg)
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
-	// Check if FS is compatible with exFAT.
-	if (!ctxt.stock && sd_fs.fs_type == FS_EXFAT && !_get_fs_exfat_compatible(&kip1_info))
+	// Check if FS is compatible with exFAT and if 5.1.0.
+	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || kb == KB_FIRMWARE_VERSION_500))
 	{
-		_hos_crit_error("SD Card is exFAT and the installed\nFS only supports FAT32!");
+		bool exfat_compat = _get_fs_exfat_compatible(&kip1_info, &ctxt.exo_ctx.fs_is_510);
 
-		_free_launch_components(&ctxt);
-		goto error;
+		if (sd_fs.fs_type == FS_EXFAT && !exfat_compat)
+		{
+			_hos_crit_error("SD Card is exFAT and installed HOS driver\nonly supports FAT32!");
+
+			_free_launch_components(&ctxt);
+			goto error;
+		}
 	}
 
 	// Patch kip1s in memory if needed.
