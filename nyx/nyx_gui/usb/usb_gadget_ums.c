@@ -48,8 +48,8 @@
 #define USB_STATUS_FAIL        1
 #define USB_STATUS_PHASE_ERROR 2
 
-#define UMS_DISK_LBA_SIZE  512
 #define UMS_DISK_LBA_SHIFT 9
+#define UMS_DISK_LBA_SIZE  (1 << UMS_DISK_LBA_SHIFT)
 
 #define UMS_DISK_MAX_IO_TRANSFER_64K (USB_EP_BUFFER_MAX_SIZE >> UMS_DISK_LBA_SHIFT)
 #define UMS_DISK_MAX_IO_TRANSFER_32K (UMS_DISK_MAX_IO_TRANSFER_64K / 2)
@@ -1805,7 +1805,7 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	if (usbs->type == MMC_SD)
 	{
 		sd_mount();
-		sd_unmount(false);
+		sd_unmount();
 		ums.lun.sdmmc = &sd_sdmmc;
 		ums.lun.storage = &sd_storage;
 	}

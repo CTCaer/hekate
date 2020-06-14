@@ -672,8 +672,8 @@ static void _usbd_initialize_ep_ctrl(u32 endpoint)
 
 static int _usbd_initialize_ep0()
 {
-	memset((void *)usbdaemon->qhs, 0, sizeof(dQH_t) * 4); // Clear all used EP queue heads.
-	memset(usbdaemon, 0, 0x80);
+	memset((void *)usbdaemon->qhs, 0, sizeof(dQH_t) * 4);  // Clear all used EP queue heads.
+	memset((void *)usbdaemon->dtds, 0, sizeof(dTD_t) * 4); // Clear all used EP0 token heads.
 
 	usbd_otg->regs->asynclistaddr = (u32)usbdaemon->qhs;
 
@@ -1161,8 +1161,7 @@ static int _usbd_handle_ep0_control_transfer()
 
 	int ret = 0;
 	bool transmit_data = 0;
-	u8 *descriptor = NULL;
-	u8 *descriptor_buf = (u8 *)USB_DESCRIPTOR_ADDR;
+	u8 *descriptor = (u8 *)USB_DESCRIPTOR_ADDR;
 	int size = 0;
 	int ep_stall = 0;
 
@@ -1235,7 +1234,6 @@ static int _usbd_handle_ep0_control_transfer()
 		switch (_bRequest)
 		{
 		case USB_REQUEST_GET_STATUS:
-			descriptor = (u8 *)descriptor_buf;
 			descriptor[0] = USB_STATUS_DEV_SELF_POWERED;
 			descriptor[1] = 0; // No support for remove wake up.
 			transmit_data = 1;
@@ -1262,7 +1260,6 @@ static int _usbd_handle_ep0_control_transfer()
 		}
 		else if (_bRequest == USB_REQUEST_GET_STATUS)
 		{
-			descriptor = (void *)&descriptor_buf;
 			memset(descriptor, 0, _wLength);
 		}
 		else if (_bRequest == USB_REQUEST_GET_DESCRIPTOR && (_wValue >> 8) == USB_DESCRIPTOR_HID_REPORT && usbd_otg->type > USB_GADGET_UMS)
@@ -1314,7 +1311,6 @@ static int _usbd_handle_ep0_control_transfer()
 			}
 
 			size = _wLength;
-			descriptor = (u8 *)&descriptor_buf;
 			memset(descriptor, 0, size);
 
 			if (_usbd_get_ep_status(ep_req) == USB_EP_STATUS_STALLED)
@@ -1329,7 +1325,6 @@ static int _usbd_handle_ep0_control_transfer()
 		break;
 
 	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_INTERFACE | USB_SETUP_TYPE_CLASS):
-		descriptor = (u8 *)&descriptor_buf;
 		memset(descriptor, 0, _wLength);
 
 		_usbd_handle_get_class_request(&transmit_data, descriptor, &size, &ep_stall);
