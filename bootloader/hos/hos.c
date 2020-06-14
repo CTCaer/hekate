@@ -648,6 +648,8 @@ static bool _get_fs_exfat_compatible(link_t *info, bool *fs_is_510)
 int hos_launch(ini_sec_t *cfg)
 {
 	u8 kb;
+	u32 secmon_base;
+	u32 warmboot_base;
 	launch_ctxt_t ctxt;
 	bool exo_new = false;
 	tsec_ctxt_t tsec_ctxt;
@@ -727,6 +729,9 @@ int hos_launch(ini_sec_t *cfg)
 	// Check if secmon is new exosphere.
 	if (ctxt.secmon)
 		exo_new = !memcmp((void *)((u8 *)ctxt.secmon + ctxt.secmon_size - 4), "LENY", 4);
+	const pkg1_id_t *pk1_latest = pkg1_get_latest();
+	secmon_base = exo_new ? pk1_latest->secmon_base : ctxt.pkg1_id->secmon_base;
+	warmboot_base = exo_new ? pk1_latest->warmboot_base : ctxt.pkg1_id->warmboot_base;
 	h_cfg.aes_slots_new = exo_new;
 
 	// Generate keys.
@@ -735,7 +740,7 @@ int hos_launch(ini_sec_t *cfg)
 		tsec_ctxt.fw = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
 		tsec_ctxt.pkg1 = ctxt.pkg1;
 		tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
-		tsec_ctxt.secmon_base = ctxt.pkg1_id->secmon_base;
+		tsec_ctxt.secmon_base = secmon_base;
 
 		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
@@ -770,7 +775,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
-		memcpy((void *)ctxt.pkg1_id->warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
+		memcpy((void *)warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
 	else
 	{
 		if (kb >= KB_FIRMWARE_VERSION_700)
@@ -786,11 +791,11 @@ int hos_launch(ini_sec_t *cfg)
 	}
 	// Set warmboot address in PMC if required.
 	if (ctxt.pkg1_id->set_warmboot)
-		PMC(APBDEV_PMC_SCRATCH1) = ctxt.pkg1_id->warmboot_base;
+		PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
 	// Replace 'SecureMonitor' if requested.
 	if (ctxt.secmon)
-		memcpy((void *)ctxt.pkg1_id->secmon_base, ctxt.secmon, ctxt.secmon_size);
+		memcpy((void *)secmon_base, ctxt.secmon, ctxt.secmon_size);
 	else if (ctxt.pkg1_id->secmon_patchset)
 	{
 		// Else we patch it to allow for an unsigned package2 and patched kernel.
@@ -983,7 +988,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Config Exosphère if booting full Atmosphère.
 	if (ctxt.atmosphere && ctxt.secmon)
-		config_exosphere(&ctxt);
+		config_exosphere(&ctxt, warmboot_base);
 
 	// Unmount SD card and eMMC.
 	sd_end();
@@ -1031,7 +1036,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (smmu_is_used())
 		smmu_exit();
 	else
-		ccplex_boot_cpu0(ctxt.pkg1_id->secmon_base);
+		ccplex_boot_cpu0(secmon_base);
 	while (!secmon_mailbox->out)
 		; // A usleep(1) only works when in IRAM or with a trained DRAM.
 

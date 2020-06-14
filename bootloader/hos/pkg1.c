@@ -133,6 +133,11 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ NULL } //End.
 };
 
+const pkg1_id_t *pkg1_get_latest()
+{
+	return &_pkg1_ids[sizeof(_pkg1_ids) / sizeof(pkg1_id_t) - 2];
+}
+
 const pkg1_id_t *pkg1_identify(u8 *pkg1)
 {
 	char build_date[15];

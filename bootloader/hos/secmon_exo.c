@@ -141,7 +141,7 @@ typedef struct _atm_fatal_error_ctx
 
 #define EXO_FW_VER(mj, mn, rv) (((mj) << 24) | ((mn) << 16) | ((rv) << 8))
 
-void config_exosphere(launch_ctxt_t *ctxt)
+void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 {
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;
@@ -284,7 +284,7 @@ void config_exosphere(launch_ctxt_t *ctxt)
 	exo_cfg->flags = exoFlags;
 
 	// If warmboot is lp0fw, add in RSA modulus.
-	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(ctxt->pkg1_id->warmboot_base + ATM_WB_HEADER_OFF);
+	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(warmboot_base + ATM_WB_HEADER_OFF);
 
 	if (wb_cfg->magic == ATM_WB_MAGIC)
 	{
@@ -302,7 +302,7 @@ void config_exosphere(launch_ctxt_t *ctxt)
 		else
 			rsa_mod[0x10] = 0x37;
 
-		memcpy((void *)(ctxt->pkg1_id->warmboot_base + 0x10), rsa_mod + 0x10, 0x100);
+		memcpy((void *)(warmboot_base + 0x10), rsa_mod + 0x10, 0x100);
 	}
 
 	if (emu_cfg.enabled && !h_cfg.emummc_force_disable)

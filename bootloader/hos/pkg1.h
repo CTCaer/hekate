@@ -57,6 +57,7 @@ typedef struct _pk11_hdr_t
 	u32 sm_off;
 } pk11_hdr_t;
 
+const pkg1_id_t *pkg1_get_latest();
 const pkg1_id_t *pkg1_identify(u8 *pkg1);
 void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
 void pkg1_unpack(void *warmboot_dst, void *secmon_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
