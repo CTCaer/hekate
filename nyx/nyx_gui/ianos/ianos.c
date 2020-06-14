@@ -63,26 +63,20 @@ static bool _ianos_read_cb(el_ctx *ctx, void *dest, size_t numberBytes, size_t o
 }
 
 //TODO: Support shared libraries.
-uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleConfig)
+uintptr_t ianos_loader(char *path, elfType_t type, void *moduleConfig)
 {
+	el_ctx ctx;
 	uintptr_t epaddr = 0;
 
-	if (sdmount)
-	{
-		if (!sd_mount())
-			goto elfLoadFinalOut;
-	}
+	if (!sd_mount())
+		goto elfLoadFinalOut;
 
+	// Read library.
 	fileBuf = sd_file_read(path, NULL);
-
-	if (sdmount)
-		sd_end();
 
 	if (!fileBuf)
 		goto elfLoadFinalOut;
 
-
-	el_ctx ctx;
 	ctx.pread = _ianos_read_cb;
 
 	if (el_init(&ctx))
@@ -94,7 +88,6 @@ uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void *moduleCon
 	case EXEC_ELF:
 	case AR64_ELF:
 		elfBuf = (void *)DRAM_LIB_ADDR;
-		sd_end;
 		break;
 	default:
 		elfBuf = malloc(ctx.memsz); // Aligned to 0x10 by default.
@@ -123,6 +116,5 @@ elfFreeOut:
 	fileBuf = NULL;
 
 elfLoadFinalOut:
-
 	return epaddr;
 }

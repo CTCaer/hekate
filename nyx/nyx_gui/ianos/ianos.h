@@ -29,6 +29,6 @@ typedef enum
 	KEEP_IN_RAM = (1 << 31)  // Shared library mask.
 } elfType_t;
 
-uintptr_t ianos_loader(bool sdmount, char *path, elfType_t type, void* config);
+uintptr_t ianos_loader(char *path, elfType_t type, void* config);
 
 #endif
