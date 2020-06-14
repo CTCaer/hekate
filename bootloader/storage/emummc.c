@@ -129,17 +129,19 @@ static int emummc_raw_get_part_off(int part_idx)
 int emummc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 {
 	FILINFO fno;
+	emu_cfg.active_part = 0;
+
+	// Always init eMMC even when in emuMMC. eMMC is needed from theh emuMMC driver anyway.
 	if (!sdmmc_storage_init_mmc(storage, sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 		return 2;
 
-	if (h_cfg.emummc_force_disable)
+	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
 		return 0;
 
-	emu_cfg.active_part = 0;
 	if (!sd_mount())
 		goto out;
 
-	if (emu_cfg.enabled && !emu_cfg.sector)
+	if (!emu_cfg.sector)
 	{
 		strcpy(emu_cfg.emummc_file_based_path, emu_cfg.path);
 		strcat(emu_cfg.emummc_file_based_path, "/eMMC");
