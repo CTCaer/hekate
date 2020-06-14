@@ -139,8 +139,6 @@ void reboot_normal()
 	sd_end();
 	reconfig_hw_workaround(false, 0);
 
-	nyx_str->mtc_cfg.init_done = 0;
-
 	panic(0x21); // Bypass fuse programming in package1.
 }
 
