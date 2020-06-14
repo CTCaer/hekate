@@ -85,27 +85,24 @@ void uart_send(u32 idx, const u8 *buf, u32 len)
 u32 uart_recv(u32 idx, u8 *buf, u32 len)
 {
 	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
-	u32 timeout = get_tmr_us() + 1000;
+	u32 timeout = get_tmr_us() + 250;
 	u32 i;
 
 	for (i = 0; ; i++)
 	{
 		while (!(uart->UART_LSR & UART_LSR_RDR))
 		{
-			if (!len)
-			{
-				if (timeout < get_tmr_us())
-					break;
-			}
-			else if (len < i)
+			if (timeout < get_tmr_us())
+				break;
+			if (len && len < i)
 				break;
 		}
 		if (timeout < get_tmr_us())
 			break;
 
 		buf[i] = uart->UART_THR_DLAB;
-		timeout = get_tmr_us() + 1000;
-	};
+		timeout = get_tmr_us() + 250;
+	}
 
 	return i ? (len ? (i - 1) : i) : 0;
 }
