@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tmp451.h"
-#include "../soc/i2c.h"
+#include <soc/i2c.h>
+#include <thermal/tmp451.h>
 
 u16 tmp451_get_soc_temp(bool intenger)
 {

@@ -17,7 +17,7 @@
 #ifndef _GUI_TOOLS_H_
 #define _GUI_TOOLS_H_
 
-#include "../libs/lvgl/lvgl.h"
+#include <libs/lvgl/lvgl.h>
 
 extern lv_obj_t *ums_mbox;
 

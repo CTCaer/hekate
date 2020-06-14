@@ -22,27 +22,27 @@
 #include "gui_tools_partition_manager.h"
 #include "gui_emmc_tools.h"
 #include "fe_emummc_tools.h"
-#include "../../../common/memory_map.h"
-#include "../config/config.h"
-#include "../gfx/di.h"
+#include <memory_map.h>
+#include "../config.h"
+#include <gfx/di.h>
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
 #include "../hos/sept.h"
-#include "../input/touch.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../mem/minerva.h"
-#include "../sec/se.h"
-#include "../soc/bpmp.h"
-#include "../soc/fuse.h"
+#include <input/touch.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <mem/minerva.h>
+#include <sec/se.h>
+#include <soc/bpmp.h>
+#include <soc/fuse.h>
 #include "../storage/nx_emmc.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../usb/usbd.h"
-#include "../utils/btn.h"
-#include "../utils/sprintf.h"
-#include "../utils/util.h"
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <usb/usbd.h>
+#include <utils/btn.h>
+#include <utils/sprintf.h>
+#include <utils/util.h>
 
 extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;

@@ -11,9 +11,9 @@
 
 #if LV_LOG_PRINTF
 #include <string.h>
-#include "../../../mem/heap.h"
-#include "../../../soc/uart.h"
-#include "../../../utils/sprintf.h"
+#include <mem/heap.h>
+#include <soc/uart.h>
+#include <utils/sprintf.h>
 #endif
 /*********************
  *      DEFINES

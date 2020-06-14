@@ -23,18 +23,18 @@
 
 #include "gui.h"
 #include "fe_emummc_tools.h"
-#include "../config/config.h"
-#include "../config/ini.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../sec/se.h"
-#include "../storage/mbr_gpt.h"
+#include "../config.h"
+#include <utils/ini.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <sec/se.h>
+#include <storage/mbr_gpt.h>
 #include "../storage/nx_emmc.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../utils/btn.h"
-#include "../utils/sprintf.h"
-#include "../utils/util.h"
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <utils/btn.h>
+#include <utils/sprintf.h>
+#include <utils/util.h>
 
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128

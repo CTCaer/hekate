@@ -17,7 +17,7 @@
 #ifndef _PKG1_H_
 #define _PKG1_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef struct _patch_t
 {

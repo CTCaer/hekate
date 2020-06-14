@@ -14,14 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../soc/ccplex.h"
-#include "../soc/i2c.h"
-#include "../soc/clock.h"
-#include "../utils/util.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../power/max77620.h"
-#include "../power/max7762x.h"
+#include <soc/ccplex.h>
+#include <soc/i2c.h>
+#include <soc/clock.h>
+#include <utils/util.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <power/max77620.h>
+#include <power/max7762x.h>
 
 void _ccplex_enable_power()
 {

@@ -18,7 +18,7 @@
 #ifndef _BTN_H_
 #define _BTN_H_
 
-#include "types.h"
+#include <utils/types.h>
 
 #define BTN_POWER    (1 << 0)
 #define BTN_VOL_DOWN (1 << 1)

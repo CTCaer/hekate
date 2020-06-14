@@ -19,10 +19,10 @@
 #include <string.h>
 
 #include "ramdisk.h"
-#include "../mem/heap.h"
-#include "../utils/types.h"
+#include <mem/heap.h>
+#include <utils/types.h>
 
-#include "../../../common/memory_map.h"
+#include <memory_map.h>
 
 int ram_disk_init(FATFS *ram_fs)
 {

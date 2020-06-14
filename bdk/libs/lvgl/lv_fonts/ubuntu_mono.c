@@ -16,7 +16,7 @@
 
 #include "../lv_misc/lv_font.h"
 
-#include "../../../../../common/memory_map.h"
+#include <memory_map.h>
 
 #if USE_UBUNTU_MONO != 0	/*Can be enabled in lv_conf.h*/
 

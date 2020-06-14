@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
+#ifndef _MODULE_H_
+#define _MODULE_H_
+
 #include <stddef.h>
-//TODO: Move it to BDK
-#include "common_gfx.h"
-#include "common_heap.h"
+#include <mem/heap.h>
 
 // Module Callback
 typedef void (*cbMainModule_t)(const char *s);
@@ -28,8 +28,8 @@ typedef void (*memset_t)(void *, int, size_t);
 
 typedef struct _bdkParams_t
 {
-	gfx_con_t *gfxCon;
-	gfx_ctxt_t *gfxCtx;
+	void *gfxCon;
+	void *gfxCtx;
 	heap_t *sharedHeap;
 	memcpy_t memcpy;
 	memset_t memset;
@@ -37,3 +37,5 @@ typedef struct _bdkParams_t
 
 // Module Entrypoint
 typedef void (*moduleEntrypoint_t)(void *, bdkParams_t);
+
+#endif

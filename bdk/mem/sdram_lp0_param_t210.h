@@ -23,7 +23,7 @@
 #ifndef __SOC_NVIDIA_TEGRA210_SDRAM_PARAM_H__
 #define __SOC_NVIDIA_TEGRA210_SDRAM_PARAM_H__
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 enum
 {

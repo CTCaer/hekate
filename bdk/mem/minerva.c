@@ -18,13 +18,13 @@
 #include <stdlib.h>
 
 #include "minerva.h"
-#include "../soc/fuse.h"
-#include "../utils/util.h"
 
-#include "../soc/clock.h"
-#include "../ianos/ianos.h"
-#include "../soc/fuse.h"
-#include "../soc/t210.h"
+#include <soc/clock.h>
+#include <ianos/ianos.h>
+#include <soc/clock.h>
+#include <soc/fuse.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 extern volatile nyx_storage_t *nyx_str;
 

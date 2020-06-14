@@ -17,8 +17,8 @@
  */
 
 #include "bq24193.h"
-#include "../soc/i2c.h"
-#include "../utils/util.h"
+#include <soc/i2c.h>
+#include <utils/util.h>
 
 static u8 bq24193_get_reg(u8 reg)
 {

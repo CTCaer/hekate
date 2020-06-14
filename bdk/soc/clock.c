@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../soc/clock.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
-#include "../storage/sdmmc.h"
+#include <soc/clock.h>
+#include <soc/t210.h>
+#include <storage/sdmmc.h>
+#include <utils/util.h>
 
 /*
  * CLOCK Peripherals:

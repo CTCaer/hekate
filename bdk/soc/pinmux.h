@@ -17,7 +17,7 @@
 #ifndef _PINMUX_H_
 #define _PINMUX_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 /*! APB MISC registers. */
 #define APB_MISC_GP_SDMMC1_CLK_LPBK_CONTROL 0x8D4

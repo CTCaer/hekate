@@ -18,7 +18,7 @@
 #ifndef _UART_H_
 #define _UART_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define UART_A 0
 #define UART_B 1

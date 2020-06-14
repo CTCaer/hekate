@@ -17,7 +17,7 @@
 #ifndef _GUI_EMMC_TOOLS_H_
 #define _GUI_EMMC_TOOLS_H_
 
-#include "../libs/lvgl/lvgl.h"
+#include <libs/lvgl/lvgl.h>
 
 lv_res_t create_window_backup_restore_tool(lv_obj_t *btn);
 

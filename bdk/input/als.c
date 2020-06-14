@@ -17,11 +17,11 @@
  */
 
 #include "als.h"
-#include "../power/max77620.h"
-#include "../soc/clock.h"
-#include "../soc/i2c.h"
-#include "../soc/pinmux.h"
-#include "../utils/util.h"
+#include <power/max77620.h>
+#include <soc/clock.h>
+#include <soc/i2c.h>
+#include <soc/pinmux.h>
+#include <utils/util.h>
 
 #define HOS_GAIN  BH1730_GAIN_64X
 #define HOS_ITIME 38

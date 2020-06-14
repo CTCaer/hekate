@@ -22,16 +22,16 @@
 #include "pkg2.h"
 #include "pkg2_ini_kippatch.h"
 
-#include "../config/config.h"
-#include "../libs/compr/blz.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../sec/se.h"
+#include "../config.h"
+#include <libs/compr/blz.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <sec/se.h>
 #include "../storage/emummc.h"
-#include "../storage/nx_sd.h"
-#include "../utils/aarch64_util.h"
+#include <storage/nx_sd.h>
+#include <utils/aarch64_util.h>
 
-#include "../gfx/gfx.h"
+#include <gfx_utils.h>
 
 extern hekate_config h_cfg;
 extern const u8 package2_keyseed[];
@@ -41,7 +41,7 @@ u32 pkg2_newkern_ini1_start;
 u32 pkg2_newkern_ini1_end;
 
 #ifdef KIP1_PATCH_DEBUG
-	#include "../utils/util.h"
+	#include <utils/util.h>
 	#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 	#define DEBUG_PRINTING
 #else

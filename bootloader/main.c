@@ -19,41 +19,41 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../common/memory_map.h"
+#include <memory_map.h>
 
-#include "config/config.h"
-#include "gfx/di.h"
-#include "gfx/gfx.h"
+#include "config.h"
+#include <gfx/di.h>
+#include <gfx_utils.h>
 #include "gfx/logos.h"
 #include "gfx/tui.h"
 #include "hos/hos.h"
 #include "hos/secmon_exo.h"
 #include "hos/sept.h"
-#include "ianos/ianos.h"
-#include "libs/compr/blz.h"
-#include "libs/fatfs/ff.h"
-#include "mem/heap.h"
-#include "mem/minerva.h"
-#include "mem/sdram.h"
-#include "power/bq24193.h"
-#include "power/max17050.h"
-#include "power/max77620.h"
-#include "power/max7762x.h"
-#include "rtc/max77620-rtc.h"
-#include "soc/bpmp.h"
-#include "soc/fuse.h"
-#include "soc/hw_init.h"
-#include "soc/i2c.h"
-#include "soc/t210.h"
-#include "soc/uart.h"
+#include <ianos/ianos.h>
+#include <libs/compr/blz.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <mem/minerva.h>
+#include <mem/sdram.h>
+#include <power/bq24193.h>
+#include <power/max17050.h>
+#include <power/max77620.h>
+#include <power/max7762x.h>
+#include <rtc/max77620-rtc.h>
+#include <soc/bpmp.h>
+#include <soc/fuse.h>
+#include <soc/hw_init.h>
+#include <soc/i2c.h>
+#include <soc/t210.h>
+#include <soc/uart.h>
 #include "storage/emummc.h"
 #include "storage/nx_emmc.h"
-#include "storage/nx_sd.h"
-#include "storage/sdmmc.h"
-#include "utils/btn.h"
-#include "utils/dirlist.h"
-#include "utils/list.h"
-#include "utils/util.h"
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <utils/btn.h>
+#include <utils/dirlist.h>
+#include <utils/list.h>
+#include <utils/util.h>
 
 #include "frontend/fe_emmc_tools.h"
 #include "frontend/fe_tools.h"
@@ -1084,7 +1084,9 @@ static void _patched_rcm_protection()
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	if (!h_cfg.rcm_patched)
+	u32 chip_id = (APB_MISC(APB_MISC_GP_HIDREV) >> 4) & 0xF;
+
+	if (!h_cfg.rcm_patched || chip_id != GP_HIDREV_MAJOR_T210)
 		return;
 
 	// Check if AutoRCM is enabled and protect from a permanent brick.

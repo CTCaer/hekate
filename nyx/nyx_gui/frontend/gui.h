@@ -17,7 +17,7 @@
 #ifndef _GUI_H_
 #define _GUI_H_
 
-#include "../libs/lvgl/lvgl.h"
+#include <libs/lvgl/lvgl.h>
 
 typedef struct _emmc_tool_gui_t
 {

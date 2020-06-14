@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 #include "pkg2_ini_kippatch.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
 
 #define KPS(x) ((u32)(x) << 29)
 

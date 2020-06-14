@@ -18,7 +18,7 @@
 #ifndef _HW_INIT_H_
 #define _HW_INIT_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 void config_hw();
 void reconfig_hw_workaround(bool extra_reconfig, u32 magic);

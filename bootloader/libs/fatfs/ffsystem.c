@@ -5,8 +5,8 @@
 /*------------------------------------------------------------------------*/
 
 
-#include "ff.h"
-#include "../../mem/heap.h"
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
 
 
 

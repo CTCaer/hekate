@@ -20,7 +20,7 @@
 #ifndef _MTC_TABLE_H_
 #define _MTC_TABLE_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef struct
 {

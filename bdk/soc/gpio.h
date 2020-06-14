@@ -18,7 +18,7 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define GPIO_MODE_SPIO 0
 #define GPIO_MODE_GPIO 1

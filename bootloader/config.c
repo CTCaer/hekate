@@ -18,17 +18,17 @@
 #include <stdlib.h>
 
 #include "config.h"
-#include "ini.h"
-#include "../gfx/gfx.h"
-#include "../gfx/tui.h"
-#include "../libs/fatfs/ff.h"
-#include "../soc/fuse.h"
-#include "../soc/t210.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../utils/btn.h"
-#include "../utils/list.h"
-#include "../utils/util.h"
+#include <utils/ini.h>
+#include <gfx_utils.h>
+#include "gfx/tui.h"
+#include <libs/fatfs/ff.h>
+#include <soc/fuse.h>
+#include <soc/t210.h>
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <utils/btn.h>
+#include <utils/list.h>
+#include <utils/util.h>
 
 extern hekate_config h_cfg;
 

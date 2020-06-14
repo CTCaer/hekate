@@ -18,7 +18,7 @@
 #ifndef _TSEC_H_
 #define _TSEC_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef struct _tsec_ctxt_t
 {

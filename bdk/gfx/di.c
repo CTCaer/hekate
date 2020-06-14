@@ -18,16 +18,15 @@
 #include <string.h>
 
 #include "di.h"
-#include "../gfx/gfx.h"
-#include "../power/max77620.h"
-#include "../power/max7762x.h"
-#include "../soc/clock.h"
-#include "../soc/gpio.h"
-#include "../soc/i2c.h"
-#include "../soc/pinmux.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
+#include <power/max77620.h>
+#include <power/max7762x.h>
+#include <soc/clock.h>
+#include <soc/gpio.h>
+#include <soc/i2c.h>
+#include <soc/pinmux.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 #include "di.inl"
 

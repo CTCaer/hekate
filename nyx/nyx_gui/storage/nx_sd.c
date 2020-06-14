@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nx_sd.h"
-#include "sdmmc.h"
-#include "sdmmc_driver.h"
-#include "../gfx/gfx.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <storage/sdmmc_driver.h>
+#include <gfx_utils.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
 
 static bool sd_mounted = false;
 static bool sd_init_done = false;

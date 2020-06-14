@@ -18,8 +18,8 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#include "types.h"
-#include "../mem/minerva.h"
+#include <utils/types.h>
+#include <mem/minerva.h>
 
 typedef enum
 {

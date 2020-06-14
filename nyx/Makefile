@@ -16,8 +16,11 @@ TARGET := nyx
 BUILDDIR := ./../build
 OUTPUTDIR := ./../output
 SOURCEDIR = nyx_gui
+BDKDIR := bdk
+BDKINC := -I../$(BDKDIR)
 VPATH = $(dir $(wildcard ./$(SOURCEDIR)/)) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
 VPATH += $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/*/*/))
+VPATH += $(dir $(wildcard ../$(BDKDIR)/*/)) $(dir $(wildcard ../$(BDKDIR)/*/*/)) $(dir $(wildcard ../$(BDKDIR)/*/*/*/))
 
 # Main and graphics.
 OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
@@ -68,11 +71,14 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	lv_theme.o lv_theme_hekate.o \
 )
 
+GFX_INC   := '"../nyx/$(SOURCEDIR)/gfx/gfx.h"'
+FFCFG_INC := '"../nyx/$(SOURCEDIR)/libs/fatfs/ffconf.h"'
+
 ################################################################################
 
 CUSTOMDEFINES := -DNYX_LOAD_ADDR=$(NYX_LOAD_ADDR) -DNYX_MAGIC=$(NYX_MAGIC)
 CUSTOMDEFINES += -DNYX_VER_MJ=$(NYXVERSION_MAJOR) -DNYX_VER_MN=$(NYXVERSION_MINOR) -DNYX_VER_HF=$(NYXVERSION_HOTFX) -DNYX_RESERVED=$(NYXVERSION_RSVD)
-CUSTOMDEFINES += -DNYX
+CUSTOMDEFINES += -DNYX -DGFX_INC=$(GFX_INC) -DFFCFG_INC=$(FFCFG_INC)
 
 # 0: UART_A, 1: UART_B.
 #CUSTOMDEFINES += -DDEBUG_UART_PORT=1
@@ -106,7 +112,7 @@ $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 
 $(BUILDDIR)/$(TARGET)/%.o: %.c
 	@echo Building $@
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
 
 $(BUILDDIR)/$(TARGET)/%.o: %.S
 	@echo Building $@

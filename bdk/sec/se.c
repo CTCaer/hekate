@@ -17,12 +17,12 @@
 
 #include <string.h>
 
-#include "../sec/se.h"
-#include "../mem/heap.h"
-#include "../soc/bpmp.h"
-#include "../soc/t210.h"
-#include "../sec/se_t210.h"
-#include "../utils/util.h"
+#include "se.h"
+#include "se_t210.h"
+#include <mem/heap.h>
+#include <soc/bpmp.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 typedef struct _se_ll_t
 {

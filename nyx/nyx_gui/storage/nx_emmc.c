@@ -16,10 +16,10 @@
 
 #include <string.h>
 
-#include "mbr_gpt.h"
+#include <storage/mbr_gpt.h>
 #include "nx_emmc.h"
-#include "../mem/heap.h"
-#include "../utils/list.h"
+#include <mem/heap.h>
+#include <utils/list.h>
 
 sdmmc_t emmc_sdmmc;
 sdmmc_storage_t emmc_storage;

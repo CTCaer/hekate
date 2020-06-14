@@ -18,7 +18,7 @@
 #define _FE_MINERVA_H_
 
 #include "mtc_table.h"
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define MTC_INIT_MAGIC 0x3043544D
 #define MTC_NEW_MAGIC  0x5243544D

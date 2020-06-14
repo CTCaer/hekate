@@ -20,13 +20,13 @@
 
 #include "fss.h"
 #include "hos.h"
-#include "../config/config.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
+#include "../config.h"
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
 #include "../storage/emummc.h"
-#include "../storage/nx_sd.h"
+#include <storage/nx_sd.h>
 
-#include "../gfx/gfx.h"
+#include <gfx_utils.h>
 #define DPRINTF(...)
 
 extern hekate_config h_cfg;

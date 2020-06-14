@@ -19,19 +19,19 @@
 
 #include <string.h>
 
-#include "../soc/clock.h"
-#include "../soc/i2c.h"
-#include "../soc/pinmux.h"
-#include "../power/max7762x.h"
-#include "../power/max77620.h"
-#include "../soc/gpio.h"
-#include "../soc/t210.h"
-#include "../utils/btn.h"
-#include "../utils/util.h"
+#include <soc/clock.h>
+#include <soc/i2c.h>
+#include <soc/pinmux.h>
+#include <power/max7762x.h>
+#include <power/max77620.h>
+#include <soc/gpio.h>
+#include <soc/t210.h>
+#include <utils/btn.h>
+#include <utils/util.h>
 #include "touch.h"
 
 
-#include "../gfx/gfx.h"
+#include <gfx_utils.h>
 #define DPRINTF(...) gfx_printf(__VA_ARGS__)
 
 static int touch_command(u8 cmd, u8 *buf, u8 size)

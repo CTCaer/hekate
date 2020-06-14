@@ -19,7 +19,7 @@
 #ifndef __FAN_H_
 #define __FAN_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 // Disable: 0 (0 RPM), min duty: 1 (960 RPM), max duty 235 (11000 RPM).
 void set_fan_duty(u32 duty);

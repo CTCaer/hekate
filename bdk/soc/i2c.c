@@ -17,8 +17,8 @@
 
 #include <string.h>
 
-#include "i2c.h"
-#include "../utils/util.h"
+#include <soc/i2c.h>
+#include <utils/util.h>
 
 static const u32 i2c_addrs[] = {
 	0x7000C000, 0x7000C400, 0x7000C500,

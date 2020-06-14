@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 M4xw
+ * Copyright (c) 2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -13,29 +12,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
-#pragma once
-//TODO: Move it to BDK
-#include "../bootloader/utils/types.h"
+#ifndef _FATFS_CFG_H_
+#define _FATFS_CFG_H_
 
-typedef struct _hnode
-{
-	int used;
-	u32 size;
-	struct _hnode *prev;
-	struct _hnode *next;
-	u32 align[4]; // Align to arch cache line size.
-} hnode_t;
+#ifdef FFCFG_INC
+#include FFCFG_INC
+#endif
 
-typedef struct _heap
-{
-	u32 start;
-	hnode_t *first;
-} heap_t;
-
-typedef struct
-{
-    u32 total;
-    u32 used;
-} heap_monitor_t;
+#endif

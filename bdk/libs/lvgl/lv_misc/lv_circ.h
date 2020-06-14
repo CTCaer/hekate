@@ -16,7 +16,7 @@ extern "C" {
  *********************/
 #include <stddef.h>
 #include "lv_area.h"
-#include "../../../utils/types.h"
+#include <utils/types.h>
 
 /*********************
  *      DEFINES

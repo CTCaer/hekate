@@ -19,7 +19,7 @@
 #ifndef _BPMP_H_
 #define _BPMP_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef enum
 {

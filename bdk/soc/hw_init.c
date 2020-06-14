@@ -17,32 +17,32 @@
 
 #include <string.h>
 
-#include "hw_init.h"
-#include "bpmp.h"
-#include "clock.h"
-#include "fuse.h"
-#include "gpio.h"
-#include "i2c.h"
-#include "pinmux.h"
-#include "pmc.h"
-#include "uart.h"
-#include "t210.h"
-#include "../input/joycon.h"
-#include "../input/touch.h"
-#include "../gfx/di.h"
-#include "../mem/mc.h"
-#include "../mem/minerva.h"
-#include "../mem/sdram.h"
-#include "../sec/se.h"
-#include "../sec/se_t210.h"
-#include "../power/max77620.h"
-#include "../power/max7762x.h"
-#include "../gfx/di.h"
-#include "../power/regulator_5v.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../thermal/fan.h"
-#include "../utils/util.h"
+#include <soc/hw_init.h>
+#include <gfx/di.h>
+#include <input/joycon.h>
+#include <input/touch.h>
+#include <sec/se.h>
+#include <sec/se_t210.h>
+#include <soc/bpmp.h>
+#include <soc/clock.h>
+#include <soc/fuse.h>
+#include <soc/gpio.h>
+#include <soc/i2c.h>
+#include <soc/pinmux.h>
+#include <soc/pmc.h>
+#include <soc/uart.h>
+#include <soc/t210.h>
+#include <mem/mc.h>
+#include <mem/minerva.h>
+#include <mem/sdram.h>
+#include <power/bq24193.h>
+#include <power/max77620.h>
+#include <power/max7762x.h>
+#include <power/regulator_5v.h>
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <thermal/fan.h>
+#include <utils/util.h>
 
 extern boot_cfg_t b_cfg;
 extern volatile nyx_storage_t *nyx_str;

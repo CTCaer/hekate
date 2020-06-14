@@ -22,10 +22,10 @@
 #include "elfarch.h"
 #include "elf.h"
 
-#include "../../utils/types.h"
+#include <utils/types.h>
 
 #ifdef DEBUG
-#include "../../gfx/gfx.h"
+#include <gfx_utils.h>
 #define EL_DEBUG(format, ...) \
 	gfx_printf(format __VA_OPT__(, ) __VA_ARGS__)
 #else

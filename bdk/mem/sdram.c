@@ -18,23 +18,23 @@
 
 #include <string.h>
 
-#include "mc.h"
-#include "emc.h"
-#include "sdram_param_t210.h"
-#include "../../common/memory_map.h"
-#include "../power/max77620.h"
-#include "../power/max7762x.h"
-#include "../soc/clock.h"
-#include "../soc/fuse.h"
-#include "../soc/i2c.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
+#include <mem/mc.h>
+#include <mem/emc.h>
+#include <mem/sdram_param_t210.h>
+#include <memory_map.h>
+#include <power/max77620.h>
+#include <power/max7762x.h>
+#include <soc/clock.h>
+#include <soc/fuse.h>
+#include <soc/i2c.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 #define CONFIG_SDRAM_KEEP_ALIVE
 
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
-#include "../libs/compr/lz.h"
+#include <libs/compr/lz.h>
 #include "sdram_config_lz.inl"
 #else
 #include "sdram_config.inl"

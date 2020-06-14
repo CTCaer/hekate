@@ -19,9 +19,9 @@
 #include <string.h>
 
 #include "irq.h"
-#include "t210.h"
-#include "../gfx/gfx.h"
-#include "../mem/heap.h"
+#include <soc/t210.h>
+#include <gfx_utils.h>
+#include <mem/heap.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

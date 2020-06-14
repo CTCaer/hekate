@@ -19,7 +19,7 @@
 #ifndef _FUSE_H_
 #define _FUSE_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 /*! Fuse registers. */
 #define FUSE_CTRL 0x0

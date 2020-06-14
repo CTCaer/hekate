@@ -20,9 +20,9 @@
 
 #include "pkg1.h"
 #include "pkg2.h"
-#include "../utils/types.h"
-#include "../config/ini.h"
-#include "../sec/tsec.h"
+#include <utils/types.h>
+#include <utils/ini.h>
+#include <sec/tsec.h>
 
 #include <assert.h>
 

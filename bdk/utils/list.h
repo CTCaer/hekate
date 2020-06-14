@@ -18,7 +18,7 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
-#include "types.h"
+#include <utils/types.h>
 
 /*! Initialize list. */
 #define LIST_INIT(name) link_t name = {&name, &name}

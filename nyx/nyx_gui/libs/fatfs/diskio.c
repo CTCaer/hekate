@@ -9,12 +9,12 @@
 
 #include <string.h>
 
-#include "diskio.h"		/* FatFs lower layer API */
-#include "../../../../common/memory_map.h"
+#include <libs/fatfs/diskio.h>	/* FatFs lower layer API */
+#include <memory_map.h>
 #include "../../storage/nx_emmc_bis.h"
-#include "../../storage/nx_sd.h"
-#include "../../storage/ramdisk.h"
-#include "../../storage/sdmmc.h"
+#include <storage/nx_sd.h>
+#include <storage/ramdisk.h>
+#include <storage/sdmmc.h>
 
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */

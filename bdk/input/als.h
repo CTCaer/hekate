@@ -19,7 +19,7 @@
 #ifndef __ALS_H_
 #define __ALS_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define BH1730_I2C_ADDR 0x29
 

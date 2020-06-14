@@ -17,7 +17,7 @@
 #ifndef _SPRINTF_H_
 #define _SPRINTF_H_
 
-#include "types.h"
+#include <utils/types.h>
 
 void s_printf(char *out_buf, const char *fmt, ...);
 

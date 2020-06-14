@@ -18,9 +18,9 @@
 #include <string.h>
 
 #include "ini.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../utils/dirlist.h"
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <utils/dirlist.h>
 
 static char *_strdup(char *str)
 {

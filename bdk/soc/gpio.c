@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "gpio.h"
-#include "t210.h"
+#include <soc/gpio.h>
+#include <soc/t210.h>
 
 #define GPIO_BANK_IDX(port)      (port >> 2)
 

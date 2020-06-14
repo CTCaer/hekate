@@ -19,7 +19,7 @@
 #ifndef _USB_DESCRIPTORS_H_
 #define _USB_DESCRIPTORS_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef enum {
 	USB_DESCRIPTOR_DEVICE                    = 1,

@@ -21,16 +21,16 @@
 
 #include <string.h>
 
-#include "usbd.h"
-#include "../gfx/gfx.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../storage/sdmmc_driver.h"
-#include "../utils/btn.h"
-#include "../utils/sprintf.h"
-#include "../utils/util.h"
+#include <usb/usbd.h>
+#include <gfx_utils.h>
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <storage/sdmmc_driver.h>
+#include <utils/btn.h>
+#include <utils/sprintf.h>
+#include <utils/util.h>
 
-#include "../../../common/memory_map.h"
+#include <memory_map.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

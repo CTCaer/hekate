@@ -17,7 +17,7 @@ extern "C" {
  *********************/
 #include <stdint.h>
 #include "lv_hal.h"
-#include "../../../utils/types.h"
+#include <utils/types.h>
 #include "../lv_misc/lv_area.h"
 #include "../lv_core/lv_obj.h"
 

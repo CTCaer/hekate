@@ -23,7 +23,7 @@
 #include "mtc_mc_emc_regs.h"
 #include "mtc_switch_tables.h"
 #include "types.h"
-#include "../../common/common_module.h"
+#include <module.h>
 
 #define EPRINTF(...)
 #define EPRINTFARGS(...)

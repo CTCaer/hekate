@@ -14,9 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../soc/kfuse.h"
-#include "../soc/clock.h"
-#include "../soc/t210.h"
+#include <soc/kfuse.h>
+#include <soc/clock.h>
+#include <soc/t210.h>
 
 int kfuse_wait_ready()
 {

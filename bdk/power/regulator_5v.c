@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../soc/gpio.h"
-#include "../soc/pinmux.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../utils/types.h"
+#include <soc/gpio.h>
+#include <soc/pinmux.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <utils/types.h>
 
 static u8 reg_5v_dev = 0;
 

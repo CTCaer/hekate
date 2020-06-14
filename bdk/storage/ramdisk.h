@@ -19,7 +19,7 @@
 #ifndef RAM_DISK_H
 #define RAM_DISK_H
 
-#include "../libs/fatfs/ff.h"
+#include <libs/fatfs/ff.h>
 
 #define RAMDISK_CLUSTER_SZ 32768
 

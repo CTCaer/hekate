@@ -7,6 +7,8 @@ include $(DEVKITARM)/base_rules
 TARGET := libsys_minerva
 BUILD := ../../build/$(TARGET)
 OUTPUT := ../../output
+BDKDIR := bdk
+BDKINC := -I../../$(BDKDIR)
 
 OBJS = $(addprefix $(BUILD)/,\
 	sys_sdrammtc.o \
@@ -21,7 +23,7 @@ LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc
 all: $(TARGET).bso
 $(BUILD)/%.o: ./%.c
 	@mkdir -p "$(BUILD)"
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
 
 $(TARGET).bso: $(OBJS)
 	@$(CC) $(LDFLAGS) -e _minerva_init $^ -o $(OUTPUT)/$(TARGET).bso

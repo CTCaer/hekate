@@ -18,7 +18,7 @@
 #ifndef MBR_GPT_H
 #define MBR_GPT_H
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef struct _mbr_chs_t
 {

@@ -18,7 +18,7 @@
 #ifndef _MAX7762X_H_
 #define _MAX7762X_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 /*
 * Switch Power domains (max77620):

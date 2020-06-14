@@ -17,17 +17,17 @@
 
 #include <string.h>
 
-#include "mmc.h"
-#include "sdmmc.h"
-#include "../gfx/gfx.h"
-#include "../power/max7762x.h"
-#include "../soc/bpmp.h"
-#include "../soc/clock.h"
-#include "../soc/gpio.h"
-#include "../soc/pinmux.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
+#include <storage/mmc.h>
+#include <storage/sdmmc.h>
+#include <gfx_utils.h>
+#include <power/max7762x.h>
+#include <soc/bpmp.h>
+#include <soc/clock.h>
+#include <soc/gpio.h>
+#include <soc/pinmux.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 //#define ERROR_EXTRA_PRINTING

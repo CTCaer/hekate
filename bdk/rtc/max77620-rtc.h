@@ -19,7 +19,7 @@
 #ifndef _MFD_MAX77620_RTC_H_
 #define _MFD_MAX77620_RTC_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define MAX77620_RTC_I2C_ADDR       0x68
 

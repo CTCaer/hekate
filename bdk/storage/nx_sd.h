@@ -18,9 +18,9 @@
 #ifndef NX_SD_H
 #define NX_SD_H
 
-#include "sdmmc.h"
-#include "sdmmc_driver.h"
-#include "../libs/fatfs/ff.h"
+#include <storage/sdmmc.h>
+#include <storage/sdmmc_driver.h>
+#include <libs/fatfs/ff.h>
 
 enum
 {

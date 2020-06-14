@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "di.h"
+#include <gfx/di.h>
 #include "tui.h"
-#include "../utils/btn.h"
-#include "../config/config.h"
-#include "../power/max17050.h"
-#include "../utils/util.h"
+#include "../config.h"
+#include <power/max17050.h>
+#include <utils/btn.h>
+#include <utils/util.h>
 
 extern hekate_config h_cfg;
 

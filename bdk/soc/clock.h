@@ -18,7 +18,7 @@
 #ifndef _CLOCK_H_
 #define _CLOCK_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 /*! Clock registers. */
 #define CLK_RST_CONTROLLER_RST_SOURCE 0x0

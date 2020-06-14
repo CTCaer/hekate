@@ -17,7 +17,7 @@
 #ifndef _KFUSE_H_
 #define _KFUSE_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define KFUSE_STATE_SOFTRESET      (1 << 31)
 #define KFUSE_STATE_STOP           (1 << 25)

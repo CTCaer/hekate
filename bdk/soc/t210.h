@@ -17,7 +17,7 @@
 #ifndef _T210_H_
 #define _T210_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define BOOTROM_BASE 0x100000
 #define IRAM_BASE 0x40000000
@@ -162,6 +162,8 @@
 #define APB_MISC_PP_STRAPPING_OPT_A 0x08
 #define APB_MISC_PP_PINMUX_GLOBAL 0x40
 #define APB_MISC_GP_HIDREV 0x804
+#define  GP_HIDREV_MAJOR_T210    0x1
+#define  GP_HIDREV_MAJOR_T210B01 0x2
 #define APB_MISC_GP_AUD_MCLK_CFGPADCTRL 0x8F4
 #define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL 0xA34
 #define APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL 0xA98

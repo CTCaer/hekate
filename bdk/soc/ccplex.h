@@ -17,7 +17,7 @@
 #ifndef _CCPLEX_H_
 #define _CCPLEX_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 void ccplex_boot_cpu0(u32 entry);
 

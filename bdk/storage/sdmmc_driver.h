@@ -18,8 +18,8 @@
 #ifndef _SDMMC_DRIVER_H_
 #define _SDMMC_DRIVER_H_
 
-#include "../utils/types.h"
-#include "sdmmc_t210.h"
+#include <utils/types.h>
+#include <storage/sdmmc_t210.h>
 
 /*! SDMMC controller IDs. */
 #define SDMMC_1 0

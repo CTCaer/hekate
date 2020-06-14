@@ -19,8 +19,8 @@
 
 #include <string.h>
 
-#include "../soc/fuse.h"
-#include "../soc/t210.h"
+#include <soc/fuse.h>
+#include <soc/t210.h>
 
 #define ARRAYSIZE(x) (sizeof(x) / sizeof(*x))
 

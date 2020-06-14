@@ -18,7 +18,7 @@
 #ifndef IANOS_H
 #define IANOS_H
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 typedef enum
 {

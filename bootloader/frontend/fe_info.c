@@ -19,25 +19,25 @@
 #include <string.h>
 
 #include "fe_info.h"
-#include "../gfx/gfx.h"
+#include <gfx_utils.h>
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../power/bq24193.h"
-#include "../power/max17050.h"
-#include "../sec/tsec.h"
-#include "../soc/fuse.h"
-#include "../soc/i2c.h"
-#include "../soc/kfuse.h"
-#include "../soc/smmu.h"
-#include "../soc/t210.h"
-#include "../storage/mmc.h"
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <mem/smmu.h>
+#include <power/bq24193.h>
+#include <power/max17050.h>
+#include <sec/tsec.h>
+#include <soc/fuse.h>
+#include <soc/i2c.h>
+#include <soc/kfuse.h>
+#include <soc/t210.h>
+#include <storage/mmc.h>
 #include "../storage/nx_emmc.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../utils/btn.h"
-#include "../utils/util.h"
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <utils/btn.h>
+#include <utils/util.h>
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 

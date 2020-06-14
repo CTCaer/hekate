@@ -14,7 +14,7 @@
 #ifndef _TEGRA210_PMC_H_
 #define _TEGRA210_PMC_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 struct tegra_pmc_regs
 {

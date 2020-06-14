@@ -17,12 +17,12 @@
 
 #include <string.h>
 
-#include "smmu.h"
-#include "../soc/ccplex.h"
-#include "../soc/t210.h"
-#include "../mem/mc_t210.h"
-#include "../utils/util.h"
-#include "../utils/aarch64_util.h"
+#include <soc/ccplex.h>
+#include <soc/t210.h>
+#include <mem/mc_t210.h>
+#include <mem/smmu.h>
+#include <utils/util.h>
+#include <utils/aarch64_util.h>
 
 bool smmu_used = false;
 u8 *_pageheap = (u8 *)SMMU_HEAP_ADDR;

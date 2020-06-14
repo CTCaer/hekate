@@ -18,8 +18,8 @@
 #ifndef _PKG2_H_
 #define _PKG2_H_
 
-#include "../utils/types.h"
-#include "../utils/list.h"
+#include <utils/types.h>
+#include <utils/list.h>
 
 #define PKG2_MAGIC 0x31324B50
 #define PKG2_SEC_BASE 0x80000000

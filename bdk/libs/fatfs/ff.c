@@ -38,7 +38,7 @@
 
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
-#include "../../gfx/gfx.h"
+#include <gfx_utils.h>
 
 #define EFSPRINTF(text, ...) print_error(); gfx_printf("%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);
 //#define EFSPRINTF(...)

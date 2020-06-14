@@ -19,7 +19,7 @@
 #ifndef _USB_T210_H_
 #define _USB_T210_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 /* General USB registers */
 #define USB1_IF_USB_SUSP_CTRL         0x400

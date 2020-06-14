@@ -15,7 +15,7 @@ extern "C" {
  *      INCLUDES
  *********************/
 #include <string.h>
-#include "../../../utils/types.h"
+#include <utils/types.h>
 
 /*********************
  *      DEFINES

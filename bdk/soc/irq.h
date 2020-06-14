@@ -19,7 +19,7 @@
 #ifndef IRQ_H
 #define IRQ_H
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define IRQ_MAX_HANDLERS 16
 

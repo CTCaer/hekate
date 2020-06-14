@@ -15,10 +15,10 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "../soc/uart.h"
-#include "../soc/clock.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
+#include <soc/uart.h>
+#include <soc/clock.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 /* UART A, B, C, D and E. */
 static const u32 uart_baseoff[5] = { 0, 0x40, 0x200, 0x300, 0x400 };

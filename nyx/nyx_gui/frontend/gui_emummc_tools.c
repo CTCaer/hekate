@@ -19,17 +19,17 @@
 #include "gui.h"
 #include "fe_emummc_tools.h"
 #include "gui_tools_partition_manager.h"
-#include "../../../common/memory_map.h"
-#include "../config/ini.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../storage/mbr_gpt.h"
-#include "../storage/nx_sd.h"
-#include "../storage/sdmmc.h"
-#include "../utils/dirlist.h"
-#include "../utils/list.h"
-#include "../utils/sprintf.h"
-#include "../utils/types.h"
+#include <memory_map.h>
+#include <utils/ini.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <storage/mbr_gpt.h>
+#include <storage/nx_sd.h>
+#include <storage/sdmmc.h>
+#include <utils/dirlist.h>
+#include <utils/list.h>
+#include <utils/sprintf.h>
+#include <utils/types.h>
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 

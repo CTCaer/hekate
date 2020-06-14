@@ -18,7 +18,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "types.h"
+#include <utils/types.h>
 
 char **sout_buf;
 

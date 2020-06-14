@@ -18,13 +18,13 @@
 
 #include <string.h>
 
-#include "usbd.h"
-#include "../gfx/gfx.h"
-#include "../input/joycon.h"
-#include "../input/touch.h"
-#include "../utils/util.h"
+#include <usb/usbd.h>
+#include <gfx_utils.h>
+#include <input/joycon.h>
+#include <input/touch.h>
+#include <utils/util.h>
 
-#include "../../../common/memory_map.h"
+#include <memory_map.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

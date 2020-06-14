@@ -17,9 +17,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../utils/types.h"
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include <utils/types.h>
 
 char *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs)
 {

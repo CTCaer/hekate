@@ -23,8 +23,8 @@
  */
 
 #include "max17050.h"
-#include "../soc/i2c.h"
-#include "../utils/util.h"
+#include <soc/i2c.h>
+#include <utils/util.h>
 
 /* Status register bits */
 #define STATUS_POR_BIT (1 << 1)

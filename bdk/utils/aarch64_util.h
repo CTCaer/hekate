@@ -18,7 +18,7 @@
 #ifndef _ARM64_H_
 #define _ARM64_H_
 
-#include "types.h"
+#include <utils/types.h>
 
 #define LSL0 0
 #define LSL16 16

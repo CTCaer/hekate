@@ -17,8 +17,8 @@
 #ifndef _SDRAM_H_
 #define _SDRAM_H_
 
-#include "emc.h"
-#include "sdram_param_t210.h"
+#include <mem/emc.h>
+#include <mem/sdram_param_t210.h>
 
 void sdram_init();
 sdram_params_t *sdram_get_params();

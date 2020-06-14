@@ -19,7 +19,7 @@
 #ifndef __TMP451_H_
 #define __TMP451_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define TMP451_I2C_ADDR 0x4C
 

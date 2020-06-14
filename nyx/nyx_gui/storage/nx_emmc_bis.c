@@ -19,12 +19,12 @@
 
 #include <string.h>
 
-#include "../../../common/memory_map.h"
+#include <memory_map.h>
 
-#include "../sec/se.h"
+#include <sec/se.h>
 #include "../storage/nx_emmc.h"
-#include "../storage/sdmmc.h"
-#include "../utils/types.h"
+#include <storage/sdmmc.h>
+#include <utils/types.h>
 
 #define MAX_SEC_CACHE_ENTRIES 1500
 

@@ -18,8 +18,8 @@
 #ifndef _DI_H_
 #define _DI_H_
 
-#include "../../common/memory_map.h"
-#include "../utils/types.h"
+#include <memory_map.h>
+#include <utils/types.h>
 
 /*! Display registers. */
 #define _DIREG(reg) ((reg) * 4)

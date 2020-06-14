@@ -18,19 +18,19 @@
 
 #include <string.h>
 
-#include "../sec/tsec.h"
-#include "../sec/tsec_t210.h"
-#include "../sec/se_t210.h"
-#include "../soc/bpmp.h"
-#include "../soc/clock.h"
-#include "../soc/kfuse.h"
-#include "../soc/smmu.h"
-#include "../soc/t210.h"
-#include "../mem/heap.h"
-#include "../mem/mc.h"
-#include "../utils/util.h"
+#include "tsec.h"
+#include "tsec_t210.h"
+#include <sec/se_t210.h>
+#include <soc/bpmp.h>
+#include <soc/clock.h>
+#include <soc/kfuse.h>
+#include <soc/t210.h>
+#include <mem/heap.h>
+#include <mem/mc.h>
+#include <mem/smmu.h>
+#include <utils/util.h>
 
-// #include "../gfx/gfx.h"
+// #include <gfx_utils.h>
 
 #define PKG11_MAGIC 0x31314B50
 #define KB_TSEC_FW_EMU_COMPAT 6 // KB ID for HOS 6.2.0.

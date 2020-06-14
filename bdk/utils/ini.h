@@ -18,8 +18,8 @@
 #ifndef _INI_H_
 #define _INI_H_
 
-#include "../utils/types.h"
-#include "../utils/list.h"
+#include <utils/types.h>
+#include <utils/list.h>
 
 #define INI_CHOICE  3
 #define INI_CAPTION 5

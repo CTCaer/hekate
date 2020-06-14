@@ -19,22 +19,22 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "usbd.h"
-#include "usb_descriptors.h"
-#include "usb_t210.h"
+#include <usb/usbd.h>
+#include <usb/usb_descriptors.h>
+#include <usb/usb_t210.h>
 
-#include "../gfx/gfx.h"
-#include "../soc/bpmp.h"
-#include "../soc/clock.h"
-#include "../soc/fuse.h"
-#include "../soc/gpio.h"
-#include "../soc/pinmux.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../utils/btn.h"
-#include "../utils/util.h"
+#include <gfx_utils.h>
+#include <soc/bpmp.h>
+#include <soc/clock.h>
+#include <soc/fuse.h>
+#include <soc/gpio.h>
+#include <soc/pinmux.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <utils/btn.h>
+#include <utils/util.h>
 
-#include "../../../common/memory_map.h"
+#include <memory_map.h>
 
 typedef enum
 {

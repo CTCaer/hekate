@@ -17,7 +17,7 @@
 #ifndef _REGULATOR_5V_H_
 #define _REGULATOR_5V_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 enum
 {

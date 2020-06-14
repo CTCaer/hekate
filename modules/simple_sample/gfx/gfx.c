@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,6 +18,10 @@
 #include <stdarg.h>
 #include <string.h>
 #include "gfx.h"
+
+// Global gfx console and context.
+gfx_ctxt_t gfx_ctxt;
+gfx_con_t gfx_con;
 
 static const u8 _gfx_font[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Char 032 ( )
@@ -117,110 +121,111 @@ static const u8 _gfx_font[] = {
 	0x00, 0x00, 0x00, 0x4C, 0x32, 0x00, 0x00, 0x00  // Char 126 (~)
 };
 
-void gfx_init_ctxt(gfx_ctxt_t *ctxt, u32 *fb, u32 width, u32 height, u32 stride)
+void gfx_clear_grey(u8 color)
 {
-	ctxt->fb = fb;
-	ctxt->width = width;
-	ctxt->height = height;
-	ctxt->stride = stride;
+	memset(gfx_ctxt.fb, color, gfx_ctxt.width * gfx_ctxt.height * 4);
 }
 
-void gfx_clear_grey(gfx_ctxt_t *ctxt, u8 color)
+void gfx_clear_partial_grey(u8 color, u32 pos_x, u32 height)
 {
-	memset(ctxt->fb, color, 0x3C0000);
+	memset(gfx_ctxt.fb + pos_x * gfx_ctxt.stride, color, height * 4 * gfx_ctxt.stride);
 }
 
-void gfx_clear_color(gfx_ctxt_t *ctxt, u32 color)
+void gfx_clear_color(u32 color)
 {
-	for (u32 i = 0; i < ctxt->height * ctxt->stride; i++)
-		ctxt->fb[i] = color;
+	for (u32 i = 0; i < gfx_ctxt.width * gfx_ctxt.height; i++)
+		gfx_ctxt.fb[i] = color;
 }
 
-void gfx_clear_partial_grey(gfx_ctxt_t *ctxt, u8 color, u32 pos_x, u32 height)
+void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride)
 {
-	memset(ctxt->fb + pos_x * ctxt->stride, color, height * 4 * ctxt->stride);
+	gfx_ctxt.fb = fb;
+	gfx_ctxt.width = width;
+	gfx_ctxt.height = height;
+	gfx_ctxt.stride = stride;
 }
 
-void gfx_con_init(gfx_con_t *con, gfx_ctxt_t *ctxt)
+void gfx_con_init()
 {
-	con->gfx_ctxt = ctxt;
-	con->fntsz = 16;
-	con->x = 0;
-	con->y = 0;
-	con->savedx = 0;
-	con->savedy = 0;
-	con->fgcol = 0xFFCCCCCC;
-	con->fillbg = 0;
-	con->bgcol = 0xFF1B1B1B;
-	con->mute = 0;
+	gfx_con.gfx_ctxt = &gfx_ctxt;
+	gfx_con.fntsz = 16;
+	gfx_con.x = 0;
+	gfx_con.y = 0;
+	gfx_con.savedx = 0;
+	gfx_con.savedy = 0;
+	gfx_con.fgcol = 0xFFCCCCCC;
+	gfx_con.fillbg = 1;
+	gfx_con.bgcol = 0xFF1B1B1B;
+	gfx_con.mute = 0;
 }
 
-void gfx_con_setcol(gfx_con_t *con, u32 fgcol, int fillbg, u32 bgcol)
+void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol)
 {
-	con->fgcol = fgcol;
-	con->fillbg = fillbg;
-	con->bgcol = bgcol;
+	gfx_con.fgcol = fgcol;
+	gfx_con.fillbg = fillbg;
+	gfx_con.bgcol = bgcol;
 }
 
-void gfx_con_getpos(gfx_con_t *con, u32 *x, u32 *y)
+void gfx_con_getpos(u32 *x, u32 *y)
 {
-	*x = con->x;
-	*y = con->y;
+	*x = gfx_con.x;
+	*y = gfx_con.y;
 }
 
-void gfx_con_setpos(gfx_con_t *con, u32 x, u32 y)
+void gfx_con_setpos(u32 x, u32 y)
 {
-	con->x = x;
-	con->y = y;
+	gfx_con.x = x;
+	gfx_con.y = y;
 }
 
-void gfx_putc(gfx_con_t *con, char c)
+void gfx_putc(char c)
 {
 	// Duplicate code for performance reasons.
-	switch (con->fntsz)
+	switch (gfx_con.fntsz)
 	{
 	case 16:
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
-			u32 *fb = con->gfx_ctxt->fb + con->x + con->y * con->gfx_ctxt->stride;
+			u32 *fb = gfx_ctxt.fb + gfx_con.x + gfx_con.y * gfx_ctxt.stride;
 
-			for (u32 i = 0; i < 16; i+=2)
+			for (u32 i = 0; i < 16; i += 2)
 			{
-				u8 v = *cbuf++;
+				u8 v = *cbuf;
 				for (u32 k = 0; k < 2; k++)
 				{
 					for (u32 j = 0; j < 8; j++)
 					{
 						if (v & 1)
 						{
-							*fb = con->fgcol;
+							*fb = gfx_con.fgcol;
 							fb++;
-							*fb = con->fgcol;
+							*fb = gfx_con.fgcol;
 						}
-						else if (con->fillbg)
+						else if (gfx_con.fillbg)
 						{
-							*fb = con->bgcol;
+							*fb = gfx_con.bgcol;
 							fb++;
-							*fb = con->bgcol;
+							*fb = gfx_con.bgcol;
 						}
 						else
 							fb++;
 						v >>= 1;
 						fb++;
 					}
-					fb += con->gfx_ctxt->stride - 16;
+					fb += gfx_ctxt.stride - 16;
 					v = *cbuf;
 				}
+				cbuf++;
 			}
-			con->x += 16;
+			gfx_con.x += 16;
 		}
 		else if (c == '\n')
 		{
-			con->x = 0;
-			con->y +=16;
-			if (con->y > con->gfx_ctxt->height - 16)
-				con->y = 0;
+			gfx_con.x = 0;
+			gfx_con.y += 16;
+			if (gfx_con.y > gfx_ctxt.height - 16)
+				gfx_con.y = 0;
 		}
 		break;
 	case 8:
@@ -228,44 +233,44 @@ void gfx_putc(gfx_con_t *con, char c)
 		if (c >= 32 && c <= 126)
 		{
 			u8 *cbuf = (u8 *)&_gfx_font[8 * (c - 32)];
-			u32 *fb = con->gfx_ctxt->fb + con->x + con->y * con->gfx_ctxt->stride;
+			u32 *fb = gfx_ctxt.fb + gfx_con.x + gfx_con.y * gfx_ctxt.stride;
 			for (u32 i = 0; i < 8; i++)
 			{
 				u8 v = *cbuf++;
 				for (u32 j = 0; j < 8; j++)
 				{
 					if (v & 1)
-						*fb = con->fgcol;
-					else if (con->fillbg)
-						*fb = con->bgcol;
+						*fb = gfx_con.fgcol;
+					else if (gfx_con.fillbg)
+						*fb = gfx_con.bgcol;
 					v >>= 1;
 					fb++;
 				}
-				fb += con->gfx_ctxt->stride - 8;
+				fb += gfx_ctxt.stride - 8;
 			}
-			con->x += 8;
+			gfx_con.x += 8;
 		}
 		else if (c == '\n')
 		{
-			con->x = 0;
-			con->y += 8;
-			if (con->y > con->gfx_ctxt->height - 8)
-				con->y = 0;
+			gfx_con.x = 0;
+			gfx_con.y += 8;
+			if (gfx_con.y > gfx_ctxt.height - 8)
+				gfx_con.y = 0;
 		}
 		break;
 	}
 }
 
-void gfx_puts(gfx_con_t *con, const char *s)
+void gfx_puts(char *s)
 {
-	if (!s || con->mute)
+	if (!s || gfx_con.mute)
 		return;
 
 	for (; *s; s++)
-		gfx_putc(con, *s);
+		gfx_putc(*s);
 }
 
-static void _gfx_putn(gfx_con_t *con, u32 v, int base, char fill, int fcnt)
+static void _gfx_putn(u32 v, int base, char fill, int fcnt)
 {
 	char buf[65];
 	static const char digits[] = "0123456789ABCDEFghijklmnopqrstuvwxyz";
@@ -293,28 +298,28 @@ static void _gfx_putn(gfx_con_t *con, u32 v, int base, char fill, int fcnt)
 		}
 	}
 
-	gfx_puts(con, p);
+	gfx_puts(p);
 }
 
-void gfx_put_small_sep(gfx_con_t *con)
+void gfx_put_small_sep()
 {
-	u8 prevFontSize = con->fntsz;
-	con->fntsz = 8;
-	gfx_putc(con, '\n');
-	con->fntsz = prevFontSize;
+	u8 prevFontSize = gfx_con.fntsz;
+	gfx_con.fntsz = 8;
+	gfx_putc('\n');
+	gfx_con.fntsz = prevFontSize;
 }
 
-void gfx_put_big_sep(gfx_con_t *con)
+void gfx_put_big_sep()
 {
-	u8 prevFontSize = con->fntsz;
-	con->fntsz = 16;
-	gfx_putc(con, '\n');
-	con->fntsz = prevFontSize;
+	u8 prevFontSize = gfx_con.fntsz;
+	gfx_con.fntsz = 16;
+	gfx_putc('\n');
+	gfx_con.fntsz = prevFontSize;
 }
 
-void gfx_printf(gfx_con_t *con, const char *fmt, ...)
+void gfx_printf(const char *fmt, ...)
 {
-	if (con->mute)
+	if (gfx_con.mute)
 		return;
 
 	va_list ap;
@@ -347,40 +352,40 @@ void gfx_printf(gfx_con_t *con, const char *fmt, ...)
 			switch(*fmt)
 			{
 			case 'c':
-				gfx_putc(con, va_arg(ap, u32));
+				gfx_putc(va_arg(ap, u32));
 				break;
 			case 's':
-				gfx_puts(con, va_arg(ap, char *));
+				gfx_puts(va_arg(ap, char *));
 				break;
 			case 'd':
-				_gfx_putn(con, va_arg(ap, u32), 10, fill, fcnt);
+				_gfx_putn(va_arg(ap, u32), 10, fill, fcnt);
 				break;
 			case 'p':
 			case 'P':
 			case 'x':
 			case 'X':
-				_gfx_putn(con, va_arg(ap, u32), 16, fill, fcnt);
+				_gfx_putn(va_arg(ap, u32), 16, fill, fcnt);
 				break;
 			case 'k':
-				con->fgcol = va_arg(ap, u32);
+				gfx_con.fgcol = va_arg(ap, u32);
 				break;
 			case 'K':
-				con->bgcol = va_arg(ap, u32);
-				con->fillbg = 1;
+				gfx_con.bgcol = va_arg(ap, u32);
+				gfx_con.fillbg = 1;
 				break;
 			case '%':
-				gfx_putc(con, '%');
+				gfx_putc('%');
 				break;
 			case '\0':
 				goto out;
 			default:
-				gfx_putc(con, '%');
-				gfx_putc(con, *fmt);
+				gfx_putc('%');
+				gfx_putc(*fmt);
 				break;
 			}
 		}
 		else
-			gfx_putc(con, *fmt);
+			gfx_putc(*fmt);
 		fmt++;
 	}
 
@@ -388,33 +393,33 @@ void gfx_printf(gfx_con_t *con, const char *fmt, ...)
 	va_end(ap);
 }
 
-void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
+void gfx_hexdump(u32 base, const u8 *buf, u32 len)
 {
-	if (con->mute)
+	if (gfx_con.mute)
 		return;
 
-	u8 prevFontSize = con->fntsz;
-	con->fntsz = 8;
+	u8 prevFontSize = gfx_con.fntsz;
+	gfx_con.fntsz = 8;
 	for(u32 i = 0; i < len; i++)
 	{
 		if(i % 0x10 == 0)
 		{
 			if(i != 0)
 			{
-				gfx_puts(con, "| ");
+				gfx_puts("| ");
 				for(u32 j = 0; j < 0x10; j++)
 				{
 					u8 c = buf[i - 0x10 + j];
 					if(c >= 32 && c <= 126)
-						gfx_putc(con, c);
+						gfx_putc(c);
 					else
-						gfx_putc(con, '.');
+						gfx_putc('.');
 				}
-				gfx_putc(con, '\n');
+				gfx_putc('\n');
 			}
-			gfx_printf(con, "%08x: ", base + i);
+			gfx_printf("%08x: ", base + i);
 		}
-		gfx_printf(con, "%02x ", buf[i]);
+		gfx_printf("%02x ", buf[i]);
 		if (i == len - 1)
 		{
 			int ln = len % 0x10 != 0;
@@ -423,22 +428,22 @@ void gfx_hexdump(gfx_con_t *con, u32 base, const u8 *buf, u32 len)
 			{
 				k = (len & 0xF) - 1;
 				for (u32 j = 0; j < 0x10 - k; j++)
-					gfx_puts(con, "   ");
+					gfx_puts("   ");
 			}
-			gfx_puts(con, "| ");
+			gfx_puts("| ");
 			for(u32 j = 0; j < (ln ? k : k + 1); j++)
 			{
 				u8 c = buf[i - k + j];
 				if(c >= 32 && c <= 126)
-					gfx_putc(con, c);
+					gfx_putc(c);
 				else
-					gfx_putc(con, '.');
+					gfx_putc('.');
 			}
-			gfx_putc(con, '\n');
+			gfx_putc('\n');
 		}
 	}
-	gfx_putc(con, '\n');
-	con->fntsz = prevFontSize;
+	gfx_putc('\n');
+	gfx_con.fntsz = prevFontSize;
 }
 
 static int abs(int x)
@@ -448,12 +453,12 @@ static int abs(int x)
 	return x;
 }
 
-void gfx_set_pixel(gfx_ctxt_t *ctxt, u32 x, u32 y, u32 color)
+void gfx_set_pixel(u32 x, u32 y, u32 color)
 {
-	ctxt->fb[x + y * ctxt->stride] = color;
+	gfx_ctxt.fb[x + y * gfx_ctxt.stride] = color;
 }
 
-void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
+void gfx_line(int x0, int y0, int x1, int y1, u32 color)
 {
 	int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
 	int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
@@ -461,7 +466,7 @@ void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
 
 	while (1)
 	{
-		gfx_set_pixel(ctxt, x0, y0, color);
+		gfx_set_pixel(x0, y0, color);
 		if (x0 == x1 && y0 == y1)
 			break;
 		e2 = err;
@@ -478,51 +483,46 @@ void gfx_line(gfx_ctxt_t *ctxt, int x0, int y0, int x1, int y1, u32 color)
 	}
 }
 
-void gfx_set_rect_grey(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+void gfx_set_rect_grey(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
 	u32 pos = 0;
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
 	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
 		{
-			memset(&ctxt->fb[x + y*ctxt->stride], buf[pos], 4);
+			memset(&gfx_ctxt.fb[x + y*gfx_ctxt.stride], buf[pos], 4);
 			pos++;
 		}
 	}
 }
 
 
-void gfx_set_rect_rgb(gfx_ctxt_t *ctxt, const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+void gfx_set_rect_rgb(const u8 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
 	u32 pos = 0;
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
 	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
 		{
-			ctxt->fb[x + y*ctxt->stride] = buf[pos + 2] | (buf[pos + 1] << 8) | (buf[pos] << 16);
+			gfx_ctxt.fb[x + y * gfx_ctxt.stride] = buf[pos + 2] | (buf[pos + 1] << 8) | (buf[pos] << 16);
 			pos+=3;
 		}
 	}
 }
 
-void gfx_set_rect_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+void gfx_set_rect_argb(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
-	u32 pos = 0;
+	u32 *ptr = (u32 *)buf;
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
-	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
-		{
-			ctxt->fb[x + y*ctxt->stride] = buf[pos];
-			pos+=1;
-		}
-	}
+			gfx_ctxt.fb[x + y * gfx_ctxt.stride] = *ptr++;
 }
 
-void gfx_render_bmp_argb(gfx_ctxt_t *ctxt, const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
+void gfx_render_bmp_argb(const u32 *buf, u32 size_x, u32 size_y, u32 pos_x, u32 pos_y)
 {
 	for (u32 y = pos_y; y < (pos_y + size_y); y++)
 	{
 		for (u32 x = pos_x; x < (pos_x + size_x); x++)
-			ctxt->fb[x + y*ctxt->stride]  = buf[(size_y + pos_y - 1 - y ) * size_x + x - pos_x];
+			gfx_ctxt.fb[x + y * gfx_ctxt.stride] = buf[(size_y + pos_y - 1 - y ) * size_x + x - pos_x];
 	}
 }

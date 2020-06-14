@@ -16,11 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "bpmp.h"
-#include "clock.h"
-#include "t210.h"
-#include "../../common/memory_map.h"
-#include "../utils/util.h"
+#include <soc/bpmp.h>
+#include <soc/clock.h>
+#include <soc/t210.h>
+#include <memory_map.h>
+#include <utils/util.h>
 
 #define BPMP_MMU_CACHE_LINE_SIZE        0x20
 

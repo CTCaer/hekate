@@ -19,7 +19,7 @@
 #ifndef _USB_H_
 #define _USB_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define USB_TD_BUFFER_PAGE_SIZE 0x1000
 #define USB_TD_BUFFER_MAX_SIZE  (USB_TD_BUFFER_PAGE_SIZE * 4)

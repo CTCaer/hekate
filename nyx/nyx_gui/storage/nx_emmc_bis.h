@@ -19,7 +19,7 @@
 #define NX_EMMC_BIS_H
 
 #include "../storage/nx_emmc.h"
-#include "../storage/sdmmc.h"
+#include <storage/sdmmc.h>
 
 typedef struct _nx_emmc_cal0_spk_t
 {

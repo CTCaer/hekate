@@ -19,7 +19,7 @@
 #ifndef __JOYCON_H_
 #define __JOYCON_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define JC_BTNS_DIRECTION_PAD 0xF0000
 #define JC_BTNS_PREV_NEXT     0x800080

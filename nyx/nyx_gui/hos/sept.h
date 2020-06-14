@@ -17,7 +17,7 @@
 #ifndef _SEPT_H_
 #define _SEPT_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 void check_sept();
 int reboot_to_sept(const u8 *tsec_fw, u32 kb);

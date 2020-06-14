@@ -18,8 +18,8 @@
 #ifndef _SDMMC_H_
 #define _SDMMC_H_
 
-#include "../utils/types.h"
-#include "sdmmc_driver.h"
+#include <utils/types.h>
+#include <storage/sdmmc_driver.h>
 
 extern u32 sd_power_cycle_time_start;
 

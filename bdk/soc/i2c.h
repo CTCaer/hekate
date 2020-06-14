@@ -18,7 +18,7 @@
 #ifndef _I2C_H_
 #define _I2C_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define I2C_1 0
 #define I2C_2 1

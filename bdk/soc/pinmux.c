@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../soc/pinmux.h"
-#include "../soc/t210.h"
+#include <soc/pinmux.h>
+#include <soc/t210.h>
 
 void pinmux_config_uart(u32 idx)
 {

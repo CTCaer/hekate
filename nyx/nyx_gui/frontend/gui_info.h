@@ -17,7 +17,7 @@
 #ifndef _GUI_INFO_H_
 #define _GUI_INFO_H_
 
-#include "../libs/lvgl/lvgl.h"
+#include <libs/lvgl/lvgl.h>
 
 void create_tab_info(lv_theme_t *th, lv_obj_t *parent);
 

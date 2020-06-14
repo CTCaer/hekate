@@ -20,10 +20,10 @@
 #include <string.h>
 
 #include "pkg1.h"
-#include "../gfx/gfx.h"
-#include "../mem/heap.h"
-#include "../sec/se.h"
-#include "../utils/aarch64_util.h"
+#include <gfx_utils.h>
+#include <mem/heap.h>
+#include <sec/se.h>
+#include <utils/aarch64_util.h>
 
 /*
  * package1.1 header: <wb, ldr, sm>

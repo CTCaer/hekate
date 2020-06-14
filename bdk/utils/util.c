@@ -15,18 +15,16 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "util.h"
-#include "../gfx/di.h"
-#include "../mem/heap.h"
-#include "../mem/minerva.h"
-#include "../power/max77620.h"
-#include "../rtc/max77620-rtc.h"
-#include "../soc/bpmp.h"
-#include "../soc/hw_init.h"
-#include "../soc/i2c.h"
-#include "../soc/pmc.h"
-#include "../soc/t210.h"
-#include "../storage/nx_sd.h"
+#include <utils/util.h>
+#include <mem/heap.h>
+#include <power/max77620.h>
+#include <rtc/max77620-rtc.h>
+#include <soc/bpmp.h>
+#include <soc/hw_init.h>
+#include <soc/i2c.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <storage/nx_sd.h>
 
 #define USE_RTC_TIMER
 

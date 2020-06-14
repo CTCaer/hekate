@@ -2,11 +2,17 @@
 	2018 - M4xw
 */
 
-#include "../../common/common_module.h"
-#include "../../common/common_gfx.h"
-#include "gfx/gfx.h"
+#include <string.h>
+#include <module.h>
+#include <gfx_utils.h>
 
 void _modInit(void *moduleConfig, bdkParams_t bp)
 {
-	gfx_puts(bp->gfxCon, "Hello World!");
+	memcpy(&gfx_con, bp->gfxCon, sizeof(gfx_con_t));
+	memcpy(&gfx_ctxt, bp->gfxCtx, sizeof(gfx_ctxt_t));
+
+	gfx_puts("Hello World!");
+
+	memcpy(bp->gfxCon, &gfx_con, sizeof(gfx_con_t));
+	memcpy(bp->gfxCtx, &gfx_ctxt, sizeof(gfx_ctxt_t));
 }

@@ -18,12 +18,13 @@
 #include <string.h>
 
 #include "ianos.h"
-#include "../../common/common_module.h"
-#include "../gfx/gfx.h"
-#include "../libs/elfload/elfload.h"
-#include "../mem/heap.h"
-#include "../storage/nx_sd.h"
-#include "../utils/types.h"
+#include "elfload/elfload.h"
+#include <module.h>
+#include <mem/heap.h>
+#include <storage/nx_sd.h>
+#include <utils/types.h>
+
+#include <gfx_utils.h>
 
 #define IRAM_LIB_ADDR 0x4002B000
 #define DRAM_LIB_ADDR 0xE0000000
@@ -36,8 +37,8 @@ void *fileBuf = NULL;
 static void _ianos_call_ep(moduleEntrypoint_t entrypoint, void *moduleConfig)
 {
 	bdkParams_t bdkParameters = (bdkParams_t)malloc(sizeof(struct _bdkParams_t));
-	bdkParameters->gfxCon = &gfx_con;
-	bdkParameters->gfxCtx = &gfx_ctxt;
+	bdkParameters->gfxCon = (void *)&gfx_con;
+	bdkParameters->gfxCtx = (void *)&gfx_ctxt;
 	bdkParameters->memcpy = (memcpy_t)&memcpy;
 	bdkParameters->memset = (memset_t)&memset;
 	bdkParameters->sharedHeap = &_heap;

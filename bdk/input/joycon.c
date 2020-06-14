@@ -19,19 +19,19 @@
 #include <string.h>
 
 #include "joycon.h"
-#include "../gfx/gfx.h"
-#include "../power/max17050.h"
-#include "../power/regulator_5v.h"
-#include "../soc/bpmp.h"
-#include "../soc/clock.h"
-#include "../soc/gpio.h"
-#include "../soc/pinmux.h"
-#include "../soc/uart.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
+#include <gfx_utils.h>
+#include <power/max17050.h>
+#include <power/regulator_5v.h>
+#include <soc/bpmp.h>
+#include <soc/clock.h>
+#include <soc/gpio.h>
+#include <soc/pinmux.h>
+#include <soc/uart.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 // For disabling driver when logging is enabled.
-#include "../libs/lvgl/lvgl.h"
+#include <libs/lv_conf.h>
 
 #define JC_WIRED_CMD        0x91
 #define JC_WIRED_HID        0x92

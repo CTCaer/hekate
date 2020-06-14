@@ -5,10 +5,10 @@
 /*------------------------------------------------------------------------*/
 
 
-#include "ff.h"
-#include "../../config/config.h"
-#include "../../mem/heap.h"
-#include "../../rtc/max77620-rtc.h"
+#include <libs/fatfs/ff.h>
+#include "../../config.h"
+#include <mem/heap.h>
+#include <rtc/max77620-rtc.h>
 
 extern nyx_config n_cfg;
 

@@ -21,7 +21,7 @@
 #ifndef _CRYPTO_TEGRA_SE_H
 #define _CRYPTO_TEGRA_SE_H
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define TEGRA_SE_CRA_PRIORITY	300
 #define TEGRA_SE_COMPOSITE_PRIORITY 400

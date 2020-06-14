@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "max7762x.h"
-#include "max77620.h"
-#include "../soc/i2c.h"
-#include "../utils/util.h"
+#include <power/max7762x.h>
+#include <power/max77620.h>
+#include <soc/i2c.h>
+#include <utils/util.h>
 
 #define REGULATOR_SD 0
 #define REGULATOR_LDO 1

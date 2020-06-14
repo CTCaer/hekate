@@ -17,9 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "max77620-rtc.h"
-#include "../soc/i2c.h"
-#include "../utils/util.h"
+#include <rtc/max77620-rtc.h>
+#include <soc/i2c.h>
+#include <utils/util.h>
 
 void max77620_rtc_get_time(rtc_time_t *time)
 {

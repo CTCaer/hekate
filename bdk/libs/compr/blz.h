@@ -17,7 +17,7 @@
 #ifndef _BLZ_H_
 #define _BLZ_H_
 
-#include "../../utils/types.h"
+#include <utils/types.h>
 
 typedef struct _blz_footer
 {

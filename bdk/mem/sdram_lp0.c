@@ -14,9 +14,9 @@
  * more details.
  */
 
-#include "../soc/t210.h"
-#include "../soc/pmc_lp0_t210.h"
-#include "sdram_lp0_param_t210.h"
+#include <soc/t210.h>
+#include <soc/pmc_lp0_t210.h>
+#include <mem/sdram_lp0_param_t210.h>
 
 /*
  * This function reads SDRAM parameters from the common BCT format and

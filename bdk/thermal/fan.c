@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fan.h"
-#include "../power/regulator_5v.h"
-#include "../soc/gpio.h"
-#include "../soc/pinmux.h"
-#include "../soc/t210.h"
-#include "../utils/util.h"
+#include <thermal/fan.h>
+#include <power/regulator_5v.h>
+#include <soc/gpio.h>
+#include <soc/pinmux.h>
+#include <soc/t210.h>
+#include <utils/util.h>
 
 void set_fan_duty(u32 duty)
 {

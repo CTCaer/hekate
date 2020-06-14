@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "../../utils/types.h"
+#include <utils/types.h>
 
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;

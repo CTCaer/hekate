@@ -17,7 +17,7 @@
 #ifndef _GUI_EMUMMC_TOOLS_H_
 #define _GUI_EMUMMC_TOOLS_H_
 
-#include "../libs/lvgl/lvgl.h"
+#include <libs/lvgl/lvgl.h>
 
 lv_res_t create_win_emummc_tools(lv_obj_t *btn);
 

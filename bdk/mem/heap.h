@@ -18,8 +18,28 @@
 #ifndef _HEAP_H_
 #define _HEAP_H_
 
-#include "../utils/types.h"
-#include "../../common/common_heap.h"
+#include <utils/types.h>
+
+typedef struct _hnode
+{
+	int used;
+	u32 size;
+	struct _hnode *prev;
+	struct _hnode *next;
+	u32 align[4]; // Align to arch cache line size.
+} hnode_t;
+
+typedef struct _heap
+{
+	u32 start;
+	hnode_t *first;
+} heap_t;
+
+typedef struct
+{
+    u32 total;
+    u32 used;
+} heap_monitor_t;
 
 void heap_init(u32 base);
 void heap_copy(heap_t *heap);

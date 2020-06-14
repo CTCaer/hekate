@@ -17,8 +17,8 @@
 #ifndef LV_CONF_H
 #define LV_CONF_H
 
-#include "../utils/types.h"
-#include "../../../common/memory_map.h"
+#include <utils/types.h>
+#include <memory_map.h>
 /*===================
    Dynamic memory
  *===================*/
@@ -32,7 +32,7 @@
 #  define LV_MEM_ADR          NYX_LV_MEM_ADR /*Set an address for memory pool instead of allocation it as an array. Can be in external SRAM too.*/
 #  define LV_MEM_AUTO_DEFRAG  1              /*Automatically defrag on free*/
 #else       /*LV_MEM_CUSTOM*/
-#  define LV_MEM_CUSTOM_INCLUDE "../../../mem/heap.h"   /*Header for the dynamic memory function*/
+#  define LV_MEM_CUSTOM_INCLUDE <mem/heap.h> /*Header for the dynamic memory function*/
 #  define LV_MEM_CUSTOM_ALLOC   malloc       /*Wrapper to malloc*/
 #  define LV_MEM_CUSTOM_FREE    free         /*Wrapper to free*/
 #endif     /*LV_MEM_CUSTOM*/
@@ -149,7 +149,7 @@
 /*HAL settings*/
 #define LV_TICK_CUSTOM               1                       /*1: use a custom tick source (removing the need to manually update the tick with `lv_tick_inc`) */
 #if LV_TICK_CUSTOM == 1
-#define LV_TICK_CUSTOM_INCLUDE       "../../../utils/util.h" /*Header for the sys time function*/
+#define LV_TICK_CUSTOM_INCLUDE       <utils/util.h>          /*Header for the sys time function*/
 #define LV_TICK_CUSTOM_SYS_TIME_EXPR (get_tmr_ms())          /*Expression evaluating to current systime in ms*/
 #endif     /*LV_TICK_CUSTOM*/
 

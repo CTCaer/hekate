@@ -24,7 +24,7 @@
 #ifndef __MAX17050_H_
 #define __MAX17050_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define MAX17050_STATUS_BattAbsent    (1 << 3)
 #define MAX17050_DEFAULT_SNS_RESISTOR 10000

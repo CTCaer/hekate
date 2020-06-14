@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018-2020 CTCaer
- * Copyright (c) 2018 M4xw
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,8 +17,7 @@
 
 #include <string.h>
 #include "heap.h"
-#include "../gfx/gfx.h"
-#include "../../common/common_heap.h"
+#include <gfx_utils.h>
 
 static void _heap_create(heap_t *heap, u32 start)
 {

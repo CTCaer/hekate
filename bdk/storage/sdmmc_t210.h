@@ -18,7 +18,7 @@
 #ifndef _SDMMC_T210_H_
 #define _SDMMC_T210_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define TEGRA_MMC_VNDR_TUN_CTRL0_TAP_VAL_UPDATED_BY_HW 0x20000
 #define TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE 0x80000000

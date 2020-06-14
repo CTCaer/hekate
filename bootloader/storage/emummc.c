@@ -18,15 +18,16 @@
 #include <stdlib.h>
 
 #include "emummc.h"
-#include "sdmmc.h"
-#include "../config/config.h"
-#include "../config/ini.h"
-#include "../gfx/gfx.h"
-#include "../libs/fatfs/ff.h"
-#include "../mem/heap.h"
-#include "../storage/nx_sd.h"
-#include "../utils/list.h"
-#include "../utils/types.h"
+#include <storage/sdmmc.h>
+#include "../config.h"
+#include <utils/ini.h>
+#include <gfx_utils.h>
+#include <libs/fatfs/ff.h>
+#include <mem/heap.h>
+#include "../storage/nx_emmc.h"
+#include <storage/nx_sd.h>
+#include <utils/list.h>
+#include <utils/types.h>
 
 extern hekate_config h_cfg;
 emummc_cfg_t emu_cfg = { 0 };

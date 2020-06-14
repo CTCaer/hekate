@@ -17,7 +17,7 @@
 #ifndef _SE_H_
 #define _SE_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 void se_rsa_acc_ctrl(u32 rs, u32 flags);
 void se_key_acc_ctrl(u32 ks, u32 flags);

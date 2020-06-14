@@ -16,14 +16,14 @@
  */
 
 #include <string.h>
-#include "sdmmc.h"
-#include "mmc.h"
-#include "nx_sd.h"
-#include "sd.h"
-#include "../../common/memory_map.h"
-#include "../gfx/gfx.h"
-#include "../mem/heap.h"
-#include "../utils/util.h"
+#include <storage/sdmmc.h>
+#include <storage/mmc.h>
+#include <storage/nx_sd.h>
+#include <storage/sd.h>
+#include <memory_map.h>
+#include <gfx_utils.h>
+#include <mem/heap.h>
+#include <utils/util.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

@@ -20,7 +20,7 @@
 #ifndef __TOUCH_H_
 #define __TOUCH_H_
 
-#include "../utils/types.h"
+#include <utils/types.h>
 
 #define STMFTS_I2C_ADDR 0x49
 

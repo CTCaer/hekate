@@ -16,7 +16,10 @@ TARGET := hekate
 BUILDDIR := build
 OUTPUTDIR := output
 SOURCEDIR = bootloader
+BDKDIR := bdk
+BDKINC := -I./$(BDKDIR)
 VPATH = $(dir ./$(SOURCEDIR)/) $(dir $(wildcard ./$(SOURCEDIR)/*/)) $(dir $(wildcard ./$(SOURCEDIR)/*/*/))
+VPATH += $(dir $(wildcard ./$(BDKDIR)/*/)) $(dir $(wildcard ./$(BDKDIR)/*/*/))
 
 # Main and graphics.
 OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
@@ -54,11 +57,15 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	elfload.o elfreloc_arm.o \
 )
 
+GFX_INC   := '"../$(SOURCEDIR)/gfx/gfx.h"'
+FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
+
 ################################################################################
 
 CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_RESERVED=$(BLVERSION_RSVD)
 CUSTOMDEFINES += -DNYX_VER_MJ=$(NYXVERSION_MAJOR) -DNYX_VER_MN=$(NYXVERSION_MINOR) -DNYX_VER_HF=$(NYXVERSION_HOTFX) -DNYX_RESERVED=$(NYXVERSION_RSVD)
+CUSTOMDEFINES += -DGFX_INC=$(GFX_INC) -DFFCFG_INC=$(FFCFG_INC)
 
 # 0: UART_A, 1: UART_B.
 #CUSTOMDEFINES += -DDEBUG_UART_PORT=0
@@ -104,7 +111,7 @@ $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 
 $(BUILDDIR)/$(TARGET)/%.o: %.c
 	@echo Building $@
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
 
 $(BUILDDIR)/$(TARGET)/%.o: %.S
 	@echo Building $@
