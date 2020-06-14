@@ -43,6 +43,7 @@
 #include "../storage/nx_emmc.h"
 #include "../storage/nx_sd.h"
 #include "../storage/sdmmc.h"
+#include "../utils/btn.h"
 #include "../utils/util.h"
 #include "../gfx/gfx.h"
 
@@ -272,8 +273,16 @@ void hos_eks_save(u32 kb)
 			memcpy(h_cfg.eks->dkg, keys + 10 * 0x10, 0x10);
 			memcpy(h_cfg.eks->dkk, keys + 15 * 0x10, 0x10);
 
-			memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * 0x10, 0x10);
-			memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
+			if (!h_cfg.aes_slots_new)
+			{
+				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * 0x10, 0x10);
+				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
+			}
+			else // New sept slots.
+			{
+				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 13 * 0x10, 0x10);
+				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 12 * 0x10, 0x10);
+			}
 
 			// Encrypt EKS blob.
 			u8 *eks = calloc(512 , 1);
@@ -386,17 +395,29 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_c
 			se_aes_key_set(10, h_cfg.eks->dkg, 0x10);
 			// Set Device key to slot 15.
 			se_aes_key_set(15, h_cfg.eks->dkk, 0x10);
-			// Set Master key to slot 12.
-			se_aes_key_set(12, h_cfg.eks->keys[key_idx].mkk, 0x10);
-			// Set FW Device key key to slot 13.
-			se_aes_key_set(13, h_cfg.eks->keys[key_idx].fdk, 0x10);
 
-			// Lock FDK.
-			se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
+			if (!h_cfg.aes_slots_new)
+			{
+				// Set Master key to slot 12.
+				se_aes_key_set(12, h_cfg.eks->keys[key_idx].mkk, 0x10);
+				// Set FW Device key key to slot 13.
+				se_aes_key_set(13, h_cfg.eks->keys[key_idx].fdk, 0x10);
+				// Lock FDK.
+				se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
+			}
+			else // New exosphere.
+			{
+				// Set Master key to slot 13.
+				se_aes_key_set(13, h_cfg.eks->keys[key_idx].mkk, 0x10);
+				// Set FW Device key key to slot 12.
+				se_aes_key_set(12, h_cfg.eks->keys[key_idx].fdk, 0x10);
+				// Lock FDK.
+				se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
+			}
 		}
 
 		se_aes_key_clear(8);
-		se_aes_unwrap_key(8, 12, package2_keyseed);
+		se_aes_unwrap_key(8, !h_cfg.aes_slots_new ? 12 : 13, package2_keyseed);
 	}
 	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
@@ -422,11 +443,20 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_c
 			se_aes_unwrap_key(15, 15, console_keyseed);
 
 			se_aes_unwrap_key(13, 13, master_keyseed_620);
-			se_aes_unwrap_key(12, 13, master_keyseed_retail);
-			se_aes_unwrap_key(14, 13, master_keyseed_4xx_5xx_610);
+
+			if (!h_cfg.aes_slots_new)
+			{
+				se_aes_unwrap_key(14, 13, master_keyseed_4xx_5xx_610);
+				se_aes_unwrap_key(12, 13, master_keyseed_retail);
+			}
+			else // New exosphere.
+			{
+				se_aes_unwrap_key(12, 13, master_keyseed_4xx_5xx_610);
+				se_aes_unwrap_key(13, 13, master_keyseed_retail);
+			}
 
 			// Package2 key.
-			se_aes_unwrap_key(8, 12, package2_keyseed);
+			se_aes_unwrap_key(8, !h_cfg.aes_slots_new ? 12 : 13, package2_keyseed);
 
 			h_cfg.se_keygen_done = 1;
 		}
@@ -465,32 +495,42 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_c
 
 		se_aes_crypt_block_ecb(12, 0, tmp, master_keyseed_retail);
 
-		switch (kb)
+		if (!h_cfg.aes_slots_new)
 		{
-		case KB_FIRMWARE_VERSION_100_200:
-		case KB_FIRMWARE_VERSION_300:
-		case KB_FIRMWARE_VERSION_301:
-			se_aes_unwrap_key(13, 15, console_keyseed);
-			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-			break;
-		case KB_FIRMWARE_VERSION_400:
-			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
-			se_aes_unwrap_key(15, 15, console_keyseed);
-			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
-			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-			break;
-		case KB_FIRMWARE_VERSION_500:
-		case KB_FIRMWARE_VERSION_600:
+			switch (kb)
+			{
+			case KB_FIRMWARE_VERSION_100_200:
+			case KB_FIRMWARE_VERSION_300:
+			case KB_FIRMWARE_VERSION_301:
+				se_aes_unwrap_key(13, 15, console_keyseed);
+				se_aes_unwrap_key(12, 12, master_keyseed_retail);
+				break;
+			case KB_FIRMWARE_VERSION_400:
+				se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
+				se_aes_unwrap_key(15, 15, console_keyseed);
+				se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+				se_aes_unwrap_key(12, 12, master_keyseed_retail);
+				break;
+			case KB_FIRMWARE_VERSION_500:
+			case KB_FIRMWARE_VERSION_600:
+				se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+				se_aes_unwrap_key(15, 15, console_keyseed);
+				se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+				se_aes_unwrap_key(12, 12, master_keyseed_retail);
+				break;
+			}
+		}
+		else // New exosphere.
+		{
 			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
-			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
-			se_aes_unwrap_key(12, 12, master_keyseed_retail);
-			break;
+			se_aes_unwrap_key(13, 12, master_keyseed_retail);
+			se_aes_unwrap_key(12, 12, master_keyseed_4xx_5xx_610);
 		}
 
 		// Package2 key.
 		se_key_acc_ctrl(8, SE_KEY_TBL_DIS_KEYREAD_FLAG | SE_KEY_TBL_DIS_OIVREAD_FLAG | SE_KEY_TBL_DIS_UIVREAD_FLAG);
-		se_aes_unwrap_key(8, 12, package2_keyseed);
+		se_aes_unwrap_key(8, !h_cfg.aes_slots_new ? 12 : 13, package2_keyseed);
 	}
 
 	return 1;
@@ -989,5 +1029,6 @@ int hos_launch(ini_sec_t *cfg)
 
 error:
 	sdmmc_storage_end(&emmc_storage);
+	h_cfg.aes_slots_new = false;
 	return 0;
 }

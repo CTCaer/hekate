@@ -35,6 +35,7 @@ typedef struct _hekate_config
 	// Global temporary config.
 	bool se_keygen_done;
 	bool sept_run;
+	bool aes_slots_new;
 	bool emummc_force_disable;
 	bool rcm_patched;
 	u32  errors;

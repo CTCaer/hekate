@@ -181,8 +181,16 @@ void hos_eks_save(u32 kb)
 			memcpy(h_cfg.eks->dkg, keys + 10 * 0x10, 0x10);
 			memcpy(h_cfg.eks->dkk, keys + 15 * 0x10, 0x10);
 
-			memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * 0x10, 0x10);
-			memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
+			if (!h_cfg.aes_slots_new)
+			{
+				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * 0x10, 0x10);
+				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
+			}
+			else // New sept slots.
+			{
+				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 13 * 0x10, 0x10);
+				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 12 * 0x10, 0x10);
+			}
 
 			// Encrypt EKS blob.
 			u8 *eks = calloc(512 , 1);
@@ -242,7 +250,7 @@ out:
 
 int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 {
-	u8 tmp[0x20];
+	u8 tmp[0x30];
 	u32 retries = 0;
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
@@ -300,9 +308,11 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 			// Set Device key to slot 15.
 			se_aes_key_set(15, h_cfg.eks->dkk, 0x10);
 		}
+		else
+			h_cfg.aes_slots_new = se_key_acc_ctrl_get(12) == 0x6A;
 
 		se_aes_key_clear(8);
-		se_aes_unwrap_key(8, 12, package2_keyseed);
+		se_aes_unwrap_key(8, !h_cfg.aes_slots_new ? 12 : 13, package2_keyseed);
 	}
 	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
@@ -311,11 +321,16 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		// Set TSEC root key.
 		se_aes_key_set(13, tmp + 0x10, 0x10);
 
+		// Decrypt keyblob and set keyslots
+		se_aes_crypt_block_ecb(12, 0, tmp + 0x20, keyblob_keyseeds[0]);
+		se_aes_unwrap_key(15, 14, tmp + 0x20);
+		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+		se_aes_unwrap_key(15, 15, console_keyseed);
+
 		// Package2 key.
-		se_aes_key_set(8, tmp + 0x10, 0x10);
-		se_aes_unwrap_key(8, 8, master_keyseed_620);
-		se_aes_unwrap_key(8, 8, master_keyseed_retail);
-		se_aes_unwrap_key(8, 8, package2_keyseed);
+		se_aes_unwrap_key(8, 13, master_keyseed_620);
+		se_aes_unwrap_key(9, 8, master_keyseed_retail);
+		se_aes_unwrap_key(8, 9, package2_keyseed);
 	}
 	else
 	{
