@@ -951,11 +951,12 @@ skip_list:
 	u8 *bitmap = NULL;
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait && !h_cfg.sept_run)
 	{
+		u32 fsize;
 		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
-			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, NULL);
+			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, &fsize);
 
 		if (!bitmap) // Custom entry bootlogo not found, trying default custom one.
-			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp", NULL);
+			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp", &fsize);
 
 		if (bitmap)
 		{
@@ -975,7 +976,7 @@ skip_list:
 				bmpData.size_x <= 720 &&
 				bmpData.size_y <= 1280)
 			{
-				if ((bmpData.size - bmpData.offset) <= 0x400000)
+				if (bmpData.size <= fsize && ((bmpData.size - bmpData.offset) < 0x400000))
 				{
 					// Avoid unaligned access from BM 2-byte MAGIC and remove header.
 					BOOTLOGO = (u8 *)malloc(0x400000);

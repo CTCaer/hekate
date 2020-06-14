@@ -574,7 +574,8 @@ void manual_system_maintenance(bool refresh)
 
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 {
-	u8 *bitmap = sd_file_read(path, NULL);
+	u32 fsize;
+	u8 *bitmap = sd_file_read(path, &fsize);
 	if (!bitmap)
 		return NULL;
 
@@ -600,7 +601,8 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 	// Sanity check.
 	if (bitmap[0] == 'B' &&
 		bitmap[1] == 'M' &&
-		bitmap[28] == 32) // Only 32 bit BMPs allowed.
+		bitmap[28] == 32 && // Only 32 bit BMPs allowed.
+		bmpData.size <= fsize)
 	{
 		// Check if non-default Bottom-Top.
 		bool flipped = false;
@@ -2191,6 +2193,12 @@ static void _nyx_main_menu(lv_theme_t * th)
 	}
 	else if (n_cfg.home_screen)
 		_create_window_home_launch(NULL);
+
+	if (!n_cfg.timeoff)
+	{
+		lv_task_t *task_run_clock = lv_task_create(first_time_clock_edit, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
+		lv_task_once(task_run_clock);
+	}
 }
 
 void nyx_load_and_run()
