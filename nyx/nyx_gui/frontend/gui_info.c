@@ -319,7 +319,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
 		"ID: %02X, Major: A0%d, Minor: %d",
-		FUSE(FUSE_SKU_INFO), odm4 & 0x10000 ? "Mariko" : "Erista", (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
+		FUSE(FUSE_SKU_INFO), odm4 & 0x30000 ? "Mariko" : "Erista", (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
 		dram_id, dram_man, burntFuses7, burntFuses6,
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
