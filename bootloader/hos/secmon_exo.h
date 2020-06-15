@@ -19,7 +19,7 @@
 
 #include <utils/types.h>
 
-void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base);
+void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new);
 void secmon_exo_check_panic();
 
 #endif

@@ -141,7 +141,7 @@ typedef struct _atm_fatal_error_ctx
 
 #define EXO_FW_VER(mj, mn, rv) (((mj) << 24) | ((mn) << 16) | ((rv) << 8))
 
-void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
+void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 {
 	u32 exoFwNo = 0;
 	u32 exoFlags = 0;
@@ -176,7 +176,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	}
 
 	// New exosphere target versioning.
-	if (!ctxt->fss0_ver || ((ctxt->fss0_ver >> 8) > 0xC00)) // 0.12.0.
+	if (exo_new)
 	{
 		// Feed old versioning.
 		switch (exoFwNo)
