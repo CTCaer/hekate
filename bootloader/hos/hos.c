@@ -36,6 +36,7 @@
 #include <sec/tsec.h>
 #include <soc/bpmp.h>
 #include <soc/ccplex.h>
+#include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/pmc.h>
 #include <soc/t210.h>
@@ -1032,10 +1033,12 @@ int hos_launch(ini_sec_t *cfg)
 	// Clear EMC_SCRATCH0.
 	EMC(EMC_SCRATCH0) = 0;
 
+	// Hold USBD in reset for SoC state validation on sleep.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_L) |= 0x400000;
+
 	// Flush cache and disable MMU.
 	bpmp_mmu_disable();
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-	minerva_change_freq(FREQ_1600);
 
 	// emuMMC: Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
