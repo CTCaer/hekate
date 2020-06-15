@@ -96,6 +96,10 @@ typedef struct _launch_ctxt_t
 void hos_eks_get();
 void hos_eks_save(u32 kb);
 void hos_eks_clear(u32 kb);
+void hos_eks_bis_save();
+void hos_eks_bis_clear();
 int  hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
+int  hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
+void hos_bis_keys_clear();
 
 #endif
