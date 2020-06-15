@@ -1143,15 +1143,27 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
 		tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
+		hos_eks_get();
+
 		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
-			b_cfg->autoboot = 0;
-			b_cfg->autoboot_list = 0;
+			u32 key_idx = 0;
+			if (kb >= KB_FIRMWARE_VERSION_810)
+				key_idx = 1;
 
-			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
+			if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
+				h_cfg.sept_run = true;
+			else
 			{
-				lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept#\n");
-				goto out_free;
+				b_cfg->autoboot = 0;
+				b_cfg->autoboot_list = 0;
+				b_cfg->extra_cfg = EXTRA_CFG_NYX_DUMP;
+
+				if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
+				{
+					lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept#\n");
+					goto out_free;
+				}
 			}
 		}
 

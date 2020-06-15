@@ -171,7 +171,6 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 	f_close(&fp);
 
 	b_cfg->boot_cfg |= (BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_SEPT_RUN);
-	b_cfg->extra_cfg = EXTRA_CFG_NYX_DUMP;
 
 	bool update_sept_payload = true;
 	if (!f_open(&fp, "sept/payload.bin", FA_READ | FA_WRITE))
