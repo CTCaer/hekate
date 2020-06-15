@@ -1071,7 +1071,7 @@ out:
 	// Clear boot reasons from binary.
 	if (b_cfg.boot_cfg & (BOOT_CFG_FROM_ID | BOOT_CFG_TO_EMUMMC))
 		memset(b_cfg.xt_str, 0, sizeof(b_cfg.xt_str));
-	b_cfg.boot_cfg &= ~(BOOT_CFG_AUTOBOOT_EN | BOOT_CFG_FROM_LAUNCH | BOOT_CFG_FROM_ID | BOOT_CFG_TO_EMUMMC);
+	b_cfg.boot_cfg &= BOOT_CFG_SEPT_RUN;
 	h_cfg.emummc_force_disable = false;
 
 	nyx_load_run();

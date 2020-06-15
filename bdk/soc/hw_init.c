@@ -208,10 +208,10 @@ void _config_se_brom()
 		se_aes_key_set(14, sbk, 0x10);
 
 		// Lock SBK from being read.
-		SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 14 * 4) = 0x7E;
+		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
 
 		// Lock SSK (although it's not set and unused anyways).
-		SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 15 * 4) = 0x7E;
+		se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEYREAD_FLAG);
 	}
 
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.

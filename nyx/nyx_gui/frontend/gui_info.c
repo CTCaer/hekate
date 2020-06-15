@@ -389,32 +389,32 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch ((ram_density.dev0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		s_printf(txt_buf + strlen(txt_buf), "4 x 512MB");
+		s_printf(txt_buf + strlen(txt_buf), "4x512MB");
 		break;
 	case 3:
-		s_printf(txt_buf + strlen(txt_buf), "4 x 768MB");
+		s_printf(txt_buf + strlen(txt_buf), "4x768MB");
 		break;
 	case 4:
-		s_printf(txt_buf + strlen(txt_buf), "4 x 1GB");
+		s_printf(txt_buf + strlen(txt_buf), "4x1GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "4 x Unk");
+		s_printf(txt_buf + strlen(txt_buf), "4xUnk");
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", (ram_density.dev0_ch0 & 0x3C) >> 2);
 	switch ((ram_density.dev1_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		s_printf(txt_buf + strlen(txt_buf), "4 x 512MB");
+		s_printf(txt_buf + strlen(txt_buf), "4x512MB");
 		break;
 	case 3:
-		s_printf(txt_buf + strlen(txt_buf), "4 x 768MB");
+		s_printf(txt_buf + strlen(txt_buf), "4x768MB");
 		break;
 	case 4:
-		s_printf(txt_buf + strlen(txt_buf), "4 x 1GB");
+		s_printf(txt_buf + strlen(txt_buf), "4x1GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "2 x Unk");
+		s_printf(txt_buf + strlen(txt_buf), "2xUnk");
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.dev1_ch0 & 0x3C) >> 2);
@@ -586,14 +586,14 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	// Read package1.
 	char *build_date = malloc(32);
 	u8 *pkg1 = (u8 *)malloc(0x40000);
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
-	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_end(&emmc_storage);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
 
-	char *txt_buf  = (char *)malloc(0x500);
-	char *txt_buf2 = (char *)malloc(0x500);
+	char *txt_buf  = (char *)malloc(0x1000);
+	char *txt_buf2 = (char *)malloc(0x1000);
 	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n", build_date);
 	free(build_date);
 
