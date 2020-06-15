@@ -23,8 +23,9 @@
 
 typedef enum
 {
-	NYX_CFG_UMS     = (1 << 6),
-	NYX_CFG_DUMP    = (1 << 7),
+	NYX_CFG_BIS  = (1 << 5),
+	NYX_CFG_UMS  = (1 << 6),
+	NYX_CFG_DUMP = (1 << 7),
 } nyx_cfg_t;
 
 typedef enum

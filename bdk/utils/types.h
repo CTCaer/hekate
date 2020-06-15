@@ -62,6 +62,7 @@ typedef int bool;
 #define EXTRA_CFG_PAYLOAD (1 << 1)
 #define EXTRA_CFG_MODULE  (1 << 2)
 
+#define EXTRA_CFG_NYX_BIS    (1 << 4)
 #define EXTRA_CFG_NYX_UMS    (1 << 5)
 #define EXTRA_CFG_NYX_RELOAD (1 << 6)
 #define EXTRA_CFG_NYX_DUMP   (1 << 7)

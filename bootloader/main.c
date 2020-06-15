@@ -705,6 +705,11 @@ void nyx_load_run()
 			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_DUMP);
 			nyx_str->cfg |= NYX_CFG_DUMP;
 		}
+		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_BIS)
+		{
+			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_BIS);
+			nyx_str->cfg |= NYX_CFG_BIS;
+		}
 		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
 		{
 			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_UMS);
@@ -763,7 +768,7 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomE
 
 static void _auto_launch_firmware()
 {
-	if(b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
+	if(b_cfg.extra_cfg & (EXTRA_CFG_NYX_DUMP | EXTRA_CFG_NYX_BIS))
 	{
 		if (!h_cfg.sept_run)
 			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
