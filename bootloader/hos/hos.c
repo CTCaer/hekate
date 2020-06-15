@@ -59,8 +59,9 @@ extern hekate_config h_cfg;
 #define PKG2_LOAD_ADDR 0xA9800000
 
  // Secmon mailbox.
-#define SECMON_MAILBOX_ADDR  0x40002EF8
-#define SECMON7_MAILBOX_ADDR 0x400000F8
+#define SECMON_MAILBOX_ADDR  0x40002E00
+#define SECMON7_MAILBOX_ADDR 0x40000000
+#define  SECMON_STATE_OFFSET 0xF8
 typedef struct _secmon_mailbox_t
 {
 	//  < 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
@@ -1008,11 +1009,18 @@ int hos_launch(ini_sec_t *cfg)
 	// < 4.0.0 pkg1.1 locks PMC scratches.
 	//_pmc_scratch_lock(kb);
 
-	// Set secmon mailbox address.
+	// Set secmon mailbox address and clear it.
 	if (kb >= KB_FIRMWARE_VERSION_700 || exo_new)
-		secmon_mailbox = (secmon_mailbox_t *)SECMON7_MAILBOX_ADDR;
+	{
+		memset((void *)SECMON7_MAILBOX_ADDR, 0, 0x200);
+		secmon_mailbox = (secmon_mailbox_t *)(SECMON7_MAILBOX_ADDR + SECMON_STATE_OFFSET);
+	}
 	else
-		secmon_mailbox = (secmon_mailbox_t *)SECMON_MAILBOX_ADDR;
+	{
+		if (kb <= KB_FIRMWARE_VERSION_301)
+			memset((void *)SECMON_MAILBOX_ADDR, 0, 0x200);
+		secmon_mailbox = (secmon_mailbox_t *)(SECMON_MAILBOX_ADDR + SECMON_STATE_OFFSET);
+	}
 
 	// Start from DRAM ready signal and reset outgoing value.
 	secmon_mailbox->in = bootStateDramPkg2;
