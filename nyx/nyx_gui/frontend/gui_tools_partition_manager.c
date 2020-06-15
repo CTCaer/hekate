@@ -126,6 +126,11 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 		if (!(fno.fattrib & AM_DIR))
 		{
 			u32 file_size = fno.fsize > RAMDISK_CLUSTER_SZ ? fno.fsize : RAMDISK_CLUSTER_SZ; // Ramdisk cluster size.
+
+			// Check for overflow.
+			if ((file_size + *total_size) < *total_size)
+				break;
+
 			*total_size += file_size;
 			*total_files += 1;
 
