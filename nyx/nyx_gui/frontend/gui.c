@@ -404,10 +404,10 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 			&& jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
 			&& jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
 		{
-			jc_drv_ctx.cx_max = jc_pad->lstick_x + 0x72;
-			jc_drv_ctx.cx_min = jc_pad->lstick_x - 0x72;
-			jc_drv_ctx.cy_max = jc_pad->lstick_y + 0x72;
-			jc_drv_ctx.cy_min = jc_pad->lstick_y - 0x72;
+			jc_drv_ctx.cx_max = jc_pad->lstick_x + 0x96;
+			jc_drv_ctx.cx_min = jc_pad->lstick_x - 0x96;
+			jc_drv_ctx.cy_max = jc_pad->lstick_y + 0x96;
+			jc_drv_ctx.cy_min = jc_pad->lstick_y - 0x96;
 			jc_drv_ctx.centering_done = true;
 			jc_drv_ctx.cursor_timeout = 0;
 		}
@@ -1809,8 +1809,8 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 
 	// Quick Launch button.
 	// lv_obj_t *btn_quick_launch = lv_btn_create(parent, NULL);
-	// label_btn = lv_label_create(btn_quick_launch, label_btn);
-	// lv_label_set_text(label_btn, SYMBOL_EDIT" Quick Launch");
+	// lv_obj_t *label_quick_launch = lv_label_create(btn_quick_launch, NULL);
+	// lv_label_set_static_text(label_quick_launch, SYMBOL_EDIT" Quick Launch");
 	// lv_obj_set_width(btn_quick_launch, 256);
 	// lv_obj_set_pos(btn_quick_launch, 343, 448);
 	// lv_btn_set_action(btn_quick_launch, LV_BTN_ACTION_CLICK, NULL);
