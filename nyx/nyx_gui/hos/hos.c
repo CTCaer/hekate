@@ -558,7 +558,7 @@ static void _hos_validate_sept_mkey(u32 kb)
 			hos_eks_save(kb);
 			return;
 		}
-	} while (mkey_idx);
+	} while (mkey_idx - 1);
 
 	se_aes_key_clear(2);
 	hos_eks_clear(kb);
@@ -574,7 +574,6 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 	if (!h_cfg.eks || !h_cfg.eks->enabled_bis)
 	{
-		///////// check sept.
 		hos_keygen(keyblob, kb, tsec_ctxt);
 
 		if (kb >= KB_FIRMWARE_VERSION_400)
@@ -599,7 +598,7 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 					se_aes_key_set(2, tmp_mkey, 0x10);
 					se_aes_crypt_ecb(2, 0, tmp_mkey, 0x10, mkey_vectors[mkey_idx - 1 - idx], 0x10);
 				}
-			} while (memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0 && mkey_idx);
+			} while (memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0 && (mkey_idx - 1));
 
 			// Derive new device key.
 			se_aes_key_clear(1);
@@ -635,6 +634,9 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		// Generate BIS 2/3 Keys.
 		se_aes_crypt_block_ecb(2, 0, bis_keys + (4 * 0x10), bis_keyseed[4]);
 		se_aes_crypt_block_ecb(2, 0, bis_keys + (5 * 0x10), bis_keyseed[5]);
+
+		if (kb >= KB_FIRMWARE_VERSION_700)
+			_hos_validate_sept_mkey(kb);
 	}
 	else
 	{
@@ -647,9 +649,6 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		memcpy(bis_keys + (4 * 0x10), h_cfg.eks->bis_keys[2].crypt, 0x10);
 		memcpy(bis_keys + (5 * 0x10), h_cfg.eks->bis_keys[2].tweak, 0x10);
 	}
-
-	if (kb >= KB_FIRMWARE_VERSION_700)
-		_hos_validate_sept_mkey(kb);
 
 	// Clear all AES keyslots.
 	for (u32 i = 0; i < 6; i++)
