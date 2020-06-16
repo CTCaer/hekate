@@ -316,11 +316,15 @@ static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const
 }
 
 static touch_event touchpad;
+static bool touch_enabled;
 static bool console_enabled = false;
 
 static bool _fts_touch_read(lv_indev_data_t *data)
 {
-	touch_poll(&touchpad);
+	if (touch_enabled)
+		touch_poll(&touchpad);
+	else
+		return false;
 
 	// Take a screenshot if 3 fingers.
 	if (touchpad.fingers > 2)
@@ -2232,7 +2236,7 @@ void nyx_load_and_run()
 	close_btn = NULL;
 
 	// Initialize touch.
-	touch_power_on();
+	touch_enabled = touch_power_on();
 	lv_indev_drv_t indev_drv_touch;
 	lv_indev_drv_init(&indev_drv_touch);
 	indev_drv_touch.type = LV_INDEV_TYPE_POINTER;
