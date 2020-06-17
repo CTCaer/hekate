@@ -61,7 +61,8 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 		curr_part_size = mbr->partitions[i].size_sct;
 		*sector_start = mbr->partitions[i].start_sct;
 		u8 type = mbr->partitions[i].type;
-		if ((curr_part_size >= *sector_size) && *sector_start && type != 0x83 && (!backup || type == 0xE0))
+		u32 sector_size_safe = !backup ? (*sector_size) + 0x8000 : (*sector_size);
+		if ((curr_part_size >= sector_size_safe) && *sector_start && type != 0x83 && (!backup || type == 0xE0))
 		{
 			if (backup)
 			{
