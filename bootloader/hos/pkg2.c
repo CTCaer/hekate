@@ -1273,11 +1273,12 @@ static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 
 	return (tmp_test->magic == PKG2_MAGIC);
 }
 
+u8 pkg2_keyslot;
 pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 {
 	pkg2_hdr_t mkey_test;
 	u8 *pdata = (u8 *)data;
-	u8 keyslot = 8;
+	pkg2_keyslot = 8;
 
 	// Skip signature.
 	pdata += 0x100;
@@ -1310,7 +1311,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 
 			if (res)
 			{
-				keyslot = 9;
+				pkg2_keyslot = 9;
 				goto key_found;
 			}
 			else
@@ -1340,7 +1341,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 
 key_found:
 	// Decrypt header.
-	se_aes_crypt_ctr(keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	//gfx_hexdump((u32)hdr, hdr, 0x100);
 
 	if (hdr->magic != PKG2_MAGIC)
@@ -1352,14 +1353,11 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * 0x10]);
+		se_aes_crypt_ctr(pkg2_keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * 0x10]);
 		//gfx_hexdump((u32)pdata, pdata, 0x100);
 
 		pdata += hdr->sec_size[i];
 	}
-
-	if (keyslot != 8)
-		se_aes_key_clear(9);
 
 	return hdr;
 }
@@ -1433,7 +1431,7 @@ DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
 		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
 	}
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
-	se_aes_crypt_ctr(8, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * 0x10]);
+	se_aes_crypt_ctr(pkg2_keyslot, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * 0x10]);
 	pdst += kernel_size;
 DPRINTF("kernel encrypted\n");
 
@@ -1455,8 +1453,11 @@ DPRINTF("INI1 encrypted\n");
 	u8 key_ver = kb ? kb + 1 : 0;
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
-	se_aes_crypt_ctr(8, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	memset(hdr->ctr, 0 , 0x10);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
+
+	if (pkg2_keyslot != 8)
+		se_aes_key_clear(9);
 }
