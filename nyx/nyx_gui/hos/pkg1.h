@@ -25,7 +25,6 @@ typedef struct _pkg1_id_t
 	u32 kb;
 	u32 tsec_off;
 	u32 pkg11_off;
-	u32 sec_map[3];
 	u32 secmon_base;
 	u32 warmboot_base;
 } pkg1_id_t;

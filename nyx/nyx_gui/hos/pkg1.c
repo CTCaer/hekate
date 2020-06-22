@@ -19,42 +19,43 @@
 
 #include <string.h>
 
+#include "hos.h"
 #include "pkg1.h"
 #include <gfx_utils.h>
 #include <mem/heap.h>
 #include <sec/se.h>
 #include <utils/aarch64_util.h>
 
+#define PK11_SECTION_WB 0
+#define PK11_SECTION_LD 1
+#define PK11_SECTION_SM 2
+
 /*
  * package1.1 header: <wb, ldr, sm>
  * package1.1 layout:
- * 1.0: {sm, ldr, wb} { 2, 1, 0 }
- * 2.0: {wb, ldr, sm} { 0, 1, 2 }
- * 3.0: {wb, ldr, sm} { 0, 1, 2 }
- * 3.1: {wb, ldr, sm} { 0, 1, 2 }
- * 4.0: {ldr, sm, wb} { 1, 2, 0 }
- * 5.0: {ldr, sm, wb} { 1, 2, 0 }
- * 6.0: {ldr, sm, wb} { 1, 2, 0 }
- * 6.2: {ldr, sm, wb} { 1, 2, 0 }
- * 7.0: {ldr, sm, wb} { 1, 2, 0 }
+ * 1.0:  {sm, ldr, wb} { 2, 1, 0 }
+ * 2.0:  {wb, ldr, sm} { 0, 1, 2 }
+ * 3.0:  {wb, ldr, sm} { 0, 1, 2 }
+ * 3.1:  {wb, ldr, sm} { 0, 1, 2 }
+ * 4.0+: {ldr, sm, wb} { 1, 2, 0 }
  */
 
 static const pkg1_id_t _pkg1_ids[] = {
-	{ "20161121183008",  0, 0x1900, 0x3FE0, { 2, 1, 0 }, 0x40014020, 0x8000D000 }, //1.0.0
-	{ "20170210155124",  0, 0x1900, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000 }, //2.0.0 - 2.3.0
-	{ "20170519101410",  1, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000 }, //3.0.0
-	{ "20170710161758",  2, 0x1A00, 0x3FE0, { 0, 1, 2 }, 0x4002D000, 0x8000D000 }, //3.0.1 - 3.0.2
-	{ "20170921172629",  3, 0x1800, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000 }, //4.0.0 - 4.1.0
-	{ "20180220163747",  4, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003B000 }, //5.0.0 - 5.1.0
-	{ "20180802162753",  5, 0x1900, 0x3FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800 }, //6.0.0 - 6.1.0
-	{ "20181107105733",  6, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x4002B000, 0x4003D800 }, //6.2.0
-	{ "20181218175730",  7, 0x0F00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //7.0.0
-	{ "20190208150037",  7, 0x0F00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //7.0.1
-	{ "20190314172056",  7, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //8.0.0 - 8.0.1
-	{ "20190531152432",  8, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //8.1.0
-	{ "20190809135709",  9, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //9.0.0 - 9.0.1
-	{ "20191021113848", 10, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //9.1.0
-	{ "20200303104606", 10, 0x0E00, 0x6FE0, { 1, 2, 0 }, 0x40030000, 0x4003E000 }, //10.0.0
+	{ "20161121183008",  0, 0x1900, 0x3FE0, 0x40014020, 0x8000D000 }, //1.0.0
+	{ "20170210155124",  0, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000 }, //2.0.0 - 2.3.0
+	{ "20170519101410",  1, 0x1A00, 0x3FE0, 0x4002D000, 0x8000D000 }, //3.0.0
+	{ "20170710161758",  2, 0x1A00, 0x3FE0, 0x4002D000, 0x8000D000 }, //3.0.1 - 3.0.2
+	{ "20170921172629",  3, 0x1800, 0x3FE0, 0x4002B000, 0x4003B000 }, //4.0.0 - 4.1.0
+	{ "20180220163747",  4, 0x1900, 0x3FE0, 0x4002B000, 0x4003B000 }, //5.0.0 - 5.1.0
+	{ "20180802162753",  5, 0x1900, 0x3FE0, 0x4002B000, 0x4003D800 }, //6.0.0 - 6.1.0
+	{ "20181107105733",  6, 0x0E00, 0x6FE0, 0x4002B000, 0x4003D800 }, //6.2.0
+	{ "20181218175730",  7, 0x0F00, 0x6FE0, 0x40030000, 0x4003E000 }, //7.0.0
+	{ "20190208150037",  7, 0x0F00, 0x6FE0, 0x40030000, 0x4003E000 }, //7.0.1
+	{ "20190314172056",  7, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, //8.0.0 - 8.0.1
+	{ "20190531152432",  8, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, //8.1.0
+	{ "20190809135709",  9, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, //9.0.0 - 9.0.1
+	{ "20191021113848", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, //9.1.0
+	{ "20200303104606", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, //10.0.0
 	{ NULL } //End.
 };
 
@@ -82,20 +83,32 @@ void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 
 void pkg1_unpack(void *warmboot_dst, void *secmon_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1)
 {
+	u8 *sec_map;
+	u8  sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTION_WB };
+	u8  sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
+	u8  sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
+
 	pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + id->pkg11_off + 0x20);
 
 	u32 sec_size[3] = { hdr->wb_size, hdr->ldr_size, hdr->sm_size };
 	//u32 sec_off[3] = { hdr->wb_off, hdr->ldr_off, hdr->sm_off };
 
+	if (id->kb == KB_FIRMWARE_VERSION_100_200 && !strcmp(id->id, "20161121183008"))
+		sec_map = sec_map_100;
+	else if (id->kb >= KB_FIRMWARE_VERSION_100_200 && id->kb <= KB_FIRMWARE_VERSION_301)
+		sec_map = sec_map_2xx;
+	else
+		sec_map = sec_map_4xx;
+
 	u8 *pdata = (u8 *)hdr + sizeof(pk11_hdr_t);
 	for (u32 i = 0; i < 3; i++)
 	{
-		if (id->sec_map[i] == 0 && warmboot_dst)
-			memcpy(warmboot_dst, pdata, sec_size[id->sec_map[i]]);
-		else if (id->sec_map[i] == 1 && ldr_dst)
-			memcpy(ldr_dst, pdata, sec_size[id->sec_map[i]]);
-		else if (id->sec_map[i] == 2 && secmon_dst)
-			memcpy(secmon_dst, pdata, sec_size[id->sec_map[i]]);
-		pdata += sec_size[id->sec_map[i]];
+		if (sec_map[i] == PK11_SECTION_WB && warmboot_dst)
+			memcpy(warmboot_dst, pdata, sec_size[sec_map[i]]);
+		else if (sec_map[i] == PK11_SECTION_LD && ldr_dst)
+			memcpy(ldr_dst, pdata, sec_size[sec_map[i]]);
+		else if (sec_map[i] == PK11_SECTION_SM && secmon_dst)
+			memcpy(secmon_dst, pdata, sec_size[sec_map[i]]);
+		pdata += sec_size[sec_map[i]];
 	}
 }

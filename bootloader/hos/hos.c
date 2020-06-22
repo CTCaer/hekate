@@ -792,7 +792,7 @@ int hos_launch(ini_sec_t *cfg)
 			*(vu32 *)(ctxt.pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
 	}
 	// Set warmboot address in PMC if required.
-	if (ctxt.pkg1_id->set_warmboot)
+	if (kb <= KB_FIRMWARE_VERSION_301)
 		PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
 	// Replace 'SecureMonitor' if requested.
@@ -997,7 +997,7 @@ int hos_launch(ini_sec_t *cfg)
 	sdmmc_storage_end(&emmc_storage);
 
 	// Finalize MC carveout.
-	if (kb <= KB_FIRMWARE_VERSION_301)
+	if (kb <= KB_FIRMWARE_VERSION_301 && !exo_new)
 		mc_config_carveout();
 
 	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise lock bootrom and ipatches.
