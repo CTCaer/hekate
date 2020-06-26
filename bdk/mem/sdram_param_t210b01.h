@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -9,35 +9,12 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * See file CREDITS for list of people who contributed to this
- * project.
  */
 
-/**
- * Defines the SDRAM parameter structure.
- *
- * Note that PLLM is used by EMC.
- */
+#ifndef _SDRAM_PARAM_T210B01_H_
+#define _SDRAM_PARAM_T210B01_H_
 
-#ifndef _SDRAM_PARAM_T210_H_
-#define _SDRAM_PARAM_T210_H_
-
-#define MEMORY_TYPE_NONE   0
-#define MEMORY_TYPE_DDR    0
-#define MEMORY_TYPE_LPDDR  0
-#define MEMORY_TYPE_DDR2   0
-#define MEMORY_TYPE_LPDDR2 1
-#define MEMORY_TYPE_DDR3L  2
-#define MEMORY_TYPE_LPDDR4 3
-
-/**
- * Defines the SDRAM parameter structure
- */
-typedef struct _sdram_params_t210_t
+typedef struct _sdram_params_t210b01_t
 {
 	/* Specifies the type of memory device */
 	u32 memory_type;
@@ -86,6 +63,54 @@ typedef struct _sdram_params_t210_t
 	u32 emc_bct_spare12;
 	/* Spare BCT param */
 	u32 emc_bct_spare13;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure0;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure1;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure2;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure3;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure4;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure5;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure6;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure7;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure8;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure9;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure10;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure11;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure12;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure13;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure14;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure15;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure16;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure17;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure18;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure19;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure20;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure21;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure22;
+	/* Spare BCT param */
+	u32 emc_bct_spare_secure23;
 
 	/* Defines EMC_2X_CLK_SRC, EMC_2X_CLK_DIVISOR, EMC_INVERT_DCD */
 	u32 emc_clock_source;
@@ -118,6 +143,8 @@ typedef struct _sdram_params_t210_t
 	u32 emc_auto_cal_config6;
 	u32 emc_auto_cal_config7;
 	u32 emc_auto_cal_config8;
+	u32 emc_auto_cal_config9;
+
 	/* Specifies the value for EMC_AUTO_CAL_VREF_SEL_0 */
 	u32 emc_auto_cal_vref_sel0;
 	u32 emc_auto_cal_vref_sel1;
@@ -201,6 +228,11 @@ typedef struct _sdram_params_t210_t
 	/* Specifies the value for EMC_RD_RCD */
 
 	u32 emc_tppd;
+	u32 emc_trtm;
+	u32 emc_twtm;
+	u32 emc_tratm;
+	u32 emc_twatm;
+	u32 emc_tr2ref;
 	u32 emc_ccdmw;
 
 	u32 emc_rd_rcd;
@@ -500,6 +532,8 @@ typedef struct _sdram_params_t210_t
 	u32 emc_pmacro_ddll_short_cmd_1;
 	u32 emc_pmacro_ddll_short_cmd_2;
 
+	u32 emc_pmacro_ddll_periodic_offset;
+
 	/*
 	 * Specifies the delay after asserting CKE pin during a WarmBoot0
 	 * sequence (in microseconds)
@@ -604,8 +638,6 @@ typedef struct _sdram_params_t210_t
 	u32 pmc_vddp_sel;
 	/* Specifies the wait time after programming PMC_VDDP_SEL */
 	u32 pmc_vddp_sel_wait;
-	/* Specifies the value for PMC_DDR_PWR */
-	u32 pmc_ddr_pwr;
 	/* Specifies the value for PMC_DDR_CFG */
 	u32 pmc_ddr_cfg;
 	/* Specifies the value for PMC_IO_DPD3_REQ */
@@ -675,7 +707,7 @@ typedef struct _sdram_params_t210_t
 	u32 emc_pmacro_vttgen_ctrl0;
 	u32 emc_pmacro_vttgen_ctrl1;
 	u32 emc_pmacro_vttgen_ctrl2;
-
+	u32 emc_pmacro_dsr_vttgen_ctrl0;
 	u32 emc_pmacro_brick_ctrl_rfu1;
 	u32 emc_pmacro_cmd_brick_ctrl_fdpd;
 	u32 emc_pmacro_brick_ctrl_rfu2;
@@ -686,7 +718,6 @@ typedef struct _sdram_params_t210_t
 	u32 emc_pmacro_data_rx_term_mode;
 	u32 emc_pmacro_cmd_rx_term_mode;
 	u32 emc_pmacro_data_pad_tx_ctrl;
-	u32 emc_pmacro_common_pad_tx_ctrl;
 	u32 emc_pmacro_cmd_pad_tx_ctrl;
 	u32 emc_cfg3;
 
@@ -709,6 +740,28 @@ typedef struct _sdram_params_t210_t
 	u32 emc_pmacro_tx_sel_clk_src3;
 	u32 emc_pmacro_tx_sel_clk_src4;
 	u32 emc_pmacro_tx_sel_clk_src5;
+
+	u32 emc_pmacro_perbit_fgcg_ctrl0;
+	u32 emc_pmacro_perbit_fgcg_ctrl1;
+	u32 emc_pmacro_perbit_fgcg_ctrl2;
+	u32 emc_pmacro_perbit_fgcg_ctrl3;
+	u32 emc_pmacro_perbit_fgcg_ctrl4;
+	u32 emc_pmacro_perbit_fgcg_ctrl5;
+	u32 emc_pmacro_perbit_rfu_ctrl0;
+	u32 emc_pmacro_perbit_rfu_ctrl1;
+	u32 emc_pmacro_perbit_rfu_ctrl2;
+	u32 emc_pmacro_perbit_rfu_ctrl3;
+	u32 emc_pmacro_perbit_rfu_ctrl4;
+	u32 emc_pmacro_perbit_rfu_ctrl5;
+	u32 emc_pmacro_perbit_rfu1_ctrl0;
+	u32 emc_pmacro_perbit_rfu1_ctrl1;
+	u32 emc_pmacro_perbit_rfu1_ctrl2;
+	u32 emc_pmacro_perbit_rfu1_ctrl3;
+	u32 emc_pmacro_perbit_rfu1_ctrl4;
+	u32 emc_pmacro_perbit_rfu1_ctrl5;
+
+	u32 emc_pmacro_data_pi_ctrl;
+	u32 emc_pmacro_cmd_pi_ctrl;
 
 	u32 emc_pmacro_ddll_bypass;
 
@@ -925,6 +978,12 @@ typedef struct _sdram_params_t210_t
 	u32 mc_mts_carveout_size_mb;
 	/* Specifies the value for MC_MTS_CARVEOUT_REG_CTRL */
 	u32 mc_mts_carveout_reg_ctrl;
-} sdram_params_t210_t;
+
+	/* Specifies the clients that are allowed to access untranslated memory */
+	u32 mc_untranslated_region_check;
+
+	/* Just a place holder for special usage when there is no BCT for certain registers */
+	u32 bct_na;
+} sdram_params_t210b01_t;
 
 #endif

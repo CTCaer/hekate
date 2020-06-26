@@ -461,6 +461,7 @@
 #define MC_SECURITY_CARVEOUT2_CLIENT_ACCESS1                    0xc6c
 #define MC_SECURITY_CARVEOUT4_CLIENT_ACCESS0                    0xd08
 #define MC_ERR_APB_ASID_UPDATE_STATUS                           0x9d0
+#define MC_UNTRANSLATED_REGION_CHECK                            0x948
 #define MC_DA_CONFIG0                                           0x9dc
 
 // MC_SECURITY_CARVEOUTX_CFG0

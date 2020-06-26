@@ -15,26 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define DRAM_CFG_SIZE 1896
+#define DRAM_CFG_T210_SIZE 1896
 
 #define DRAM_ID(x) BIT(x)
 
-#define DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH       0
-#define DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN      1
-#define DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT 2
-#define DRAM_4GB_COPPER_SAMSUNG                3
-#define DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH       4
-#define DRAM_4GB_COPPER_HYNIX                  5
-#define DRAM_4GB_COPPER_MICRON                 6
-
-typedef struct _sdram_vendor_patch_t
-{
-	u32 val;
-	u16 addr:9;
-	u16 dramid:7;
-} sdram_vendor_patch_t;
-
-static const sdram_params_t _dram_cfg_0_samsung_4gb = {
+static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	/* Specifies the type of memory device */
 	.memory_type                                     = MEMORY_TYPE_LPDDR4,
 
@@ -112,7 +97,7 @@ static const sdram_params_t _dram_cfg_0_samsung_4gb = {
 	 * DRAM size information
 	 * Specifies the value for EMC_ADR_CFG
 	 */
-	.emc_adr_cfg                                     = 0x00000001,
+	.emc_adr_cfg                                     = 0x00000001, // 2 populated DRAM Devices.
 
 	/*
 	 * Specifies the time to wait after asserting pin
@@ -258,7 +243,7 @@ static const sdram_params_t _dram_cfg_0_samsung_4gb = {
 	.emc_cfg_dig_dll                                 = 0x002C00A0,
 	.emc_cfg_dig_dll_1                               = 0x00003701,
 	.emc_cfg_dig_dll_period                          = 0x00008000,
-	.emc_dev_select                                  = 0x00000000,
+	.emc_dev_select                                  = 0x00000000, // Both devices.
 	.emc_sel_dpd_ctrl                                = 0x00040008,
 
 	/* Pads trimmer delays */
@@ -505,9 +490,9 @@ static const sdram_params_t _dram_cfg_0_samsung_4gb = {
 	.emc_pmacro_cmd_ctrl2                            = 0x0A0A0A0A,
 
 	/* DRAM size information */
-	.mc_emem_adr_cfg                                 = 0x00000001,
-	.mc_emem_adr_cfg_dev0                            = 0x00070302,
-	.mc_emem_adr_cfg_dev1                            = 0x00070302,
+	.mc_emem_adr_cfg                                 = 0x00000001, // 2 populated DRAM Devices.
+	.mc_emem_adr_cfg_dev0                            = 0x00070302, // Density 512MB.
+	.mc_emem_adr_cfg_dev1                            = 0x00070302, // Density 512MB.
 	.mc_emem_adr_cfg_channel_mask                    = 0xFFFF2400,
 	.mc_emem_adr_cfg_bank_mask0                      = 0x6E574400,
 	.mc_emem_adr_cfg_bank_mask1                      = 0x39722800,
@@ -516,7 +501,7 @@ static const sdram_params_t _dram_cfg_0_samsung_4gb = {
 	 * Specifies the value for MC_EMEM_CFG which holds the external memory
 	 * size (in KBytes)
 	 */
-	.mc_emem_cfg                                     = 0x00001000,
+	.mc_emem_cfg                                     = 0x00001000, // 4GB total density.
 
 	/* MC arbitration configuration */
 	.mc_emem_arb_cfg                                 = 0x08000001,
@@ -659,7 +644,7 @@ static const sdram_params_t _dram_cfg_0_samsung_4gb = {
 	.mc_mts_carveout_reg_ctrl                        = 0x00000000
 };
 
-static const sdram_vendor_patch_t sdram_cfg_vendor_patches[] = {
+static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	// Hynix timing config.
 	{ 0x0000000D,  67, DRAM_ID(1) | DRAM_ID(5) }, // emc_r2w.
 	{ 0x00000001,  91, DRAM_ID(1) | DRAM_ID(5) }, // emc_puterm_extra.
