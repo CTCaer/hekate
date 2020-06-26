@@ -75,9 +75,17 @@
 /*! Fuse cache registers. */
 #define FUSE_RESERVED_ODMX(x) (0x1C8 + 4 * (x))
 
+enum
+{
+	FUSE_NX_HW_TYPE_ICOSA,
+	FUSE_NX_HW_TYPE_IOWA,
+	FUSE_NX_HW_TYPE_HOAG
+};
+
 void fuse_disable_program();
 u32  fuse_read_odm(u32 idx);
 u32  fuse_read_odm_keygen_rev();
+u32  fuse_read_hw_type();
 u8   fuse_count_burnt(u32 val);
 void fuse_wait_idle();
 int  fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));

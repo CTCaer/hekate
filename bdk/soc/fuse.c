@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <soc/fuse.h>
+#include <soc/hw_init.h>
 #include <soc/t210.h>
 #include <utils/types.h>
 
@@ -65,6 +66,22 @@ u32 fuse_read_odm_keygen_rev()
 		return (fuse_read_odm(2) & 0x1F);
 
 	return 0;
+}
+
+u32 fuse_read_hw_type()
+{
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
+	{
+		switch ((fuse_read_odm(4) & 0xF0000) >> 16)
+		{
+		case 1:
+			return FUSE_NX_HW_TYPE_IOWA;
+		case 2:
+			return FUSE_NX_HW_TYPE_HOAG;
+		}
+	}
+
+	return FUSE_NX_HW_TYPE_ICOSA;
 }
 
 u8 fuse_count_burnt(u32 val)
@@ -339,8 +356,8 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 
 bool fuse_check_patched_rcm()
 {
-	// Check if XUSB in use.
-	if (FUSE(FUSE_RESERVED_SW) & (1<<7))
+	// Check if XUSB in use or Tegra X1+.
+	if (FUSE(FUSE_RESERVED_SW) & (1<<7) || hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
 		return true;
 
 	// Check if RCM is ipatched.
