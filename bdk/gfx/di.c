@@ -22,6 +22,7 @@
 #include <power/max7762x.h>
 #include <soc/clock.h>
 #include <soc/gpio.h>
+#include <soc/hw_init.h>
 #include <soc/i2c.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
@@ -59,10 +60,26 @@ void display_init()
 	if (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) & BIT(CLK_L_DISP1))
 		_display_panel_and_hw_end(true);
 
+	// Get Chip ID.
+	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 
-	// Power on.
+	// T210B01: Power on SD2 regulator for supplying LD0.
+	if (!tegra_t210)
+	{
+		// Set SD2 regulator voltage.
+		max77620_regulator_set_voltage(REGULATOR_SD2, 1325000);
+
+		// Set slew rate and enable SD2 regulator.
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD2_CFG, (1 << MAX77620_SD_SR_SHIFT) | MAX77620_SD_CFG1_FSRADE_SD_ENABLE);
+		max77620_regulator_enable(REGULATOR_SD2, 1);
+
+	}
+
+	// Enable power to display panel controller.
 	max77620_regulator_set_volt_and_flags(REGULATOR_LDO0, 1200000, MAX77620_POWER_MODE_NORMAL); // Configure to 1.2V.
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO7, MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH | MAX77620_CNFG_GPIO_DRV_PUSHPULL);
+	if (tegra_t210)
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO7,
+			MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH | MAX77620_CNFG_GPIO_DRV_PUSHPULL); // T210: LD0 -> GPIO7 -> Display panel.
 
 	// Enable Display Interface specific clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_MIPI_CAL) | BIT(CLK_H_DSI);
@@ -75,69 +92,107 @@ void display_init()
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_UART_FST_MIPI_CAL) = 10; // Set PLLP_OUT3 and div 6 (17MHz).
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = BIT(CLK_W_DSIA_LP);
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = 10;    // Set PLLP_OUT and div 6 (68MHz).
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = 10;           // Set PLLP_OUT and div 6 (68MHz).
 
 	// Bring every IO rail out of deep power down.
 	PMC(APBDEV_PMC_IO_DPD_REQ)  = PMC_IO_DPD_REQ_DPD_OFF;
 	PMC(APBDEV_PMC_IO_DPD2_REQ) = PMC_IO_DPD_REQ_DPD_OFF;
 
-	// Config LCD and Backlight pins.
+	// Configure LCD pins.
 	PINMUX_AUX(PINMUX_AUX_NFC_EN)     &= ~PINMUX_TRISTATE; // PULL_DOWN
 	PINMUX_AUX(PINMUX_AUX_NFC_INT)    &= ~PINMUX_TRISTATE; // PULL_DOWN
-	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) &= ~PINMUX_TRISTATE; // PULL_DOWN | 1
-	PINMUX_AUX(PINMUX_AUX_LCD_BL_EN)  &= ~PINMUX_TRISTATE; // PULL_DOWN
 	PINMUX_AUX(PINMUX_AUX_LCD_RST)    &= ~PINMUX_TRISTATE; // PULL_DOWN
 
-	// Set Backlight +-5V pins mode and direction
+	// Configure Backlight pins.
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) &= ~PINMUX_TRISTATE; // PULL_DOWN | 1
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_EN)  &= ~PINMUX_TRISTATE; // PULL_DOWN
+
+	// Set LCD +-5V pins mode and direction
 	gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE);
 
-	// Enable Backlight power.
-	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // Backlight +5V enable.
+	// Enable LCD power.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // LCD +5V enable.
 	usleep(10000);
-	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // Backlight -5V enable.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // LCD -5V enable.
 	usleep(10000);
 
-	// Configure Backlight pins (PWM, EN, RST).
+	// Configure Backlight PWM/EN and LCD RST pins (BL PWM, BL EN, LCD RST).
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
-	gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH); // Enable Backlight EN.
+
+	 // Enable Backlight power.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH);
 
 	// Power up supply regulator for display interface.
 	MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0;
+
+	if (!tegra_t210)
+	{
+		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG0)) = 0;
+		APB_MISC(APB_MISC_GP_DSI_PAD_CONTROL) = 0;
+	}
 
 	// Set DISP1 clock source and parent clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DISP1) = 0x40000000; // PLLD_OUT.
 	u32 plld_div = (3 << 20) | (20 << 11) | 1; // DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 96 MHz.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
-	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20;    // PLLD_SETUP.
-	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = 0x2D0AAA; // PLLD_ENABLE_CLK.
+
+	if (tegra_t210)
+	{
+		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20;     // PLLD_SETUP.
+		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC)  = 0x2D0AAA; // PLLD_ENABLE_CLK.
+	}
+	else
+	{
+		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0;
+		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC)  = 0x2DFC00; // PLLD_ENABLE_CLK.
+	}
+
+	// Setup Display Interface initial window configuration.
+	exec_cfg((u32 *)DISPLAY_A_BASE, _display_dc_setup_win_config, 94);
 
 	// Setup display communication interfaces.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _display_dc_setup_win_config, 94);
-	exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config, 61);
+	exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config_part1, 8);
+	if (tegra_t210)
+		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15)) = 0;
+	else
+		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15_B01)) = 0;
+	exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config_part2, 14);
+	if (!tegra_t210)
+		exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config_part3_t210b01, 7);
+	exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config_part4, 10);
+	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603;
+	exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config_part5, 12);
+	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603;
+	exec_cfg((u32 *)DSI_BASE, _display_dsi_init_config_part6, 14);
 	usleep(10000);
 
-	// Enable Backlight Reset.
+	// Enable LCD Reset.
 	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_HIGH);
 	usleep(60000);
 
-	// Setups DSI packet configuration and request display id.
+	// Setup DSI device takeover timeout.
 	DSI(_DSIREG(DSI_BTA_TIMING)) = 0x50204;
+
+	// Set reply size.
 	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, 3, 0);
 	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
+	// Request register read.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, MIPI_DCS_GET_DISPLAY_ID, 0);
 	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
+	// Transfer bus control to device for transmitting the reply.
 	DSI(_DSIREG(DSI_HOST_CONTROL)) = DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_IMM_BTA | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC;
 	_display_dsi_wait(150000, _DSIREG(DSI_HOST_CONTROL), DSI_HOST_CONTROL_IMM_BTA);
 
+	// Wait a bit for the reply.
 	usleep(5000);
 
-	// MIPI_DCS_GET_DISPLAY_ID reply is a long read, size 3 u32.
+	// MIPI_DCS_GET_DISPLAY_ID reply is a long read, size 3 x u32.
 	for (u32 i = 0; i < 3; i++)
-		_display_id = DSI(_DSIREG(DSI_RD_DATA)); // Skip ack and msg type info and get the payload (display id).
+		_display_id = DSI(_DSIREG(DSI_RD_DATA)) & 0xFFFFFF; // Skip ack and msg type info and get the payload (display id).
 
 	// Save raw Display ID to Nyx storage.
 	nyx_str->info.disp_id = _display_id;
@@ -155,22 +210,28 @@ void display_init()
 		exec_cfg((u32 *)DSI_BASE, _display_init_config_jdi, 43);
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 		break;
+
 	case PANEL_INL_P062CCA_AZ1:
 	case PANEL_AUO_A062TAN01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
+
+		// Unlock extension cmds.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // Enable extension cmd. (Pass: FF 83 94).
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
+
+		// Set Power control.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x739;          // MIPI_DSI_DCS_LONG_WRITE: 7 bytes.
 		if (_display_id == PANEL_INL_P062CCA_AZ1)
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // Set Power control. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
-		else
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
+		else // PANEL_AUO_A062TAN01.
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x143209;       // (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32).
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
+
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
 	default: // Allow spare part displays to work.
@@ -178,25 +239,52 @@ void display_init()
 		break;
 	}
 
+	// Unblank display.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
 	// Configure PLLD for DISP1.
 	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 230.4 MHz.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
-	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20;
-	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = 0x2DFC00; // Use new PLLD_SDM_DIN.
+
+	if (tegra_t210)
+		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20; // PLLD_SETUP
+	else
+		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0;
+	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = 0x2DFC00;  // Use new PLLD_SDM_DIN.
 
 	// Finalize DSI configuration.
-	exec_cfg((u32 *)DSI_BASE, _display_dsi_packet_config, 21);
+	DSI(_DSIREG(DSI_PAD_CONTROL_1)) = 0;
+	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603;
+	exec_cfg((u32 *)DSI_BASE, _display_dsi_packet_config, 19);
 	// Set pixel clock dividers: 230.4 / 3 / 1 = 76.8 MHz. 60 Hz.
 	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
 	exec_cfg((u32 *)DSI_BASE, _display_dsi_mode_config, 10);
 	usleep(10000);
 
 	// Calibrate display communication pads.
-	exec_cfg((u32 *)MIPI_CAL_BASE, _display_mipi_pad_cal_config, 6);
-	exec_cfg((u32 *)DSI_BASE, _display_dsi_pad_cal_config, 4);
-	exec_cfg((u32 *)MIPI_CAL_BASE, _display_mipi_apply_dsi_cal_config, 16);
+	u32 loops = tegra_t210 ? 1 : 2; // Find out why this is done 2 times on Mariko.
+	exec_cfg((u32 *)MIPI_CAL_BASE, _display_mipi_pad_cal_config, 4);
+	for (u32 i = 0; i < loops; i++)
+	{
+		// Set MIPI bias pad config.
+		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0x10010;
+		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG1)) = tegra_t210 ? 0x300 : 0;
+
+		// Set pad trimmers and set MIPI DSI cal offsets.
+		if (tegra_t210)
+		{
+			exec_cfg((u32 *)DSI_BASE, _display_dsi_pad_cal_config_t210, 4);
+			exec_cfg((u32 *)MIPI_CAL_BASE, _display_mipi_dsi_cal_offsets_config_t210, 4);
+		}
+		else
+		{
+			exec_cfg((u32 *)DSI_BASE, _display_dsi_pad_cal_config_t210b01, 7);
+			exec_cfg((u32 *)MIPI_CAL_BASE, _display_mipi_dsi_cal_offsets_config_t210b01, 4);
+		}
+
+		// Set the rest of MIPI cal offsets and apply calibration.
+		exec_cfg((u32 *)MIPI_CAL_BASE, _display_mipi_apply_dsi_cal_config, 12);
+	}
 	usleep(10000);
 
 	// Enable video display controller.
@@ -207,9 +295,9 @@ void display_backlight_pwm_init()
 {
 	clock_enable_pwm();
 
-	PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN; // Enable PWM and set it to 25KHz PFM.
+	PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN; // Enable PWM and set it to 25KHz PFM. 29.5KHz is stock.
 
-	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & 0xFFFFFFFC) | 1; // PWM clock source.
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight power mode.
 }
 
@@ -254,11 +342,15 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 	display_backlight_brightness(0, 1000);
 
+	// Enable host cmd packets during video.
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE;
+
+	// Blank display.
 	DSI(_DSIREG(DSI_WR_DATA)) = (MIPI_DCS_SET_DISPLAY_OFF << 8) | MIPI_DSI_DCS_SHORT_WRITE;
 
+	// Propagate changes to all register buffers and disable host cmd packets during video.
 	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX | WRITE_MUX;
-	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0; // Disable host cmd packet.
+	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
 
 	// De-initialize video controller.
 	exec_cfg((u32 *)DISPLAY_A_BASE, _display_video_disp_controller_disable_config, 17);
@@ -271,43 +363,47 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	case PANEL_JDI_XXX062M:
 		exec_cfg((u32 *)DSI_BASE, _display_deinit_config_jdi, 22);
 		break;
+
 	case PANEL_AUO_A062TAN01:
 		exec_cfg((u32 *)DSI_BASE, _display_deinit_config_auo, 37);
 		break;
+
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x439; // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9; // Enable extension cmd. (Pass: FF 83 94).
+		// Unlock extension cmds.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
-		// Set Power.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39; // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
+
+		// Set Power control.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39;          // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
 		if (_display_id == PANEL_INL_2J055IA_27A)
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // Set Power control. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
 		else
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
-		// Set Power control. (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+		// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31; // Set Power control. (Unknown).
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31; // (Unknown).
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
+
 	case PANEL_INL_P062CCA_AZ1:
 	default:
 		break;
 	}
 
+	// Blank - powerdown.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE, 50000);
 
 skip_panel_deinit:
-	// Disable display and backlight pins.
-	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); //Backlight Reset disable.
+	// Disable LCD power pins.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); // LCD Reset disable.
 	usleep(10000);
-
-	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); //Backlight -5V disable.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD -5V disable.
 	usleep(10000);
-
-	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); //Backlight +5V disable.
+	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD +5V disable.
 	usleep(10000);
 
 	// Disable Display Interface specific clocks.
@@ -320,9 +416,8 @@ skip_panel_deinit:
 	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) | DSI_PAD_CONTROL_VS1_PDIO_CLK | DSI_PAD_CONTROL_VS1_PDIO(0xF);
 	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
 
-	// Switch to automatic function mode.
+	// Switch LCD PWM backlight pin to special function mode and enable PWM0 mode.
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
-
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_TRISTATE) | PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
 }

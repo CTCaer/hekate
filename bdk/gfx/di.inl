@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2019 CTCaer
+* Copyright (c) 2018-2020 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -20,7 +20,7 @@ static const cfg_op_t _display_dc_setup_win_config[94] = {
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
-	{DC_CMD_REG_ACT_CONTROL, 0x54},
+	{DC_CMD_REG_ACT_CONTROL, 0x54}, // Select H counter for win A/B/C.
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
@@ -101,11 +101,11 @@ static const cfg_op_t _display_dc_setup_win_config[94] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE | WIN_B_UPDATE | WIN_C_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
-	{0x716, 0x10000FF},
+	{DC_WINBUF_BLEND_LAYER_CONTROL, 0x10000FF},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT},
-	{0x716, 0x10000FF},
+	{DC_WINBUF_BLEND_LAYER_CONTROL, 0x10000FF},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT},
-	{0x716, 0x10000FF},
+	{DC_WINBUF_BLEND_LAYER_CONTROL, 0x10000FF},
 	{DC_CMD_DISPLAY_COMMAND_OPTION0, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
@@ -120,7 +120,7 @@ static const cfg_op_t _display_dc_setup_win_config[94] = {
 };
 
 //DSI Init config.
-static const cfg_op_t _display_dsi_init_config[61] = {
+static const cfg_op_t _display_dsi_init_config_part1[8] = {
 	{DSI_WR_DATA, 0},
 	{DSI_INT_ENABLE, 0},
 	{DSI_INT_STATUS, 0},
@@ -128,8 +128,9 @@ static const cfg_op_t _display_dsi_init_config[61] = {
 	{DSI_INIT_SEQ_DATA_0, 0},
 	{DSI_INIT_SEQ_DATA_1, 0},
 	{DSI_INIT_SEQ_DATA_2, 0},
-	{DSI_INIT_SEQ_DATA_3, 0},
-	{DSI_INIT_SEQ_DATA_15, 0},
+	{DSI_INIT_SEQ_DATA_3, 0}
+};
+static const cfg_op_t _display_dsi_init_config_part2[14] = {
 	{DSI_DCS_CMDS, 0},
 	{DSI_PKT_SEQ_0_LO, 0},
 	{DSI_PKT_SEQ_1_LO, 0},
@@ -143,7 +144,18 @@ static const cfg_op_t _display_dsi_init_config[61] = {
 	{DSI_PKT_SEQ_3_HI, 0},
 	{DSI_PKT_SEQ_4_HI, 0},
 	{DSI_PKT_SEQ_5_HI, 0},
-	{DSI_CONTROL, 0},
+	{DSI_CONTROL, 0}
+};
+static const cfg_op_t _display_dsi_init_config_part3_t210b01[7] = {
+	{DSI_PAD_CONTROL_1, 0},
+	{DSI_PAD_CONTROL_2, 0},
+	{DSI_PAD_CONTROL_3, 0},
+	{DSI_PAD_CONTROL_4, 0},
+	{DSI_PAD_CONTROL_5_B01, 0},
+	{DSI_PAD_CONTROL_6_B01, 0},
+	{DSI_PAD_CONTROL_7_B01, 0}
+};
+static const cfg_op_t _display_dsi_init_config_part4[10] = {
 	{DSI_PAD_CONTROL_CD, 0},
 	{DSI_SOL_DELAY, 0x18},
 	{DSI_MAX_THRESHOLD, 0x1E0},
@@ -153,8 +165,9 @@ static const cfg_op_t _display_dsi_init_config[61] = {
 	{DSI_PKT_LEN_2_3, 0},
 	{DSI_PKT_LEN_4_5, 0},
 	{DSI_PKT_LEN_6_7, 0},
-	{DSI_PAD_CONTROL_1, 0},
-	{DSI_PHY_TIMING_0, 0x6070601},
+	{DSI_PAD_CONTROL_1, 0}
+};
+static const cfg_op_t _display_dsi_init_config_part5[12] = {
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30109},
 	{DSI_BTA_TIMING, 0x190A14},
@@ -166,8 +179,9 @@ static const cfg_op_t _display_dsi_init_config[61] = {
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, 0},
 	{DSI_POWER_CONTROL, 0},
-	{DSI_PAD_CONTROL_1, 0},
-	{DSI_PHY_TIMING_0, 0x6070601},
+	{DSI_PAD_CONTROL_1, 0}
+};
+static const cfg_op_t _display_dsi_init_config_part6[14] = {
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
 	{DSI_BTA_TIMING, 0x190A14},
@@ -187,12 +201,12 @@ static const cfg_op_t _display_dsi_init_config[61] = {
 //DSI panel config.
 static const cfg_op_t _display_init_config_jdi[43] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-	{DSI_WR_DATA, 0x9483FFB9}, // Enable extension cmd. (Pass: FF 83 94).
+	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x0BD.
+	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0 to 0xBD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x1939},     // MIPI_DSI_DCS_LONG_WRITE: 25 bytes.
-	{DSI_WR_DATA, 0xAAAAAAD8},
+	{DSI_WR_DATA, 0xAAAAAAD8}, // Register: 0xD8.
 	{DSI_WR_DATA, 0xAAAAAAEB},
 	{DSI_WR_DATA, 0xAAEBAAAA},
 	{DSI_WR_DATA, 0xAAAAAAAA},
@@ -200,10 +214,10 @@ static const cfg_op_t _display_init_config_jdi[43] = {
 	{DSI_WR_DATA, 0xAAEBAAAA},
 	{DSI_WR_DATA, 0xAA},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x01BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x1BD.
+	{DSI_WR_DATA, 0x01BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 1 to 0xBD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x2739},     // MIPI_DSI_DCS_LONG_WRITE: 39 bytes.
-	{DSI_WR_DATA, 0xFFFFFFD8},
+	{DSI_WR_DATA, 0xFFFFFFD8}, // Register: 0xD8.
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFFFF},
@@ -214,27 +228,25 @@ static const cfg_op_t _display_init_config_jdi[43] = {
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFF},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x02BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x2BD.
+	{DSI_WR_DATA, 0x02BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 2 to 0xBD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0xF39},      // MIPI_DSI_DCS_LONG_WRITE: 15 bytes.
-	{DSI_WR_DATA, 0xFFFFFFD8},
+	{DSI_WR_DATA, 0xFFFFFFD8}, // Register: 0xD8.
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFFFF},
 	{DSI_WR_DATA, 0xFFFFFF},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x0BD.
+	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0 to 0xBD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x06D915},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0x6D9.
+	{DSI_WR_DATA, 0x06D915},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 6 to 0xD9.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-	{DSI_WR_DATA, 0x000000B9}, // Disable extension cmd.
+	{DSI_WR_DATA, 0x000000B9}, // MIPI_DCS_PRIV_SET_EXTC. Disable.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
 //DSI packet config.
-static const cfg_op_t _display_dsi_packet_config[21] = {
-	{DSI_PAD_CONTROL_1, 0},
-	{DSI_PHY_TIMING_0, 0x6070601},
+static const cfg_op_t _display_dsi_packet_config[19] = {
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30172},
 	{DSI_BTA_TIMING, 0x190A14},
@@ -271,29 +283,44 @@ static const cfg_op_t _display_dsi_mode_config[10] = {
 };
 
 //MIPI CAL config.
-static const cfg_op_t _display_mipi_pad_cal_config[6] = {
+static const cfg_op_t _display_mipi_pad_cal_config[4] = {
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0},
 	{MIPI_CAL_CIL_MIPI_CAL_STATUS, 0xF3F10000},
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG0,  0},
-	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0},
-	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0x10010},
-	{MIPI_CAL_MIPI_BIAS_PAD_CFG1,  0x300}
+	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0}
 };
 
 //DSI config.
-static const cfg_op_t _display_dsi_pad_cal_config[4] = {
+static const cfg_op_t _display_dsi_pad_cal_config_t210[4] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PAD_CONTROL_2, 0},
 	{DSI_PAD_CONTROL_3, DSI_PAD_PREEMP_PD_CLK(0x3) | DSI_PAD_PREEMP_PU_CLK(0x3) | DSI_PAD_PREEMP_PD(0x03) | DSI_PAD_PREEMP_PU(0x3)},
 	{DSI_PAD_CONTROL_4, 0}
 };
+static const cfg_op_t _display_dsi_pad_cal_config_t210b01[7] = {
+	{DSI_PAD_CONTROL_1, 0},
+	{DSI_PAD_CONTROL_2, 0},
+	{DSI_PAD_CONTROL_3, 0},
+	{DSI_PAD_CONTROL_4, 0x77777},
+	{DSI_PAD_CONTROL_5_B01, 0x77777},
+	{DSI_PAD_CONTROL_6_B01, 0x1111},
+	{DSI_PAD_CONTROL_7_B01, 0}
+};
 
 //MIPI CAL config.
-static const cfg_op_t _display_mipi_apply_dsi_cal_config[16] = {
+static const cfg_op_t _display_mipi_dsi_cal_offsets_config_t210[4] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x200002},
-	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x200002},
+	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x200002}
+};
+static const cfg_op_t _display_mipi_dsi_cal_offsets_config_t210b01[4] = {
+	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200006},
+	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200006},
+	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x260000},
+	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x260000}
+};
+static const cfg_op_t _display_mipi_apply_dsi_cal_config[12] = {
 	{MIPI_CAL_CILA_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILB_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILC_MIPI_CAL_CONFIG,   0},
@@ -500,10 +527,10 @@ static const cfg_op_t _display_dsi_timing_deinit_config[16] = {
 //DSI config (if ver == 0x10).
 static const cfg_op_t _display_deinit_config_jdi[22] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-	{DSI_WR_DATA, 0x9483FFB9}, // Enable extension cmd. (Pass: FF 83 94).
+	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x2139},     // MIPI_DSI_DCS_LONG_WRITE: 33 bytes.
-	{DSI_WR_DATA, 0x191919D5},
+	{DSI_WR_DATA, 0x191919D5}, // Register: 0xD5.
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
@@ -514,21 +541,21 @@ static const cfg_op_t _display_deinit_config_jdi[22] = {
 	{DSI_WR_DATA, 0x19},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0xB39},      // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
-	{DSI_WR_DATA, 0x4F0F41B1}, // Set Power control.
+	{DSI_WR_DATA, 0x4F0F41B1}, // MIPI_DCS_PRIV_SET_POWER_CONTROL.
 	{DSI_WR_DATA, 0xF179A433},
 	{DSI_WR_DATA, 0x002D81},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-	{DSI_WR_DATA, 0x000000B9}, // Disable extension cmd.
+	{DSI_WR_DATA, 0x000000B9}, // MIPI_DCS_PRIV_SET_EXTC. Disable.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
 static const cfg_op_t _display_deinit_config_auo[37] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-	{DSI_WR_DATA, 0x9483FFB9}, // Enable extension cmd. (Pass: FF 83 94).
+	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x2C39},     // MIPI_DSI_DCS_LONG_WRITE: 44 bytes.
-	{DSI_WR_DATA, 0x191919D5},
+	{DSI_WR_DATA, 0x191919D5}, // Register: 0xD5.
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
@@ -541,7 +568,7 @@ static const cfg_op_t _display_deinit_config_auo[37] = {
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x2C39},     // MIPI_DSI_DCS_LONG_WRITE: 44 bytes.
-	{DSI_WR_DATA, 0x191919D6},
+	{DSI_WR_DATA, 0x191919D6}, // Register: 0xD6.
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_WR_DATA, 0x19191919},
@@ -554,13 +581,13 @@ static const cfg_op_t _display_deinit_config_auo[37] = {
 	{DSI_WR_DATA, 0x19191919},
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0xB39},      // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
-	{DSI_WR_DATA, 0x711148B1}, // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
-	// Set Power control. (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
+	{DSI_WR_DATA, 0x711148B1}, // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+	// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
 	{DSI_WR_DATA, 0x71143209},
-	{DSI_WR_DATA, 0x114D31},   // Set Power control. (Unknown).
+	{DSI_WR_DATA, 0x114D31},   // (Unknown).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-	{DSI_WR_DATA, 0x000000B9}, // Disable extension cmd.
+	{DSI_WR_DATA, 0x000000B9}, // MIPI_DCS_PRIV_SET_EXTC. Disable.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 

@@ -461,7 +461,11 @@
 #define  DSI_PAD_PREEMP_PD_CLK(x) (((x) & 0x3) << 12)
 
 #define DSI_PAD_CONTROL_4 0x52
+#define DSI_PAD_CONTROL_5_B01 0x53
+#define DSI_PAD_CONTROL_6_B01 0x54
+#define DSI_PAD_CONTROL_7_B01 0x55
 #define DSI_INIT_SEQ_DATA_15 0x5F
+#define DSI_INIT_SEQ_DATA_15_B01 0x62
 
 /*! MIPI registers. */
 #define MIPI_CAL_MIPI_CAL_CTRL          (0x00 / 0x4)
@@ -500,7 +504,7 @@
 
 /* Switch Panels:
  *
- * 6.2 panels":
+ * 6.2" panels for Icosa and Iowa skus:
  * [10] 81 [26]: JDI LPM062M326A
  * [10] 96 [09]: JDI LAM062M109A
  * [20] 93 [0F]: InnoLux P062CCA-AZ1 (Rev A1)
@@ -508,9 +512,25 @@
  * [30] 94 [0F]: AUO A062TAN01 (59.06A33.001)
  * [30] 95 [0F]: AUO A062TAN02 (59.06A33.002)
  *
- * 5.5" panels:
+ * 5.5" panels for Hoag skus:
  * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1)
  * [30] XX [10]: AUO A055TAN01 (59.05A30.001) [UNCONFIRMED ID]
+ */
+
+/* Display ID Decoding:
+ *
+ * byte0: Vendor
+ * byte1: Model
+ * byte2: Board
+ *
+ * Vendors:
+ * 10h: Japan Display Inc.
+ * 20h: InnoLux Corporation
+ * 30h: AU Optronics
+ *
+ * Boards, Panel Size:
+ * 0Fh: Icosa/Iowa, 6.2"
+ * 10h: Hoag,       5.5"
  */
 
 enum
