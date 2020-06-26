@@ -20,8 +20,8 @@
  * directly converting BCT config files (*.cfg) into C structure.
  */
 
-#ifndef __SOC_NVIDIA_TEGRA210_SDRAM_PARAM_H__
-#define __SOC_NVIDIA_TEGRA210_SDRAM_PARAM_H__
+#ifndef __TEGRA210_SDRAM_PARAM_H__
+#define __TEGRA210_SDRAM_PARAM_H__
 
 #include <utils/types.h>
 
@@ -57,7 +57,7 @@ enum
 /**
  * Defines the SDRAM parameter structure
  */
-struct sdram_params
+struct sdram_params_t210
 {
 
 	/* Specifies the type of memory device */
