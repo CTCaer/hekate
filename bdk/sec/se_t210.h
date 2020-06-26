@@ -203,6 +203,11 @@
 #define SE_CONTEXT_RSA_WORD_QUAD(x)		\
 		((x) << SE_CONTEXT_RSA_WORD_QUAD_SHIFT)
 
+#define SE_CTX_SAVE_AUTO            0x074
+#define CTX_SAVE_AUTO_ENABLE        BIT(0)
+#define CTX_SAVE_AUTO_LOCK          BIT(8)
+#define CTX_SAVE_AUTO_CURR_CNT_MASK (0x3FF << 16)
+
 #define SE_INT_ENABLE_REG_OFFSET	0x00c
 #define SE_INT_STATUS_REG_OFFSET	0x010
 #define INT_DISABLE		0
