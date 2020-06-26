@@ -534,20 +534,92 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	char *txt_buf = (char *)malloc(0x4000);
 
 	// Decode fuses.
+	char *sku;
+	char dram_man[32];
 	u32 odm4 = fuse_read_odm(4);
 	u8 dram_id = (odm4 >> 3) & 0x1F;
-	char dram_man[16] = {0};
-	switch (dram_id)
+	u32 hw_type3 = (odm4 & 0xF0000) >> 16;
+
+	switch (hw_type3)
 	{
 	case 0:
-	case 4:
-		s_printf(dram_man, "Samsung %s", (!dram_id) ? "4GB" : "6GB");
+		sku = "Icosa (Erista)";
 		break;
 	case 1:
-		strcpy(dram_man, "Hynix 4GB");
+		sku = "Iowa (Mariko)";
 		break;
 	case 2:
-		strcpy(dram_man, "Micron 4GB");
+		sku = "Hoag (Mariko)";
+		break;
+	case 4:
+		sku = "Calcio (Mariko)";
+		break;
+	default:
+		sku = "Unknown";
+		break;
+	}
+
+	switch (dram_id)
+	{
+	// LPDDR4 3200Mbps.
+	case LPDDR4_ICOSA_4GB_SAMSUNG_K4F6E304HB_MGCH:
+	case LPDDR4_COPPER_4GB_SAMSUNG_K4F6E304HB_MGCH:
+		strcpy(dram_man, "Samsung K4F6E304HB-MGCH 4GB");
+		break;
+	case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
+	case LPDDR4_COPPER_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
+		strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
+		break;
+	case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
+	case LPDDR4_COPPER_4GB_MICRON_MT53B512M32D2NP_062_WT:
+		strcpy(dram_man, "Micron MT53B512M32D2NP-062");
+		break;
+	case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
+		strcpy(dram_man, "Samsung K4FHE3D4HM-MGCH 6GB");
+		break;
+
+	// LPDDR4X 3733Mbps.
+	case LPDDR4X_IOWA_4GB_SAMSUNG_X1X2:
+		strcpy(dram_man, "Samsung X1X2 4GB");
+		break;
+	case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
+	case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
+		strcpy(dram_man, "Samsung K4U6E3S4AM-MGCJ 4GB");
+		break;
+	case LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
+	case LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
+		strcpy(dram_man, "Samsung K4UBE3D4AM-MGCJ 8GB");
+		break;
+	case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
+	case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
+		strcpy(dram_man, "Hynix H9HCNNNBKMMLHR-NME 4GB");
+		break;
+
+	case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
+	case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
+		strcpy(dram_man, "Micron MT53E512M32D2NP-046 4GB");
+		break;
+	// LPDDR4X 4266Mbps?
+	case LPDDR4X_IOWA_4GB_SAMSUNG_Y:
+		strcpy(dram_man, "Samsung Y 4GB");
+		break;
+	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_X:
+	case LPDDR4X_HOAG_4GB_SAMSUNG_1Y_X:
+	case LPDDR4X_SDS_4GB_SAMSUNG_1Y_X:
+		strcpy(dram_man, "Samsung 1y X 4GB");
+		break;
+	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_X:
+	case LPDDR4X_SDS_8GB_SAMSUNG_1Y_X:
+		strcpy(dram_man, "Samsung 1y X 8GB");
+		break;
+	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y:
+		strcpy(dram_man, "Samsung 1y Y 4GB");
+		break;
+	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
+		strcpy(dram_man, "Samsung 1y Y 8GB");
+		break;
+	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_A:
+		strcpy(dram_man, "Samsung 1y A 4GB");
 		break;
 	default:
 		strcpy(dram_man, "Unknown");
@@ -572,11 +644,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"\n%X - %s - %s\n%d - %s\n%d - %d\n%08X%08X%08X%08X\n%08X\n"
+		"\n%X - %s - %s\n%02d: %s\n%d - %d\n%08X%08X%08X%08X\n%08X\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
 		"ID: %02X, Major: A0%d, Minor: %d",
-		FUSE(FUSE_SKU_INFO), odm4 & 0x30000 ? "Mariko" : "Erista", (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
+		FUSE(FUSE_SKU_INFO), sku, (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6,
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
@@ -612,7 +684,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 ranks = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
 	u32 die_channels = ranks * ((channels & 1) + ((channels & 2) >> 1));
-	s_printf(txt_buf, "#00DDFF LPDDR4 SDRAM ##FF8000 Slot 0 | Slot 1:#\n#FF8000 Vendor:# ");
+	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", hw_type3 ? "LPDDR4X" : "LPDDR4");
 	switch (ram_vendor.rank0_ch0)
 	{
 	case 1:
