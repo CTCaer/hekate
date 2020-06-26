@@ -1103,16 +1103,14 @@ static void _patched_rcm_protection()
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	u32 chip_id = (APB_MISC(APB_MISC_GP_HIDREV) >> 4) & 0xF;
-
-	if (!h_cfg.rcm_patched || chip_id != GP_HIDREV_MAJOR_T210)
+	if (!h_cfg.rcm_patched || hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
 		return;
 
 	// Check if AutoRCM is enabled and protect from a permanent brick.
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 		return;
 
-	u8 *tempbuf = (u8 *)malloc(0x200);
+	u8 *buf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	u8 corr_mod_byte0;
@@ -1125,18 +1123,23 @@ static void _patched_rcm_protection()
 	for (i = 0; i < 4; i++)
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
-		sdmmc_storage_read(&storage, sect, 1, tempbuf);
+		sdmmc_storage_read(&storage, sect, 1, buf);
+
+		// Check if 2nd byte of modulus is correct.
+		if (buf[0x11] == 0x86)
+			goto out;
 
 		// If AutoRCM is enabled, disable it.
-		if (tempbuf[0x10] != corr_mod_byte0)
+		if (buf[0x10] != corr_mod_byte0)
 		{
-			tempbuf[0x10] = corr_mod_byte0;
+			buf[0x10] = corr_mod_byte0;
 
-			sdmmc_storage_write(&storage, sect, 1, tempbuf);
+			sdmmc_storage_write(&storage, sect, 1, buf);
 		}
 	}
 
-	free(tempbuf);
+out:
+	free(buf);
 	sdmmc_storage_end(&storage);
 }
 
@@ -1553,7 +1556,7 @@ void ipl_main()
 	// Load emuMMC configuration from SD.
 	emummc_load_cfg();
 
-	// Show library errors.
+	// Show exception, library errors and L4T kernel panics.
 	_show_errors();
 
 	// Load saved configuration and auto boot if enabled.

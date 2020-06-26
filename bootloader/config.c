@@ -23,6 +23,7 @@
 #include "gfx/tui.h"
 #include <libs/fatfs/ff.h>
 #include <soc/fuse.h>
+#include <soc/hw_init.h>
 #include <soc/t210.h>
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
@@ -49,6 +50,7 @@ void set_default_configuration()
 	h_cfg.aes_slots_new = false;
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 	h_cfg.emummc_force_disable = false;
+	h_cfg.t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;
 }
 
 int create_config_entry()

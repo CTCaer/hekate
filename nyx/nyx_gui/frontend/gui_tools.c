@@ -75,6 +75,9 @@ bool get_autorcm_status(bool change)
 	sdmmc_t sdmmc;
 	bool enabled = false;
 
+	if (h_cfg.t210b01)
+		return false;
+
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);

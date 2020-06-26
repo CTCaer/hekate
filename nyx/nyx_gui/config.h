@@ -32,6 +32,7 @@ typedef struct _hekate_config
 	u32 updater2p;
 	u32 bootprotect;
 	// Global temporary config.
+	bool t210b01;
 	bool se_keygen_done;
 	bool sept_run;
 	bool aes_slots_new;
