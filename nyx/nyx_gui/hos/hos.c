@@ -66,6 +66,15 @@ static const u8 master_keyseed_4xx_5xx_610[0x10] =
 static const u8 master_keyseed_620[0x10] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
+static const u8 master_kekseed_t210b01[][0x10] = {
+	{ 0x77, 0x60, 0x5A, 0xD2, 0xEE, 0x6E, 0xF8, 0x3C, 0x3F, 0x72, 0xE2, 0x59, 0x9D, 0xAC, 0x5E, 0x56 }, // 6.0.0.
+	{ 0x1E, 0x80, 0xB8, 0x17, 0x3E, 0xC0, 0x60, 0xAA, 0x11, 0xBE, 0x1A, 0x4A, 0xA6, 0x6F, 0xE4, 0xAE }, // 6.2.0.
+	{ 0x94, 0x08, 0x67, 0xBD, 0x0A, 0x00, 0x38, 0x84, 0x11, 0xD3, 0x1A, 0xDB, 0xDD, 0x8D, 0xF1, 0x8A }, // 7.0.0.
+	{ 0x5C, 0x24, 0xE3, 0xB8, 0xB4, 0xF7, 0x00, 0xC2, 0x3C, 0xFD, 0x0A, 0xCE, 0x13, 0xC3, 0xDC, 0x23 }, // 8.1.0.
+	{ 0x86, 0x69, 0xF0, 0x09, 0x87, 0xC8, 0x05, 0xAE, 0xB5, 0x7B, 0x48, 0x74, 0xDE, 0x62, 0xA6, 0x13 }, // 9.0.0.
+	{ 0x0E, 0x44, 0x0C, 0xED, 0xB4, 0x36, 0xC0, 0x3F, 0xAA, 0x1D, 0xAE, 0xBF, 0x62, 0xB1, 0x09, 0x82 }, // 9.1.0.
+};
+
 static const u8 console_keyseed[0x10] =
 	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
 
@@ -378,6 +387,21 @@ out:
 	}
 }
 
+int hos_keygen_t210b01(u32 kb)
+{
+	// Use SBK as Device key 4x unsealer and KEK for mkey in T210B01 units.
+	se_aes_unwrap_key(10, 14, console_keyseed_4xx_5xx);
+
+	// Derive master key.
+	se_aes_unwrap_key(7, 12, &master_kekseed_t210b01[kb - KB_FIRMWARE_VERSION_600]);
+	se_aes_unwrap_key(7, 7, master_keyseed_retail);
+
+	// Derive latest pkg2 key.
+	se_aes_unwrap_key(8, 7, package2_keyseed);
+
+	return 1;
+}
+
 int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 {
 	u8 tmp[0x30];
@@ -385,6 +409,9 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
 		return 0;
+
+	if (h_cfg.t210b01)
+		return hos_keygen_t210b01(kb);
 
 	if (kb <= KB_FIRMWARE_VERSION_600)
 		tsec_ctxt->size = 0xF00;
@@ -563,7 +590,7 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	{
 		hos_keygen(keyblob, kb, tsec_ctxt);
 
-		// New keygen was introduced in 4.0.0.
+		// All Mariko use new device keygen. New keygen was introduced in 4.0.0.
 		// We check unconditionally in order to support downgrades.
 		keygen_rev = fuse_read_odm_keygen_rev();
 
@@ -575,6 +602,10 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 			// Keygen revision uses bootloader version, which starts from 1.
 			keygen_rev -= (KB_FIRMWARE_VERSION_400 + 1);
+
+			// Use SBK as Device key 4x unsealer and KEK for mkey in T210B01 units.
+			if (h_cfg.t210b01)
+				mkey_slot = 7;
 
 			// Derive mkey 0.
 			do
@@ -624,7 +655,7 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		se_aes_crypt_block_ecb(2, 0, bis_keys + (4 * 0x10), bis_keyseed[4]);
 		se_aes_crypt_block_ecb(2, 0, bis_keys + (5 * 0x10), bis_keyseed[5]);
 
-		if (kb >= KB_FIRMWARE_VERSION_700)
+		if (!h_cfg.t210b01 && kb >= KB_FIRMWARE_VERSION_700)
 			_hos_validate_sept_mkey(kb);
 	}
 	else

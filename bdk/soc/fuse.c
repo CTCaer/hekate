@@ -62,7 +62,15 @@ u32 fuse_read_odm(u32 idx)
 
 u32 fuse_read_odm_keygen_rev()
 {
-	if ((fuse_read_odm(4) & 0x800) && fuse_read_odm(0) == 0x8E61ECAE && fuse_read_odm(1) == 0xF2BA3BB2)
+	bool has_new_keygen;
+
+	// Check if it has new keygen.
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
+		has_new_keygen = true;
+	else
+		has_new_keygen = (fuse_read_odm(4) & 0x800) && fuse_read_odm(0) == 0x8E61ECAE && fuse_read_odm(1) == 0xF2BA3BB2;
+
+	if (has_new_keygen)
 		return (fuse_read_odm(2) & 0x1F);
 
 	return 0;
