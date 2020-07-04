@@ -21,10 +21,13 @@
 
 #include "hos.h"
 #include "pkg1.h"
+#include "../config.h"
 #include <gfx_utils.h>
 #include <mem/heap.h>
 #include <sec/se.h>
 #include <utils/aarch64_util.h>
+
+extern hekate_config h_cfg;
 
 // Secmon package2 signature/hash checks patches for Erista.
 #define SM_100_ADR 0x4002B020 // Original: 0x40014020.
@@ -145,20 +148,39 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1)
 	gfx_printf("Found pkg1 ('%s').\n\n", build_date);
 
 	for (u32 i = 0; _pkg1_ids[i].id; i++)
-		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 12))
+		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 8))
 			return &_pkg1_ids[i];
 	return NULL;
 }
 
-void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
+int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 {
 	// Decrypt package1.
+	pk11_hdr_t *hdr;
 	u8 *pkg11 = pkg1 + id->pkg11_off;
 	u32 pkg11_size = *(u32 *)pkg11;
-	se_aes_crypt_ctr(11, pkg11 + 0x20, pkg11_size, pkg11 + 0x20, pkg11_size, pkg11 + 0x10);
+
+	if (!h_cfg.t210b01)
+	{
+		hdr = (pk11_hdr_t *)(pkg11 + 0x20);
+		se_aes_crypt_ctr(11, hdr, pkg11_size, hdr, pkg11_size, pkg11 + 0x10);
+	}
+	else
+	{
+		bl_hdr_t210b01_t *oem_hdr = (bl_hdr_t210b01_t *)pkg1;
+		pkg1 += sizeof(bl_hdr_t210b01_t);
+		hdr = (pk11_hdr_t *)(pkg1 + id->pkg11_off + 0x20);
+
+		// Use BEK for T210B01.
+		se_aes_iv_clear(13);
+		se_aes_crypt_cbc(13, 0, pkg1 + 0x20, oem_hdr->size - 0x20, pkg1 + 0x20, oem_hdr->size - 0x20);
+	}
+
+	// Return if header is valid.
+	return (hdr->magic == PKG1_MAGIC);
 }
 
-const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1)
+const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1)
 {
 	const u8 *sec_map;
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + id->pkg11_off + 0x20);
@@ -179,7 +201,11 @@ const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t
 	for (u32 i = 0; i < 3; i++)
 	{
 		if (sec_map[i] == PK11_SECTION_WB && wm_dst)
+		{
 			memcpy(wm_dst, pdata, sec_size[sec_map[i]]);
+			if (wb_sz)
+				*wb_sz = sec_size[sec_map[i]];
+		}
 		else if (sec_map[i] == PK11_SECTION_LD && ldr_dst)
 			memcpy(ldr_dst, pdata, sec_size[sec_map[i]]);
 		else if (sec_map[i] == PK11_SECTION_SM && sm_dst)

@@ -297,6 +297,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	u8 kb = 0;
 	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
+	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
 	u8 *pkg1 = (u8 *)malloc(BOOTLOADER_SIZE);
 	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
@@ -305,7 +306,7 @@ try_load:
 	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
 
 	char *build_date = malloc(32);
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
+	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
 
 	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
 	free(build_date);

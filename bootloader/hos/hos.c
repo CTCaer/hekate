@@ -591,6 +591,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
 	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
 
+	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
 	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
 	ctxt->pkg1 = (void *)malloc(BOOTLOADER_SIZE);
 
@@ -599,7 +600,7 @@ try_load:
 	emummc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 	emummc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 
-	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
+	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1 + pk1_offset);
 	if (!ctxt->pkg1_id)
 	{
 		_hos_crit_error("Unknown pkg1 version.");
@@ -832,12 +833,30 @@ int hos_launch(ini_sec_t *cfg)
 	// Decrypt and unpack package1 if we require parts of it.
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
-		if (kb <= KB_FIRMWARE_VERSION_600)
-			pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
-
-		if (kb <= KB_FIRMWARE_VERSION_620 && !emummc_enabled)
+		// Decrypt PK1 or PK11.
+		if (kb <= KB_FIRMWARE_VERSION_600 || h_cfg.t210b01)
 		{
-			pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
+			if (!pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1))
+			{
+				_hos_crit_error("Pkg1 decryption failed!");
+				if (h_cfg.t210b01)
+					EPRINTF("Is BEK missing?");
+				goto error;
+			}
+		}
+
+		// Unpack PK11.
+		if (h_cfg.t210b01 || (kb <= KB_FIRMWARE_VERSION_620 && !emummc_enabled))
+		{
+			// Skip T210B01 OEM header.
+			u32 pk1_offset = 0;
+			if (h_cfg.t210b01)
+				pk1_offset = sizeof(bl_hdr_t210b01_t);
+
+			pkg1_unpack((void *)warmboot_base, &ctxt.warmboot_size,
+				!exo_new ? (void *)ctxt.pkg1_id->secmon_base : NULL, NULL,
+				ctxt.pkg1_id, ctxt.pkg1 + pk1_offset);
+
 			gfx_puts("Decrypted & unpacked pkg1\n");
 		}
 		else

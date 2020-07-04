@@ -129,7 +129,7 @@ void dump_packages12()
 
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
-		const u8 *sec_map = pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+		const u8 *sec_map = pkg1_unpack(warmboot, NULL, secmon, loader, pkg1_id, pkg1);
 
 		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 

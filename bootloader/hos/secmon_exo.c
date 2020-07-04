@@ -158,7 +158,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 	switch (kb)
 	{
 	case KB_FIRMWARE_VERSION_100_200:
-		if (!strcmp(ctxt->pkg1_id->id, "20161121183008"))
+		if (!memcmp(ctxt->pkg1_id->id, "20161121183008", 8))
 			exoFwNo = 1;
 		else
 			exoFwNo = 2;
@@ -168,9 +168,9 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		break;
 	default:
 		exoFwNo = kb + 1;
-		if (!strcmp(ctxt->pkg1_id->id, "20190314172056") || (kb >= KB_FIRMWARE_VERSION_810))
+		if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8) || (kb >= KB_FIRMWARE_VERSION_810))
 			exoFwNo++; // ATM_TARGET_FW_800/810/900/910.
-		if (!strcmp(ctxt->pkg1_id->id, "20200303104606"))
+		if (!memcmp(ctxt->pkg1_id->id, "20200303104606", 8))
 			exoFwNo++; // ATM_TARGET_FW_1000.
 		break;
 	}

@@ -19,6 +19,8 @@
 
 #include <utils/types.h>
 
+#define PKG1_MAGIC 0x31314B50
+
 #define PK11_SECTION_WB 0
 #define PK11_SECTION_LD 1
 #define PK11_SECTION_SM 2
@@ -34,6 +36,19 @@ typedef struct _patch_t
 		__VA_ARGS__, \
 		{ 0xFFFFFFFF, 0xFFFFFFFF } \
 	}
+
+typedef struct _bl_hdr_t210b01_t
+{
+	u8  aes_mac[0x10];
+	u8  rsa_sig[0x100];
+	u8  salt[0x20];
+	u8  sha256[0x20];
+	u32 version;
+	u32 size;
+	u32 load_addr;
+	u32 entrypoint;
+	u8  rsvd[0x10];
+} bl_hdr_t210b01_t;
 
 typedef struct _pkg1_id_t
 {
@@ -61,7 +76,7 @@ typedef struct _pk11_hdr_t
 
 const pkg1_id_t *pkg1_get_latest();
 const pkg1_id_t *pkg1_identify(u8 *pkg1);
-void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
-const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
+int  pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
+const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
 
 #endif
