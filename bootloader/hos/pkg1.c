@@ -220,6 +220,18 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 	return sec_map;
 }
 
+
+void pkg1_warmboot_patch(void *hos_ctxt)
+{
+	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
+
+	// Patch warmboot on T210 to allow downgrading.
+	patch_t *warmboot_patchset = ctxt->pkg1_id->warmboot_patchset;
+	gfx_printf("%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
+		*(vu32 *)(ctxt->pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
+}
+
 static void _warmboot_filename(char *out, u32 fuses)
 {
 	if (fuses < 16)

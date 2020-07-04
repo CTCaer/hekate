@@ -880,11 +880,8 @@ int hos_launch(ini_sec_t *cfg)
 			_hos_crit_error("No warmboot provided!");
 			goto error;
 		}
-		// Else we patch it to allow downgrading.
-		patch_t *warmboot_patchset = ctxt.pkg1_id->warmboot_patchset;
-		gfx_printf("%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
-		for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
-			*(vu32 *)(ctxt.pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
+
+		pkg1_warmboot_patch((void *)&ctxt);
 	}
 
 	// Replace 'SecureMonitor' if requested or patch Pkg2 checks if needed.
