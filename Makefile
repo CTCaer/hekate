@@ -78,14 +78,23 @@ LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defs
 
 MODULEDIRS := $(wildcard modules/*)
 NYXDIR := $(wildcard nyx)
+LDRDIR := $(wildcard loader)
+TOOLSLZ := $(wildcard tools/lz)
+TOOLSB2C := $(wildcard tools/bin2c)
+TOOLS := $(TOOLSLZ) $(TOOLSB2C)
 
 ################################################################################
 
-.PHONY: all clean $(MODULEDIRS) $(NYXDIR)
+.PHONY: all clean $(MODULEDIRS) $(NYXDIR) $(LDRDIR) $(TOOLS)
 
-all: $(TARGET).bin
+all: $(TARGET).bin $(LDRDIR)
 	@printf ICTC49 >> $(OUTPUTDIR)/$(TARGET).bin
 	@echo "--------------------------------------"
+	@echo -n "Uncompr size: "
+	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET)_unc.bin))
+	@echo $(BIN_SIZE)" Bytes"
+	@echo "Uncompr Max:  140288 Bytes + 3 KiB BSS"
+	@if [ ${BIN_SIZE} -gt 140288 ]; then echo "\e[1;33mUncompr size exceeds limit!\e[0m"; fi
 	@echo -n "Payload size: "
 	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET).bin))
 	@echo $(BIN_SIZE)" Bytes"
@@ -104,7 +113,21 @@ $(MODULEDIRS):
 $(NYXDIR):
 	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
-$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR)
+$(LDRDIR): $(TARGET).bin
+	@$(TOOLSLZ)/lz77 $(OUTPUTDIR)/$(TARGET).bin
+	mv $(OUTPUTDIR)/$(TARGET).bin $(OUTPUTDIR)/$(TARGET)_unc.bin
+	@mv $(OUTPUTDIR)/$(TARGET).bin.00.lz payload_00
+	@mv $(OUTPUTDIR)/$(TARGET).bin.01.lz payload_01
+	@$(TOOLSB2C)/bin2c payload_00 > $(LDRDIR)/payload_00.h
+	@$(TOOLSB2C)/bin2c payload_01 > $(LDRDIR)/payload_01.h
+	@rm payload_00
+	@rm payload_01
+	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS) PAYLOAD_NAME=$(TARGET)
+
+$(TOOLS):
+	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+
+$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR) $(TOOLS)
 	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
 
 $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
