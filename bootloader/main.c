@@ -1531,7 +1531,7 @@ void ipl_main()
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
-	if (minerva_init())
+	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
 	display_init();

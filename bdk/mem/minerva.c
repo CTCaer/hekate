@@ -23,6 +23,7 @@
 #include <ianos/ianos.h>
 #include <soc/clock.h>
 #include <soc/fuse.h>
+#include <soc/hw_init.h>
 #include <soc/t210.h>
 #include <utils/util.h>
 
@@ -36,6 +37,10 @@ u32 minerva_init()
 
 	minerva_cfg = NULL;
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+
+	//!TODO: Not supported on T210B01 yet.
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
+		return 0;
 
 #ifdef NYX
 	// Set table to nyx storage.
