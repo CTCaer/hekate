@@ -115,7 +115,9 @@ u32 fuse_read(u32 addr)
 
 void fuse_read_array(u32 *words)
 {
-	for (u32 i = 0; i < 192; i++)
+	u32 array_size = (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01) ? 256 : 192;
+
+	for (u32 i = 0; i < array_size; i++)
 		words[i] = fuse_read(i);
 }
 

@@ -190,17 +190,31 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
+	const u32 fuse_array_size_t210    = 192 * sizeof(u32);
+	const u32 fuse_array_size_t210b01 = 256 * sizeof(u32);
+
 	int error = !sd_mount();
 	if (!error)
 	{
-		char path[64];
-		emmcsn_path_impl(path, "/dumps", "fuse_cached.bin", NULL);
-		error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
+		char path[128];
+		if (!h_cfg.t210b01)
+		{
+			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210.bin", NULL);
+			error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
+		}
+		else
+		{
+			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01.bin", NULL);
+			error = sd_save_to_file((u8 *)0x7000F898, 0x368, path);
+		}
 
-		u32 words[192];
+		u32 words[fuse_array_size_t210b01 / sizeof(u32)];
 		fuse_read_array(words);
-		emmcsn_path_impl(path, "/dumps", "fuse_array_raw.bin", NULL);
-		int res = sd_save_to_file((u8 *)words, sizeof(words), path);
+		if (!h_cfg.t210b01)
+			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
+		else
+			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210b01.bin", NULL);
+		int res = sd_save_to_file((u8 *)words, h_cfg.t210b01 ? fuse_array_size_t210b01 : fuse_array_size_t210, path);
 		if (!error)
 			error = res;
 
