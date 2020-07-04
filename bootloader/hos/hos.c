@@ -866,10 +866,13 @@ int hos_launch(ini_sec_t *cfg)
 		}
 	}
 
+	// Configure and manage Warmboot binary.
+	pkg1_warmboot_config(&ctxt, kb, warmboot_base);
+
 	// Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
 		memcpy((void *)warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
-	else
+	else if (!h_cfg.t210b01)
 	{
 		// Patch warmboot on T210 to allow downgrading.
 		if (kb >= KB_FIRMWARE_VERSION_700)
@@ -883,9 +886,6 @@ int hos_launch(ini_sec_t *cfg)
 		for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
 			*(vu32 *)(ctxt.pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
 	}
-	// Set warmboot address in PMC if required.
-	if (kb <= KB_FIRMWARE_VERSION_301)
-		PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
 	// Replace 'SecureMonitor' if requested or patch Pkg2 checks if needed.
 	if (ctxt.secmon)
@@ -985,7 +985,6 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Merge extra KIP1s into loaded ones.
-	gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
@@ -1004,6 +1003,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Patch kip1s in memory if needed.
+	gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
@@ -1033,12 +1033,6 @@ int hos_launch(ini_sec_t *cfg)
 	// Set initial mailbox values.
 	int bootStateDramPkg2 = 0;
 	int bootStatePkg2Continue = 0;
-
-	// Set warmboot PA address ids for 3.0.0 - 3.0.2.
-	if (kb == KB_FIRMWARE_VERSION_300)
-		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
-	else if (kb == KB_FIRMWARE_VERSION_301)
-		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 
 	// Clear pkg1/pkg2 keys.
 	se_aes_key_clear(8);

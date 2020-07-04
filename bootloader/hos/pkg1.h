@@ -78,5 +78,6 @@ const pkg1_id_t *pkg1_get_latest();
 const pkg1_id_t *pkg1_identify(u8 *pkg1);
 int  pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
 const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
+void pkg1_warmboot_config(void *hos_ctxt, u32 kb, u32 warmboot_base);
 
 #endif

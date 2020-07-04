@@ -24,7 +24,11 @@
 #include "../config.h"
 #include <gfx_utils.h>
 #include <mem/heap.h>
+#include <soc/fuse.h>
 #include <sec/se.h>
+#include <soc/pmc.h>
+#include <soc/t210.h>
+#include <storage/nx_sd.h>
 #include <utils/aarch64_util.h>
 
 extern hekate_config h_cfg;
@@ -214,4 +218,94 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 	}
 
 	return sec_map;
+}
+
+static void _warmboot_filename(char *out, u32 fuses)
+{
+	if (fuses < 16)
+	{
+		out[19] = '0';
+		itoa(fuses, &out[19 + 1], 10);
+	}
+	else
+		itoa(fuses, &out[19], 10);
+	strcat(out, ".bin");
+}
+
+void pkg1_warmboot_config(void *hos_ctxt, u32 kb, u32 warmboot_base)
+{
+	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
+
+	// Set warmboot address in PMC if required.
+	if (kb <= KB_FIRMWARE_VERSION_301)
+		PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
+
+	if (h_cfg.t210b01)
+	{
+		u32 pa_id;
+		u32 fuses_fw = kb + 2;
+		u32 fuses_max = KB_FIRMWARE_VERSION_MAX + 3;
+		u8  burnt_fuses = fuse_count_burnt(fuse_read_odm(7));
+
+		// Add one more fuse for high versions.
+		if (kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8))
+			fuses_fw++;
+
+		// Save current warmboot in storage cache and check if another one is needed.
+		if (!ctxt->warmboot)
+		{
+			char path[128];
+			f_mkdir("warmboot_mariko");
+			strcpy(path, "warmboot_mariko/wb_");
+			_warmboot_filename(path, fuses_fw);
+			if (f_stat(path, NULL))
+				sd_save_to_file((void *)warmboot_base, ctxt->warmboot_size, path);
+
+			// Load warmboot fw from storage if not matched.
+			if (burnt_fuses > fuses_fw)
+			{
+				u32 tmp_fuses = burnt_fuses;
+				while (true)
+				{
+					_warmboot_filename(path, burnt_fuses);
+					if (!f_stat(path, NULL))
+					{
+						ctxt->warmboot = sd_file_read(path, &ctxt->warmboot_size);
+						burnt_fuses = tmp_fuses;
+						break;
+					}
+					if (tmp_fuses >= fuses_max)
+						break;
+					tmp_fuses++;
+				}
+			}
+		}
+
+		// Configure Warmboot parameters.
+		switch (burnt_fuses)
+		{
+		case KB_FIRMWARE_VERSION_600 + 2: // 7 fuses burnt.
+			pa_id = 0x87;
+			break;
+		case KB_FIRMWARE_VERSION_620 + 2: // 8 fuses burnt. 0x21 raise.
+			pa_id = 0xA8;
+			break;
+		default: // From 7.0.0 and up PA id raises by 0x21 with a static base.
+			pa_id = 0x129;
+			pa_id += 0x21 * (burnt_fuses - KB_FIRMWARE_VERSION_700 - 2);
+			break;
+		}
+
+		// Set Warmboot Physical Address ID and lock SECURE_SCRATCH32 register.
+		PMC(APBDEV_PMC_SECURE_SCRATCH32) = pa_id;
+		PMC(APBDEV_PMC_SEC_DISABLE3) |= BIT(16);
+	}
+	else
+	{
+		// Set Warmboot Physical Address ID for 3.0.0 - 3.0.2.
+		if (kb == KB_FIRMWARE_VERSION_300)
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
+		else if (kb == KB_FIRMWARE_VERSION_301)
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
+	}
 }
