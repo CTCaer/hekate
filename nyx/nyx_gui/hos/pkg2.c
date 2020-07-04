@@ -159,7 +159,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	if ((kb >= KB_FIRMWARE_VERSION_810) && (kb < KB_FIRMWARE_VERSION_MAX))
 	{
 		u8 tmp_mkey[0x10];
-		u8 decr_slot = !h_cfg.aes_slots_new ? 12 : 13; // Sept mkey.
+		u8 decr_slot = !h_cfg.t210b01 ? (!h_cfg.aes_slots_new ? 12 : 13) : 7; // Sept mkey or T210B01 mkey.
 		u8 mkey_seeds_cnt = sizeof(mkey_vector_8xx) / 0x10;
 		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
 		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (KB_FIRMWARE_VERSION_MAX - kb);
