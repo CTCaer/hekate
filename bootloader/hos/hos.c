@@ -887,14 +887,8 @@ int hos_launch(ini_sec_t *cfg)
 	// Replace 'SecureMonitor' if requested or patch Pkg2 checks if needed.
 	if (ctxt.secmon)
 		memcpy((void *)secmon_base, ctxt.secmon, ctxt.secmon_size);
-	else if (ctxt.pkg1_id->secmon_patchset)
-	{
-		// Else we patch it to allow for an unsigned package2 and patched kernel.
-		patch_t *secmon_patchset = ctxt.pkg1_id->secmon_patchset;
-		gfx_printf("%kPatching Secure Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
-		for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
-			*(vu32 *)(ctxt.pkg1_id->secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
-	}
+	else
+		pkg1_secmon_patch((void *)&ctxt, secmon_base, h_cfg.t210b01);
 
 	gfx_puts("Loaded warmboot and secmon\n");
 

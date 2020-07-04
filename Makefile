@@ -52,7 +52,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Libraries.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	lz.o blz.o \
+	lz.o lz4.o blz.o \
 	diskio.o ff.o ffunicode.o ffsystem.o \
 	elfload.o elfreloc_arm.o \
 )

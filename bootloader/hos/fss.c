@@ -114,6 +114,9 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 	// Skip if stock and Exosphere and warmboot are not needed.
 	if (!sept_ctxt)
 	{
+		bool pkg1_old = ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620;
+		bool emummc_disabled = !emu_cfg.enabled || h_cfg.emummc_force_disable;
+
 		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
 		{
 			if (!strcmp("stock", kv->key))
@@ -121,8 +124,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 					stock = true;
 		}
 
-		bool emummc_disabled = !emu_cfg.enabled || h_cfg.emummc_force_disable;
-		if (stock && ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620 && emummc_disabled)
+		if (stock && emummc_disabled && (pkg1_old || h_cfg.t210b01))
 			return 1;
 	}
 
@@ -196,6 +198,8 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 					break;
 
 				case CNT_TYPE_WBT:
+					if (h_cfg.t210b01)
+						continue;
 					ctxt->warmboot_size = curr_fss_cnt[i].size;
 					ctxt->warmboot = content;
 					break;

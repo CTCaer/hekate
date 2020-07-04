@@ -18,11 +18,13 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "hos.h"
 #include "pkg1.h"
 #include "../config.h"
 #include <gfx_utils.h>
+#include <libs/compr/lz4.h>
 #include <mem/heap.h>
 #include <soc/fuse.h>
 #include <sec/se.h>
@@ -87,6 +89,37 @@ PATCHSET_DEF(_secmon_620_patchset,
 	// { 0x2AC8 + 0x3868, 0x94000D89 }, //uart_configure.
 	// { 0x2AC8 + 0x3A6C, _NOP() }      // warmboot UARTA cfg.
 );
+
+// Secmon patches for Mariko.
+#define TZRAM_PROG_ADDR               (TZRAM_BASE + 0x800)
+#define TZRAM_COMPR_PROG_OFF          0xE04
+#define TZRAM_PROG_PK2_SIG_PATCH      (TZRAM_PROG_ADDR + 0xC10)
+#define TZRAM_PROG_PK2_SIG_PATCH_1000 (TZRAM_PROG_ADDR + 0xD70)
+PATCHSET_DEF(_secmon_6_mariko_patchset,
+	// Patch package2 decryption and signature/hash checks.
+	{ 0xDC8 + 0xE94, _NOP() }
+);
+
+PATCHSET_DEF(_secmon_620_mariko_patchset,
+	// Patch package2 decryption and signature/hash checks.
+	{ 0xDC8 + 0xC78, _NOP() }
+);
+
+// From 7.0.0 and above secmon is compressed.
+PATCHSET_DEF(_secmon_7_mariko_patchset,
+	// Patch out decompression of program payload.
+	{ 0x82C, _NOP() }
+);
+
+const u16 _secmon_mariko_prog_comp_size[] = {
+	0x6B03, // 7.0.0.  Patch offset: 0xC10.
+	0x6B16, // 7.0.1.  Patch offset: 0xC10.
+	0x6B23, // 8.0.0.  Patch offset: 0xC10.
+	0x6B84, // 8.1.0.  Patch offset: 0xC10.
+	0x6C90, // 9.0.0.  Patch offset: 0xC10.
+	0x6CE5, // 9.1.0.  Patch offset: 0xC10.
+	0x6EE9, // 10.0.0. Patch offset: 0xD70.
+};
 
 // Erista fuse check warmboot patches.
 #define _NOPv7() 0xE320F000
@@ -220,6 +253,55 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 	return sec_map;
 }
 
+void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
+{
+	patch_t *secmon_patchset;
+	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
+
+	// Patch Secmon to allow for an unsigned package2 and patched kernel.
+	if (!t210b01 && ctxt->pkg1_id->secmon_patchset)
+	{
+		// For T210 till 6.2.0 the patching is used as is, because of no compression.
+		secmon_patchset = ctxt->pkg1_id->secmon_patchset;
+	}
+	else if (t210b01)
+	{
+		// For T210B01 we patch 6.X.X as is. Otherwise we decompress the program payload.
+		if (ctxt->pkg1_id->kb == KB_FIRMWARE_VERSION_600)
+			secmon_patchset = _secmon_6_mariko_patchset;
+		else if (ctxt->pkg1_id->kb == KB_FIRMWARE_VERSION_620)
+			secmon_patchset = _secmon_620_mariko_patchset;
+		else
+		{
+			// Patch uncompress of program payload clear TZRAM.
+			secmon_patchset = _secmon_7_mariko_patchset;
+			memset((void *)TZRAM_PROG_ADDR, 0, 0x38800);
+
+			// Get size of compressed program payload and set patch offset.
+			u32 idx = ctxt->pkg1_id->kb - KB_FIRMWARE_VERSION_700;
+			u32 patch_offset = TZRAM_PROG_PK2_SIG_PATCH;
+			if (ctxt->pkg1_id->kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8))
+			{
+				idx++;
+				patch_offset = TZRAM_PROG_PK2_SIG_PATCH_1000;
+			}
+
+			// Uncompress directly to TZRAM.
+			LZ4_decompress_fast((const char*)(secmon_base + TZRAM_COMPR_PROG_OFF),
+				(char *)TZRAM_PROG_ADDR, _secmon_mariko_prog_comp_size[idx]);
+
+			// Patch package2 signature/hash checks.
+			*(vu32 *)patch_offset = _NOP();
+		}
+	}
+	else
+		return;
+
+	// Patch Secmon.
+	gfx_printf("%kPatching Secure Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
+		*(vu32 *)(secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
+}
 
 void pkg1_warmboot_patch(void *hos_ctxt)
 {
