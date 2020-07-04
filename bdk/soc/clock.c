@@ -16,6 +16,7 @@
  */
 
 #include <soc/clock.h>
+#include <soc/hw_init.h>
 #include <soc/t210.h>
 #include <storage/sdmmc.h>
 #include <utils/util.h>
@@ -154,6 +155,10 @@ void clock_disable_i2c(u32 idx)
 void clock_enable_se()
 {
 	clock_enable(&_clock_se);
+
+	// Lock clock to always enabled if T210B01.
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SE) |= 0x100;
 }
 
 void clock_enable_tzram()
