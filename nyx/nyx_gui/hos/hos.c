@@ -162,6 +162,10 @@ bool hos_eks_rw_try(u8 *buf, bool write)
 
 void hos_eks_get()
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	// Check if EKS already found and parsed.
 	if (!h_cfg.eks)
 	{
@@ -189,6 +193,10 @@ out:
 
 void hos_eks_save(u32 kb)
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	if (kb >= KB_FIRMWARE_VERSION_700)
 	{
 		u32 key_idx = 0;
@@ -267,6 +275,10 @@ out:
 
 void hos_eks_clear(u32 kb)
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
 	{
 		u32 key_idx = 0;
@@ -305,6 +317,10 @@ out:
 
 void hos_eks_bis_save()
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	bool new_eks = false;
 	if (!h_cfg.eks)
 	{
@@ -361,6 +377,10 @@ out:
 
 void hos_eks_bis_clear()
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	// Check if BIS keys are enabled.
 	if (h_cfg.eks && h_cfg.eks->enabled_bis)
 	{
@@ -692,6 +712,10 @@ void hos_bis_keys_clear()
 	// Clear all aes keyslots.
 	for (u32 i = 0; i < 6; i++)
 		se_aes_key_clear(i);
+
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
 
 	// Set SBK back.
 	if (!h_cfg.sbk_set)

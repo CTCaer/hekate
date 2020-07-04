@@ -217,6 +217,10 @@ bool hos_eks_rw_try(u8 *buf, bool write)
 
 void hos_eks_get()
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	// Check if EKS already found and parsed.
 	if (!h_cfg.eks)
 	{
@@ -244,6 +248,10 @@ out:
 
 void hos_eks_save(u32 kb)
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	if (kb >= KB_FIRMWARE_VERSION_700)
 	{
 		u32 key_idx = 0;
@@ -322,6 +330,10 @@ out:
 
 void hos_eks_clear(u32 kb)
 {
+	// Check if Erista based unit.
+	if (h_cfg.t210b01)
+		return;
+
 	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
 	{
 		u32 key_idx = 0;
