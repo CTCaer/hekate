@@ -70,6 +70,12 @@ extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
 
 void check_sept()
 {
+	if (h_cfg.t210b01)
+	{
+		h_cfg.sept_run = true;
+		return;
+	}
+
 	hos_eks_get();
 
 	// Check if non-hekate payload is used for sept and restore it.
