@@ -328,6 +328,10 @@ try_load:
 
 	kb = pkg1_id->kb;
 
+	// Skip if Mariko.
+	if (h_cfg.t210b01)
+		goto t210b01;
+
 	tsec_ctxt_t tsec_ctxt;
 	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
 	tsec_ctxt.pkg1 = pkg1;
@@ -358,6 +362,7 @@ try_load:
 		}
 	}
 
+t210b01:;
 	// Read the correct keyblob.
 	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
 	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);

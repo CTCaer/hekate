@@ -1113,9 +1113,10 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
 
 	char *build_date = malloc(32);
+	u32 pk1_offset =  h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
 	sdmmc_storage_read(&storage, BOOTLOADER_MAIN_OFFSET / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
 
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
+	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
 
 	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n\n", build_date);
 	free(build_date);
@@ -1151,7 +1152,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		hos_eks_get();
 
-		if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
+		if (!h_cfg.t210b01 && kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 		{
 			u32 key_idx = 0;
 			if (kb >= KB_FIRMWARE_VERSION_810)
@@ -1184,14 +1185,21 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		free(keyblob);
 	}
 
-	if (kb <= KB_FIRMWARE_VERSION_600)
-		pkg1_decrypt(pkg1_id, pkg1);
-
-	if (kb <= KB_FIRMWARE_VERSION_620)
+	if (h_cfg.t210b01 || kb <= KB_FIRMWARE_VERSION_600)
 	{
-		const u8 *sec_map = pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+		if (!pkg1_decrypt(pkg1_id, pkg1))
+		{
+			strcat(txt_buf, "#FFDD00 Pkg1 decryption failed!#\n");
+			lv_label_set_text(lb_desc, txt_buf);
+			goto out_free;
+		}
+	}
 
-		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
+	if (h_cfg.t210b01 || kb <= KB_FIRMWARE_VERSION_620)
+	{
+		const u8 *sec_map = pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
+
+		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pk1_offset + pkg1_id->pkg11_off + 0x20);
 
 		// Use correct sizes.
 		u32 sec_size[3] = { hdr_pk11->wb_size, hdr_pk11->ldr_size, hdr_pk11->sm_size };
@@ -1245,6 +1253,16 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
 		if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 			goto out_free;
+		// If T210B01, save a copy of decrypted warmboot binary also.
+		if (h_cfg.t210b01)
+		{
+
+			se_aes_iv_clear(13);
+			se_aes_crypt_cbc(13, 0, warmboot + 0x330, hdr_pk11->wb_size - 0x330, warmboot + 0x330, hdr_pk11->wb_size - 0x330);
+			emmcsn_path_impl(path, "/pkg1", "warmboot_dec.bin", &storage);
+			if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
+				goto out_free;
+		}
 		strcat(txt_buf, "Warmboot dumped to warmboot.bin\n\n");
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
