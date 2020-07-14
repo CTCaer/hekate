@@ -1081,12 +1081,12 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char path[128];
 
+	u8 kb = 0;
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
 	u8 *warmboot = (u8 *)calloc(1, 0x40000);
 	u8 *secmon = (u8 *)calloc(1, 0x40000);
 	u8 *loader = (u8 *)calloc(1, 0x40000);
 	u8 *pkg2 = NULL;
-	u8 kb = 0;
 
 	char *txt_buf  = (char *)malloc(0x4000);
 
@@ -1131,8 +1131,6 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		goto out_free;
 	}
-
-	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 
 	kb = pkg1_id->kb;
 
@@ -1183,7 +1181,21 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
-		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+		const u8 *sec_map = pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+
+		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
+
+		// Use correct sizes.
+		u32 sec_size[3] = { hdr_pk11->wb_size, hdr_pk11->ldr_size, hdr_pk11->sm_size };
+		for (u32 i = 0; i < 3; i++)
+		{
+			if (sec_map[i] == PK11_SECTION_WB)
+				hdr_pk11->wb_size = sec_size[i];
+			else if (sec_map[i] == PK11_SECTION_LD)
+				hdr_pk11->ldr_size = sec_size[i];
+			else if (sec_map[i] == PK11_SECTION_SM)
+				hdr_pk11->sm_size = sec_size[i];
+		}
 
 		// Display info.
 		s_printf(txt_buf + strlen(txt_buf),
@@ -1192,7 +1204,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 			"#C7EA46 Secure monitor size: #0x%05X\n"
 			"#C7EA46 Warmboot addr:       #0x%05X\n"
 			"#C7EA46 Warmboot size:       #0x%05X\n\n",
-			hdr->ldr_size, pkg1_id->secmon_base, hdr->sm_size, pkg1_id->warmboot_base, hdr->wb_size);
+			hdr_pk11->ldr_size, pkg1_id->secmon_base, hdr_pk11->sm_size, pkg1_id->warmboot_base, hdr_pk11->wb_size);
 
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
@@ -1207,7 +1219,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Dump nxbootloader.
 		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
-		if (sd_save_to_file(loader, hdr->ldr_size, path))
+		if (sd_save_to_file(loader, hdr_pk11->ldr_size, path))
 			goto out_free;
 		strcat(txt_buf, "NX Bootloader dumped to nxloader.bin\n");
 		lv_label_set_text(lb_desc, txt_buf);
@@ -1215,7 +1227,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Dump secmon.
 		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
-		if (sd_save_to_file(secmon, hdr->sm_size, path))
+		if (sd_save_to_file(secmon, hdr_pk11->sm_size, path))
 			goto out_free;
 		strcat(txt_buf, "Secure Monitor dumped to secmon.bin\n");
 		lv_label_set_text(lb_desc, txt_buf);
@@ -1223,7 +1235,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Dump warmboot.
 		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
-		if (sd_save_to_file(warmboot, hdr->wb_size, path))
+		if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 			goto out_free;
 		strcat(txt_buf, "Warmboot dumped to warmboot.bin\n\n");
 		lv_label_set_text(lb_desc, txt_buf);

@@ -19,6 +19,10 @@
 
 #include <utils/types.h>
 
+#define PK11_SECTION_WB 0
+#define PK11_SECTION_LD 1
+#define PK11_SECTION_SM 2
+
 typedef struct _pkg1_id_t
 {
 	const char *id;
@@ -43,6 +47,6 @@ typedef struct _pk11_hdr_t
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date);
 void pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
-void pkg1_unpack(void *warmboot_dst, void *secmon_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
+const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
 
 #endif

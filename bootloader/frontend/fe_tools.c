@@ -88,7 +88,6 @@ void dump_packages12()
 
 		goto out_free;
 	}
-	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
 
 	kb = pkg1_id->kb;
 
@@ -130,16 +129,30 @@ void dump_packages12()
 
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
-		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+		const u8 *sec_map = pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1);
+
+		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pkg1_id->pkg11_off + 0x20);
+
+		// Use correct sizes.
+		u32 sec_size[3] = { hdr_pk11->wb_size, hdr_pk11->ldr_size, hdr_pk11->sm_size };
+		for (u32 i = 0; i < 3; i++)
+		{
+			if (sec_map[i] == PK11_SECTION_WB)
+				hdr_pk11->wb_size = sec_size[i];
+			else if (sec_map[i] == PK11_SECTION_LD)
+				hdr_pk11->ldr_size = sec_size[i];
+			else if (sec_map[i] == PK11_SECTION_SM)
+				hdr_pk11->sm_size = sec_size[i];
+		}
 
 		// Display info.
-		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->ldr_size);
+		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->ldr_size);
 
 		gfx_printf("%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
-		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->sm_size);
+		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->sm_size);
 
 		gfx_printf("%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
-		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr->wb_size);
+		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->wb_size);
 
 		// Dump package1.1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
@@ -149,19 +162,19 @@ void dump_packages12()
 
 		// Dump nxbootloader.
 		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
-		if (sd_save_to_file(loader, hdr->ldr_size, path))
+		if (sd_save_to_file(loader, hdr_pk11->ldr_size, path))
 			goto out_free;
 		gfx_puts("NX Bootloader dumped to nxloader.bin\n");
 
 		// Dump secmon.
 		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
-		if (sd_save_to_file(secmon, hdr->sm_size, path))
+		if (sd_save_to_file(secmon, hdr_pk11->sm_size, path))
 			goto out_free;
 		gfx_puts("Secure Monitor dumped to secmon.bin\n");
 
 		// Dump warmboot.
 		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
-		if (sd_save_to_file(warmboot, hdr->wb_size, path))
+		if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 			goto out_free;
 		gfx_puts("Warmboot dumped to warmboot.bin\n\n\n");
 	}
