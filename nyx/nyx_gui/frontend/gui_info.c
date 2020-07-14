@@ -81,6 +81,32 @@ static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 	return LV_RES_OK;
 }
 
+static lv_res_t _cal0_dump_window_action(lv_obj_t *btns, const char * txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	mbox_action(btns, txt);
+
+	if (btn_idx == 1)
+	{
+		int error = !sd_mount();
+
+		if (!error)
+		{
+			char path[64];
+			emmcsn_path_impl(path, "/dumps", "cal0.bin", NULL);
+			error = sd_save_to_file((u8 *)cal0_buf, 0x8000, path);
+
+			sd_unmount();
+		}
+
+		_create_window_dump_done(error, "cal0.bin");
+	}
+
+	return LV_RES_INV;
+}
+
+
 static lv_res_t _battery_dump_window_action(lv_obj_t * btn)
 {
 	int error = !sd_mount();
@@ -230,7 +256,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char * mbox_btn_map[] = { "\211", "\222Dump", "\222Close", "\211", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
@@ -402,7 +428,7 @@ out:
 	sd_unmount();
 	sdmmc_storage_end(&emmc_storage);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, _cal0_dump_window_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
