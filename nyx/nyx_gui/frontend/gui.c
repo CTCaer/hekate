@@ -200,6 +200,11 @@ static void _save_log_to_bmp(char *fname)
 
 static void _save_fb_to_bmp()
 {
+	// Disallow screenshots if less than 2s passed.
+	static u32 timer = 0;
+	if (get_tmr_ms() < timer)
+		return;
+
 	if (do_reload)
 		return;
 
@@ -298,6 +303,9 @@ static void _save_fb_to_bmp()
 	lv_mbox_set_text(mbox, SYMBOL_CAMERA"  #96FF00 Screenshot saved!#");
 	manual_system_maintenance(true);
 	lv_mbox_start_auto_close(mbox, 4000);
+
+	// Set timer to 2s.
+	timer = get_tmr_ms() + 2000;
 }
 
 static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_p)
@@ -329,16 +337,9 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	// Take a screenshot if 3 fingers.
 	if (touchpad.fingers > 2)
 	{
-		// Disallow screenshots if less than 2s passed.
-		static u32 timer = 0;
-		if (get_tmr_ms() > timer)
-		{
-			_save_fb_to_bmp();
-			timer = get_tmr_ms() + 2000;
-		}
+		_save_fb_to_bmp();
 
 		data->state = LV_INDEV_STATE_REL;
-
 		return false;
 	}
 
@@ -398,7 +399,9 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	if (jc_pad->cap)
 	{
 		_save_fb_to_bmp();
-		msleep(1000);
+
+		data->state = LV_INDEV_STATE_REL;
+		return false;
 	}
 
 	// Calibrate left stick.
