@@ -386,6 +386,8 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 
 static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 {
+	static u32 calib_timer = 0;
+
 	// Poll Joy-Con.
 	jc_gamepad_rpt_t *jc_pad = joycon_poll();
 
@@ -407,6 +409,12 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	// Calibrate left stick.
 	if (!jc_drv_ctx.centering_done)
 	{
+		if (!calib_timer)
+			calib_timer = get_tmr_ms() + LV_INDEV_READ_PERIOD * 4;
+
+		if (calib_timer > get_tmr_ms())
+			return false;
+
 		if (jc_pad->conn_l
 			&& jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
 			&& jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
@@ -427,7 +435,10 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 
 	// Re-calibrate on disconnection.
 	if (!jc_pad->conn_l)
+	{
+		calib_timer = 0;
 		jc_drv_ctx.centering_done = 0;
+	}
 
 	// Set button presses.
 	if (jc_pad->a || jc_pad->zl || jc_pad->zr)
