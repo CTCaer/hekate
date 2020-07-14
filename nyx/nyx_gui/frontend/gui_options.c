@@ -817,7 +817,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 
 		// Check if pairing info was found.
 		if (joycon_found == 2)
-			s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
+			strcat(txt_buf, "#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
 		else
 		{
 			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
@@ -826,25 +826,25 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 
 		// Check if pairing was done in HOS.
 		if (is_l_hos && is_r_hos)
-			s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Both pairing data are HOS based!#");
+			strcat(txt_buf, "#C7EA46 Both pairing data are HOS based!#");
 		else if (!is_l_hos && is_r_hos)
 		{
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# #FFDD00 Left# pairing data is not HOS based!");
+			strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Left# pairing data is not HOS based!");
 			success = false;
 		}
 		else if (is_l_hos && !is_r_hos)
 		{
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# #FFDD00 Right# pairing data is not HOS based!");
+			strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Right# pairing data is not HOS based!");
 			success = false;
 		}
 		else
 		{
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# #FFDD00 No# pairing data is HOS based!");
+			strcat(txt_buf, "#FF8000 Warning:# #FFDD00 No# pairing data is HOS based!");
 			success = false;
 		}
 
 		if (!success)
-			s_printf(txt_buf + strlen(txt_buf),
+			strcat(txt_buf,
 				"\n\n#FFDD00 Make sure that both Joy-Con are connected,#\n"
 				"#FFDD00 and that you paired them in HOS!#");
 	}

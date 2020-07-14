@@ -271,7 +271,7 @@ static void _create_mbox_emummc_raw()
 		mbr->partitions[3].type, mbr->partitions[3].start_sct, mbr->partitions[3].size_sct);
 
 	if (!mbr_ctx.available)
-		s_printf(txt_buf + strlen(txt_buf),
+		strcat(txt_buf,
 			"\n#FF8000 Do you want to partition your SD card?#\n"
 			"#FF8000 (You will be asked on how to proceed)#");
 

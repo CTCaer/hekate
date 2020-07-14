@@ -1245,18 +1245,18 @@ static void _update_status_bar(void *params)
 
 	u8 batt_level = (batt_percent >> 8) & 0xFF;
 	if (batt_level > 80)
-		s_printf(label + strlen(label), SYMBOL_BATTERY_FULL);
+		strcat(label, SYMBOL_BATTERY_FULL);
 	else if (batt_level > 60)
-		s_printf(label + strlen(label), SYMBOL_BATTERY_3);
+		strcat(label, SYMBOL_BATTERY_3);
 	else if (batt_level > 40)
-		s_printf(label + strlen(label), SYMBOL_BATTERY_2);
+		strcat(label, SYMBOL_BATTERY_2);
 	else if (batt_level > 15)
-		s_printf(label + strlen(label), SYMBOL_BATTERY_1);
+		strcat(label, SYMBOL_BATTERY_1);
 	else
-		s_printf(label + strlen(label), "#FF3C28 "SYMBOL_BATTERY_EMPTY"#");
+		strcat(label, "#FF3C28 "SYMBOL_BATTERY_EMPTY"#");
 
 	if (charge_status)
-		s_printf(label + strlen(label), " #FFDD00 "SYMBOL_CHARGE"#");
+		strcat(label, " #FFDD00 "SYMBOL_CHARGE"#");
 
 	lv_label_set_text(status_bar.battery, label);
 	lv_obj_realign(status_bar.battery);

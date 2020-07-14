@@ -1008,21 +1008,21 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 				}
 
 				if ((file_size >> 9) > size_sct)
-					s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# TWRP image too big!\n");
+					strcat(txt_buf, "#FF8000 Warning:# TWRP image too big!\n");
 				else
 				{
 					sdmmc_storage_write(&sd_storage, offset_sct, file_size >> 9, buf);
-					s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Success:# TWRP image flashed!\n");
+					strcat(txt_buf, "#C7EA46 Success:# TWRP image flashed!\n");
 					f_unlink(path);
 				}
 
 				free(buf);
 			}
 			else
-				s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# TWRP partition not found!\n");
+				strcat(txt_buf, "#FF8000 Warning:# TWRP partition not found!\n");
 		}
 		else
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# TWRP image not found!\n");
+			strcat(txt_buf, "#FF8000 Warning:# TWRP image not found!\n");
 
 		lv_label_set_text(lbl_status, txt_buf);
 		manual_system_maintenance(true);
@@ -1060,21 +1060,21 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 				}
 
 				if ((file_size >> 9) > size_sct)
-					s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# DTB image too big!");
+					strcat(txt_buf, "#FF8000 Warning:# DTB image too big!");
 				else
 				{
 					sdmmc_storage_write(&sd_storage, offset_sct, file_size >> 9, buf);
-					s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Success:# DTB image flashed!");
+					strcat(txt_buf, "#C7EA46 Success:# DTB image flashed!");
 					f_unlink(path);
 				}
 
 				free(buf);
 			}
 			else
-				s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# DTB partition not found!");
+				strcat(txt_buf, "#FF8000 Warning:# DTB partition not found!");
 		}
 		else
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# DTB image not found!");
+			strcat(txt_buf, "#FF8000 Warning:# DTB image not found!");
 
 		lv_label_set_text(lbl_status, txt_buf);
 
@@ -1098,7 +1098,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 error:
 		if (boot_twrp)
 		{
-			s_printf(txt_buf + strlen(txt_buf),"\n\nDo you want to reboot into TWRP\nto finish Android installation?");
+			strcat(txt_buf,"\n\nDo you want to reboot into TWRP\nto finish Android installation?");
 			lv_label_set_text(lbl_status, txt_buf);
 			lv_mbox_add_btns(mbox, mbox_btn_map2, _action_reboot_twrp);
 		}
@@ -1525,9 +1525,9 @@ static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn)
 	s_printf(txt_buf, "#FFDD00 Warning: This will partition your SD Card!#\n\n");
 
 	if (part_info.backup_possible)
-		s_printf(txt_buf + strlen(txt_buf), "#C7EA46 Your files will be backed up and restored!#");
+		strcat(txt_buf, "#C7EA46 Your files will be backed up and restored!#");
 	else
-		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Your files will be wiped!#\n#FFDD00 Use USB UMS to copy them over!#");
+		strcat(txt_buf, "#FFDD00 Your files will be wiped!#\n#FFDD00 Use USB UMS to copy them over!#");
 
 	lv_label_set_text(lbl_status, txt_buf);
 
