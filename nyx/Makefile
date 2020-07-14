@@ -86,8 +86,7 @@ CUSTOMDEFINES += -DNYX -DGFX_INC=$(GFX_INC) -DFFCFG_INC=$(FFCFG_INC)
 #CUSTOMDEFINES += -DDEBUG
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
-CFLAGS = $(ARCH) -O2 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall $(CUSTOMDEFINES)
-CFLAGS += -g
+CFLAGS = $(ARCH) -O2 -g -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=NYX_LOAD_ADDR=$(NYX_LOAD_ADDR)
 
 ################################################################################
@@ -95,8 +94,11 @@ LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defs
 .PHONY: all clean
 
 all: $(TARGET).bin
-	@echo -n "Nyx size is "
-	@wc -c < $(OUTPUTDIR)/$(TARGET).bin
+	@echo "--------------------------------------"
+	@echo -n "Nyx size:     "
+	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET).bin))
+	@echo $(BIN_SIZE)" Bytes"
+	@echo "--------------------------------------"
 
 clean:
 	@rm -rf $(OBJS)

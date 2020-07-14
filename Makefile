@@ -84,11 +84,14 @@ NYXDIR := $(wildcard nyx)
 .PHONY: all clean $(MODULEDIRS) $(NYXDIR)
 
 all: $(TARGET).bin
-	@echo -n "Payload size is "
+	@printf ICTC49 >> $(OUTPUTDIR)/$(TARGET).bin
+	@echo "--------------------------------------"
+	@echo -n "Payload size: "
 	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET).bin))
-	@echo $(BIN_SIZE)
-	@echo "Max size is     126296 Bytes."
+	@echo $(BIN_SIZE)" Bytes"
+	@echo "Payload Max:  126296 Bytes"
 	@if [ ${BIN_SIZE} -gt 126296 ]; then echo "\e[1;33mPayload size exceeds limit!\e[0m"; fi
+	@echo "--------------------------------------"
 
 clean:
 	@rm -rf $(OBJS)
@@ -96,14 +99,13 @@ clean:
 	@rm -rf $(OUTPUTDIR)
 
 $(MODULEDIRS):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(NYXDIR):
-	@$(MAKE) -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
+	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR)
 	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
-	@printf ICTC49 >> $(OUTPUTDIR)/$@
 
 $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 	@$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
