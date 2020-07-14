@@ -307,16 +307,16 @@ static void _show_errors()
 		switch (*excp_type)
 		{
 		case EXCP_TYPE_RESET:
-			WPRINTF("Reset");
+			WPRINTF("RST");
 			break;
 		case EXCP_TYPE_UNDEF:
-			WPRINTF("Undefined instruction");
+			WPRINTF("UNDEF");
 			break;
 		case EXCP_TYPE_PABRT:
-			WPRINTF("Prefetch abort");
+			WPRINTF("PABRT");
 			break;
 		case EXCP_TYPE_DABRT:
-			WPRINTF("Data abort");
+			WPRINTF("DABRT");
 			break;
 		}
 		WPRINTF("\n");

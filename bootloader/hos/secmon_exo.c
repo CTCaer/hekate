@@ -331,23 +331,23 @@ static const char *get_error_desc(u32 error_desc)
 	switch (error_desc)
 	{
 	case 0x100:
-		return "Instruction Abort";
+		return "IABRT";
 	case 0x101:
-		return "Data Abort";
+		return "DABRT";
 	case 0x102:
-		return "PC Misalignment";
+		return "PC-UA";
 	case 0x103:
-		return "SP Misalignment";
+		return "SP-UA";
 	case 0x104:
-		return "Trap";
+		return "TRAP";
 	case 0x106:
-		return "SError";
+		return "SE";
 	case 0x301:
-		return "Bad SVC";
+		return "SVC";
 	case 0xFFE:
-		return "std::abort()";
+		return "std::abort";
 	default:
-		return "Unknown";
+		return "UNK";
 	}
 }
 
@@ -359,12 +359,15 @@ void secmon_exo_check_panic()
 	if ((rpt->magic & 0xF0FFFFFF) != ATM_FATAL_MAGIC)
 		return;
 
+	// Change magic to invalid, to prevent double-display of error/bootlooping.
+	rpt->magic = 0;
+
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
 	WPRINTF("Panic occurred while running Atmosphere.\n\n");
-	WPRINTFARGS("Title ID:   %08X%08X", (u32)((u64)rpt->title_id >> 32), (u32)rpt->title_id);
-	WPRINTFARGS("Error Desc: %s (0x%x)\n", get_error_desc(rpt->error_desc), rpt->error_desc);
+	WPRINTFARGS("Title ID: %08X%08X", (u32)((u64)rpt->title_id >> 32), (u32)rpt->title_id);
+	WPRINTFARGS("Error:    %s (0x%x)\n", get_error_desc(rpt->error_desc), rpt->error_desc);
 
 	// Save context to the SD card.
 	char filepath[0x40];
@@ -374,23 +377,20 @@ void secmon_exo_check_panic()
 	itoa((u32)(rpt->report_identifier), filepath + strlen(filepath), 16);
 	strcat(filepath, ".bin");
 
-	sd_save_to_file((void *)rpt, sizeof(atm_fatal_error_ctx), filepath);
+	if (!sd_save_to_file((void *)rpt, sizeof(atm_fatal_error_ctx), filepath))
+	{
+		gfx_con.fntsz = 8;
+		WPRINTFARGS("Report saved to %s\n", filepath);
+		gfx_con.fntsz = 16;
+	}
 
-	gfx_con.fntsz = 8;
-	WPRINTFARGS("Report saved to %s\n", filepath);
-
-	// Change magic to invalid, to prevent double-display of error/bootlooping.
-	rpt->magic = 0x0;
-
-	gfx_con.fntsz = 16;
 	gfx_printf("\n\nPress POWER to continue.\n");
 
 	display_backlight_brightness(100, 1000);
 	msleep(1000);
 
-	u32 btn = btn_wait();
-	while (!(btn & BTN_POWER))
-		btn = btn_wait();
+	while (!(btn_wait() & BTN_POWER))
+		;
 
 	display_backlight_brightness(0, 1000);
 	gfx_con_setpos(0, 0);

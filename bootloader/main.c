@@ -692,7 +692,7 @@ void nyx_load_run()
 		WPRINTF("\nUpdate your bootloader folder!\n\n");
 		WPRINTF("Press any key...");
 
-		msleep(2000);
+		msleep(1000);
 		btn_wait();
 	}
 
@@ -1166,16 +1166,16 @@ static void _show_errors()
 			switch (*excp_type)
 			{
 			case EXCP_TYPE_RESET:
-				WPRINTF("Reset");
+				WPRINTF("RST");
 				break;
 			case EXCP_TYPE_UNDEF:
-				WPRINTF("Undefined instruction");
+				WPRINTF("UNDEF");
 				break;
 			case EXCP_TYPE_PABRT:
-				WPRINTF("Prefetch abort");
+				WPRINTF("PABRT");
 				break;
 			case EXCP_TYPE_DABRT:
-				WPRINTF("Data abort");
+				WPRINTF("DABRT");
 				break;
 			}
 			WPRINTF("\n");
@@ -1186,7 +1186,7 @@ static void _show_errors()
 
 		WPRINTF("Press any key...");
 
-		msleep(2000);
+		msleep(1000);
 		btn_wait();
 	}
 }
