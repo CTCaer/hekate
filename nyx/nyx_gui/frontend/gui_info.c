@@ -378,6 +378,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5],
 		cal0->battery_lot);
 
+	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;
 	u32 display_id = (cal0->lcd_vendor & 0xFF) << 8 | (cal0->lcd_vendor & 0xFF0000) >> 16;
 	switch (display_id)
 	{
@@ -388,16 +389,37 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		strcat(txt_buf, "JDI LPM062M326A");
 		break;
 	case PANEL_INL_P062CCA_AZ1:
-		strcat(txt_buf, "InnoLux P062CCA-AZ1");
+		strcat(txt_buf, "InnoLux P062CCA-AZ");
+		switch (display_rev)
+		{
+		case 0x93:
+			strcat(txt_buf, "1");
+			break;
+		case 0x95:
+			strcat(txt_buf, "2");
+			break;
+		default:
+			strcat(txt_buf, "X");
+			break;
+		}
 		break;
 	case PANEL_AUO_A062TAN01:
-		strcat(txt_buf, "AUO A062TAN01");
+		strcat(txt_buf, "AUO A062TAN0");
+		switch (display_rev)
+		{
+		case 0x94:
+			strcat(txt_buf, "1");
+			break;
+		default:
+			strcat(txt_buf, "X");
+			break;
+		}
 		break;
-	case PANEL_INL_P062CCA_AZ2:
-		strcat(txt_buf, "InnoLux P062CCA-AZ2");
+	case PANEL_INL_2J055IA_27A:
+		strcat(txt_buf, "InnoLux 2J055IA-27A");
 		break;
-	case PANEL_AUO_A062TAN02:
-		strcat(txt_buf, "AUO A062TAN02");
+	case PANEL_AUO_A055TAN01:
+		strcat(txt_buf, "AUO A055TAN01");
 		break;
 	default:
 		switch (cal0->lcd_vendor & 0xFF)
@@ -640,6 +662,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.dev1_ch0 & 0x3C) >> 2);
 
 	// Display info.
+	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;
 	u32 display_id = ((nyx_str->info.disp_id >> 8) & 0xFF00) | (nyx_str->info.disp_id & 0xFF);
 
 	strcat(txt_buf, "#00DDFF Display Panel:#\n#FF8000 Model:# ");
@@ -653,16 +676,37 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "JDI LPM062M326A");
 		break;
 	case PANEL_INL_P062CCA_AZ1:
-		strcat(txt_buf, "InnoLux P062CCA-AZ1");
+		strcat(txt_buf, "InnoLux P062CCA-AZ");
+		switch (display_rev)
+		{
+		case 0x93:
+			strcat(txt_buf, "1");
+			break;
+		case 0x95:
+			strcat(txt_buf, "2");
+			break;
+		default:
+			strcat(txt_buf, "X #FFDD00 Contact me!#");
+			break;
+		}
 		break;
 	case PANEL_AUO_A062TAN01:
-		strcat(txt_buf, "AUO A062TAN01");
+		strcat(txt_buf, "AUO A062TAN0");
+		switch (display_rev)
+		{
+		case 0x94:
+			strcat(txt_buf, "1");
+			break;
+		default:
+			strcat(txt_buf, "X #FFDD00 Contact me!#");
+			break;
+		}
 		break;
-	case PANEL_INL_P062CCA_AZ2:
-		strcat(txt_buf, "InnoLux P062CCA-AZ2");
+	case PANEL_INL_2J055IA_27A:
+		strcat(txt_buf, "InnoLux 2J055IA-27A");
 		break;
-	case PANEL_AUO_A062TAN02:
-		strcat(txt_buf, "AUO A062TAN02");
+	case PANEL_AUO_A055TAN01:
+		strcat(txt_buf, "AUO A055TAN01");
 		break;
 	default:
 		switch (display_id & 0xFF)
@@ -677,7 +721,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "AUO ");
 			break;
 		}
-		strcat(txt_buf, "Unknown");
+		strcat(txt_buf, "Unknown #FFDD00 Contact me!#");
 		break;
 	}
 

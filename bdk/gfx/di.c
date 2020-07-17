@@ -170,8 +170,8 @@ void display_init()
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
-	case PANEL_INL_P062CCA_AZ2:
-	case PANEL_AUO_A062TAN02:
+	case PANEL_INL_2J055IA_27A:
+	case PANEL_AUO_A055TAN01:
 	default: // Allow spare part displays to work.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 120000);
 		break;
@@ -269,15 +269,15 @@ void display_end()
 	case PANEL_AUO_A062TAN01:
 		exec_cfg((u32 *)DSI_BASE, _display_deinit_config_auo, 37);
 		break;
-	case PANEL_INL_P062CCA_AZ2:
-	case PANEL_AUO_A062TAN02:
+	case PANEL_INL_2J055IA_27A:
+	case PANEL_AUO_A055TAN01:
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x439; // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9; // Enable extension cmd. (Pass: FF 83 94).
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		// Set Power.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39; // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
-		if (_display_id == PANEL_INL_P062CCA_AZ2)
+		if (_display_id == PANEL_INL_2J055IA_27A)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // Set Power control. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
 		else
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // Set Power control. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
