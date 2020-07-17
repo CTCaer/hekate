@@ -34,7 +34,8 @@ $(BUILD)/%.o: ./%.c
 
 $(TARGET).bso: $(OBJS)
 	@$(CC) $(LDFLAGS) -e _modInit $^ -o $(OUTPUT)/$(TARGET).bso
-	$(STRIP) -g $(OUTPUT)/$(TARGET).bso
+	@$(STRIP) -g $(OUTPUT)/$(TARGET).bso
+	@echo "-------------\nBuilt module: "$(TARGET)".bso\n-------------"
 
 clean:
 	@rm -rf $(OUTPUT)/$(TARGET).bso
