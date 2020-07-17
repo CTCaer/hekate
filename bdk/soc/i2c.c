@@ -65,7 +65,7 @@ static int _i2c_send_pkt(u32 idx, u32 x, u8 *buf, u32 size)
 
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFFDFF) | 0x200;
 
-	u32 timeout = get_tmr_ms() + 1500;
+	u32 timeout = get_tmr_ms() + 100; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & 0x100)
 	{
 		if (get_tmr_ms() > timeout)
@@ -90,7 +90,7 @@ static int _i2c_recv_pkt(u32 idx, u8 *buf, u32 size, u32 x)
 
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFFDFF) | 0x200;
 
-	u32 timeout = get_tmr_ms() + 1500;
+	u32 timeout = get_tmr_ms() + 100; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & 0x100)
 	{
 		if (get_tmr_ms() > timeout)
