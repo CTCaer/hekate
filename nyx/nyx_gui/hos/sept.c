@@ -226,7 +226,7 @@ int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 	PMC(APBDEV_PMC_SCRATCH33) = SEPT_PRI_ADDR;
 	PMC(APBDEV_PMC_SCRATCH40) = 0x6000F208;
 
-	reconfig_hw_workaround(false, 0);
+	hw_reinit_workaround(false, 0);
 
 	(*sept)();
 

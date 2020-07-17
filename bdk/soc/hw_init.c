@@ -73,14 +73,17 @@ void _config_oscillators()
 
 	PMC(APBDEV_PMC_TSC_MULT) = (PMC(APBDEV_PMC_TSC_MULT) & 0xFFFF0000) | 0x249F; //0x249F = 19200000 * (16 / 32.768 kHz)
 
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SYS) = 0;              // Set SCLK div to 1.
-	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20004444;  // Set clk source to Run and PLLP_OUT2 (204MHz).
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SYS) = 0;              // Set BPMP/SCLK div to 1.
+	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20004444;  // Set BPMP/SCLK source to Run and PLLP_OUT2 (204MHz).
 	CLOCK(CLK_RST_CONTROLLER_SUPER_SCLK_DIVIDER) = 0x80000000; // Enable SUPER_SDIV to 1.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2;             // Set HCLK div to 1 and PCLK div to 3.
 }
 
 void _config_gpios()
 {
+	// Clamp inputs when tristated.
+	APB_MISC(APB_MISC_PP_PINMUX_GLOBAL) = 0;
+
 	PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
 	PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
 
@@ -122,7 +125,7 @@ void _config_gpios()
 
 void _config_pmc_scratch()
 {
-	PMC(APBDEV_PMC_SCRATCH20) &= 0xFFF3FFFF;  // Unset Debug console from Customer Option.
+	PMC(APBDEV_PMC_SCRATCH20)  &= 0xFFF3FFFF; // Unset Debug console from Customer Option.
 	PMC(APBDEV_PMC_SCRATCH190) &= 0xFFFFFFFE; // Unset DATA_DQ_E_IVREF EMC_PMACRO_DATA_PAD_TX_CTRL
 	PMC(APBDEV_PMC_SECURE_SCRATCH21) |= PMC_FUSE_PRIVATEKEYDISABLE_TZ_STICKY_BIT;
 }
@@ -222,11 +225,11 @@ void _mbist_workaround()
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRE) = 0;
 
 	// Set child clock sources.
-	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) &= 0x1F7FFFFF; // Disable PLLD and set reference clock and csi clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) &= 0xFFFF3FFF; // Set SOR1 to automatic muxing of safe clock (24MHz) or SOR1 clk switch.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI) & 0x1FFFFFFF) | 0x80000000; // Set clock source to PLLP_OUT.
+	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE)        &= 0x1F7FFFFF; // Disable PLLD and set reference clock and csi clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1)  &= 0xFFFF3FFF; // Set SOR1 to automatic muxing of safe clock (24MHz) or SOR1 clk switch.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI)     = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI) & 0x1FFFFFFF) | 0x80000000;     // Set clock source to PLLP_OUT.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X) & 0x1FFFFFFF) | 0x80000000; // Set clock source to PLLP_OUT.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC) & 0x1FFFFFFF) | 0x80000000; // Set clock source to PLLP_OUT.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC)  = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC) & 0x1FFFFFFF) | 0x80000000;  // Set clock source to PLLP_OUT.
 }
 
 void _config_se_brom()
@@ -317,7 +320,7 @@ void _config_regulators()
 		MAX77621_CKKADV_TRIP_150mV_PER_US | MAX77621_INDUCTOR_NOMINAL);
 }
 
-void config_hw()
+void hw_init()
 {
 	// Bootrom stuff we skipped by going through rcm.
 	_config_se_brom();
@@ -325,19 +328,25 @@ void config_hw()
 	SYSREG(AHB_AHB_SPARE_REG) &= 0xFFFFFF9F; // Unset APB2JTAG_OVERRIDE_EN and OBS_OVERRIDE_EN.
 	PMC(APBDEV_PMC_SCRATCH49) = PMC(APBDEV_PMC_SCRATCH49) & 0xFFFFFFFC;
 
+	// Perform Memory Built-In Self Test WAR if T210.
 	_mbist_workaround();
+
+	// Enable Security Engine clock.
 	clock_enable_se();
 
-	// Enable fuse clock.
+	// Enable Fuse clock.
 	clock_enable_fuse(true);
 
-	// Disable fuse programming.
+	// Disable Fuse programming.
 	fuse_disable_program();
 
+	// Enable clocks to Memory controllers and disable AHB redirect.
 	mc_enable();
 
+	// Initialize counters, CLKM, BPMP and other clocks based on 38.4MHz oscillator.
 	_config_oscillators();
-	APB_MISC(APB_MISC_PP_PINMUX_GLOBAL) = 0;
+
+	// Initialize pin configuration.
 	_config_gpios();
 
 #ifdef DEBUG_UART_PORT
@@ -345,34 +354,42 @@ void config_hw()
 	uart_init(DEBUG_UART_PORT, 115200);
 #endif
 
+	// Enable Dynamic Voltage and Frequency Scaling device clock.
 	clock_enable_cl_dvfs();
 
+	// Enable clocks to I2C1 and I2CPWR.
 	clock_enable_i2c(I2C_1);
 	clock_enable_i2c(I2C_5);
 
+	// Enable clock to TZRAM.
 	clock_enable_tzram();
 
+	// Initialize I2C5, mandatory for PMIC comms.
 	i2c_init(I2C_1);
 	i2c_init(I2C_5);
 
 	// Enable charger in case it's disabled.
 	bq24193_enable_charger();
 
+	// Initialize various regulators based on Erista/Mariko platform.
 	_config_regulators();
 
 	_config_pmc_scratch(); // Missing from 4.x+
 
-	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333; // Set SCLK to PLLP_OUT (408MHz).
+	// Set BPMP/SCLK to PLLP_OUT (408MHz).
+	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333;
 
+
+	// Initialize External memory controller and configure DRAM parameters.
 	sdram_init();
 
 	bpmp_mmu_enable();
 
-	// Clear flags from PMC_SCRATCH0
+	// L4T: Clear flags from PMC_SCRATCH0.
 	PMC(APBDEV_PMC_SCRATCH0) &= ~PMC_SCRATCH0_MODE_PAYLOAD;
 }
 
-void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
+void hw_reinit_workaround(bool extra_reconfig, u32 magic)
 {
 	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);

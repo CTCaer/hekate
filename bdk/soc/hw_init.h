@@ -20,7 +20,7 @@
 
 #include <utils/types.h>
 
-void config_hw();
-void reconfig_hw_workaround(bool extra_reconfig, u32 magic);
+void hw_init();
+void hw_reinit_workaround(bool extra_reconfig, u32 magic);
 
 #endif

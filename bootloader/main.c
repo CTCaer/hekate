@@ -255,12 +255,12 @@ int launch_payload(char *path, bool update)
 			else
 				reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
-			reconfig_hw_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
+			hw_reinit_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 		}
 		else
 		{
 			reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
-			reconfig_hw_workaround(true, 0);
+			hw_reinit_workaround(true, 0);
 		}
 
 		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
@@ -1459,7 +1459,7 @@ extern void pivot_stack(u32 stack_top);
 void ipl_main()
 {
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
-	config_hw();
+	hw_init();
 
 	// Pivot the stack so we have enough space.
 	pivot_stack(IPL_STACK_TOP);

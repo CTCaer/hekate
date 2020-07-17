@@ -867,7 +867,7 @@ static lv_res_t _action_reboot_twrp(lv_obj_t * btns, const char * txt)
 
 		sd_end();
 
-		reconfig_hw_workaround(false, 0);
+		hw_reinit_workaround(false, 0);
 
 		(*main_ptr)();
 	}

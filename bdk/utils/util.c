@@ -135,7 +135,7 @@ void panic(u32 val)
 void reboot_normal()
 {
 	sd_end();
-	reconfig_hw_workaround(false, 0);
+	hw_reinit_workaround(false, 0);
 
 	panic(0x21); // Bypass fuse programming in package1.
 }
@@ -143,7 +143,7 @@ void reboot_normal()
 void reboot_rcm()
 {
 	sd_end();
-	reconfig_hw_workaround(false, 0);
+	hw_reinit_workaround(false, 0);
 
 	PMC(APBDEV_PMC_SCRATCH0) = PMC_SCRATCH0_MODE_RCM;
 	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
@@ -155,7 +155,7 @@ void reboot_rcm()
 void power_off()
 {
 	sd_end();
-	reconfig_hw_workaround(false, 0);
+	hw_reinit_workaround(false, 0);
 
 	// Stop the alarm, in case we injected and powered off too fast.
 	max77620_rtc_stop_alarm();

@@ -862,7 +862,7 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 
 	sd_end();
 
-	reconfig_hw_workaround(false, 0);
+	hw_reinit_workaround(false, 0);
 
 	// Mitigate L4T Joy-Con driver issue.
 	if ((autoboot & 0x80) && h_cfg.bootwait < 2)
@@ -882,7 +882,7 @@ void reload_nyx()
 
 	sd_end();
 
-	reconfig_hw_workaround(false, 0);
+	hw_reinit_workaround(false, 0);
 
 	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
