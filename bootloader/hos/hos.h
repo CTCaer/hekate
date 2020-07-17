@@ -66,17 +66,17 @@ typedef struct _hos_eks_bis_keys_t
 typedef struct _hos_eks_mbr_t
 {
 	u32 magic;
-	u8  enabled[6];
+	u8  enabled[5];
 	u8  enabled_bis;
-	u8  rsvd;
+	u8  rsvd[2];
 	u32 sbk_low;
 	u8  dkg[0x10];
 	u8  dkk[0x10];
-	hos_eks_keys_t keys[6];
+	hos_eks_keys_t keys[5];
 	hos_eks_bis_keys_t bis_keys[3];
 } hos_eks_mbr_t;
 
-static_assert(sizeof(hos_eks_mbr_t) == 336, "HOS EKS size is wrong!");
+static_assert(sizeof(hos_eks_mbr_t) == 304, "HOS EKS size is wrong!");
 
 typedef struct _launch_ctxt_t
 {

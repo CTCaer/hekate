@@ -369,7 +369,7 @@ usb_dev_bot_t usb_device_binary_object_descriptor =
 	.wU2DevExitLat          = 0
 };
 
-u8 usb_vendor_string_descriptor_ums[32] = 
+u8 usb_vendor_string_descriptor_ums[32] =
 {
 	26, 0x03,
 	'N', 0, 'y', 0, 'x', 0, ' ', 0, 'U', 0, 'S', 0, 'B', 0, ' ', 0,

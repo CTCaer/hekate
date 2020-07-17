@@ -59,6 +59,9 @@ extern hekate_config h_cfg;
 
 #define PKG2_LOAD_ADDR 0xA9800000
 
+#define SECMON_BCT_CFG_ADDR  0x4003D000
+#define SECMON6_BCT_CFG_ADDR 0x4003F800
+
  // Secmon mailbox.
 #define SECMON_MAILBOX_ADDR  0x40002E00
 #define SECMON7_MAILBOX_ADDR 0x40000000
@@ -87,20 +90,20 @@ static const u8 cmac_keyseed[0x10] =
 static const u8 master_keyseed_retail[0x10] =
 	{ 0xD8, 0xA2, 0x41, 0x0A, 0xC6, 0xC5, 0x90, 0x01, 0xC6, 0x1D, 0x6A, 0x26, 0x7C, 0x51, 0x3F, 0x3C };
 
-static const u8 console_keyseed[0x10] =
-	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
-
-const u8 package2_keyseed[0x10] =
-	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
-
 static const u8 master_keyseed_4xx_5xx_610[0x10] =
 	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
 
 static const u8 master_keyseed_620[0x10] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
+static const u8 console_keyseed[0x10] =
+	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
+
 static const u8 console_keyseed_4xx_5xx[0x10] =
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
+
+const u8 package2_keyseed[0x10] =
+	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
 static void _hos_crit_error(const char *text)
 {
@@ -214,7 +217,7 @@ void hos_eks_get()
 			goto out;
 
 		// Decrypt EKS blob.
-		hos_eks_mbr_t *eks = (hos_eks_mbr_t *)(mbr + 0x60);
+		hos_eks_mbr_t *eks = (hos_eks_mbr_t *)(mbr + 0x80);
 		se_aes_crypt_ecb(14, 0, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
 		// Check if valid and for this unit.
@@ -292,7 +295,7 @@ void hos_eks_save(u32 kb)
 			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
 			// Write EKS blob to SD.
-			memcpy(mbr + 0x60, eks, sizeof(hos_eks_mbr_t));
+			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
 			hos_eks_rw_try(mbr, true);
 
 
@@ -329,7 +332,7 @@ void hos_eks_clear(u32 kb)
 			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
 			// Write EKS blob to SD.
-			memcpy(mbr + 0x60, eks, sizeof(hos_eks_mbr_t));
+			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
 			hos_eks_rw_try(mbr, true);
 
 			EMC(EMC_SCRATCH0) &= ~EMC_SEPT_RUN;
@@ -552,7 +555,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "\nOr emuMMC corrupt!" : "");
 		return 0;
 	}
-	gfx_printf("Identified pkg1 and Keyblob %d\n\n", ctxt->pkg1_id->kb);
+	gfx_printf("Identified pkg1 and mkey %d\n\n", ctxt->pkg1_id->kb);
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
@@ -695,8 +698,10 @@ int hos_launch(ini_sec_t *cfg)
 		goto error;
 	}
 
+	bool emummc_enabled = emu_cfg.enabled && !h_cfg.emummc_force_disable;
+
 	// Enable emummc patching.
-	if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
+	if (emummc_enabled)
 	{
 		if (ctxt.stock)
 		{
@@ -721,7 +726,7 @@ int hos_launch(ini_sec_t *cfg)
 		if ((h_cfg.autonogc &&
 				((!(fuses & ~0xF) && (kb >= KB_FIRMWARE_VERSION_400)) || // LAFW v2.
 				(!(fuses & ~0x3FF) && (kb >= KB_FIRMWARE_VERSION_900)))) // LAFW v3.
-			|| ((emu_cfg.enabled && !h_cfg.emummc_force_disable) &&
+			|| ((emummc_enabled) &&
 				((fuses & 0x400) && (kb <= KB_FIRMWARE_VERSION_810))))
 			config_kip1patch(&ctxt, "nogc");
 	}
@@ -763,7 +768,7 @@ int hos_launch(ini_sec_t *cfg)
 		if (kb <= KB_FIRMWARE_VERSION_600)
 			pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1);
 
-		if (kb <= KB_FIRMWARE_VERSION_620 && !(emu_cfg.enabled && !h_cfg.emummc_force_disable))
+		if (kb <= KB_FIRMWARE_VERSION_620 && !emummc_enabled)
 		{
 			pkg1_unpack((void *)ctxt.pkg1_id->warmboot_base, (void *)ctxt.pkg1_id->secmon_base, NULL, ctxt.pkg1_id, ctxt.pkg1);
 			gfx_puts("Decrypted & unpacked pkg1\n");
@@ -780,6 +785,7 @@ int hos_launch(ini_sec_t *cfg)
 		memcpy((void *)warmboot_base, ctxt.warmboot, ctxt.warmboot_size);
 	else
 	{
+		// Patch warmboot on T210 to allow downgrading.
 		if (kb >= KB_FIRMWARE_VERSION_700)
 		{
 			_hos_crit_error("No warmboot provided!");
@@ -795,7 +801,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (kb <= KB_FIRMWARE_VERSION_301)
 		PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
-	// Replace 'SecureMonitor' if requested.
+	// Replace 'SecureMonitor' if requested or patch Pkg2 checks if needed.
 	if (ctxt.secmon)
 		memcpy((void *)secmon_base, ctxt.secmon, ctxt.secmon_size);
 	else if (ctxt.pkg1_id->secmon_patchset)
@@ -853,8 +859,8 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (!ctxt.stock && (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere))
 		{
-			u8 kernel_hash[0x20];
 			// Hash only Kernel when it embeds INI1.
+			u8 kernel_hash[0x20];
 			if (!ctxt.new_pkg2)
 				se_calc_sha256_oneshot(kernel_hash, ctxt.kernel, ctxt.kernel_size);
 			else
@@ -976,15 +982,15 @@ int hos_launch(ini_sec_t *cfg)
 	// Clear BCT area for retail units and copy it over if dev unit.
 	if (kb <= KB_FIRMWARE_VERSION_500 && !exo_new)
 	{
-		memset((void *)0x4003D000, 0, 0x3000);
+		memset((void *)SECMON_BCT_CFG_ADDR, 0, 0x3000);
 		if ((fuse_read_odm(4) & 3) == 3)
-			memcpy((void *)0x4003D000, bootConfigBuf, 0x1000);
+			memcpy((void *)SECMON_BCT_CFG_ADDR, bootConfigBuf, 0x1000);
 	}
 	else
 	{
-		memset((void *)0x4003F800, 0, 0x800);
+		memset((void *)SECMON6_BCT_CFG_ADDR, 0, 0x800);
 		if ((fuse_read_odm(4) & 3) == 3)
-			memcpy((void *)0x4003F800, bootConfigBuf, 0x800);
+			memcpy((void *)SECMON6_BCT_CFG_ADDR, bootConfigBuf, 0x800);
 	}
 	free(bootConfigBuf);
 
@@ -1043,13 +1049,15 @@ int hos_launch(ini_sec_t *cfg)
 	// emuMMC: Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
 
-	// Wait for secmon to get ready.
+	// Launch secmon.
 	if (smmu_is_used())
 		smmu_exit();
 	else
 		ccplex_boot_cpu0(secmon_base);
+
+	// Wait for secmon to get ready.
 	while (!secmon_mailbox->out)
-		; // A usleep(1) only works when in IRAM or with a trained DRAM.
+		;
 
 	// Signal pkg2 ready and continue boot.
 	secmon_mailbox->in = bootStatePkg2Continue;

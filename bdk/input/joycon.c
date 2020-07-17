@@ -206,7 +206,7 @@ static u16 jc_packet_add_uart_hdr(jc_wired_hdr_t *out, u8 wired_cmd, u8 *data, u
 	out->uart_hdr.magic[1] = 0x01;
 	out->uart_hdr.magic[2] = 0x3;
 
-	out->uart_hdr.total_size_lsb = 7;
+	out->uart_hdr.total_size_lsb = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t);
 	out->uart_hdr.total_size_msb = 0;
 	out->cmd = wired_cmd;
 

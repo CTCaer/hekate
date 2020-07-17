@@ -111,6 +111,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 	bool stock = false;
 	int sept_used = 0;
 
+	// Skip if stock and Exosphere and warmboot are not needed.
 	if (!sept_ctxt)
 	{
 		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)

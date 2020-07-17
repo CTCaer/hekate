@@ -272,6 +272,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 3);
 
 	// Read package1.
+	u8 kb = 0;
 	char *build_date = malloc(32);
 	u8 *pkg1 = (u8 *)malloc(0x40000);
 	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
@@ -293,6 +294,8 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		goto out;
 	}
 
+	kb = pkg1_id->kb;
+
 	tsec_ctxt_t tsec_ctxt;
 	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
 	tsec_ctxt.pkg1 = pkg1;
@@ -301,13 +304,13 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	// Get keys.
 	hos_eks_get();
-	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
+	if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
 	{
 		u32 key_idx = 0;
-		if (pkg1_id->kb >= KB_FIRMWARE_VERSION_810)
+		if (kb >= KB_FIRMWARE_VERSION_810)
 			key_idx = 1;
 
-		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= pkg1_id->kb)
+		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
 			h_cfg.sept_run = true;
 		else
 		{
@@ -315,7 +318,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 			b_cfg->autoboot_list = 0;
 			b_cfg->extra_cfg = EXTRA_CFG_NYX_BIS;
 
-			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, pkg1_id->kb))
+			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
 			{
 				lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept#\n");
 				goto out;
@@ -325,10 +328,10 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	// Read the correct keyblob.
 	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + pkg1_id->kb, 1, keyblob);
+	sdmmc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 	// Generate BIS keys
-	hos_bis_keygen(keyblob, pkg1_id->kb, &tsec_ctxt);
+	hos_bis_keygen(keyblob, kb, &tsec_ctxt);
 
 	free(keyblob);
 

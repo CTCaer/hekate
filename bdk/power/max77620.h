@@ -108,11 +108,11 @@
 #define  MAX77620_LDO_VOLT_MASK               0x3F
 #define MAX77620_REG_DVSSD0         0x1B
 #define MAX77620_REG_DVSSD1         0x1C
-#define MAX77620_REG_SD0_CFG        0x1D
-#define MAX77620_REG_SD1_CFG        0x1E
-#define MAX77620_REG_SD2_CFG        0x1F
-#define MAX77620_REG_SD3_CFG        0x20
-#define MAX77620_REG_SD4_CFG        0x21
+#define MAX77620_REG_SD0_CFG        0x1D // SD CNFG1.
+#define MAX77620_REG_SD1_CFG        0x1E // SD CNFG1.
+#define MAX77620_REG_SD2_CFG        0x1F // SD CNFG1.
+#define MAX77620_REG_SD3_CFG        0x20 // SD CNFG1.
+#define MAX77620_REG_SD4_CFG        0x21 // SD CNFG1.
 #define MAX77620_REG_SD_CFG2        0x22
 #define MAX77620_REG_LDO0_CFG       0x23
 #define MAX77620_REG_LDO0_CFG2      0x24
