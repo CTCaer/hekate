@@ -76,11 +76,12 @@
 #define FUSE_RESERVED_ODMX(x) (0x1C8 + 4 * (x))
 
 void fuse_disable_program();
-u32 fuse_read_odm(u32 idx);
-u32 fuse_read_odm_keygen_rev();
+u32  fuse_read_odm(u32 idx);
+u32  fuse_read_odm_keygen_rev();
+u8   fuse_count_burnt(u32 val);
 void fuse_wait_idle();
-int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
-int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);
+int  fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
+int  fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);
 void fuse_read_array(u32 *words);
 bool fuse_check_patched_rcm();
 

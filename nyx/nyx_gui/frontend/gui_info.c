@@ -514,8 +514,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	char *txt_buf = (char *)malloc(0x4000);
 
 	// Decode fuses.
-	u8 burntFuses7 = 0;
-	u8 burntFuses6 = 0;
 	u32 odm4 = fuse_read_odm(4);
 	u8 dram_id = (odm4 >> 3) & 0x1F;
 	char dram_man[16] = {0};
@@ -536,17 +534,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	}
 
-	for (u32 i = 0; i < 32; i++)
-	{
-		if ((fuse_read_odm(7) >> i) & 1)
-			burntFuses7++;
-	}
-	for (u32 i = 0; i < 32; i++)
-	{
-		if ((fuse_read_odm(6) >> i) & 1)
-			burntFuses6++;
-	}
+	// Count burnt fuses.
+	u8 burnt_fuses_7 = fuse_count_burnt(fuse_read_odm(7));
+	u8 burnt_fuses_6 = fuse_count_burnt(fuse_read_odm(6));
 
+	// Calculate LOT.
 	u32 lot_code0 = (FUSE(FUSE_OPT_LOT_CODE_0) & 0xFFFFFFF) << 2;
 	u32 lot_bin = 0;
 	for (int i = 0; i < 5; ++i)
@@ -565,7 +557,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
 		"ID: %02X, Major: A0%d, Minor: %d",
 		FUSE(FUSE_SKU_INFO), odm4 & 0x30000 ? "Mariko" : "Erista", (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
-		dram_id, dram_man, burntFuses7, burntFuses6,
+		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6,
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)),
