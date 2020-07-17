@@ -143,9 +143,10 @@ break_nosleep:
 	if (params->clear_clock2_mc1)
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = 0x40000000; // Clear Reset to MC1.
 
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = 0x2000001; // Enable EMC and MEM clocks.
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = 0x4000;    // Enable EMC_DLL clock.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = 0x2000001; // Clear EMC and MEM resets.
+	// Enable and clear reset for memory clocks.
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = BIT(CLK_X_EMC_DLL);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
 
 	// Set pad macros.
 	EMC(EMC_PMACRO_VTTGEN_CTRL_0) = params->emc_pmacro_vttgen_ctrl0;

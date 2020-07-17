@@ -1034,7 +1034,7 @@ int hos_launch(ini_sec_t *cfg)
 	EMC(EMC_SCRATCH0) = 0;
 
 	// Hold USBD in reset for SoC state validation on sleep.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_L) |= 0x400000;
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = BIT(CLK_L_USBD);
 
 	// Flush cache and disable MMU.
 	bpmp_mmu_disable();

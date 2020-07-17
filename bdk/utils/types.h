@@ -21,6 +21,7 @@
 
 #define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 #define ALIGN_DOWN(x, a) (((x) - ((a) - 1)) & ~((a) - 1))
+#define BIT(n) (1U << (n))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 

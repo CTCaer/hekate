@@ -129,18 +129,19 @@ void _config_pmc_scratch()
 
 void _mbist_workaround()
 {
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= (1 << 10); // Enable AHUB clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= (1 <<  6); // Enable APE clock.
+	// Make sure Audio clocks are enabled before accessing I2S.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
 
 	// Set mux output to SOR1 clock switch.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) | 0x8000) & 0xFFFFBFFF;
 	// Enabled PLLD and set csi to PLLD for test pattern generation.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) |= 0x40800000;
 
-	// Clear per-clock resets.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_CLR) = 0x40;       // Clear reset APE.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_X_CLR) = 0x40000;    // Clear reset VIC.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = 0x18000000; // Clear reset DISP1, HOST1X.
+	// Clear per-clock resets for APE/VIC/HOST1X/DISP1.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_CLR) = BIT(CLK_Y_APE);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_X_CLR) = BIT(CLK_X_VIC);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = BIT(CLK_L_HOST1X) | BIT(CLK_L_DISP1);
 	usleep(2);
 
 	// I2S channels to master and disable SLCG.
@@ -159,20 +160,59 @@ void _mbist_workaround()
 	VIC(0x8C) = 0xFFFFFFFF;
 	usleep(2);
 
-	// Set per-clock reset.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_SET) = 0x40;       // Set reset APE.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = 0x18000000; // Set reset DISP1, HOST1x.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_X_SET) = 0x40000;    // Set reset VIC.
+	// Set per-clock reset for APE/VIC/HOST1X/DISP1.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_SET) = BIT(CLK_Y_APE);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_HOST1X) | BIT(CLK_L_DISP1);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_X_SET) = BIT(CLK_X_VIC);
 
 	// Enable specific clocks and disable all others.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) = 0xC0;       // Enable clock PMC, FUSE.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) = 0x80000130; // Enable clock RTC, TMR, GPIO, BPMP_CACHE.
-	//CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) = 0x80400130; // Keep USBD ON.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_U) = 0x1F00200;  // Enable clock CSITE, IRAMA, IRAMB, IRAMC, IRAMD, BPMP_CACHE_RAM.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) = 0x80400808; // Enable clock MSELECT, APB2APE, SPDIF_DOUBLER, SE.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_W) = 0x402000FC; // Enable clock PCIERX0, PCIERX1, PCIERX2, PCIERX3, PCIERX4, PCIERX5, ENTROPY, MC1.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X) = 0x23000780; // Enable clock MC_CAPA, MC_CAPB, MC_CPU, MC_BBC, DBGAPB, HPLL_ADSP, PLLG_REF.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) = 0x300;      // Enable clock MC_CDPA, MC_CCPA.
+	// CLK L Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) =
+		BIT(CLK_H_PMC) |
+		BIT(CLK_H_FUSE);
+	// CLK H Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) =
+		BIT(CLK_L_RTC)  |
+		BIT(CLK_L_TMR)  |
+		BIT(CLK_L_GPIO) |
+		BIT(CLK_L_BPMP_CACHE_CTRL);
+	// CLK U Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_U) =
+		BIT(CLK_U_CSITE) |
+		BIT(CLK_U_IRAMA) |
+		BIT(CLK_U_IRAMB) |
+		BIT(CLK_U_IRAMC) |
+		BIT(CLK_U_IRAMD) |
+		BIT(CLK_U_BPMP_CACHE_RAM);
+	// CLK V Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) =
+		BIT(CLK_V_MSELECT)       |
+		BIT(CLK_V_APB2APE)       |
+		BIT(CLK_V_SPDIF_DOUBLER) |
+		BIT(CLK_V_SE);
+	// CLK W Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_W) =
+		BIT(CLK_W_PCIERX0) |
+		BIT(CLK_W_PCIERX1) |
+		BIT(CLK_W_PCIERX2) |
+		BIT(CLK_W_PCIERX3) |
+		BIT(CLK_W_PCIERX4) |
+		BIT(CLK_W_PCIERX5) |
+		BIT(CLK_W_ENTROPY) |
+		BIT(CLK_W_MC1);
+	// CLK X Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X) =
+		BIT(CLK_X_MC_CAPA)  |
+		BIT(CLK_X_MC_CBPA)  |
+		BIT(CLK_X_MC_CPU)   |
+		BIT(CLK_X_MC_BBC)   |
+		BIT(CLK_X_GPU)      |
+		BIT(CLK_X_DBGAPB)   |
+		BIT(CLK_X_PLLG_REF);
+	// CLK Y Devices.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) =
+		BIT(CLK_Y_MC_CDPA) |
+		BIT(CLK_Y_MC_CCPA);
 
 	// Disable clock gate overrides.
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRA) = 0;
@@ -353,8 +393,8 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 	nyx_str->mtc_cfg.init_done = 0;
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= (1 << 10); // Enable AHUB clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= (1 <<  6); // Enable APE clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
 
 	if (extra_reconfig)
 	{
@@ -376,7 +416,7 @@ void reconfig_hw_workaround(bool extra_reconfig, u32 magic)
 	// Enable clock to USBD and init SDMMC1 to avoid hangs with bad hw inits.
 	if (magic == 0xBAADF00D)
 	{
-		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) |= (1 << 22);
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_USBD);
 		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, 0);
 		clock_disable_cl_dvfs();
 
