@@ -365,7 +365,7 @@ void hos_eks_bis_clear()
 		se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
 		// Write EKS blob to SD.
-		memcpy(mbr + 0x60, eks, sizeof(hos_eks_mbr_t));
+		memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
 		hos_eks_rw_try(mbr, true);
 
 		free(eks);

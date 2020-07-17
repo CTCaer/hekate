@@ -38,7 +38,7 @@ void set_fan_duty(u32 duty)
 		gpio_config(GPIO_PORT_S, GPIO_PIN_7, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_S, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
 
-		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24); // Max PWM to disable fan.
+		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (0x100 << 16); // Max PWM to disable fan.
 
 		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) = 1; // Set source to PWM1.
 		gpio_config(GPIO_PORT_V, GPIO_PIN_4, GPIO_MODE_SPIO); // Fan power mode.
@@ -55,7 +55,7 @@ void set_fan_duty(u32 duty)
 	// If disabled send a 0 duty.
 	if (inv_duty == 236)
 	{
-		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (1 << 24); // Bit 24 is absolute 0%.
+		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (0x100 << 16); // Bit 24 is absolute 0%.
 		regulator_disable_5v(REGULATOR_5V_FAN);
 
 		// Disable fan.
