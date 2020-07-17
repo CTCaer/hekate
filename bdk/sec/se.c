@@ -198,6 +198,27 @@ void se_aes_key_set(u32 ks, void *key, u32 size)
 	}
 }
 
+void se_aes_iv_set(u32 ks, void *iv)
+{
+	u32 *data = (u32 *)iv;
+
+	for (u32 i = 0; i < TEGRA_SE_AES_MIN_KEY_SIZE / 4; i++)
+	{
+		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(QUAD_ORG_IV) | i;
+		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = data[i];
+	}
+}
+
+void se_aes_key_get(u32 ks, void *key, u32 size)
+{
+	u32 *data = (u32 *)key;
+	for (u32 i = 0; i < size / 4; i++)
+	{
+		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | i;
+		data[i] = SE(SE_KEYTABLE_DATA0_REG_OFFSET);
+	}
+}
+
 void se_aes_key_clear(u32 ks)
 {
 	for (u32 i = 0; i < TEGRA_SE_AES_MAX_KEY_SIZE / 4; i++)
@@ -206,6 +227,16 @@ void se_aes_key_clear(u32 ks)
 		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = 0;
 	}
 }
+
+void se_aes_iv_clear(u32 ks)
+{
+	for (u32 i = 0; i < TEGRA_SE_AES_MIN_KEY_SIZE / 4; i++)
+	{
+		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(QUAD_ORG_IV) | i;
+		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = 0;
+	}
+}
+
 
 int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input)
 {
@@ -336,6 +367,7 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 	int res;
 	u32 *hash32 = (u32 *)hash;
 
+	//! TODO: src_size must be 512 bit aligned if continuing and not last block for SHA256.
 	if (src_size > 0xFFFFFF || (u32)hash % 4 || !hash) // Max 16MB - 1 chunks and aligned x4 hash buffer.
 		return 0;
 
