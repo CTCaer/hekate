@@ -92,6 +92,7 @@ typedef struct _sd_ssr
 	u8 uhs_grade;
 	u8 video_class;
 	u8 app_class;
+	u32 protected_size;
 } sd_ssr_t;
 
 /*! SDMMC storage context. */
