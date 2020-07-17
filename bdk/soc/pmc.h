@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -17,6 +18,8 @@
 
 #ifndef _PMC_H_
 #define _PMC_H_
+
+#include <utils/types.h>
 
 /*! PMC registers. */
 #define APBDEV_PMC_CNTRL 0x0
@@ -83,5 +86,7 @@
 #define APBDEV_PMC_SCRATCH188 0x810
 #define APBDEV_PMC_SCRATCH190 0x818
 #define APBDEV_PMC_SCRATCH200 0x840
+
+int pmc_enable_partition(u32 part, int enable);
 
 #endif

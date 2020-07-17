@@ -17,11 +17,11 @@
 #include <soc/ccplex.h>
 #include <soc/i2c.h>
 #include <soc/clock.h>
-#include <utils/util.h>
 #include <soc/pmc.h>
 #include <soc/t210.h>
 #include <power/max77620.h>
 #include <power/max7762x.h>
+#include <utils/util.h>
 
 void _ccplex_enable_power()
 {
@@ -38,39 +38,6 @@ void _ccplex_enable_power()
 		MAX77621_T_JUNCTION_120 | MAX77621_WDTMR_ENABLE | MAX77621_CKKADV_TRIP_75mV_PER_US| MAX77621_INDUCTOR_NOMINAL);
 	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_0_95V);
 	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_DVS_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_0_95V);
-}
-
-int _ccplex_pmc_enable_partition(u32 part, int enable)
-{
-	u32 part_mask = 1 << part;
-	u32 desired_state = enable << part;
-
-	// Check if the partition has the state we want.
-	if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
-		return 1;
-
-	u32 i = 5001;
-	while (PMC(APBDEV_PMC_PWRGATE_TOGGLE) & 0x100)
-	{
-		usleep(1);
-		i--;
-		if (i < 1)
-			return 0;
-	}
-
-	// Toggle power gating.
-	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = part | 0x100;
-
-	i = 5001;
-	while (i > 0)
-	{
-		if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
-			break;
-		usleep(1);
-		i--;
-	}
-
-	return 1;
 }
 
 void ccplex_boot_cpu0(u32 entry)
@@ -107,11 +74,11 @@ void ccplex_boot_cpu0(u32 entry)
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
 	// Enable CPU rail.
-	_ccplex_pmc_enable_partition(0, 1);
-	// Enable cluster 0 non-CPU.
-	_ccplex_pmc_enable_partition(15, 1);
-	// Enable CE0.
-	_ccplex_pmc_enable_partition(14, 1);
+	pmc_enable_partition(0, 1);
+	// Enable cluster 0 non-CPU rail.
+	pmc_enable_partition(15, 1);
+	// Enable CE0 rail.
+	pmc_enable_partition(14, 1);
 
 	// Request and wait for RAM repair.
 	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = 1;

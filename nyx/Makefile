@@ -33,7 +33,7 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Hardware.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	bpmp.o ccplex.o clock.o di.o gpio.o i2c.o irq.o pinmux.o se.o smmu.o tsec.o uart.o \
+	bpmp.o ccplex.o clock.o di.o gpio.o i2c.o irq.o pinmux.o pmc.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o \
 	mc.o sdram.o minerva.o ramdisk.o \
 	sdmmc.o sdmmc_driver.o nx_emmc.o nx_emmc_bis.o nx_sd.o \
