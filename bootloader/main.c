@@ -1127,10 +1127,10 @@ static void _patched_rcm_protection()
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC
-#define  EXCP_MAGIC 0x30505645 // EVP0
+#define  EXCP_MAGIC 0x30505645      // EVP0
 #define EXCP_TYPE_ADDR 0x4003FFF8
-#define  EXCP_TYPE_RESET 0x545352 // RST
-#define  EXCP_TYPE_UNDEF 0x464455 // UDF
+#define  EXCP_TYPE_RESET 0x545352   // RST
+#define  EXCP_TYPE_UNDEF 0x464455   // UDF
 #define  EXCP_TYPE_PABRT 0x54424150 // PABT
 #define  EXCP_TYPE_DABRT 0x54424144 // DABT
 #define EXCP_LR_ADDR   0x4003FFF4

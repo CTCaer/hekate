@@ -331,19 +331,21 @@ static const char *get_error_desc(u32 error_desc)
 	switch (error_desc)
 	{
 	case 0x100:
-		return "IABRT";
+		return "IABRT"; // Instruction Abort.
 	case 0x101:
-		return "DABRT";
+		return "DABRT"; // Data Abort.
 	case 0x102:
-		return "PC-UA";
+		return "IUA";   // Instruction Unaligned Access.
 	case 0x103:
-		return "SP-UA";
+		return "DUA";   // Data Unaligned Access.
 	case 0x104:
-		return "TRAP";
+		return "UDF";   // Undefined Instruction.
 	case 0x106:
-		return "SE";
+		return "SYS";   // System Error.
 	case 0x301:
-		return "SVC";
+		return "SVC";   // Bad arguments or unimplemented SVC.
+	case 0xFFD:
+		return "SO";    // Stack Overflow.
 	case 0xFFE:
 		return "std::abort";
 	default:
