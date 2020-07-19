@@ -1145,7 +1145,8 @@ static void _show_errors()
 	if (*excp_enabled == EXCP_MAGIC)
 		h_cfg.errors |= ERR_EXCEPT_ENB;
 
-	if (PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
+	//! FIXME: Find a better way to identify if that scratch has proper data.
+	if (0 && PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
 	{
 		// Set error and clear flag.
 		h_cfg.errors |= ERR_L4T_KERNEL;
