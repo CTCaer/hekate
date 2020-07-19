@@ -44,6 +44,7 @@
 #include <soc/fuse.h>
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
+#include <soc/pmc.h>
 #include <soc/t210.h>
 #include <soc/uart.h>
 #include "storage/emummc.h"
@@ -1144,6 +1145,13 @@ static void _show_errors()
 	if (*excp_enabled == EXCP_MAGIC)
 		h_cfg.errors |= ERR_EXCEPT_ENB;
 
+	if (PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
+	{
+		// Set error and clear flag.
+		h_cfg.errors |= ERR_L4T_KERNEL;
+		PMC(APBDEV_PMC_SCRATCH37) &= ~PMC_SCRATCH37_KERNEL_PANIC_FLAG;
+	}
+
 	if (h_cfg.errors)
 	{
 		gfx_clear_grey(0x1B);
@@ -1152,10 +1160,10 @@ static void _show_errors()
 
 		if (h_cfg.errors & ERR_LIBSYS_LP0)
 			WPRINTF("Missing LP0 (sleep mode) lib!\n");
-		if (h_cfg.errors & ERR_SYSOLD_MTC)
+		if (h_cfg.errors & ERR_LIBSYS_MTC)
 			WPRINTF("Missing or old Minerva lib!\n");
 
-		if (h_cfg.errors & ~ERR_EXCEPT_ENB)
+		if (h_cfg.errors & ~(ERR_EXCEPT_ENB | ERR_L4T_KERNEL))
 		{
 			WPRINTF("\nUpdate bootloader folder!\n\n");
 		}
@@ -1182,6 +1190,13 @@ static void _show_errors()
 
 			// Clear the exception.
 			*excp_enabled = 0;
+		}
+
+		if (h_cfg.errors & ERR_L4T_KERNEL)
+		{
+			WPRINTF("Panic occurred while running L4T.\n");
+			if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
+				WPRINTF("PSTORE saved to L4T_panic.bin\n");
 		}
 
 		WPRINTF("Press any key...");
@@ -1486,7 +1501,7 @@ void ipl_main()
 
 	// Train DRAM and switch to max frequency.
 	if (minerva_init())
-		h_cfg.errors |= ERR_SYSOLD_MTC;
+		h_cfg.errors |= ERR_LIBSYS_MTC;
 
 	display_init();
 

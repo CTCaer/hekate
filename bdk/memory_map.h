@@ -41,8 +41,12 @@
 /* --- Gap: 1040MB 0xA4000000 - 0xE4FFFFFF --- */
 
 // Virtual disk / Chainloader buffers.
-#define RAM_DISK_ADDR     0xA4000000
-#define  RAM_DISK_SZ      0x41000000 // 1040MB.
+#define RAM_DISK_ADDR 0xA4000000
+#define  RAM_DISK_SZ  0x41000000 // 1040MB.
+
+// L4T Kernel Panic Storage (PSTORE).
+#define PSTORE_ADDR   0xB0000000
+#define  PSTORE_SZ      0x200000 // 2MB.
 
 //#define DRAM_LIB_ADDR    0xE0000000
 /* --- Chnldr: 252MB 0xC03C0000 - 0xCFFFFFFF --- */ //! Only used when chainloading.
