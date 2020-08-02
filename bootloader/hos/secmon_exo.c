@@ -361,9 +361,6 @@ void secmon_exo_check_panic()
 	if ((rpt->magic & 0xF0FFFFFF) != ATM_FATAL_MAGIC)
 		return;
 
-	// Change magic to invalid, to prevent double-display of error/bootlooping.
-	rpt->magic = 0;
-
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
@@ -385,6 +382,9 @@ void secmon_exo_check_panic()
 		WPRINTFARGS("Report saved to %s\n", filepath);
 		gfx_con.fntsz = 16;
 	}
+
+	// Change magic to invalid, to prevent double-display of error/bootlooping.
+	rpt->magic = 0;
 
 	gfx_printf("\n\nPress POWER to continue.\n");
 
