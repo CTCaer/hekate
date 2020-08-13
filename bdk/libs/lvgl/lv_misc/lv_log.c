@@ -67,7 +67,7 @@ void lv_log_add(lv_log_level_t level, const char * file, int line, const char * 
         static const char * lvl_prefix[] = {"Trace", "Info", "Warn", "Error"};
         char *log = (char *)malloc(0x1000);
         s_printf(log, "%s: %s \t(%s #%d)\r\n", lvl_prefix[level], dsc,  file, line);
-        uart_send(UART_B, (u8 *)log, strlen(log) + 1);
+        uart_send(DEBUG_UART_PORT, (u8 *)log, strlen(log) + 1);
         //gfx_printf("%s: %s \t(%s #%d)\n", lvl_prefix[level], dsc,  file, line);
 #else
         if(print_cb) print_cb(level, file, line, dsc);

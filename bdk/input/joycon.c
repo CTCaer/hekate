@@ -812,7 +812,7 @@ void jc_init_hw()
 	jc_l.uart = UART_C;
 	jc_r.uart = UART_B;
 
-#if (LV_LOG_PRINTF != 1)
+#ifndef DEBUG_UART_PORT
 	jc_power_supply(UART_C, true);
 	jc_power_supply(UART_B, true);
 

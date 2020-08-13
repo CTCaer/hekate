@@ -155,7 +155,11 @@
 
 
 /*Log settings*/
-#define USE_LV_LOG        0   /*Enable/disable the log module*/
+#ifdef DEBUG_UART_PORT
+#  define USE_LV_LOG        1   /*Enable/disable the log module*/
+#else
+#  define USE_LV_LOG        0   /*Enable/disable the log module*/
+#endif
 #if USE_LV_LOG
 /* How important log should be added:
  * LV_LOG_LEVEL_TRACE       A lot of logs to give detailed information
