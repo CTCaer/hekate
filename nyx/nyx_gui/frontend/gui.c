@@ -1372,6 +1372,8 @@ static lv_res_t _win_launch_close_action(lv_obj_t * btn)
 		launch_bg_done = true;
 	}
 
+	close_btn = NULL;
+
 	return LV_RES_INV;
 }
 
