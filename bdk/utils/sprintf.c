@@ -65,11 +65,6 @@ static void _s_putn(u32 v, int base, char fill, int fcnt)
 	_s_puts(p);
 }
 
-static void _s_putp(u32 *v, int base, char fill, int fcnt)
-{
-	_s_putn(*v, base, fill, fcnt);
-}
-
 void s_printf(char *out_buf, const char *fmt, ...)
 {
 	va_list ap;
@@ -114,8 +109,6 @@ void s_printf(char *out_buf, const char *fmt, ...)
 				break;
 			case 'p':
 			case 'P':
-				_s_putp(va_arg(ap, u32*), 16, fill, fcnt);
-				break;
 			case 'x':
 			case 'X':
 				_s_putn(va_arg(ap, u32), 16, fill, fcnt);
