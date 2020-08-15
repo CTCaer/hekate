@@ -1523,7 +1523,7 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			DPRINTF("USB: EP timeout\n");
 			// In case we disconnected, exit UMS.
 			// Raise timeout if removable and didn't got a unit ready command inside 4s.
-			if (bulk_ctxt->bulk_out_status == 28 || 
+			if (bulk_ctxt->bulk_out_status == 28 ||
 				(bulk_ctxt->bulk_out_status == 3 && ums->lun.removable && !ums->lun.prevent_medium_removal))
 			{
 				if (bulk_ctxt->bulk_out_status == 3)

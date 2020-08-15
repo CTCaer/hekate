@@ -930,10 +930,10 @@ out:
 			_usbd_mark_ep_complete(endpoint);
 		else if (_usbd_get_ep_status(endpoint) != USB_EP_STATUS_IDLE)
 			res = 26;
-	}
 
-	if (direction == USB_XFER_DIR_OUT)
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+		if (direction == USB_XFER_DIR_OUT)
+			bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+	}
 
 	return res;
 }
@@ -1564,6 +1564,8 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes)
 	while ((ep_status == USB_EP_STATUS_ACTIVE) || (ep_status == USB_EP_STATUS_STALLED));
 
 	*pending_bytes = _usbd_get_ep1_out_bytes_read();
+
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
 	if (ep_status == USB_EP_STATUS_IDLE)
 		return 0;
