@@ -1084,8 +1084,6 @@ out:
 	PMC(APBDEV_PMC_SCRATCH0) &= ~PMC_SCRATCH0_MODE_CUSTOM_ALL;
 
 	nyx_load_run();
-
-	sd_end();
 }
 
 static void _patched_rcm_protection()
@@ -1534,6 +1532,9 @@ void ipl_main()
 
 	// Load saved configuration and auto boot if enabled.
 	_auto_launch_firmware();
+
+	// Failed to launch Nyx, unmount SD Card.
+	sd_end();
 
 	minerva_change_freq(FREQ_800);
 

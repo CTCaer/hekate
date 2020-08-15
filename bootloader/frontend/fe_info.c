@@ -270,7 +270,7 @@ void print_sdcard_info()
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	if (sd_mount())
+	if (sd_initialize(true))
 	{
 		gfx_printf("%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		gfx_printf(
@@ -287,6 +287,7 @@ void print_sdcard_info()
 			sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
 			sd_storage.cid.month, sd_storage.cid.year);
 
+		u16 *sd_errors = sd_get_error_count();
 		gfx_printf("%kCard-Specific Data V%d.0:%k\n", 0xFF00DDFF, sd_storage.csd.structure + 1, 0xFFCCCCCC);
 		gfx_printf(
 			" Cmd Classes:    %02X\n"
@@ -297,18 +298,39 @@ void print_sdcard_info()
 			" UHS Grade:      U%d\n"
 			" Video Class:    V%d\n"
 			" App perf class: A%d\n"
-			" Write Protect:  %d\n\n",
+			" Write Protect:  %d\n"
+			" SDMMC Errors:   %d %d %d\n\n",
 			sd_storage.csd.cmdclass, sd_storage.sec_cnt >> 11,
 			sd_storage.ssr.bus_width, sd_storage.csd.busspeed, sd_storage.csd.busspeed * 2,
 			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
-			sd_storage.ssr.app_class, sd_storage.csd.write_protect);
+			sd_storage.ssr.app_class, sd_storage.csd.write_protect,
+			sd_errors[0], sd_errors[1], sd_errors[2]); // SD_ERROR_INIT_FAIL, SD_ERROR_RW_FAIL, SD_ERROR_RW_RETRY.
 
-		gfx_puts("Acquiring FAT volume info...\n\n");
-		f_getfree("", &sd_fs.free_clst, NULL);
-		gfx_printf("%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
-				0xFF00DDFF, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
-				sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
-		sd_end();
+		int res = f_mount(&sd_fs, "", 1);
+		if (!res)
+		{
+			gfx_puts("Acquiring FAT volume info...\n\n");
+			f_getfree("", &sd_fs.free_clst, NULL);
+			gfx_printf("%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
+					0xFF00DDFF, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
+					sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
+			f_mount(NULL, "", 1);
+		}
+		else
+		{
+			EPRINTFARGS("Failed to mount SD card (FatFS Error %d).\n"
+				"Make sure that a FAT partition exists..", res);
+		}
+
+		sdmmc_storage_end(&sd_storage);
+	}
+	else
+	{
+		EPRINTF("Failed to init SD card.");
+		if (!sdmmc_get_sd_inserted())
+			EPRINTF("Make sure that it is inserted.");
+		else
+			EPRINTF("SD Card Reader is not properly seated!");
 	}
 
 	btn_wait();
