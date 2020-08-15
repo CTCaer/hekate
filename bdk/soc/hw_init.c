@@ -384,9 +384,6 @@ void hw_init()
 	sdram_init();
 
 	bpmp_mmu_enable();
-
-	// L4T: Clear flags from PMC_SCRATCH0.
-	PMC(APBDEV_PMC_SCRATCH0) &= ~PMC_SCRATCH0_MODE_PAYLOAD;
 }
 
 void hw_reinit_workaround(bool extra_reconfig, u32 magic)

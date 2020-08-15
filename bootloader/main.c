@@ -1080,6 +1080,9 @@ out:
 	b_cfg.boot_cfg &= BOOT_CFG_SEPT_RUN;
 	h_cfg.emummc_force_disable = false;
 
+	// L4T: Clear custom boot mode flags from PMC_SCRATCH0.
+	PMC(APBDEV_PMC_SCRATCH0) &= ~PMC_SCRATCH0_MODE_CUSTOM_ALL;
+
 	nyx_load_run();
 
 	sd_end();
