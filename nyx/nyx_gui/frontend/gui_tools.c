@@ -1105,8 +1105,13 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	// Read package1.
+	static const u32 BOOTLOADER_SIZE          = 0x40000;
+	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
+	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+
 	char *build_date = malloc(32);
-	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_read(&storage, BOOTLOADER_MAIN_OFFSET / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
+
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
 
 	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n\n", build_date);
@@ -1122,7 +1127,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		manual_system_maintenance(true);
 
 		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &storage);
-		if (sd_save_to_file(pkg1, 0x40000, path))
+		if (sd_save_to_file(pkg1, BOOTLOADER_SIZE, path))
 			goto out_free;
 
 		strcat(txt_buf, "\nEncrypted pkg1 dumped to pkg1_enc.bin");
@@ -1167,7 +1172,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Read keyblob.
 		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+		sdmmc_storage_read(&storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 		// Decrypt.
 		hos_keygen(keyblob, kb, &tsec_ctxt);

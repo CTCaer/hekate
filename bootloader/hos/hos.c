@@ -543,23 +543,41 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_c
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 {
+	static const u32 BOOTLOADER_SIZE          = 0x40000;
+	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
+	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
+	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+
+	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
+	ctxt->pkg1 = (void *)malloc(BOOTLOADER_SIZE);
+
+try_load:
 	// Read package1.
-	ctxt->pkg1 = (void *)malloc(0x40000);
 	emummc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	emummc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1);
 	if (!ctxt->pkg1_id)
 	{
 		_hos_crit_error("Unknown pkg1 version.");
-		EHPRINTFARGS("HOS version not supported!%s",
+		EPRINTFARGS("HOS version not supported!%s",
 			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "\nOr emuMMC corrupt!" : "");
+
+		// Try backup bootloader.
+		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
+		{
+			EPRINTF("Trying backup bootloader...");
+			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
+			goto try_load;
+		}
+
 		return 0;
 	}
 	gfx_printf("Identified pkg1 and mkey %d\n\n", ctxt->pkg1_id->kb);
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	emummc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+	emummc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 
 	return 1;
 }

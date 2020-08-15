@@ -264,6 +264,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	lv_mbox_set_text(mbox, "#C7EA46 CAL0 Info#");
 
 	char *txt_buf = (char *)malloc(0x4000);
+	txt_buf[0] = 0;
 
 	lv_obj_t * lb_desc = lv_label_create(mbox, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
@@ -271,24 +272,39 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	lv_label_set_style(lb_desc, &monospace_text);
 	lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 3);
 
+	sd_mount();
+
 	// Read package1.
+	static const u32 BOOTLOADER_SIZE          = 0x40000;
+	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
+	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
+	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+
 	u8 kb = 0;
-	char *build_date = malloc(32);
-	u8 *pkg1 = (u8 *)malloc(0x40000);
+	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
+	u8 *pkg1 = (u8 *)malloc(BOOTLOADER_SIZE);
 	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 
+try_load:
+	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
+
+	char *build_date = malloc(32);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
 
-	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n", build_date);
+	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
 	free(build_date);
-
-	sd_mount();
 
 	if (!pkg1_id)
 	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#");
+		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#\n");
+		// Try backup bootloader.
+		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
+		{
+			strcat(txt_buf, "Trying backup bootloader...\n");
+			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
+			goto try_load;
+		}
 		lv_label_set_text(lb_desc, txt_buf);
 
 		goto out;
@@ -328,7 +344,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	// Read the correct keyblob.
 	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 	// Generate BIS keys
 	hos_bis_keygen(keyblob, kb, &tsec_ctxt);
@@ -848,23 +864,40 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 	lv_label_set_recolor(lb_desc, true);
 	lv_label_set_style(lb_desc, &monospace_text);
 
-	// Read package1.
-	char *build_date = malloc(32);
-	u8 *pkg1 = (u8 *)malloc(0x40000);
-	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
-	sdmmc_storage_end(&emmc_storage);
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
-
 	char *txt_buf  = (char *)malloc(0x1000);
 	char *txt_buf2 = (char *)malloc(0x1000);
-	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n", build_date);
+	txt_buf[0] = 0;
+
+	// Read package1.
+	static const u32 BOOTLOADER_SIZE          = 0x40000;
+	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
+	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
+
+	u8 *pkg1 = (u8 *)malloc(0x40000);
+	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
+
+try_load:
+	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_end(&emmc_storage);
+
+	char *build_date = malloc(32);
+	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
+
+	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
 	free(build_date);
 
 	if (!pkg1_id)
 	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#");
+		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#\n");
+		// Try backup bootloader.
+		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
+		{
+			strcat(txt_buf, "Trying backup bootloader...\n");
+			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
+			goto try_load;
+		}
 		lv_label_set_text(lb_desc, txt_buf);
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
