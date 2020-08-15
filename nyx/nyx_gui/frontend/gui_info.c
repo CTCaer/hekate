@@ -1144,8 +1144,15 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	}
 	else
 	{
-		u16 card_type;
 		u32 speed = 0;
+		char *rsvd_blocks;
+		char life_a_txt[8];
+		char life_b_txt[8];
+		u32 life_a = storage.ext_csd.dev_life_est_a;
+		u32 life_b = storage.ext_csd.dev_life_est_b;
+		u16 card_type = storage.ext_csd.card_type;
+		char card_type_support[96];
+		card_type_support[0] = 0;
 
 		s_printf(txt_buf, "\n%X\n%X\n%02X\n%c%c%c%c%c%c\n%X\n%04X\n%02d/%04d\n\n",
 			storage.cid.manfid, storage.cid.card_bga, storage.cid.oemid,
@@ -1153,9 +1160,6 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
 			storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
 
-		card_type = storage.ext_csd.card_type;
-		char card_type_support[96];
-		card_type_support[0] = 0;
 		if (card_type & EXT_CSD_CARD_TYPE_HS_26)
 		{
 			strcat(card_type_support, "HS26");
@@ -1182,11 +1186,45 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			speed = (200 << 16) | 400;
 		}
 
+		strcpy(life_a_txt, "-");
+		strcpy(life_b_txt, "-");
+
+		// Normalize cells life.
+		if (life_a)
+		{
+			life_a--;
+			life_a = (10 - life_a) * 10;
+			s_printf(life_a_txt, "%d%%", life_a);
+		}
+
+		if (life_b) // Toshiba is 0 (undefined).
+		{
+			life_b--;
+			life_b = (10 - life_b) * 10;
+			s_printf(life_b_txt, "%d%%", life_b);
+		}
+
+		switch (storage.ext_csd.pre_eol_info)
+		{
+		case 1:
+			rsvd_blocks = "Normal (< 80%)";
+			break;
+		case 2:
+			rsvd_blocks = "Warning (> 80%)";
+			break;
+		case 3:
+			rsvd_blocks = "Urgent (> 90%)";
+			break;
+		default:
+			rsvd_blocks = "Unknown";
+			break;
+		}
+
 		s_printf(txt_buf + strlen(txt_buf),
-			"#00DDFF V1.%d#\n%02X\n1.%d\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s",
-			storage.ext_csd.ext_struct, storage.csd.mmca_vsn, storage.ext_csd.rev,
+			"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s\nA: %s, B: %s\n%s",
+			storage.ext_csd.ext_struct, storage.ext_csd.rev,
 			storage.csd.cmdclass, speed & 0xFFFF, (speed >> 16) & 0xFFFF,
-			storage.csd.busspeed, card_type_support);
+			storage.csd.busspeed, card_type_support, life_a_txt, life_b_txt, rsvd_blocks);
 
 		lv_label_set_static_text(lb_desc,
 			"#00DDFF CID:#\n"
@@ -1198,12 +1236,12 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			"S/N:\n"
 			"Month/Year:\n\n"
 			"#00DDFF Ext CSD#\n"
-			"Spec Version:\n"
-			"Extended Rev:\n"
 			"Cmd Classes:\n"
 			"Max Rate:\n"
 			"Current Rate:\n"
-			"Type Support:"
+			"Type Support:\n\n"
+			"Estimated Life:\n"
+			"Reserved Used:"
 		);
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
