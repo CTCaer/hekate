@@ -387,6 +387,10 @@ static void _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage, u8 *buf)
 	storage->ext_csd.bkops_en = buf[EXT_CSD_BKOPS_EN];
 	storage->ext_csd.bkops_status = buf[EXT_CSD_BKOPS_STATUS];
 
+	storage->ext_csd.pre_eol_info = buf[EXT_CSD_PRE_EOL_INFO];
+	storage->ext_csd.dev_life_est_a = buf[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A];
+	storage->ext_csd.dev_life_est_b = buf[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B];
+
 	storage->sec_cnt  = *(u32 *)&buf[EXT_CSD_SEC_CNT];
 }
 

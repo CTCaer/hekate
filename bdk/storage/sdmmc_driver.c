@@ -764,7 +764,7 @@ static int _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
 	u16 norintsts = sdmmc->regs->norintsts;
 	u16 errintsts = sdmmc->regs->errintsts;
 
-DPRINTF("norintsts %08X; errintsts %08X\n", norintsts, errintsts);
+DPRINTF("norintsts %08X, errintsts %08X\n", norintsts, errintsts);
 
 	if (pout)
 		*pout = norintsts;
@@ -772,6 +772,9 @@ DPRINTF("norintsts %08X; errintsts %08X\n", norintsts, errintsts);
 	// Check for error interrupt.
 	if (norintsts & SDHCI_INT_ERROR)
 	{
+#ifdef ERROR_EXTRA_PRINTING
+		EPRINTFARGS("SDMMC: norintsts %08X, errintsts %08X\n", norintsts, errintsts);
+#endif
 		sdmmc->regs->errintsts = errintsts;
 		return SDMMC_MASKINT_ERROR;
 	}
@@ -963,8 +966,6 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 
 		is_data_present = true;
 	}
-	else
-		is_data_present = false;
 
 	_sdmmc_enable_interrupts(sdmmc);
 
@@ -983,7 +984,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		EPRINTF("SDMMC: Transfer timeout!");
 #endif
 	}
-	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
+DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
 	if (result)
 	{
@@ -1004,7 +1005,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 			if (!result)
 			{
 #ifdef ERROR_EXTRA_PRINTING
-				EPRINTF("SDMMC: DMA Update failed!");
+				EPRINTFARGS("SDMMC: DMA Update failed (%08X)!", result);
 #endif
 			}
 		}
