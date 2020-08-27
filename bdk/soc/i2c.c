@@ -178,6 +178,149 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	return 1;
 }
 
+static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
+{
+	if (size > 32)
+		return 0;
+
+	int res = 0;
+
+	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+
+	// Enable interrupts.
+	base[I2C_INT_EN] = ALL_PACKETS_COMPLETE | PACKET_COMPLETE | NO_ACK |
+		ARB_LOST | TX_FIFO_OVER | RX_FIFO_UNDER | TX_FIFO_DATA_REQ;
+	base[I2C_INT_STATUS] = base[I2C_INT_STATUS];
+
+	// Set device address and recv mode.
+	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_READ;
+
+	// Set recv mode.
+	base[I2C_CNFG] = DEBOUNCE_CNT_4T | NEW_MASTER_FSM | CMD1_WRITE;
+
+	// Set and flush FIFO.
+	base[I2C_FIFO_CONTROL] = RX_FIFO_FLUSH | TX_FIFO_FLUSH;
+
+	// Load configuration.
+	_i2c_load_cfg_wait(base);
+
+	// Initiate transaction on packet mode.
+	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | PACKET_MODE_GO;
+
+	u32 hdr[3];
+	hdr[0] = I2C_PACKET_PROT_I2C;
+	hdr[1] = size - 1;
+	hdr[2] = I2C_HEADER_IE_ENABLE | (dev_addr << 1);
+
+	// Send header with request.
+	base[I2C_TX_FIFO] = hdr[0];
+	base[I2C_TX_FIFO] = hdr[1];
+	base[I2C_TX_FIFO] = hdr[2];
+
+	u32 timeout = get_tmr_ms() + 400;
+	while (size)
+	{
+		if (base[I2C_FIFO_STATUS] & TX_FIFO_EMPTY_CNT)
+		{
+			u32 tmp = 0;
+			u32 snd_size = MIN(size, 4);
+			memcpy(&tmp, buf, snd_size);
+			base[I2C_TX_FIFO] = tmp;
+			buf += snd_size;
+			size -= snd_size;
+		}
+
+		if (get_tmr_ms() > timeout)
+		{
+			res = 1;
+			break;
+		}
+	}
+
+	if (base[I2C_STATUS] & I2C_STATUS_NOACK || base[I2C_INT_STATUS] & NO_ACK)
+		res = 1;
+
+	// Disable packet mode.
+	usleep(20);
+	base[I2C_CNFG] &= 0xFFFFF9FF;
+
+	// Disable interrupts.
+	base[I2C_INT_EN] = 0;
+
+	return res;
+}
+
+static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
+{
+	if (size > 32)
+		return 0;
+
+	int res = 0;
+
+	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+
+	// Enable interrupts.
+	base[I2C_INT_EN] = ALL_PACKETS_COMPLETE | PACKET_COMPLETE | NO_ACK |
+		ARB_LOST | TX_FIFO_OVER | RX_FIFO_UNDER | RX_FIFO_DATA_REQ;
+	base[I2C_INT_STATUS] = base[I2C_INT_STATUS];
+
+	// Set device address and recv mode.
+	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_READ;
+
+	// Set recv mode.
+	base[I2C_CNFG] = DEBOUNCE_CNT_4T | NEW_MASTER_FSM | CMD1_READ;
+
+	// Set and flush FIFO.
+	base[I2C_FIFO_CONTROL] = RX_FIFO_FLUSH | TX_FIFO_FLUSH;
+
+	// Load configuration.
+	_i2c_load_cfg_wait(base);
+
+	// Initiate transaction on packet mode.
+	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | PACKET_MODE_GO;
+
+	u32 hdr[3];
+	hdr[0] = I2C_PACKET_PROT_I2C;
+	hdr[1] = size - 1;
+	hdr[2] = I2C_HEADER_READ | I2C_HEADER_IE_ENABLE | (dev_addr << 1);
+
+	// Send header with request.
+	base[I2C_TX_FIFO] = hdr[0];
+	base[I2C_TX_FIFO] = hdr[1];
+	base[I2C_TX_FIFO] = hdr[2];
+
+	u32 timeout = get_tmr_ms() + 400;
+	while (size)
+	{
+		if (base[I2C_FIFO_STATUS] & RX_FIFO_FULL_CNT)
+		{
+			u32 rcv_size = MIN(size, 4);
+			u32 tmp = base[I2C_RX_FIFO];
+			memcpy(buf, &tmp, rcv_size);
+			buf += rcv_size;
+			size -= rcv_size;
+		}
+
+		if (get_tmr_ms() > timeout)
+		{
+			res = 1;
+			break;
+		}
+	}
+
+	if (base[I2C_STATUS] & I2C_STATUS_NOACK || base[I2C_INT_STATUS] & NO_ACK)
+		res = 1;
+
+	// Disable packet mode.
+	usleep(20);
+	base[I2C_CNFG] &= 0xFFFFF9FF;
+
+	// Disable interrupts.
+	base[I2C_INT_EN] = 0;
+
+	return res;
+}
+
 void i2c_init(u32 i2c_idx)
 {
 	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
@@ -202,6 +345,22 @@ void i2c_init(u32 i2c_idx)
 int i2c_recv_buf(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr)
 {
 	return _i2c_recv_single(i2c_idx, buf, size, dev_addr);
+}
+
+int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, u32 reg, u8 *buf, u32 size)
+{
+	if (size > 32)
+		return 0;
+
+	return _i2c_send_pkt(i2c_idx, buf, size, dev_addr, reg);
+}
+
+int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
+{
+	int res = _i2c_send_single(i2c_idx, dev_addr, (u8 *)&reg, 1);
+	if (res)
+		res = _i2c_recv_pkt(i2c_idx, buf, size, dev_addr, reg);
+	return res;
 }
 
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, u8 *buf, u32 size)
