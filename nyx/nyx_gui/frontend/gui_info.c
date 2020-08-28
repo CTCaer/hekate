@@ -429,6 +429,9 @@ try_load:
 		case 0x94:
 			strcat(txt_buf, "1");
 			break;
+		case 0x95:
+			strcat(txt_buf, "2");
+			break;
 		default:
 			strcat(txt_buf, "X");
 			break;
@@ -707,6 +710,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		{
 		case 0x94:
 			strcat(txt_buf, "1");
+			break;
+		case 0x95:
+			strcat(txt_buf, "2");
 			break;
 		default:
 			strcat(txt_buf, "X #FFDD00 Contact me!#");
