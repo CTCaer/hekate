@@ -1160,15 +1160,16 @@ static void _show_errors()
 		gfx_con_setpos(0, 0);
 		display_backlight_brightness(150, 1000);
 
+		if (h_cfg.errors & ERR_SD_BOOT_EN)
+			WPRINTF("Failed to init SD!\n");
+
 		if (h_cfg.errors & ERR_LIBSYS_LP0)
 			WPRINTF("Missing LP0 (sleep mode) lib!\n");
 		if (h_cfg.errors & ERR_LIBSYS_MTC)
 			WPRINTF("Missing or old Minerva lib!\n");
 
 		if (h_cfg.errors & ~(ERR_EXCEPT_ENB | ERR_L4T_KERNEL))
-		{
 			WPRINTF("\nUpdate bootloader folder!\n\n");
-		}
 
 		if (h_cfg.errors & ERR_EXCEPT_ENB)
 		{
@@ -1495,7 +1496,8 @@ void ipl_main()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
-	sd_mount();
+	// Mount SD Card.
+	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
 
 	// Save sdram lp0 config.
 	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, (void *)sdram_get_params_patched()))

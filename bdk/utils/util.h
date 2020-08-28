@@ -33,6 +33,7 @@ typedef enum
 	ERR_LIBSYS_LP0 = (1 << 0),
 	ERR_SYSOLD_NYX = (1 << 1),
 	ERR_LIBSYS_MTC = (1 << 2),
+	ERR_SD_BOOT_EN = (1 << 3),
 	ERR_L4T_KERNEL = (1 << 24),
 	ERR_EXCEPT_ENB = (1 << 31),
 } hekate_errors_t;
