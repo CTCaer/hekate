@@ -175,8 +175,11 @@ int sdmmc_storage_end(sdmmc_storage_t *storage)
 static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf, u32 is_write)
 {
 	u8 *bbuf = (u8 *)buf;
-	bool first_reinit = false;
-	while (num_sectors)
+	u32 sct_off = sector;
+	u32 sct_total = num_sectors;
+	bool first_reinit = true;
+
+	while (sct_total)
 	{
 		u32 blkcnt = 0;
 		// Retry 5 times if failed.
@@ -184,7 +187,7 @@ static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 nu
 		do
 		{
 reinit_try:
-			if (_sdmmc_storage_readwrite_ex(storage, &blkcnt, sector, MIN(num_sectors, 0xFFFF), bbuf, is_write))
+			if (_sdmmc_storage_readwrite_ex(storage, &blkcnt, sct_off, MIN(sct_total, 0xFFFF), bbuf, is_write))
 				goto out;
 			else
 				retries--;
@@ -201,7 +204,7 @@ reinit_try:
 
 			sd_error_count_increment(SD_ERROR_RW_FAIL);
 
-			if (!first_reinit)
+			if (first_reinit)
 				res = sd_initialize(true);
 			else
 			{
@@ -210,19 +213,27 @@ reinit_try:
 					sd_error_count_increment(SD_ERROR_INIT_FAIL);
 			}
 
+			// Reset retries to a lower number.
 			retries = 3;
-			first_reinit = true;
+			first_reinit = false;
 
+			// If succesful reinit, restart xfer.
 			if (res)
+			{
+				bbuf = (u8 *)buf;
+				sct_off = sector;
+				sct_total = num_sectors;
+
 				goto reinit_try;
+			}
 		}
 
 		return 0;
 
 out:
 DPRINTF("readwrite: %08X\n", blkcnt);
-		sector += blkcnt;
-		num_sectors -= blkcnt;
+		sct_off += blkcnt;
+		sct_total -= blkcnt;
 		bbuf += 512 * blkcnt;
 	}
 
