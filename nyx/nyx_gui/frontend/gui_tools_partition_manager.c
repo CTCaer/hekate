@@ -676,7 +676,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 			if (pct != prevPct)
 			{
 				lv_bar_set_value(bar, pct);
-				s_printf(txt_buf, " "SYMBOL_DOT" %d%%", pct);
+				s_printf(txt_buf, " #DDDDDD "SYMBOL_DOT"# %d%%", pct);
 				lv_label_set_text(label_pct, txt_buf);
 				manual_system_maintenance(true);
 				prevPct = pct;
@@ -810,8 +810,26 @@ static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
 		{
 			if ((u64)fno.fsize % 0x400000)
 			{
-				lv_label_set_text(lbl_status, "#FFDD00 Error:# The image is not aligned to 4 MiB!");
-				goto error;
+				// Check if last part.
+				idx++;
+				if (idx < 10)
+				{
+					path[23] = '0';
+					itoa(idx, &path[23 + 1], 10);
+				}
+				else
+					itoa(idx, &path[23], 10);
+
+				// If not the last part, unaligned size is not permitted.
+				if (!f_stat(path, NULL)) // NULL: Don't override current part fs info.
+				{
+					lv_label_set_text(lbl_status, "#FFDD00 Error:# The image is not aligned to 4 MiB!");
+					goto error;
+				}
+
+				// Last part. Align size to LBA (512 bytes).
+				fno.fsize = ALIGN((u64)fno.fsize, 512);
+				idx--;
 			}
 			l4t_flash_ctxt.image_size_sct += (u64)fno.fsize >> 9;
 		}
