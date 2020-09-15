@@ -28,6 +28,7 @@
 #include <mem/heap.h>
 #include <mem/sdram.h>
 #include <mem/smmu.h>
+#include <power/bm92t30_stub.h>
 #include <power/bq24193.h>
 #include <power/max17050.h>
 #include <sec/se.h>
@@ -1612,7 +1613,11 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		"Fast charge current limit:\n"
 		"Charge voltage limit:\n"
 		"Charge status:\n"
-		"Temperature status:"
+		"Temperature status:\n\n"
+		"#00DDFF USB-PD IC Info:#\n"
+		"Connection status:\n"
+		"Input Wattage Limit:\n"
+		"USB-PD Profiles:"
 	);
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
@@ -1625,8 +1630,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
 	s_printf(txt_buf, "\n%d mV\n", value);
 
-	bq24193_get_property(BQ24193_InputCurrentLimit, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value);
+	int iinlim = 0;
+	bq24193_get_property(BQ24193_InputCurrentLimit, &iinlim);
+	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", iinlim);
 
 	bq24193_get_property(BQ24193_SystemMinimumVoltage, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
@@ -1678,6 +1684,31 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	default:
 		s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)", value);
 		break;
+	}
+
+	bool inserted;
+	u32 wattage = 0;
+	u32 max_voltage = 5;
+	usb_pd_objects_t usb_pd;
+	bm92t30_get_charger_type(&inserted, &usb_pd);
+	strcat(txt_buf, "\n\n\n");
+	strcat(txt_buf, inserted ? "Connected" : "Disconnected");
+
+	for (u32 i = 0; i < usb_pd.pdo_no; i++)
+		if (usb_pd.pdos[i].voltage <= 15)
+			max_voltage = usb_pd.pdos[i].voltage;
+
+	wattage = iinlim * max_voltage;
+
+	s_printf(txt_buf + strlen(txt_buf), "\n%d.%d W", wattage / 1000, (wattage % 1000) / 100);
+
+	if (!usb_pd.pdo_no)
+		strcat(txt_buf, "\nNon PD");
+
+	for (u32 i = 0; i < usb_pd.pdo_no; i++)
+	{
+		s_printf(txt_buf + strlen(txt_buf), "\n%d mA, %2d V",
+			usb_pd.pdos[i].amperage, usb_pd.pdos[i].voltage);
 	}
 
 	lv_label_set_text(lb_val2, txt_buf);
