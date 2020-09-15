@@ -651,20 +651,26 @@ static bool _get_fs_exfat_compatible(link_t *info, bool *fs_is_510)
 		pkg2_get_ids(&kip_ids, &fs_ids_cnt);
 
 		for (fs_idx = 0; fs_idx < fs_ids_cnt; fs_idx++)
+		{
 			if (!memcmp(sha_buf, kip_ids[fs_idx].hash, 8))
+			{
+				// Check if it's 5.1.0.
+				if ((fs_idx & ~1) == 16)
+					*fs_is_510 = true;
+
+				// Check if FAT32-only.
+				if (fs_ids_cnt <= fs_idx && !(fs_idx & 1))
+					return false;
+
+				// FS is FAT32 + exFAT.
 				break;
-
-		// Check if it's 5.1.0.
-		if ((fs_idx & ~1) == 16)
-			*fs_is_510 = true;
-
-		// Return false if FAT32 only.
-		if (fs_ids_cnt <= fs_idx && !(fs_idx & 1))
-			return false;
+			}
+		}
 
 		break;
 	}
 
+	// Hash didn't match or FAT32 + exFAT.
 	return true;
 }
 
