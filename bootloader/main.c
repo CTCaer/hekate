@@ -1319,6 +1319,15 @@ out:
 	max77620_low_battery_monitor_config(true);
 }
 
+void ipl_reload()
+{
+	hw_reinit_workaround(false, 0);
+
+	// Reload hekate.
+	void (*ipl_ptr)() = (void *)IPL_LOAD_ADDR;
+	(*ipl_ptr)();
+}
+
 static void _about()
 {
 	static const char credits[] =
@@ -1462,6 +1471,7 @@ ment_t ment_top[] = {
 	MDEF_MENU("Tools", &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
 	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_HANDLER("Reload", ipl_reload),
 	MDEF_HANDLER("Reboot (Normal)", reboot_normal),
 	MDEF_HANDLER("Reboot (RCM)", reboot_rcm),
 	MDEF_HANDLER("Power off", power_off),
