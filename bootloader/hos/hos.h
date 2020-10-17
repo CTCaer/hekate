@@ -97,6 +97,7 @@ typedef struct _launch_ctxt_t
 
 	void  *kernel;
 	u32    kernel_size;
+
 	link_t kip1_list;
 	char*  kip1_patches;
 
@@ -105,7 +106,7 @@ typedef struct _launch_ctxt_t
 	bool debugmode;
 	bool stock;
 	bool atmosphere;
-	bool fss0_enable_experimental;
+	bool fss0_experimental;
 	bool emummc_forced;
 
 	exo_ctxt_t exo_ctx;

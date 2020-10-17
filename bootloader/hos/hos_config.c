@@ -253,7 +253,7 @@ static int _config_fss(launch_ctxt_t *ctxt, const char *value)
 	{
 		if (!strcmp("fss0experimental", kv->key))
 		{
-			ctxt->fss0_enable_experimental = *kv->val == '1';
+			ctxt->fss0_experimental = *kv->val == '1';
 			break;
 		}
 	}

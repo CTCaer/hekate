@@ -854,13 +854,11 @@ int hos_launch(ini_sec_t *cfg)
 	if (!pkg2_hdr)
 	{
 		_hos_crit_error("Pkg2 decryption failed!");
-		if (kb >= KB_FIRMWARE_VERSION_700)
-		{
-			EPRINTF("Is Sept updated?");
+		EPRINTFARGS("Is hekate%s updated?", kb >= KB_FIRMWARE_VERSION_700 ? " or Sept" : "");
 
-			// Clear EKS slot, in case something went wrong with sept keygen.
+		// Clear EKS slot, in case something went wrong with sept keygen.
+		if (kb >= KB_FIRMWARE_VERSION_700)
 			hos_eks_clear(kb);
-		}
 		goto error;
 	}
 	else if (kb >= KB_FIRMWARE_VERSION_700)
@@ -964,7 +962,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Rebuild and encrypt package2.
-	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, ctxt.kernel, ctxt.kernel_size, &kip1_info, ctxt.new_pkg2, kb);
+	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, &ctxt, &kip1_info);
 
 	gfx_puts("Rebuilt & loaded pkg2\n");
 

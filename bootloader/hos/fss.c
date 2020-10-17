@@ -165,7 +165,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 				continue;
 
 			// If content is experimental and experimental flag is not enabled, skip it.
-			if ((curr_fss_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !ctxt->fss0_enable_experimental)
+			if ((curr_fss_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !ctxt->fss0_experimental)
 				continue;
 
 			// Parse content.

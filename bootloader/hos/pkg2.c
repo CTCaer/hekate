@@ -1410,9 +1410,11 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 	return ini1_size;
 }
 
-void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_info, bool new_pkg2, u8 kb)
+void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info)
 {
 	u8 *pdst = (u8 *)dst;
+	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
+	u32 kernel_size = ctxt->kernel_size;
 
 	// Signature.
 	memset(pdst, 0, 0x100);
@@ -1427,23 +1429,25 @@ void pkg2_build_encrypt(void *dst, void *kernel, u32 kernel_size, link_t *kips_i
 	hdr->bl_ver = 0;
 	hdr->pkg2_ver = 0xFF;
 
-	if (!new_pkg2)
+	if (!ctxt->new_pkg2)
 		hdr->base = 0x10000000;
 	else
 		hdr->base = 0x60000;
-DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
+DPRINTF("kernel @ %08X (%08X)\n", (u32)ctxt->kernel, kernel_size);
 
 	pdst += sizeof(pkg2_hdr_t);
 
 	// Kernel.
-	memcpy(pdst, kernel, kernel_size);
-	if (!new_pkg2)
+	memcpy(pdst, ctxt->kernel, kernel_size);
+	if (!ctxt->new_pkg2)
 		hdr->sec_off[PKG2_SEC_KERNEL] = 0x10000000;
 	else
 	{
 		// Set new INI1 offset to kernel.
 		*(u32 *)(pdst + pkg2_newkern_ini1_val) = kernel_size;
-		kernel_size += _pkg2_ini1_build(pdst + kernel_size, hdr, kips_info, new_pkg2);
+
+		// Build INI1 for new Package2.
+		kernel_size += _pkg2_ini1_build(pdst + kernel_size, hdr, kips_info, ctxt->new_pkg2);
 		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
 	}
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
@@ -1451,10 +1455,10 @@ DPRINTF("kernel @ %08X (%08X)\n", (u32)kernel, kernel_size);
 	pdst += kernel_size;
 DPRINTF("kernel encrypted\n");
 
-	// INI1.
+	/// Build INI1 for old Package2.
 	u32 ini1_size = 0;
-	if (!new_pkg2)
-		ini1_size = _pkg2_ini1_build(pdst, hdr, kips_info, new_pkg2);
+	if (!ctxt->new_pkg2)
+		ini1_size = _pkg2_ini1_build(pdst, hdr, kips_info, false);
 DPRINTF("INI1 encrypted\n");
 
 	// Calculate SHA256 over encrypted Kernel and INI1.
@@ -1466,7 +1470,7 @@ DPRINTF("INI1 encrypted\n");
 		(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_INI1]);
 
 	//Encrypt header.
-	u8 key_ver = kb ? kb + 1 : 0;
+	u8 key_ver = ctxt->pkg1_id->kb ? ctxt->pkg1_id->kb + 1 : 0;
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
 	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
