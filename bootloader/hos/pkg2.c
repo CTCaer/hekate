@@ -1415,6 +1415,11 @@ void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info)
 	u8 *pdst = (u8 *)dst;
 	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
 	u32 kernel_size = ctxt->kernel_size;
+	bool is_meso = *(u32 *)(ctxt->kernel + 4) == ATM_MESOSPHERE;
+
+	// Force new Package2 if Mesosphere.
+	if (is_meso)
+		ctxt->new_pkg2 = true;
 
 	// Signature.
 	memset(pdst, 0, 0x100);
@@ -1433,7 +1438,7 @@ void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info)
 		hdr->base = 0x10000000;
 	else
 		hdr->base = 0x60000;
-DPRINTF("kernel @ %08X (%08X)\n", (u32)ctxt->kernel, kernel_size);
+DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel, kernel_size);
 
 	pdst += sizeof(pkg2_hdr_t);
 
@@ -1444,7 +1449,7 @@ DPRINTF("kernel @ %08X (%08X)\n", (u32)ctxt->kernel, kernel_size);
 	else
 	{
 		// Set new INI1 offset to kernel.
-		*(u32 *)(pdst + pkg2_newkern_ini1_val) = kernel_size;
+		*(u32 *)(pdst + (is_meso ? 8 : pkg2_newkern_ini1_val)) = kernel_size;
 
 		// Build INI1 for new Package2.
 		kernel_size += _pkg2_ini1_build(pdst + kernel_size, hdr, kips_info, ctxt->new_pkg2);

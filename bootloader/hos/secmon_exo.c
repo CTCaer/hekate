@@ -344,6 +344,8 @@ static const char *get_error_desc(u32 error_desc)
 		return "SYS";   // System Error.
 	case 0x301:
 		return "SVC";   // Bad arguments or unimplemented SVC.
+	case 0xF00:
+		return "KRNL";  // Kernel panic.
 	case 0xFFD:
 		return "SO";    // Stack Overflow.
 	case 0xFFE:

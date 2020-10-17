@@ -190,6 +190,10 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 					ctxt->warmboot_size = curr_fss_cnt[i].size;
 					ctxt->warmboot = content;
 					break;
+				case CNT_TYPE_KRN:
+					ctxt->kernel_size = curr_fss_cnt[i].size;
+					ctxt->kernel = content;
+					break;
 				default:
 					continue;
 				}
