@@ -949,19 +949,14 @@ int hos_launch(ini_sec_t *cfg)
 	{
 		EHPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
 
-		bool prevent_sysmmc_boot = false;
-		if (!strcmp(unappliedPatch, "emummc") && ctxt.emummc_forced)
-			prevent_sysmmc_boot = true;
-
-		if (prevent_sysmmc_boot)
-			gfx_puts("\nPress POWER or VOL to go to the menu.\n");
-		else
+		bool emmc_patch_failed = !strcmp(unappliedPatch, "emummc");
+		if (!emmc_patch_failed)
+		{
 			gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
+			display_backlight_brightness(h_cfg.backlight, 1000);
+		}
 
-		display_backlight_brightness(h_cfg.backlight, 1000);
-
-		u32 btn = btn_wait();
-		if (prevent_sysmmc_boot || !(btn & BTN_POWER))
+		if (emmc_patch_failed || !(btn_wait() & BTN_POWER))
 		{
 			_free_launch_components(&ctxt);
 			goto error; // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
