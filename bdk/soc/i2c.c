@@ -21,35 +21,44 @@
 #include <utils/util.h>
 
 #define I2C_PACKET_PROT_I2C  (1 << 4)
+#define I2C_HEADER_CONT_XFER (1 << 15)
+#define I2C_HEADER_REP_START (1 << 16)
 #define I2C_HEADER_IE_ENABLE (1 << 17)
 #define I2C_HEADER_READ      (1 << 19)
 
-#define I2C_CNFG             (0x00 / 4)
+#define I2C_CNFG              (0x00 / 4)
 #define  CMD1_WRITE           (0 << 6)
 #define  CMD1_READ            (1 << 6)
 #define  NORMAL_MODE_GO       (1 << 9)
 #define  PACKET_MODE_GO       (1 << 10)
 #define  NEW_MASTER_FSM       (1 << 11)
 #define  DEBOUNCE_CNT_4T      (2 << 12)
-#define I2C_CMD_ADDR0        (0x04 / 4)
+
+#define I2C_CMD_ADDR0         (0x04 / 4)
 #define  ADDR0_WRITE          0
 #define  ADDR0_READ           1
-#define I2C_CMD_DATA1        (0x0C / 4)
-#define I2C_CMD_DATA2        (0x10 / 4)
-#define I2C_STATUS           (0x1C / 4)
+
+#define I2C_CMD_DATA1         (0x0C / 4)
+#define I2C_CMD_DATA2         (0x10 / 4)
+
+#define I2C_STATUS            (0x1C / 4)
 #define  I2C_STATUS_NOACK     (0xF << 0)
 #define  I2C_STATUS_BUSY      (1 << 8)
-#define I2C_TX_FIFO          (0x50 / 4)
-#define I2C_RX_FIFO          (0x54 / 4)
-#define I2C_FIFO_CONTROL     (0x5C / 4)
+
+#define I2C_TX_FIFO           (0x50 / 4)
+#define I2C_RX_FIFO           (0x54 / 4)
+
+#define I2C_FIFO_CONTROL      (0x5C / 4)
 #define  RX_FIFO_FLUSH        (1 << 0)
 #define  TX_FIFO_FLUSH        (1 << 1)
-#define I2C_FIFO_STATUS      (0x60 / 4)
+
+#define I2C_FIFO_STATUS       (0x60 / 4)
 #define  RX_FIFO_FULL_CNT     (0xF << 0)
 #define  TX_FIFO_EMPTY_CNT    (0xF << 4)
-#define I2C_INT_EN           (0x64 / 4)
-#define I2C_INT_STATUS       (0x68 / 4)
-#define I2C_INT_SOURCE       (0x70 / 4)
+
+#define I2C_INT_EN            (0x64 / 4)
+#define I2C_INT_STATUS        (0x68 / 4)
+#define I2C_INT_SOURCE        (0x70 / 4)
 #define  RX_FIFO_DATA_REQ     (1 << 0)
 #define  TX_FIFO_DATA_REQ     (1 << 1)
 #define  ARB_LOST             (1 << 2)
@@ -59,12 +68,16 @@
 #define  ALL_PACKETS_COMPLETE (1 << 6)
 #define  PACKET_COMPLETE      (1 << 7)
 #define  BUS_CLEAR_DONE       (1 << 11)
-#define I2C_CLK_DIVISOR      (0x6C / 4)
-#define I2C_BUS_CLEAR_CONFIG (0x84 / 4)
+
+#define I2C_CLK_DIVISOR       (0x6C / 4)
+
+#define I2C_BUS_CLEAR_CONFIG  (0x84 / 4)
 #define  BC_ENABLE            (1 << 0)
 #define  BC_TERMINATE         (1 << 1)
-#define I2C_BUS_CLEAR_STATUS (0x88 / 4)
-#define I2C_CONFIG_LOAD      (0x8C / 4)
+
+#define I2C_BUS_CLEAR_STATUS  (0x88 / 4)
+
+#define I2C_CONFIG_LOAD       (0x8C / 4)
 #define  MSTR_CONFIG_LOAD     (1 << 0)
 #define  TIMEOUT_CONFIG_LOAD  (1 << 2)
 
@@ -178,7 +191,7 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	return 1;
 }
 
-static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
+static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 {
 	if (size > 32)
 		return 0;
@@ -210,7 +223,7 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 	u32 hdr[3];
 	hdr[0] = I2C_PACKET_PROT_I2C;
 	hdr[1] = size - 1;
-	hdr[2] = I2C_HEADER_IE_ENABLE | (dev_addr << 1);
+	hdr[2] = I2C_HEADER_IE_ENABLE | I2C_HEADER_CONT_XFER | (dev_addr << 1);
 
 	// Send header with request.
 	base[I2C_TX_FIFO] = hdr[0];
@@ -279,17 +292,33 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 	// Initiate transaction on packet mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | PACKET_MODE_GO;
 
+	// Send reg request.
 	u32 hdr[3];
 	hdr[0] = I2C_PACKET_PROT_I2C;
-	hdr[1] = size - 1;
-	hdr[2] = I2C_HEADER_READ | I2C_HEADER_IE_ENABLE | (dev_addr << 1);
+	hdr[1] = 1 - 1;
+	hdr[2] = I2C_HEADER_REP_START | (dev_addr << 1);
 
-	// Send header with request.
+	// Send header with reg request.
+	base[I2C_TX_FIFO] = hdr[0];
+	base[I2C_TX_FIFO] = hdr[1];
+	base[I2C_TX_FIFO] = hdr[2];
+	base[I2C_TX_FIFO] = reg;
+
+	u32 timeout = get_tmr_ms() + 400;
+	while (!(base[I2C_FIFO_STATUS] & TX_FIFO_EMPTY_CNT))
+		if (get_tmr_ms() > timeout)
+			break;
+
+	// Send read request.
+	hdr[1] = size - 1;
+	hdr[2] = I2C_HEADER_READ | (dev_addr << 1);
+
+	// Send header with read request.
 	base[I2C_TX_FIFO] = hdr[0];
 	base[I2C_TX_FIFO] = hdr[1];
 	base[I2C_TX_FIFO] = hdr[2];
 
-	u32 timeout = get_tmr_ms() + 400;
+	timeout = get_tmr_ms() + 400;
 	while (size)
 	{
 		if (base[I2C_FIFO_STATUS] & RX_FIFO_FULL_CNT)
@@ -347,20 +376,17 @@ int i2c_recv_buf(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr)
 	return _i2c_recv_single(i2c_idx, buf, size, dev_addr);
 }
 
-int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, u32 reg, u8 *buf, u32 size)
+int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, u8 *buf, u32 size)
 {
 	if (size > 32)
 		return 0;
 
-	return _i2c_send_pkt(i2c_idx, buf, size, dev_addr, reg);
+	return _i2c_send_pkt(i2c_idx, buf, size, dev_addr);
 }
 
 int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 {
-	int res = _i2c_send_single(i2c_idx, dev_addr, (u8 *)&reg, 1);
-	if (res)
-		res = _i2c_recv_pkt(i2c_idx, buf, size, dev_addr, reg);
-	return res;
+	return _i2c_recv_pkt(i2c_idx, buf, size, dev_addr, reg);
 }
 
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, u8 *buf, u32 size)
