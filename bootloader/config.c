@@ -42,8 +42,7 @@ void set_default_configuration()
 	h_cfg.autohosoff = 0;
 	h_cfg.autonogc = 1;
 	h_cfg.updater2p = 0;
-	h_cfg.brand = NULL;
-	h_cfg.tagline = NULL;
+	h_cfg.bootprotect = 0;
 	h_cfg.errors = 0;
 	h_cfg.eks = NULL;
 	h_cfg.sept_run = EMC(EMC_SCRATCH0) & EMC_SEPT_RUN;
@@ -107,16 +106,9 @@ int create_config_entry()
 	f_puts("\nupdater2p=", &fp);
 	itoa(h_cfg.updater2p, lbuf, 10);
 	f_puts(lbuf, &fp);
-	if (h_cfg.brand)
-	{
-		f_puts("\nbrand=", &fp);
-		f_puts(h_cfg.brand, &fp);
-	}
-	if (h_cfg.tagline)
-	{
-		f_puts("\ntagline=", &fp);
-		f_puts(h_cfg.tagline, &fp);
-	}
+	f_puts("\nbootprotect=", &fp);
+	itoa(h_cfg.bootprotect, lbuf, 10);
+	f_puts(lbuf, &fp);
 	f_puts("\n", &fp);
 
 	if (mainIniFound)

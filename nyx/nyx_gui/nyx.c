@@ -241,10 +241,8 @@ void load_saved_configuration()
 						h_cfg.autonogc = atoi(kv->val);
 					else if (!strcmp("updater2p", kv->key))
 						h_cfg.updater2p = atoi(kv->val);
-					else if (!strcmp("brand", kv->key))
-						h_cfg.brand = kv->val;
-					else if (!strcmp("tagline", kv->key))
-						h_cfg.tagline = kv->val;
+					else if (!strcmp("bootprotect", kv->key))
+						h_cfg.bootprotect = atoi(kv->val);
 				}
 
 				break;

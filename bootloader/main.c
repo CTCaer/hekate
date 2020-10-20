@@ -767,6 +767,18 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomE
 	return cfg_sec;
 }
 
+static void _bootloader_corruption_protect()
+{
+	FILINFO fno;
+	if (!f_stat("bootloader", &fno))
+	{
+		if (!h_cfg.bootprotect && (fno.fattrib & AM_ARC))
+			f_chmod("bootloader", 0, AM_ARC);
+		else if (h_cfg.bootprotect && !(fno.fattrib & AM_ARC))
+			f_chmod("bootloader", AM_ARC, AM_ARC);
+	}
+}
+
 static void _auto_launch_firmware()
 {
 	if(b_cfg.extra_cfg & (EXTRA_CFG_NYX_DUMP | EXTRA_CFG_NYX_BIS))
@@ -845,16 +857,8 @@ static void _auto_launch_firmware()
 								h_cfg.autonogc = atoi(kv->val);
 							else if (!strcmp("updater2p", kv->key))
 								h_cfg.updater2p = atoi(kv->val);
-							else if (!strcmp("brand", kv->key))
-							{
-								h_cfg.brand = malloc(strlen(kv->val) + 1);
-								strcpy(h_cfg.brand, kv->val);
-							}
-							else if (!strcmp("tagline", kv->key))
-							{
-								h_cfg.tagline = malloc(strlen(kv->val) + 1);
-								strcpy(h_cfg.tagline, kv->val);
-							}
+							else if (!strcmp("bootprotect", kv->key))
+								h_cfg.bootprotect = atoi(kv->val);
 						}
 						boot_entry_id++;
 
@@ -869,6 +873,9 @@ static void _auto_launch_firmware()
 							b_cfg.autoboot = h_cfg.autoboot;
 							b_cfg.autoboot_list = h_cfg.autoboot_list;
 						}
+
+						// Apply bootloader protection against corruption.
+						_bootloader_corruption_protect();
 
 						continue;
 					}

@@ -55,6 +55,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
 | autohosoff=1       | 0: Disable, 1: If woke up from HOS via an RTC alarm, shows logo, then powers off completely, 2: No logo, immediately powers off.|
 | autonogc=1         | 0: Disable, 1: Automatically applies nogc patch if unburnt fuses found and a >= 4.0.0 HOS is booted. |
+| bootprotect=0      | 0: Disable, 1: Protect bootloader folder from being corrupted by disallowing reading or editing in HOS. |
 | updater2p=0        | 0: Disable, 1: Force updates (if needed) the reboot2payload binary to be hekate. |
 | backlight=100      | Screen backlight level. 0-255.                             |
 
