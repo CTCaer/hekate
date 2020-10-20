@@ -28,7 +28,7 @@
 #include <mem/heap.h>
 #include <mem/sdram.h>
 #include <mem/smmu.h>
-#include <power/bm92t30_stub.h>
+#include <power/bm92t36.h>
 #include <power/bq24193.h>
 #include <power/max17050.h>
 #include <sec/se.h>
@@ -1689,27 +1689,31 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	bool inserted;
 	u32 wattage = 0;
-	u32 max_voltage = 5;
 	usb_pd_objects_t usb_pd;
-	bm92t30_get_charger_type(&inserted, &usb_pd);
+	bm92t36_get_sink_info(&inserted, &usb_pd);
 	strcat(txt_buf, "\n\n\n");
 	strcat(txt_buf, inserted ? "Connected" : "Disconnected");
 
-	for (u32 i = 0; i < usb_pd.pdo_no; i++)
-		if (usb_pd.pdos[i].voltage <= 15)
-			max_voltage = usb_pd.pdos[i].voltage;
-
-	wattage = iinlim * max_voltage;
+	// Select 5V is no PD contract.
+	wattage = iinlim * (usb_pd.pdo_no ? usb_pd.selected_pdo.voltage : 5);
 
 	s_printf(txt_buf + strlen(txt_buf), "\n%d.%d W", wattage / 1000, (wattage % 1000) / 100);
 
 	if (!usb_pd.pdo_no)
 		strcat(txt_buf, "\nNon PD");
 
+	// Limit to 5 profiles so it can fit.
+	usb_pd.pdo_no = MIN(usb_pd.pdo_no, 5);
+
 	for (u32 i = 0; i < usb_pd.pdo_no; i++)
 	{
-		s_printf(txt_buf + strlen(txt_buf), "\n%d mA, %2d V",
-			usb_pd.pdos[i].amperage, usb_pd.pdos[i].voltage);
+		bool selected =
+			usb_pd.pdos[i].amperage == usb_pd.selected_pdo.amperage &&
+			usb_pd.pdos[i].voltage == usb_pd.selected_pdo.voltage;
+		s_printf(txt_buf + strlen(txt_buf), "\n%s%d mA, %2d V%s",
+			selected ? "#D4FF00 " : "",
+			usb_pd.pdos[i].amperage, usb_pd.pdos[i].voltage,
+			selected ? "#" : "");
 	}
 
 	lv_label_set_text(lb_val2, txt_buf);
