@@ -214,6 +214,10 @@ void hos_eks_save(u32 kb)
 			u8 *keys = (u8 *)calloc(0x1000, 1);
 			se_get_aes_keys(keys + 0x800, keys, 0x10);
 
+			// Set SBK back.
+			if (h_cfg.sbk_set)
+				se_aes_key_set(14, keys + 14 * 0x10, 0x10);
+
 			// Set magic and personalized info.
 			h_cfg.eks->magic = HOS_EKS_MAGIC;
 			h_cfg.eks->enabled[key_idx] = kb;
@@ -659,15 +663,18 @@ void hos_bis_keys_clear()
 		se_aes_key_clear(i);
 
 	// Set SBK back.
-	u32 sbk[4] = {
+	if (!h_cfg.sbk_set)
+	{
+		u32 sbk[4] = {
 			FUSE(FUSE_PRIVATE_KEY0),
 			FUSE(FUSE_PRIVATE_KEY1),
 			FUSE(FUSE_PRIVATE_KEY2),
 			FUSE(FUSE_PRIVATE_KEY3)
 		};
-	// Set SBK to slot 14.
-	se_aes_key_set(14, sbk, 0x10);
+		// Set SBK to slot 14.
+		se_aes_key_set(14, sbk, 0x10);
 
-	// Lock SBK from being read.
-	se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
+		// Lock SBK from being read.
+		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
+	}
 }

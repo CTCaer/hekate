@@ -56,7 +56,7 @@ extern volatile nyx_storage_t *nyx_str;
  * PCLK    - 68MHz  init (-> 136MHz -> OC/4).
  */
 
-void _config_oscillators()
+static void _config_oscillators()
 {
 	CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) = (CLOCK(CLK_RST_CONTROLLER_SPARE_REG0) & 0xFFFFFFF3) | 4; // Set CLK_M_DIVISOR to 2.
 	SYSCTR0(SYSCTR0_CNTFID0) = 19200000;             // Set counter frequency.
@@ -79,7 +79,7 @@ void _config_oscillators()
 	CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2;             // Set HCLK div to 1 and PCLK div to 3.
 }
 
-void _config_gpios()
+static void _config_gpios()
 {
 	// Clamp inputs when tristated.
 	APB_MISC(APB_MISC_PP_PINMUX_GLOBAL) = 0;
@@ -123,14 +123,14 @@ void _config_gpios()
 	// gpio_config(GPIO_PORT_Y, GPIO_PIN_1, GPIO_MODE_GPIO);
 }
 
-void _config_pmc_scratch()
+static void _config_pmc_scratch()
 {
 	PMC(APBDEV_PMC_SCRATCH20)  &= 0xFFF3FFFF; // Unset Debug console from Customer Option.
 	PMC(APBDEV_PMC_SCRATCH190) &= 0xFFFFFFFE; // Unset DATA_DQ_E_IVREF EMC_PMACRO_DATA_PAD_TX_CTRL
 	PMC(APBDEV_PMC_SECURE_SCRATCH21) |= PMC_FUSE_PRIVATEKEYDISABLE_TZ_STICKY_BIT;
 }
 
-void _mbist_workaround()
+static void _mbist_workaround()
 {
 	// Make sure Audio clocks are enabled before accessing I2S.
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
@@ -232,13 +232,14 @@ void _mbist_workaround()
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC)  = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC) & 0x1FFFFFFF) | 0x80000000;  // Set clock source to PLLP_OUT.
 }
 
-void _config_se_brom()
+static void _config_se_brom()
 {
 	// Enable fuse clock.
 	clock_enable_fuse(true);
 
 	// Skip SBK/SSK if sept was run.
-	if (!(b_cfg.boot_cfg & BOOT_CFG_SEPT_RUN))
+	bool sbk_skip = b_cfg.boot_cfg & BOOT_CFG_SEPT_RUN || FUSE(FUSE_PRIVATE_KEY0) == 0xFFFFFFFF;
+	if (!sbk_skip)
 	{
 		// Bootrom part we skipped.
 		u32 sbk[4] = {
@@ -268,7 +269,7 @@ void _config_se_brom()
 	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) = (APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) & 0xF0) | (7 << 10);
 }
 
-void _config_regulators()
+static void _config_regulators()
 {
 	// Disable low battery shutdown monitor.
 	max77620_low_battery_monitor_config(false);
