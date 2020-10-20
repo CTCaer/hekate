@@ -912,7 +912,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 		static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
-		static const char *mbox_btn_map2[] = { "\222Continue", "\222Cancel", "" };
+		static const char *mbox_btn_map2[] = { "\222Continue", "\222No", "" };
 		lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 		lv_mbox_set_recolor_text(mbox, true);
 		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);

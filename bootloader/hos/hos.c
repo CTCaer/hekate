@@ -968,10 +968,6 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf("\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
-	// Clear pkg1/pkg2 keys.
-	se_aes_key_clear(8);
-	se_aes_key_clear(11);
-
 	// Set initial mailbox values.
 	int bootStateDramPkg2 = 0;
 	int bootStatePkg2Continue = 0;
@@ -981,6 +977,10 @@ int hos_launch(ini_sec_t *cfg)
 		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
 	else if (kb == KB_FIRMWARE_VERSION_301)
 		PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
+
+	// Clear pkg1/pkg2 keys.
+	se_aes_key_clear(8);
+	se_aes_key_clear(11);
 
 	// Finalize per firmware key access. Skip access control if new exosphere.
 	switch (kb | (exo_new << 7))

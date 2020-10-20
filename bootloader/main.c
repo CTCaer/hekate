@@ -787,8 +787,6 @@ static void _auto_launch_firmware()
 			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 		check_sept(NULL);
 	}
-	else if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
-		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 
 	if (!h_cfg.sept_run)
 		auto_launch_update();
