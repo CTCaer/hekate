@@ -270,6 +270,8 @@ void load_saved_configuration()
 						n_cfg.verification = atoi(kv->val);
 					else if (!strcmp("umsemmcrw", kv->key))
 						n_cfg.ums_emmc_rw = atoi(kv->val) == 1;
+					else if (!strcmp("jcdisable", kv->key))
+						n_cfg.jc_disable = atoi(kv->val) == 1;
 				}
 
 				break;

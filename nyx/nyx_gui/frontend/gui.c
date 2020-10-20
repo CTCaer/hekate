@@ -2234,8 +2234,11 @@ void nyx_load_and_run()
 	lv_disp_drv_register(&disp_drv);
 
 	// Initialize Joy-Con.
-	lv_task_t *task_jc_init_hw = lv_task_create(jc_init_hw, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
-	lv_task_once(task_jc_init_hw);
+	if (!n_cfg.jc_disable)
+	{
+		lv_task_t *task_jc_init_hw = lv_task_create(jc_init_hw, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
+		lv_task_once(task_jc_init_hw);
+	}
 	lv_indev_drv_t indev_drv_jc;
 	lv_indev_drv_init(&indev_drv_jc);
 	indev_drv_jc.type = LV_INDEV_TYPE_POINTER;

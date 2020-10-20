@@ -740,9 +740,19 @@ void first_time_clock_edit(void *param)
 static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 {
 	FIL fp;
+	int error;
 	bool is_l_hos = false;
 	bool is_r_hos = false;
 	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info(&is_l_hos, &is_r_hos);
+
+	char *data = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(0x1000);
+
+	if (!jc_pad)
+	{
+		error = 255;
+		goto disabled;
+	}
 
 	// Count valid joycon.
 	u32 joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
@@ -753,10 +763,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	jc_pad->bt_conn_l.type = is_l_hos ? jc_pad->bt_conn_l.type : 0;
 	jc_pad->bt_conn_r.type = is_r_hos ? jc_pad->bt_conn_r.type : 0;
 
-	int error = !sd_mount();
-
-	char *data = (char *)malloc(0x4000);
-	char *txt_buf = (char *)malloc(0x1000);
+	error = !sd_mount();
 
 	if (!error)
 	{
@@ -798,6 +805,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 		sd_unmount();
 	}
 
+disabled:;
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);

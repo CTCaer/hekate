@@ -68,7 +68,8 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | timeoff=100        | Sets time offset in HEX. Must be in HOS epoch format       |
 | homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
-| umsemmcrw=1        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
+| umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
+| jcdisable=0        | 1: Disables Joycon driver completely.                      |
 
 
 ### Boot entry key/value combinations:

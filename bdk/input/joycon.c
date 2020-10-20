@@ -523,6 +523,9 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	u8 retries;
 	jc_bt_conn_t *bt_conn;
 
+	if (!jc_init_done)
+		return NULL;
+
 	bt_conn = &jc_gamepad.bt_conn_l;
 	memset(bt_conn->host_mac, 0, 6);
 	memset(bt_conn->ltk, 0, 16);

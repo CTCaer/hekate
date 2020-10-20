@@ -48,6 +48,7 @@ typedef struct _nyx_config
 	u32 home_screen;
 	u32 verification;
 	u32 ums_emmc_rw;
+	u32 jc_disable;
 } nyx_config;
 
 void set_default_configuration();
