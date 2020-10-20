@@ -293,8 +293,15 @@ void auto_launch_update()
 		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
 	else if (sd_mount())
 	{
+		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
 			launch_payload("bootloader/update.bin", true);
+		else
+		{
+			u8 *buf = calloc(0x200, 1);
+			is_ipl_updated(buf, "bootloader/update.bin", false);
+			free(buf);
+		}
 	}
 }
 
