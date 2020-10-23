@@ -1,5 +1,5 @@
 /*
- * USB Device driver for Tegra X1
+ * Enhanced USB (EHCI) Device driver for Tegra X1
  *
  * Copyright (c) 2019 CTCaer
  *
@@ -312,7 +312,7 @@ static void _usb_charger_detect()
 		gpio_config(GPIO_PORT_V, GPIO_PIN_3, GPIO_MODE_GPIO);
 
 		// Configure charger pin.
-		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) &=
+		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN1) &=
 			~(PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_TRISTATE | PINMUX_PULL_MASK);
 		gpio_config(GPIO_PORT_CC, GPIO_PIN_5, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
@@ -335,10 +335,10 @@ int usb_device_init()
 		return 0;
 
 	// Configure PLLU.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) = CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) | 0x20000000; // Disable reference clock.
-	u32 pllu_cfg = (((((CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) >> 8 << 8) | 2) & 0xFFFF00FF) | ((0x19 << 8) & 0xFFFF)) & 0xFFE0FFFF) | (1<< 16) | 0x1000000;
+	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) |= (1 << 29); // Disable reference clock.
+	u32 pllu_cfg = (((((CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) >> 8 << 8) | 2) & 0xFFFF00FF) | ((0x19 << 8) & 0xFFFF)) & 0xFFE0FFFF) | (1 << 16) | (1 << 24);
 	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg;
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg | 0x40000000; // Enable.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg | (1 << 30); // Enable.
 
 	// Wait for PLL to stabilize.
 	u32 timeout = (u32)TMR(TIMERUS_CNTR_1US) + 1300;
@@ -348,7 +348,7 @@ int usb_device_init()
 	usleep(10);
 
 	// Enable PLLU USB/HSIC/ICUSB/48M.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) | 0x2600000 | 0x800000;
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) |= 0x2E00000;
 
 	// Enable USBD clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_USBD);
@@ -1175,17 +1175,17 @@ static int _usbd_handle_ep0_control_transfer()
 
 	switch (_bmRequestType)
 	{
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_RECIPIENT_DEVICE    | USB_SETUP_TYPE_STANDARD):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):
 		ret = _usbd_handle_set_request(&ep_stall);
 		break;
 
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_RECIPIENT_INTERFACE | USB_SETUP_TYPE_STANDARD):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE):
 		ret = _usbd_ep_ack(USB_EP_CTRL_IN);
 		if (!ret)
 			usbd_otg->interface = _wValue;
 		break;
 
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_RECIPIENT_ENDPOINT  | USB_SETUP_TYPE_STANDARD):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT):
 		switch (_bRequest)
 		{
 		case USB_REQUEST_CLEAR_FEATURE:
@@ -1227,10 +1227,12 @@ static int _usbd_handle_ep0_control_transfer()
 			break;
 		}
 		break;
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_RECIPIENT_INTERFACE | USB_SETUP_TYPE_CLASS):
+
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE):
 		_usbd_handle_get_class_request(&transmit_data, descriptor, &size, &ep_stall);
 		break;
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_DEVICE    | USB_SETUP_TYPE_STANDARD):
+
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):
 		switch (_bRequest)
 		{
 		case USB_REQUEST_GET_STATUS:
@@ -1253,7 +1255,7 @@ static int _usbd_handle_ep0_control_transfer()
 		}
 		break;
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_INTERFACE | USB_SETUP_TYPE_STANDARD):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE):
 		if (_bRequest == USB_REQUEST_GET_INTERFACE)
 		{
 			descriptor = (void *)&usbd_otg->interface;
@@ -1287,7 +1289,7 @@ static int _usbd_handle_ep0_control_transfer()
 		transmit_data = 1;
 		break;
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_ENDPOINT  | USB_SETUP_TYPE_STANDARD):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT):
 		if (_bRequest == USB_REQUEST_GET_STATUS)
 		{
 			int ep_req;
@@ -1324,14 +1326,15 @@ static int _usbd_handle_ep0_control_transfer()
 			_usbd_stall_reset_ep1(3, USB_EP_CFG_STALL);
 		break;
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_INTERFACE | USB_SETUP_TYPE_CLASS):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE):
 		memset(descriptor, 0, _wLength);
 
 		_usbd_handle_get_class_request(&transmit_data, descriptor, &size, &ep_stall);
 		size = _wLength;
 		break;
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_INTERFACE | USB_SETUP_TYPE_VENDOR):
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_RECIPIENT_DEVICE    | USB_SETUP_TYPE_VENDOR):
+
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_INTERFACE):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_DEVICE):
 		if (_bRequest == USB_REQUEST_GET_MS_DESCRIPTOR)
 		{
 			switch (_wIndex)

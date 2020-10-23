@@ -75,7 +75,7 @@ typedef struct _usb_dev_descr_t
 	u8  bNumConfigs;     // Number of possible configuration.
 } __attribute__((packed)) usb_dev_descr_t;
 
-/* Device Qualigier descriptor structure */
+/* Device Qualifier descriptor structure */
 typedef struct _usb_dev_qual_descr_t
 {
 	u8  bLength;          // Size of this descriptor in bytes.

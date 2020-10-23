@@ -241,8 +241,9 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 	}
 
 #ifdef SDMMC_EMMC_OC
+	 // Add -4 TX_DLY_CODE_OFFSET if HS533.
 	if (sdmmc->id == SDMMC_4 && overclock)
-		sdmmc->regs->vendllcalcfg = sdmmc->regs->vendllcalcfg &= 0xFFFFC07F | (0x7C << 7); // Add -4 TX_DLY_CODE_OFFSET if HS533.
+		sdmmc->regs->vendllcalcfg = sdmmc->regs->vendllcalcfg &= 0xFFFFC07F | (0x7C << 7);
 #endif
 
 	sdmmc->regs->vendllcalcfg |= TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE;
@@ -399,9 +400,8 @@ void sdmmc_card_clock_ctrl(sdmmc_t *sdmmc, int auto_cal_enable)
 	sdmmc->auto_cal_enabled = auto_cal_enable;
 	if (auto_cal_enable)
 	{
-		if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
-			return;
-		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
+		if (sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN)
+			sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 		return;
 	}
 
@@ -725,7 +725,6 @@ static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
 		off_pu = 5;
 		break;
 	case SDMMC_1:
-	case SDMMC_3:
 		if (power == SDMMC_POWER_1_8)
 		{
 			off_pd = 123;
@@ -995,7 +994,7 @@ DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 			if (!result)
 			{
 #ifdef ERROR_EXTRA_PRINTING
-				EPRINTFARGS("SDMMC: Unknown response %08X!", sdmmc->rsp[0]);
+				EPRINTF("SDMMC: Unknown response type!");
 #endif
 			}
 		}
@@ -1117,10 +1116,7 @@ static void _sdmmc_config_emmc(u32 id)
 	case SDMMC_4:
 		// Unset park for pads.
 		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) &= 0xF8003FFF;
-		// Set default pad cfg.
-		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) & 0xFFFFC003) | 0x1040;
-
-		// Enabled schmitt trigger.
+		// Enable schmitt trigger.
 		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) |= 1; // Enable Schmitt trigger.
 		break;
 	}
@@ -1130,7 +1126,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int a
 {
 	const u32 trim_values[] = { 2, 8, 3, 8 };
 
-	if (id > SDMMC_4)
+	if (id > SDMMC_4 || id == SDMMC_3)
 		return 0;
 
 	memset(sdmmc, 0, sizeof(sdmmc_t));

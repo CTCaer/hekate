@@ -174,7 +174,7 @@ bool sd_mount()
 
 static void _sd_deinit(bool deinit)
 {
-	if (sd_mode == SD_INIT_FAIL)
+	if (deinit && sd_mode == SD_INIT_FAIL)
 		sd_mode = SD_UHS_SDR104;
 
 	if (sd_init_done && sd_mounted)

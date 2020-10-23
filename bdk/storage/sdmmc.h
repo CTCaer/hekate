@@ -116,6 +116,7 @@ typedef struct _sdmmc_storage_t
 	mmc_ext_csd_t ext_csd;
 	sd_scr_t      scr;
 	sd_ssr_t      ssr;
+	int initialized;
 } sdmmc_storage_t;
 
 int sdmmc_storage_end(sdmmc_storage_t *storage);

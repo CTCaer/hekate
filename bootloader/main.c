@@ -1156,7 +1156,7 @@ static void _show_errors()
 	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
 
 	if (*excp_enabled == EXCP_MAGIC)
-		h_cfg.errors |= ERR_EXCEPT_ENB;
+		h_cfg.errors |= ERR_EXCEPTION;
 
 	//! FIXME: Find a better way to identify if that scratch has proper data.
 	if (0 && PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
@@ -1173,23 +1173,23 @@ static void _show_errors()
 		display_backlight_brightness(150, 1000);
 
 		if (h_cfg.errors & ERR_SD_BOOT_EN)
-			WPRINTF("Failed to init SD!\n");
+			WPRINTF("Failed to mount SD!\n");
 
 		if (h_cfg.errors & ERR_LIBSYS_LP0)
 			WPRINTF("Missing LP0 (sleep mode) lib!\n");
 		if (h_cfg.errors & ERR_LIBSYS_MTC)
 			WPRINTF("Missing or old Minerva lib!\n");
 
-		if (h_cfg.errors & ~(ERR_EXCEPT_ENB | ERR_L4T_KERNEL))
+		if (h_cfg.errors & (ERR_LIBSYS_LP0 | ERR_LIBSYS_MTC))
 			WPRINTF("\nUpdate bootloader folder!\n\n");
 
-		if (h_cfg.errors & ERR_EXCEPT_ENB)
+		if (h_cfg.errors & ERR_EXCEPTION)
 		{
 			WPRINTFARGS("An exception occurred (LR %08X):\n", *excp_lr);
 			switch (*excp_type)
 			{
 			case EXCP_TYPE_RESET:
-				WPRINTF("RST");
+				WPRINTF("RESET");
 				break;
 			case EXCP_TYPE_UNDEF:
 				WPRINTF("UNDEF");
@@ -1207,7 +1207,7 @@ static void _show_errors()
 			*excp_enabled = 0;
 		}
 
-		if (h_cfg.errors & ERR_L4T_KERNEL)
+		if (0 && h_cfg.errors & ERR_L4T_KERNEL)
 		{
 			WPRINTF("Panic occurred while running L4T.\n");
 			if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))

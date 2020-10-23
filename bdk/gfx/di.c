@@ -56,7 +56,7 @@ static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
 void display_init()
 {
 	// Check if display is already initialized.
-	if (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) & 0x18000000)
+	if (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) & (BIT(CLK_L_DISP1) | BIT(CLK_L_HOST1X)))
 		display_end();
 
 	// Power on.
@@ -180,14 +180,15 @@ void display_init()
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
 	// Configure PLLD for DISP1.
-	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 460.8 MHz.
+	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 230.4 MHz.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
 	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20;
 	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = 0x2DFC00; // Use new PLLD_SDM_DIN.
 
 	// Finalize DSI configuration.
 	exec_cfg((u32 *)DSI_BASE, _display_dsi_packet_config, 21);
-	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = 4; // PCD1 | div3.
+	// Set pixel clock dividers: 230.4 / 3 / 1 = 76.8 MHz. 60 Hz.
+	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
 	exec_cfg((u32 *)DSI_BASE, _display_dsi_mode_config, 10);
 	usleep(10000);
 

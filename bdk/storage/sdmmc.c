@@ -169,6 +169,8 @@ int sdmmc_storage_end(sdmmc_storage_t *storage)
 
 	sdmmc_end(storage->sdmmc);
 
+	storage->initialized = 0;
+
 	return 1;
 }
 
@@ -178,6 +180,10 @@ static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 nu
 	u32 sct_off = sector;
 	u32 sct_total = num_sectors;
 	bool first_reinit = true;
+
+	// Exit if not initialized.
+	if (!storage->initialized)
+		return 0;
 
 	while (sct_total)
 	{
@@ -213,7 +219,8 @@ reinit_try:
 					sd_error_count_increment(SD_ERROR_INIT_FAIL);
 			}
 
-			// Reset retries to a lower number.
+			// Reset values for a retry.
+			blkcnt = 0;
 			retries = 3;
 			first_reinit = false;
 
@@ -228,6 +235,7 @@ reinit_try:
 			}
 		}
 
+		// Failed.
 		return 0;
 
 out:
@@ -631,6 +639,8 @@ DPRINTF("[MMC] succesfully switched to HS mode\n");
 
 	sdmmc_card_clock_ctrl(storage->sdmmc, SDMMC_AUTO_CAL_ENABLE);
 
+	storage->initialized = 1;
+
 	return 1;
 }
 
@@ -643,6 +653,7 @@ int sdmmc_storage_set_mmc_partition(sdmmc_storage_t *storage, u32 partition)
 		return 0;
 
 	storage->partition = partition;
+
 	return 1;
 }
 
@@ -1306,6 +1317,8 @@ DPRINTF("[SD] enabled HS\n");
 DPRINTF("[SD] got sd status\n");
 	}
 
+	storage->initialized = 1;
+
 	return 1;
 }
 
@@ -1356,6 +1369,8 @@ DPRINTF("[gc] after init\n");
 DPRINTF("[gc] after tuning\n");
 
 	sdmmc_card_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
+
+	storage->initialized = 1;
 
 	return 1;
 }

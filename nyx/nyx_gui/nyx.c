@@ -307,7 +307,7 @@ static void _show_errors()
 		switch (*excp_type)
 		{
 		case EXCP_TYPE_RESET:
-			WPRINTF("RST");
+			WPRINTF("RESET");
 			break;
 		case EXCP_TYPE_UNDEF:
 			WPRINTF("UNDEF");

@@ -1,5 +1,5 @@
 /*
- * USB driver for Tegra X1
+ * Enhanced USB (EHCI) device driver for Tegra X1
  *
  * Copyright (c) 2019 CTCaer
  *
