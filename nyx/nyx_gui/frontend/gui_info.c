@@ -646,32 +646,32 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch ((ram_density.dev0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		strcat(txt_buf, "4x512MB");
+		strcat(txt_buf, " x 512MB");
 		break;
 	case 3:
-		strcat(txt_buf, "4x768MB");
+		strcat(txt_buf, " x 768MB");
 		break;
 	case 4:
-		strcat(txt_buf, "4x1GB");
+		strcat(txt_buf, " x 1GB");
 		break;
 	default:
-		strcat(txt_buf, "4xUnk");
+		strcat(txt_buf, " x Unk");
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", (ram_density.dev0_ch0 & 0x3C) >> 2);
 	switch ((ram_density.dev1_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		strcat(txt_buf, "4x512MB");
+		strcat(txt_buf, " x 512MB");
 		break;
 	case 3:
-		strcat(txt_buf, "4x768MB");
+		strcat(txt_buf, " x 768MB");
 		break;
 	case 4:
-		strcat(txt_buf, "4x1GB");
+		strcat(txt_buf, " x 1GB");
 		break;
 	default:
-		strcat(txt_buf, "2xUnk");
+		strcat(txt_buf, " x Unk");
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.dev1_ch0 & 0x3C) >> 2);
@@ -1014,7 +1014,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 
 	char *txt_buf = (char *)malloc(0x1000);
 
-	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[3 x %s raw reads. Cancel: VOL- & VOL+]\n",
+	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[3 x %s raw reads] Abort: VOL- & VOL+\n",
 		sd_bench ? "SD Card" : "eMMC", sd_bench ? "2GB" : "8GB");
 
 	lv_mbox_set_text(mbox, txt_buf);

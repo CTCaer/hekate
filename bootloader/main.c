@@ -299,7 +299,7 @@ void auto_launch_update()
 		else
 		{
 			u8 *buf = calloc(0x200, 1);
-			is_ipl_updated(buf, "bootloader/update.bin", false);
+			is_ipl_updated(buf, "bootloader/update.bin", true);
 			free(buf);
 		}
 	}
