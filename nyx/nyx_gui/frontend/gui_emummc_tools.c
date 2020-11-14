@@ -30,6 +30,7 @@
 #include <utils/list.h>
 #include <utils/sprintf.h>
 #include <utils/types.h>
+#include <libs/lvgl/lv_objx/lv_list.h>
 
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
@@ -755,10 +756,12 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 typedef struct _emummc_images_t
 {
 	char *dirlist;
-	u32 part_sector[3];
-	u32 part_type[3];
-	u32 part_end[3];
-	char part_path[3 * 128];
+	char *dirlist2;
+	u32 part_sector[127];
+	u32 part_type[127];
+	u32 part_end[127];
+	u32 part_size[127];
+	char part_path[127 * 128];
 	lv_obj_t *win;
 } emummc_images_t;
 
@@ -799,22 +802,29 @@ static void _create_emummc_saved_mbox()
 	lv_obj_set_top(mbox, true);
 }
 
+lv_obj_t *list_raw_based;
+
 static lv_res_t _save_raw_emummc_cfg_action(lv_obj_t * btn)
 {
-	lv_btn_ext_t *ext = lv_obj_get_ext_attr(btn);
-	switch (ext->idx)
-	{
-	case 0:
-		save_emummc_cfg(1, emummc_img->part_sector[0], &emummc_img->part_path[0]);
-		break;
-	case 1:
-		save_emummc_cfg(2, emummc_img->part_sector[1], &emummc_img->part_path[128]);
-		break;
-	case 2:
-		save_emummc_cfg(3, emummc_img->part_sector[2], &emummc_img->part_path[256]);
-		break;
-	}
+	int idx = lv_list_get_btn_index(list_raw_based, btn);
+	char emupath[12];
+	s_printf(emupath, "emuMMC/RAW%d", idx + 1);
+	
+	save_emummc_cfg(idx + 1, emummc_img->part_sector[idx], emupath);
 
+	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
+	gpt_t *gpt = (gpt_t *)malloc(sizeof(gpt_t));
+	
+	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+	sdmmc_storage_read(&sd_storage, 1, 33, gpt);
+	
+	mbr->partitions[1].start_sct = emummc_img->part_sector[idx];
+	mbr->partitions[1].size_sct = emummc_img->part_size[idx];
+	sdmmc_storage_write(&sd_storage, 0, 1, mbr);
+	
+	free(mbr);
+	free(gpt);
+	
 	_create_emummc_saved_mbox();
 	sd_unmount();
 
@@ -850,23 +860,38 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	emummc_img->win = win;
 
 	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
+	gpt_t *gpt = (gpt_t *)malloc(sizeof(gpt_t));
 	char *path = malloc(256);
 
-	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
+	sdmmc_storage_read(&sd_storage, 1, 33, gpt);
 
-	memset(emummc_img->part_path, 0, 3 * 128);
-
-	for (int i = 1; i < 4; i++)
+	memset(emummc_img->part_path, 0, 127 * 128);
+	int j = 0;
+	int k;
+	for (int i = 1; i < 128; i++)
 	{
-		emummc_img->part_sector[i - 1] = mbr->partitions[i].start_sct;
-		emummc_img->part_end[i - 1] = emummc_img->part_sector[i - 1] + mbr->partitions[i].size_sct - 1;
-		emummc_img->part_type[i - 1] = mbr->partitions[i].type;
+		char sect1[512];
+		sdmmc_storage_read(&sd_storage, gpt->entries[i].lba_start, 1, sect1);
+		
+		if (sect1[1] == 0x02 && sect1[4] == 0x0F && sect1[5] == 0x0E)
+		{
+			emummc_img->part_sector[j] = gpt->entries[i].lba_start;
+			emummc_img->part_end[j] = gpt->entries[i].lba_end;
+			emummc_img->part_size[j] = (u32)(gpt->entries[i].lba_end - gpt->entries[i].lba_start);
+			j++;
+		}
+		k = i;
 	}
+	
 	free(mbr);
+	free(gpt);
 
 	emummc_img->dirlist = dirlist("emuMMC", NULL, false, true);
+	emummc_img->dirlist2 = dirlist("emuMMC", NULL, false, true);
 
 	if (!emummc_img->dirlist)
+		goto out0;
+	if (!emummc_img->dirlist2)
 		goto out0;
 
 	u32 emummc_idx = 0;
@@ -887,21 +912,21 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 
 			// Check if there's a HOS image there.
 			if ((curr_list_sector == 2) || (emummc_img->part_sector[0] && curr_list_sector >= emummc_img->part_sector[0] &&
-				curr_list_sector < emummc_img->part_end[0] && emummc_img->part_type[0] != 0x83))
+				curr_list_sector < emummc_img->part_end[0]))
 			{
 				s_printf(&emummc_img->part_path[0], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
 				emummc_img->part_sector[0] = curr_list_sector;
 				emummc_img->part_end[0] = 0;
 			}
 			else if (emummc_img->part_sector[1] && curr_list_sector >= emummc_img->part_sector[1] &&
-				curr_list_sector < emummc_img->part_end[1] && emummc_img->part_type[1] != 0x83)
+				curr_list_sector < emummc_img->part_end[1])
 			{
 				s_printf(&emummc_img->part_path[1 * 128], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
 				emummc_img->part_sector[1] = curr_list_sector;
 				emummc_img->part_end[1] = 0;
 			}
 			else if (emummc_img->part_sector[2] && curr_list_sector >= emummc_img->part_sector[2] &&
-				curr_list_sector < emummc_img->part_end[2] && emummc_img->part_type[2] != 0x83)
+				curr_list_sector < emummc_img->part_end[2])
 			{
 				s_printf(&emummc_img->part_path[2 * 128], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
 				emummc_img->part_sector[2] = curr_list_sector;
@@ -915,19 +940,19 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	u32 file_based_idx = 0;
 
 	// Sanitize the directory list with sd file based ones.
-	while (emummc_img->dirlist[emummc_idx * 256])
+	while (emummc_img->dirlist2[emummc_idx * 256])
 	{
-		s_printf(path, "emuMMC/%s/file_based", &emummc_img->dirlist[emummc_idx * 256]);
+		s_printf(path, "emuMMC/%s/file_based", &emummc_img->dirlist2[emummc_idx * 256]);
 
 		if(!f_stat(path, NULL))
 		{
-			char *tmp = &emummc_img->dirlist[emummc_idx * 256];
-			memcpy(&emummc_img->dirlist[file_based_idx * 256], tmp, strlen(tmp) + 1);
+			char *tmp = &emummc_img->dirlist2[emummc_idx * 256];
+			memcpy(&emummc_img->dirlist2[file_based_idx * 256], tmp, strlen(tmp) + 1);
 			file_based_idx++;
 		}
 		emummc_idx++;
 	}
-	emummc_img->dirlist[file_based_idx * 256] = 0;
+	emummc_img->dirlist2[file_based_idx * 256] = 0;
 
 out0:;
 	static lv_style_t h_style;
@@ -965,49 +990,22 @@ out0:;
 	char *txt_buf = malloc(0x500);
 
 	// Create RAW buttons.
-	for (u32 raw_btn_idx = 0; raw_btn_idx < 3; raw_btn_idx++)
+	list_raw_based = lv_list_create(h1, NULL);
+	lv_obj_align(list_raw_based, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 2, LV_DPI / 4);
+
+	lv_obj_set_size(list_raw_based, LV_HOR_RES * 4 / 10, LV_VER_RES * 6 / 10);
+	lv_list_set_single_mode(list_raw_based, true);
+	
+	for (int i = 0; i < j; i++)
 	{
-		btn = lv_btn_create(h1, btn);
-		ext = lv_obj_get_ext_attr(btn);
-		ext->idx = raw_btn_idx;
-		btn_label = lv_label_create(btn, btn_label);
+		char sect1[512];
+		sdmmc_storage_read(&sd_storage, emummc_img->part_sector[i], 1, sect1);
+		
+		char sectstart[26];
+		s_printf(sectstart, "sector %x", emummc_img->part_sector[i]);
 
-		lv_btn_set_state(btn, LV_BTN_STATE_REL);
-		lv_obj_set_click(btn, true);
-
-		if (emummc_img->part_type[raw_btn_idx] != 0x83)
-		{
-			s_printf(txt_buf, "SD RAW %d", raw_btn_idx + 1);
-			lv_label_set_text(btn_label, txt_buf);
-		}
-
-		if (!emummc_img->part_sector[raw_btn_idx] || emummc_img->part_type[raw_btn_idx] == 0x83 || !emummc_img->part_path[raw_btn_idx * 128])
-		{
-			lv_btn_set_state(btn, LV_BTN_STATE_INA);
-			lv_obj_set_click(btn, false);
-
-			if (emummc_img->part_type[raw_btn_idx] == 0x83)
-				lv_label_set_static_text(btn_label, "Linux");
-		}
-
-		if (!raw_btn_idx)
-		{
-			lv_btn_set_fit(btn, false, true);
-			lv_obj_set_width(btn, LV_DPI * 3);
-			lv_obj_align(btn, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 2, LV_DPI / 5);
-		}
-		else
-			lv_obj_align(btn, lv_desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
-
-		lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _save_raw_emummc_cfg_action);
-
-		lv_desc = lv_label_create(h1, lv_desc);
-		lv_label_set_recolor(lv_desc, true);
-		lv_obj_set_style(lv_desc, &hint_small_style);
-
-		s_printf(txt_buf, "Sector start: 0x%08X\nFolder: %s", emummc_img->part_sector[raw_btn_idx], &emummc_img->part_path[raw_btn_idx * 128]);
-		lv_label_set_text(lv_desc, txt_buf);
-		lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
+		if (sect1[1] == 0x02 && sect1[4] == 0x0F && sect1[5] == 0x0E)
+		lv_list_add(list_raw_based, NULL, sectstart, _save_raw_emummc_cfg_action);
 	}
 
 	// Create SD File Based container.
@@ -1043,9 +1041,9 @@ out0:;
 	emummc_idx = 0;
 
 	// Add file based to the list.
-	while (emummc_img->dirlist[emummc_idx * 256])
+	while (emummc_img->dirlist2[emummc_idx * 256])
 	{
-		s_printf(path, "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+		s_printf(path, "emuMMC/%s", &emummc_img->dirlist2[emummc_idx * 256]);
 
 		lv_list_add(list_sd_based, NULL, path, _save_file_emummc_cfg_action);
 
@@ -1144,8 +1142,7 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
 		"Choose between images created in the emuMMC folder\n"
-		"or in SD card partitions. You can have at most 3 partition\n"
-		"based and countless file based.");
+		"or in SD card partitions. You can have as many emummc's\nboth partition and file based as your sd will fit.");
 
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
