@@ -48,7 +48,7 @@ u32 minerva_init()
 		u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
 		minerva_cfg = (void *)ep_addr;
 
-		return 0;
+		return !minerva_cfg ? 1 : 0;
 	}
 	else
 	{
