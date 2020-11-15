@@ -48,15 +48,18 @@ static inline u32 unstuff_bits(u32 *resp, u32 start, u32 size)
 static int _sdmmc_storage_check_result(u32 res)
 {
 	//Error mask:
-	//R1_OUT_OF_RANGE, R1_ADDRESS_ERROR, R1_BLOCK_LEN_ERROR,
-	//R1_ERASE_SEQ_ERROR, R1_ERASE_PARAM, R1_WP_VIOLATION,
-	//R1_LOCK_UNLOCK_FAILED, R1_COM_CRC_ERROR, R1_ILLEGAL_COMMAND,
-	//R1_CARD_ECC_FAILED, R1_CC_ERROR, R1_ERROR, R1_CID_CSD_OVERWRITE,
-	//R1_WP_ERASE_SKIP, R1_ERASE_RESET, R1_SWITCH_ERROR
-	if (!(res & 0xFDF9A080))
-		return 1;
-	//TODO: R1_SWITCH_ERROR we can skip for certain card types.
-	return 0;
+	//TODO: R1_SWITCH_ERROR can be skipped for certain card types.
+	if (res &
+		(R1_OUT_OF_RANGE       | R1_ADDRESS_ERROR | R1_BLOCK_LEN_ERROR |
+		 R1_ERASE_SEQ_ERROR    | R1_ERASE_PARAM   | R1_WP_VIOLATION    |
+		 R1_LOCK_UNLOCK_FAILED | R1_COM_CRC_ERROR | R1_ILLEGAL_COMMAND |
+		 R1_CARD_ECC_FAILED    | R1_CC_ERROR      | R1_ERROR           |
+		 R1_CID_CSD_OVERWRITE  | R1_WP_ERASE_SKIP | R1_ERASE_RESET     |
+		 R1_SWITCH_ERROR))
+		return 0;
+
+	// No errors.
+	return 1;
 }
 
 static int _sdmmc_storage_execute_cmd_type1_ex(sdmmc_storage_t *storage, u32 *resp, u32 cmd, u32 arg, u32 check_busy, u32 expected_state, u32 mask)
@@ -239,7 +242,6 @@ reinit_try:
 		return 0;
 
 out:
-DPRINTF("readwrite: %08X\n", blkcnt);
 		sct_off += blkcnt;
 		sct_total -= blkcnt;
 		bbuf += 512 * blkcnt;
@@ -721,6 +723,8 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 			break;
 		if (cond & MMC_CARD_BUSY)
 		{
+DPRINTF("[SD] cond: %08X, lv: %d\n", cond, supports_low_voltage);
+
 			if (cond & SD_OCR_CCS)
 				storage->has_sector_access = 1;
 
@@ -737,6 +741,10 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, i
 
 DPRINTF("-> switched to low voltage\n");
 				}
+			}
+			else
+			{
+DPRINTF("[SD] no low voltage support\n");
 			}
 
 			return 1;
@@ -911,7 +919,7 @@ int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
 	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, 0, hs_type))
 		return 0;
-DPRINTF("[SD] supports switch to (U)HS mode\n");
+DPRINTF("[SD] supports (U)HS mode: %d\n", buf[16] & 0xF);
 
 	u32 type_out = buf[16] & 0xF;
 	if (type_out != hs_type)
@@ -947,6 +955,7 @@ int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
 
 	u8  access_mode = buf[13];
 	u16 current_limit = buf[7] | buf[6] << 8;
+DPRINTF("[SD] access: %02X, current: %02X\n", access_mode, current_limit);
 
 	// Try to raise the current limit to let the card perform better.
 	_sd_storage_set_current_limit(storage, current_limit, buf);
@@ -1008,10 +1017,10 @@ DPRINTF("[SD] bus speed set to SDR12\n");
 DPRINTF("[SD] card accepted UHS\n");
 	if (!sdmmc_setup_clock(storage->sdmmc, type))
 		return 0;
-DPRINTF("[SD] setup clock\n");
+DPRINTF("[SD] after setup clock\n");
 	if (!sdmmc_tuning_execute(storage->sdmmc, type, MMC_SEND_TUNING_BLOCK))
 		return 0;
-DPRINTF("[SD] config tuning\n");
+DPRINTF("[SD] after tuning\n");
 	return _sdmmc_storage_check_status(storage);
 }
 
@@ -1190,6 +1199,8 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_widt
 {
 	int is_version_1 = 0;
 	u8 *buf = (u8 *)SDMMC_UPPER_BUFFER;
+
+DPRINTF("[SD] init: bus: %d, type: %d\n", bus_width, type);
 
 	// Some cards (SanDisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
