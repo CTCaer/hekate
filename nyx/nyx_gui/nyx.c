@@ -381,8 +381,6 @@ void nyx_init_load_res()
 	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
 
 	sd_unmount();
-
-	h_cfg.rcm_patched = fuse_check_patched_rcm();
 }
 
 #if (LV_LOG_PRINTF == 1)
