@@ -278,18 +278,8 @@ int usb_device_init()
 	USB(USB1_IF_USB_PHY_VBUS_SENSORS) |= 0x1000;
 	USB(USB1_IF_USB_PHY_VBUS_SENSORS) |= 0x800;
 
-	// Set UTMIPLL dividers and enable it.
-	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG0) = (CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG0) & 0xFF0000FF) | 0x190000 | 0x100;
-	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) = (CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) & 0xFF00003F) | 0x600000; // Set delay count for 38.4Mhz osc crystal.
-	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG1) = ((CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG1) & 0x7FFF000) | 0x8000 | 0x177) & 0xFFFFAFFF;
-
-	// Wait for UTMIPLL to stabilize.
-	u32 retries = 10; // Wait 20us
-	while (!(CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) & 0x80000000) && retries)
-	{
-		usleep(1);
-		retries--;
-	}
+	// Set UTMIPLL dividers and config based on OSC and enable it to 960 MHz.
+	clock_enable_utmipll();
 
 	// Configure UTMIP Transceiver Cells.
 	u32 fuse_usb_calib = FUSE(FUSE_USB_CALIB);

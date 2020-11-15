@@ -388,6 +388,22 @@ void clock_disable_pllu()
 	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) &= ~0x20000000; // Enable reference clock.
 }
 
+void clock_enable_utmipll()
+{
+	// Set UTMIPLL dividers and config based on OSC and enable it to 960 MHz.
+	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG0) = (CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG0) & 0xFF0000FF) | (25 << 16) | (1 << 8); // 38.4Mhz * (25 / 1) = 960 MHz.
+	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) = (CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) & 0xFF00003F) | (24 << 18); // Set delay count for 38.4Mhz osc crystal.
+	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG1) = (CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG1) &  0x7FFA000) | (1 << 15) | 375;
+
+	// Wait for UTMIPLL to stabilize.
+	u32 retries = 10; // Wait 20us
+	while (!(CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) & UTMIPLL_LOCK) && retries)
+	{
+		usleep(1);
+		retries--;
+	}
+}
+
 static int _clock_sdmmc_is_reset(u32 id)
 {
 	switch (id)

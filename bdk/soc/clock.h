@@ -171,6 +171,8 @@
 #define PLLC4_OUT3_CLKEN     (1 << 1)
 #define PLLC4_OUT3_RSTN_CLR  (1 << 0)
 
+#define UTMIPLL_LOCK         (1 << 31)
+
 /*
  * CLOCK Peripherals:
  * L   0 -  31
@@ -480,6 +482,7 @@ void clock_enable_pllc(u32 divn);
 void clock_disable_pllc();
 void clock_enable_pllu();
 void clock_disable_pllu();
+void clock_enable_utmipll();
 void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 val);
 void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type);
 int  clock_sdmmc_is_not_reset_and_enabled(u32 id);
