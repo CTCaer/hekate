@@ -610,7 +610,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	emc_mr_data_t ram_rev1 = sdram_read_mrx(MR7_REV_ID2);
 	emc_mr_data_t ram_density = sdram_read_mrx(MR8_DENSITY);
 	s_printf(txt_buf, "#00DDFF LPDDR4 SDRAM ##FF8000 Slot 0 | Slot 1:#\n#FF8000 Vendor:# ");
-	switch (ram_vendor.dev0_ch0)
+	switch (ram_vendor.rank0_ch0)
 	{
 	case 1:
 		strcat(txt_buf, "Samsung");
@@ -625,8 +625,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Unknown");
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", ram_vendor.dev0_ch0);
-	switch (ram_vendor.dev1_ch0)
+	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", ram_vendor.rank0_ch0);
+	switch (ram_vendor.rank1_ch0)
 	{
 	case 1:
 		strcat(txt_buf, "Samsung");
@@ -642,8 +642,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), " (%d)\n#FF8000 Rev ID:# %04X #FF8000 |# %04X\n#FF8000 Density:# ",
-		ram_vendor.dev1_ch0, (ram_rev0.dev0_ch0 << 8) | ram_rev1.dev0_ch0, (ram_rev0.dev1_ch0 << 8) | ram_rev1.dev1_ch0);
-	switch ((ram_density.dev0_ch0 & 0x3C) >> 2)
+		ram_vendor.rank1_ch0, (ram_rev0.rank0_ch0 << 8) | ram_rev1.rank0_ch0, (ram_rev0.rank1_ch0 << 8) | ram_rev1.rank1_ch0);
+	switch ((ram_density.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
 		strcat(txt_buf, " x 512MB");
@@ -658,8 +658,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x Unk");
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", (ram_density.dev0_ch0 & 0x3C) >> 2);
-	switch ((ram_density.dev1_ch0 & 0x3C) >> 2)
+	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", (ram_density.rank0_ch0 & 0x3C) >> 2);
+	switch ((ram_density.rank1_ch0 & 0x3C) >> 2)
 	{
 	case 2:
 		strcat(txt_buf, " x 512MB");
@@ -674,7 +674,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x Unk");
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.dev1_ch0 & 0x3C) >> 2);
+	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.rank1_ch0 & 0x3C) >> 2);
 
 	// Display info.
 	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;

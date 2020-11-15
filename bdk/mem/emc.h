@@ -684,10 +684,13 @@ enum
 
 typedef struct _emc_mr_data_t
 {
-	u8 dev0_ch0;
-	u8 dev0_ch1;
-	u8 dev1_ch0;
-	u8 dev1_ch1;
+	// Device 0.
+	u8 rank0_ch0;
+	u8 rank0_ch1;
+
+	// Device 1.
+	u8 rank1_ch0;
+	u8 rank1_ch1;
 } emc_mr_data_t;
 
 #endif

@@ -85,12 +85,16 @@ static void _sdram_req_mrr_data(u32 data, bool dual_channel)
 emc_mr_data_t sdram_read_mrx(emc_mr_t mrx)
 {
 	emc_mr_data_t data;
+
+	// Device 0.
 	_sdram_req_mrr_data((1 << 31) | (mrx << 16), EMC_CHAN0);
-	data.dev0_ch0 = EMC(EMC_MRR) & 0xFF;
-	data.dev0_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
+	data.rank0_ch0 = EMC(EMC_MRR) & 0xFF;
+	data.rank0_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
+
+	// Device 1.
 	_sdram_req_mrr_data((1 << 30) | (mrx << 16), EMC_CHAN1);
-	data.dev1_ch0 = EMC(EMC_MRR) & 0xFF;
-	data.dev1_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
+	data.rank1_ch0 = EMC(EMC_MRR) & 0xFF;
+	data.rank1_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
 
 	return data;
 }
