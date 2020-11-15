@@ -266,8 +266,8 @@ int usb_device_init()
 	USB(USB1_IF_USB_SUSP_CTRL) = usb_susp_ctrl | SUSP_CTRL_UTMIP_RESET;
 	USB(USB1_IF_USB_SUSP_CTRL) = usb_susp_ctrl | SUSP_CTRL_UTMIP_PHY_ENB | SUSP_CTRL_UTMIP_RESET;
 
-	// Disable UTMIPLL IDDQ.
-	CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) &= 0xFFFFFFFD;
+	// Enable IDDQ control by software and disable UTMIPLL IDDQ.
+	CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) = (CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) & 0xFFFFFFFC) | 1;
 	usleep(10);
 
 	// Disable crystal clock.
@@ -367,11 +367,11 @@ int usb_device_init()
 	memset(usbdaemon, 0, sizeof(usbd_t));
 
 	usbd_otg->regs = (t210_usb2d_t *)USB_OTG_BASE;
-	usbd_otg->usb_phy_ready = 0;
+	usbd_otg->usb_phy_ready = false;
 
 	// Initialize USB PHY on the USB_OTG Controller (#1) in Device mode.
 	int result = _usbd_reset_usb_otg_phy_device_mode();
-	usbd_otg->configuration_set = 0;
+	usbd_otg->configuration_set = false;
 
 	_usb_charger_detect();
 
@@ -421,8 +421,8 @@ static void _usb_device_power_down()
 	// Disable crystal clock.
 	USB(USB1_UTMIP_MISC_CFG1) &= 0xBFFFFFFF;
 
-	// Enable UTMIPLL IDDQ.
-	CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) |= 2;
+	// Force enable UTMIPLL IDDQ.
+	CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) |= 3;
 
 	// Set XUSB_PADCTL reset
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_PADCTL);
