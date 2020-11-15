@@ -228,6 +228,8 @@ typedef struct _usb_desc_t
 	usb_dev_bot_t *dev_bot;
 	u8 *vendor;
 	u8 *product;
+	u8 *serial;
+	u8 *lang_id;
 	usb_ms_os_descr_t *ms_os;
 	usb_ms_cid_descr_t *ms_cid;
 	usb_ms_ext_prop_descr_t *mx_ext;
@@ -367,6 +369,19 @@ usb_dev_bot_t usb_device_binary_object_descriptor =
 	.bFunctionalitySupport  = 1,   // FS and above.
 	.bU1DevExitLat          = 0,
 	.wU2DevExitLat          = 0
+};
+
+u8 usb_lang_id_string_descriptor[4] =
+{
+	4, 3,
+	0x09, 0x04
+};
+
+u8 usb_serial_string_descriptor[26] =
+{
+	26, 0x03,
+	'C', 0x00, '7', 0x00, 'C', 0x00, '0', 0x00,
+	'9', 0x00, '2', 0x00, '4', 0x00, '2', 0x00, 'F', 0x00, '7', 0x00, '0', 0x00, '3', 0x00
 };
 
 u8 usb_vendor_string_descriptor_ums[32] =
@@ -716,6 +731,8 @@ usb_desc_t usb_gadget_ums_descriptors =
 	.dev_bot   = &usb_device_binary_object_descriptor,
 	.vendor    = usb_vendor_string_descriptor_ums,
 	.product   = usb_product_string_descriptor_ums,
+	.serial    = usb_serial_string_descriptor,
+	.lang_id   = usb_lang_id_string_descriptor,
 	.ms_os     = &usb_ms_os_descriptor,
 	.ms_cid    = &usb_ms_cid_descriptor,
 	.mx_ext    = &usb_ms_ext_prop_descriptor_ums
@@ -730,6 +747,8 @@ usb_desc_t usb_gadget_hid_jc_descriptors =
 	.dev_bot   = &usb_device_binary_object_descriptor,
 	.vendor    = usb_vendor_string_descriptor_hid,
 	.product   = usb_product_string_descriptor_hid_jc,
+	.serial    = usb_serial_string_descriptor,
+	.lang_id   = usb_lang_id_string_descriptor,
 	.ms_os     = &usb_ms_os_descriptor,
 	.ms_cid    = &usb_ms_cid_descriptor,
 	.mx_ext    = &usb_ms_ext_prop_descriptor_hid

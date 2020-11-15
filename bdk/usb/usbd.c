@@ -188,19 +188,6 @@ typedef struct _usbd_controller_t
 	bool charger_detect;
 } usbd_controller_t;
 
-u8 usb_serial_string_descriptor[26] =
-{
-	26, 0x03,
-	'C', 0x00, '7', 0x00, 'C', 0x00, '0', 0x00,
-	'9', 0x00, '2', 0x00, '4', 0x00, '2', 0x00, 'F', 0x00, '7', 0x00, '0', 0x00, '3', 0x00
-};
-
-u8 usb_lang_id_string_descriptor[] =
-{
-	4, 3,
-	0x09, 0x04
-};
-
 usbd_t *usbdaemon;
 
 usbd_controller_t *usbd_otg;
@@ -1070,15 +1057,15 @@ static void _usbd_handle_get_descriptor(bool *transmit_data, void **descriptor, 
 			*size = usbd_otg->desc->product[0];
 			break;
 		case 3:
-			*descriptor = usb_serial_string_descriptor;
-			*size = usb_serial_string_descriptor[0];
+			*descriptor = usbd_otg->desc->serial;
+			*size = usbd_otg->desc->serial[0];
 			break;
 		case 0xEE:
 			*descriptor = usbd_otg->desc->ms_os;
 			*size = usbd_otg->desc->ms_os->bLength;
 			break;
 		default:
-			*descriptor = usb_lang_id_string_descriptor;
+			*descriptor = usbd_otg->desc->lang_id;
 			*size = 4;
 			break;
 		}
