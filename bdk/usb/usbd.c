@@ -242,11 +242,8 @@ static void _usb_charger_detect()
 	}
 }
 
-int usb_device_init()
+static void _usb_init_phy()
 {
-	if (usb_init_done)
-		return 0;
-
 	// Configure and enable PLLU.
 	clock_enable_pllu();
 
@@ -308,7 +305,8 @@ int usb_device_init()
 
 	// Enable crystal clock.
 	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) |= 0x40000000;
-	// Enable USB2 tracking.
+
+	// Enable USB2 tracking clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_Y_SET) = BIT(CLK_Y_USB2_TRK);
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_USB2_HSIC_TRK) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_USB2_HSIC_TRK) & 0xFFFFFF00) | 6; // Set trank divisor to 4.
 
@@ -331,7 +329,7 @@ int usb_device_init()
 	// TRK cycle done. Force PDTRK input into power down.
 	USB(USB1_UTMIP_BIAS_CFG1) = (USB(USB1_UTMIP_BIAS_CFG1) & 0xFF7FFFFF) | 1;
 
-	// Disable USB2_TRK clock and configure UTMIP misc.
+	// Disable USB2 tracking clock and configure UTMIP misc.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_Y_CLR) = BIT(CLK_Y_USB2_TRK);
 	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) = (CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) & 0xFEFFFFEA) | 0x2000000 | 0x28 | 2;
 	usleep(1);
@@ -340,7 +338,7 @@ int usb_device_init()
 	usleep(1);
 
 	// Clear power downs on UTMIP ID and VBUS wake up, PD, PD2, PDZI, PDCHRP, PDDR.
-	PMC(APBDEV_PMC_USB_AO) &= 0xFFFFFFF3; // UTMIP ID and VBUS wake up.
+	PMC(APBDEV_PMC_USB_AO) &= 0xFFFFFFF3;    // UTMIP ID and VBUS wake up.
 	usleep(1);
 	USB(USB1_UTMIP_XCVR_CFG0) &= 0xFFFFBFFF; // UTMIP_FORCE_PD_POWERDOWN.
 	usleep(1);
@@ -352,6 +350,15 @@ int usb_device_init()
 	usleep(1);
 	USB(USB1_UTMIP_XCVR_CFG1) &= 0xFFFFFFEF; // UTMIP_FORCE_PDDR_POWERDOWN.
 	usleep(1);
+}
+
+int usb_device_init()
+{
+	if (usb_init_done)
+		return 0;
+
+	// Initialize USB2 controller PHY.
+	_usb_init_phy();
 
 	// AHB USB performance cfg.
 	AHB_GIZMO(AHB_GIZMO_AHB_MEM) |= AHB_MEM_ENB_FAST_REARBITRATE;
