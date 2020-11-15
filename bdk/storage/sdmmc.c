@@ -994,7 +994,7 @@ DPRINTF("[SD] bus speed set to SDR50\n");
 		if (access_mode & SD_MODE_UHS_SDR25)
 		{
 			type = SDHCI_TIMING_UHS_SDR25;
-			hs_type = UHS_SDR50_BUS_SPEED;
+			hs_type = UHS_SDR25_BUS_SPEED;
 DPRINTF("[SD] bus speed set to SDR25\n");
 			storage->csd.busspeed = 25;
 			break;
