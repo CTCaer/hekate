@@ -33,32 +33,32 @@
 // For disabling driver when logging is enabled.
 #include <libs/lv_conf.h>
 
-#define JC_WIRED_CMD        0x91
-#define JC_WIRED_HID        0x92
-#define JC_WIRED_INIT_REPLY 0x94
-#define JC_INIT_HANDSHAKE   0xA5
+#define JC_WIRED_CMD             0x91
+#define JC_WIRED_HID             0x92
+#define JC_WIRED_INIT_REPLY      0x94
+#define JC_INIT_HANDSHAKE        0xA5
 
-#define JC_WIRED_CMD_MAC 0x01
-#define JC_WIRED_CMD_10  0x10
+#define JC_WIRED_CMD_MAC         0x01
+#define JC_WIRED_CMD_10          0x10
 
-#define JC_HID_OUTPUT_RPT 0x01
-#define JC_HID_RUMBLE_RPT 0x10
+#define JC_HID_OUTPUT_RPT        0x01
+#define JC_HID_RUMBLE_RPT        0x10
 
-#define JC_HID_INPUT_RPT  0x30
-#define JC_HID_SUBMCD_RPT 0x21
+#define JC_HID_INPUT_RPT         0x30
+#define JC_HID_SUBMCD_RPT        0x21
 
 #define JC_HID_SUBCMD_HCI_STATE  0x06
-#define  HCI_STATE_SLEEP     0x00
-#define  HCI_STATE_RECONNECT 0x01
-#define  HCI_STATE_PAIR      0x02
-#define  HCI_STATE_HOME      0x04
+#define  HCI_STATE_SLEEP         0x00
+#define  HCI_STATE_RECONNECT     0x01
+#define  HCI_STATE_PAIR          0x02
+#define  HCI_STATE_HOME          0x04
 #define JC_HID_SUBCMD_SPI_READ   0x10
-#define  SPI_READ_OFFSET     0x20
+#define  SPI_READ_OFFSET         0x20
 #define JC_HID_SUBCMD_RUMBLE_CTL 0x48
 #define JC_HID_SUBCMD_SND_RUMBLE 0xFF
 
 #define JC_BTN_MASK_L 0xFF2900 // 0xFFE900: with charge status.
-#define JC_BTN_MASK_R 0x76FF
+#define JC_BTN_MASK_R 0x0056FF
 
 #define JC_ID_L 1
 #define JC_ID_R 2
