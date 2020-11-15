@@ -182,18 +182,24 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 					list_append(&ctxt->kip1_list, &mkip1->link);
 					DPRINTF("Loaded %s.kip1 from FSS0 (size %08X)\n", curr_fss_cnt[i].name, curr_fss_cnt[i].size);
 					break;
+
+				case CNT_TYPE_KRN:
+					if (stock)
+						continue;
+					ctxt->kernel_size = curr_fss_cnt[i].size;
+					ctxt->kernel = content;
+					break;
+
 				case CNT_TYPE_EXO:
 					ctxt->secmon_size = curr_fss_cnt[i].size;
 					ctxt->secmon = content;
 					break;
+
 				case CNT_TYPE_WBT:
 					ctxt->warmboot_size = curr_fss_cnt[i].size;
 					ctxt->warmboot = content;
 					break;
-				case CNT_TYPE_KRN:
-					ctxt->kernel_size = curr_fss_cnt[i].size;
-					ctxt->kernel = content;
-					break;
+
 				default:
 					continue;
 				}
