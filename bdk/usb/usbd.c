@@ -962,11 +962,15 @@ static void _usbd_handle_get_descriptor(bool *transmit_data, void **descriptor, 
 			{
 				tmp->endpoint[0].wMaxPacketSize = 0x200;
 				tmp->endpoint[1].wMaxPacketSize = 0x200;
+				tmp->endpoint[0].bInterval = usbd_otg->gadget == USB_GADGET_HID_GAMEPAD ? 4 : 3; // 8ms : 4ms.
+				tmp->endpoint[1].bInterval = usbd_otg->gadget == USB_GADGET_HID_GAMEPAD ? 4 : 3; // 8ms : 4ms.
 			}
 			else // Full speed. 64 bytes.
 			{
 				tmp->endpoint[0].wMaxPacketSize = 0x40;
 				tmp->endpoint[1].wMaxPacketSize = 0x40;
+				tmp->endpoint[0].bInterval = usbd_otg->gadget == USB_GADGET_HID_GAMEPAD ? 8 : 4; // 8ms : 4ms.
+				tmp->endpoint[1].bInterval = usbd_otg->gadget == USB_GADGET_HID_GAMEPAD ? 8 : 4; // 8ms : 4ms.
 			}
 		}
 		*descriptor = usbd_otg->desc->cfg;

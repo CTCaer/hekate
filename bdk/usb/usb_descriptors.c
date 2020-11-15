@@ -429,7 +429,7 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 	.endpoint[0].bEndpointAddress = 0x81, // USB_EP_ADDR_BULK_IN.
 	.endpoint[0].bmAttributes     = USB_EP_TYPE_INTR,
 	.endpoint[0].wMaxPacketSize   = 0x200,
-	.endpoint[0].bInterval        = 4, // 4ms on FS, 8ms on HS.
+	.endpoint[0].bInterval        = 4,   // 8ms on HS.
 
 	/* Endpoint descriptor structure EP1 OUT */
 	.endpoint[1].bLength          = 7,
@@ -437,7 +437,7 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 	.endpoint[1].bEndpointAddress = 0x01, // USB_EP_ADDR_BULK_OUT.
 	.endpoint[1].bmAttributes     = USB_EP_TYPE_INTR,
 	.endpoint[1].wMaxPacketSize   = 0x200,
-	.endpoint[1].bInterval        = 4 // 4ms on FS, 8ms on HS.
+	.endpoint[1].bInterval        = 4    // 8ms on HS.
 };
 
 static u8 usb_vendor_string_descriptor_hid[22] =
@@ -498,7 +498,7 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_touch =
 	.endpoint[0].bEndpointAddress = 0x81, // USB_EP_ADDR_BULK_IN.
 	.endpoint[0].bmAttributes     = USB_EP_TYPE_INTR,
 	.endpoint[0].wMaxPacketSize   = 0x200,
-	.endpoint[0].bInterval        = 4, // 4ms on FS, 8ms on HS.
+	.endpoint[0].bInterval        = 3,   // 4ms on HS.
 
 	/* Endpoint descriptor structure EP1 OUT */
 	.endpoint[1].bLength          = 7,
@@ -506,7 +506,7 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_touch =
 	.endpoint[1].bEndpointAddress = 0x01, // USB_EP_ADDR_BULK_OUT.
 	.endpoint[1].bmAttributes     = USB_EP_TYPE_INTR,
 	.endpoint[1].wMaxPacketSize   = 0x200,
-	.endpoint[1].bInterval        = 4 // 4ms on FS, 8ms on HS.
+	.endpoint[1].bInterval        = 3    // 4ms on HS.
 };
 
 usb_desc_t usb_gadget_ums_descriptors =
