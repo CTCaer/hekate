@@ -221,6 +221,8 @@ typedef struct _usbd_gadget_ums_t {
 	void (*set_text)(void *, const char *);
 } usbd_gadget_ums_t;
 
+static usb_ops_t usb_ops;
+
 static inline void put_array_le_to_be16(u16 val, void *p)
 {
 	u8 *_p = p;
@@ -271,7 +273,7 @@ static void raise_exception(usbd_gadget_ums_t *ums, enum ums_state new_state)
 
 static void ums_handle_ep0_ctrl(usbd_gadget_ums_t *ums)
 {
-	if (usbd_handle_ep0_pending_control_transfer())
+	if (usb_ops.usbd_handle_ep0_ctrl_setup())
 		raise_exception(ums, UMS_STATE_PROTOCOL_RESET);
 }
 
@@ -284,30 +286,36 @@ static int ums_wedge_bulk_in_endpoint(usbd_gadget_ums_t *ums)
 
 static int ums_set_stall(u32 ep)
 {
-	usbd_set_ep_stall(ep, 1);
+	usb_ops.usbd_set_ep_stall(ep, USB_EP_CFG_STALL);
 
 	return 0;
 }
 
 static int ums_clear_stall(u32 ep)
 {
-	usbd_set_ep_stall(ep, 0);
+	usb_ops.usbd_set_ep_stall(ep, USB_EP_CFG_CLEAR);
 
 	return 0;
+}
+
+static void ums_flush_endpoint(u32 ep)
+{
+	if (usb_ops.usbd_flush_endpoint)
+		usb_ops.usbd_flush_endpoint(ep);
 }
 
 static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, u32 ep, bool sync)
 {
 	if (ep == bulk_ctxt->bulk_in)
 	{
-		bulk_ctxt->bulk_in_status = usb_device_write_ep1_in(
+		bulk_ctxt->bulk_in_status = usb_ops.usb_device_ep1_in_write(
 			bulk_ctxt->bulk_in_buf, bulk_ctxt->bulk_in_length,
 			&bulk_ctxt->bulk_in_length_actual, sync);
 
 		if (bulk_ctxt->bulk_in_status == 26)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP IN");
-			usbd_flush_endpoint(bulk_ctxt->bulk_in);
+			ums_flush_endpoint(bulk_ctxt->bulk_in);
 		}
 
 		if (sync)
@@ -315,14 +323,14 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 	}
 	else
 	{
-		bulk_ctxt->bulk_out_status = usb_device_read_ep1_out(
+		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_read(
 			bulk_ctxt->bulk_out_buf, bulk_ctxt->bulk_out_length,
 			&bulk_ctxt->bulk_out_length_actual, sync);
 
 		if (bulk_ctxt->bulk_out_status == 26)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
-			usbd_flush_endpoint(bulk_ctxt->bulk_out);
+			ums_flush_endpoint(bulk_ctxt->bulk_out);
 		}
 
 		if (sync)
@@ -332,14 +340,14 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 
 static void _ums_transfer_out_big_read(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 {
-		bulk_ctxt->bulk_out_status = usb_device_read_ep1_out_big_reads(
+		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_read_big(
 			bulk_ctxt->bulk_out_buf, bulk_ctxt->bulk_out_length,
 			&bulk_ctxt->bulk_out_length_actual);
 
 		if (bulk_ctxt->bulk_out_status == 26)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
-			usbd_flush_endpoint(bulk_ctxt->bulk_out);
+			ums_flush_endpoint(bulk_ctxt->bulk_out);
 		}
 
 		bulk_ctxt->bulk_out_buf_state = BUF_STATE_FULL;
@@ -349,24 +357,26 @@ static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt,
 {
 	if (ep == bulk_ctxt->bulk_in)
 	{
-		bulk_ctxt->bulk_in_status = usb_device_ep1_in_writing_finish(&bulk_ctxt->bulk_in_length_actual);
+		bulk_ctxt->bulk_in_status = usb_ops.usb_device_ep1_in_writing_finish(
+			&bulk_ctxt->bulk_in_length_actual);
 
 		if (bulk_ctxt->bulk_in_status == 26)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP IN");
-			usbd_flush_endpoint(bulk_ctxt->bulk_in);
+			ums_flush_endpoint(bulk_ctxt->bulk_in);
 		}
 
 		bulk_ctxt->bulk_in_buf_state = BUF_STATE_EMPTY;
 	}
 	else
 	{
-		bulk_ctxt->bulk_out_status = usb_device_ep1_out_reading_finish(&bulk_ctxt->bulk_out_length_actual);
+		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_reading_finish(
+			&bulk_ctxt->bulk_out_length_actual, 1000000);
 
 		if (bulk_ctxt->bulk_out_status == 26)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
-			usbd_flush_endpoint(bulk_ctxt->bulk_out);
+			ums_flush_endpoint(bulk_ctxt->bulk_out);
 		}
 
 		bulk_ctxt->bulk_out_buf_state = BUF_STATE_FULL;
@@ -497,7 +507,7 @@ static int _scsi_read(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			break;
 
 		// Start the USB transfer.
-		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, false);
+		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_START);
 		first_read = false;
 
 		// Increment our buffer to read new data.
@@ -943,7 +953,7 @@ static int _scsi_mode_sense(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		buf += 4;
 	}
 	else // SC_MODE_SENSE_10.
-	{ 
+	{
 		buf[3] = (ums->lun.ro ? 0x80 : 0x00); // WP, DPOFUA.
 		buf += 8;
 	}
@@ -1382,7 +1392,7 @@ static int pad_with_zeros(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		u32 nsend = MIN(ums->usb_amount_left, USB_EP_BUFFER_MAX_SIZE);
 		memset(bulk_ctxt->bulk_in_buf + current_len_to_keep, 0, nsend - current_len_to_keep);
 		bulk_ctxt->bulk_in_length = nsend;
-		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, true);
+		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
 		ums->usb_amount_left -= nsend;
 		current_len_to_keep = 0;
 	}
@@ -1400,7 +1410,7 @@ static int throw_away_data(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			u32 amount = MIN(ums->usb_amount_left, USB_EP_BUFFER_MAX_SIZE);
 
 			bulk_ctxt->bulk_out_length = amount;
-			_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, true);
+			_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED);
 			ums->usb_amount_left -= amount;
 
 			return 0;
@@ -1447,7 +1457,7 @@ static int finish_reply(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			// If there's no residue, simply send the last buffer.
 			if (!ums->residue)
 			{
-				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, true);
+				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
 
 			/* For Bulk-only, if we're allowed to stall then send the
 			 * short packet and halt the bulk-in endpoint.  If we can't
@@ -1455,7 +1465,7 @@ static int finish_reply(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			}
 			else if (ums->can_stall)
 			{
-				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, true);
+				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
 				rc = ums_set_stall(bulk_ctxt->bulk_in);
 				ums->set_text(ums->label, "#C7EA46 Status:# Residue. Stalled EP IN");
 			}
@@ -1528,7 +1538,7 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			{
 				if (bulk_ctxt->bulk_out_status == 3)
 				{
-					if (usb_device_get_port_status() == 0x885)
+					if (usb_ops.usb_device_get_port_in_sleep())
 					{
 						ums->set_text(ums->label, "#C7EA46 Status:# EP in sleep");
 						ums->timeouts += 10;
@@ -1634,7 +1644,7 @@ static int get_next_command(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	bulk_ctxt->bulk_out_length = USB_BULK_CB_WRAP_LEN;
 
 	/* Queue a request to read a Bulk-only CBW */
-	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, true);
+	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED);
 
 	/* We will drain the buffer in software, which means we
 	 * can reuse it for the next filling.  No need to advance
@@ -1680,7 +1690,7 @@ static void send_status(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	csw->Status = status;
 
 	bulk_ctxt->bulk_in_length = USB_BULK_CS_WRAP_LEN;
-	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, true);
+	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
 }
 
 static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
@@ -1688,8 +1698,8 @@ static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	enum ums_state old_state;
 
 	/* Clear out the controller's fifos */
-	usbd_flush_endpoint(bulk_ctxt->bulk_in);
-	usbd_flush_endpoint(bulk_ctxt->bulk_out);
+	ums_flush_endpoint(bulk_ctxt->bulk_in);
+	ums_flush_endpoint(bulk_ctxt->bulk_out);
 
 	/* Reset the I/O buffer states and pointers, the SCSI
 	 * state, and the exception.  Then invoke the handler. */
@@ -1764,26 +1774,25 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	int res = 0;
 	sdmmc_t sdmmc;
 	sdmmc_storage_t storage;
+	usbd_gadget_ums_t ums = {0};
 
+	// Get USB Controller ops.
+	usb_device_get_ops(&usb_ops);
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Started USB");
 
-	if (usb_device_init())
+	if (usb_ops.usb_device_init())
 	{
-		usbd_end(false, true);
+		usb_ops.usbd_end(false, true);
 		return 1;
 	}
 
-	usbd_gadget_ums_t ums;
-	memset(&ums, 0, sizeof(usbd_gadget_ums_t));
-
-	ums.bulk_out_maxpacket = usbd_get_max_pkt_length(USB_EP_BULK_IN);
 	ums.state = UMS_STATE_NORMAL;
 	ums.can_stall = 0;
 
-	ums.bulk_ctxt.bulk_in = 3;
+	ums.bulk_ctxt.bulk_in = USB_EP_BULK_IN;
 	ums.bulk_ctxt.bulk_in_buf = (u8 *)USB_EP_BULK_IN_BUF_ADDR;
 
-	ums.bulk_ctxt.bulk_out = 2;
+	ums.bulk_ctxt.bulk_out = USB_EP_BULK_OUT;
 	ums.bulk_ctxt.bulk_out_buf = (u8 *)USB_EP_BULK_OUT_BUF_ADDR;
 
 	// Set LUN parameters.
@@ -1820,12 +1829,12 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	ums.set_text(ums.label, "#C7EA46 Status:# Waiting for connection");
 
 	// Initialize Control Endpoint.
-	if (usb_device_ep0_initialize(USB_GADGET_UMS))
+	if (usb_ops.usb_device_enumerate(USB_GADGET_UMS))
 		goto error;
 
 	ums.set_text(ums.label, "#C7EA46 Status:# Waiting for LUN");
 
-	if (usb_device_get_max_lun(0)) // One device for now.
+	if (usb_ops.usb_device_class_send_max_lun(0)) // One device for now.
 		goto error;
 
 	ums.set_text(ums.label, "#C7EA46 Status:# Started UMS");
@@ -1885,7 +1894,7 @@ exit:
 	if (ums.lun.type == MMC_EMMC)
 		sdmmc_storage_end(ums.lun.storage);
 
-	usbd_end(true, false);
+	usb_ops.usbd_end(true, false);
 
 	return res;
 }

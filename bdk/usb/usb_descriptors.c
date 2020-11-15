@@ -19,7 +19,7 @@
 #include <usb/usb_descriptor_types.h>
 #include <utils/types.h>
 
-usb_dev_descr_t usb_device_descriptor_ums =
+static usb_dev_descr_t usb_device_descriptor_ums =
 {
 	.bLength         = 18,
 	.bDescriptorType = USB_DESCRIPTOR_DEVICE,
@@ -37,7 +37,7 @@ usb_dev_descr_t usb_device_descriptor_ums =
 	.bNumConfigs     = 1
 };
 
-usb_dev_qual_descr_t usb_device_qualifier_descriptor =
+static usb_dev_qual_descr_t usb_device_qualifier_descriptor =
 {
 	.bLength          = 10,
 	.bDescriptorType  = USB_DESCRIPTOR_DEVICE_QUALIFIER,
@@ -50,7 +50,7 @@ usb_dev_qual_descr_t usb_device_qualifier_descriptor =
 	.bReserved        = 0x00
 };
 
-usb_cfg_simple_descr_t usb_configuration_descriptor_ums =
+static usb_cfg_simple_descr_t usb_configuration_descriptor_ums =
 {
 	/* Configuration descriptor structure */
 	.config.bLength               = 9,
@@ -90,7 +90,7 @@ usb_cfg_simple_descr_t usb_configuration_descriptor_ums =
 	.endpoint[1].bInterval        = 0x00
 };
 
-usb_cfg_simple_descr_t usb_other_speed_config_descriptor_ums =
+static usb_cfg_simple_descr_t usb_other_speed_config_descriptor_ums =
 {
 	/* Other Speed Configuration descriptor structure */
 	.config.bLength               = 9,
@@ -130,7 +130,7 @@ usb_cfg_simple_descr_t usb_other_speed_config_descriptor_ums =
 	.endpoint[1].bInterval        = 0
 };
 
-usb_dev_bot_t usb_device_binary_object_descriptor =
+static usb_dev_bot_t usb_device_binary_object_descriptor =
 {
 	.bLength                = 5,
 	.bDescriptorType        = USB_DESCRIPTOR_DEVICE_BINARY_OBJECT,
@@ -155,33 +155,33 @@ usb_dev_bot_t usb_device_binary_object_descriptor =
 	.wU2DevExitLat          = 0
 };
 
-u8 usb_lang_id_string_descriptor[4] =
+static u8 usb_lang_id_string_descriptor[4] =
 {
 	4, 3,
 	0x09, 0x04
 };
 
-u8 usb_serial_string_descriptor[26] =
+static u8 usb_serial_string_descriptor[26] =
 {
 	26, 0x03,
 	'C', 0x00, '7', 0x00, 'C', 0x00, '0', 0x00,
 	'9', 0x00, '2', 0x00, '4', 0x00, '2', 0x00, 'F', 0x00, '7', 0x00, '0', 0x00, '3', 0x00
 };
 
-u8 usb_vendor_string_descriptor_ums[32] =
+static u8 usb_vendor_string_descriptor_ums[32] =
 {
 	26, 0x03,
 	'N', 0, 'y', 0, 'x', 0, ' ', 0, 'U', 0, 'S', 0, 'B', 0, ' ', 0,
 	'D', 0, 'i', 0, 's', 0, 'k', 0
 };
 
-u8 usb_product_string_descriptor_ums[22] =
+static u8 usb_product_string_descriptor_ums[22] =
 {
 	8, 0x03,
 	'U', 0, 'M', 0, 'S', 0
 };
 
-usb_ms_os_descr_t usb_ms_os_descriptor =
+static usb_ms_os_descr_t usb_ms_os_descriptor =
 {
 	.bLength         = 0x28,
 	.bDescriptorType = 0x03,
@@ -195,7 +195,7 @@ usb_ms_os_descr_t usb_ms_os_descriptor =
 	.bVendorCode     = 0x99,
 };
 
-usb_ms_cid_descr_t usb_ms_cid_descriptor =
+static usb_ms_cid_descr_t usb_ms_cid_descriptor =
 {
 	.dLength          = 0x28,
 	.wVersion         = 0x100,
@@ -212,7 +212,7 @@ usb_ms_cid_descr_t usb_ms_cid_descriptor =
 	.bCompatibleId[5] = 'B',
 };
 
-usb_ms_ext_prop_descr_t usb_ms_ext_prop_descriptor_ums =
+static usb_ms_ext_prop_descr_t usb_ms_ext_prop_descriptor_ums =
 {
 	.dLength             = 0x48,
 	.wVersion            = 0x100,
@@ -251,7 +251,7 @@ usb_ms_ext_prop_descr_t usb_ms_ext_prop_descriptor_ums =
 	.wPropertyData[1]    = 0x10,
 };
 
-usb_ms_ext_prop_descr_t usb_ms_ext_prop_descriptor_hid =
+static usb_ms_ext_prop_descr_t usb_ms_ext_prop_descriptor_hid =
 {
 	.dLength             = 7,
 	.wVersion            = 0x100,
@@ -259,7 +259,7 @@ usb_ms_ext_prop_descr_t usb_ms_ext_prop_descriptor_hid =
 	.wSections           = 0,
 };
 
-usb_dev_descr_t usb_device_descriptor_hid_jc =
+static usb_dev_descr_t usb_device_descriptor_hid_jc =
 {
 	.bLength         = 18,
 	.bDescriptorType = USB_DESCRIPTOR_DEVICE,
@@ -277,7 +277,7 @@ usb_dev_descr_t usb_device_descriptor_hid_jc =
 	.bNumConfigs     = 1
 };
 
-usb_dev_descr_t usb_device_descriptor_hid_touch =
+static usb_dev_descr_t usb_device_descriptor_hid_touch =
 {
 	.bLength         = 18,
 	.bDescriptorType = USB_DESCRIPTOR_DEVICE,
@@ -331,6 +331,8 @@ u8 hid_report_descriptor_jc[] =
 	0xc0,                      //   END_COLLECTION(),
 	0xc0                       // END_COLLECTION(),
 };
+
+u32 hid_report_descriptor_jc_size = sizeof(hid_report_descriptor_jc);
 
 u8 hid_report_descriptor_touch[] =
 {
@@ -388,6 +390,7 @@ u8 hid_report_descriptor_touch[] =
 	0xc0,                               //    END_COLLECTION
 	0xc0,                               // END_COLLECTION
 };
+u32 hid_report_descriptor_touch_size = sizeof(hid_report_descriptor_touch);
 
 static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 {
@@ -418,7 +421,7 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 	.hid.bCountryCode             = 0,
 	.hid.bNumDescriptors          = 1,
 	.hid.bClassDescriptorType     = USB_DESCRIPTOR_HID_REPORT,
-	.hid.bDescriptorLength        = 0x43,
+	.hid.bDescriptorLength        = sizeof(hid_report_descriptor_jc),
 
 	/* Endpoint descriptor structure EP1 IN */
 	.endpoint[0].bLength          = 7,
@@ -437,28 +440,28 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 	.endpoint[1].bInterval        = 4 // 4ms on FS, 8ms on HS.
 };
 
-u8 usb_vendor_string_descriptor_hid[22] =
+static u8 usb_vendor_string_descriptor_hid[22] =
 {
 	16, 0x03,
 	'N', 0, 'y', 0, 'x', 0, ' ', 0,
 	'U', 0, 'S', 0, 'B', 0
 };
 
-u8 usb_product_string_descriptor_hid_jc[24] =
+static u8 usb_product_string_descriptor_hid_jc[24] =
 {
 	24, 0x03,
 	'N', 0, 'y', 0, 'x', 0, ' ', 0,
 	'J', 0, 'o', 0, 'y', 0, '-', 0, 'C', 0, 'o', 0, 'n', 0
 };
 
-u8 usb_product_string_descriptor_hid_touch[26] =
+static u8 usb_product_string_descriptor_hid_touch[26] =
 {
 	26, 0x03,
 	'N', 0, 'y', 0, 'x', 0, ' ', 0,
 	'T', 0, 'o', 0, 'u', 0, 'c', 0, 'h', 0, 'p', 0, 'a', 0, 'd', 0
 };
 
-usb_cfg_hid_descr_t usb_configuration_descriptor_hid_touch =
+static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_touch =
 {
 	/* Configuration descriptor structure */
 	.config.bLength               = 9,

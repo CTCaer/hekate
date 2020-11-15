@@ -67,6 +67,7 @@ typedef struct _jc_cal_t
 } jc_cal_t;
 
 static jc_cal_t jc_cal_ctx;
+static usb_ops_t usb_ops;
 
 static bool _jc_calibration(jc_gamepad_rpt_t *jc_pad)
 {
@@ -306,12 +307,12 @@ static bool _fts_touch_read(touchpad_report_t *rpt)
 
 static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 {
-	u8 status = usb_device_write_ep1_in((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, true);
-
+	u8 status = usb_ops.usb_device_ep1_in_write((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, USB_XFER_SYNCED);
 	if (status == 26)
 	{
 		usbs->set_text(usbs->label, "#C7EA46 Status:# Error EP IN");
-		usbd_flush_endpoint(3);
+		if (usb_ops.usbd_flush_endpoint)
+			usb_ops.usbd_flush_endpoint(USB_EP_BULK_IN);
 	}
 
 	// Linux mitigation: If timed out, clear status.
@@ -350,6 +351,8 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 	u32 gadget_type;
 	u32 polling_time;
 
+	// Get USB Controller ops.
+	usb_device_get_ops(&usb_ops);
 	if (usbs->type == USB_HID_GAMEPAD)
 	{
 		polling_time = 8000;
@@ -363,21 +366,21 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Started USB");
 
-	if (usb_device_init())
+	if (usb_ops.usb_device_init())
 	{
-		usbd_end(false, true);
+		usb_ops.usbd_end(false, true);
 		return 1;
 	}
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Waiting for connection");
 
 	// Initialize Control Endpoint.
-	if (usb_device_ep0_initialize(gadget_type))
+	if (usb_ops.usb_device_enumerate(gadget_type))
 		goto error;
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Waiting for HID report request");
 
-	if (usb_device_get_hid_report())
+	if (usb_ops.usb_device_class_send_hid_report())
 		goto error;
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Started HID emulation");
@@ -400,11 +403,11 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 		}
 
 		// Check for suspended USB in case the cable was pulled.
-		if (usb_device_get_suspended())
+		if (usb_ops.usb_device_get_suspended())
 			break; // Disconnected.
 
 		// Handle control endpoint.
-		usbd_handle_ep0_pending_control_transfer();
+		usb_ops.usbd_handle_ep0_ctrl_setup();
 
 		// Wait max gadget timing.
 		timer = get_tmr_us() - timer;
@@ -426,7 +429,7 @@ error:
 	res = 1;
 
 exit:
-	usbd_end(true, false);
+	usb_ops.usbd_end(true, false);
 
 	return res;
 }

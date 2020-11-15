@@ -1,7 +1,7 @@
 /*
  * Enhanced USB (EHCI) Device driver for Tegra X1
  *
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #include <usb/usbd.h>
-#include <usb/usb_descriptors.h>
+#include <usb/usb_descriptor_types.h>
 #include <usb/usb_t210.h>
 
 #include <gfx_utils.h>
@@ -44,20 +44,6 @@ typedef enum
 
 typedef enum
 {
-    USB_EP_ADDR_CTRL_OUT = 0x00,
-    USB_EP_ADDR_CTRL_IN  = 0x80,
-    USB_EP_ADDR_BULK_OUT = 0x01,
-    USB_EP_ADDR_BULK_IN  = 0x81,
-} usb_ep_addr_t;
-
-typedef enum
-{
-    USB_EP_CFG_RESET = 0,
-    USB_EP_CFG_STALL = 1
-} usb_ep_cfg_t;
-
-typedef enum
-{
 	USB_EP_STATUS_IDLE      = 0,
 	USB_EP_STATUS_ACTIVE    = 1,
 	USB_EP_STATUS_ERROR     = 2,
@@ -67,71 +53,11 @@ typedef enum
 } usb_ep_status_t;
 
 typedef enum {
-	USB_SETUP_RECIPIENT_DEVICE    = 0,
-	USB_SETUP_RECIPIENT_INTERFACE = 1,
-	USB_SETUP_RECIPIENT_ENDPOINT  = 2,
-	USB_SETUP_RECIPIENT_OTHER     = 3,
-
-	USB_SETUP_TYPE_STANDARD       = 0x00,
-	USB_SETUP_TYPE_CLASS          = 0x20,
-	USB_SETUP_TYPE_VENDOR         = 0x40,
-	USB_SETUP_TYPE_RESERVED       = 0x60,
-
-	USB_SETUP_HOST_TO_DEVICE      = 0x00,
-	USB_SETUP_DEVICE_TO_HOST      = 0x80,
-} usb_setup_req_type_t;
-
-typedef enum {
-	USB_REQUEST_GET_STATUS        = 0,
-	USB_REQUEST_CLEAR_FEATURE     = 1,
-	USB_REQUEST_SET_FEATURE       = 3,
-	USB_REQUEST_SET_ADDRESS       = 5,
-	USB_REQUEST_GET_DESCRIPTOR    = 6,
-	USB_REQUEST_SET_DESCRIPTOR    = 7,
-	USB_REQUEST_GET_CONFIGURATION = 8,
-	USB_REQUEST_SET_CONFIGURATION = 9,
-	USB_REQUEST_GET_INTERFACE     = 10,
-	USB_REQUEST_SET_INTERFACE     = 11,
-	USB_REQUEST_SYNCH_FRAME       = 12,
-
-	USB_REQUEST_GET_MS_DESCRIPTOR = 0x99,
-
-	USB_REQUEST_BULK_GET_MAX_LUN  = 0xFE,
-	USB_REQUEST_BULK_RESET        = 0xFF
-} usb_standard_req_t;
-
-typedef enum {
-	USB_FEATURE_ENDPOINT_HALT        = 0,
-	USB_FEATURE_DEVICE_REMOTE_WAKEUP = 1,
-	USB_FEATURE_TEST_MODE            = 2,
-} usb_get_status_req_t;
-
-typedef enum {
-	USB_STATUS_EP_OK            = 0,
-	USB_STATUS_EP_HALTED        = 1,
-
-	USB_STATUS_DEV_SELF_POWERED = 1,
-	USB_STATUS_DEV_REMOTE_WAKE  = 2,
-} usb_set_clear_feature_req_t;
-
-typedef enum {
-	USB_XFER_DIR_OUT = 0,
-	USB_XFER_DIR_IN  = 1,
-} usb_xfer_dir_t;
-
-typedef enum {
-	USB_SPEED_LOW   = 0,
-	USB_SPEED_FULL  = 1,
-	USB_SPEED_HIGH  = 2,
-	USB_SPEED_SUPER = 3,
+	USB_LOW_SPEED   = 0,
+	USB_FULL_SPEED  = 1,
+	USB_HIGH_SPEED  = 2,
+	USB_SUPER_SPEED = 3,
 } usb_speed_t;
-
-typedef enum {
-	USB_XFER_TYPE_CONTROL = 0,
-	USB_XFER_TYPE_ISOCHRONOUS = 1,
-	USB_XFER_TYPE_BULK = 2,
-	USB_XFER_TYPE_INTERRUPT = 3,
-} usb_xfer_type_t;
 
 typedef struct _dTD_t
 {
@@ -161,15 +87,6 @@ typedef struct _usbd_t
 	int ep_bytes_requested[4];
 } usbd_t;
 
-typedef struct _usb_ctrl_setup_t
-{
-	u8 bmRequestType;
-	u8 bRequest;
-	u16 wValue;
-	u16 wIndex;
-	u16 wLength;
-} usb_ctrl_setup_t;
-
 typedef struct _usbd_controller_t
 {
 	u32 port_speed;
@@ -187,6 +104,15 @@ typedef struct _usbd_controller_t
 	u8 hid_report_sent;
 	bool charger_detect;
 } usbd_controller_t;
+
+extern u8  hid_report_descriptor_jc[];
+extern u8  hid_report_descriptor_touch[];
+extern u32 hid_report_descriptor_jc_size;
+extern u32 hid_report_descriptor_touch_size;
+
+extern usb_desc_t usb_gadget_hid_jc_descriptors;
+extern usb_desc_t usb_gadget_hid_touch_descriptors;
+extern usb_desc_t usb_gadget_ums_descriptors;
 
 usbd_t *usbdaemon;
 
@@ -535,10 +461,10 @@ static void _usb_device_power_down()
 	usb_init_done = false;
 }
 
-static void _usbd_stall_reset_ep1(usb_xfer_dir_t direction, usb_ep_cfg_t stall)
+static void _usbd_stall_reset_ep1(usb_dir_t direction, usb_ep_cfg_t stall)
 {
 	stall &= 1;
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 	{
 		usbd_otg->regs->endptctrl[1] = (usbd_otg->regs->endptctrl[1] & ~USB2D_ENDPTCTRL_TX_EP_STALL) | ((u32)stall << 16);
 		if (!stall)
@@ -552,39 +478,14 @@ static void _usbd_stall_reset_ep1(usb_xfer_dir_t direction, usb_ep_cfg_t stall)
 	}
 }
 
-void usbd_end(bool reset_ep, bool only_controller)
-{
-	if (reset_ep)
-	{
-		usbd_flush_endpoint(USB_EP_ALL);
-		_usbd_stall_reset_ep1(0, USB_EP_CFG_RESET); // EP1 Bulk IN.
-		_usbd_stall_reset_ep1(1, USB_EP_CFG_RESET); // EP1 Bulk OUT.
-		//TODO: what about EP0 simultaneous in/out reset.
-
-		usbd_otg->configuration = 0;
-		usbd_otg->interface = 0;
-		usbd_otg->configuration_set = 0;
-		usbd_otg->max_lun_set = 0;
-	}
-
-	// Stop device controller.
-	usbd_otg->regs->usbcmd &= ~USB2D_USBCMD_RUN;
-
-	// Enable PHY auto low power suspend.
-	usbd_otg->regs->hostpc1_devlc |= USB2D_HOSTPC1_DEVLC_ASUS;
-
-	if (!only_controller)
-		_usb_device_power_down();
-}
-
 void usb_device_stall_ep1_bulk_out()
 {
-	_usbd_stall_reset_ep1(USB_XFER_DIR_OUT, USB_EP_CFG_STALL);
+	_usbd_stall_reset_ep1(USB_DIR_OUT, USB_EP_CFG_STALL);
 }
 
 void usb_device_stall_ep1_bulk_in()
 {
-	_usbd_stall_reset_ep1(USB_XFER_DIR_IN, USB_EP_CFG_STALL);
+	_usbd_stall_reset_ep1(USB_DIR_IN, USB_EP_CFG_STALL);
 }
 
 int usbd_get_max_pkt_length(int endpoint)
@@ -608,7 +509,7 @@ int usbd_get_max_pkt_length(int endpoint)
 static void _usbd_initialize_ep_ctrl(u32 endpoint)
 {
 	usb_hw_ep_t actual_ep = (endpoint & 2) >> 1;
-	usb_xfer_dir_t direction = endpoint & 1;
+	usb_dir_t direction = endpoint & 1;
 
 	memset((void *)&usbdaemon->qhs[endpoint], 0, sizeof(dQH_t));
 
@@ -620,7 +521,7 @@ static void _usbd_initialize_ep_ctrl(u32 endpoint)
 	u32 max_packet_len = usbd_get_max_pkt_length(endpoint) & USB_QHD_EP_CAP_MAX_PKT_LEN_MASK;
 	usbdaemon->qhs[endpoint].ep_capabilities |= max_packet_len << 16;
 
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 	{
 		u32 endpoint_type = usbd_otg->regs->endptctrl[actual_ep] & ~USB2D_ENDPTCTRL_TX_EP_TYPE_MASK;
 		if (actual_ep)
@@ -700,13 +601,13 @@ int usbd_flush_endpoint(u32 endpoint)
 {
 
 	usb_hw_ep_t actual_ep = (endpoint & 2) >> 1;
-	usb_xfer_dir_t direction = endpoint & 1;
+	usb_dir_t direction = endpoint & 1;
 	u32 reg_mask = endpoint;
 
 	// Flash all endpoints or 1.
 	if (endpoint != USB_EP_ALL)
 	{
-		if (direction == USB_XFER_DIR_IN)
+		if (direction == USB_DIR_IN)
 			reg_mask = USB2D_ENDPT_STATUS_TX_OFFSET << actual_ep;
 		else
 			reg_mask = USB2D_ENDPT_STATUS_RX_OFFSET << actual_ep;
@@ -745,11 +646,36 @@ int usbd_flush_endpoint(u32 endpoint)
 	return 0;
 }
 
+void usbd_end(bool reset_ep, bool only_controller)
+{
+	if (reset_ep)
+	{
+		usbd_flush_endpoint(USB_EP_ALL);
+		_usbd_stall_reset_ep1(0, USB_EP_CFG_RESET); // EP1 Bulk IN.
+		_usbd_stall_reset_ep1(1, USB_EP_CFG_RESET); // EP1 Bulk OUT.
+		//TODO: what about EP0 simultaneous in/out reset.
+
+		usbd_otg->configuration = 0;
+		usbd_otg->interface = 0;
+		usbd_otg->configuration_set = false;
+		usbd_otg->max_lun_set = false;
+	}
+
+	// Stop device controller.
+	usbd_otg->regs->usbcmd &= ~USB2D_USBCMD_RUN;
+
+	// Enable PHY auto low power suspend.
+	usbd_otg->regs->hostpc1_devlc |= USB2D_HOSTPC1_DEVLC_ASUS;
+
+	if (!only_controller)
+		_usb_device_power_down();
+}
+
 static void _usbd_mark_ep_complete(u32 endpoint)
 {
 	u32 complete_bit;
 	usb_hw_ep_t actual_ep = (endpoint & 2) >> 1;
-	usb_xfer_dir_t direction = endpoint & 1;
+	usb_dir_t direction = endpoint & 1;
 
 	usbd_flush_endpoint(endpoint);
 	memset((void *)&usbdaemon->dtds[endpoint * 4], 0, sizeof(dTD_t) * 4);
@@ -757,7 +683,7 @@ static void _usbd_mark_ep_complete(u32 endpoint)
 	usbdaemon->ep_configured[endpoint] = 0;
 	usbdaemon->ep_bytes_requested[endpoint] = 0;
 
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 		complete_bit = USB2D_ENDPT_STATUS_TX_OFFSET << actual_ep;
 	else
 		complete_bit = USB2D_ENDPT_STATUS_RX_OFFSET << actual_ep;
@@ -771,9 +697,9 @@ static usb_ep_status_t _usbd_get_ep_status(usb_ep_t endpoint)
 	u32 reg_val;
 	u32 reg_mask;
 	u32 actual_ep = (endpoint & 2) >> 1;
-	usb_xfer_dir_t direction = endpoint & 1;
+	usb_dir_t direction = endpoint & 1;
 
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 		reg_mask = USB2D_ENDPT_STATUS_TX_OFFSET << actual_ep;
 	else
 		reg_mask = USB2D_ENDPT_STATUS_RX_OFFSET << actual_ep;
@@ -784,7 +710,7 @@ static usb_ep_status_t _usbd_get_ep_status(usb_ep_t endpoint)
 		reg_val = usbd_otg->regs->endptctrl[0];
 
 	// Check stalled status.
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 		status = reg_val & USB2D_ENDPTCTRL_TX_EP_STALL;
 	else
 		status = reg_val & USB2D_ENDPTCTRL_RX_EP_STALL;
@@ -793,7 +719,7 @@ static usb_ep_status_t _usbd_get_ep_status(usb_ep_t endpoint)
 		return USB_EP_STATUS_STALLED;
 
 	// Check enabled status.
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 		status = reg_val & USB2D_ENDPTCTRL_TX_EP_ENABLE;
 	else
 		status = reg_val & USB2D_ENDPTCTRL_RX_EP_ENABLE;
@@ -824,7 +750,7 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, bool sync)
 
 	u32 prime_bit;
 	usb_hw_ep_t actual_ep = (endpoint & 2) >> 1;
-	usb_xfer_dir_t direction = endpoint & 1;
+	usb_dir_t direction = endpoint & 1;
 	u32 length_left = len;
 	u32 dtd_ep_idx = endpoint * 4;
 
@@ -877,7 +803,7 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, bool sync)
 	AHB_GIZMO(AHB_AHB_MEM_PREFETCH_CFG1) &= ~MEM_PREFETCH_ENABLE;
 	AHB_GIZMO(AHB_AHB_MEM_PREFETCH_CFG1) |=  MEM_PREFETCH_ENABLE;
 
-	if (direction == USB_XFER_DIR_IN)
+	if (direction == USB_DIR_IN)
 	{
 		prime_bit = USB2D_ENDPT_STATUS_TX_OFFSET << actual_ep;
 		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
@@ -918,7 +844,7 @@ out:
 		else if (_usbd_get_ep_status(endpoint) != USB_EP_STATUS_IDLE)
 			res = 26;
 
-		if (direction == USB_XFER_DIR_OUT)
+		if (direction == USB_DIR_OUT)
 			bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 	}
 
@@ -938,25 +864,27 @@ static void _usbd_set_ep0_stall()
 			USB2D_ENDPTCTRL_RX_EP_ENABLE | USB2D_ENDPTCTRL_RX_EP_STALL;
 }
 
-void usbd_set_ep_stall(u32 endpoint, int ep_stall)
+int usbd_set_ep_stall(u32 endpoint, int ep_stall)
 {
 	usb_hw_ep_t actual_ep = (endpoint & 2) >> 1;
-	usb_xfer_dir_t direction = endpoint & 1;
+	usb_dir_t direction = endpoint & 1;
 
 	if (ep_stall)
 	{
-		if (direction == USB_XFER_DIR_IN)
+		if (direction == USB_DIR_IN)
 			usbd_otg->regs->endptctrl[actual_ep] |= USB2D_ENDPTCTRL_TX_EP_STALL; // Stall EP Bulk IN.
 		else
 			usbd_otg->regs->endptctrl[actual_ep] |= USB2D_ENDPTCTRL_RX_EP_STALL; // Stall EP Bulk OUT.
 	}
 	else
 	{
-		if (direction == USB_XFER_DIR_IN)
+		if (direction == USB_DIR_IN)
 			usbd_otg->regs->endptctrl[actual_ep] &= ~USB2D_ENDPTCTRL_TX_EP_STALL; // Clear stall EP Bulk IN.
 		else
 			usbd_otg->regs->endptctrl[actual_ep] &= ~USB2D_ENDPTCTRL_RX_EP_STALL; // Clear stall EP Bulk OUT.
 	}
+
+	return 0;
 }
 
 static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, int *size, int *ep_stall)
@@ -1256,12 +1184,12 @@ static int _usbd_handle_ep0_control_transfer()
 			if (usbd_otg->type == USB_GADGET_HID_GAMEPAD)
 			{
 				descriptor = (u8 *)&hid_report_descriptor_jc;
-				_wLength = sizeof(hid_report_descriptor_jc);
+				_wLength = hid_report_descriptor_jc_size;
 			}
 			else // USB_GADGET_HID_TOUCHPAD
 			{
 				descriptor = (u8 *)&hid_report_descriptor_touch;
-				_wLength = sizeof(hid_report_descriptor_touch);
+				_wLength = hid_report_descriptor_touch_size;
 			}
 
 			usbd_otg->hid_report_sent = 1;
@@ -1432,7 +1360,7 @@ static int _usbd_ep0_initialize()
 	return 3;
 }
 
-int usb_device_ep0_initialize(usb_gadget_type type)
+int usb_device_enumerate(usb_gadget_type type)
 {
 	switch (type)
 	{
@@ -1455,7 +1383,7 @@ int usb_device_ep0_initialize(usb_gadget_type type)
 	return result;
 }
 
-int usbd_handle_ep0_pending_control_transfer()
+int usbd_handle_ep0_ctrl_setup()
 {
 	// Acknowledge setup request for EP0 and copy its configuration.
 	u32 ep0_setup_req = usbd_otg->regs->endptsetupstat;
@@ -1476,17 +1404,17 @@ int usbd_handle_ep0_pending_control_transfer()
 	return 0;
 }
 
-static usb_ep_status_t _usbd_get_ep1_status(usb_xfer_dir_t dir)
+static usb_ep_status_t _usbd_get_ep1_status(usb_dir_t dir)
 {
 	usb_ep_t ep;
-	if (dir == USB_XFER_DIR_OUT)
+	if (dir == USB_DIR_OUT)
 		ep = USB_EP_BULK_OUT;
 	else
 		ep = USB_EP_BULK_IN;
 	return _usbd_get_ep_status(ep);
 }
 
-int usb_device_read_ep1_out(u8 *buf, u32 len, u32 *bytes_read, bool sync)
+int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 {
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
@@ -1504,7 +1432,7 @@ int usb_device_read_ep1_out(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 	return result;
 }
 
-int usb_device_read_ep1_out_big_reads(u8 *buf, u32 len, u32 *bytes_read)
+int usb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 {
 	if (len > USB_EP_BULK_OUT_MAX_XFER)
 		len = USB_EP_BULK_OUT_MAX_XFER;
@@ -1518,7 +1446,7 @@ int usb_device_read_ep1_out_big_reads(u8 *buf, u32 len, u32 *bytes_read)
 	{
 		u32 len_ep = MIN(len, USB_EP_BUFFER_MAX_SIZE);
 
-		result = usb_device_read_ep1_out(buf_curr, len_ep, &bytes, true);
+		result = usb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED);
 		if (!result)
 		{
 			len -= len_ep;
@@ -1540,16 +1468,16 @@ static int _usbd_get_ep1_out_bytes_read()
 		return (usbdaemon->ep_bytes_requested[2] - (usbdaemon->qhs[2].token >> 16));
 }
 
-int usb_device_ep1_out_reading_finish(u32 *pending_bytes)
+int usb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
 {
 	usb_ep_status_t ep_status;
 	do
 	{
-		ep_status = _usbd_get_ep1_status(USB_XFER_DIR_OUT);
+		ep_status = _usbd_get_ep1_status(USB_DIR_OUT);
 		if ((ep_status == USB_EP_STATUS_IDLE) || (ep_status == USB_EP_STATUS_DISABLED))
 			break;
 
-		usbd_handle_ep0_pending_control_transfer();
+		usbd_handle_ep0_ctrl_setup();
 	}
 	while ((ep_status == USB_EP_STATUS_ACTIVE) || (ep_status == USB_EP_STATUS_STALLED));
 
@@ -1565,7 +1493,7 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes)
 		return 26;
 }
 
-int usb_device_write_ep1_in(u8 *buf, u32 len, u32 *bytes_written, bool sync)
+int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
 {
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
@@ -1596,11 +1524,11 @@ int usb_device_ep1_in_writing_finish(u32 *pending_bytes)
 	usb_ep_status_t ep_status;
 	do
 	{
-		ep_status = _usbd_get_ep1_status(USB_XFER_DIR_IN);
+		ep_status = _usbd_get_ep1_status(USB_DIR_IN);
 		if ((ep_status == USB_EP_STATUS_IDLE) || (ep_status == USB_EP_STATUS_DISABLED))
 			break;
 
-		usbd_handle_ep0_pending_control_transfer();
+		usbd_handle_ep0_ctrl_setup();
 	}
 	while ((ep_status == USB_EP_STATUS_ACTIVE) || (ep_status == USB_EP_STATUS_STALLED));
 
@@ -1621,12 +1549,13 @@ bool usb_device_get_suspended()
 	return (suspended ? true : false);
 }
 
-u32 usb_device_get_port_status()
+bool usb_device_get_port_in_sleep()
 {
-	return (usbd_otg->regs->portsc1);
+	// Windows heuristic: Forces port into suspend, sleep and J-State.
+	return (usbd_otg->regs->portsc1) == 0x885;
 }
 
-bool usb_device_get_max_lun(u8 max_lun)
+bool usb_device_class_send_max_lun(u8 max_lun)
 {
 	// Timeout if get MAX_LUN request doesn't happen in 10s.
 	u32 timer = get_tmr_ms() + 10000;
@@ -1635,7 +1564,7 @@ bool usb_device_get_max_lun(u8 max_lun)
 
 	while (!usbd_otg->max_lun_set)
 	{
-		usbd_handle_ep0_pending_control_transfer();
+		usbd_handle_ep0_ctrl_setup();
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			return true;
 	}
@@ -1643,17 +1572,39 @@ bool usb_device_get_max_lun(u8 max_lun)
 	return false;
 }
 
-bool usb_device_get_hid_report()
+bool usb_device_class_send_hid_report()
 {
 	// Timeout if get GET_HID_REPORT request doesn't happen in 10s.
 	u32 timer = get_tmr_ms() + 10000;
 
+	// Wait for request and transfer start.
 	while (!usbd_otg->hid_report_sent)
 	{
-		usbd_handle_ep0_pending_control_transfer();
+		usbd_handle_ep0_ctrl_setup();
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			return true;
 	}
 
 	return false;
 }
+
+void usb_device_get_ops(usb_ops_t *ops)
+{
+	ops->usbd_flush_endpoint               = usbd_flush_endpoint;
+	ops->usbd_set_ep_stall                 = usbd_set_ep_stall;
+	ops->usbd_handle_ep0_ctrl_setup        = usbd_handle_ep0_ctrl_setup;
+	ops->usbd_end                          = usbd_end;
+	ops->usb_device_init                   = usb_device_init;
+	ops->usb_device_enumerate              = usb_device_enumerate;
+	ops->usb_device_class_send_max_lun     = usb_device_class_send_max_lun;
+	ops->usb_device_class_send_hid_report  = usb_device_class_send_hid_report;
+	ops->usb_device_get_suspended          = usb_device_get_suspended;
+	ops->usb_device_get_port_in_sleep      = usb_device_get_port_in_sleep;
+
+	ops->usb_device_ep1_out_read           = usb_device_ep1_out_read;
+	ops->usb_device_ep1_out_read_big       = usb_device_ep1_out_read_big;
+	ops->usb_device_ep1_out_reading_finish = usb_device_ep1_out_reading_finish;
+	ops->usb_device_ep1_in_write           = usb_device_ep1_in_write;
+	ops->usb_device_ep1_in_writing_finish  = usb_device_ep1_in_writing_finish;
+}
+
