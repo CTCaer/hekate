@@ -247,21 +247,8 @@ int usb_device_init()
 	if (usb_init_done)
 		return 0;
 
-	// Configure PLLU.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) |= (1 << 29); // Disable reference clock.
-	u32 pllu_cfg = (((((CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) >> 8 << 8) | 2) & 0xFFFF00FF) | ((0x19 << 8) & 0xFFFF)) & 0xFFE0FFFF) | (1 << 16) | (1 << 24);
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg;
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg | (1 << 30); // Enable.
-
-	// Wait for PLL to stabilize.
-	u32 timeout = (u32)TMR(TIMERUS_CNTR_1US) + 1300;
-	while (!(CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) & (1 << 27))) // PLL_LOCK.
-		if ((u32)TMR(TIMERUS_CNTR_1US) > timeout)
-			break;
-	usleep(10);
-
-	// Enable PLLU USB/HSIC/ICUSB/48M.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) |= 0x2E00000;
+	// Configure and enable PLLU.
+	clock_enable_pllu();
 
 	// Enable USBD clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_USBD);
@@ -453,10 +440,8 @@ static void _usb_device_power_down()
 	// Disable USBD clock.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = BIT(CLK_L_USBD);
 
-	// Completely disable PLLU.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x2E00000;  // Disable PLLU USB/HSIC/ICUSB/48M.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x40000000; // Disable PLLU.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) &= ~0x20000000; // Enable reference clock.
+	// Disable PLLU.
+	clock_disable_pllu();
 
 	usb_init_done = false;
 }

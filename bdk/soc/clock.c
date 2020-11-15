@@ -362,6 +362,32 @@ static void _clock_disable_pllc4(u32 mask)
 	pllc4_enabled = 0;
 }
 
+void clock_enable_pllu()
+{
+	// Configure PLLU.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) |= (1 << 29); // Disable reference clock.
+	u32 pllu_cfg = (CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) & 0xFFE00000) | (1 << 24) | (1 << 16) | (0x19 << 8) | 2;
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg;
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg | (1 << 30); // Enable.
+
+	// Wait for PLL to stabilize.
+	u32 timeout = (u32)TMR(TIMERUS_CNTR_1US) + 1300;
+	while (!(CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) & (1 << 27))) // PLL_LOCK.
+		if ((u32)TMR(TIMERUS_CNTR_1US) > timeout)
+			break;
+	usleep(10);
+
+	// Enable PLLU USB/HSIC/ICUSB/48M.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) |= 0x2E00000;
+}
+
+void clock_disable_pllu()
+{
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x2E00000;  // Disable PLLU USB/HSIC/ICUSB/48M.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x40000000; // Disable PLLU.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) &= ~0x20000000; // Enable reference clock.
+}
+
 static int _clock_sdmmc_is_reset(u32 id)
 {
 	switch (id)
