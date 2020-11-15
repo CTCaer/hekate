@@ -222,7 +222,7 @@ void hos_eks_get()
 
 		// Check if valid and for this unit.
 		if (eks->magic == HOS_EKS_MAGIC &&
-			eks->sbk_low == FUSE(FUSE_PRIVATE_KEY0))
+			eks->lot0 == FUSE(FUSE_OPT_LOT_CODE_0))
 		{
 			h_cfg.eks = eks;
 			return;
@@ -276,7 +276,7 @@ void hos_eks_save(u32 kb)
 			// Set magic and personalized info.
 			h_cfg.eks->magic = HOS_EKS_MAGIC;
 			h_cfg.eks->enabled[key_idx] = kb;
-			h_cfg.eks->sbk_low = FUSE(FUSE_PRIVATE_KEY0);
+			h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
 
 			// Copy new keys.
 			memcpy(h_cfg.eks->dkg, keys + 10 * 0x10, 0x10);

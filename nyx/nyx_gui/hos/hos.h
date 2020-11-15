@@ -60,7 +60,7 @@ typedef struct _hos_eks_mbr_t
 	u8  enabled[5];
 	u8  enabled_bis;
 	u8  rsvd[2];
-	u32 sbk_low;
+	u32 lot0;
 	u8  dkg[0x10];
 	u8  dkk[0x10];
 	hos_eks_keys_t keys[5];
