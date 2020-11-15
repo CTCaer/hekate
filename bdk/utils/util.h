@@ -38,8 +38,8 @@ typedef enum
 	ERR_EXCEPTION  = (1 << 31),
 } hekate_errors_t;
 
-#define byte_swap_32(num) (((num >> 24) & 0xff) | ((num << 8) & 0xff0000) | \
-						((num >> 8 )& 0xff00) | ((num << 24) & 0xff000000))
+#define byte_swap_32(num) ((((num) >> 24) & 0xff) | (((num) << 8) & 0xff0000) | \
+						(((num) >> 8 )& 0xff00) | (((num) << 24) & 0xff000000))
 
 typedef struct _cfg_op_t
 {

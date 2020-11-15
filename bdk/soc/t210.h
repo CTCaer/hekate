@@ -79,7 +79,7 @@
 #define VIC(off) _REG(VIC_BASE, off)
 #define TSEC(off) _REG(TSEC_BASE, off)
 #define SOR1(off) _REG(SOR1_BASE, off)
-#define ICTLR(cidx, off) _REG(ICTLR_BASE + (0x100 * cidx), off)
+#define ICTLR(cidx, off) _REG(ICTLR_BASE + (0x100 * (cidx)), off)
 #define TMR(off) _REG(TMR_BASE, off)
 #define CLOCK(off) _REG(CLOCK_BASE, off)
 #define FLOW_CTLR(off) _REG(FLOW_CTLR_BASE, off)

@@ -31,7 +31,7 @@
 #define  CFG_FORCE_WRITE_THROUGH        (1 << 3)
 #define  CFG_NEVER_ALLOCATE             (1 << 6)
 #define  CFG_ENABLE_INTERRUPT           (1 << 7)
-#define  CFG_MMU_TAG_MODE(x)            (x << 8)
+#define  CFG_MMU_TAG_MODE(x)            ((x) << 8)
 #define   TAG_MODE_PARALLEL             0
 #define   TAG_MODE_TAG_FIRST            1
 #define   TAG_MODE_MMU_FIRST            2
@@ -45,7 +45,7 @@
 #define  CFG_OBS_BUS_EN                 (1 << 31)
 
 #define BPMP_CACHE_LOCK                 0x4
-#define  LOCK_LINE(x)                   (1 << x)
+#define  LOCK_LINE(x)                   (1 << (x))
 
 #define BPMP_CACHE_SIZE                 0xC
 #define BPMP_CACHE_LFSR                 0x10

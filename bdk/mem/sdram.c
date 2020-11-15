@@ -761,7 +761,7 @@ sdram_params_t *sdram_get_params()
 
 sdram_params_t *sdram_get_params_patched()
 {
-	#define IPATCH_CONFIG(addr, data) (((addr - 0x100000) / 2) << 16 | (data & 0xffff))
+	#define IPATCH_CONFIG(addr, data) ((((addr) - 0x100000) / 2) << 16 | ((data) & 0xffff))
 	sdram_params_t *sdram_params = sdram_get_params();
 
 	// Disable Warmboot signature check.

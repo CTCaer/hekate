@@ -405,8 +405,8 @@ enum kip_offset_section
 #define KIP_PATCH_SECTION_SHIFT  (29)
 #define KIP_PATCH_SECTION_MASK   (7 << KIP_PATCH_SECTION_SHIFT)
 #define KIP_PATCH_OFFSET_MASK    (~KIP_PATCH_SECTION_MASK)
-#define GET_KIP_PATCH_SECTION(x) ((x >> KIP_PATCH_SECTION_SHIFT) & 7)
-#define GET_KIP_PATCH_OFFSET(x)  (x & KIP_PATCH_OFFSET_MASK)
+#define GET_KIP_PATCH_SECTION(x) (((x) >> KIP_PATCH_SECTION_SHIFT) & 7)
+#define GET_KIP_PATCH_OFFSET(x)  ((x) & KIP_PATCH_OFFSET_MASK)
 #define KPS(x) ((u32)(x) << KIP_PATCH_SECTION_SHIFT)
 
 static kip1_patch_t _fs_emummc[] =

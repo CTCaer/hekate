@@ -18,23 +18,23 @@
 #include <soc/gpio.h>
 #include <soc/t210.h>
 
-#define GPIO_BANK_IDX(port)      (port >> 2)
+#define GPIO_BANK_IDX(port)       ((port) >> 2)
 
-#define GPIO_CNF_OFFSET(port)     (0x00 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_OE_OFFSET(port)      (0x10 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_OUT_OFFSET(port)     (0x20 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_IN_OFFSET(port)      (0x30 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_STA_OFFSET(port) (0x40 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_ENB_OFFSET(port) (0x50 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_LVL_OFFSET(port) (0x60 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_CLR_OFFSET(port) (0x70 + ((port >> 2) << 8) + ((port % 4) << 2))
+#define GPIO_CNF_OFFSET(port)     (0x00 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_OE_OFFSET(port)      (0x10 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_OUT_OFFSET(port)     (0x20 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_IN_OFFSET(port)      (0x30 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_STA_OFFSET(port) (0x40 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_ENB_OFFSET(port) (0x50 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_LVL_OFFSET(port) (0x60 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_CLR_OFFSET(port) (0x70 + (((port) >> 2) << 8) + (((port) % 4) << 2))
 
-#define GPIO_CNF_MASKED_OFFSET(port)     (0x80 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_OE_MASKED_OFFSET(port)      (0x90 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_OUT_MASKED_OFFSET(port)     (0xA0 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_STA_MASKED_OFFSET(port) (0xC0 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_ENB_MASKED_OFFSET(port) (0xD0 + ((port >> 2) << 8) + ((port % 4) << 2))
-#define GPIO_INT_LVL_MASKED_OFFSET(port) (0xE0 + ((port >> 2) << 8) + ((port % 4) << 2))
+#define GPIO_CNF_MASKED_OFFSET(port)     (0x80 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_OE_MASKED_OFFSET(port)      (0x90 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_OUT_MASKED_OFFSET(port)     (0xA0 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_STA_MASKED_OFFSET(port) (0xC0 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_ENB_MASKED_OFFSET(port) (0xD0 + (((port) >> 2) << 8) + (((port) % 4) << 2))
+#define GPIO_INT_LVL_MASKED_OFFSET(port) (0xE0 + (((port) >> 2) << 8) + (((port) % 4) << 2))
 
 #define GPIO_IRQ_BANK1 32
 #define GPIO_IRQ_BANK2 33
