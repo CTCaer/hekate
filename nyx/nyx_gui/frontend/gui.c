@@ -276,7 +276,9 @@ static void _save_fb_to_bmp()
 
 	char path[0x80];
 
-	strcpy(path, "bootloader/screenshots");
+	strcpy(path, "bootloader");
+	f_mkdir(path);
+	strcat(path, "/screenshots");
 	f_mkdir(path);
 
 	// Create date/time name.
@@ -289,18 +291,22 @@ static void _save_fb_to_bmp()
 		max77620_rtc_epoch_to_date(epoch, &time);
 	}
 	s_printf(fname, "%04d%02d%02d_%02d%02d%02d", time.year, time.month, time.day, time.hour, time.min, time.sec);
-
 	s_printf(path + strlen(path), "/nyx%s.bmp", fname);
-	sd_save_to_file(bitmap, file_size, path);
 
-	_save_log_to_bmp(fname);
+	// Save screenshot and log.
+	int res = sd_save_to_file(bitmap, file_size, path);
+	if (!res)
+		_save_log_to_bmp(fname);
 
 	sd_unmount();
 
 	free(bitmap);
 	free(fb);
 
-	lv_mbox_set_text(mbox, SYMBOL_CAMERA"  #96FF00 Screenshot saved!#");
+	if (!res)
+		lv_mbox_set_text(mbox, SYMBOL_CAMERA"  #96FF00 Screenshot saved!#");
+	else
+		lv_mbox_set_text(mbox, SYMBOL_WARNING"  #FFDD00 Screenshot failed!#");
 	manual_system_maintenance(true);
 	lv_mbox_start_auto_close(mbox, 4000);
 
