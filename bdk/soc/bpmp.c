@@ -172,7 +172,7 @@ void bpmp_mmu_enable()
 
 	// Init BPMP MMU entries.
 	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_SHADOW_COPY_MASK) = 0;
-	for (u32 idx = 0; idx < (sizeof(mmu_entries) / sizeof(bpmp_mmu_entry_t)); idx++)
+	for (u32 idx = 0; idx < ARRAY_SIZE(mmu_entries); idx++)
 		bpmp_mmu_set_entry(idx, &mmu_entries[idx], false);
 
 	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CMD) = MMU_CMD_COPY_SHADOW;

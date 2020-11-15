@@ -25,6 +25,8 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+
 #define OFFSET_OF(t, m) ((u32)&((t *)NULL)->m)
 #define CONTAINER_OF(mp, t, mn) ((t *)((u32)mp - OFFSET_OF(t, mn)))
 

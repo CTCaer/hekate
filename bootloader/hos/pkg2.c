@@ -660,7 +660,7 @@ static kip1_id_t _kip_ids[] =
 };
 
 static kip1_id_t *_kip_id_sets = _kip_ids;
-static u32 _kip_id_sets_cnt = sizeof(_kip_ids) / sizeof(_kip_ids[0]);
+static u32 _kip_id_sets_cnt = ARRAY_SIZE(_kip_ids);
 
 void pkg2_get_ids(kip1_id_t **ids, u32 *entries)
 {
@@ -783,7 +783,7 @@ static void parse_external_kip_patches()
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)
 {
-	for (u32 i = 0; i < (sizeof(_pkg2_kernel_ids) / sizeof(pkg2_kernel_id_t)); i++)
+	for (u32 i = 0; i < ARRAY_SIZE(_pkg2_kernel_ids); i++)
 	{
 		if (!memcmp(hash, _pkg2_kernel_ids[i].hash, sizeof(_pkg2_kernel_ids[0].hash)))
 			return &_pkg2_kernel_ids[i];

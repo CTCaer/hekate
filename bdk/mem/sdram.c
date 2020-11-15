@@ -703,7 +703,7 @@ break_nosleep:
 #ifndef CONFIG_SDRAM_COMPRESS_CFG
 static void _sdram_patch_model_params(u32 dramid, u32 *params)
 {
-	for (u32 i = 0; i < sizeof(sdram_cfg_vendor_patches) / sizeof(sdram_vendor_patch_t); i++)
+	for (u32 i = 0; i < ARRAY_SIZE(sdram_cfg_vendor_patches); i++)
 		if (sdram_cfg_vendor_patches[i].dramid & DRAM_ID(dramid))
 			params[sdram_cfg_vendor_patches[i].addr] = sdram_cfg_vendor_patches[i].val;
 }

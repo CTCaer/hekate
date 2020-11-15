@@ -21,8 +21,7 @@
 
 #include <soc/fuse.h>
 #include <soc/t210.h>
-
-#define ARRAYSIZE(x) (sizeof(x) / sizeof(*x))
+#include <utils/types.h>
 
 static const u32 evp_thunk_template[] = {
 	0xe92d0007, //   STMFD   SP!, {R0-R2}
@@ -145,7 +144,7 @@ static int _patch_hash_one(u32 *word)
 	{
 		return 3;
 	}
-	for (u32 i = 0; i < ARRAYSIZE(hash_vals); i++)
+	for (u32 i = 0; i < ARRAY_SIZE(hash_vals); i++)
 	{
 		if (hash_vals[i] == hash)
 		{
@@ -234,7 +233,7 @@ int fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value))
 	while (word_count)
 	{
 		total_read += word_count;
-		if (total_read >= ARRAYSIZE(words))
+		if (total_read >= ARRAY_SIZE(words))
 		{
 			break;
 		}
@@ -291,7 +290,7 @@ int fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len)
 	while (word_count)
 	{
 		total_read += word_count;
-		if (total_read >= ARRAYSIZE(words))
+		if (total_read >= ARRAY_SIZE(words))
 		{
 			break;
 		}
