@@ -911,6 +911,7 @@ static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, 
 		break; // DELAYED_STATUS;
 	case USB_REQUEST_BULK_GET_MAX_LUN:
 		*transmit_data = true;
+		*size = 1;
 		descriptor[0] = usbd_otg->max_lun; // Set 0 LUN for 1 drive supported.
 		usbd_otg->max_lun_set = true;
 		break;
@@ -1148,6 +1149,7 @@ static int _usbd_handle_ep0_control_transfer()
 		break;
 
 	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE):
+		memset(descriptor, 0, _wLength);
 		_usbd_handle_get_class_request(&transmit_data, descriptor, &size, &ep_stall);
 		break;
 
@@ -1177,23 +1179,26 @@ static int _usbd_handle_ep0_control_transfer()
 	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE):
 		if (_bRequest == USB_REQUEST_GET_INTERFACE)
 		{
-			descriptor = (void *)&usbd_otg->interface_num;
+			memset(descriptor, 0, _wLength);
+			descriptor[0] = usbd_otg->interface_num;
+			size = _wLength;
 		}
 		else if (_bRequest == USB_REQUEST_GET_STATUS)
 		{
 			memset(descriptor, 0, _wLength);
+			size = _wLength;
 		}
 		else if (_bRequest == USB_REQUEST_GET_DESCRIPTOR && (_wValue >> 8) == USB_DESCRIPTOR_HID_REPORT && usbd_otg->gadget > USB_GADGET_UMS)
 		{
 			if (usbd_otg->gadget == USB_GADGET_HID_GAMEPAD)
 			{
 				descriptor = (u8 *)&hid_report_descriptor_jc;
-				_wLength = hid_report_descriptor_jc_size;
+				size = hid_report_descriptor_jc_size;
 			}
 			else // USB_GADGET_HID_TOUCHPAD
 			{
 				descriptor = (u8 *)&hid_report_descriptor_touch;
-				_wLength = hid_report_descriptor_touch_size;
+				size = hid_report_descriptor_touch_size;
 			}
 
 			usbd_otg->hid_report_sent = true;
@@ -1204,7 +1209,8 @@ static int _usbd_handle_ep0_control_transfer()
 			break;
 		}
 
-		size = _wLength;
+		if (_wLength < size)
+			size = _wLength;
 		transmit_data = true;
 		break;
 
@@ -1248,7 +1254,6 @@ static int _usbd_handle_ep0_control_transfer()
 	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE):
 		memset(descriptor, 0, _wLength);
 		_usbd_handle_get_class_request(&transmit_data, descriptor, &size, &ep_stall);
-		size = _wLength;
 		break;
 
 	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_INTERFACE):
