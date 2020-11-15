@@ -198,7 +198,6 @@ typedef struct _usbd_gadget_ums_t {
 	u32  lun_idx; // lun index
 	logical_unit_t lun;
 
-	u32  bulk_out_maxpacket;   // 512
 	enum ums_state state; // For exception handling.
 
 	enum data_direction data_dir;
