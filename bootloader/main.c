@@ -1224,7 +1224,7 @@ static void _show_errors()
 static void _check_low_battery()
 {
 	int enough_battery;
-	int batt_volt = 3500;
+	int batt_volt = 0;
 	int charge_status = 0;
 
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
@@ -1232,7 +1232,7 @@ static void _check_low_battery()
 
 	enough_battery = charge_status ? 3250 : 3000;
 
-	if (batt_volt > enough_battery)
+	if (batt_volt > enough_battery || !batt_volt)
 		goto out;
 
 	// Prepare battery icon resources.
