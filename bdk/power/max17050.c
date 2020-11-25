@@ -26,6 +26,8 @@
 #include <soc/i2c.h>
 #include <utils/util.h>
 
+#define BASE_SNS_UOHM 5000
+
 /* Status register bits */
 #define STATUS_POR_BIT BIT(1)
 #define STATUS_BST_BIT BIT(3)
@@ -85,31 +87,31 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 		break;
 	case MAX17050_VCELL: // Voltage now.
 		data = max17050_get_reg(MAX17050_VCELL);
-		*value = data * 625 / 8 / 1000;
+		*value = (data >> 3) * 625 / 1000; /* Units of LSB = 0.625mV */
 		battery_voltage = *value;
 		break;
 	case MAX17050_AvgVCELL: // Voltage avg.
 		data = max17050_get_reg(MAX17050_AvgVCELL);
-		*value = data * 625 / 8 / 1000;
+		*value = (data >> 3) * 625 / 1000; /* Units of LSB = 0.625mV */
 		break;
 	case MAX17050_OCVInternal: // Voltage ocv.
 		data = max17050_get_reg(MAX17050_OCVInternal);
-		*value = data * 625 / 8 / 1000;
+		*value = (data >> 3) * 625 / 1000; /* Units of LSB = 0.625mV */
 		break;
 	case MAX17050_RepSOC: // Capacity %.
 		*value = max17050_get_reg(MAX17050_RepSOC);
 		break;
 	case MAX17050_DesignCap: // Charge full design.
 		data = max17050_get_reg(MAX17050_DesignCap);
-		*value = data * 5 / 10;
+		*value = data * (BASE_SNS_UOHM / MAX17050_BOARD_SNS_RESISTOR_UOHM) / MAX17050_BOARD_CGAIN;
 		break;
 	case MAX17050_FullCAP: // Charge full.
 		data = max17050_get_reg(MAX17050_FullCAP);
-		*value = data * 5 / 10;
+		*value = data * (BASE_SNS_UOHM / MAX17050_BOARD_SNS_RESISTOR_UOHM) / MAX17050_BOARD_CGAIN;
 		break;
 	case MAX17050_RepCap: // Charge now.
 		data = max17050_get_reg(MAX17050_RepCap);
-		*value = data * 5 / 10;
+		*value = data * (BASE_SNS_UOHM / MAX17050_BOARD_SNS_RESISTOR_UOHM) / MAX17050_BOARD_CGAIN;
 		break;
 	case MAX17050_TEMP: // Temp.
 		data = max17050_get_reg(MAX17050_TEMP);
@@ -119,12 +121,12 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 	case MAX17050_Current: // Current now.
 		data = max17050_get_reg(MAX17050_Current);
 		*value = (s16)data;
-		*value *= 1562500 / MAX17050_DEFAULT_SNS_RESISTOR;
+		*value *= 1562500 / (MAX17050_BOARD_SNS_RESISTOR_UOHM * MAX17050_BOARD_CGAIN);
 		break;
 	case MAX17050_AvgCurrent: // Current avg.
 		data = max17050_get_reg(MAX17050_AvgCurrent);
 		*value = (s16)data;
-		*value *= 1562500 / MAX17050_DEFAULT_SNS_RESISTOR;
+		*value *= 1562500 / (MAX17050_BOARD_SNS_RESISTOR_UOHM * MAX17050_BOARD_CGAIN);
 		break;
 	default:
 		return -1;
