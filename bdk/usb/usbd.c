@@ -1403,6 +1403,9 @@ static usb_ep_status_t _usbd_get_ep1_status(usb_dir_t dir)
 
 int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 {
+	if ((u32)buf % USB_EP_BUFFER_ALIGN)
+		return USB2_ERROR_XFER_NOT_ALIGNED;
+
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 
@@ -1416,6 +1419,9 @@ int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 
 int usb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 {
+	if ((u32)buf % USB_EP_BUFFER_ALIGN)
+		return USB2_ERROR_XFER_NOT_ALIGNED;
+
 	if (len > USB_EP_BULK_OUT_MAX_XFER)
 		len = USB_EP_BULK_OUT_MAX_XFER;
 
@@ -1475,6 +1481,9 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
 
 int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
 {
+	if ((u32)buf % USB_EP_BUFFER_ALIGN)
+		return USB2_ERROR_XFER_NOT_ALIGNED;
+
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 

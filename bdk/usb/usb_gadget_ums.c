@@ -316,6 +316,8 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP IN");
 			ums_flush_endpoint(bulk_ctxt->bulk_in);
 		}
+		else if (bulk_ctxt->bulk_in_status == USB2_ERROR_XFER_NOT_ALIGNED)
+			ums->set_text(ums->label, "C7EA46 Status:# EP IN Buffer not aligned!");
 
 		if (sync)
 			bulk_ctxt->bulk_in_buf_state = BUF_STATE_EMPTY;
@@ -331,6 +333,8 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
 			ums_flush_endpoint(bulk_ctxt->bulk_out);
 		}
+		else if (bulk_ctxt->bulk_out_status == USB2_ERROR_XFER_NOT_ALIGNED)
+			ums->set_text(ums->label, "C7EA46 Status:# EP OUT Buffer not aligned!");
 
 		if (sync)
 			bulk_ctxt->bulk_out_buf_state = BUF_STATE_FULL;

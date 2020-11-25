@@ -28,6 +28,7 @@
 #define USB_EP_BUFFER_2_TD      (USB_TD_BUFFER_MAX_SIZE * 2)
 #define USB_EP_BUFFER_4_TD      (USB_TD_BUFFER_MAX_SIZE * 4)
 #define USB_EP_BUFFER_MAX_SIZE  (USB_EP_BUFFER_4_TD)
+#define USB_EP_BUFFER_ALIGN     (USB_TD_BUFFER_PAGE_SIZE)
 
 #define USB_XFER_START  false
 #define USB_XFER_SYNCED true
@@ -134,6 +135,7 @@ typedef enum _usb_error_t
 	USB_ERROR_XFER_ERROR = 5,
 
 	USB2_ERROR_XFER_EP_DISABLED     = 28,
+	USB2_ERROR_XFER_NOT_ALIGNED     = 29,
 } usb_error_t;
 
 typedef struct _usb_ctrl_setup_t
