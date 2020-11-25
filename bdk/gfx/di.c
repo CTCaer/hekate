@@ -34,7 +34,7 @@ extern volatile nyx_storage_t *nyx_str;
 
 static u32 _display_id = 0;
 
-void display_end();
+static void _display_panel_and_hw_end(bool no_panel_deinit);
 
 static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 {
@@ -56,8 +56,9 @@ static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
 void display_init()
 {
 	// Check if display is already initialized.
-	if (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) & (BIT(CLK_L_DISP1) | BIT(CLK_L_HOST1X)))
-		display_end();
+	if (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) & BIT(CLK_L_DISP1))
+		_display_panel_and_hw_end(true);
+
 
 	// Power on.
 	max77620_regulator_set_volt_and_flags(REGULATOR_LDO0, 1200000, MAX77620_POWER_MODE_NORMAL); // Configure to 1.2V.
@@ -246,8 +247,11 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 		PWM(PWM_CONTROLLER_PWM_CSR_0) = 0;
 }
 
-void display_end()
+static void _display_panel_and_hw_end(bool no_panel_deinit)
 {
+	if (no_panel_deinit)
+		goto skip_panel_deinit;
+
 	display_backlight_brightness(0, 1000);
 
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE;
@@ -295,6 +299,7 @@ void display_end()
 
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE, 50000);
 
+skip_panel_deinit:
 	// Disable display and backlight pins.
 	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); //Backlight Reset disable.
 	usleep(10000);
@@ -321,6 +326,8 @@ void display_end()
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_TRISTATE) | PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & 0xFFFFFFFC)| 1;
 }
+
+void display_end() { _display_panel_and_hw_end(false); };
 
 void display_color_screen(u32 color)
 {
