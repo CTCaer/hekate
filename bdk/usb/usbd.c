@@ -868,7 +868,7 @@ int usbd_set_ep_stall(u32 endpoint, int ep_stall)
 	return USB_RES_OK;
 }
 
-static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, int *size, int *ep_stall)
+static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, int *size, bool *ep_stall)
 {
 	u8 _bRequest = usbd_otg->control_setup.bRequest;
 	u16 _wIndex  = usbd_otg->control_setup.wIndex;
@@ -880,7 +880,7 @@ static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, 
 
 	if (!valid_interface || _wValue != 0 || _wLength != valid_len)
 	{
-		*ep_stall = 1;
+		*ep_stall = true;
 		return;
 	}
 
@@ -897,12 +897,12 @@ static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, 
 		usbd_otg->max_lun_set = true;
 		break;
 	default:
-		*ep_stall = 1;
+		*ep_stall = true;
 		break;
 	}
 }
 
-static void _usbd_handle_get_descriptor(bool *transmit_data, void **descriptor, int *size, int *ep_stall)
+static void _usbd_handle_get_descriptor(bool *transmit_data, void **descriptor, int *size, bool *ep_stall)
 {
 	u8 descriptor_type = usbd_otg->control_setup.wValue >> 8;
 	u8 descriptor_subtype = usbd_otg->control_setup.wValue & 0xFF;
@@ -1018,16 +1018,16 @@ static void _usbd_handle_get_descriptor(bool *transmit_data, void **descriptor, 
 		return;
 	default:
 		*transmit_data = false;
-		*ep_stall = 1;
+		*ep_stall = true;
 		return;
 	}
 exit:
 	*transmit_data = false;
-	*ep_stall = 1;
+	*ep_stall = true;
 	return;
 }
 
-static int _usbd_handle_set_request(int *ep_stall)
+static int _usbd_handle_set_request(bool *ep_stall)
 {
 	int res = USB_RES_OK;
 	u8 bRequest = usbd_otg->control_setup.bRequest;
@@ -1051,7 +1051,7 @@ static int _usbd_handle_set_request(int *ep_stall)
 		}
 	}
 	else
-		*ep_stall = 1;
+		*ep_stall = true;
 
 	return res;
 }
@@ -1059,11 +1059,11 @@ static int _usbd_handle_set_request(int *ep_stall)
 static int _usbd_handle_ep0_control_transfer()
 {
 	int res = USB_RES_OK;
+	bool ep_stall = false;
 	bool transmit_data = false;
 
 	u8 *descriptor = (u8 *)USB_DESCRIPTOR_ADDR;
 	int size = 0;
-	int ep_stall = 0;
 
 	u8  _bmRequestType = usbd_otg->control_setup.bmRequestType;
 	u8  _bRequest      = usbd_otg->control_setup.bRequest;
@@ -1124,7 +1124,7 @@ static int _usbd_handle_ep0_control_transfer()
 
 			break;
 		default:
-			ep_stall = 1;
+			ep_stall = true;
 			break;
 		}
 		break;
@@ -1152,7 +1152,7 @@ static int _usbd_handle_ep0_control_transfer()
 			transmit_data = true;
 			break;
 		default:
-			ep_stall = 1;
+			ep_stall = true;
 			break;
 		}
 		break;
@@ -1186,7 +1186,7 @@ static int _usbd_handle_ep0_control_transfer()
 		}
 		else
 		{
-			ep_stall = 1;
+			ep_stall = true;
 			break;
 		}
 
@@ -1201,17 +1201,17 @@ static int _usbd_handle_ep0_control_transfer()
 			int ep_req;
 			switch (_wIndex)
 			{
-			case 0:
-				ep_req = 0;
+			case USB_EP_ADDR_CTRL_OUT:
+				ep_req = USB_EP_CTRL_OUT;
 				break;
-			case 1:
-				ep_req = 2;
+			case USB_EP_ADDR_BULK_OUT:
+				ep_req = USB_EP_BULK_OUT;
 				break;
-			case 0x80:
-				ep_req = 1;
+			case USB_EP_ADDR_CTRL_IN:
+				ep_req = USB_EP_CTRL_IN;
 				break;
-			case 0x81:
-				ep_req = 3;
+			case USB_EP_ADDR_BULK_IN:
+				ep_req = USB_EP_BULK_IN;
 				break;
 			default:
 				_usbd_stall_reset_ep1(3, USB_EP_CFG_STALL);
@@ -1254,16 +1254,16 @@ static int _usbd_handle_ep0_control_transfer()
 				transmit_data = true;
 				break;
 			default:
-				ep_stall = 1;
+				ep_stall = true;
 				break;
 			}
 		}
 		else
-			ep_stall = 1;
+			ep_stall = true;
 		break;
 
 	default:
-		ep_stall = 1;
+		ep_stall = true;
 		break;
 	}
 
