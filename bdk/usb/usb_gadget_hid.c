@@ -310,7 +310,7 @@ static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 	u8 status = usb_ops.usb_device_ep1_in_write((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, USB_XFER_SYNCED);
 	if (status == USB_ERROR_XFER_ERROR)
 	{
-		usbs->set_text(usbs->label, "#C7EA46 Status:# Error EP IN");
+		usbs->set_text(usbs->label, "#FFDD00 Error:# EP IN transfer!");
 		if (usb_ops.usbd_flush_endpoint)
 			usb_ops.usbd_flush_endpoint(USB_EP_BULK_IN);
 	}
@@ -425,7 +425,7 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 	goto exit;
 
 error:
-	usbs->set_text(usbs->label, "#C7EA46 Status:# Timed out or canceled");
+	usbs->set_text(usbs->label, "#FFDD00 Error:# Timed out or canceled");
 	res = 1;
 
 exit:
