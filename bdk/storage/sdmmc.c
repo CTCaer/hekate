@@ -296,9 +296,11 @@ static int _mmc_storage_get_op_cond_inner(sdmmc_storage_t *storage, u32 *pout, u
 	case SDMMC_POWER_1_8:
 		arg = SD_OCR_CCS | SD_OCR_VDD_18;
 		break;
+
 	case SDMMC_POWER_3_3:
 		arg = SD_OCR_CCS | SD_OCR_VDD_27_34;
 		break;
+
 	default:
 		return 0;
 	}
@@ -355,6 +357,7 @@ static void _mmc_storage_parse_cid(sdmmc_storage_t *storage)
 		storage->cid.fwrev  = unstuff_bits(raw_cid, 40, 4);
 		storage->cid.serial = unstuff_bits(raw_cid, 16, 24);
 		break;
+
 	case 2: /* MMC v2.0 - v2.2 */
 	case 3: /* MMC v3.1 - v3.3 */
 	case 4: /* MMC v4 */
@@ -364,6 +367,7 @@ static void _mmc_storage_parse_cid(sdmmc_storage_t *storage)
 		storage->cid.prv      = unstuff_bits(raw_cid, 48, 8);
 		storage->cid.serial   = unstuff_bits(raw_cid, 16, 32);
 		break;
+
 	default:
 		break;
 	}
@@ -454,6 +458,7 @@ static int _mmc_storage_switch_buswidth(sdmmc_storage_t *storage, u32 bus_width)
 	case SDMMC_BUS_WIDTH_4:
 		arg = SDMMC_SWITCH(MMC_SWITCH_MODE_WRITE_BYTE, EXT_CSD_BUS_WIDTH, EXT_CSD_BUS_WIDTH_4);
 		break;
+
 	case SDMMC_BUS_WIDTH_8:
 		arg = SDMMC_SWITCH(MMC_SWITCH_MODE_WRITE_BYTE, EXT_CSD_BUS_WIDTH, EXT_CSD_BUS_WIDTH_8);
 		break;
@@ -512,7 +517,7 @@ static int _mmc_storage_enable_HS400(sdmmc_storage_t *storage)
 	if (!_mmc_storage_enable_HS200(storage))
 		return 0;
 
-	sdmmc_set_tap_value(storage->sdmmc);
+	sdmmc_save_tap_value(storage->sdmmc);
 
 	if (!_mmc_storage_enable_HS(storage, 0))
 		return 0;
@@ -568,7 +573,7 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_wid
 	storage->sdmmc = sdmmc;
 	storage->rca = 2; //TODO: this could be a config item.
 
-	if (!sdmmc_init(sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID, SDMMC_AUTO_CAL_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID, SDMMC_POWER_SAVE_DISABLE))
 		return 0;
 DPRINTF("[MMC] after init\n");
 
@@ -639,7 +644,7 @@ DPRINTF("[MMC] BKOPS enabled\n");
 		return 0;
 DPRINTF("[MMC] succesfully switched to HS mode\n");
 
-	sdmmc_card_clock_ctrl(storage->sdmmc, SDMMC_AUTO_CAL_ENABLE);
+	sdmmc_card_clock_powersave(storage->sdmmc, SDMMC_POWER_SAVE_ENABLE);
 
 	storage->initialized = 1;
 
@@ -694,7 +699,7 @@ static int _sd_storage_send_if_cond(sdmmc_storage_t *storage)
 	return (resp & 0xFF) == 0xAA ? 0 : 2;
 }
 
-static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int is_version_1, int supports_low_voltage)
+static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int is_version_1, int bus_low_voltage_support)
 {
 	sdmmc_cmd_t cmdbuf;
 	// Support for Current > 150mA
@@ -702,7 +707,7 @@ static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int
 	// Support for handling block-addressed SDHC cards
 	arg	|= (~is_version_1 & 1) ? SD_OCR_CCS : 0;
 	// Support for 1.8V
-	arg |= (supports_low_voltage & ~is_version_1 & 1) ? SD_OCR_S18R : 0;
+	arg |= (bus_low_voltage_support & ~is_version_1 & 1) ? SD_OCR_S18R : 0;
 	// This is needed for most cards. Do not set bit7 even if 1.8V is supported.
 	arg |= SD_OCR_VDD_32_33;
 	sdmmc_init_cmd(&cmdbuf, SD_APP_OP_COND, arg, SDMMC_RSP_TYPE_3, 0);
@@ -712,24 +717,24 @@ static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int
 	return sdmmc_get_rsp(storage->sdmmc, cond, 4, SDMMC_RSP_TYPE_3);
 }
 
-static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, int supports_low_voltage)
+static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, int bus_low_voltage_support)
 {
 	u32 timeout = get_tmr_ms() + 1500;
 
 	while (1)
 	{
 		u32 cond = 0;
-		if (!_sd_storage_get_op_cond_once(storage, &cond, is_version_1, supports_low_voltage))
+		if (!_sd_storage_get_op_cond_once(storage, &cond, is_version_1, bus_low_voltage_support))
 			break;
 		if (cond & MMC_CARD_BUSY)
 		{
-DPRINTF("[SD] cond: %08X, lv: %d\n", cond, supports_low_voltage);
+DPRINTF("[SD] cond: %08X, lv: %d\n", cond, bus_low_voltage_support);
 
 			if (cond & SD_OCR_CCS)
 				storage->has_sector_access = 1;
 
 			// Check if card supports 1.8V signaling.
-			if (cond & SD_ROCR_S18A && supports_low_voltage)
+			if (cond & SD_ROCR_S18A && bus_low_voltage_support)
 			{
 				//The low voltage regulator configuration is valid for SDMMC1 only.
 				if (storage->sdmmc->id == SDMMC_1 &&
@@ -901,12 +906,15 @@ void _sd_storage_set_current_limit(sdmmc_storage_t *storage, u16 current_limit, 
 		case SD_SET_CURRENT_LIMIT_800:
 DPRINTF("[SD] power limit raised to 800mA\n");
 			break;
+
 		case SD_SET_CURRENT_LIMIT_600:
 DPRINTF("[SD] power limit raised to 600mA\n");
 			break;
+
 		case SD_SET_CURRENT_LIMIT_400:
 DPRINTF("[SD] power limit raised to 400mA\n");
 			break;
+
 		default:
 		case SD_SET_CURRENT_LIMIT_200:
 DPRINTF("[SD] power limit defaulted to 200mA\n");
@@ -1007,6 +1015,7 @@ DPRINTF("[SD] bus speed set to SDR25\n");
 DPRINTF("[SD] bus speed set to SDR12\n");
 		storage->csd.busspeed = 12;
 		break;
+
 	default:
 		return 0;
 		break;
@@ -1072,18 +1081,23 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 	case 0:
 		storage->ssr.speed_class = 0;
 		break;
+
 	case 1:
 		storage->ssr.speed_class = 2;
 		break;
+
 	case 2:
 		storage->ssr.speed_class = 4;
 		break;
+
 	case 3:
 		storage->ssr.speed_class = 6;
 		break;
+
 	case 4:
 		storage->ssr.speed_class = 10;
 		break;
+
 	default:
 		storage->ssr.speed_class = unstuff_bits(raw_ssr1, 440 - 384, 8);
 		break;
@@ -1163,6 +1177,7 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 	case 0:
 		storage->csd.capacity = (1 + unstuff_bits(raw_csd, 62, 12)) << (unstuff_bits(raw_csd, 47, 3) + 2);
 		break;
+
 	case 1:
 		storage->csd.c_size = (1 + unstuff_bits(raw_csd, 48, 22));
 		storage->csd.capacity = storage->csd.c_size << 10;
@@ -1171,7 +1186,7 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 	}
 }
 
-static bool _sdmmc_storage_supports_low_voltage(u32 bus_width, u32 type)
+static bool _sdmmc_storage_get_low_voltage_support(u32 bus_width, u32 type)
 {
 	switch (type)
 	{
@@ -1208,7 +1223,7 @@ DPRINTF("[SD] init: bus: %d, type: %d\n", bus_width, type);
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, SDMMC_AUTO_CAL_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, SDMMC_POWER_SAVE_DISABLE))
 		return 0;
 DPRINTF("[SD] after init\n");
 
@@ -1223,9 +1238,9 @@ DPRINTF("[SD] went to idle state\n");
 		return 0;
 DPRINTF("[SD] after send if cond\n");
 
-	bool supports_low_voltage = _sdmmc_storage_supports_low_voltage(bus_width, type);
+	bool bus_low_voltage_support = _sdmmc_storage_get_low_voltage_support(bus_width, type);
 
-	if (!_sd_storage_get_op_cond(storage, is_version_1, supports_low_voltage))
+	if (!_sd_storage_get_op_cond(storage, is_version_1, bus_low_voltage_support))
 		return 0;
 DPRINTF("[SD] got op cond\n");
 
@@ -1303,7 +1318,7 @@ DPRINTF("[SD] SD does not support wide bus width\n");
 			return 0;
 DPRINTF("[SD] enabled UHS\n");
 
-		sdmmc_card_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
+		sdmmc_card_clock_powersave(sdmmc, SDMMC_POWER_SAVE_ENABLE);
 	}
 	else if (type != SDHCI_TIMING_SD_DS12 && (storage->scr.sda_vsn & 0xF) != 0)
 	{
@@ -1316,6 +1331,7 @@ DPRINTF("[SD] enabled HS\n");
 		case SDMMC_BUS_WIDTH_4:
 			storage->csd.busspeed = 25;
 			break;
+
 		case SDMMC_BUS_WIDTH_1:
 			storage->csd.busspeed = 6;
 			break;
@@ -1369,7 +1385,7 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS102, SDMMC_AUTO_CAL_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS102, SDMMC_POWER_SAVE_DISABLE))
 		return 0;
 DPRINTF("[gc] after init\n");
 
@@ -1379,7 +1395,7 @@ DPRINTF("[gc] after init\n");
 		return 0;
 DPRINTF("[gc] after tuning\n");
 
-	sdmmc_card_clock_ctrl(sdmmc, SDMMC_AUTO_CAL_ENABLE);
+	sdmmc_card_clock_powersave(sdmmc, SDMMC_POWER_SAVE_ENABLE);
 
 	storage->initialized = 1;
 
