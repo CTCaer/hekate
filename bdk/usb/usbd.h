@@ -123,6 +123,19 @@ typedef enum {
 	USB_FEATURE_TEST_MODE            = 2,
 } usb_get_status_req_t;
 
+typedef enum _usb_error_t
+{
+	USB_RES_OK           = 0,
+	USB_RES_BULK_RESET   = 1,
+
+	USB_ERROR_USER_ABORT = 2,
+	USB_ERROR_TIMEOUT    = 3,
+	USB_ERROR_INIT       = 4,
+	USB_ERROR_XFER_ERROR = 5,
+
+	USB2_ERROR_XFER_EP_DISABLED     = 28,
+} usb_error_t;
+
 typedef struct _usb_ctrl_setup_t
 {
 	u8 bmRequestType;
@@ -140,8 +153,8 @@ typedef struct _usb_ops_t
 	void (*usbd_end)(bool, bool);
 	int  (*usb_device_init)();
 	int  (*usb_device_enumerate)(usb_gadget_type gadget);
-	bool (*usb_device_class_send_max_lun)(u8);
-	bool (*usb_device_class_send_hid_report)();
+	int  (*usb_device_class_send_max_lun)(u8);
+	int  (*usb_device_class_send_hid_report)();
 
 	int  (*usb_device_ep1_out_read)(u8 *, u32, u32 *, bool);
 	int  (*usb_device_ep1_out_read_big)(u8 *, u32, u32 *);

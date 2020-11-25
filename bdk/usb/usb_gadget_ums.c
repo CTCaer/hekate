@@ -311,7 +311,7 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 			bulk_ctxt->bulk_in_buf, bulk_ctxt->bulk_in_length,
 			&bulk_ctxt->bulk_in_length_actual, sync);
 
-		if (bulk_ctxt->bulk_in_status == 26)
+		if (bulk_ctxt->bulk_in_status == USB_ERROR_XFER_ERROR)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP IN");
 			ums_flush_endpoint(bulk_ctxt->bulk_in);
@@ -326,7 +326,7 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 			bulk_ctxt->bulk_out_buf, bulk_ctxt->bulk_out_length,
 			&bulk_ctxt->bulk_out_length_actual, sync);
 
-		if (bulk_ctxt->bulk_out_status == 26)
+		if (bulk_ctxt->bulk_out_status == USB_ERROR_XFER_ERROR)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
 			ums_flush_endpoint(bulk_ctxt->bulk_out);
@@ -343,7 +343,7 @@ static void _ums_transfer_out_big_read(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk
 			bulk_ctxt->bulk_out_buf, bulk_ctxt->bulk_out_length,
 			&bulk_ctxt->bulk_out_length_actual);
 
-		if (bulk_ctxt->bulk_out_status == 26)
+		if (bulk_ctxt->bulk_out_status == USB_ERROR_XFER_ERROR)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
 			ums_flush_endpoint(bulk_ctxt->bulk_out);
@@ -359,7 +359,7 @@ static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt,
 		bulk_ctxt->bulk_in_status = usb_ops.usb_device_ep1_in_writing_finish(
 			&bulk_ctxt->bulk_in_length_actual);
 
-		if (bulk_ctxt->bulk_in_status == 26)
+		if (bulk_ctxt->bulk_in_status == USB_ERROR_XFER_ERROR)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP IN");
 			ums_flush_endpoint(bulk_ctxt->bulk_in);
@@ -372,7 +372,7 @@ static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt,
 		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_reading_finish(
 			&bulk_ctxt->bulk_out_length_actual, 1000000);
 
-		if (bulk_ctxt->bulk_out_status == 26)
+		if (bulk_ctxt->bulk_out_status == USB_ERROR_XFER_ERROR)
 		{
 			ums->set_text(ums->label, "#C7EA46 Status:# Error EP OUT");
 			ums_flush_endpoint(bulk_ctxt->bulk_out);
@@ -1421,7 +1421,7 @@ static int throw_away_data(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 		// A short packet or an error ends everything.
 		if (bulk_ctxt->bulk_out_length_actual != bulk_ctxt->bulk_out_length ||
-			bulk_ctxt->bulk_out_status != 0)
+			bulk_ctxt->bulk_out_status != USB_RES_OK)
 		{
 			raise_exception(ums, UMS_STATE_ABORT_BULK_OUT);
 			return -4; // Interrupted system call
@@ -1532,10 +1532,10 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			DPRINTF("USB: EP timeout\n");
 			// In case we disconnected, exit UMS.
 			// Raise timeout if removable and didn't got a unit ready command inside 4s.
-			if (bulk_ctxt->bulk_out_status == 28 ||
-				(bulk_ctxt->bulk_out_status == 3 && ums->lun.removable && !ums->lun.prevent_medium_removal))
+			if (bulk_ctxt->bulk_out_status == USB2_ERROR_XFER_EP_DISABLED ||
+				(bulk_ctxt->bulk_out_status == USB_ERROR_TIMEOUT && ums->lun.removable && !ums->lun.prevent_medium_removal))
 			{
-				if (bulk_ctxt->bulk_out_status == 3)
+				if (bulk_ctxt->bulk_out_status == USB_ERROR_TIMEOUT)
 				{
 					if (usb_ops.usb_device_get_port_in_sleep())
 					{

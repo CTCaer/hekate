@@ -308,7 +308,7 @@ static bool _fts_touch_read(touchpad_report_t *rpt)
 static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 {
 	u8 status = usb_ops.usb_device_ep1_in_write((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, USB_XFER_SYNCED);
-	if (status == 26)
+	if (status == USB_ERROR_XFER_ERROR)
 	{
 		usbs->set_text(usbs->label, "#C7EA46 Status:# Error EP IN");
 		if (usb_ops.usbd_flush_endpoint)
@@ -316,7 +316,7 @@ static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 	}
 
 	// Linux mitigation: If timed out, clear status.
-	if (status == 3)
+	if (status == USB_ERROR_TIMEOUT)
 		return 0;
 
 	return status;

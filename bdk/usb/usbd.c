@@ -136,7 +136,7 @@ static int _usbd_reset_usb_otg_phy_device_mode()
 	{
 		retries--;
 		if (!retries)
-			return 1;
+			return USB_ERROR_INIT;
 		usleep(1);
 	}
 	usbd_otg->usb_phy_ready = true;
@@ -161,7 +161,7 @@ static int _usbd_reset_usb_otg_phy_device_mode()
 	{
 		retries--;
 		if (!retries)
-			return 2;
+			return USB_ERROR_INIT;
 		usleep(1);
 	}
 
@@ -171,7 +171,7 @@ static int _usbd_reset_usb_otg_phy_device_mode()
 	{
 		retries--;
 		if (!retries)
-			return 3;
+			return USB_ERROR_INIT;
 		usleep(1);
 	}
 
@@ -184,7 +184,7 @@ static int _usbd_reset_usb_otg_phy_device_mode()
 	{
 		retries--;
 		if (!retries)
-			return 4;
+			return USB_ERROR_INIT;
 		usleep(1);
 	}
 
@@ -209,7 +209,7 @@ static int _usbd_reset_usb_otg_phy_device_mode()
 	// Set all interrupts to immediate.
 	usbd_otg->regs->usbcmd &= ~USB2D_USBCMD_ITC_MASK;
 
-	return 0;
+	return USB_RES_OK;
 }
 
 static void _usb_charger_detect()
@@ -355,7 +355,7 @@ static void _usb_init_phy()
 int usb_device_init()
 {
 	if (usb_init_done)
-		return 0;
+		return USB_RES_OK;
 
 	// Initialize USB2 controller PHY.
 	_usb_init_phy();
@@ -377,15 +377,15 @@ int usb_device_init()
 	usbd_otg->usb_phy_ready = false;
 
 	// Initialize USB PHY on the USB_OTG Controller (#1) in Device mode.
-	int result = _usbd_reset_usb_otg_phy_device_mode();
+	int res = _usbd_reset_usb_otg_phy_device_mode();
 	usbd_otg->configuration_set = false;
 
 	_usb_charger_detect();
 
-	if (!result)
+	if (!res)
 		usb_init_done = true;
 
-	return result;
+	return res;
 }
 
 static void _usb_device_power_down()
@@ -561,11 +561,11 @@ static int _usbd_initialize_ep0()
 	{
 		retries--;
 		if (!retries)
-			return 3;
+			return USB_ERROR_TIMEOUT;
 		usleep(1);
 	}
 
-	return 0;
+	return USB_RES_OK;
 }
 
 // static void _disable_usb_wdt4()
@@ -601,7 +601,7 @@ int usbd_flush_endpoint(u32 endpoint)
 	{
 		retries--;
 		if (!retries)
-			return 3;
+			return USB_ERROR_TIMEOUT;
 		usleep(1);
 	}
 
@@ -611,7 +611,7 @@ int usbd_flush_endpoint(u32 endpoint)
 	{
 		retries--;
 		if (!retries)
-			return 3;
+			return USB_ERROR_TIMEOUT;
 		usleep(1);
 	}
 
@@ -621,11 +621,11 @@ int usbd_flush_endpoint(u32 endpoint)
 	{
 		retries--;
 		if (!retries)
-			return 3;
+			return USB_ERROR_TIMEOUT;
 		usleep(1);
 	}
 
-	return 0;
+	return USB_RES_OK;
 }
 
 void usbd_end(bool reset_ep, bool only_controller)
@@ -633,9 +633,8 @@ void usbd_end(bool reset_ep, bool only_controller)
 	if (reset_ep)
 	{
 		usbd_flush_endpoint(USB_EP_ALL);
-		_usbd_stall_reset_ep1(0, USB_EP_CFG_RESET); // EP1 Bulk IN.
-		_usbd_stall_reset_ep1(1, USB_EP_CFG_RESET); // EP1 Bulk OUT.
-		//TODO: what about EP0 simultaneous in/out reset.
+		_usbd_stall_reset_ep1(USB_DIR_OUT, USB_EP_CFG_RESET); // EP1 Bulk OUT.
+		_usbd_stall_reset_ep1(USB_DIR_IN, USB_EP_CFG_RESET);  // EP1 Bulk IN.
 
 		usbd_otg->config_num = 0;
 		usbd_otg->interface_num = 0;
@@ -796,7 +795,7 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, bool sync)
 	// Prime endpoint.
 	usbd_otg->regs->endptprime |= prime_bit; // USB2_CONTROLLER_USB2D_ENDPTPRIME.
 
-	int res = 0;
+	int res = USB_RES_OK;
 	usb_ep_status_t ep_status;
 	if (sync)
 	{
@@ -810,21 +809,21 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, bool sync)
 				if (ep_status != USB_EP_STATUS_ACTIVE)
 				{
 					if (ep_status == USB_EP_STATUS_DISABLED)
-						res = 28;
+						res = USB2_ERROR_XFER_EP_DISABLED;
 					goto out;
 				}
 				retries--;
 				usleep(1);
 			}
-			res = 3;
+			res = USB_ERROR_TIMEOUT;
 		}
 		else if (ep_status == USB_EP_STATUS_DISABLED)
-			res = 28;
+			res = USB2_ERROR_XFER_EP_DISABLED;
 out:
 		if (res)
 			_usbd_mark_ep_complete(endpoint);
 		else if (_usbd_get_ep_status(endpoint) != USB_EP_STATUS_IDLE)
-			res = 26;
+			res = USB_ERROR_XFER_ERROR;
 
 		if (direction == USB_DIR_OUT)
 			bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
@@ -866,7 +865,7 @@ int usbd_set_ep_stall(u32 endpoint, int ep_stall)
 			usbd_otg->regs->endptctrl[actual_ep] &= ~USB2D_ENDPTCTRL_RX_EP_STALL; // Clear stall EP Bulk OUT.
 	}
 
-	return 0;
+	return USB_RES_OK;
 }
 
 static void _usbd_handle_get_class_request(bool *transmit_data, u8 *descriptor, int *size, int *ep_stall)
@@ -1030,20 +1029,20 @@ exit:
 
 static int _usbd_handle_set_request(int *ep_stall)
 {
-	int ret = 0;
+	int res = USB_RES_OK;
 	u8 bRequest = usbd_otg->control_setup.bRequest;
 	if (bRequest == USB_REQUEST_SET_ADDRESS)
 	{
-		ret = _usbd_ep_ack(USB_EP_CTRL_IN);
+		res = _usbd_ep_ack(USB_EP_CTRL_IN);
 
 		// Set USB address for device mode.
-		if (!ret)
+		if (!res)
 			usbd_otg->regs->periodiclistbase = (usbd_otg->regs->periodiclistbase & 0x1FFFFFF) | ((usbd_otg->control_setup.wValue & 0xFF) << 25);
 	}
 	else if (bRequest == USB_REQUEST_SET_CONFIGURATION)
 	{
-		ret = _usbd_ep_ack(USB_EP_CTRL_IN);
-		if (!ret)
+		res = _usbd_ep_ack(USB_EP_CTRL_IN);
+		if (!res)
 		{
 			usbd_otg->config_num = usbd_otg->control_setup.wValue;
 			_usbd_initialize_ep_ctrl(USB_EP_BULK_OUT);
@@ -1054,15 +1053,14 @@ static int _usbd_handle_set_request(int *ep_stall)
 	else
 		*ep_stall = 1;
 
-	return ret;
+	return res;
 }
 
 static int _usbd_handle_ep0_control_transfer()
 {
-	int direction;
-
-	int ret = 0;
+	int res = USB_RES_OK;
 	bool transmit_data = false;
+
 	u8 *descriptor = (u8 *)USB_DESCRIPTOR_ADDR;
 	int size = 0;
 	int ep_stall = 0;
@@ -1078,12 +1076,12 @@ static int _usbd_handle_ep0_control_transfer()
 	switch (_bmRequestType)
 	{
 	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):
-		ret = _usbd_handle_set_request(&ep_stall);
+		res = _usbd_handle_set_request(&ep_stall);
 		break;
 
 	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE):
-		ret = _usbd_ep_ack(USB_EP_CTRL_IN);
-		if (!ret)
+		res = _usbd_ep_ack(USB_EP_CTRL_IN);
+		if (!res)
 			usbd_otg->interface_num = _wValue;
 		break;
 
@@ -1094,6 +1092,7 @@ static int _usbd_handle_ep0_control_transfer()
 		case USB_REQUEST_SET_FEATURE:
 			if ((_wValue & 0xFF) == USB_FEATURE_ENDPOINT_HALT)
 			{
+				int direction;
 				switch (_wIndex) // endpoint
 				{
 				case USB_EP_ADDR_CTRL_OUT:
@@ -1118,7 +1117,7 @@ static int _usbd_handle_ep0_control_transfer()
 				else
 					_usbd_stall_reset_ep1(direction, USB_EP_CFG_STALL);
 
-				ret = _usbd_ep_ack(USB_EP_CTRL_IN);
+				res = _usbd_ep_ack(USB_EP_CTRL_IN);
 			}
 			else
 				_usbd_stall_reset_ep1(3, USB_EP_CFG_STALL);
@@ -1275,16 +1274,16 @@ static int _usbd_handle_ep0_control_transfer()
 
 		if (_wLength < size)
 			size = _wLength;
-		ret = _usbd_ep_operation(USB_EP_CTRL_IN, usb_ep0_ctrl_buf, size, true);
-		if (!ret)
-			ret = _usbd_ep_ack(USB_EP_CTRL_OUT);
+		res = _usbd_ep_operation(USB_EP_CTRL_IN, usb_ep0_ctrl_buf, size, true);
+		if (!res)
+			res = _usbd_ep_ack(USB_EP_CTRL_OUT);
 	}
 
 out:
 	if (ep_stall)
 		_usbd_set_ep0_stall();
 
-	return ret;
+	return res;
 }
 
 static int _usbd_ep0_initialize()
@@ -1340,14 +1339,14 @@ static int _usbd_ep0_initialize()
 					break;
 			}
 			if (usbd_otg->configuration_set)
-				return 0;
+				return USB_RES_OK;
 
 			if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
-				return 2;
+				return USB_ERROR_USER_ABORT;
 		}
 	}
 
-	return 3;
+	return USB_ERROR_TIMEOUT;
 }
 
 int usb_device_enumerate(usb_gadget_type gadget)
@@ -1367,10 +1366,7 @@ int usb_device_enumerate(usb_gadget_type gadget)
 
 	usbd_otg->gadget = gadget;
 
-	int result = _usbd_ep0_initialize();
-	if (result)
-		result = 8;
-	return result;
+	return _usbd_ep0_initialize();
 }
 
 int usbd_handle_ep0_ctrl_setup()
@@ -1385,13 +1381,14 @@ int usbd_handle_ep0_ctrl_setup()
 		memset(usb_ep0_ctrl_buf, 0, USB_TD_BUFFER_PAGE_SIZE);
 	}
 
+	// Only return error if bulk reset was requested.
 	if (usbd_otg->bulk_reset_req)
 	{
 		usbd_otg->bulk_reset_req = false;
-		return 1;
+		return USB_RES_BULK_RESET;
 	}
 
-	return 0;
+	return USB_RES_OK;
 }
 
 static usb_ep_status_t _usbd_get_ep1_status(usb_dir_t dir)
@@ -1409,12 +1406,12 @@ int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 
-	int result = _usbd_ep_operation(USB_EP_BULK_OUT, buf, len, sync);
+	int res = _usbd_ep_operation(USB_EP_BULK_OUT, buf, len, sync);
 
 	if (sync && bytes_read)
-		*bytes_read = result ? 0 : len;
+		*bytes_read = res ? 0 : len;
 
-	return result;
+	return res;
 }
 
 int usb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
@@ -1422,7 +1419,7 @@ int usb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 	if (len > USB_EP_BULK_OUT_MAX_XFER)
 		len = USB_EP_BULK_OUT_MAX_XFER;
 
-	int result;
+	int res;
 	u32 bytes = 0;
 	*bytes_read = 0;
 	u8 *buf_curr = buf;
@@ -1431,16 +1428,16 @@ int usb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 	{
 		u32 len_ep = MIN(len, USB_EP_BUFFER_MAX_SIZE);
 
-		result = usb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED);
-		if (result)
-			return result;
+		res = usb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED);
+		if (res)
+			return res;
 
 		len -= len_ep;
 		buf_curr += len_ep;
 		*bytes_read = *bytes_read + bytes;
 	}
 
-	return 0;
+	return USB_RES_OK;
 }
 
 static int _usbd_get_ep1_out_bytes_read()
@@ -1469,11 +1466,11 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
 	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
 	if (ep_status == USB_EP_STATUS_IDLE)
-		return 0;
+		return USB_RES_OK;
 	else if (ep_status == USB_EP_STATUS_DISABLED)
-		return 28;
+		return USB2_ERROR_XFER_EP_DISABLED;
 	else
-		return 26;
+		return USB_ERROR_XFER_ERROR;
 }
 
 int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
@@ -1481,12 +1478,12 @@ int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 
-	int result = _usbd_ep_operation(USB_EP_BULK_IN, buf, len, sync);
+	int res = _usbd_ep_operation(USB_EP_BULK_IN, buf, len, sync);
 
 	if (sync && bytes_written)
-		*bytes_written = result ? 0 : len;
+		*bytes_written = res ? 0 : len;
 
-	return result;
+	return res;
 }
 
 static int _usbd_get_ep1_in_bytes_written()
@@ -1513,12 +1510,12 @@ int usb_device_ep1_in_writing_finish(u32 *pending_bytes)
 	*pending_bytes = _usbd_get_ep1_in_bytes_written();
 
 	if (ep_status == USB_EP_STATUS_IDLE)
-		return 0;
+		return USB_RES_OK;
 	else if (ep_status == USB_EP_STATUS_DISABLED)
-		return 28;
+		return USB2_ERROR_XFER_EP_DISABLED;
 
 	usb_device_stall_ep1_bulk_out();
-	return 26;
+	return USB_ERROR_XFER_ERROR;
 }
 
 bool usb_device_get_suspended()
@@ -1533,7 +1530,7 @@ bool usb_device_get_port_in_sleep()
 	return (usbd_otg->regs->portsc1) == 0x885;
 }
 
-bool usb_device_class_send_max_lun(u8 max_lun)
+int usb_device_class_send_max_lun(u8 max_lun)
 {
 	// Timeout if get MAX_LUN request doesn't happen in 10s.
 	u32 timer = get_tmr_ms() + 10000;
@@ -1544,13 +1541,13 @@ bool usb_device_class_send_max_lun(u8 max_lun)
 	{
 		usbd_handle_ep0_ctrl_setup();
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
-			return true;
+			return USB_ERROR_USER_ABORT;
 	}
 
-	return false;
+	return USB_RES_OK;
 }
 
-bool usb_device_class_send_hid_report()
+int usb_device_class_send_hid_report()
 {
 	// Timeout if get GET_HID_REPORT request doesn't happen in 10s.
 	u32 timer = get_tmr_ms() + 10000;
@@ -1560,10 +1557,10 @@ bool usb_device_class_send_hid_report()
 	{
 		usbd_handle_ep0_ctrl_setup();
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
-			return true;
+			return USB_ERROR_USER_ABORT;
 	}
 
-	return false;
+	return USB_RES_OK;
 }
 
 void usb_device_get_ops(usb_ops_t *ops)
