@@ -1,6 +1,5 @@
 /*
  * Fuel gauge driver for Nintendo Switch's Maxim 17050
- *  Note that Maxim 8966 and 8997 are mfd and this is its subdevice.
  *
  * Copyright (c) 2011 Samsung Electronics
  * MyungJoo Ham <myungjoo.ham@samsung.com>
@@ -26,7 +25,7 @@
 
 #include <utils/types.h>
 
-#define MAX17050_STATUS_BattAbsent    (1 << 3)
+#define MAX17050_STATUS_BattAbsent    BIT(3)
 #define MAX17050_DEFAULT_SNS_RESISTOR 10000
 
 /* Consider RepCap which is less then 10 units below FullCAP full */

@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (c) 2018-2020 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -51,24 +52,30 @@ typedef volatile unsigned char vu8;
 typedef volatile unsigned short vu16;
 typedef volatile unsigned int vu32;
 
+#ifdef __aarch64__
+typedef u64 uptr;
+#else /* __arm__ or __thumb__ */
+typedef u32 uptr;
+#endif
+
 typedef int bool;
 #define true  1
 #define false 0
 
-#define BOOT_CFG_AUTOBOOT_EN (1 << 0)
-#define BOOT_CFG_FROM_LAUNCH (1 << 1)
-#define BOOT_CFG_FROM_ID     (1 << 2)
-#define BOOT_CFG_TO_EMUMMC   (1 << 3)
-#define BOOT_CFG_SEPT_RUN    (1 << 7)
+#define BOOT_CFG_AUTOBOOT_EN BIT(0)
+#define BOOT_CFG_FROM_LAUNCH BIT(1)
+#define BOOT_CFG_FROM_ID     BIT(2)
+#define BOOT_CFG_TO_EMUMMC   BIT(3)
+#define BOOT_CFG_SEPT_RUN    BIT(7)
 
-#define EXTRA_CFG_KEYS    (1 << 0)
-#define EXTRA_CFG_PAYLOAD (1 << 1)
-#define EXTRA_CFG_MODULE  (1 << 2)
+#define EXTRA_CFG_KEYS    BIT(0)
+#define EXTRA_CFG_PAYLOAD BIT(1)
+#define EXTRA_CFG_MODULE  BIT(2)
 
-#define EXTRA_CFG_NYX_BIS    (1 << 4)
-#define EXTRA_CFG_NYX_UMS    (1 << 5)
-#define EXTRA_CFG_NYX_RELOAD (1 << 6)
-#define EXTRA_CFG_NYX_DUMP   (1 << 7)
+#define EXTRA_CFG_NYX_BIS    BIT(4)
+#define EXTRA_CFG_NYX_UMS    BIT(5)
+#define EXTRA_CFG_NYX_RELOAD BIT(6)
+#define EXTRA_CFG_NYX_DUMP   BIT(7)
 
 typedef enum _nyx_ums_type
 {

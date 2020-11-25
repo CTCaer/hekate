@@ -124,20 +124,20 @@ typedef struct _atm_fatal_error_ctx
 } atm_fatal_error_ctx;
 
 #define ATM_FATAL_ERR_CTX_ADDR 0x4003E000
-#define  ATM_FATAL_MAGIC 0x30454641 // AFE0
+#define  ATM_FATAL_MAGIC       0x30454641 // AFE0
 
-#define ATM_WB_HEADER_OFF 0x244
-#define  ATM_WB_MAGIC 0x30544257
+#define ATM_WB_HEADER_OFF      0x244
+#define  ATM_WB_MAGIC          0x30544257 // WBT0
 
 // Exosphère mailbox defines.
-#define EXO_CFG_ADDR      0x8000F000
+#define EXO_CFG_ADDR             0x8000F000
 #define  EXO_MAGIC_VAL           0x304F5845
-#define  EXO_FLAG_DBG_PRIV        (1 << 1)
-#define  EXO_FLAG_DBG_USER        (1 << 2)
-#define  EXO_FLAG_NO_USER_EXC     (1 << 3)
-#define  EXO_FLAG_USER_PMU        (1 << 4)
-#define  EXO_FLAG_CAL0_BLANKING   (1 << 5)
-#define  EXO_FLAG_CAL0_WRITES_SYS (1 << 6)
+#define  EXO_FLAG_DBG_PRIV        BIT(1)
+#define  EXO_FLAG_DBG_USER        BIT(2)
+#define  EXO_FLAG_NO_USER_EXC     BIT(3)
+#define  EXO_FLAG_USER_PMU        BIT(4)
+#define  EXO_FLAG_CAL0_BLANKING   BIT(5)
+#define  EXO_FLAG_CAL0_WRITES_SYS BIT(6)
 
 #define EXO_FW_VER(mj, mn, rv) (((mj) << 24) | ((mn) << 16) | ((rv) << 8))
 

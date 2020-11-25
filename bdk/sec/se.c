@@ -172,7 +172,7 @@ void se_rsa_acc_ctrl(u32 rs, u32 flags)
 			((flags >> SE_RSA_KEY_TBL_DIS_KEYUSE_FLAG_SHIFT) & SE_RSA_KEY_TBL_DIS_KEYUSE_FLAG) |
 			((flags & SE_RSA_KEY_TBL_DIS_KEY_READ_UPDATE_FLAG) ^ SE_RSA_KEY_TBL_DIS_KEY_ALL_COMMON_FLAG);
 	if (flags & SE_RSA_KEY_TBL_DIS_KEY_LOCK_FLAG)
-		SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) &= ~(1 << rs);
+		SE(SE_RSA_KEYTABLE_ACCESS_LOCK_OFFSET) &= ~BIT(rs);
 }
 
 void se_key_acc_ctrl(u32 ks, u32 flags)
@@ -180,7 +180,7 @@ void se_key_acc_ctrl(u32 ks, u32 flags)
 	if (flags & SE_KEY_TBL_DIS_KEY_ACCESS_FLAG)
 		SE(SE_KEY_TABLE_ACCESS_REG_OFFSET + 4 * ks) = ~flags;
 	if (flags & SE_KEY_TBL_DIS_KEY_LOCK_FLAG)
-		SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) &= ~(1 << ks);
+		SE(SE_KEY_TABLE_ACCESS_LOCK_OFFSET) &= ~BIT(ks);
 }
 
 u32 se_key_acc_ctrl_get(u32 ks)

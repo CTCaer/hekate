@@ -20,18 +20,18 @@
 #include <soc/i2c.h>
 #include <utils/util.h>
 
-#define I2C_PACKET_PROT_I2C  (1 << 4)
-#define I2C_HEADER_CONT_XFER (1 << 15)
-#define I2C_HEADER_REP_START (1 << 16)
-#define I2C_HEADER_IE_ENABLE (1 << 17)
-#define I2C_HEADER_READ      (1 << 19)
+#define I2C_PACKET_PROT_I2C  BIT(4)
+#define I2C_HEADER_CONT_XFER BIT(15)
+#define I2C_HEADER_REP_START BIT(16)
+#define I2C_HEADER_IE_ENABLE BIT(17)
+#define I2C_HEADER_READ      BIT(19)
 
 #define I2C_CNFG              (0x00 / 4)
 #define  CMD1_WRITE           (0 << 6)
-#define  CMD1_READ            (1 << 6)
-#define  NORMAL_MODE_GO       (1 << 9)
-#define  PACKET_MODE_GO       (1 << 10)
-#define  NEW_MASTER_FSM       (1 << 11)
+#define  CMD1_READ            BIT(6)
+#define  NORMAL_MODE_GO       BIT(9)
+#define  PACKET_MODE_GO       BIT(10)
+#define  NEW_MASTER_FSM       BIT(11)
 #define  DEBOUNCE_CNT_4T      (2 << 12)
 
 #define I2C_CMD_ADDR0         (0x04 / 4)
@@ -43,14 +43,14 @@
 
 #define I2C_STATUS            (0x1C / 4)
 #define  I2C_STATUS_NOACK     (0xF << 0)
-#define  I2C_STATUS_BUSY      (1 << 8)
+#define  I2C_STATUS_BUSY      BIT(8)
 
 #define I2C_TX_FIFO           (0x50 / 4)
 #define I2C_RX_FIFO           (0x54 / 4)
 
 #define I2C_FIFO_CONTROL      (0x5C / 4)
-#define  RX_FIFO_FLUSH        (1 << 0)
-#define  TX_FIFO_FLUSH        (1 << 1)
+#define  RX_FIFO_FLUSH        BIT(0)
+#define  TX_FIFO_FLUSH        BIT(1)
 
 #define I2C_FIFO_STATUS       (0x60 / 4)
 #define  RX_FIFO_FULL_CNT     (0xF << 0)
@@ -59,27 +59,27 @@
 #define I2C_INT_EN            (0x64 / 4)
 #define I2C_INT_STATUS        (0x68 / 4)
 #define I2C_INT_SOURCE        (0x70 / 4)
-#define  RX_FIFO_DATA_REQ     (1 << 0)
-#define  TX_FIFO_DATA_REQ     (1 << 1)
-#define  ARB_LOST             (1 << 2)
-#define  NO_ACK               (1 << 3)
-#define  RX_FIFO_UNDER        (1 << 4)
-#define  TX_FIFO_OVER         (1 << 5)
-#define  ALL_PACKETS_COMPLETE (1 << 6)
-#define  PACKET_COMPLETE      (1 << 7)
-#define  BUS_CLEAR_DONE       (1 << 11)
+#define  RX_FIFO_DATA_REQ     BIT(0)
+#define  TX_FIFO_DATA_REQ     BIT(1)
+#define  ARB_LOST             BIT(2)
+#define  NO_ACK               BIT(3)
+#define  RX_FIFO_UNDER        BIT(4)
+#define  TX_FIFO_OVER         BIT(5)
+#define  ALL_PACKETS_COMPLETE BIT(6)
+#define  PACKET_COMPLETE      BIT(7)
+#define  BUS_CLEAR_DONE       BIT(11)
 
 #define I2C_CLK_DIVISOR       (0x6C / 4)
 
 #define I2C_BUS_CLEAR_CONFIG  (0x84 / 4)
-#define  BC_ENABLE            (1 << 0)
-#define  BC_TERMINATE         (1 << 1)
+#define  BC_ENABLE            BIT(0)
+#define  BC_TERMINATE         BIT(1)
 
 #define I2C_BUS_CLEAR_STATUS  (0x88 / 4)
 
 #define I2C_CONFIG_LOAD       (0x8C / 4)
-#define  MSTR_CONFIG_LOAD     (1 << 0)
-#define  TIMEOUT_CONFIG_LOAD  (1 << 2)
+#define  MSTR_CONFIG_LOAD     BIT(0)
+#define  TIMEOUT_CONFIG_LOAD  BIT(2)
 
 static const u32 i2c_addrs[] = {
 	0x7000C000, // I2C_1.
@@ -92,7 +92,7 @@ static const u32 i2c_addrs[] = {
 
 static void _i2c_load_cfg_wait(vu32 *base)
 {
-	base[I2C_CONFIG_LOAD] = (1 << 5) | TIMEOUT_CONFIG_LOAD | MSTR_CONFIG_LOAD;
+	base[I2C_CONFIG_LOAD] = BIT(5) | TIMEOUT_CONFIG_LOAD | MSTR_CONFIG_LOAD;
 	for (u32 i = 0; i < 20; i++)
 	{
 		usleep(1);
@@ -136,7 +136,7 @@ static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, u8 *buf, u32 size)
 	// Initiate transaction on normal mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | NORMAL_MODE_GO;
 
-	u32 timeout = get_tmr_ms() + 100; // Actual for max 8 bytes at 100KHz is 0.74ms.
+	u32 timeout = get_tmr_ms() + 400; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
 		if (get_tmr_ms() > timeout)
@@ -168,7 +168,7 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	// Initiate transaction on normal mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | NORMAL_MODE_GO;
 
-	u32 timeout = get_tmr_ms() + 100; // Actual for max 8 bytes at 100KHz is 0.74ms.
+	u32 timeout = get_tmr_ms() + 400; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
 		if (get_tmr_ms() > timeout)

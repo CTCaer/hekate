@@ -23,12 +23,12 @@
 
 /* General USB registers */
 #define USB1_IF_USB_SUSP_CTRL         0x400
-#define  SUSP_CTRL_USB_WAKE_ON_CNNT_EN_DEV   (1 << 3)
-#define  SUSP_CTRL_USB_WAKE_ON_DISCON_EN_DEV (1 << 4)
-#define  SUSP_CTRL_USB_PHY_CLK_VALID         (1 << 7)
-#define  SUSP_CTRL_UTMIP_RESET               (1 << 11)
-#define  SUSP_CTRL_UTMIP_PHY_ENB             (1 << 12)
-#define  SUSP_CTRL_UTMIP_UTMIP_SUSPL1_SET    (1 << 25)
+#define  SUSP_CTRL_USB_WAKE_ON_CNNT_EN_DEV   BIT(3)
+#define  SUSP_CTRL_USB_WAKE_ON_DISCON_EN_DEV BIT(4)
+#define  SUSP_CTRL_USB_PHY_CLK_VALID         BIT(7)
+#define  SUSP_CTRL_UTMIP_RESET               BIT(11)
+#define  SUSP_CTRL_UTMIP_PHY_ENB             BIT(12)
+#define  SUSP_CTRL_UTMIP_UTMIP_SUSPL1_SET    BIT(25)
 #define USB1_IF_USB_PHY_VBUS_SENSORS  0x404
 #define USB1_UTMIP_XCVR_CFG0          0x808
 #define USB1_UTMIP_BIAS_CFG0          0x80C
@@ -37,6 +37,9 @@
 #define USB1_UTMIP_TX_CFG0            0x820
 #define USB1_UTMIP_MISC_CFG1          0x828
 #define USB1_UTMIP_DEBOUNCE_CFG0      0x82C
+#define USB1_UTMIP_BAT_CHRG_CFG0      0x830
+#define  BAT_CHRG_CFG0_PWRDOWN_CHRG          BIT(0)
+#define  BAT_CHRG_CFG0_OP_SRC_EN             BIT(3)
 #define USB1_UTMIP_SPARE_CFG0         0x834
 #define USB1_UTMIP_XCVR_CFG1          0x838
 #define USB1_UTMIP_BIAS_CFG1          0x83C
@@ -46,38 +49,38 @@
 
 /* USB Queue Head Descriptor */
 #define USB2_QH_USB2D_QH_EP_BASE      (USB_BASE + 0x1000)
-#define  USB_QHD_EP_CAP_IOS_ENABLE        (1 << 15)
+#define  USB_QHD_EP_CAP_IOS_ENABLE        BIT(15)
 #define  USB_QHD_EP_CAP_MAX_PKT_LEN_MASK  0x7FF
-#define  USB_QHD_EP_CAP_ZERO_LEN_TERM_DIS (1 << 29)
+#define  USB_QHD_EP_CAP_ZERO_LEN_TERM_DIS BIT(29)
 #define  USB_QHD_EP_CAP_MULTI_NON_ISO     (0 << 30)
 #define  USB_QHD_EP_CAP_MULTI_1           (1 << 30)
 #define  USB_QHD_EP_CAP_MULTI_2           (2 << 30)
 #define  USB_QHD_EP_CAP_MULTI_3           (3 << 30)
 
-#define  USB_QHD_TOKEN_XFER_ERROR         (1 << 3)
-#define  USB_QHD_TOKEN_BUFFER_ERROR       (1 << 5)
-#define  USB_QHD_TOKEN_HALTED             (1 << 6)
-#define  USB_QHD_TOKEN_ACTIVE             (1 << 7)
+#define  USB_QHD_TOKEN_XFER_ERROR         BIT(3)
+#define  USB_QHD_TOKEN_BUFFER_ERROR       BIT(5)
+#define  USB_QHD_TOKEN_HALTED             BIT(6)
+#define  USB_QHD_TOKEN_ACTIVE             BIT(7)
 #define  USB_QHD_TOKEN_MULT_OVERR_MASK    (2 << 10)
-#define  USB_QHD_TOKEN_IRQ_ON_COMPLETE    (1 << 15)
+#define  USB_QHD_TOKEN_IRQ_ON_COMPLETE    BIT(15)
 #define  USB_QHD_TOKEN_TOTAL_BYTES_SHIFT  16
 
 /* USB_OTG/USB_1 controllers register bits */
-#define USB2D_PORTSC1_SUSP (1 << 7)
+#define USB2D_PORTSC1_SUSP BIT(7)
 
-#define USB2D_USBCMD_RUN      (1 << 0)
-#define USB2D_USBCMD_RESET    (1 << 1)
+#define USB2D_USBCMD_RUN      BIT(0)
+#define USB2D_USBCMD_RESET    BIT(1)
 #define USB2D_USBCMD_ITC_MASK (0xFF << 16)
 
-#define USB2D_USBSTS_UI  (1 << 0)
-#define USB2D_USBSTS_UEI (1 << 1)
-#define USB2D_USBSTS_PCI (1 << 2)
-#define USB2D_USBSTS_FRI (1 << 3)
-#define USB2D_USBSTS_SEI (1 << 4)
-#define USB2D_USBSTS_AAI (1 << 5)
-#define USB2D_USBSTS_URI (1 << 6)
-#define USB2D_USBSTS_SRI (1 << 7)
-#define USB2D_USBSTS_SLI (1 << 8)
+#define USB2D_USBSTS_UI  BIT(0)
+#define USB2D_USBSTS_UEI BIT(1)
+#define USB2D_USBSTS_PCI BIT(2)
+#define USB2D_USBSTS_FRI BIT(3)
+#define USB2D_USBSTS_SEI BIT(4)
+#define USB2D_USBSTS_AAI BIT(5)
+#define USB2D_USBSTS_URI BIT(6)
+#define USB2D_USBSTS_SRI BIT(7)
+#define USB2D_USBSTS_SLI BIT(8)
 
 #define USB2D_USBMODE_CM_MASK   (3 << 0)
 #define USB2D_USBMODE_CM_IDLE   0
@@ -85,33 +88,33 @@
 #define USB2D_USBMODE_CM_DEVICE 2
 #define USB2D_USBMODE_CM_HOST   3
 
-#define USB2D_ENDPT_STATUS_RX_OFFSET (1 << 0)
-#define USB2D_ENDPT_STATUS_TX_OFFSET (1 << 16)
+#define USB2D_ENDPT_STATUS_RX_OFFSET BIT(0)
+#define USB2D_ENDPT_STATUS_TX_OFFSET BIT(16)
 
-#define USB2D_ENDPTCTRL_RX_EP_STALL     (1 << 0)
+#define USB2D_ENDPTCTRL_RX_EP_STALL     BIT(0)
 #define USB2D_ENDPTCTRL_RX_EP_TYPE_CTRL (0 << 2)
 #define USB2D_ENDPTCTRL_RX_EP_TYPE_ISO  (1 << 2)
 #define USB2D_ENDPTCTRL_RX_EP_TYPE_BULK (2 << 2)
 #define USB2D_ENDPTCTRL_RX_EP_TYPE_INTR (3 << 2)
 #define USB2D_ENDPTCTRL_RX_EP_TYPE_MASK (3 << 2)
-#define USB2D_ENDPTCTRL_RX_EP_INHIBIT   (1 << 5)
-#define USB2D_ENDPTCTRL_RX_EP_RESET     (1 << 6)
-#define USB2D_ENDPTCTRL_RX_EP_ENABLE    (1 << 7)
-#define USB2D_ENDPTCTRL_TX_EP_STALL     (1 << 16)
+#define USB2D_ENDPTCTRL_RX_EP_INHIBIT   BIT(5)
+#define USB2D_ENDPTCTRL_RX_EP_RESET     BIT(6)
+#define USB2D_ENDPTCTRL_RX_EP_ENABLE    BIT(7)
+#define USB2D_ENDPTCTRL_TX_EP_STALL     BIT(16)
 #define USB2D_ENDPTCTRL_TX_EP_TYPE_CTRL (0 << 18)
 #define USB2D_ENDPTCTRL_TX_EP_TYPE_ISO  (1 << 18)
 #define USB2D_ENDPTCTRL_TX_EP_TYPE_BULK (2 << 18)
 #define USB2D_ENDPTCTRL_TX_EP_TYPE_INTR (3 << 18)
 #define USB2D_ENDPTCTRL_TX_EP_TYPE_MASK (3 << 18)
-#define USB2D_ENDPTCTRL_TX_EP_INHIBIT   (1 << 21)
-#define USB2D_ENDPTCTRL_TX_EP_RESET     (1 << 22)
-#define USB2D_ENDPTCTRL_TX_EP_ENABLE    (1 << 23)
+#define USB2D_ENDPTCTRL_TX_EP_INHIBIT   BIT(21)
+#define USB2D_ENDPTCTRL_TX_EP_RESET     BIT(22)
+#define USB2D_ENDPTCTRL_TX_EP_ENABLE    BIT(23)
 
-#define USB2D_HOSTPC1_DEVLC_ASUS      (1 << 17)
-#define USB2D_HOSTPC1_DEVLC_PHCD      (1 << 22)
+#define USB2D_HOSTPC1_DEVLC_ASUS      BIT(17)
+#define USB2D_HOSTPC1_DEVLC_PHCD      BIT(22)
 #define USB2D_HOSTPC1_DEVLC_PSPD_MASK (3 << 25)
 
-#define USB2D_OTGSC_USB_ID_PULLUP     (1 << 5)
+#define USB2D_OTGSC_USB_ID_PULLUP     BIT(5)
 #define USB2D_OTGSC_USB_IRQ_STS_MASK  (0x7F << 16)
 
 /* USB_OTG/USB_1 controllers registers */

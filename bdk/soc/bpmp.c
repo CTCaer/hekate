@@ -25,38 +25,38 @@
 #define BPMP_MMU_CACHE_LINE_SIZE        0x20
 
 #define BPMP_CACHE_CONFIG               0x0
-#define  CFG_ENABLE_CACHE               (1 << 0)
-#define  CFG_ENABLE_SKEW_ASSOC          (1 << 1)
-#define  CFG_DISABLE_RANDOM_ALLOC       (1 << 2)
-#define  CFG_FORCE_WRITE_THROUGH        (1 << 3)
-#define  CFG_NEVER_ALLOCATE             (1 << 6)
-#define  CFG_ENABLE_INTERRUPT           (1 << 7)
+#define  CFG_ENABLE_CACHE               BIT(0)
+#define  CFG_ENABLE_SKEW_ASSOC          BIT(1)
+#define  CFG_DISABLE_RANDOM_ALLOC       BIT(2)
+#define  CFG_FORCE_WRITE_THROUGH        BIT(3)
+#define  CFG_NEVER_ALLOCATE             BIT(6)
+#define  CFG_ENABLE_INTERRUPT           BIT(7)
 #define  CFG_MMU_TAG_MODE(x)            ((x) << 8)
 #define   TAG_MODE_PARALLEL             0
 #define   TAG_MODE_TAG_FIRST            1
 #define   TAG_MODE_MMU_FIRST            2
-#define  CFG_DISABLE_WRITE_BUFFER       (1 << 10)
-#define  CFG_DISABLE_READ_BUFFER        (1 << 11)
-#define  CFG_ENABLE_HANG_DETECT         (1 << 12)
-#define  CFG_FULL_LINE_DIRTY            (1 << 13)
-#define  CFG_TAG_CHK_ABRT_ON_ERR        (1 << 14)
-#define  CFG_TAG_CHK_CLR_ERR            (1 << 15)
-#define  CFG_DISABLE_SAMELINE           (1 << 16)
-#define  CFG_OBS_BUS_EN                 (1 << 31)
+#define  CFG_DISABLE_WRITE_BUFFER       BIT(10)
+#define  CFG_DISABLE_READ_BUFFER        BIT(11)
+#define  CFG_ENABLE_HANG_DETECT         BIT(12)
+#define  CFG_FULL_LINE_DIRTY            BIT(13)
+#define  CFG_TAG_CHK_ABRT_ON_ERR        BIT(14)
+#define  CFG_TAG_CHK_CLR_ERR            BIT(15)
+#define  CFG_DISABLE_SAMELINE           BIT(16)
+#define  CFG_OBS_BUS_EN                 BIT(31)
 
 #define BPMP_CACHE_LOCK                 0x4
-#define  LOCK_LINE(x)                   (1 << (x))
+#define  LOCK_LINE(x)                   BIT((x))
 
 #define BPMP_CACHE_SIZE                 0xC
 #define BPMP_CACHE_LFSR                 0x10
 
 #define BPMP_CACHE_TAG_STATUS           0x14
-#define  TAG_STATUS_TAG_CHECK_ERROR     (1 << 0)
+#define  TAG_STATUS_TAG_CHECK_ERROR     BIT(0)
 #define  TAG_STATUS_CONFLICT_ADDR_MASK  0xFFFFFFE0
 
 #define BPMP_CACHE_CLKEN_OVERRIDE       0x18
-#define  CLKEN_OVERRIDE_WR_MCCIF_CLKEN  (1 << 0)
-#define  CLKEN_OVERRIDE_RD_MCCIF_CLKEN  (1 << 1)
+#define  CLKEN_OVERRIDE_WR_MCCIF_CLKEN  BIT(0)
+#define  CLKEN_OVERRIDE_RD_MCCIF_CLKEN  BIT(1)
 
 #define BPMP_CACHE_MAINT_ADDR           0x20
 #define BPMP_CACHE_MAINT_DATA           0x24
@@ -68,8 +68,8 @@
 #define BPMP_CACHE_INT_CLEAR            0x44
 #define BPMP_CACHE_INT_RAW_EVENT        0x48
 #define BPMP_CACHE_INT_STATUS           0x4C
-#define  INT_MAINT_DONE                 (1 << 0)
-#define  INT_MAINT_ERROR                (1 << 1)
+#define  INT_MAINT_DONE                 BIT(0)
+#define  INT_MAINT_ERROR                BIT(1)
 
 #define BPMP_CACHE_RB_CFG               0x80
 #define BPMP_CACHE_WB_CFG               0x84
@@ -78,12 +78,12 @@
 #define BPMP_CACHE_MMU_SHADOW_COPY_MASK 0xA4
 
 #define BPMP_CACHE_MMU_CFG              0xAC
-#define  MMU_CFG_BLOCK_MAIN_ENTRY_WR    (1 << 0)
-#define  MMU_CFG_SEQ_EN                 (1 << 1)
-#define  MMU_CFG_TLB_EN                 (1 << 2)
-#define  MMU_CFG_SEG_CHECK_ALL_ENTRIES  (1 << 3)
-#define  MMU_CFG_ABORT_STORE_LAST       (1 << 4)
-#define  MMU_CFG_CLR_ABORT              (1 << 5)
+#define  MMU_CFG_BLOCK_MAIN_ENTRY_WR    BIT(0)
+#define  MMU_CFG_SEQ_EN                 BIT(1)
+#define  MMU_CFG_TLB_EN                 BIT(2)
+#define  MMU_CFG_SEG_CHECK_ALL_ENTRIES  BIT(3)
+#define  MMU_CFG_ABORT_STORE_LAST       BIT(4)
+#define  MMU_CFG_CLR_ABORT              BIT(5)
 
 #define BPMP_CACHE_MMU_CMD              0xB0
 #define  MMU_CMD_NOP                    0
@@ -98,25 +98,25 @@
 #define  ABORT_STAT_UNIT_TLB            3
 #define  ABORT_STAT_UNIT_SEG            4
 #define  ABORT_STAT_UNIT_FALLBACK       5
-#define  ABORT_STAT_OVERLAP             (1 << 3)
+#define  ABORT_STAT_OVERLAP             BIT(3)
 #define  ABORT_STAT_ENTRY               (0x1F << 4)
 #define  ABORT_STAT_TYPE_MASK           (3 << 16)
 #define  ABORT_STAT_TYPE_EXE            (0 << 16)
 #define  ABORT_STAT_TYPE_RD             (1 << 16)
 #define  ABORT_STAT_TYPE_WR             (2 << 16)
 #define  ABORT_STAT_SIZE                (3 << 18)
-#define  ABORT_STAT_SEQ                 (1 << 20)
-#define  ABORT_STAT_PROT                (1 << 21)
+#define  ABORT_STAT_SEQ                 BIT(20)
+#define  ABORT_STAT_PROT                BIT(21)
 
 #define BPMP_CACHE_MMU_ABORT_ADDR       0xB8
 #define BPMP_CACHE_MMU_ACTIVE_ENTRIES   0xBC
 
 #define BPMP_MMU_SHADOW_ENTRY_BASE      (BPMP_CACHE_BASE + 0x400)
 #define BPMP_MMU_MAIN_ENTRY_BASE        (BPMP_CACHE_BASE + 0x800)
-#define  MMU_EN_CACHED                  (1 << 0)
-#define  MMU_EN_EXEC                    (1 << 1)
-#define  MMU_EN_READ                    (1 << 2)
-#define  MMU_EN_WRITE                   (1 << 3)
+#define  MMU_EN_CACHED                  BIT(0)
+#define  MMU_EN_EXEC                    BIT(1)
+#define  MMU_EN_READ                    BIT(2)
+#define  MMU_EN_WRITE                   BIT(3)
 
 bpmp_mmu_entry_t mmu_entries[] =
 {
@@ -153,7 +153,7 @@ void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply)
 		mmu_entry->end_addr = ALIGN_DOWN(entry->end_addr, BPMP_MMU_CACHE_LINE_SIZE);
 		mmu_entry->attr = entry->attr;
 
-		BPMP_CACHE_CTRL(BPMP_CACHE_MMU_SHADOW_COPY_MASK) |= (1 << idx);
+		BPMP_CACHE_CTRL(BPMP_CACHE_MMU_SHADOW_COPY_MASK) |= BIT(idx);
 
 		if (apply)
 			BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CMD) = MMU_CMD_COPY_SHADOW;

@@ -47,10 +47,10 @@ static void _irq_enable_source(u32 irq)
 	u32 bit = irq % 32;
 
 	// Set as normal IRQ.
-	ICTLR(ctrl_idx, PRI_ICTLR_COP_IEP_CLASS) &= ~(1 << bit);
+	ICTLR(ctrl_idx, PRI_ICTLR_COP_IEP_CLASS) &= ~BIT(bit);
 
 	// Enable IRQ source.
-	ICTLR(ctrl_idx, PRI_ICTLR_COP_IER_SET) = 1 << bit;
+	ICTLR(ctrl_idx, PRI_ICTLR_COP_IER_SET) = BIT(bit);
 }
 
 static void _irq_disable_source(u32 irq)
@@ -59,7 +59,7 @@ static void _irq_disable_source(u32 irq)
 	u32 bit = irq % 32;
 
 	// Disable IRQ source.
-	ICTLR(ctrl_idx, PRI_ICTLR_COP_IER_CLR) = 1 << bit;
+	ICTLR(ctrl_idx, PRI_ICTLR_COP_IER_CLR) = BIT(bit);
 }
 
 static void _irq_disable_and_ack_all()
@@ -79,7 +79,7 @@ static void _irq_ack_source(u32 irq)
 	u32 bit = irq % 32;
 
 	// Force stop the interrupt as it's serviced here.
-	ICTLR(ctrl_idx, PRI_ICTLR_FIR_CLR) = 1 << bit;
+	ICTLR(ctrl_idx, PRI_ICTLR_FIR_CLR) = BIT(bit);
 }
 
 void irq_free(u32 irq)

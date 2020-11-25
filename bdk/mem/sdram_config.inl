@@ -17,7 +17,7 @@
 
 #define DRAM_CFG_SIZE 1896
 
-#define DRAM_ID(x) (1 << (x))
+#define DRAM_ID(x) BIT(x)
 
 #define DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH       0
 #define DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN      1

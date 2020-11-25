@@ -86,13 +86,18 @@ emc_mr_data_t sdram_read_mrx(emc_mr_t mrx)
 {
 	emc_mr_data_t data;
 
-	// Device 0.
-	_sdram_req_mrr_data((1 << 31) | (mrx << 16), EMC_CHAN0);
+	/*
+	 * When a dram chip has only one rank, then the info from the 2 ranks differs.
+	 * Info not matching is only allowed on different channels.
+	 */
+
+	// Get Device 0 (Rank 0) info from both dram chips (channels).
+	_sdram_req_mrr_data(BIT(31) | (mrx << 16), EMC_CHAN0);
 	data.rank0_ch0 = EMC(EMC_MRR) & 0xFF;
 	data.rank0_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
 
-	// Device 1.
-	_sdram_req_mrr_data((1 << 30) | (mrx << 16), EMC_CHAN1);
+	// Get Device 1 (Rank 1) info from both dram chips (channels).
+	_sdram_req_mrr_data(BIT(30) | (mrx << 16), EMC_CHAN1);
 	data.rank1_ch0 = EMC(EMC_MRR) & 0xFF;
 	data.rank1_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
 
@@ -545,7 +550,7 @@ break_nosleep:
 	EMC(EMC_CFG) = (params->emc_cfg & 0xE) | 0x3C00000;
 
 	// Patch BootROM.
-	if (params->boot_rom_patch_control & (1 << 31))
+	if (params->boot_rom_patch_control & BIT(31))
 	{
 		*(vu32 *)(APB_MISC_BASE + params->boot_rom_patch_control * 4) = params->boot_rom_patch_data;
 		MC(MC_TIMING_CONTROL) = 1; // Trigger MC timing update.
@@ -765,7 +770,7 @@ sdram_params_t *sdram_get_params_patched()
 	sdram_params_t *sdram_params = sdram_get_params();
 
 	// Disable Warmboot signature check.
-	sdram_params->boot_rom_patch_control = (1 << 31) | (((IPATCH_BASE + 4) - APB_MISC_BASE) / 4);
+	sdram_params->boot_rom_patch_control = BIT(31) | (((IPATCH_BASE + 4) - APB_MISC_BASE) / 4);
 	sdram_params->boot_rom_patch_data = IPATCH_CONFIG(0x10459E, 0x2000);
 /*
 	// Disable SBK lock.

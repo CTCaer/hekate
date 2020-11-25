@@ -45,8 +45,8 @@
 #define BH1730_DATA1LOW_REG  0x16
 #define BH1730_DATA1HIGH_REG 0x17
 
-#define BH1730_ADDR(reg) (BH1730_CMD_MAGIC | BH1730_CMD_SETADDR | reg)
-#define BH1730_SPEC(cmd) (BH1730_CMD_MAGIC | BH1730_CMD_SPECCMD | cmd)
+#define BH1730_ADDR(reg) (BH1730_CMD_MAGIC | BH1730_CMD_SETADDR | (reg))
+#define BH1730_SPEC(cmd) (BH1730_CMD_MAGIC | BH1730_CMD_SPECCMD | (cmd))
 
 typedef struct _als_table_t
 {

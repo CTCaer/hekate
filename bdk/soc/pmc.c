@@ -20,7 +20,7 @@
 
 int pmc_enable_partition(u32 part, int enable)
 {
-	u32 part_mask = 1 << part;
+	u32 part_mask = BIT(part);
 	u32 desired_state = enable << part;
 
 	// Check if the partition has the state we want.

@@ -16,13 +16,7 @@
 
 /* GLOBAL, PMIC, GPIO, FPS, ONOFFC, CID Registers */
 #define MAX77620_REG_CNFGGLBL1      0x00
-#define  MAX77620_CNFGGLBL1_LBDAC_EN          (1 << 7)
-#define  MAX77620_CNFGGLBL1_MPPLD             (1 << 6)
-#define  MAX77620_CNFGGLBL1_LBHYST            ((1 << 5) | (1 << 4))
-#define  MAX77620_CNFGGLBL1_LBHYST_100        (0 << 4)
-#define  MAX77620_CNFGGLBL1_LBHYST_200        (1 << 4)
-#define  MAX77620_CNFGGLBL1_LBHYST_300        (2 << 4)
-#define  MAX77620_CNFGGLBL1_LBHYST_400        (3 << 4)
+#define  MAX77620_CNFGGLBL1_LBRSTEN           BIT(0)
 #define  MAX77620_CNFGGLBL1_LBDAC_MASK        0x0E
 #define  MAX77620_CNFGGLBL1_LBDAC_2700        (0 << 1)
 #define  MAX77620_CNFGGLBL1_LBDAC_2800        (1 << 1)
@@ -32,14 +26,20 @@
 #define  MAX77620_CNFGGLBL1_LBDAC_3200        (5 << 1)
 #define  MAX77620_CNFGGLBL1_LBDAC_3300        (6 << 1)
 #define  MAX77620_CNFGGLBL1_LBDAC_3400        (7 << 1)
-#define  MAX77620_CNFGGLBL1_LBRSTEN           (1 << 0)
+#define  MAX77620_CNFGGLBL1_LBHYST_100        (0 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST_200        (1 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST_300        (2 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST_400        (3 << 4)
+#define  MAX77620_CNFGGLBL1_LBHYST            (BIT(5) | BIT(4))
+#define  MAX77620_CNFGGLBL1_MPPLD             BIT(6)
+#define  MAX77620_CNFGGLBL1_LBDAC_EN          BIT(7)
 
 #define MAX77620_REG_CNFGGLBL2      0x01
 #define MAX77620_REG_CNFGGLBL3      0x02
 #define  MAX77620_WDTC_MASK                   0x3
-#define  MAX77620_WDTOFFC                     (1 << 4)
-#define  MAX77620_WDTSLPC                     (1 << 3)
-#define  MAX77620_WDTEN                       (1 << 2)
+#define  MAX77620_WDTEN                       BIT(2)
+#define  MAX77620_WDTSLPC                     BIT(3)
+#define  MAX77620_WDTOFFC                     BIT(4)
 #define  MAX77620_TWD_MASK                    0x3
 #define  MAX77620_TWD_2s                      0x0
 #define  MAX77620_TWD_16s                     0x1
@@ -47,15 +47,15 @@
 #define  MAX77620_TWD_128s                    0x3
 
 #define MAX77620_REG_CNFG1_32K      0x03
-#define  MAX77620_CNFG1_32K_OUT0_EN           (1 << 2)
+#define  MAX77620_CNFG1_32K_OUT0_EN           BIT(2)
 
 #define MAX77620_REG_CNFGBBC        0x04
-#define  MAX77620_CNFGBBC_ENABLE              (1 << 0)
+#define  MAX77620_CNFGBBC_ENABLE              BIT(0)
 #define  MAX77620_CNFGBBC_CURRENT_MASK        0x06
 #define  MAX77620_CNFGBBC_CURRENT_SHIFT       1
 #define  MAX77620_CNFGBBC_VOLTAGE_MASK        0x18
 #define  MAX77620_CNFGBBC_VOLTAGE_SHIFT       3
-#define  MAX77620_CNFGBBC_LOW_CURRENT_DISABLE (1 << 5)
+#define  MAX77620_CNFGBBC_LOW_CURRENT_DISABLE BIT(5)
 #define  MAX77620_CNFGBBC_RESISTOR_MASK       0xC0
 #define  MAX77620_CNFGBBC_RESISTOR_SHIFT      6
 #define  MAX77620_CNFGBBC_RESISTOR_100        (0 << MAX77620_CNFGBBC_RESISTOR_SHIFT)
@@ -64,19 +64,19 @@
 #define  MAX77620_CNFGBBC_RESISTOR_6K         (3 << MAX77620_CNFGBBC_RESISTOR_SHIFT)
 
 #define MAX77620_REG_IRQTOP         0x05
-#define  MAX77620_IRQ_TOP_GLBL_MASK           (1 << 7)
-#define  MAX77620_IRQ_TOP_SD_MASK             (1 << 6)
-#define  MAX77620_IRQ_TOP_LDO_MASK            (1 << 5)
-#define  MAX77620_IRQ_TOP_GPIO_MASK           (1 << 4)
-#define  MAX77620_IRQ_TOP_RTC_MASK            (1 << 3)
-#define  MAX77620_IRQ_TOP_32K_MASK            (1 << 2)
-#define  MAX77620_IRQ_TOP_ONOFF_MASK          (1 << 1)
+#define  MAX77620_IRQ_TOP_ONOFF_MASK          BIT(1)
+#define  MAX77620_IRQ_TOP_32K_MASK            BIT(2)
+#define  MAX77620_IRQ_TOP_RTC_MASK            BIT(3)
+#define  MAX77620_IRQ_TOP_GPIO_MASK           BIT(4)
+#define  MAX77620_IRQ_TOP_LDO_MASK            BIT(5)
+#define  MAX77620_IRQ_TOP_SD_MASK             BIT(6)
+#define  MAX77620_IRQ_TOP_GLBL_MASK           BIT(7)
 
 #define MAX77620_REG_INTLBT         0x06
 #define MAX77620_REG_IRQTOPM        0x0D
-#define  MAX77620_IRQ_LBM_MASK                (1 << 3)
-#define  MAX77620_IRQ_TJALRM1_MASK            (1 << 2)
-#define  MAX77620_IRQ_TJALRM2_MASK            (1 << 1)
+#define  MAX77620_IRQ_TJALRM2_MASK            BIT(1)
+#define  MAX77620_IRQ_TJALRM1_MASK            BIT(2)
+#define  MAX77620_IRQ_LBM_MASK                BIT(3)
 
 #define MAX77620_REG_IRQSD          0x07
 #define MAX77620_REG_IRQ_LVL2_L0_7  0x08
@@ -86,7 +86,7 @@
 #define MAX77620_REG_NVERC          0x0C
 
 #define MAX77620_REG_INTENLBT       0x0E
-#define  MAX77620_GLBLM_MASK                  (1 << 0)
+#define  MAX77620_GLBLM_MASK                  BIT(0)
 
 #define MAX77620_REG_IRQMASKSD      0x0F
 #define MAX77620_REG_IRQ_MSK_L0_7   0x10
@@ -132,23 +132,23 @@
 #define MAX77620_REG_LDO7_CFG2      0x32
 #define MAX77620_REG_LDO8_CFG       0x33
 #define MAX77620_REG_LDO8_CFG2      0x34
+#define  MAX77620_LDO_CFG2_SS_MASK            (1 << 0)
+#define  MAX77620_LDO_CFG2_SS_FAST            (1 << 0)
+#define  MAX77620_LDO_CFG2_SS_SLOW            0
+#define  MAX77620_LDO_CFG2_ADE_MASK           (1 << 1)
+#define  MAX77620_LDO_CFG2_ADE_DISABLE        (0 << 1)
+#define  MAX77620_LDO_CFG2_ADE_ENABLE         (1 << 1)
+#define  MAX20024_LDO_CFG2_MPOK_MASK          BIT(2)
 #define  MAX77620_LDO_POWER_MODE_MASK         0xC0
 #define  MAX77620_LDO_POWER_MODE_SHIFT        6
 #define  MAX77620_POWER_MODE_NORMAL	          3
 #define  MAX77620_POWER_MODE_LPM              2
 #define  MAX77620_POWER_MODE_GLPM             1
 #define  MAX77620_POWER_MODE_DISABLE          0
-#define  MAX20024_LDO_CFG2_MPOK_MASK          (1 << 2)
-#define  MAX77620_LDO_CFG2_ADE_MASK           (1 << 1)
-#define  MAX77620_LDO_CFG2_ADE_DISABLE        (0 << 1)
-#define  MAX77620_LDO_CFG2_ADE_ENABLE         (1 << 1)
-#define  MAX77620_LDO_CFG2_SS_MASK            (1 << 0)
-#define  MAX77620_LDO_CFG2_SS_FAST            (1 << 0)
-#define  MAX77620_LDO_CFG2_SS_SLOW            0
 
 #define MAX77620_REG_LDO_CFG3       0x35
-#define  MAX77620_TRACK4_MASK                 (1 << 5)
 #define  MAX77620_TRACK4_SHIFT                5
+#define  MAX77620_TRACK4_MASK                 (1 << MAX77620_TRACK4_SHIFT)
 
 #define MAX77620_LDO_SLEW_RATE_MASK 0x1
 
@@ -183,19 +183,19 @@
 #define  MAX77620_CNFG_GPIO_DBNC_32ms         (0x3 << 6)
 
 #define MAX77620_REG_ONOFFCNFG1     0x41
-#define  MAX77620_ONOFFCNFG1_SFT_RST          (1 << 7)
-#define  MAX77620_ONOFFCNFG1_MRT_MASK         0x38
-#define  MAX77620_ONOFFCNFG1_MRT_SHIFT        0x3
-#define  MAX77620_ONOFFCNFG1_SLPEN            (1 << 2)
-#define  MAX77620_ONOFFCNFG1_PWR_OFF          (1 << 1)
 #define  MAX20024_ONOFFCNFG1_CLRSE            0x18
+#define  MAX77620_ONOFFCNFG1_PWR_OFF          BIT(1)
+#define  MAX77620_ONOFFCNFG1_SLPEN            BIT(2)
+#define  MAX77620_ONOFFCNFG1_MRT_SHIFT        0x3
+#define  MAX77620_ONOFFCNFG1_MRT_MASK         0x38
+#define  MAX77620_ONOFFCNFG1_SFT_RST          BIT(7)
 
 #define MAX77620_REG_ONOFFCNFG2     0x42
-#define  MAX77620_ONOFFCNFG2_SFT_RST_WK       (1 << 7)
-#define  MAX77620_ONOFFCNFG2_WD_RST_WK        (1 << 6)
-#define  MAX77620_ONOFFCNFG2_SLP_LPM_MSK      (1 << 5)
-#define  MAX77620_ONOFFCNFG2_WK_ALARM1        (1 << 2)
-#define  MAX77620_ONOFFCNFG2_WK_EN0           (1 << 0)
+#define  MAX77620_ONOFFCNFG2_WK_EN0           BIT(0)
+#define  MAX77620_ONOFFCNFG2_WK_ALARM1        BIT(2)
+#define  MAX77620_ONOFFCNFG2_SLP_LPM_MSK      BIT(5)
+#define  MAX77620_ONOFFCNFG2_WD_RST_WK        BIT(6)
+#define  MAX77620_ONOFFCNFG2_SFT_RST_WK       BIT(7)
 
 /* FPS Registers */
 #define MAX77620_REG_FPS_CFG0       0x43
@@ -259,8 +259,8 @@
 #define MAX77620_CID_DIDM_SHIFT               4
 
 /* CNCG2SD */
-#define MAX77620_SD_CNF2_ROVS_EN_SD1          (1 << 1)
-#define MAX77620_SD_CNF2_ROVS_EN_SD0          (1 << 2)
+#define MAX77620_SD_CNF2_ROVS_EN_SD1          BIT(1)
+#define MAX77620_SD_CNF2_ROVS_EN_SD0          BIT(2)
 
 /* Device Identification Metal */
 #define MAX77620_CID5_DIDM(n) (((n) >> 4) & 0xF)
@@ -272,29 +272,29 @@
 #define MAX77620_SD_SR_SHIFT                  6
 #define MAX77620_SD_POWER_MODE_MASK           0x30
 #define MAX77620_SD_POWER_MODE_SHIFT          4
-#define MAX77620_SD_CFG1_ADE_MASK             (1 << 3)
+#define MAX77620_SD_CFG1_ADE_MASK             BIT(3)
 #define MAX77620_SD_CFG1_ADE_DISABLE          0
-#define MAX77620_SD_CFG1_ADE_ENABLE           (1 << 3)
+#define MAX77620_SD_CFG1_ADE_ENABLE           BIT(3)
 #define MAX77620_SD_FPWM_MASK                 0x04
 #define MAX77620_SD_FPWM_SHIFT                2
 #define MAX77620_SD_FSRADE_MASK               0x01
 #define MAX77620_SD_FSRADE_SHIFT              0
-#define MAX77620_SD_CFG1_FPWM_SD_MASK         (1 << 2)
+#define MAX77620_SD_CFG1_FPWM_SD_MASK         BIT(2)
 #define MAX77620_SD_CFG1_FPWM_SD_SKIP         0
-#define MAX77620_SD_CFG1_FPWM_SD_FPWM         (1 << 2)
-#define MAX20024_SD_CFG1_MPOK_MASK            (1 << 1)
-#define MAX77620_SD_CFG1_FSRADE_SD_MASK       (1 << 0)
+#define MAX77620_SD_CFG1_FPWM_SD_FPWM         BIT(2)
+#define MAX20024_SD_CFG1_MPOK_MASK            BIT(1)
+#define MAX77620_SD_CFG1_FSRADE_SD_MASK       BIT(0)
 #define MAX77620_SD_CFG1_FSRADE_SD_DISABLE    0
-#define MAX77620_SD_CFG1_FSRADE_SD_ENABLE     (1 << 0)
+#define MAX77620_SD_CFG1_FSRADE_SD_ENABLE     BIT(0)
 
-#define MAX77620_IRQ_LVL2_GPIO_EDGE0          (1 << 0)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE1          (1 << 1)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE2          (1 << 2)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE3          (1 << 3)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE4          (1 << 4)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE5          (1 << 5)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE6          (1 << 6)
-#define MAX77620_IRQ_LVL2_GPIO_EDGE7          (1 << 7)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE0          BIT(0)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE1          BIT(1)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE2          BIT(2)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE3          BIT(3)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE4          BIT(4)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE5          BIT(5)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE6          BIT(6)
+#define MAX77620_IRQ_LVL2_GPIO_EDGE7          BIT(7)
 
 /* Interrupts */
 enum {

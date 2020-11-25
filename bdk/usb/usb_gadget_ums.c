@@ -1167,7 +1167,7 @@ DPRINTF("SCSI command: %X;  Dc=%d, D%c=%X;  Hc=%d, H%c=%X\n",
 	ums->cmnd[1] &= 0x1F; // Mask away the LUN.
 	for (u32 i = 1; i < cmnd_size; ++i)
 	{
-		if (ums->cmnd[i] && !(mask & (1 << i)))
+		if (ums->cmnd[i] && !(mask & BIT(i)))
 		{
 			ums->lun.sense_data = SS_INVALID_FIELD_IN_CDB;
 

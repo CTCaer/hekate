@@ -51,7 +51,7 @@ extern bool is_ipl_updated(void *buf, char *path, bool force);
 #define CNT_TYPE_KRN 10 // Kernel.
 
 // FSS0 Content Flags.
-#define CNT_FLAG0_EXPERIMENTAL (1 << 0)
+#define CNT_FLAG0_EXPERIMENTAL BIT(0)
 
 // FSS0 Meta Header.
 typedef struct _fss_meta_t

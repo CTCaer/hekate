@@ -209,8 +209,8 @@ typedef enum _irq_status_t
 typedef enum _irq_flags_t
 {
 	IRQ_FLAG_NONE        = 0,
-	IRQ_FLAG_ONE_OFF     = (1 << 0),
-	IRQ_FLAG_REPLACEABLE = (1 << 1)
+	IRQ_FLAG_ONE_OFF     = BIT(0),
+	IRQ_FLAG_REPLACEABLE = BIT(1)
 } irq_flags_t;
 
 void irq_end();

@@ -22,11 +22,11 @@
 
 typedef enum
 {
-	PART_BOOT =   (1 << 0),
-	PART_SYSTEM = (1 << 1),
-	PART_USER =   (1 << 2),
-	PART_RAW =    (1 << 3),
-	PART_GP_ALL = (1 << 7)
+	PART_BOOT =   BIT(0),
+	PART_SYSTEM = BIT(1),
+	PART_USER =   BIT(2),
+	PART_RAW =    BIT(3),
+	PART_GP_ALL = BIT(7)
 } emmcPartType_t;
 
 void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui);

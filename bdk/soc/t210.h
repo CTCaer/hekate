@@ -150,30 +150,32 @@
 /*! AHB Gizmo registers. */
 #define AHB_ARBITRATION_PRIORITY_CTRL 0x8
 #define  PRIORITY_CTRL_WEIGHT(x) (((x) & 7) << 29)
-#define  PRIORITY_SELECT_USB BIT(6)
-#define  PRIORITY_SELECT_USB2 BIT(18)
-#define  PRIORITY_SELECT_USB3 BIT(17)
+#define  PRIORITY_SELECT_USB BIT(6)   // USB-OTG.
+#define  PRIORITY_SELECT_USB2 BIT(18) // USB-HSIC.
+#define  PRIORITY_SELECT_USB3 BIT(17) // XUSB.
 #define AHB_GIZMO_AHB_MEM 0x10
-#define  AHB_MEM_ENB_FAST_REARBITRATE (1 << 2)
-#define  AHB_MEM_DONT_SPLIT_AHB_WR    (1 << 7)
-#define  AHB_MEM_IMMEDIATE            (1 << 18)
+#define  AHB_MEM_ENB_FAST_REARBITRATE BIT(2)
+#define  AHB_MEM_DONT_SPLIT_AHB_WR    BIT(7)
+#define  AHB_MEM_IMMEDIATE            BIT(18)
 #define AHB_GIZMO_APB_DMA 0x14
 #define AHB_GIZMO_USB 0x20
 #define AHB_GIZMO_SDMMC4 0x48
 #define AHB_GIZMO_USB2 0x7C
 #define AHB_GIZMO_USB3 0x80
-#define  AHB_GIZMO_IMMEDIATE (1 << 18)
+#define  AHB_GIZMO_IMMEDIATE BIT(18)
+#define AHB_ARBITRATION_XBAR_CTRL 0xE0
 #define AHB_AHB_MEM_PREFETCH_CFG3 0xE4
 #define AHB_AHB_MEM_PREFETCH_CFG4 0xE8
 #define AHB_AHB_MEM_PREFETCH_CFG1 0xF0
 #define AHB_AHB_MEM_PREFETCH_CFG2 0xF4
 #define  MST_ID(x) (((x) & 0x1F) << 26)
 #define  MEM_PREFETCH_AHBDMA_MST_ID MST_ID(5)
-#define  MEM_PREFETCH_USB_MST_ID MST_ID(6)
-#define  MEM_PREFETCH_USB2_MST_ID MST_ID(18)
-#define  MEM_PREFETCH_USB3_MST_ID MST_ID(17)
+#define  MEM_PREFETCH_USB_MST_ID MST_ID(6)   // USB-OTG.
+#define  MEM_PREFETCH_USB2_MST_ID MST_ID(18) // USB-HSIC.
+#define  MEM_PREFETCH_USB3_MST_ID MST_ID(17) // XUSB.
 #define  MEM_PREFETCH_ADDR_BNDRY(x) (((x) & 0xF) << 21)
-#define  MEM_PREFETCH_ENABLE (1 << 31)
+#define  MEM_PREFETCH_ENABLE BIT(31)
+#define AHB_AHB_SPARE_REG 0x110
 
 /*! Misc registers. */
 #define APB_MISC_PP_STRAPPING_OPT_A 0x08
@@ -190,16 +192,12 @@
 #define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64
 #define APB_MISC_GP_WIFI_RST_CFGPADCTRL 0xB68
 
-/*! System registers. */
-#define AHB_ARBITRATION_XBAR_CTRL 0xE0
-#define AHB_AHB_SPARE_REG 0x110
-
 /*! Secure boot registers. */
 #define SB_CSR 0x0
-#define  SB_CSR_NS_RST_VEC_WR_DIS    (1 << 1)
-#define  SB_CSR_PIROM_DISABLE        (1 << 4)
+#define  SB_CSR_NS_RST_VEC_WR_DIS    BIT(1)
+#define  SB_CSR_PIROM_DISABLE        BIT(4)
 #define SB_AA64_RESET_LOW  0x30
-#define  SB_AA64_RST_AARCH64_MODE_EN (1 << 0)
+#define  SB_AA64_RST_AARCH64_MODE_EN BIT(0)
 #define SB_AA64_RESET_HIGH 0x34
 
 /*! SOR registers. */
@@ -234,20 +232,20 @@
 #define TIMERUS_USEC_CFG          (0x10 + 0x4)
 #define TIMER_TMR8_TMR_PTV        0x78
 #define TIMER_TMR9_TMR_PTV        0x80
-#define  TIMER_EN          (1 << 31)
-#define  TIMER_PER_EN      (1 << 30)
+#define  TIMER_PER_EN      BIT(30)
+#define  TIMER_EN          BIT(31)
 #define TIMER_TMR8_TMR_PCR        0x7C
 #define TIMER_TMR9_TMR_PCR        0x8C
-#define  TIMER_INTR_CLR    (1 << 30)
+#define  TIMER_INTR_CLR    BIT(30)
 
 #define TIMER_WDT4_CONFIG         (0x100 + 0x80)
-#define  TIMER_SRC(TMR) (TMR & 0xF)
-#define  TIMER_PER(PER) ((PER & 0xFF) << 4)
-#define  TIMER_SYSRESET_EN (1 << 14)
-#define  TIMER_PMCRESET_EN (1 << 15)
+#define  TIMER_SRC(TMR) ((TMR) & 0xF)
+#define  TIMER_PER(PER) (((PER) & 0xFF) << 4)
+#define  TIMER_SYSRESET_EN BIT(14)
+#define  TIMER_PMCRESET_EN BIT(15)
 #define TIMER_WDT4_COMMAND        (0x108 + 0x80)
-#define  TIMER_START_CNT   (1 << 0)
-#define  TIMER_CNT_DISABLE (1 << 1)
+#define  TIMER_START_CNT   BIT(0)
+#define  TIMER_CNT_DISABLE BIT(1)
 #define TIMER_WDT4_UNLOCK_PATTERN (0x10C + 0x80)
 #define  TIMER_MAGIC_PTRN 0xC45A
 
@@ -262,29 +260,29 @@
 #define I2S4_CTRL 0x3A0
 #define I2S5_CG   0x488
 #define I2S5_CTRL 0x4A0
-#define  I2S_CG_SLCG_ENABLE (1 << 0)
-#define  I2S_CTRL_MASTER_EN (1 << 10)
+#define  I2S_CG_SLCG_ENABLE BIT(0)
+#define  I2S_CTRL_MASTER_EN BIT(10)
 
 /*! PWM registers. */
 #define PWM_CONTROLLER_PWM_CSR_0 0x00
 #define PWM_CONTROLLER_PWM_CSR_1 0x10
-#define  PWM_CSR_EN (1 << 31)
+#define  PWM_CSR_EN BIT(31)
 
 /*! Special registers. */
 #define EMC_SCRATCH0 0x324
-#define  EMC_HEKA_UPD (1 << 30)
-#define  EMC_SEPT_RUN (1 << 31)
+#define  EMC_HEKA_UPD BIT(30)
+#define  EMC_SEPT_RUN BIT(31)
 
 /*! Flow controller registers. */
 #define FLOW_CTLR_HALT_COP_EVENTS  0x4
-#define  HALT_COP_GIC_IRQ        (1 << 9)
-#define  HALT_COP_LIC_IRQ        (1 << 11)
-#define  HALT_COP_SEC            (1 << 23)
-#define  HALT_COP_MSEC           (1 << 24)
-#define  HALT_COP_USEC           (1 << 25)
-#define  HALT_COP_JTAG           (1 << 28)
-#define  HALT_COP_WAIT_EVENT     (1 << 30)
-#define  HALT_COP_STOP_UNTIL_IRQ (1 << 31)
+#define  HALT_COP_GIC_IRQ        BIT(9)
+#define  HALT_COP_LIC_IRQ        BIT(11)
+#define  HALT_COP_SEC            BIT(23)
+#define  HALT_COP_MSEC           BIT(24)
+#define  HALT_COP_USEC           BIT(25)
+#define  HALT_COP_JTAG           BIT(28)
+#define  HALT_COP_WAIT_EVENT     BIT(30)
+#define  HALT_COP_STOP_UNTIL_IRQ BIT(31)
 #define  HALT_COP_MAX_CNT        0xFF
 #define FLOW_CTLR_HALT_CPU0_EVENTS 0x0
 #define FLOW_CTLR_HALT_CPU1_EVENTS 0x14
@@ -296,10 +294,5 @@
 #define FLOW_CTLR_CPU3_CSR 0x28
 #define FLOW_CTLR_RAM_REPAIR 0x40
 #define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
-
-/*! USB controller registers. */
-#define USB1_UTMIP_BAT_CHRG_CFG0 0x830
-#define  BAT_CHRG_CFG0_OP_SRC_EN    (1 << 3)
-#define  BAT_CHRG_CFG0_PWRDOWN_CHRG (1 << 0)
 
 #endif

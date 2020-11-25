@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -77,9 +77,9 @@ void display_init()
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = BIT(CLK_W_DSIA_LP);
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = 10;    // Set PLLP_OUT and div 6 (68MHz).
 
-	// Disable deep power down.
-	PMC(APBDEV_PMC_IO_DPD_REQ)  = 0x40000000;
-	PMC(APBDEV_PMC_IO_DPD2_REQ) = 0x40000000;
+	// Bring every IO rail out of deep power down.
+	PMC(APBDEV_PMC_IO_DPD_REQ)  = PMC_IO_DPD_REQ_DPD_OFF;
+	PMC(APBDEV_PMC_IO_DPD2_REQ) = PMC_IO_DPD_REQ_DPD_OFF;
 
 	// Config LCD and Backlight pins.
 	PINMUX_AUX(PINMUX_AUX_NFC_EN)     &= ~PINMUX_TRISTATE; // PULL_DOWN
@@ -255,7 +255,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	display_backlight_brightness(0, 1000);
 
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE;
-	DSI(_DSIREG(DSI_WR_DATA)) = 0x2805; // MIPI_DCS_SET_DISPLAY_OFF
+	DSI(_DSIREG(DSI_WR_DATA)) = (MIPI_DCS_SET_DISPLAY_OFF << 8) | MIPI_DSI_DCS_SHORT_WRITE;
 
 	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX | WRITE_MUX;
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0; // Disable host cmd packet.
@@ -324,7 +324,7 @@ skip_panel_deinit:
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
 
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_TRISTATE) | PINMUX_TRISTATE;
-	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & 0xFFFFFFFC)| 1;
+	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
 }
 
 void display_end() { _display_panel_and_hw_end(false); };
@@ -386,7 +386,7 @@ u32 *display_init_framebuffer_log()
 
 void display_activate_console()
 {
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window C.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window D.
 	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = WIN_ENABLE; // Enable window DD.
 	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0xFF80;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
@@ -407,7 +407,7 @@ void display_activate_console()
 
 void display_deactivate_console()
 {
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window C.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window D.
 
 	for (u32 i = 0xFFFF; i > 0xFF7F; i--)
 	{

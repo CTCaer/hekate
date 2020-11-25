@@ -27,16 +27,16 @@
 #include <utils/util.h>
 
 /* Status register bits */
-#define STATUS_POR_BIT (1 << 1)
-#define STATUS_BST_BIT (1 << 3)
-#define STATUS_VMN_BIT (1 << 8)
-#define STATUS_TMN_BIT (1 << 9)
-#define STATUS_SMN_BIT (1 << 10)
-#define STATUS_BI_BIT  (1 << 11)
-#define STATUS_VMX_BIT (1 << 12)
-#define STATUS_TMX_BIT (1 << 13)
-#define STATUS_SMX_BIT (1 << 14)
-#define STATUS_BR_BIT  (1 << 15)
+#define STATUS_POR_BIT BIT(1)
+#define STATUS_BST_BIT BIT(3)
+#define STATUS_VMN_BIT BIT(8)
+#define STATUS_TMN_BIT BIT(9)
+#define STATUS_SMN_BIT BIT(10)
+#define STATUS_BI_BIT  BIT(11)
+#define STATUS_VMX_BIT BIT(12)
+#define STATUS_TMX_BIT BIT(13)
+#define STATUS_SMX_BIT BIT(14)
+#define STATUS_BR_BIT  BIT(15)
 
 #define VFSOC0_LOCK   0x0000
 #define VFSOC0_UNLOCK 0x0080

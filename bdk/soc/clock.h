@@ -153,25 +153,25 @@
 #define CLK_NO_SOURCE 0x0
 
 /*! PLL control and status bits */
-#define PLLCX_BASE_ENABLE    (1 << 30)
-#define PLLCX_BASE_REF_DIS   (1 << 29)
-#define PLLCX_BASE_LOCK      (1 << 27)
+#define PLLCX_BASE_LOCK      BIT(27)
+#define PLLCX_BASE_REF_DIS   BIT(29)
+#define PLLCX_BASE_ENABLE    BIT(30)
 
-#define PLLA_BASE_IDDQ       (1 << 25)
-#define PLLA_OUT0_CLKEN      (1 << 1)
-#define PLLA_OUT0_RSTN_CLR   (1 << 0)
+#define PLLA_OUT0_RSTN_CLR   BIT(0)
+#define PLLA_OUT0_CLKEN      BIT(1)
+#define PLLA_BASE_IDDQ       BIT(25)
 
-#define PLLC_MISC_RESET      (1 << 30)
-#define PLLC_MISC1_IDDQ      (1 << 27)
-#define PLLC_OUT1_CLKEN      (1 << 1)
-#define PLLC_OUT1_RSTN_CLR   (1 << 0)
+#define PLLC_OUT1_RSTN_CLR   BIT(0)
+#define PLLC_OUT1_CLKEN      BIT(1)
+#define PLLC_MISC1_IDDQ      BIT(27)
+#define PLLC_MISC_RESET      BIT(30)
 
-#define PLLC4_MISC_EN_LCKDET (1 << 30)
-#define PLLC4_BASE_IDDQ      (1 << 18)
-#define PLLC4_OUT3_CLKEN     (1 << 1)
-#define PLLC4_OUT3_RSTN_CLR  (1 << 0)
+#define PLLC4_OUT3_RSTN_CLR  BIT(0)
+#define PLLC4_OUT3_CLKEN     BIT(1)
+#define PLLC4_BASE_IDDQ      BIT(18)
+#define PLLC4_MISC_EN_LCKDET BIT(30)
 
-#define UTMIPLL_LOCK         (1 << 31)
+#define UTMIPLL_LOCK         BIT(31)
 
 /*
  * CLOCK Peripherals:

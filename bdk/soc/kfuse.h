@@ -19,16 +19,16 @@
 
 #include <utils/types.h>
 
-#define KFUSE_STATE_SOFTRESET      (1 << 31)
-#define KFUSE_STATE_STOP           (1 << 25)
-#define KFUSE_STATE_RESTART        (1 << 24)
-#define KFUSE_STATE_CRCPASS        (1 << 17)
-#define KFUSE_STATE_DONE           (1 << 16)
-#define KFUSE_STATE_ERRBLOCK_MASK  0x3F00
-#define KFUSE_STATE_ERRBLOCK_SHIFT 8
 #define KFUSE_STATE_CURBLOCK_MASK  0x3F
+#define KFUSE_STATE_ERRBLOCK_SHIFT 8
+#define KFUSE_STATE_ERRBLOCK_MASK  0x3F00
+#define KFUSE_STATE_DONE           BIT(16)
+#define KFUSE_STATE_CRCPASS        BIT(17)
+#define KFUSE_STATE_RESTART        BIT(24)
+#define KFUSE_STATE_STOP           BIT(25)
+#define KFUSE_STATE_SOFTRESET      BIT(31)
 
-#define KFUSE_KEYADDR_AUTOINC (1<<16)
+#define KFUSE_KEYADDR_AUTOINC      BIT(16)
 
 #define KFUSE_STATE 0x80
 #define KFUSE_KEYADDR 0x88

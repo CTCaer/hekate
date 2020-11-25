@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -42,11 +42,11 @@
 #define DC_CMD_GENERAL_INCR_SYNCPT 0x00
 
 #define DC_CMD_GENERAL_INCR_SYNCPT_CNTRL 0x01
-#define  SYNCPT_CNTRL_NO_STALL   (1 << 8)
-#define  SYNCPT_CNTRL_SOFT_RESET (1 << 0)
+#define  SYNCPT_CNTRL_SOFT_RESET BIT(0)
+#define  SYNCPT_CNTRL_NO_STALL   BIT(8)
 
 #define DC_CMD_CONT_SYNCPT_VSYNC 0x28
-#define  SYNCPT_VSYNC_ENABLE (1 << 8)
+#define  SYNCPT_VSYNC_ENABLE BIT(8)
 
 #define DC_CMD_DISPLAY_COMMAND_OPTION0 0x031
 
@@ -57,42 +57,42 @@
 #define  DISP_CTRL_MODE_MASK       (3 << 5)
 
 #define DC_CMD_DISPLAY_POWER_CONTROL 0x36
-#define  PW0_ENABLE (1 <<  0)
-#define  PW1_ENABLE (1 <<  2)
-#define  PW2_ENABLE (1 <<  4)
-#define  PW3_ENABLE (1 <<  6)
-#define  PW4_ENABLE (1 <<  8)
-#define  PM0_ENABLE (1 << 16)
-#define  PM1_ENABLE (1 << 18)
+#define  PW0_ENABLE BIT(0)
+#define  PW1_ENABLE BIT(2)
+#define  PW2_ENABLE BIT(4)
+#define  PW3_ENABLE BIT(6)
+#define  PW4_ENABLE BIT(8)
+#define  PM0_ENABLE BIT(16)
+#define  PM1_ENABLE BIT(18)
 
 #define DC_CMD_INT_STATUS 0x37
 #define DC_CMD_INT_MASK 0x38
 #define DC_CMD_INT_ENABLE 0x39
 
 #define DC_CMD_STATE_ACCESS 0x40
-#define  READ_MUX  (1 << 0)
-#define  WRITE_MUX (1 << 2)
+#define  READ_MUX  BIT(0)
+#define  WRITE_MUX BIT(2)
 
 #define DC_CMD_STATE_CONTROL 0x41
-#define  GENERAL_ACT_REQ (1 <<  0)
-#define  WIN_A_ACT_REQ   (1 <<  1)
-#define  WIN_B_ACT_REQ   (1 <<  2)
-#define  WIN_C_ACT_REQ   (1 <<  3)
-#define  WIN_D_ACT_REQ   (1 <<  4)
-#define  CURSOR_ACT_REQ  (1 <<  7)
-#define  GENERAL_UPDATE  (1 <<  8)
-#define  WIN_A_UPDATE    (1 <<  9)
-#define  WIN_B_UPDATE    (1 << 10)
-#define  WIN_C_UPDATE    (1 << 11)
-#define  WIN_D_UPDATE    (1 << 12)
-#define  CURSOR_UPDATE   (1 << 15)
-#define  NC_HOST_TRIG    (1 << 24)
+#define  GENERAL_ACT_REQ BIT(0)
+#define  WIN_A_ACT_REQ   BIT(1)
+#define  WIN_B_ACT_REQ   BIT(2)
+#define  WIN_C_ACT_REQ   BIT(3)
+#define  WIN_D_ACT_REQ   BIT(4)
+#define  CURSOR_ACT_REQ  BIT(7)
+#define  GENERAL_UPDATE  BIT(8)
+#define  WIN_A_UPDATE    BIT(9)
+#define  WIN_B_UPDATE    BIT(10)
+#define  WIN_C_UPDATE    BIT(11)
+#define  WIN_D_UPDATE    BIT(12)
+#define  CURSOR_UPDATE   BIT(15)
+#define  NC_HOST_TRIG    BIT(24)
 
 #define DC_CMD_DISPLAY_WINDOW_HEADER 0x42
-#define  WINDOW_A_SELECT (1 << 4)
-#define  WINDOW_B_SELECT (1 << 5)
-#define  WINDOW_C_SELECT (1 << 6)
-#define  WINDOW_D_SELECT (1 << 7)
+#define  WINDOW_A_SELECT BIT(4)
+#define  WINDOW_B_SELECT BIT(5)
+#define  WINDOW_C_SELECT BIT(6)
+#define  WINDOW_D_SELECT BIT(7)
 
 #define DC_CMD_REG_ACT_CONTROL 0x043
 
@@ -125,12 +125,13 @@
 
 // DC_DISP shadowed registers.
 #define DC_DISP_DISP_WIN_OPTIONS 0x402
-#define  HDMI_ENABLE     (1 << 30)
-#define  DSI_ENABLE      (1 << 29)
-#define  SOR1_TIMING_CYA (1 << 27)
-#define  SOR1_ENABLE     (1 << 26)
-#define  SOR_ENABLE      (1 << 25)
-#define  CURSOR_ENABLE   (1 << 16)
+#define  CURSOR_ENABLE   BIT(16)
+#define  SOR_ENABLE      BIT(25)
+#define  SOR1_ENABLE     BIT(26)
+#define  SOR1_TIMING_CYA BIT(27)
+#define  DSI_ENABLE      BIT(29)
+#define  HDMI_ENABLE     BIT(30)
+
 
 #define DC_DISP_DISP_MEM_HIGH_PRIORITY 0x403
 #define DC_DISP_DISP_MEM_HIGH_PRIORITY_TIMER 0x404
@@ -142,6 +143,7 @@
 #define DC_DISP_FRONT_PORCH 0x40A
 
 #define DC_DISP_DISP_CLOCK_CONTROL 0x42E
+#define  SHIFT_CLK_DIVIDER(x)    ((x) & 0xff)
 #define  PIXEL_CLK_DIVIDER_PCD1  (0 << 8)
 #define  PIXEL_CLK_DIVIDER_PCD1H (1 << 8)
 #define  PIXEL_CLK_DIVIDER_PCD2  (2 << 8)
@@ -155,7 +157,6 @@
 #define  PIXEL_CLK_DIVIDER_PCD18 (10 << 8)
 #define  PIXEL_CLK_DIVIDER_PCD24 (11 << 8)
 #define  PIXEL_CLK_DIVIDER_PCD13 (12 << 8)
-#define  SHIFT_CLK_DIVIDER(x)    ((x) & 0xff)
 
 #define DC_DISP_DISP_INTERFACE_CONTROL 0x42F
 #define  DISP_DATA_FORMAT_DF1P1C    (0 << 0)
@@ -189,8 +190,8 @@
 #define  BASE_COLOR_SIZE_888    (8 << 0)
 
 #define DC_DISP_SHIFT_CLOCK_OPTIONS 0x431
-#define  SC1_H_QUALIFIER_NONE	(1 << 16)
-#define  SC0_H_QUALIFIER_NONE	(1 <<  0)
+#define  SC0_H_QUALIFIER_NONE	BIT(0)
+#define  SC1_H_QUALIFIER_NONE	BIT(16)
 
 #define DC_DISP_DATA_ENABLE_OPTIONS 0x432
 #define  DE_SELECT_ACTIVE_BLANK  (0 << 0)
@@ -217,6 +218,7 @@
 #define  CURSOR_SIZE_128 (2 << 24)
 #define  CURSOR_SIZE_256 (3 << 24)
 #define DC_DISP_CURSOR_POSITION      0x440
+#define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
 #define DC_DISP_CURSOR_START_ADDR_HI 0x4EC
 #define DC_DISP_BLEND_CURSOR_CONTROL 0x4F1
 #define  CURSOR_BLEND_2BIT     (0 << 24)
@@ -247,12 +249,12 @@
 
 // The following registers are A/B/C shadows of the 0xB80/0xD80/0xF80 registers (see DISPLAY_WINDOW_HEADER).
 #define DC_WIN_WIN_OPTIONS 0x700
-#define  H_DIRECTION  (1 <<  0)
-#define  V_DIRECTION  (1 <<  2)
-#define  SCAN_COLUMN  (1 <<  4)
-#define  COLOR_EXPAND (1 <<  6)
-#define  CSC_ENABLE   (1 << 18)
-#define  WIN_ENABLE   (1 << 30)
+#define  H_DIRECTION  BIT(0)
+#define  V_DIRECTION  BIT(2)
+#define  SCAN_COLUMN  BIT(4)
+#define  COLOR_EXPAND BIT(6)
+#define  CSC_ENABLE   BIT(18)
+#define  WIN_ENABLE   BIT(30)
 
 #define DC_WIN_BUFFER_CONTROL 0x702
 #define  BUFFER_CONTROL_HOST  0
@@ -369,36 +371,36 @@
 #define DSI_INT_MASK 0xE
 
 #define DSI_HOST_CONTROL 0xF
-#define  DSI_HOST_CONTROL_FIFO_RESET   (1 << 21)
-#define  DSI_HOST_CONTROL_CRC_RESET    (1 << 20)
+#define  DSI_HOST_CONTROL_ECC          BIT(0)
+#define  DSI_HOST_CONTROL_CS           BIT(1)
+#define  DSI_HOST_CONTROL_PKT_BTA      BIT(2)
+#define  DSI_HOST_CONTROL_IMM_BTA      BIT(3)
+#define  DSI_HOST_CONTROL_FIFO_SEL     BIT(4)
+#define  DSI_HOST_CONTROL_HS           BIT(5)
+#define  DSI_HOST_CONTROL_RAW          BIT(6)
 #define  DSI_HOST_CONTROL_TX_TRIG_SOL  (0 << 12)
 #define  DSI_HOST_CONTROL_TX_TRIG_FIFO (1 << 12)
 #define  DSI_HOST_CONTROL_TX_TRIG_HOST (2 << 12)
-#define  DSI_HOST_CONTROL_RAW          (1 << 6)
-#define  DSI_HOST_CONTROL_HS           (1 << 5)
-#define  DSI_HOST_CONTROL_FIFO_SEL     (1 << 4)
-#define  DSI_HOST_CONTROL_IMM_BTA      (1 << 3)
-#define  DSI_HOST_CONTROL_PKT_BTA      (1 << 2)
-#define  DSI_HOST_CONTROL_CS           (1 << 1)
-#define  DSI_HOST_CONTROL_ECC          (1 << 0)
+#define  DSI_HOST_CONTROL_CRC_RESET    BIT(20)
+#define  DSI_HOST_CONTROL_FIFO_RESET   BIT(21)
 
 #define DSI_CONTROL 0x10
-#define  DSI_CONTROL_HS_CLK_CTRL  (1 << 20)
-#define  DSI_CONTROL_CHANNEL(c)   (((c) & 0x3) << 16)
-#define  DSI_CONTROL_FORMAT(f)    (((f) & 0x3) << 12)
-#define  DSI_CONTROL_TX_TRIG(x)   (((x) & 0x3) <<  8)
-#define  DSI_CONTROL_LANES(n)     (((n) & 0x3) <<  4)
-#define  DSI_CONTROL_DCS_ENABLE   (1 << 3)
+#define  DSI_CONTROL_HOST_ENABLE  BIT(0)
+#define  DSI_CONTROL_VIDEO_ENABLE BIT(1)
 #define  DSI_CONTROL_SOURCE(s)    (((s) & 0x1) <<  2)
-#define  DSI_CONTROL_VIDEO_ENABLE (1 << 1)
-#define  DSI_CONTROL_HOST_ENABLE  (1 << 0)
+#define  DSI_CONTROL_DCS_ENABLE   BIT(3)
+#define  DSI_CONTROL_LANES(n)     (((n) & 0x3) <<  4)
+#define  DSI_CONTROL_TX_TRIG(x)   (((x) & 0x3) <<  8)
+#define  DSI_CONTROL_FORMAT(f)    (((f) & 0x3) << 12)
+#define  DSI_CONTROL_CHANNEL(c)   (((c) & 0x3) << 16)
+#define  DSI_CONTROL_HS_CLK_CTRL  BIT(20)
 
 #define DSI_SOL_DELAY 0x11
 #define DSI_MAX_THRESHOLD 0x12
 
 #define DSI_TRIGGER 0x13
-#define  DSI_TRIGGER_HOST  (1 << 1)
-#define  DSI_TRIGGER_VIDEO (1 << 0)
+#define  DSI_TRIGGER_VIDEO BIT(0)
+#define  DSI_TRIGGER_HOST  BIT(1)
 
 #define DSI_TX_CRC 0x14
 #define DSI_STATUS 0x15
@@ -430,20 +432,20 @@
 #define DSI_BTA_TIMING 0x3F
 
 #define DSI_TIMEOUT_0 0x44
-#define  DSI_TIMEOUT_LRX(x) (((x) & 0xffff) << 16)
 #define  DSI_TIMEOUT_HTX(x) (((x) & 0xffff) <<  0)
+#define  DSI_TIMEOUT_LRX(x) (((x) & 0xffff) << 16)
 
 #define DSI_TIMEOUT_1 0x45
-#define  DSI_TIMEOUT_PR(x) (((x) & 0xffff) << 16)
 #define  DSI_TIMEOUT_TA(x) (((x) & 0xffff) <<  0)
+#define  DSI_TIMEOUT_PR(x) (((x) & 0xffff) << 16)
 
 #define DSI_TO_TALLY 0x46
 
 #define DSI_PAD_CONTROL_0 0x4B
-#define  DSI_PAD_CONTROL_VS1_PULLDN_CLK (1 << 24)
-#define  DSI_PAD_CONTROL_VS1_PULLDN(x)  (((x) & 0xf) << 16)
-#define  DSI_PAD_CONTROL_VS1_PDIO_CLK   (1 <<  8)
+#define  DSI_PAD_CONTROL_VS1_PDIO_CLK   BIT(8)
 #define  DSI_PAD_CONTROL_VS1_PDIO(x)    (((x) & 0xf) <<  0)
+#define  DSI_PAD_CONTROL_VS1_PULLDN_CLK BIT(24)
+#define  DSI_PAD_CONTROL_VS1_PULLDN(x)  (((x) & 0xf) << 16)
 
 #define DSI_PAD_CONTROL_CD 0x4C
 #define DSI_VIDEO_MODE_CONTROL 0x4E
@@ -453,10 +455,10 @@
 #define DSI_PAD_CONTROL_2 0x50
 
 #define DSI_PAD_CONTROL_3 0x51
-#define  DSI_PAD_PREEMP_PD_CLK(x) (((x) & 0x3) << 12)
-#define  DSI_PAD_PREEMP_PU_CLK(x) (((x) & 0x3) << 8)
-#define  DSI_PAD_PREEMP_PD(x)     (((x) & 0x3) << 4)
 #define  DSI_PAD_PREEMP_PU(x)     (((x) & 0x3) << 0)
+#define  DSI_PAD_PREEMP_PD(x)     (((x) & 0x3) << 4)
+#define  DSI_PAD_PREEMP_PU_CLK(x) (((x) & 0x3) << 8)
+#define  DSI_PAD_PREEMP_PD_CLK(x) (((x) & 0x3) << 12)
 
 #define DSI_PAD_CONTROL_4 0x52
 #define DSI_INIT_SEQ_DATA_15 0x5F
@@ -493,6 +495,7 @@
 #define MIPI_DCS_GET_DISPLAY_ID   0x04
 #define MIPI_DCS_ENTER_SLEEP_MODE 0x10
 #define MIPI_DCS_EXIT_SLEEP_MODE  0x11
+#define MIPI_DCS_SET_DISPLAY_OFF  0x28
 #define MIPI_DCS_SET_DISPLAY_ON   0x29
 
 /* Switch Panels:
