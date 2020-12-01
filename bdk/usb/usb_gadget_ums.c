@@ -216,6 +216,7 @@ typedef struct _usbd_gadget_ums_t {
 	int  can_stall;
 
 	u32 timeouts;
+	bool xusb;
 
 	void (*system_maintenance)(bool);
 	void *label;
@@ -1546,18 +1547,20 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 					if (usb_ops.usb_device_get_port_in_sleep())
 					{
 						ums->set_text(ums->label, "#C7EA46 Status:# EP in sleep");
-						ums->timeouts += 10;
+						ums->timeouts += 14;
 					}
-					else
+					else if (!ums->xusb) // Timeout only on USB2.
+					{
+						ums->timeouts += 4;
 						DPRINTF("USB: EP removable\n");
+					}
 				}
 				else
 				{
 					gfx_printf("USB: EP disabled\n");
 					msleep(500);
+					ums->timeouts += 4;
 				}
-
-				ums->timeouts += 4;
 			}
 
 			if (ums->lun.unmounted)
@@ -1785,7 +1788,10 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
 		usb_device_get_ops(&usb_ops);
 	else
+	{
+		ums.xusb = true;
 		xusb_device_get_ops(&usb_ops);
+	}
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Started USB");
 
