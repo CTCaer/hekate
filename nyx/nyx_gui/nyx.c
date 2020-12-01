@@ -169,6 +169,14 @@ lv_res_t launch_payload(lv_obj_t *list)
 		{
 			coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
 			buf = coreboot_addr;
+			if (h_cfg.t210b01)
+			{
+				f_close(&fp);
+
+				EPRINTF("T210B01: Coreboot not allowed!");
+
+				goto out;
+			}
 		}
 
 		if (f_read(&fp, buf, size, NULL))

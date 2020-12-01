@@ -233,6 +233,15 @@ int launch_payload(char *path, bool update)
 		{
 			coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
 			buf = coreboot_addr;
+			if (h_cfg.t210b01)
+			{
+				f_close(&fp);
+
+				gfx_con.mute = 0;
+				EPRINTF("T210B01: Coreboot not allowed!");
+
+				goto out;
+			}
 		}
 
 		if (f_read(&fp, buf, size, NULL))
