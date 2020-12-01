@@ -90,6 +90,8 @@ typedef struct _launch_ctxt_t
 	u32   warmboot_size;
 	void *secmon;
 	u32   secmon_size;
+	void *exofatal;
+	u32   exofatal_size;
 
 	void *pkg2;
 	u32   pkg2_size;

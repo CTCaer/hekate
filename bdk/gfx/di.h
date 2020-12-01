@@ -515,6 +515,7 @@
  * 5.5" panels for Hoag skus:
  * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1)
  * [30] XX [10]: AUO A055TAN01 (59.05A30.001) [UNCONFIRMED ID]
+ * [40] XX [10]: Vendor 40 [UNCONFIRMED ID]
  */
 
 /* Display ID Decoding:
@@ -527,6 +528,7 @@
  * 10h: Japan Display Inc.
  * 20h: InnoLux Corporation
  * 30h: AU Optronics
+ * 40h: Unknown1
  *
  * Boards, Panel Size:
  * 0Fh: Icosa/Iowa, 6.2"
@@ -541,12 +543,16 @@ enum
 	PANEL_INL_P062CCA_AZ1 = 0x0F20,
 	PANEL_AUO_A062TAN01   = 0x0F30,
 	PANEL_INL_2J055IA_27A = 0x1020,
-	PANEL_AUO_A055TAN01   = 0x1030
+	PANEL_AUO_A055TAN01   = 0x1030,
+	PANEL_V40_55_UNK      = 0x1040
 };
 
 void display_init();
 void display_backlight_pwm_init();
 void display_end();
+
+/*! Get Display panel ID. */
+u16 display_get_decoded_lcd_id();
 
 /*! Show one single color on the display. */
 void display_color_screen(u32 color);

@@ -234,6 +234,7 @@ void display_init()
 
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
+	case PANEL_V40_55_UNK:
 	default: // Allow spare part displays to work.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 120000);
 		break;
@@ -370,6 +371,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
+	case PANEL_V40_55_UNK:
 		// Unlock extension cmds.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
@@ -380,11 +382,22 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39;          // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
 		if (_display_id == PANEL_INL_2J055IA_27A)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
-		else
+		else if (_display_id == PANEL_AUO_A055TAN01)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
-		// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31; // (Unknown).
+		else // PANEL_V40_55_UNK.
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x731348B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT3 / XDK, VRH gamma volt adj 51 / x40).
+		if (_display_id == PANEL_INL_2J055IA_27A || _display_id == PANEL_AUO_A055TAN01)
+		{
+			// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31;   // (Unknown).
+		}
+		else // PANEL_V40_55_UNK.
+		{
+			// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/48, Enter standby / PON / VCOMG).
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x71243209;
+			DSI(_DSIREG(DSI_WR_DATA)) = 0x004C31;   // (Unknown).
+		}
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
@@ -423,6 +436,11 @@ skip_panel_deinit:
 }
 
 void display_end() { _display_panel_and_hw_end(false); };
+
+u16 display_get_decoded_lcd_id()
+{
+	return _display_id;
+}
 
 void display_color_screen(u32 color)
 {
