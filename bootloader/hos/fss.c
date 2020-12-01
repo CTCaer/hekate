@@ -49,6 +49,7 @@ extern bool is_ipl_updated(void *buf, char *path, bool force);
 #define CNT_TYPE_EMC 8
 #define CNT_TYPE_KLD 9  // Kernel Loader.
 #define CNT_TYPE_KRN 10 // Kernel.
+#define CNT_TYPE_EXF 11 // Exosphere Mariko fatal payload.
 
 // FSS0 Content Flags.
 #define CNT_FLAG0_EXPERIMENTAL BIT(0)
@@ -195,6 +196,11 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 				case CNT_TYPE_EXO:
 					ctxt->secmon_size = curr_fss_cnt[i].size;
 					ctxt->secmon = content;
+					break;
+
+				case CNT_TYPE_EXF:
+					ctxt->exofatal_size = curr_fss_cnt[i].size;
+					ctxt->exofatal = content;
 					break;
 
 				case CNT_TYPE_WBT:

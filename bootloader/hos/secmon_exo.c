@@ -80,8 +80,10 @@ typedef struct _exo_cfg_t
 {
 	u32 magic;
 	u32 fwno;
-	u32 flags;
-	u32 reserved[5];
+	u32 flags[2];
+	u16 display_id;
+	u16 rsvd0;
+	u32 rsvd1[3];
 	exo_emummc_config_t emummc_cfg;
 } exo_cfg_t;
 
@@ -125,6 +127,9 @@ typedef struct _atm_fatal_error_ctx
 
 #define ATM_FATAL_ERR_CTX_ADDR 0x4003E000
 #define  ATM_FATAL_MAGIC       0x30454641 // AFE0
+
+#define ATM_EXO_FATAL_ADDR     0x80020000
+#define  ATM_EXO_FATAL_SIZE    0x20000
 
 #define ATM_WB_HEADER_OFF      0x244
 #define  ATM_WB_MAGIC          0x30544257 // WBT0
@@ -281,7 +286,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;
 	exo_cfg->fwno = exoFwNo;
-	exo_cfg->flags = exoFlags;
+	exo_cfg->flags[0] = exoFlags;
+	exo_cfg->flags[1] = 0;
 
 	// If warmboot is lp0fw, add in RSA modulus.
 	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(warmboot_base + ATM_WB_HEADER_OFF);
@@ -324,6 +330,17 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		else
 			exo_cfg->emummc_cfg.nintendo_path[0] = 0;
 	}
+
+	// Copy over exosphere fatal for Mariko.
+	if (h_cfg.t210b01)
+	{
+		memset((void *)ATM_EXO_FATAL_ADDR, 0, ATM_EXO_FATAL_SIZE);
+		if (ctxt->exofatal)
+			memcpy((void *)ATM_EXO_FATAL_ADDR, ctxt->exofatal, ctxt->exofatal_size);
+	}
+
+	// Set display id.
+	exo_cfg->display_id = display_get_decoded_lcd_id();
 }
 
 static const char *get_error_desc(u32 error_desc)
