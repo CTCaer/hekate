@@ -39,7 +39,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	sdmmc.o sdmmc_driver.o nx_emmc.o nx_emmc_bis.o nx_sd.o \
 	bm92t36.o bq24193.o max17050.o max7762x.o max77620-rtc.o regulator_5v.o \
 	touch.o joycon.o tmp451.o fan.o \
-	usbd.o usb_descriptors.o usb_gadget_ums.o usb_gadget_hid.o \
+	usbd.o xusbd.o usb_descriptors.o usb_gadget_ums.o usb_gadget_hid.o \
 	hw_init.o \
 )
 

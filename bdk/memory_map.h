@@ -20,9 +20,16 @@
 //#define IPL_STACK_TOP  0x4003FF00
 /* --- BIT/BCT: 0x40000000 - 0x40003000 --- */
 /* ---     IPL: 0x40008000 - 0x40028000 --- */
+#define LDR_LOAD_ADDR     0x40007000
+
 #define IPL_LOAD_ADDR     0x40008000
 #define  IPL_SZ_MAX          0x20000 // 128KB.
-//#define IRAM_LIB_ADDR     0x4002B000
+
+/* --- XUSB EP context and TRB ring buffers --- */
+#define XUSB_RING_ADDR    0x40020000
+
+#define SECMON_MIN_START  0x4002B000
+
 #define SDRAM_PARAMS_ADDR 0x40030000 // SDRAM extraction buffer during sdram init.
 #define CBFS_DRAM_EN_ADDR 0x4003e000 // u32.
 

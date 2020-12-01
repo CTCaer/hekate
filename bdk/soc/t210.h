@@ -61,6 +61,9 @@
 #define EMC_BASE 0x7001B000
 #define EMC0_BASE 0x7001E000
 #define EMC1_BASE 0x7001F000
+#define XUSB_HOST_BASE 0x70090000
+#define XUSB_PADCTL_BASE 0x7009F000
+#define XUSB_DEV_BASE 0x700D0000
 #define MIPI_CAL_BASE 0x700E3000
 #define CL_DVFS_BASE 0x70110000
 #define I2S_BASE 0x702D1000
@@ -109,6 +112,12 @@
 #define EMC(off) _REG(EMC_BASE, off)
 #define EMC_CH0(off) _REG(EMC0_BASE, off)
 #define EMC_CH1(off) _REG(EMC1_BASE, off)
+#define XUSB_HOST(off) _REG(XUSB_HOST_BASE, off)
+#define XUSB_PADCTL(off) _REG(XUSB_PADCTL_BASE, off)
+#define XUSB_DEV(off) _REG(XUSB_DEV_BASE, off)
+#define XUSB_DEV_XHCI(off) _REG(XUSB_DEV_BASE, off)
+#define XUSB_DEV_PCI(off) _REG(XUSB_DEV_BASE + 0x8000, off)
+#define XUSB_DEV_DEV(off) _REG(XUSB_DEV_BASE + 0x9000, off)
 #define MIPI_CAL(off) _REG(MIPI_CAL_BASE, off)
 #define CL_DVFS(off) _REG(CL_DVFS_BASE, off)
 #define I2S(off) _REG(I2S_BASE, off)

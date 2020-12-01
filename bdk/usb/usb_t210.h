@@ -1,5 +1,5 @@
 /*
- * Enhanced USB (EHCI) device driver for Tegra X1
+ * Enhanced & eXtensible USB device (EDCI & XDCI) driver for Tegra X1
  *
  * Copyright (c) 2019-2020 CTCaer
  *
@@ -20,6 +20,8 @@
 #define _USB_T210_H_
 
 #include <utils/types.h>
+
+/* EHCI USB */
 
 /* General USB registers */
 #define USB1_IF_USB_SUSP_CTRL         0x400
@@ -171,5 +173,120 @@ typedef struct _t210_usb2d_t
 	vu32 endptcomplete;
 	vu32 endptctrl[16];
 } t210_usb2d_t;
+
+
+/* XHCI USB */
+
+/* XUSB DEV XHCI registers */
+#define XUSB_DEV_XHCI_DB                 0x4
+#define XUSB_DEV_XHCI_ERSTSZ             0x8
+#define XUSB_DEV_XHCI_ERST0BALO          0x10
+#define XUSB_DEV_XHCI_ERST0BAHI          0x14
+#define XUSB_DEV_XHCI_ERST1BALO          0x18
+#define XUSB_DEV_XHCI_ERST1BAHI          0x1C
+#define XUSB_DEV_XHCI_ERDPLO             0x20
+#define  XHCI_ERDPLO_EHB                 BIT(3)
+#define XUSB_DEV_XHCI_ERDPHI             0x24
+#define XUSB_DEV_XHCI_EREPLO             0x28
+#define  XCHI_ECS                        BIT(0)
+#define XUSB_DEV_XHCI_EREPHI             0x2C
+#define XUSB_DEV_XHCI_CTRL               0x30
+#define  XHCI_CTRL_RUN                   BIT(0)
+#define  XHCI_CTRL_LSE                   BIT(1)
+#define  XHCI_CTRL_IE                    BIT(4)
+#define  XHCI_CTRL_ENABLE                BIT(31)
+#define XUSB_DEV_XHCI_ST                 0x34
+#define  XHCI_ST_RC                      BIT(0)
+#define  XHCI_ST_IP                      BIT(4)
+#define XUSB_DEV_XHCI_PORTSC             0x3C
+#define  XHCI_PORTSC_PR                  BIT(4)
+#define  XHCI_PORTSC_PLS_MASK            (0xF << 5)
+#define   XHCI_PORTSC_PLS_U0             (0 << 5)
+#define   XHCI_PORTSC_PLS_U1             (1 << 5)
+#define   XHCI_PORTSC_PLS_U2             (2 << 5)
+#define   XHCI_PORTSC_PLS_U3             (3 << 5)
+#define   XHCI_PORTSC_PLS_DISABLED       (4 << 5)
+#define   XHCI_PORTSC_PLS_RXDETECT       (5 << 5)
+#define   XHCI_PORTSC_PLS_INACTIVE       (6 << 5)
+#define   XHCI_PORTSC_PLS_POLLING        (7 << 5)
+#define   XHCI_PORTSC_PLS_RECOVERY       (8 << 5)
+#define   XHCI_PORTSC_PLS_HOTRESET       (9 << 5)
+#define   XHCI_PORTSC_PLS_COMPLIANCE     (10 << 5)
+#define   XHCI_PORTSC_PLS_LOOPBACK       (11 << 5)
+#define   XHCI_PORTSC_PLS_RESUME         (15 << 5)
+#define  XHCI_PORTSC_PS                  (0xF << 10)
+#define  XHCI_PORTSC_LWS                 BIT(16)
+#define  XHCI_PORTSC_CSC                 BIT(17)
+#define  XHCI_PORTSC_WRC                 BIT(19)
+#define  XHCI_PORTSC_PRC                 BIT(21)
+#define  XHCI_PORTSC_PLC                 BIT(22)
+#define  XHCI_PORTSC_CEC                 BIT(23)
+#define  XHCI_PORTSC_WPR                 BIT(30)
+#define XUSB_DEV_XHCI_ECPLO              0x40
+#define XUSB_DEV_XHCI_ECPHI              0x44
+#define XUSB_DEV_XHCI_EP_HALT            0x50
+#define  XHCI_EP_HALT_DCI                BIT(0)
+#define XUSB_DEV_XHCI_EP_PAUSE           0x54
+#define XUSB_DEV_XHCI_EP_RELOAD          0x58
+#define XUSB_DEV_XHCI_EP_STCHG           0x5C
+#define XUSB_DEV_XHCI_PORTHALT           0x6C
+#define  XHCI_PORTHALT_HALT_LTSSM        BIT(0)
+#define  XHCI_PORTHALT_STCHG_REQ         BIT(20)
+#define XUSB_DEV_XHCI_CFG_DEV_FE         0x85C
+#define  XHCI_CFG_DEV_FE_PORTREGSEL_MASK (3 << 0)
+#define  XHCI_CFG_DEV_FE_PORTREGSEL_SS   (1 << 0)
+#define  XHCI_CFG_DEV_FE_PORTREGSEL_HSFS (2 << 0)
+
+/* XUSB DEV PCI registers */
+#define XUSB_CFG_1                 0x4
+#define  CFG_1_IO_SPACE            BIT(0)
+#define  CFG_1_MEMORY_SPACE        BIT(1)
+#define  CFG_1_BUS_MASTER          BIT(2)
+#define XUSB_CFG_4                 0x10
+#define  CFG_4_ADDRESS_TYPE_32_BIT (0 << 1)
+#define  CFG_4_ADDRESS_TYPE_64_BIT (2 << 1)
+
+/* XUSB DEV Device registers */
+#define XUSB_DEV_CONFIGURATION     0x180
+#define  DEV_CONFIGURATION_EN_FPCI BIT(0)
+#define XUSB_DEV_INTR_MASK         0x188
+#define  DEV_INTR_MASK_IP_INT_MASK BIT(16)
+
+/* XUSB Pad Control registers */
+#define XUSB_PADCTL_USB2_PAD_MUX 0x4
+#define  PADCTL_USB2_PAD_MUX_USB2_OTG_PAD_PORT0_USB2 (0 << 0)
+#define  PADCTL_USB2_PAD_MUX_USB2_OTG_PAD_PORT0_XUSB (1 << 0)
+#define  PADCTL_USB2_PAD_MUX_USB2_OTG_PAD_PORT0_MASK (3 << 0)
+#define  PADCTL_USB2_PAD_MUX_USB2_BIAS_PAD_USB2      (0 << 18)
+#define  PADCTL_USB2_PAD_MUX_USB2_BIAS_PAD_XUSB      (1 << 18)
+#define  PADCTL_USB2_PAD_MUX_USB2_BIAS_PAD_MASK      (3 << 18)
+#define XUSB_PADCTL_USB2_PORT_CAP 0x8
+#define  PADCTL_USB2_PORT_CAP_PORT_0_CAP_DIS  (0 << 0)
+#define  PADCTL_USB2_PORT_CAP_PORT_0_CAP_HOST (1 << 0)
+#define  PADCTL_USB2_PORT_CAP_PORT_0_CAP_DEV  (2 << 0)
+#define  PADCTL_USB2_PORT_CAP_PORT_0_CAP_OTG  (3 << 0)
+#define  PADCTL_USB2_PORT_CAP_PORT_0_CAP_MASK (3 << 0)
+#define XUSB_PADCTL_SS_PORT_MAP 0x14
+#define  PADCTL_SS_PORT_MAP_PORT0_MASK (0xF << 0)
+#define XUSB_PADCTL_ELPG_PROGRAM_0 0x20
+#define XUSB_PADCTL_ELPG_PROGRAM_1 0x24
+#define XUSB_PADCTL_USB2_BATTERY_CHRG_OTGPAD0_CTL0 0x80
+#define XUSB_PADCTL_USB2_BATTERY_CHRG_OTGPAD0_CTL1 0x84
+#define XUSB_PADCTL_USB2_OTG_PAD0_CTL_0 0x88
+#define XUSB_PADCTL_USB2_OTG_PAD0_CTL_1 0x8C
+#define XUSB_PADCTL_USB2_BIAS_PAD_CTL_0 0x284
+#define XUSB_PADCTL_USB2_BIAS_PAD_CTL_1 0x288
+#define XUSB_PADCTL_USB2_VBUS_ID 0xC60
+#define  PADCTL_USB2_VBUS_ID_VBUS_OVR_EN   (1 << 12)
+#define  PADCTL_USB2_VBUS_ID_VBUS_OVR_MASK (3 << 12)
+#define  PADCTL_USB2_VBUS_ID_VBUS_ON       BIT(14)
+#define  PADCTL_USB2_VBUS_ID_SRC_ID_OVR_EN (1 << 16)
+#define  PADCTL_USB2_VBUS_ID_SRC_MASK      (3 << 16)
+#define  PADCTL_USB2_VBUS_ID_OVR_GND       (0 << 18)
+#define  PADCTL_USB2_VBUS_ID_OVR_C         (1 << 18)
+#define  PADCTL_USB2_VBUS_ID_OVR_B         (2 << 18)
+#define  PADCTL_USB2_VBUS_ID_OVR_A         (4 << 18)
+#define  PADCTL_USB2_VBUS_ID_OVR_FLOAT     (8 << 18)
+#define  PADCTL_USB2_VBUS_ID_OVR_MASK      (0xF << 18)
 
 #endif

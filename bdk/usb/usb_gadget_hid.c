@@ -22,6 +22,8 @@
 #include <gfx_utils.h>
 #include <input/joycon.h>
 #include <input/touch.h>
+#include <soc/hw_init.h>
+#include <soc/t210.h>
 #include <utils/util.h>
 
 #include <memory_map.h>
@@ -352,7 +354,11 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 	u32 polling_time;
 
 	// Get USB Controller ops.
-	usb_device_get_ops(&usb_ops);
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
+		usb_device_get_ops(&usb_ops);
+	else
+		xusb_device_get_ops(&usb_ops);
+
 	if (usbs->type == USB_HID_GAMEPAD)
 	{
 		polling_time = 8000;

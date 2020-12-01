@@ -988,6 +988,7 @@ static void _usbd_handle_get_descriptor(bool *transmit_data, void **descriptor, 
 	case USB_DESCRIPTOR_DEVICE_QUALIFIER:
 		if (!usbd_otg->desc->dev_qual)
 			goto exit;
+		usbd_otg->desc->dev_qual->bNumOtherConfigs = 1;
 		*descriptor = usbd_otg->desc->dev_qual;
 		*size = usbd_otg->desc->dev_qual->bLength;
 		*transmit_data = true;

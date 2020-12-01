@@ -1,5 +1,5 @@
 /*
- * Enhanced USB Device (EDCI) driver for Tegra X1
+ * Enhanced & eXtensible USB Device (EDCI & XDCI) driver for Tegra X1
  *
  * Copyright (c) 2019 CTCaer
  *
@@ -53,11 +53,15 @@ typedef enum {
 
 typedef enum
 {
-    USB_EP_CTRL_OUT = 0, // EP0.
-    USB_EP_CTRL_IN  = 1, // EP0.
-    USB_EP_BULK_OUT = 2, // EP1.
-    USB_EP_BULK_IN  = 3, // EP1.
-    USB_EP_ALL      = 0xFFFFFFFF
+	XUSB_EP_CTRL_IN  = 0, // EP0.
+	XUSB_EP_CTRL_OUT = 1, // EP0.
+
+	USB_EP_CTRL_OUT = 0,  // EP0.
+	USB_EP_CTRL_IN  = 1,  // EP0.
+
+	USB_EP_BULK_OUT = 2,  // EP1.
+	USB_EP_BULK_IN  = 3,  // EP1.
+	USB_EP_ALL      = 0xFFFFFFFF
 } usb_ep_t;
 
 typedef enum
@@ -136,6 +140,13 @@ typedef enum _usb_error_t
 
 	USB2_ERROR_XFER_EP_DISABLED     = 28,
 	USB2_ERROR_XFER_NOT_ALIGNED     = 29,
+
+	XUSB_ERROR_INVALID_EP           = USB_ERROR_XFER_ERROR,        // From 2.
+	XUSB_ERROR_XFER_BULK_IN_RESIDUE = 7,
+	XUSB_ERROR_INVALID_CYCLE        = USB2_ERROR_XFER_EP_DISABLED, // From 8.
+	XUSB_ERROR_SEQ_NUM              = 51,
+	XUSB_ERROR_XFER_DIR             = 52,
+	XUSB_ERROR_PORT_CFG             = 54
 } usb_error_t;
 
 typedef struct _usb_ctrl_setup_t

@@ -23,6 +23,8 @@
 
 #include <usb/usbd.h>
 #include <gfx_utils.h>
+#include <soc/hw_init.h>
+#include <soc/t210.h>
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
 #include <storage/sdmmc_driver.h>
@@ -1780,7 +1782,11 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	usbd_gadget_ums_t ums = {0};
 
 	// Get USB Controller ops.
-	usb_device_get_ops(&usb_ops);
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
+		usb_device_get_ops(&usb_ops);
+	else
+		xusb_device_get_ops(&usb_ops);
+
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Started USB");
 
 	if (usb_ops.usb_device_init())
