@@ -42,6 +42,9 @@
 #define HOS_PKG11_MAGIC 0x31314B50
 #define HOS_EKS_MAGIC   0x30534B45
 
+// Use official Mariko secmon when in stock.
+//#define HOS_MARIKO_STOCK_SECMON
+
 typedef struct _exo_ctxt_t
 {
 	bool fs_is_510;

@@ -125,7 +125,11 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 					stock = true;
 		}
 
+#ifdef HOS_MARIKO_STOCK_SECMON
 		if (stock && emummc_disabled && (pkg1_old || h_cfg.t210b01))
+#else
+		if (stock && emummc_disabled && pkg1_old)
+#endif
 			return 1;
 	}
 

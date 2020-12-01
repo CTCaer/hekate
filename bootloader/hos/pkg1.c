@@ -264,6 +264,7 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 		// For T210 till 6.2.0 the patching is used as is, because of no compression.
 		secmon_patchset = ctxt->pkg1_id->secmon_patchset;
 	}
+#ifdef HOS_MARIKO_STOCK_SECMON
 	else if (t210b01)
 	{
 		// For T210B01 we patch 6.X.X as is. Otherwise we decompress the program payload.
@@ -294,6 +295,7 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 			*(vu32 *)patch_offset = _NOP();
 		}
 	}
+#endif
 	else
 		return;
 
