@@ -24,6 +24,7 @@
 #include <power/regulator_5v.h>
 #include <soc/bpmp.h>
 #include <soc/clock.h>
+#include <soc/fuse.h>
 #include <soc/gpio.h>
 #include <soc/pinmux.h>
 #include <soc/uart.h>
@@ -814,6 +815,9 @@ void jc_init_hw()
 {
 	jc_l.uart = UART_C;
 	jc_r.uart = UART_B;
+
+	if (fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG)
+		return;
 
 #ifndef DEBUG_UART_PORT
 	jc_power_supply(UART_C, true);
