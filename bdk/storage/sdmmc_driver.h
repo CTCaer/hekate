@@ -214,6 +214,7 @@ typedef struct _sdmmc_t
 	u32 divisor;
 	u32 clock_stopped;
 	int powersave_enabled;
+	int manual_cal;
 	int card_clock_enabled;
 	int venclkctl_set;
 	u32 venclkctl_tap;
@@ -221,6 +222,7 @@ typedef struct _sdmmc_t
 	u32 dma_addr_next;
 	u32 rsp[4];
 	u32 rsp3;
+	int t210b01;
 } sdmmc_t;
 
 /*! SDMMC command. */

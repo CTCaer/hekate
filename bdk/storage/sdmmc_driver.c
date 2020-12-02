@@ -24,6 +24,7 @@
 #include <soc/bpmp.h>
 #include <soc/clock.h>
 #include <soc/gpio.h>
+#include <soc/hw_init.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
 #include <soc/t210.h>
@@ -115,7 +116,7 @@ void sdmmc_save_tap_value(sdmmc_t *sdmmc)
 static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 {
 	const u32 dqs_trim_val = 0x28;
-	const u32 tap_values[] = { 4, 0, 3, 0 };
+	const u32 tap_values_t210[] = { 4, 0, 3, 0 };
 
 	u32 tap_val = 0;
 
@@ -132,9 +133,8 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 		tap_val = sdmmc->venclkctl_tap;
 	}
 	else
-	{
-		tap_val = tap_values[sdmmc->id];
-	}
+		tap_val = sdmmc->t210b01 ? 11 : tap_values_t210[sdmmc->id];
+
 	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xFF00FFFF) | (tap_val << 16);
 
 	return 1;
@@ -154,16 +154,28 @@ static void _sdmmc_pad_config_fallback(sdmmc_t *sdmmc, u32 power)
 		if (power == SDMMC_POWER_OFF)
 			break;
 		u32 sdmmc1_pad_cfg = APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) & 0xF8080FFF;
-		if (power == SDMMC_POWER_1_8)
-			APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = sdmmc1_pad_cfg | (0xB0F << 12); // Up: 11, Dn: 15. For 33 ohm.
+		if (sdmmc->t210b01)
+			sdmmc1_pad_cfg |= (0x808 << 12); // Up:  8, Dn:  8. For 33 ohm.
+		else if (power == SDMMC_POWER_1_8)
+			sdmmc1_pad_cfg |= (0xB0F << 12); // Up: 11, Dn: 15. For 33 ohm.
 		else if (power == SDMMC_POWER_3_3)
-			APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = sdmmc1_pad_cfg | (0xC0C << 12); // Up: 12, Dn: 12. For 33 ohm.
+			sdmmc1_pad_cfg |= (0xC0C << 12); // Up: 12, Dn: 12. For 33 ohm.
+		APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = sdmmc1_pad_cfg;
+		(void)APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL); // Commit write.
 		break;
 
 	case SDMMC_2:
+		if (sdmmc->t210b01)
+			APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL) & 0xF8080FFF) | 0xA0A000;
+		else
+			APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL) & 0xFFFFC003) | 0x1040; // PU:16, PD:16.
+		(void)APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL);
+		break;
 
-	case SDMMC_4: // 50 Ohm 2X Driver. PU:16, PD:16.
-		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) & 0xFFFFC003) | 0x1040;
+	case SDMMC_4: // 50 Ohm 2X Driver. PU:16, PD:16, B01: PU:10, PD:10.
+		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) =
+			(APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) & 0xFFFFC003) | (sdmmc->t210b01 ? 0xA28 : 0x1040);
+		(void)APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL); // Commit write.
 		break;
 	}
 }
@@ -199,24 +211,18 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 			break;
 		}
 	}
-/*
-	// Check if PU results are inside limits.
-	// SDMMC1: CZ pads - 7-bit PU. SDMMC2/4: LV_CZ pads - 5-bit PU.
-	u8 autocal_pu_status = sdmmc->regs->autocalsts & 0x7F;
-	switch (sdmmc->id)
-	{
-	case SDMMC_1:
-		if (!autocal_pu_status || autocal_pu_status == 0x7F)
-			timeout = 0;
-		break;
-	case SDMMC_2:
-	case SDMMC_4:
-		autocal_pu_status &= 0x1F;
-		if (!autocal_pu_status || autocal_pu_status == 0x1F)
-			timeout = 0;
-		break;
-	}
-*/
+
+#ifdef ERROR_EXTRA_PRINTING
+	// Check if Comp pad is open or short to ground.
+	// SDMMC1: CZ pads - T210/T210B01: 7-bit/5-bit. SDMMC2/4: LV_CZ pads - 5-bit.
+	u8 code_mask = (sdmmc->t210b01 || sdmmc->id != SDMMC_1) ? 0x1F : 0x7F;
+	u8 autocal_pu_status = sdmmc->regs->autocalsts & code_mask;
+	if (!autocal_pu_status)
+		EPRINTF("SDMMC: Comp Pad short to gnd!");
+	else if (autocal_pu_status == code_mask)
+		EPRINTF("SDMMC: Comp Pad open!");
+#endif
+
 	// In case auto calibration fails, we load suggested standard values.
 	if (!timeout)
 	{
@@ -286,6 +292,15 @@ static void _sdmmc_reset(sdmmc_t *sdmmc)
 	_sdmmc_commit_changes(sdmmc);
 	u32 timeout = get_tmr_ms() + 2000;
 	while ((sdmmc->regs->swrst & (SDHCI_RESET_CMD | SDHCI_RESET_DATA)) && get_tmr_ms() < timeout)
+		;
+}
+
+static void _sdmmc_reset_all(sdmmc_t *sdmmc)
+{
+	sdmmc->regs->swrst |= SDHCI_RESET_ALL;
+	_sdmmc_commit_changes(sdmmc);
+	u32 timeout = get_tmr_ms() + 2000;//100ms
+	while ((sdmmc->regs->swrst & SDHCI_RESET_ALL) && get_tmr_ms() < timeout)
 		;
 }
 
@@ -384,7 +399,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 static void _sdmmc_card_clock_enable(sdmmc_t *sdmmc)
 {
 	// Recalibrate conditionally.
-	if ((sdmmc->id == SDMMC_1) && !sdmmc->powersave_enabled)
+	if (sdmmc->manual_cal && !sdmmc->powersave_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	if (!sdmmc->powersave_enabled)
@@ -404,7 +419,7 @@ static void _sdmmc_sd_clock_disable(sdmmc_t *sdmmc)
 void sdmmc_card_clock_powersave(sdmmc_t *sdmmc, int powersave_enable)
 {
 	// Recalibrate periodically for SDMMC1.
-	if ((sdmmc->id == SDMMC_1) && !powersave_enable && sdmmc->card_clock_enabled)
+	if (sdmmc->manual_cal && !powersave_enable && sdmmc->card_clock_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	sdmmc->powersave_enabled = powersave_enable;
@@ -749,13 +764,24 @@ static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
 	case SDMMC_1:
 		if (power == SDMMC_POWER_1_8)
 		{
-			off_pd = 123;
-			off_pu = 123;
+			if (!sdmmc->t210b01)
+			{
+				off_pd = 123;
+				off_pu = 123;
+			}
+			else
+			{
+				off_pd = 6;
+				off_pu = 6;
+			}
 		}
 		else if (power == SDMMC_POWER_3_3)
 		{
-			off_pd = 125;
-			off_pu = 0;
+			if (!sdmmc->t210b01)
+			{
+				off_pd = 125;
+				off_pu = 0;
+			}
 		}
 		else
 			return 0;
@@ -861,7 +887,7 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 		return 0;
 
 	// Recalibrate periodically for SDMMC1.
-	if ((sdmmc->id == SDMMC_1) && sdmmc->powersave_enabled)
+	if (sdmmc->manual_cal && sdmmc->powersave_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	bool should_disable_sd_clock = false;
@@ -1079,7 +1105,46 @@ static void _sdmmc_config_sdmmc1_schmitt()
 	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT0) |= PINMUX_SCHMT;
 }
 
-static int _sdmmc_config_sdmmc1()
+static void _sdmmc_config_sdmmc2_schmitt()
+{
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_CLK)  |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_CMD)  |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT7) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT6) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT5) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT4) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT3) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT2) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT1) |= PINMUX_SCHMT;
+	PINMUX_AUX(PINMUX_AUX_SDMMC2_DAT0) |= PINMUX_SCHMT;
+}
+
+static void _sdmmc_config_sdmmc1_pads(bool discharge)
+{
+	u32 sdmmc1_pin_mask = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5;
+
+	// Set values for Reset state.
+	u32 function = GPIO_MODE_SPIO;
+	u32 level    = GPIO_LOW;
+	u32 output   = GPIO_OUTPUT_DISABLE;
+
+	// Set values for dicharging.
+	if (discharge)
+	{
+		function = GPIO_MODE_GPIO;
+		level    = GPIO_HIGH;
+		output   = GPIO_OUTPUT_ENABLE;
+	}
+
+	// Set all pads function.
+	gpio_config(GPIO_PORT_M, sdmmc1_pin_mask, function);
+	// Set all pads output level.
+	gpio_write(GPIO_PORT_M, sdmmc1_pin_mask, level);
+	// Set all pads output.
+	gpio_output_enable(GPIO_PORT_M, sdmmc1_pin_mask, output);
+}
+
+static int _sdmmc_config_sdmmc1(bool t210b01)
 {
 	// Configure SD card detect.
 	PINMUX_AUX(PINMUX_AUX_GPIO_PZ1) = PINMUX_INPUT_ENABLE | PINMUX_PULL_UP | 2; // GPIO control, pull up.
@@ -1104,28 +1169,35 @@ static int _sdmmc_config_sdmmc1()
 	// Enable deep loopback for SDMMC1 CLK pad.
 	APB_MISC(APB_MISC_GP_SDMMC1_CLK_LPBK_CONTROL) = 1;
 
-	// Configure SDMMC1 pinmux.
-	PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK)  = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PARKED;
-	PINMUX_AUX(PINMUX_AUX_SDMMC1_CMD)  = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_PULL_UP;
-	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT3) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_PULL_UP;
-	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT2) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_PULL_UP;
-	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT1) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_PULL_UP;
-	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT0) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_PULL_UP;
+	// Configure SDMMC1 CLK pinmux, based on state and SoC type.
+	if (PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK) != (PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PULL_DOWN)) // Check if CLK pad is already configured.
+		PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | (t210b01 ? PINMUX_PULL_NONE : PINMUX_PULL_DOWN);
+
+	// Configure reset state of SDMMC1 pins pinmux.
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_CMD)  = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP;
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT3) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP;
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT2) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP;
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT1) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP;
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_DAT0) = PINMUX_DRIVE_2X | PINMUX_INPUT_ENABLE | PINMUX_PULL_UP;
+
+	// Force schmitt trigger for T210B01.
+	if (t210b01)
+		_sdmmc_config_sdmmc1_schmitt();
 
 	// Make sure the SDMMC1 controller is powered.
-	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1_IO_EN;
-	usleep(1000);
 	PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
+	(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
 
 	// Inform IO pads that voltage is gonna be 3.3V.
 	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
+	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 	// Set enable SD card power.
 	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2; // Pull down.
 	gpio_config(GPIO_PORT_E, GPIO_PIN_4, GPIO_MODE_GPIO);
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
 	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
-	usleep(1000);
+	usleep(10000);
 
 	// Enable SD card IO power.
 	max77620_regulator_set_voltage(REGULATOR_LDO2, 3300000);
@@ -1133,26 +1205,40 @@ static int _sdmmc_config_sdmmc1()
 	usleep(1000);
 
 	// Set pad slew codes to get good quality clock.
-	APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) & 0xFFFFFFF) | 0x50000000;
-	usleep(1000);
+	if (!t210b01)
+	{
+		APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) & 0xFFFFFFF) | 0x50000000;
+		(void)APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL); // Commit write.
+		usleep(1000);
+	}
 
 	return 1;
 }
 
-static void _sdmmc_config_emmc(u32 id)
+static void _sdmmc_config_emmc(u32 id, bool t210b01)
 {
 	switch (id)
 	{
 	case SDMMC_2:
-		// Unset park for pads.
-		APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL) &= 0xF8003FFF;
+		if (!t210b01)
+		{
+			// Unset park for pads.
+			APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL) &= 0xF8003FFF;
+			(void)APB_MISC(APB_MISC_GP_EMMC2_PAD_CFGPADCTRL); // Commit write.
+		}
+		else // Enable schmitt trigger for T210B01.
+			_sdmmc_config_sdmmc2_schmitt();
 		break;
 
 	case SDMMC_4:
 		// Unset park for pads.
 		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) &= 0xF8003FFF;
+		// Set default pad cfg.
+		if (t210b01)
+			APB_MISC(APB_MISC_GP_EMMC4_PAD_PUPD_CFGPADCTRL) &= 0xFFBFFFF9; // Unset CMD/CLK/DQS powedown.
 		// Enable schmitt trigger.
-		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) |= 1; // Enable Schmitt trigger.
+		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) |= 1;
+		(void)APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL); // Commit write.
 		break;
 	}
 }
@@ -1161,8 +1247,11 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 {
 	u32 clock;
 	u16 divisor;
+	u8 vref_sel = 7;
 
-	const u32 trim_values[] = { 2, 8, 3, 8 };
+	const u32 trim_values_t210[] = { 2, 8, 3, 8 };
+	const u32 trim_values_t210b01[] = { 14, 13, 15, 13 };
+	const u32 *trim_values = sdmmc->t210b01 ? trim_values_t210b01 : trim_values_t210;
 
 	if (id > SDMMC_4 || id == SDMMC_3)
 		return 0;
@@ -1172,18 +1261,23 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	sdmmc->regs = (t210_sdmmc_t *)_sdmmc_bases[id];
 	sdmmc->id = id;
 	sdmmc->clock_stopped = 1;
+	sdmmc->t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;
 
 	// Do specific SDMMC HW configuration.
 	switch (id)
 	{
 	case SDMMC_1:
-		if (!_sdmmc_config_sdmmc1())
+		if (!_sdmmc_config_sdmmc1(sdmmc->t210b01))
 			return 0;
+		if (sdmmc->t210b01)
+			vref_sel = 0;
+		else
+			sdmmc->manual_cal = 1;
 		break;
 
 	case SDMMC_2:
 	case SDMMC_4:
-		_sdmmc_config_emmc(id);
+		_sdmmc_config_emmc(id, sdmmc->t210b01);
 		break;
 	}
 
@@ -1198,6 +1292,9 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	clock_sdmmc_get_card_clock_div(&clock, &divisor, type);
 	clock_sdmmc_enable(id, clock);
 
+	// Make sure all sdmmc registers are reset.
+	_sdmmc_reset_all(sdmmc);
+
 	sdmmc->clock_stopped = 0;
 
 	// Set default pad IO trimming configuration.
@@ -1205,7 +1302,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	sdmmc->regs->veniotrimctl &= 0xFFFFFFFB; // Set Band Gap VREG to supply DLL.
 	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xE0FFFFFB) | (trim_values[sdmmc->id] << 24);
 	sdmmc->regs->sdmemcmppadctl =
-		(sdmmc->regs->sdmemcmppadctl & TEGRA_MMC_SDMEMCOMPPADCTRL_COMP_VREF_SEL_MASK) | 7;
+		(sdmmc->regs->sdmemcmppadctl & TEGRA_MMC_SDMEMCOMPPADCTRL_COMP_VREF_SEL_MASK) | vref_sel;
 
 	// Configure auto calibration values.
 	if (!_sdmmc_autocal_config_offset(sdmmc, power))
@@ -1233,6 +1330,52 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	return 0;
 }
 
+void sdmmc1_disable_power()
+{
+	// Ensure regulator is into default voltage.
+	if (PMC(APBDEV_PMC_PWR_DET_VAL) & PMC_PWR_DET_SDMMC1_IO_EN)
+	{
+		// Switch to 1.8V and wait for regulator to stabilize.
+		max77620_regulator_set_voltage(REGULATOR_LDO2, 1800000);
+		usleep(150);
+
+		// Inform IO pads that we switched to 1.8V.
+		PMC(APBDEV_PMC_PWR_DET_VAL) &= ~(PMC_PWR_DET_SDMMC1_IO_EN);
+		(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
+	}
+
+	// T210B01 WAR: Clear pull down from CLK pad.
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK) &= ~PINMUX_PULL_MASK;
+
+	// T210B01 WAR: Set pads to discharge state.
+	_sdmmc_config_sdmmc1_pads(true);
+
+	// Disable SD card IO power regulator.
+	max77620_regulator_enable(REGULATOR_LDO2, 0);
+	usleep(4000);
+
+	// Disable SD card IO power pin.
+	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_LOW);
+
+	// T210/T210B01 WAR: Set start timer for IO and Controller power discharge.
+	sd_power_cycle_time_start = get_tmr_ms();
+	usleep(1000); // To power cycle, min 1ms without power is needed.
+
+	// Disable SDMMC1 controller power.
+	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1_IO_EN;
+	(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
+
+	// Inform IO pads that next voltage might be 3.3V.
+	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
+	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
+
+	// T210B01 WAR: Restore pads to reset state.
+	_sdmmc_config_sdmmc1_pads(false);
+
+	// T210B01 WAR: Restore pull down to CLK pad.
+	PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK) |= PINMUX_PULL_DOWN;
+}
+
 void sdmmc_end(sdmmc_t *sdmmc)
 {
 	if (!sdmmc->clock_stopped)
@@ -1243,16 +1386,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 
 		// Disable SD card power.
 		if (sdmmc->id == SDMMC_1)
-		{
-			gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
-			max77620_regulator_enable(REGULATOR_LDO2, 0);
-
-			// Inform IO pads that next voltage might be 3.3V.
-			PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
-
-			sd_power_cycle_time_start = get_tmr_ms(); // Some SanDisk U1 cards need 100ms for a power cycle.
-			usleep(1000); // To power cycle, min 1ms without power is needed.
-		}
+			sdmmc1_disable_power();
 
 		_sdmmc_commit_changes(sdmmc);
 		clock_sdmmc_disable(sdmmc->id);
@@ -1274,7 +1408,7 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 		return 0;
 
 	// Recalibrate periodically for SDMMC1.
-	if (sdmmc->id == SDMMC_1 && sdmmc->powersave_enabled)
+	if (sdmmc->manual_cal && sdmmc->powersave_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	int should_disable_sd_clock = 0;
@@ -1307,10 +1441,11 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 
 	// Switch to 1.8V and wait for regulator to stabilize. Assume max possible wait needed.
 	max77620_regulator_set_voltage(REGULATOR_LDO2, 1800000);
-	usleep(300);
+	usleep(150);
 
 	// Inform IO pads that we switched to 1.8V.
 	PMC(APBDEV_PMC_PWR_DET_VAL) &= ~(PMC_PWR_DET_SDMMC1_IO_EN);
+	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 	// Enable schmitt trigger for better duty cycle and low jitter clock.
 	_sdmmc_config_sdmmc1_schmitt();

@@ -1205,9 +1205,10 @@ static bool _sdmmc_storage_get_low_voltage_support(u32 bus_width, u32 type)
 
 void sdmmc_storage_init_wait_sd()
 {
+	// T210/T210B01 WAR: Wait exactly 239ms for IO and Controller power to discharge.
 	u32 sd_poweroff_time = (u32)get_tmr_ms() - sd_power_cycle_time_start;
-	if (sd_poweroff_time < 100)
-		msleep(100 - sd_poweroff_time);
+	if (sd_poweroff_time < 239)
+		msleep(239 - sd_poweroff_time);
 }
 
 int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type)
