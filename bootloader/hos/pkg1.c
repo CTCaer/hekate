@@ -321,10 +321,10 @@ static void _warmboot_filename(char *out, u32 fuses)
 	if (fuses < 16)
 	{
 		out[19] = '0';
-		itoa(fuses, &out[19 + 1], 10);
+		itoa(fuses, &out[19 + 1], 16);
 	}
 	else
-		itoa(fuses, &out[19], 10);
+		itoa(fuses, &out[19], 16);
 	strcat(out, ".bin");
 }
 
