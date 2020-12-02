@@ -280,6 +280,8 @@ void load_saved_configuration()
 						n_cfg.ums_emmc_rw = atoi(kv->val) == 1;
 					else if (!strcmp("jcdisable", kv->key))
 						n_cfg.jc_disable = atoi(kv->val) == 1;
+					else if (!strcmp("newpowersave", kv->key))
+						n_cfg.new_powersave = atoi(kv->val) == 1;
 				}
 
 				break;

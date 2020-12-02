@@ -51,6 +51,7 @@ typedef struct _nyx_config
 	u32 verification;
 	u32 ums_emmc_rw;
 	u32 jc_disable;
+	u32 new_powersave;
 } nyx_config;
 
 void set_default_configuration();

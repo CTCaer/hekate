@@ -2235,6 +2235,30 @@ static void _nyx_main_menu(lv_theme_t * th)
 	}
 }
 
+static void _nyx_gui_loop_powersave_ram()
+{
+	// Saves 280 mW.
+	while (true)
+	{
+		minerva_change_freq(FREQ_1600);  // Takes 295 us.
+
+		lv_task_handler();
+
+		minerva_change_freq(FREQ_800);   // Takes 80 us.
+	}
+}
+
+static void _nyx_gui_loop_powersave_cpu()
+{
+	// Saves 75 mW.
+	while (true)
+	{
+		lv_task_handler();
+
+		bpmp_usleep(HALT_COP_MAX_CNT);   // Takes 200 us.
+	}
+}
+
 void nyx_load_and_run()
 {
 	memset(&system_tasks, 0, sizeof(system_maintenance_tasks_t));
@@ -2293,13 +2317,15 @@ void nyx_load_and_run()
 		lv_task_once(task_run_sd_errors);
 	}
 
-	while (true)
+	// Gui loop.
+	if (h_cfg.t210b01)
 	{
-		minerva_change_freq(FREQ_1600);  // Takes 295us.
-
-		lv_task_handler();
-
-		minerva_change_freq(FREQ_800);   // Takes 80us. Saves 280mW.
-		//bpmp_usleep(HALT_COP_MAX_CNT); // Taskes 200us. Saves 75mW.
+		// Minerva not supported on T210B01 yet. No power saving.
+		while (true)
+			lv_task_handler();
 	}
+	else if (n_cfg.new_powersave)
+		_nyx_gui_loop_powersave_ram(); // Alternate DRAM frequencies. Higher power savings.
+	else
+		_nyx_gui_loop_powersave_cpu(); // Suspend CPU. Lower power savings.
 }
