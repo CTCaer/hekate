@@ -21,6 +21,9 @@
 #include <memory_map.h>
 #include <utils/types.h>
 
+#define DSI_VIDEO_DISABLED 0
+#define DSI_VIDEO_ENABLED  1
+
 /*! Display registers. */
 #define _DIREG(reg) ((reg) * 4)
 
@@ -68,6 +71,7 @@
 #define DC_CMD_INT_STATUS 0x37
 #define DC_CMD_INT_MASK 0x38
 #define DC_CMD_INT_ENABLE 0x39
+#define  DC_CMD_INT_FRAME_END_INT BIT(1)
 
 #define DC_CMD_STATE_ACCESS 0x40
 #define  READ_MUX  BIT(0)
@@ -360,6 +364,10 @@
 /*! Display serial interface registers. */
 #define _DSIREG(reg) ((reg) * 4)
 
+#define DSI_INCR_SYNCPT_CNTRL 0x1
+#define  DSI_INCR_SYNCPT_SOFT_RESET BIT(0)
+#define  DSI_INCR_SYNCPT_NO_STALL   BIT(8)
+
 #define DSI_RD_DATA 0x9
 #define DSI_WR_DATA 0xA
 
@@ -403,7 +411,10 @@
 #define  DSI_TRIGGER_HOST  BIT(1)
 
 #define DSI_TX_CRC 0x14
+
 #define DSI_STATUS 0x15
+#define  DSI_STATUS_RX_FIFO_SIZE 0x1F
+
 #define DSI_INIT_SEQ_CONTROL 0x1A
 #define DSI_INIT_SEQ_DATA_0 0x1B
 #define DSI_INIT_SEQ_DATA_1 0x1C
@@ -450,6 +461,7 @@
 #define DSI_PAD_CONTROL_CD 0x4C
 #define DSI_VIDEO_MODE_CONTROL 0x4E
 #define  DSI_CMD_PKT_VID_ENABLE 1
+#define  DSI_DSI_LINE_TYPE(x) ((x) << 1)
 
 #define DSI_PAD_CONTROL_1 0x4F
 #define DSI_PAD_CONTROL_2 0x50
@@ -466,6 +478,18 @@
 #define DSI_PAD_CONTROL_7_B01 0x55
 #define DSI_INIT_SEQ_DATA_15 0x5F
 #define DSI_INIT_SEQ_DATA_15_B01 0x62
+
+/*! DSI packet defines */
+#define DSI_ESCAPE_CMD	0x87
+#define DSI_ACK_NO_ERR	0x84
+
+#define ACK_ERROR_RES   0x02
+#define GEN_LONG_RD_RES 0x1A
+#define DCS_LONG_RD_RES 0x1C
+#define GEN_1_BYTE_SHORT_RD_RES 0x11
+#define DCS_1_BYTE_SHORT_RD_RES 0x21
+#define GEN_2_BYTE_SHORT_RD_RES 0x12
+#define DCS_2_BYTE_SHORT_RD_RES 0x22
 
 /*! MIPI registers. */
 #define MIPI_CAL_MIPI_CAL_CTRL          (0x00 / 0x4)
@@ -489,18 +513,136 @@
 #define MIPI_CAL_DSID_MIPI_CAL_CONFIG_2 (0x74 / 0x4)
 
 /*! MIPI CMDs. */
-#define MIPI_DSI_DCS_SHORT_WRITE 0x05
-#define MIPI_DSI_DCS_READ 0x06
-#define MIPI_DSI_DCS_SHORT_WRITE_PARAM 0x15
+#define MIPI_DSI_V_SYNC_START        0x01
+#define MIPI_DSI_COLOR_MODE_OFF      0x02
+#define MIPI_DSI_END_OF_TRANSMISSION 0x08
+#define MIPI_DSI_NULL_PACKET         0x09
+#define MIPI_DSI_V_SYNC_END          0x11
+#define MIPI_DSI_COLOR_MODE_ON       0x12
+#define MIPI_DSI_BLANKING_PACKET     0x19
+#define MIPI_DSI_H_SYNC_START        0x21
+#define MIPI_DSI_SHUTDOWN_PERIPHERAL 0x22
+#define MIPI_DSI_H_SYNC_END          0x31
+#define MIPI_DSI_TURN_ON_PERIPHERAL  0x32
 #define MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE 0x37
-#define MIPI_DSI_DCS_LONG_WRITE 0x39
+
+#define MIPI_DSI_DCS_SHORT_WRITE       0x05
+#define MIPI_DSI_DCS_READ              0x06
+#define MIPI_DSI_DCS_SHORT_WRITE_PARAM 0x15
+#define MIPI_DSI_DCS_LONG_WRITE        0x39
+
+#define MIPI_DSI_GENERIC_LONG_WRITE           0x29
+#define MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM  0x03
+#define MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM  0x13
+#define MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM  0x23
+#define MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM 0x04
+#define MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM 0x14
+#define MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM 0x24
 
 /*! MIPI DCS CMDs. */
-#define MIPI_DCS_GET_DISPLAY_ID   0x04
-#define MIPI_DCS_ENTER_SLEEP_MODE 0x10
-#define MIPI_DCS_EXIT_SLEEP_MODE  0x11
-#define MIPI_DCS_SET_DISPLAY_OFF  0x28
-#define MIPI_DCS_SET_DISPLAY_ON   0x29
+#define MIPI_DCS_NOP                   0x00
+#define MIPI_DCS_SOFT_RESET            0x01
+#define MIPI_DCS_GET_COMPRESSION_MODE  0x03
+#define MIPI_DCS_GET_DISPLAY_ID        0x04
+#define MIPI_DCS_GET_DISPLAY_ID1       0xDA // GET_DISPLAY_ID Byte0, Module Manufacturer ID.
+#define MIPI_DCS_GET_DISPLAY_ID2       0xDB // GET_DISPLAY_ID Byte1, Module/Driver Version ID.
+#define MIPI_DCS_GET_DISPLAY_ID3       0xDC // GET_DISPLAY_ID Byte2, Module/Driver ID.
+#define MIPI_DCS_GET_NUM_ERRORS        0x05
+#define MIPI_DCS_GET_RED_CHANNEL       0x06
+#define MIPI_DCS_GET_GREEN_CHANNEL     0x07
+#define MIPI_DCS_GET_BLUE_CHANNEL      0x08
+#define MIPI_DCS_GET_DISPLAY_STATUS    0x09
+#define MIPI_DCS_GET_POWER_MODE	       0x0A
+#define MIPI_DCS_GET_ADDRESS_MODE      0x0B
+#define MIPI_DCS_GET_PIXEL_FORMAT      0x0C
+#define MIPI_DCS_GET_DISPLAY_MODE      0x0D
+#define MIPI_DCS_GET_SIGNAL_MODE       0x0E
+#define MIPI_DCS_GET_DIAGNOSTIC_RESULT 0x0F
+#define MIPI_DCS_ENTER_SLEEP_MODE      0x10
+#define MIPI_DCS_EXIT_SLEEP_MODE       0x11
+#define MIPI_DCS_ENTER_PARTIAL_MODE    0x12
+#define MIPI_DCS_ENTER_NORMAL_MODE     0x13
+#define MIPI_DCS_EXIT_INVERT_MODE      0x20
+#define MIPI_DCS_ENTER_INVERT_MODE     0x21
+#define MIPI_DCS_ALL_PIXELS_OFF        0x22
+#define MIPI_DCS_ALL_PIXELS_ON         0x23
+#define MIPI_DCS_SET_CONTRAST          0x25 // VCON in 40mV steps. 7-bit integer.
+#define MIPI_DCS_SET_GAMMA_CURVE       0x26
+#define MIPI_DCS_SET_DISPLAY_OFF       0x28
+#define MIPI_DCS_SET_DISPLAY_ON        0x29
+#define MIPI_DCS_SET_COLUMN_ADDRESS    0x2A
+#define MIPI_DCS_SET_PAGE_ADDRESS      0x2B
+#define MIPI_DCS_WRITE_MEMORY_START    0x2C
+#define MIPI_DCS_WRITE_LUT             0x2D // 24-bit: 192 bytes.
+#define MIPI_DCS_READ_MEMORY_START     0x2E
+#define MIPI_DCS_SET_PARTIAL_ROWS      0x30
+#define MIPI_DCS_SET_PARTIAL_COLUMNS   0x31
+#define MIPI_DCS_SET_SCROLL_AREA       0x33
+#define MIPI_DCS_SET_TEAR_OFF          0x34
+#define MIPI_DCS_SET_TEAR_ON           0x35
+#define MIPI_DCS_SET_ADDRESS_MODE      0x36
+#define MIPI_DCS_SET_SCROLL_START      0x37
+#define MIPI_DCS_EXIT_IDLE_MODE        0x38
+#define MIPI_DCS_ENTER_IDLE_MODE       0x39
+#define MIPI_DCS_SET_PIXEL_FORMAT      0x3A
+#define MIPI_DCS_WRITE_MEMORY_CONTINUE 0x3C
+#define MIPI_DCS_READ_MEMORY_CONTINUE  0x3E
+#define MIPI_DCS_GET_3D_CONTROL        0x3F
+#define MIPI_DCS_SET_VSYNC_TIMING      0x40
+#define MIPI_DCS_SET_TEAR_SCANLINE     0x44
+#define MIPI_DCS_GET_SCANLINE          0x45
+#define MIPI_DCS_SET_TEAR_SCANLINE_WIDTH 0x46
+#define MIPI_DCS_GET_SCANLINE_WIDTH    0x47
+#define MIPI_DCS_SET_BRIGHTNESS        0x51 // DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL.
+#define MIPI_DCS_GET_BRIGHTNESS        0x52
+#define MIPI_DCS_SET_CONTROL_DISPLAY   0x53
+#define MIPI_DCS_GET_CONTROL_DISPLAY   0x54
+#define MIPI_DCS_SET_CABC_VALUE        0x55
+#define MIPI_DCS_GET_CABC_VALUE        0x56
+#define MIPI_DCS_SET_CABC_MIN_BRI      0x5E
+#define MIPI_DCS_GET_CABC_MIN_BRI      0x5F
+#define MIPI_DCS_READ_DDB_START        0xA1
+#define MIPI_DCS_READ_DDB_CONTINUE     0xA8
+
+/*! MIPI DCS Panel Private CMDs. */
+#define MIPI_DCS_PRIV_UNK_A0            0xA0
+#define MIPI_DCS_PRIV_SET_POWER_CONTROL 0xB1
+#define MIPI_DCS_PRIV_SET_EXTC          0xB9
+#define MIPI_DCS_PRIV_UNK_BD            0xBD
+#define MIPI_DCS_PRIV_UNK_D5            0xD5
+#define MIPI_DCS_PRIV_UNK_D6            0xD6
+#define MIPI_DCS_PRIV_UNK_D8            0xD8
+#define MIPI_DCS_PRIV_UNK_D9            0xD9
+
+/*! MIPI DCS CMD Defines. */
+#define DCS_POWER_MODE_DISPLAY_ON           BIT(2)
+#define DCS_POWER_MODE_NORMAL_MODE          BIT(3)
+#define DCS_POWER_MODE_SLEEP_MODE           BIT(4)
+#define DCS_POWER_MODE_PARTIAL_MODE         BIT(5)
+#define DCS_POWER_MODE_IDLE_MODE            BIT(6)
+
+#define DCS_ADDRESS_MODE_V_FLIP             BIT(0)
+#define DCS_ADDRESS_MODE_H_FLIP             BIT(1)
+#define DCS_ADDRESS_MODE_LATCH_RL           BIT(2) // Latch Data Order.
+#define DCS_ADDRESS_MODE_BGR_COLOR          BIT(3)
+#define DCS_ADDRESS_MODE_LINE_ORDER         BIT(4) // Line Refresh Order.
+#define DCS_ADDRESS_MODE_SWAP_XY            BIT(5) // Page/Column Addressing Reverse Order.
+#define DCS_ADDRESS_MODE_MIRROR_X           BIT(6) // Column Address Order.
+#define DCS_ADDRESS_MODE_MIRROR_Y           BIT(7) // Page Address Order.
+#define DCS_ADDRESS_MODE_ROTATION_MASK      (0xF << 4)
+#define DCS_ADDRESS_MODE_ROTATION_90        (DCS_ADDRESS_MODE_SWAP_XY | DCS_ADDRESS_MODE_LINE_ORDER)
+#define DCS_ADDRESS_MODE_ROTATION_180       (DCS_ADDRESS_MODE_MIRROR_X | DCS_ADDRESS_MODE_LINE_ORDER)
+#define DCS_ADDRESS_MODE_ROTATION_270       (DCS_ADDRESS_MODE_SWAP_XY)
+
+#define DCS_GAMMA_CURVE_NONE                0
+#define DCS_GAMMA_CURVE_GC0_1_8             BIT(0)
+#define DCS_GAMMA_CURVE_GC1_2_5             BIT(1)
+#define DCS_GAMMA_CURVE_GC2_1_0             BIT(2)
+#define DCS_GAMMA_CURVE_GC3_1_0             BIT(3) // Are there more?
+
+#define DCS_CONTROL_DISPLAY_BACKLIGHT_CTRL  BIT(2)
+#define DCS_CONTROL_DISPLAY_DIMMING_CTRL    BIT(3)
+#define DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL BIT(5)
 
 /* Switch Panels:
  *
@@ -571,5 +713,8 @@ void display_deactivate_console();
 void display_init_cursor(void *crs_fb, u32 size);
 void display_set_pos_cursor(u32 x, u32 y);
 void display_deinit_cursor();
+
+void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled);
+int  display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled);
 
 #endif
