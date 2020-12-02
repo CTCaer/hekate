@@ -63,6 +63,7 @@ u32 pkg2_newkern_ini1_end;
 #define FREE_CODE_OFF_1ST_800  0x607F0
 #define FREE_CODE_OFF_1ST_900  0x65780
 #define FREE_CODE_OFF_1ST_1000 0x67790
+#define FREE_CODE_OFF_1ST_1100 0x49EE8
 
 #define ID_SND_OFF_100  0x23CC0
 #define ID_SND_OFF_200  0x3F134
@@ -75,6 +76,7 @@ u32 pkg2_newkern_ini1_end;
 #define ID_SND_OFF_800  0x2F1FC
 #define ID_SND_OFF_900  0x329A0
 #define ID_SND_OFF_1000 0x34404
+#define ID_SND_OFF_1100 0x245B4
 
 #define ID_RCV_OFF_100  0x219F0
 #define ID_RCV_OFF_200  0x3D1A8
@@ -87,6 +89,7 @@ u32 pkg2_newkern_ini1_end;
 #define ID_RCV_OFF_800  0x2D424
 #define ID_RCV_OFF_900  0x309B4
 #define ID_RCV_OFF_1000 0x322F8
+#define ID_RCV_OFF_1100 0x22B24
 
 static u32 PRC_ID_SND_100[] =
 {
@@ -205,6 +208,20 @@ static u32 PRC_ID_RCV_1000[] =
 {
 	0xA9BF2FEA, 0xF94067EB, 0x2A1A03EA, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF9400388, 0xF9401D08, 0xAA1C03E0,
+	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
+};
+
+static u32 PRC_ID_SND_1100[] =
+{
+	0xA9BF2FEA, 0xF94043EB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
+	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002A8, 0xF9401D08, 0xAA1503E0,
+	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
+};
+#define FREE_CODE_OFF_2ND_1100 (FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100) + sizeof(u32))
+static u32 PRC_ID_RCV_1100[] =
+{
+	0xA9BF2FEA, 0xF94073EB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
+	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF9400308, 0xF9401D08, 0xAA1803E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
 
@@ -375,21 +392,38 @@ KERNEL_PATCHSET_DEF(_kernel_10_patchset,
 		_B(FREE_CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000), ID_RCV_OFF_1000 + sizeof(u32) * 4), NULL}
 );
 
+KERNEL_PATCHSET_DEF(_kernel_11_patchset,
+	{ SVC_GENERIC,   0x2FCE0, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x39194, _NOP(), NULL },          // Disable SVC verifications.
+	{ DEBUG_MODE_EN, 0x460C0, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
+	// Atmosphère kernel patches.
+	{ ATM_SYSM_INCR, 0x490C4, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
+	{ ATM_GEN_PATCH, ID_SND_OFF_1100, _B(ID_SND_OFF_1100, FREE_CODE_OFF_1ST_1100), NULL},    // Send process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2, PRC_ID_SND_1100}, // Send process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                      // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1100 + sizeof(u32) * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1100, _B(ID_RCV_OFF_1100, FREE_CODE_OFF_2ND_1100), NULL},    // Receive process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2, PRC_ID_RCV_1100}, // Receive process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                      // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1100 + sizeof(u32) * 4), NULL}
+);
+
 // Kernel sha256 hashes.
 static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 {
-	{ "\xb8\xc5\x0c\x68\x25\xa9\xb9\x5b", _kernel_1_patchset },   //1.0.0
-	{ "\x64\x0b\x51\xff\x28\x01\xb8\x30", _kernel_2_patchset },   //2.0.0 - 2.3.0
-	{ "\x50\x84\x23\xac\x6f\xa1\x5d\x3b", _kernel_3_patchset },   //3.0.0 - 3.0.1
-	{ "\x81\x9d\x08\xbe\xe4\x5e\x1f\xbb", _kernel_302_patchset }, //3.0.2
-	{ "\xe6\xc0\xb7\xe3\x2f\xf9\x44\x51", _kernel_4_patchset },   //4.0.0 - 4.1.0
-	{ "\xb2\x38\x61\xa8\xe1\xe2\xe4\xe4", _kernel_5_patchset },   //5.0.0 - 5.1.0
-	{ "\x85\x97\x40\xf6\xc0\x3e\x3d\x44", _kernel_6_patchset },   //6.0.0 - 6.2.0
-	{ "\xa2\x5e\x47\x0c\x8e\x6d\x2f\xd7", _kernel_7_patchset },   //7.0.0 - 7.0.1
-	{ "\xf1\x5e\xc8\x34\xfd\x68\xf0\xf0", _kernel_8_patchset },   //8.0.0 - 8.1.0. Kernel only.
-	{ "\x69\x00\x39\xdf\x21\x56\x70\x6b", _kernel_9_patchset },   //9.0.0 - 9.1.0. Kernel only.
-	{ "\xa2\xe3\xad\x1c\x98\xd8\x7a\x62", _kernel_9_patchset },   //9.2.0. Kernel only.
-	{ "\x21\xc1\xd7\x24\x8e\xcd\xbd\xa8", _kernel_10_patchset },  //10.0.0. Kernel only.
+	{ "\xb8\xc5\x0c\x68\x25\xa9\xb9\x5b", _kernel_1_patchset },   //  1.0.0
+	{ "\x64\x0b\x51\xff\x28\x01\xb8\x30", _kernel_2_patchset },   //  2.0.0 - 2.3.0
+	{ "\x50\x84\x23\xac\x6f\xa1\x5d\x3b", _kernel_3_patchset },   //  3.0.0 - 3.0.1
+	{ "\x81\x9d\x08\xbe\xe4\x5e\x1f\xbb", _kernel_302_patchset }, //  3.0.2
+	{ "\xe6\xc0\xb7\xe3\x2f\xf9\x44\x51", _kernel_4_patchset },   //  4.0.0 - 4.1.0
+	{ "\xb2\x38\x61\xa8\xe1\xe2\xe4\xe4", _kernel_5_patchset },   //  5.0.0 - 5.1.0
+	{ "\x85\x97\x40\xf6\xc0\x3e\x3d\x44", _kernel_6_patchset },   //  6.0.0 - 6.2.0
+	{ "\xa2\x5e\x47\x0c\x8e\x6d\x2f\xd7", _kernel_7_patchset },   //  7.0.0 - 7.0.1
+	{ "\xf1\x5e\xc8\x34\xfd\x68\xf0\xf0", _kernel_8_patchset },   //  8.0.0 - 8.1.0. Kernel only.
+	{ "\x69\x00\x39\xdf\x21\x56\x70\x6b", _kernel_9_patchset },   //  9.0.0 - 9.1.0. Kernel only.
+	{ "\xa2\xe3\xad\x1c\x98\xd8\x7a\x62", _kernel_9_patchset },   //  9.2.0. Kernel only.
+	{ "\x21\xc1\xd7\x24\x8e\xcd\xbd\xa8", _kernel_10_patchset },  // 10.0.0. Kernel only.
+	{ "\xD5\xD0\xBA\x5D\x52\xB9\x77\x85", _kernel_11_patchset },  // 11.0.0. Kernel only.
 };
 
 enum kip_offset_section
@@ -618,6 +652,21 @@ static kip1_patchset_t _fs_patches_1020[] =
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nogc_1100[] =
+{
+	{ KPS(KIP_TEXT) | 0x1398B4, 8, "\xF4\x4F\xBE\xA9\xFD\x7B\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x156EB8, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_1100[] =
+{
+	{ "nogc",     _fs_nogc_1100 },
+	{ "emummc",   _fs_emummc },
+	{ NULL, NULL }
+};
+
+
 // SHA256 hashes.
 static kip1_id_t _kip_ids[] =
 {
@@ -657,6 +706,8 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x81\x7E\xA2\xB0\xB7\x02\xC1\xF3", _fs_patches_1000 },      // FS 10.0.0 exfat
 	{ "FS", "\xA9\x52\xB6\x57\xAD\xF9\xC2\xBA", _fs_patches_1020 },      // FS 10.2.0
 	{ "FS", "\x16\x0D\x3E\x10\x4E\xAD\x61\x76", _fs_patches_1020 },      // FS 10.2.0 exfat
+	{ "FS", "\xE3\x99\x15\x6E\x84\x4E\xB0\xAA", _fs_patches_1100 },      // FS 11.0.0
+	{ "FS", "\x0B\xA1\x5B\xB3\x04\xB5\x05\x63", _fs_patches_1100 },      // FS 11.0.0 exfat
 };
 
 static kip1_id_t *_kip_id_sets = _kip_ids;

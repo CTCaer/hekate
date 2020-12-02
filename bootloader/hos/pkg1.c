@@ -169,6 +169,7 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20190809135709",  9, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 9.0.0 - 9.0.1.
 	{ "20191021113848", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 9.1.0.
 	{ "20200303104606", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 10.0.0.
+	{ "20201030110855", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 11.0.0.
 	{ NULL } // End.
 };
 
@@ -281,7 +282,7 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 			// Get size of compressed program payload and set patch offset.
 			u32 idx = ctxt->pkg1_id->kb - KB_FIRMWARE_VERSION_700;
 			u32 patch_offset = TZRAM_PROG_PK2_SIG_PATCH;
-			if (ctxt->pkg1_id->kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8))
+			if (ctxt->pkg1_id->kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8)) //TODO: Add 11.0.0 support.
 			{
 				idx++;
 				patch_offset = TZRAM_PROG_PK2_SIG_PATCH_1000;
@@ -340,12 +341,15 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 kb, u32 warmboot_base)
 	{
 		u32 pa_id;
 		u32 fuses_fw = kb + 2;
-		u32 fuses_max = KB_FIRMWARE_VERSION_MAX + 3;
+		u32 fuses_max = 32; // Current ODM7 max.
 		u8  burnt_fuses = fuse_count_burnt(fuse_read_odm(7));
 
 		// Add one more fuse for high versions.
-		if (kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8))
+		//TODO: Add better checks for 10.0.0 and up in case mkey doesn't change.
+		if (kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8)) // 10.0.0.
 			fuses_fw++;
+		if (!memcmp(ctxt->pkg1_id->id, "20201030110855", 8)) // 11.0.0.
+			fuses_fw += 2;
 
 		// Save current warmboot in storage cache and check if another one is needed.
 		if (!ctxt->warmboot)
