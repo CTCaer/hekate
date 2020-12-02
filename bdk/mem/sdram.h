@@ -76,14 +76,14 @@ enum sdram_ids_mariko
 	LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y                   = 20,
 	LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y                   = 21,
 
-	LPDDR4X_IOWA_4GB_SAMSUNG_1Y_A                   = 22,
+	LPDDR4X_SDS_4GB_SAMSUNG_1Y_A                    = 22,
 
 	LPDDR4X_SDS_8GB_SAMSUNG_1Y_X                    = 23,
 	LPDDR4X_SDS_4GB_SAMSUNG_1Y_X                    = 24,
 
-	LPDDR4X_CALSIO_4GB_SAMSUNG_UNK0                 = 25,
-	LPDDR4X_CALSIO_4GB_SAMSUNG_UNK1                 = 26,
-	LPDDR4X_CALSIO_4GB_SAMSUNG_UNK2                 = 27
+	LPDDR4X_IOWA_4GB_MICRON_1Y_A                    = 25,
+	LPDDR4X_HOAG_4GB_MICRON_1Y_A                    = 26,
+	LPDDR4X_SDS_4GB_MICRON_1Y_A                     = 27
 };
 
 void sdram_init();

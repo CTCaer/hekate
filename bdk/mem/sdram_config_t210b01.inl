@@ -922,7 +922,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x2A800000, 0x6DC / 4, DRAM_ID2(21) }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, DRAM_ID2(21) }, // mc_video_protect_gpu_override1.
 
-	// Samsung LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown Iowa.
+	// Samsung LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown SDS.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(22) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(22) }, // emc_auto_cal_vref_sel0.
 	{ 0x00000008, 0x24C / 4, DRAM_ID2(22) }, // emc_tfaw.
@@ -986,7 +986,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x00000002, 0x6E0 / 4, DRAM_ID2(22) }, // mc_video_protect_gpu_override1.
 	{ 0x0000009C, 0x814 / 4, DRAM_ID2(22) }, // swizzle_rank_byte_encode.
 
-	// Calcio prototype, probably Samsung/Hynix/Micron timing configs.
+	// Micron LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown Iowa/Hoag/SDS.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(25) | DRAM_ID2(26) | DRAM_ID2(27) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(25) | DRAM_ID2(26) | DRAM_ID2(27) }, // emc_auto_cal_vref_sel0.
 	{ 0x00000006, 0x1CC / 4, DRAM_ID2(25) | DRAM_ID2(26) | DRAM_ID2(27) }, // emc_quse.
