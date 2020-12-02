@@ -1239,6 +1239,8 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	sdmmc_t sdmmc;
 
 	char *txt_buf = (char *)malloc(0x4000);
+	txt_buf[0] = '\n';
+	txt_buf[1] = 0;
 
 	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
@@ -1257,7 +1259,21 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		char card_type_support[96];
 		card_type_support[0] = 0;
 
-		s_printf(txt_buf, "\n%X\n%X\n%02X\n%c%c%c%c%c%c\n%X\n%04X\n%02d/%04d\n\n",
+		// Identify manufacturer. Only official eMMCs.
+		switch (storage.cid.manfid)
+		{
+		case 0x11:
+			strcat(txt_buf, "Toshiba ");
+			break;
+		case 0x15:
+			strcat(txt_buf, "Samsung ");
+			break;
+		case 0x90:
+			strcat(txt_buf, "SK Hynix ");
+			break;
+		}
+
+		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%X\n%02X\n%c%c%c%c%c%c\n%X\n%04X\n%02d/%04d\n\n",
 			storage.cid.manfid, storage.cid.card_bga, storage.cid.oemid,
 			storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
 			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
@@ -1456,8 +1472,51 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
 		char *txt_buf = (char *)malloc(0x4000);
+		txt_buf[0] = '\n';
+		txt_buf[1] = 0;
 
-		s_printf(txt_buf,"\n%02x\n%c%c\n%c%c%c%c%c\n%X\n%X\n%08x\n%02d/%04d",
+		// Identify manufacturer.
+		switch (sd_storage.cid.manfid)
+		{
+		case 1:
+			strcat(txt_buf, "Panasonic ");
+			break;
+		case 2:
+			strcat(txt_buf, "Toshiba ");
+			break;
+		case 3:
+			strcat(txt_buf, "SanDisk ");
+			break;
+		case 0x1B:
+			strcat(txt_buf, "Samsung ");
+			break;
+		case 0x1D:
+			strcat(txt_buf, "AData ");
+			break;
+		case 0x27:
+			strcat(txt_buf, "Phison ");
+			break;
+		case 0x28:
+			strcat(txt_buf, "Lexar ");
+			break;
+		case 0x31:
+			strcat(txt_buf, "Silicon Power ");
+			break;
+		case 0x41:
+			strcat(txt_buf, "Kingston ");
+			break;
+		case 0x74:
+			strcat(txt_buf, "Transcend ");
+			break;
+		case 0x76:
+			strcat(txt_buf, "Patriot ");
+			break;
+		case 0x82:
+			strcat(txt_buf, "Sony ");
+			break;
+		}
+
+		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c\n%c%c%c%c%c\n%X\n%X\n%08x\n%02d/%04d",
 			sd_storage.cid.manfid, (sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF,
 			sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
 			sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
