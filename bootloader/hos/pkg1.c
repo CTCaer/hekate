@@ -377,18 +377,18 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 kb, u32 warmboot_base)
 			}
 		}
 
-		// Configure Warmboot parameters.
+		// Configure Warmboot parameters. Anything lower is not supported.
 		switch (burnt_fuses)
 		{
-		case KB_FIRMWARE_VERSION_600 + 2: // 7 fuses burnt.
+		case 7:
 			pa_id = 0x87;
 			break;
-		case KB_FIRMWARE_VERSION_620 + 2: // 8 fuses burnt. 0x21 raise.
+		case 8: // 0x21 raise.
 			pa_id = 0xA8;
 			break;
 		default: // From 7.0.0 and up PA id raises by 0x21 with a static base.
-			pa_id = 0x129;
-			pa_id += 0x21 * (burnt_fuses - KB_FIRMWARE_VERSION_700 - 2);
+			pa_id = 0x108;
+			pa_id += 0x21 * (burnt_fuses - 8);
 			break;
 		}
 
