@@ -21,6 +21,7 @@
 #include "se_t210.h"
 #include <mem/heap.h>
 #include <soc/bpmp.h>
+#include <soc/pmc.h>
 #include <soc/t210.h>
 #include <utils/util.h>
 
@@ -160,9 +161,11 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 
 static void _se_aes_ctr_set(void *ctr)
 {
-	u32 *data = (u32 *)ctr;
-	for (u32 i = 0; i < 4; i++)
-		SE(SE_CRYPTO_CTR_REG_OFFSET + 4 * i) = data[i];
+	u32 data[TEGRA_SE_AES_BLOCK_SIZE / 4];
+	memcpy(data, ctr, TEGRA_SE_AES_BLOCK_SIZE);
+
+	for (u32 i = 0; i < (TEGRA_SE_AES_BLOCK_SIZE / 4); i++)
+		SE(SE_CRYPTO_CTR_REG_OFFSET + (4 * i)) = data[i];
 }
 
 void se_rsa_acc_ctrl(u32 rs, u32 flags)
@@ -190,8 +193,10 @@ u32 se_key_acc_ctrl_get(u32 ks)
 
 void se_aes_key_set(u32 ks, void *key, u32 size)
 {
-	u32 *data = (u32 *)key;
-	for (u32 i = 0; i < size / 4; i++)
+	u32 data[TEGRA_SE_AES_MAX_KEY_SIZE / 4];
+	memcpy(data, key, size);
+
+	for (u32 i = 0; i < (size / 4); i++)
 	{
 		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | i;
 		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = data[i];
@@ -200,9 +205,10 @@ void se_aes_key_set(u32 ks, void *key, u32 size)
 
 void se_aes_iv_set(u32 ks, void *iv)
 {
-	u32 *data = (u32 *)iv;
+	u32 data[TEGRA_SE_AES_BLOCK_SIZE / 4];
+	memcpy(data, iv, TEGRA_SE_AES_BLOCK_SIZE);
 
-	for (u32 i = 0; i < TEGRA_SE_AES_MIN_KEY_SIZE / 4; i++)
+	for (u32 i = 0; i < (TEGRA_SE_AES_BLOCK_SIZE / 4); i++)
 	{
 		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(QUAD_ORG_IV) | i;
 		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = data[i];
@@ -211,17 +217,20 @@ void se_aes_iv_set(u32 ks, void *iv)
 
 void se_aes_key_get(u32 ks, void *key, u32 size)
 {
-	u32 *data = (u32 *)key;
-	for (u32 i = 0; i < size / 4; i++)
+	u32 data[TEGRA_SE_AES_MAX_KEY_SIZE / 4];
+
+	for (u32 i = 0; i < (size / 4); i++)
 	{
 		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | i;
 		data[i] = SE(SE_KEYTABLE_DATA0_REG_OFFSET);
 	}
+
+	memcpy(key, data, size);
 }
 
 void se_aes_key_clear(u32 ks)
 {
-	for (u32 i = 0; i < TEGRA_SE_AES_MAX_KEY_SIZE / 4; i++)
+	for (u32 i = 0; i < (TEGRA_SE_AES_MAX_KEY_SIZE / 4); i++)
 	{
 		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | i;
 		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = 0;
@@ -230,7 +239,7 @@ void se_aes_key_clear(u32 ks)
 
 void se_aes_iv_clear(u32 ks)
 {
-	for (u32 i = 0; i < TEGRA_SE_AES_MIN_KEY_SIZE / 4; i++)
+	for (u32 i = 0; i < (TEGRA_SE_AES_BLOCK_SIZE / 4); i++)
 	{
 		SE(SE_KEYTABLE_REG_OFFSET) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(QUAD_ORG_IV) | i;
 		SE(SE_KEYTABLE_DATA0_REG_OFFSET) = 0;
@@ -365,10 +374,10 @@ int se_aes_xts_crypt(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u
 int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64 total_size, u32 sha_cfg, bool is_oneshot)
 {
 	int res;
-	u32 *hash32 = (u32 *)hash;
+	u32 hash32[TEGRA_SE_SHA_256_SIZE / 4];
 
 	//! TODO: src_size must be 512 bit aligned if continuing and not last block for SHA256.
-	if (src_size > 0xFFFFFF || (u32)hash % 4 || !hash) // Max 16MB - 1 chunks and aligned x4 hash buffer.
+	if (src_size > 0xFFFFFF || !hash) // Max 16MB - 1 chunks and aligned x4 hash buffer.
 		return 0;
 
 	// Setup config for SHA256.
@@ -400,7 +409,8 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 		SE(SE_SHA_MSG_LEFT_1_REG_OFFSET) = msg_left[1];
 
 		// Restore hash reg.
-		for (u32 i = 0; i < 8; i++)
+		memcpy(hash32, hash, TEGRA_SE_SHA_256_SIZE);
+		for (u32 i = 0; i < (TEGRA_SE_SHA_256_SIZE / 4); i++)
 			SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)) = byte_swap_32(hash32[i]);
 	}
 
@@ -417,8 +427,9 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 		}
 
 		// Copy output hash.
-		for (u32 i = 0; i < 8; i++)
+		for (u32 i = 0; i < (TEGRA_SE_SHA_256_SIZE / 4); i++)
 			hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)));
+		memcpy(hash, hash32, TEGRA_SE_SHA_256_SIZE);
 	}
 
 	return res;
@@ -431,7 +442,7 @@ int se_calc_sha256_oneshot(void *hash, const void *src, u32 src_size)
 
 int se_calc_sha256_finalize(void *hash, u32 *msg_left)
 {
-	u32 *hash32 = (u32 *)hash;
+	u32 hash32[TEGRA_SE_SHA_256_SIZE / 4];
 	int res = _se_execute_finalize();
 
 	// Backup message left.
@@ -442,8 +453,9 @@ int se_calc_sha256_finalize(void *hash, u32 *msg_left)
 	}
 
 	// Copy output hash.
-	for (u32 i = 0; i < 8; i++)
+	for (u32 i = 0; i < (TEGRA_SE_SHA_256_SIZE / 4); i++)
 		hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG_OFFSET + (i << 2)));
+	memcpy(hash, hash32, TEGRA_SE_SHA_256_SIZE);
 
 	return res;
 }
@@ -501,7 +513,7 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 
 	// Save SRK to PMC secure scratches.
 	SE(SE_CONTEXT_SAVE_CONFIG_REG_OFFSET) = SE_CONTEXT_SAVE_SRC(SRK);
-	SE(0x80) = 0; // SE_CRYPTO_LAST_BLOCK
+	SE(SE_CRYPTO_LAST_BLOCK) = 0;
 	_se_execute_oneshot(OP_CTX_SAVE, NULL, 0, NULL, 0);
 
 	// End context save.
@@ -510,10 +522,10 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 
 	// Get SRK.
 	u32 srk[4];
-	srk[0] = PMC(0xC0);
-	srk[1] = PMC(0xC4);
-	srk[2] = PMC(0x224);
-	srk[3] = PMC(0x228);
+	srk[0] = PMC(APBDEV_PMC_SECURE_SCRATCH4);
+	srk[1] = PMC(APBDEV_PMC_SECURE_SCRATCH5);
+	srk[2] = PMC(APBDEV_PMC_SECURE_SCRATCH6);
+	srk[3] = PMC(APBDEV_PMC_SECURE_SCRATCH7);
 
 	// Decrypt context.
 	se_aes_key_clear(3);
