@@ -77,6 +77,7 @@ u32 pkg2_newkern_ini1_end;
 #define ID_SND_OFF_900  0x329A0
 #define ID_SND_OFF_1000 0x34404
 #define ID_SND_OFF_1100 0x245B4
+#define ID_SND_OFF_1101 0x245B8
 
 #define ID_RCV_OFF_100  0x219F0
 #define ID_RCV_OFF_200  0x3D1A8
@@ -90,6 +91,7 @@ u32 pkg2_newkern_ini1_end;
 #define ID_RCV_OFF_900  0x309B4
 #define ID_RCV_OFF_1000 0x322F8
 #define ID_RCV_OFF_1100 0x22B24
+#define ID_RCV_OFF_1101 0x22B28
 
 static u32 PRC_ID_SND_100[] =
 {
@@ -408,6 +410,22 @@ KERNEL_PATCHSET_DEF(_kernel_11_patchset,
 		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1100 + sizeof(u32) * 4), NULL}
 );
 
+KERNEL_PATCHSET_DEF(_kernel_1101_patchset,
+	{ SVC_GENERIC,   0x2FD04, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x39194, _NOP(), NULL },          // Disable SVC verifications.
+	{ DEBUG_MODE_EN, 0x460C0, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
+	// Atmosphère kernel patches.
+	{ ATM_SYSM_INCR, 0x490C4, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
+	{ ATM_GEN_PATCH, ID_SND_OFF_1101, _B(ID_SND_OFF_1101, FREE_CODE_OFF_1ST_1100), NULL},    // Send process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2, PRC_ID_SND_1100}, // Send process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                       // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1101 + sizeof(u32) * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1101, _B(ID_RCV_OFF_1101, FREE_CODE_OFF_2ND_1100), NULL},    // Receive process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2, PRC_ID_RCV_1100}, // Receive process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                       // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1101 + sizeof(u32) * 4), NULL}
+);
+
 // Kernel sha256 hashes.
 static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 {
@@ -424,6 +442,7 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 	{ "\xa2\xe3\xad\x1c\x98\xd8\x7a\x62", _kernel_9_patchset },   //  9.2.0. Kernel only.
 	{ "\x21\xc1\xd7\x24\x8e\xcd\xbd\xa8", _kernel_10_patchset },  // 10.0.0. Kernel only.
 	{ "\xD5\xD0\xBA\x5D\x52\xB9\x77\x85", _kernel_11_patchset },  // 11.0.0. Kernel only.
+	{ "\xF8\x1E\xE0\x30\x3C\x7A\x08\x04", _kernel_1101_patchset },// 11.0.1. Kernel only.
 };
 
 enum kip_offset_section
