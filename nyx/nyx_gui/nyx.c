@@ -355,6 +355,18 @@ void nyx_init_load_res()
 	set_default_configuration();
 	set_nyx_default_configuration();
 
+	// Reset new info if magic not correct.
+	if (nyx_str->info.magic != NYX_NEW_INFO)
+	{
+		nyx_str->info.sd_init = 0;
+		for (u32 i = 0; i < 3; i++)
+			nyx_str->info.sd_errors[i] = 0;
+	}
+
+	// Clear info magic.
+	nyx_str->info.magic = 0;
+
+	// Initialize gfx console.
 	gfx_init_ctxt((u32 *)LOG_FB_ADDRESS, 1280, 656, 656);
 	gfx_con_init();
 

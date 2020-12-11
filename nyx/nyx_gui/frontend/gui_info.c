@@ -1468,7 +1468,8 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			"HW rev:\n"
 			"FW rev:\n"
 			"S/N:\n"
-			"Month/Year:"
+			"Month/Year:\n\n"
+			"Bootloader bus:"
 		);
 
 		lv_obj_t *val = lv_cont_create(win, NULL);
@@ -1521,12 +1522,30 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			break;
 		}
 
-		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c\n%c%c%c%c%c\n%X\n%X\n%08x\n%02d/%04d",
+		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c\n%c%c%c%c%c\n%X\n%X\n%08x\n%02d/%04d\n\n",
 			sd_storage.cid.manfid, (sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF,
 			sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
 			sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
 			sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
 			sd_storage.cid.month, sd_storage.cid.year);
+
+		switch (nyx_str->info.sd_init)
+		{
+		case SD_1BIT_HS25:
+			strcat(txt_buf, "HS25 1bit");
+			break;
+		case SD_4BIT_HS25:
+			strcat(txt_buf, "HS25");
+			break;
+		case SD_UHS_SDR82: // Report as SDR104.
+		case SD_UHS_SDR104:
+			strcat(txt_buf, "SDR104");
+			break;
+		case 0:
+		default:
+			strcat(txt_buf, "Undefined");
+			break;
+		}
 
 		lv_label_set_text(lb_val, txt_buf);
 
@@ -1664,7 +1683,8 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_obj_t * lb_val4 = lv_label_create(val4, lb_desc);
 
 		u16 *sd_errors = sd_get_error_count();
-		s_printf(txt_buf, "\n%d\n%d\n%d", sd_errors[0], sd_errors[1], sd_errors[2]);
+		s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
+			sd_errors[0], nyx_str->info.sd_errors[0], sd_errors[1], nyx_str->info.sd_errors[1], sd_errors[2], nyx_str->info.sd_errors[2]);
 
 		lv_label_set_text(lb_val4, txt_buf);
 

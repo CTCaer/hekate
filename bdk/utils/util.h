@@ -21,6 +21,8 @@
 #include <utils/types.h>
 #include <mem/minerva.h>
 
+#define NYX_NEW_INFO 0x3058594E
+
 typedef enum
 {
 	NYX_CFG_BIS  = BIT(5),
@@ -49,6 +51,10 @@ typedef struct _cfg_op_t
 
 typedef struct _nyx_info_t
 {
+	u32 magic;
+	u32 sd_init;
+	u32 sd_errors[3];
+	u8  rsvd[0x1000];
 	u32 disp_id;
 	u32 errors;
 } nyx_info_t;

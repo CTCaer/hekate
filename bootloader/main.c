@@ -741,6 +741,13 @@ void nyx_load_run()
 	// Set hekate version used to boot Nyx.
 	nyx_str->version = ipl_ver.version - 0x303030; // Convert ASCII to numbers.
 
+	// Set SD card initialization info.
+	nyx_str->info.magic = NYX_NEW_INFO;
+	nyx_str->info.sd_init = sd_get_mode();
+	u16 *sd_errors = sd_get_error_count();
+	for (u32 i = 0; i < 3; i++)
+		nyx_str->info.sd_errors[i] = sd_errors[i];
+
 	//memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);
 	volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
 	memcpy((u8 *)nyx_str->hekate, (u8 *)reloc->start, reloc->end - reloc->start);

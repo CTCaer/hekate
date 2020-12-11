@@ -44,7 +44,7 @@ u32 get_tmr_ms()
 
 u32 get_tmr_us()
 {
-	return TMR(TIMERUS_CNTR_1US); //TIMERUS_CNTR_1US
+	return TMR(TIMERUS_CNTR_1US);
 }
 
 void msleep(u32 ms)
