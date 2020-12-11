@@ -594,6 +594,19 @@ static void _hos_validate_sept_mkey(u32 kb)
 	hos_eks_clear(kb);
 }
 
+static void _hos_bis_print_key(u32 idx, u8 *key)
+{
+	gfx_printf("BIS %d Crypt: ", idx);
+	for (int i = 0; i < 0x10; i++)
+		gfx_printf("%02X", key[((idx * 2 + 0) * 0x10) + i]);
+	gfx_puts("\n");
+
+	gfx_printf("BIS %d Tweak: ", idx);
+	for (int i = 0; i < 0x10; i++)
+		gfx_printf("%02X", key[((idx * 2 + 1) * 0x10) + i]);
+	gfx_puts("\n");
+}
+
 int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 {
 	u32 keygen_rev = 0;
@@ -609,6 +622,8 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		// All Mariko use new device keygen. New keygen was introduced in 4.0.0.
 		// We check unconditionally in order to support downgrades.
 		keygen_rev = fuse_read_odm_keygen_rev();
+
+		gfx_printf("Keygen rev: %d\n", keygen_rev);
 
 		if (keygen_rev)
 		{
@@ -685,6 +700,10 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		memcpy(bis_keys + (4 * 0x10), h_cfg.eks->bis_keys[2].crypt, 0x10);
 		memcpy(bis_keys + (5 * 0x10), h_cfg.eks->bis_keys[2].tweak, 0x10);
 	}
+
+	_hos_bis_print_key(0, bis_keys);
+	_hos_bis_print_key(1, bis_keys);
+	_hos_bis_print_key(2, bis_keys);
 
 	// Clear all AES keyslots.
 	for (u32 i = 0; i < 6; i++)
