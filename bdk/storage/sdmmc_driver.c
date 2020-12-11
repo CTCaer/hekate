@@ -501,7 +501,7 @@ int sdmmc_get_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
 		break;
 
 	case SDMMC_RSP_TYPE_2:
-		if (size < 0x10)
+		if (size < 16)
 			return 0;
 		rsp[0] = sdmmc->rsp[0];
 		rsp[1] = sdmmc->rsp[1];
@@ -1052,7 +1052,7 @@ DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 			if (!result)
 			{
 #ifdef ERROR_EXTRA_PRINTING
-				EPRINTFARGS("SDMMC: DMA Update failed (%08X)!", result);
+				EPRINTF("SDMMC: DMA Update failed!");
 #endif
 			}
 		}

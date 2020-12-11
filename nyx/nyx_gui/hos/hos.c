@@ -231,10 +231,6 @@ void hos_eks_save(u32 kb)
 			u8 *keys = (u8 *)calloc(0x1000, 1);
 			se_get_aes_keys(keys + 0x800, keys, 0x10);
 
-			// Set SBK back.
-			if (h_cfg.sbk_set)
-				se_aes_key_set(14, keys + 14 * 0x10, 0x10);
-
 			// Set magic and personalized info.
 			h_cfg.eks->magic = HOS_EKS_MAGIC;
 			h_cfg.eks->enabled[key_idx] = kb;

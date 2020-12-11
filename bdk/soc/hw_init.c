@@ -285,6 +285,10 @@ static void _config_se_brom()
 
 static void _config_regulators(bool tegra_t210)
 {
+	// Set RTC/AO domain to POR voltage.
+	if (tegra_t210)
+		max77620_regulator_set_voltage(REGULATOR_LDO4, 1000000);
+
 	// Disable low battery shutdown monitor.
 	max77620_low_battery_monitor_config(false);
 
@@ -396,11 +400,11 @@ void hw_init()
 	// Initialize I2C1 for various power related devices.
 	i2c_init(I2C_1);
 
-	// Enable charger in case it's disabled.
-	bq24193_enable_charger();
-
 	// Initialize various regulators based on Erista/Mariko platform.
 	_config_regulators(tegra_t210);
+
+	// Enable charger in case it's disabled.
+	bq24193_enable_charger();
 
 	_config_pmc_scratch(); // Missing from 4.x+
 

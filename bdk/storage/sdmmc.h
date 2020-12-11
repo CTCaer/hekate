@@ -107,6 +107,7 @@ typedef struct _sdmmc_storage_t
 	u32 sec_cnt;
 	int is_low_voltage;
 	u32 partition;
+	int initialized;
 	u8  raw_cid[0x10];
 	u8  raw_csd[0x10];
 	u8  raw_scr[8];
@@ -116,16 +117,15 @@ typedef struct _sdmmc_storage_t
 	mmc_ext_csd_t ext_csd;
 	sd_scr_t      scr;
 	sd_ssr_t      ssr;
-	int initialized;
 } sdmmc_storage_t;
 
-int sdmmc_storage_end(sdmmc_storage_t *storage);
-int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf);
-int sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf);
-int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
-int sdmmc_storage_set_mmc_partition(sdmmc_storage_t *storage, u32 partition);
+int  sdmmc_storage_end(sdmmc_storage_t *storage);
+int  sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf);
+int  sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf);
+int  sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
+int  sdmmc_storage_set_mmc_partition(sdmmc_storage_t *storage, u32 partition);
 void sdmmc_storage_init_wait_sd();
-int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
-int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
+int  sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
+int  sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
 
 #endif

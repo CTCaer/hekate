@@ -292,7 +292,6 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 	exo_cfg->magic = EXO_MAGIC_VAL;
 	exo_cfg->fwno = exoFwNo;
 	exo_cfg->flags[0] = exoFlags;
-	exo_cfg->flags[1] = 0;
 
 	// If warmboot is lp0fw, add in RSA modulus.
 	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(warmboot_base + ATM_WB_HEADER_OFF);
@@ -342,10 +341,10 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		memset((void *)ATM_EXO_FATAL_ADDR, 0, ATM_EXO_FATAL_SIZE);
 		if (ctxt->exofatal)
 			memcpy((void *)ATM_EXO_FATAL_ADDR, ctxt->exofatal, ctxt->exofatal_size);
-	}
 
-	// Set display id.
-	exo_cfg->display_id = display_get_decoded_lcd_id();
+		// Set display id.
+		exo_cfg->display_id = display_get_decoded_panel_id();
+	}
 }
 
 static const char *get_error_desc(u32 error_desc)

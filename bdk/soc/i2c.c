@@ -136,10 +136,10 @@ static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, u8 *buf, u32 size)
 	// Initiate transaction on normal mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | NORMAL_MODE_GO;
 
-	u32 timeout = get_tmr_ms() + 400; // Actual for max 8 bytes at 100KHz is 0.74ms.
+	u32 timeout = get_tmr_us() + 200000; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
-		if (get_tmr_ms() > timeout)
+		if (get_tmr_us() > timeout)
 			return 0;
 	}
 
@@ -168,10 +168,10 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	// Initiate transaction on normal mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | NORMAL_MODE_GO;
 
-	u32 timeout = get_tmr_ms() + 400; // Actual for max 8 bytes at 100KHz is 0.74ms.
+	u32 timeout = get_tmr_us() + 200000; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
-		if (get_tmr_ms() > timeout)
+		if (get_tmr_us() > timeout)
 			return 0;
 	}
 

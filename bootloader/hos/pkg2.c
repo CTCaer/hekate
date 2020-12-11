@@ -384,11 +384,11 @@ KERNEL_PATCHSET_DEF(_kernel_10_patchset,
 	{ ATM_SYSM_INCR, 0x66950, _MOVZW(19, 0x1D80, LSL16), NULL }, // System memory pool increase.
 	{ ATM_GEN_PATCH, ID_SND_OFF_1000, _B(ID_SND_OFF_1000, FREE_CODE_OFF_1ST_1000), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1000, sizeof(PRC_ID_SND_1000) >> 2, PRC_ID_SND_1000}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000),                      // Branch back and skip 4 instructions.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000),                       // Branch back and skip 4 instructions.
 		_B(FREE_CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000), ID_SND_OFF_1000 + sizeof(u32) * 4), NULL},
 	{ ATM_GEN_PATCH, ID_RCV_OFF_1000, _B(ID_RCV_OFF_1000, FREE_CODE_OFF_2ND_1000), NULL},    // Receive process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1000, sizeof(PRC_ID_RCV_1000) >> 2, PRC_ID_RCV_1000}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000),                      // Branch back and skip 4 instructions.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000),                       // Branch back and skip 4 instructions.
 		_B(FREE_CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000), ID_RCV_OFF_1000 + sizeof(u32) * 4), NULL}
 );
 
@@ -400,11 +400,11 @@ KERNEL_PATCHSET_DEF(_kernel_11_patchset,
 	{ ATM_SYSM_INCR, 0x490C4, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
 	{ ATM_GEN_PATCH, ID_SND_OFF_1100, _B(ID_SND_OFF_1100, FREE_CODE_OFF_1ST_1100), NULL},    // Send process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2, PRC_ID_SND_1100}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                      // Branch back and skip 4 instructions.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                       // Branch back and skip 4 instructions.
 		_B(FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1100 + sizeof(u32) * 4), NULL},
 	{ ATM_GEN_PATCH, ID_RCV_OFF_1100, _B(ID_RCV_OFF_1100, FREE_CODE_OFF_2ND_1100), NULL},    // Receive process id branch.
 	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2, PRC_ID_RCV_1100}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                      // Branch back and skip 4 instructions.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                       // Branch back and skip 4 instructions.
 		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1100 + sizeof(u32) * 4), NULL}
 );
 

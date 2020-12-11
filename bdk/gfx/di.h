@@ -671,10 +671,12 @@
  * 20h: InnoLux Corporation
  * 30h: AU Optronics
  * 40h: Unknown1
+ * 50h: Unknown2 (OLED? Samsung? LG?)
  *
  * Boards, Panel Size:
  * 0Fh: Icosa/Iowa, 6.2"
  * 10h: Hoag,       5.5"
+ * 20h: Unknown,    x.x"
  */
 
 enum
@@ -694,7 +696,7 @@ void display_backlight_pwm_init();
 void display_end();
 
 /*! Get Display panel ID. */
-u16 display_get_decoded_lcd_id();
+u16  display_get_decoded_panel_id();
 
 /*! Show one single color on the display. */
 void display_color_screen(u32 color);

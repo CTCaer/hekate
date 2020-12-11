@@ -816,10 +816,10 @@ void jc_init_hw()
 	jc_l.uart = UART_C;
 	jc_r.uart = UART_B;
 
+#if !defined(DEBUG_UART_PORT) || !(DEBUG_UART_PORT)
 	if (fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG)
 		return;
 
-#ifndef DEBUG_UART_PORT
 	jc_power_supply(UART_C, true);
 	jc_power_supply(UART_B, true);
 

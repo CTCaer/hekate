@@ -155,7 +155,7 @@
 
 
 /*Log settings*/
-#ifdef DEBUG_UART_PORT
+#ifdef DEBUG_UART_LV_LOG
 #  define USE_LV_LOG        1   /*Enable/disable the log module*/
 #else
 #  define USE_LV_LOG        0   /*Enable/disable the log module*/

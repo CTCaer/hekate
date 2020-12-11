@@ -689,9 +689,7 @@ void nyx_load_run()
 
 	sd_end();
 
-	u32 expected_nyx_ver = ((NYX_VER_MJ + '0') << 24) | ((NYX_VER_MN + '0') << 16) | ((NYX_VER_HF + '0') << 8);
-	u32 nyx_ver = byte_swap_32(*(u32 *)(nyx + NYX_VER_OFF));
-
+	// Show loading logo.
 	gfx_clear_grey(0x1B);
 	u8 *BOOTLOGO = (void *)malloc(0x4000);
 	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
@@ -700,6 +698,8 @@ void nyx_load_run()
 	display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Check if Nyx version is old.
+	u32 expected_nyx_ver = ((NYX_VER_MJ + '0') << 24) | ((NYX_VER_MN + '0') << 16) | ((NYX_VER_HF + '0') << 8);
+	u32 nyx_ver = byte_swap_32(*(u32 *)(nyx + NYX_VER_OFF));
 	if (nyx_ver < expected_nyx_ver)
 	{
 		h_cfg.errors |= ERR_SYSOLD_NYX;
@@ -713,7 +713,10 @@ void nyx_load_run()
 		btn_wait();
 	}
 
+	// Set hekate errors.
 	nyx_str->info.errors = h_cfg.errors;
+
+	// Set Nyx mode.
 	nyx_str->cfg = 0;
 	if (b_cfg.extra_cfg)
 	{
@@ -735,6 +738,7 @@ void nyx_load_run()
 		}
 	}
 
+	// Set hekate version used to boot Nyx.
 	nyx_str->version = ipl_ver.version - 0x303030; // Convert ASCII to numbers.
 
 	//memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);

@@ -221,7 +221,7 @@ void display_init()
 	// Get Chip ID.
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 
-	// T210B01: Power on SD2 regulator for supplying LD0.
+	// T210B01: Power on SD2 regulator for supplying LDO0.
 	if (!tegra_t210)
 	{
 		// Set SD2 regulator voltage.
@@ -600,7 +600,7 @@ skip_panel_deinit:
 
 void display_end() { _display_panel_and_hw_end(false); };
 
-u16 display_get_decoded_lcd_id()
+u16 display_get_decoded_panel_id()
 {
 	return _display_id;
 }

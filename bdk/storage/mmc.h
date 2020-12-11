@@ -142,7 +142,10 @@ c : clear by read
 #define R1_SWITCH_ERROR		(1 << 7)	/* sx, c */
 #define R1_EXCEPTION_EVENT	(1 << 6)	/* sr, a */
 #define R1_APP_CMD		(1 << 5)	/* sr, c */
+#define R1_SKIP_STATE_CHECK	(1 << 4)	/* Custom state to skip expected state check */
+#define R1_AKE_SEQ_ERROR	(1 << 3)
 
+/* R1_CURRENT_STATE 12:9 */
 #define R1_STATE_IDLE	0
 #define R1_STATE_READY	1
 #define R1_STATE_IDENT	2
