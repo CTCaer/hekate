@@ -1332,6 +1332,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 
 void sdmmc1_disable_power()
 {
+#if 0
 	// Ensure regulator is into default voltage.
 	if (PMC(APBDEV_PMC_PWR_DET_VAL) & PMC_PWR_DET_SDMMC1_IO_EN)
 	{
@@ -1343,7 +1344,7 @@ void sdmmc1_disable_power()
 		PMC(APBDEV_PMC_PWR_DET_VAL) &= ~(PMC_PWR_DET_SDMMC1_IO_EN);
 		(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 	}
-
+#endif
 	// T210B01 WAR: Clear pull down from CLK pad.
 	PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK) &= ~PINMUX_PULL_MASK;
 
