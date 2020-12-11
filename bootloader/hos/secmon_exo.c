@@ -312,13 +312,25 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		u8 *rsa_mod = (u8 *)malloc(512);
 
 		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-		sdmmc_storage_read(&emmc_storage, 1, 1, rsa_mod);
 
-		// Patch AutoRCM out.
-		if ((fuse_read_odm(4) & 3) != 3)
-			rsa_mod[0x10] = 0xF7;
-		else
-			rsa_mod[0x10] = 0x37;
+		u32 sector;
+		for (u32 i = 0; i < 4; i++)
+		{
+			sector = 1 + (32 * i); // 0x4000 bct + 0x200 offset.
+			sdmmc_storage_read(&emmc_storage, sector, 1, rsa_mod);
+
+			// Check if 2nd byte of modulus is correct.
+			if (rsa_mod[0x11] != 0x86)
+				continue;
+
+			// Patch AutoRCM out.
+			if ((fuse_read_odm(4) & 3) != 3)
+				rsa_mod[0x10] = 0xF7;
+			else
+				rsa_mod[0x10] = 0x37;
+
+			break;
+		}
 
 		memcpy((void *)(warmboot_base + 0x10), rsa_mod + 0x10, 0x100);
 	}

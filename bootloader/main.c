@@ -1133,32 +1133,31 @@ static void _patched_rcm_protection()
 	u8 *buf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
+	u32 sector;
 	u8 corr_mod_byte0;
-	int i, sect = 0;
 	if ((fuse_read_odm(4) & 3) != 3)
 		corr_mod_byte0 = 0xF7;
 	else
 		corr_mod_byte0 = 0x37;
 
-	for (i = 0; i < 4; i++)
+	for (u32 i = 0; i < 4; i++)
 	{
-		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
-		sdmmc_storage_read(&storage, sect, 1, buf);
+		sector = 1 + (32 * i); // 0x4000 bct + 0x200 offset.
+		sdmmc_storage_read(&storage, sector, 1, buf);
 
 		// Check if 2nd byte of modulus is correct.
-		if (buf[0x11] == 0x86)
-			goto out;
+		if (buf[0x11] != 0x86)
+			continue;
 
 		// If AutoRCM is enabled, disable it.
 		if (buf[0x10] != corr_mod_byte0)
 		{
 			buf[0x10] = corr_mod_byte0;
 
-			sdmmc_storage_write(&storage, sect, 1, buf);
+			sdmmc_storage_write(&storage, sector, 1, buf);
 		}
 	}
 
-out:
 	free(buf);
 	sdmmc_storage_end(&storage);
 }

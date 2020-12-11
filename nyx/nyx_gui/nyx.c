@@ -32,11 +32,13 @@
 #include <mem/minerva.h>
 #include <mem/sdram.h>
 #include <power/max77620.h>
+#include <soc/clock.h>
 #include <soc/bpmp.h>
 #include <soc/fuse.h>
 #include <soc/gpio.h>
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
+#include <soc/pinmux.h>
 #include <soc/pmc.h>
 #include <soc/t210.h>
 #include <soc/uart.h>
