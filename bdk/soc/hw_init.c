@@ -377,7 +377,8 @@ void hw_init()
 
 #ifdef DEBUG_UART_PORT
 	clock_enable_uart(DEBUG_UART_PORT);
-	uart_init(DEBUG_UART_PORT, 115200);
+	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE);
+	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
 #endif
 
 	// Enable Dynamic Voltage and Frequency Scaling device clock.

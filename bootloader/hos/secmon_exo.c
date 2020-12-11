@@ -82,8 +82,10 @@ typedef struct _exo_cfg_t
 	u32 fwno;
 	u32 flags[2];
 	u16 display_id;
-	u16 rsvd0;
-	u32 rsvd1[3];
+	u8  uart_port;
+	u8  uart_invert;
+	u32 uart_baudrate;
+	u32 rsvd1[2];
 	exo_emummc_config_t emummc_cfg;
 } exo_cfg_t;
 
@@ -244,6 +246,12 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 				{
 					if (!strcmp("debugmode_user", kv->key))
 						user_debug = atoi(kv->val);
+					else if (!strcmp("log_port", kv->key))
+						exo_cfg->uart_port = atoi(kv->val);
+					else if (!strcmp("log_inverted", kv->key))
+						exo_cfg->uart_invert = atoi(kv->val);
+					else if (!strcmp("log_baud_rate", kv->key))
+						exo_cfg->uart_baudrate = atoi(kv->val);
 					else if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
 					{
 						if (!strcmp("blank_prodinfo_emummc", kv->key))
@@ -345,6 +353,16 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		// Set display id.
 		exo_cfg->display_id = display_get_decoded_panel_id();
 	}
+
+#ifdef DEBUG_UART_PORT
+	// Ovverride logging parameters if set in compile time.
+	if (!ctxt->stock)
+	{
+		exo_cfg->uart_port = DEBUG_UART_PORT;
+		exo_cfg->uart_invert = DEBUG_UART_INVERT;
+		exo_cfg->uart_baudrate = DEBUG_UART_BAUDRATE;
+	}
+#endif
 }
 
 static const char *get_error_desc(u32 error_desc)
