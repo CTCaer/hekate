@@ -366,6 +366,9 @@ void nyx_init_load_res()
 	// Clear info magic.
 	nyx_str->info.magic = 0;
 
+	// Set display id from previous initialization.
+	display_set_decoded_panel_id(nyx_str->info.disp_id);
+
 	// Initialize gfx console.
 	gfx_init_ctxt((u32 *)LOG_FB_ADDRESS, 1280, 656, 656);
 	gfx_con_init();

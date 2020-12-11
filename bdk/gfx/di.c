@@ -605,6 +605,15 @@ u16 display_get_decoded_panel_id()
 	return _display_id;
 }
 
+void display_set_decoded_panel_id(u32 id)
+{
+	// Decode Display ID.
+	_display_id = ((id >> 8) & 0xFF00) | (id & 0xFF);
+
+	if ((_display_id & 0xFF) == PANEL_JDI_XXX062M)
+		_display_id = PANEL_JDI_XXX062M;
+}
+
 void display_color_screen(u32 color)
 {
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_one_color, 8);

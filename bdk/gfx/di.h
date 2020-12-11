@@ -695,8 +695,9 @@ void display_init();
 void display_backlight_pwm_init();
 void display_end();
 
-/*! Get Display panel ID. */
+/*! Get/Set Display panel ID. */
 u16  display_get_decoded_panel_id();
+void display_set_decoded_panel_id(u32 id);
 
 /*! Show one single color on the display. */
 void display_color_screen(u32 color);

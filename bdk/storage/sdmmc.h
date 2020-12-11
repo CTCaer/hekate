@@ -130,4 +130,6 @@ void sdmmc_storage_init_wait_sd();
 int  sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
 int  sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
 
+u32  sd_storage_ssr_get_au(sdmmc_storage_t *storage);
+
 #endif
