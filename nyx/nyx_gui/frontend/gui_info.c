@@ -1574,14 +1574,22 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			break;
 		}
 
+		bool uhs_au_mb = false;
+		u32 uhs_au_size = sd_storage_ssr_get_au(&sd_storage);
+		if (uhs_au_size >= 1024)
+		{
+			uhs_au_mb = true;
+			uhs_au_size /= 1024;
+		}
+
 		s_printf(txt_buf,
-			"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d\nU%d\nV%d\nA%d\n%s",
+			"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d\nV%d\nA%d\n%s",
 			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass,
 			sd_storage.sec_cnt >> 11, sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
 			sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
 			(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
-			sd_storage.ssr.speed_class, sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class,
-			sd_storage.ssr.app_class, wp_info);
+			sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)", sd_storage.ssr.uhs_grade,
+			sd_storage.ssr.video_class, sd_storage.ssr.app_class, wp_info);
 
 		lv_label_set_text(lb_val2, txt_buf);
 

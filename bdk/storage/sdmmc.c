@@ -845,7 +845,7 @@ int _sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
 	_sd_storage_parse_scr(storage);
 	//gfx_hexdump(0, storage->raw_scr, 8);
 
-	return _sdmmc_storage_check_result(tmp);
+	return _sdmmc_storage_check_card_status(tmp);
 }
 
 int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
@@ -861,12 +861,12 @@ int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
 	reqbuf.is_multi_block = 0;
 	reqbuf.is_auto_cmd12 = 0;
 
-	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, 0))
+	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))
 		return 0;
 
 	u32 tmp = 0;
 	sdmmc_get_rsp(storage->sdmmc, &tmp, 4, SDMMC_RSP_TYPE_1);
-	return _sdmmc_storage_check_result(tmp);
+	return _sdmmc_storage_check_card_status(tmp);
 }
 
 int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int group, u32 arg)
@@ -885,12 +885,12 @@ int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int group,
 	reqbuf.is_multi_block = 0;
 	reqbuf.is_auto_cmd12 = 0;
 
-	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, 0))
+	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))
 		return 0;
 
 	u32 tmp = 0;
 	sdmmc_get_rsp(storage->sdmmc, &tmp, 4, SDMMC_RSP_TYPE_1);
-	return _sdmmc_storage_check_result(tmp);
+	return _sdmmc_storage_check_card_status(tmp);
 }
 
 void _sd_storage_set_current_limit(sdmmc_storage_t *storage, u16 current_limit, u8 *buf)
@@ -1064,6 +1064,44 @@ int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 	return sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_SD_HS25);
 }
 
+u32 sd_storage_ssr_get_au(sdmmc_storage_t *storage)
+{
+	u32 au_size = storage->ssr.uhs_au_size;
+
+	if (!au_size)
+		au_size = storage->ssr.au_size;
+
+	if (au_size <= 10)
+	{
+		u32 shift = au_size;
+		au_size = shift ? 8 : 0;
+    	au_size <<= shift;
+	}
+	else
+	{
+		switch (au_size)
+		{
+		case 11:
+			au_size = 12288;
+			break;
+		case 12:
+			au_size = 16384;
+			break;
+		case 13:
+			au_size = 24576;
+			break;
+		case 14:
+			au_size = 32768;
+			break;
+		case 15:
+			au_size = 65536;
+			break;
+		}
+	}
+
+	return au_size;
+}
+
 static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 {
 	// unstuff_bits supports only 4 u32 so break into 2 x 16byte groups
@@ -1113,6 +1151,9 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 	storage->ssr.video_class = unstuff_bits(raw_ssr1, 384 - 384, 8);
 
 	storage->ssr.app_class = unstuff_bits(raw_ssr2, 336 - 256, 4);
+
+	storage->ssr.au_size = unstuff_bits(raw_ssr1, 428 - 384, 4);
+	storage->ssr.uhs_au_size = unstuff_bits(raw_ssr1, 392 - 384, 4);
 }
 
 static int _sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)

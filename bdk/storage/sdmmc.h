@@ -95,6 +95,8 @@ typedef struct _sd_ssr
 	u8 uhs_grade;
 	u8 video_class;
 	u8 app_class;
+	u8 au_size;
+	u8 uhs_au_size;
 	u32 protected_size;
 } sd_ssr_t;
 
