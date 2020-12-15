@@ -133,7 +133,7 @@ void check_power_off_from_hos()
 			msleep(600);
 			display_backlight_brightness(0, 20000);
 		}
-		power_set_state(POWER_OFF);
+		power_set_state(POWER_OFF_RESET);
 	}
 }
 
@@ -1304,7 +1304,7 @@ static void _check_low_battery()
 			if (!current_charge_status)
 			{
 				max77620_low_battery_monitor_config(true);
-				power_set_state(POWER_OFF);
+				power_set_state(POWER_OFF_RESET);
 			}
 
 			display_end();
@@ -1498,7 +1498,7 @@ ment_t ment_tools[] = {
 
 menu_t menu_tools = { ment_tools, "Tools", 0, 0 };
 
-power_state_t STATE_POWER_OFF           = POWER_OFF;
+power_state_t STATE_POWER_OFF           = POWER_OFF_RESET;
 power_state_t STATE_REBOOT_RCM          = REBOOT_RCM;
 power_state_t STATE_REBOOT_BYPASS_FUSES = REBOOT_BYPASS_FUSES;
 

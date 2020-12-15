@@ -906,7 +906,7 @@ static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
 			power_set_state(REBOOT_RCM);
 		break;
 	case 1:
-		power_set_state(POWER_OFF);
+		power_set_state(POWER_OFF_RESET);
 		break;
 	case 2:
 		sd_end();
@@ -972,7 +972,7 @@ static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
 static lv_res_t _poweroff_action(lv_obj_t *btns, const char *txt)
 {
 	if (!lv_btnm_get_pressed(btns))
-		power_set_state(POWER_OFF);
+		power_set_state(POWER_OFF_RESET);
 
 	return mbox_action(btns, txt);
 }
