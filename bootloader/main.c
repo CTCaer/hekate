@@ -133,7 +133,7 @@ void check_power_off_from_hos()
 			msleep(600);
 			display_backlight_brightness(0, 20000);
 		}
-		power_off();
+		power_set_state(POWER_OFF);
 	}
 }
 
@@ -1304,7 +1304,7 @@ static void _check_low_battery()
 			if (!current_charge_status)
 			{
 				max77620_low_battery_monitor_config(true);
-				power_off();
+				power_set_state(POWER_OFF);
 			}
 
 			display_end();
@@ -1498,17 +1498,21 @@ ment_t ment_tools[] = {
 
 menu_t menu_tools = { ment_tools, "Tools", 0, 0 };
 
+power_state_t STATE_POWER_OFF           = POWER_OFF;
+power_state_t STATE_REBOOT_RCM          = REBOOT_RCM;
+power_state_t STATE_REBOOT_BYPASS_FUSES = REBOOT_BYPASS_FUSES;
+
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
 	//MDEF_MENU("Options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
-	MDEF_MENU("Tools", &menu_tools),
+	MDEF_MENU("Tools",        &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_HANDLER("Reload", ipl_reload),
-	MDEF_HANDLER("Reboot (Normal)", reboot_normal),
-	MDEF_HANDLER("Reboot (RCM)", reboot_rcm),
-	MDEF_HANDLER("Power off", power_off),
+	MDEF_HANDLER_EX("Reboot (Normal)", &STATE_REBOOT_BYPASS_FUSES, power_set_state_ex),
+	MDEF_HANDLER_EX("Reboot (RCM)",    &STATE_REBOOT_RCM,          power_set_state_ex),
+	MDEF_HANDLER_EX("Power off",       &STATE_POWER_OFF,           power_set_state_ex),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_HANDLER("About", _about),
 	MDEF_END()

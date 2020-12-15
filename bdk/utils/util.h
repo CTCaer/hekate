@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -22,6 +22,16 @@
 #include <mem/minerva.h>
 
 #define NYX_NEW_INFO 0x3058594E
+
+typedef enum
+{
+	REBOOT_RCM,          // PMC reset. Enter RCM mode.
+	REBOOT_BYPASS_FUSES, // PMC reset via watchdog. Enter Normal mode. Bypass fuse programming in package1.
+
+	POWER_OFF,           // Power off PMIC. Do not reset regulators.
+	POWER_OFF_RESET,     // Power off PMIC. Reset regulators.
+	POWER_OFF_REBOOT,    // Power off PMIC. Reset regulators. Power on.
+} power_state_t;
 
 typedef enum
 {
@@ -71,17 +81,18 @@ typedef struct _nyx_storage_t
 	emc_table_t mtc_table[10];
 } nyx_storage_t;
 
-u32 get_tmr_us();
-u32 get_tmr_ms();
-u32 get_tmr_s();
-void usleep(u32 us);
-void msleep(u32 ms);
-void panic(u32 val);
-void reboot_normal();
-void reboot_rcm();
-void reboot_full();
-void power_off();
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops);
 u32  crc32_calc(u32 crc, const u8 *buf, u32 len);
+
+u32  get_tmr_us();
+u32  get_tmr_ms();
+u32  get_tmr_s();
+void usleep(u32 us);
+void msleep(u32 ms);
+
+void panic(u32 val);
+void power_set_state(power_state_t state);
+void power_set_state_ex(void *param);
+
 
 #endif

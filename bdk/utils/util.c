@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018 CTCaer
+* Copyright (c) 2018-2020 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -132,53 +132,57 @@ void panic(u32 val)
 		usleep(1);
 }
 
-void reboot_normal()
+void power_set_state(power_state_t state)
 {
+	u8 reg;
+
+	// Unmount and power down sd card.
 	sd_end();
-	hw_reinit_workaround(false, 0);
 
-	panic(0x21); // Bypass fuse programming in package1.
-}
-
-void reboot_rcm()
-{
-	sd_end();
-	hw_reinit_workaround(false, 0);
-
-	PMC(APBDEV_PMC_SCRATCH0) = PMC_SCRATCH0_MODE_RCM;
-	PMC(APBDEV_PMC_CNTRL) |= PMC_CNTRL_MAIN_RST;
-
-	while (true)
-		bpmp_halt();
-}
-
-void reboot_full()
-{
-	sd_end();
-	hw_reinit_workaround(false, 0);
-
-	// Enable soft reset wake event.
-	u8 reg = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2);
-	reg |= MAX77620_ONOFFCNFG2_SFT_RST_WK;
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2, reg);
-
-	// Do a soft reset.
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_SFT_RST);
-
-	while (true)
-		bpmp_halt();
-}
-
-void power_off()
-{
-	sd_end();
+	// De-initialize and power down various hardware.
 	hw_reinit_workaround(false, 0);
 
 	// Stop the alarm, in case we injected and powered off too fast.
 	max77620_rtc_stop_alarm();
 
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
+	// Set power state.
+	switch (state)
+	{
+	case REBOOT_RCM:
+		PMC(APBDEV_PMC_SCRATCH0) = PMC_SCRATCH0_MODE_RCM; // Enable RCM path.
+		PMC(APBDEV_PMC_CNTRL)   |= PMC_CNTRL_MAIN_RST;    // PMC reset.
+		break;
+
+	case REBOOT_BYPASS_FUSES:
+		panic(0x21); // Bypass fuse programming in package1.
+		break;
+
+	case POWER_OFF:
+		// Initiate power down sequence and do not generate a reset (regulators retain state).
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
+		break;
+
+	case POWER_OFF_RESET:
+	case POWER_OFF_REBOOT:
+		// Disable soft reset wake event.
+		reg = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2);
+		if (state == POWER_OFF_RESET)
+			reg &= ~MAX77620_ONOFFCNFG2_SFT_RST_WK; // Do not wake up after power off.
+		else // POWER_OFF_REBOOT.
+			reg |= MAX77620_ONOFFCNFG2_SFT_RST_WK;  // Wake up after power off.
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2, reg);
+
+		// Initiate power down sequence and generate a reset (regulators' state resets).
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_SFT_RST);
+		break;
+	}
 
 	while (true)
 		bpmp_halt();
+}
+
+void power_set_state_ex(void *param)
+{
+	power_state_t *state = (power_state_t *)param;
+	power_set_state(*state);
 }

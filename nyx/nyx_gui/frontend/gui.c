@@ -901,12 +901,12 @@ static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
 	{
 	case 0:
 		if (h_cfg.rcm_patched)
-			reboot_full();
+			power_set_state(POWER_OFF_REBOOT);
 		else
-			reboot_rcm();
+			power_set_state(REBOOT_RCM);
 		break;
 	case 1:
-		power_off();
+		power_set_state(POWER_OFF);
 		break;
 	case 2:
 		sd_end();
@@ -955,14 +955,14 @@ static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
 	{
 	case 0:
 		if (h_cfg.rcm_patched)
-			reboot_full();
+			power_set_state(POWER_OFF_REBOOT);
 		else
-			reboot_normal();
+			power_set_state(REBOOT_BYPASS_FUSES);
 		break;
 	case 1:
 		if (h_cfg.rcm_patched)
 			break;
-		reboot_rcm();
+		power_set_state(REBOOT_RCM);
 		break;
 	}
 
@@ -972,7 +972,7 @@ static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
 static lv_res_t _poweroff_action(lv_obj_t *btns, const char *txt)
 {
 	if (!lv_btnm_get_pressed(btns))
-		power_off();
+		power_set_state(POWER_OFF);
 
 	return mbox_action(btns, txt);
 }
