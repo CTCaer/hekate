@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	if(stat(argv[1], &statbuf))
 		goto error;
 
-	if((in_file=fopen(argv[1], "r")) == NULL)
+	if((in_file=fopen(argv[1], "rb")) == NULL)
 		goto error;
 
 	strcpy(filename, argv[1]);
