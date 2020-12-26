@@ -91,6 +91,8 @@
 #define APBDEV_PMC_SEC_DISABLE6 0x5B8
 #define APBDEV_PMC_SEC_DISABLE7 0x5BC
 #define APBDEV_PMC_SEC_DISABLE8 0x5C0
+#define APBDEV_PMC_SEC_DISABLE9 0x5C4
+#define APBDEV_PMC_SEC_DISABLE10 0x5C8
 #define APBDEV_PMC_SCRATCH188 0x810
 #define APBDEV_PMC_SCRATCH190 0x818
 #define APBDEV_PMC_SCRATCH200 0x840
@@ -98,6 +100,20 @@
 #define APBDEV_PMC_TZRAM_SEC_DISABLE 0xBEC
 #define APBDEV_PMC_TZRAM_NON_SEC_DISABLE 0xBF0
 
-int pmc_enable_partition(u32 part, int enable);
+typedef enum _pmc_sec_lock_t
+{
+	PMC_SEC_LOCK_MISC       = BIT(0),
+	PMC_SEC_LOCK_LP0_PARAMS = BIT(1),
+	PMC_SEC_LOCK_RST_VECTOR = BIT(2),
+	PMC_SEC_LOCK_CARVEOUTS  = BIT(3),
+	PMC_SEC_LOCK_TZ_CMAC_W  = BIT(4),
+	PMC_SEC_LOCK_TZ_CMAC_R  = BIT(5),
+	PMC_SEC_LOCK_TZ_KEK_W   = BIT(6),
+	PMC_SEC_LOCK_TZ_KEK_R   = BIT(7),
+	PMC_SEC_LOCK_SE_SRK     = BIT(8),
+} pmc_sec_lock_t;
+
+void pmc_scratch_lock(pmc_sec_lock_t lock_mask);
+int  pmc_enable_partition(u32 part, int enable);
 
 #endif

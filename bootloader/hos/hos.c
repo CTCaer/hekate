@@ -152,33 +152,6 @@ static void _se_lock(bool lock_se)
 	gfx_hexdump(SE_BASE, (void *)SE_BASE, 0x400);*/
 }
 
-void _pmc_scratch_lock(u32 kb)
-{
-	switch (kb)
-	{
-	case KB_FIRMWARE_VERSION_100_200:
-	case KB_FIRMWARE_VERSION_300:
-	case KB_FIRMWARE_VERSION_301:
-		PMC(APBDEV_PMC_SEC_DISABLE)  = 0x7FFFF3;
-		PMC(APBDEV_PMC_SEC_DISABLE2) = 0xFFFFFFFF;
-		PMC(APBDEV_PMC_SEC_DISABLE3) = 0xFFAFFFFF;
-		PMC(APBDEV_PMC_SEC_DISABLE4) = 0xFFFFFFFF;
-		PMC(APBDEV_PMC_SEC_DISABLE5) = 0xFFFFFFFF;
-		PMC(APBDEV_PMC_SEC_DISABLE6) = 0xFFFFFFFF;
-		PMC(APBDEV_PMC_SEC_DISABLE7) = 0xFFFFFFFF;
-		PMC(APBDEV_PMC_SEC_DISABLE8) = 0xFFAAFFFF;
-		break;
-	default:
-		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x3FCFFFF;
-	    PMC(APBDEV_PMC_SEC_DISABLE4) |= 0x3F3FFFFF;
-	    PMC(APBDEV_PMC_SEC_DISABLE5)  = 0xFFFFFFFF;
-	    PMC(APBDEV_PMC_SEC_DISABLE6) |= 0xF3FFC00F;
-	    PMC(APBDEV_PMC_SEC_DISABLE7) |= 0x3FFFFF;
-	    PMC(APBDEV_PMC_SEC_DISABLE8) |= 0xFF;
-		break;
-	}
-}
-
 void _sysctr0_reset()
 {
 	SYSCTR0(SYSCTR0_CNTCR) = 0;
@@ -1090,8 +1063,8 @@ int hos_launch(ini_sec_t *cfg)
 	if (kb >= KB_FIRMWARE_VERSION_620)
 		_sysctr0_reset();
 
-	// < 4.0.0 pkg1.1 locks PMC scratches.
-	//_pmc_scratch_lock(kb);
+	// NX Bootloader locks LP0 Carveout secure scratch registers.
+	//pmc_scratch_lock(PMC_SEC_LOCK_LP0_PARAMS);
 
 	// Set secmon mailbox address and clear it.
 	if (kb >= KB_FIRMWARE_VERSION_700 || exo_new)
