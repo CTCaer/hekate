@@ -133,6 +133,10 @@ static irq_status_t _irq_handle_source(u32 irq)
 		}
 	}
 
+	// Do not re-enable if not handled.
+	if (status == IRQ_NONE)
+		return status;
+
 	if (irqs[idx].flags & IRQ_FLAG_ONE_OFF)
 		irq_free(irq);
 	else
@@ -148,7 +152,9 @@ void irq_handler()
 
 	if (!irq_init_done)
 	{
+		_irq_disable_source(irq);
 		_irq_ack_source(irq);
+
 		return;
 	}
 
@@ -156,9 +162,10 @@ void irq_handler()
 
 	int err = _irq_handle_source(irq);
 
-	//TODO: disable if unhandhled.
 	if (err == IRQ_NONE)
-		gfx_printf("Unhandled IRQ: %d\n", irq);
+	{
+		DPRINTF("Unhandled IRQ got disabled: %d!\n", irq);
+	}
 }
 
 static void _irq_init()
@@ -170,6 +177,9 @@ static void _irq_init()
 
 void irq_end()
 {
+	if (!irq_init_done)
+		return;
+
 	_irq_free_all();
 	irq_disable_cpu_irq_exceptions();
 	irq_init_done = false;
