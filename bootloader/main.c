@@ -238,7 +238,7 @@ int launch_payload(char *path, bool update)
 				f_close(&fp);
 
 				gfx_con.mute = 0;
-				EPRINTF("T210B01: Coreboot not allowed!");
+				EPRINTF("Coreboot not allowed on Mariko!");
 
 				goto out;
 			}

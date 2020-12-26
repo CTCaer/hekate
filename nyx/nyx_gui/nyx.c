@@ -175,7 +175,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 			{
 				f_close(&fp);
 
-				EPRINTF("T210B01: Coreboot not allowed!");
+				EPRINTF("Coreboot not allowed on Mariko!");
 
 				goto out;
 			}
