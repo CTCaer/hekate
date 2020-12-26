@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2019-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -43,7 +44,9 @@ extern FATFS emmc_fs;
 void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage);
 void nx_emmc_gpt_free(link_t *gpt);
 emmc_part_t *nx_emmc_part_find(link_t *gpt, const char *name);
-int nx_emmc_part_read(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_off, u32 num_sectors, void *buf);
-int nx_emmc_part_write(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_off, u32 num_sectors, void *buf);
+int  nx_emmc_part_read(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_off, u32 num_sectors, void *buf);
+int  nx_emmc_part_write(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_off, u32 num_sectors, void *buf);
+
+void nx_emmc_get_autorcm_masks(u8 *mod0, u8 *mod1);
 
 #endif

@@ -1134,25 +1134,25 @@ static void _patched_rcm_protection()
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	u32 sector;
-	u8 corr_mod_byte0;
-	if ((fuse_read_odm(4) & 3) != 3)
-		corr_mod_byte0 = 0xF7;
-	else
-		corr_mod_byte0 = 0x37;
+	u8 corr_mod0, mod1;
 
+	// Get the correct RSA modulus byte masks.
+	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
+
+	// Iterate BCTs.
 	for (u32 i = 0; i < 4; i++)
 	{
 		sector = 1 + (32 * i); // 0x4000 bct + 0x200 offset.
 		sdmmc_storage_read(&storage, sector, 1, buf);
 
 		// Check if 2nd byte of modulus is correct.
-		if (buf[0x11] != 0x86)
+		if (buf[0x11] != mod1)
 			continue;
 
 		// If AutoRCM is enabled, disable it.
-		if (buf[0x10] != corr_mod_byte0)
+		if (buf[0x10] != corr_mod0)
 		{
-			buf[0x10] = corr_mod_byte0;
+			buf[0x10] = corr_mod0;
 
 			sdmmc_storage_write(&storage, sector, 1, buf);
 		}

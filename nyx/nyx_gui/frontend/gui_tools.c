@@ -70,7 +70,7 @@ static lv_obj_t *_create_container(lv_obj_t *parent)
 
 bool get_autorcm_status(bool change)
 {
-	u8 corr_mod_byte0;
+	u8 corr_mod0, mod1;
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 	bool enabled = false;
@@ -84,41 +84,37 @@ bool get_autorcm_status(bool change)
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
-	if ((fuse_read_odm(4) & 3) != 3)
-		corr_mod_byte0 = 0xF7;
-	else
-		corr_mod_byte0 = 0x37;
+	// Get the correct RSA modulus byte masks.
+	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
 
-	if (tempbuf[0x10] != corr_mod_byte0)
+	// Check if 2nd byte of modulus is correct.
+	if (tempbuf[0x11] != mod1)
+		goto out;
+
+	if (tempbuf[0x10] != corr_mod0)
 		enabled = true;
 
 	// Change autorcm status if requested.
 	if (change)
 	{
 		int i, sect = 0;
-		u8 randomXor = 0;
 
+		// Iterate BCTs.
 		for (i = 0; i < 4; i++)
 		{
 			sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
 			sdmmc_storage_read(&storage, sect, 1, tempbuf);
 
 			if (!enabled)
-			{
-				do
-				{
-					randomXor = get_tmr_us() & 0xFF; // Bricmii style of bricking.
-				} while (!randomXor); // Avoid the lottery.
-
-				tempbuf[0x10] ^= randomXor;
-			}
+				tempbuf[0x10] = 0;
 			else
-				tempbuf[0x10] = corr_mod_byte0;
+				tempbuf[0x10] = corr_mod0;
 			sdmmc_storage_write(&storage, sect, 1, tempbuf);
 		}
 		enabled = !(enabled);
 	}
 
+out:
 	free(tempbuf);
 	sdmmc_storage_end(&storage);
 

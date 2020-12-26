@@ -314,20 +314,23 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 		u32 sector;
+		u8  mod0, mod1;
+
+		// Get the correct RSA modulus byte masks.
+		nx_emmc_get_autorcm_masks(&mod0, &mod1);
+
+		// Iterate BCTs.
 		for (u32 i = 0; i < 4; i++)
 		{
 			sector = 1 + (32 * i); // 0x4000 bct + 0x200 offset.
 			sdmmc_storage_read(&emmc_storage, sector, 1, rsa_mod);
 
 			// Check if 2nd byte of modulus is correct.
-			if (rsa_mod[0x11] != 0x86)
+			if (rsa_mod[0x11] != mod1)
 				continue;
 
 			// Patch AutoRCM out.
-			if ((fuse_read_odm(4) & 3) != 3)
-				rsa_mod[0x10] = 0xF7;
-			else
-				rsa_mod[0x10] = 0x37;
+			rsa_mod[0x10] = mod0;
 
 			break;
 		}

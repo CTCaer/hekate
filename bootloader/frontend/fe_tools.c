@@ -270,8 +270,6 @@ void _toggle_autorcm(bool enable)
 	sdmmc_storage_t storage;
 	sdmmc_t sdmmc;
 
-	u8 randomXor = 0;
-
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
@@ -285,28 +283,25 @@ void _toggle_autorcm(bool enable)
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 
 	int i, sect = 0;
-	u8 corr_mod_byte0;
-	if ((fuse_read_odm(4) & 3) != 3)
-		corr_mod_byte0 = 0xF7;
-	else
-		corr_mod_byte0 = 0x37;
+	u8 corr_mod0, mod1;
 
+	// Get the correct RSA modulus byte masks.
+	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
+
+	// Iterate BCTs.
 	for (i = 0; i < 4; i++)
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
 		sdmmc_storage_read(&storage, sect, 1, tempbuf);
 
-		if (enable)
-		{
-			do
-			{
-				randomXor = get_tmr_us() & 0xFF; // Bricmii style of bricking.
-			} while (!randomXor); // Avoid the lottery.
+		// Check if 2nd byte of modulus is correct.
+		if (tempbuf[0x11] != mod1)
+			continue;
 
-			tempbuf[0x10] ^= randomXor;
-		}
+		if (enable)
+			tempbuf[0x10] = 0;
 		else
-			tempbuf[0x10] = corr_mod_byte0;
+			tempbuf[0x10] = corr_mod0;
 		sdmmc_storage_write(&storage, sect, 1, tempbuf);
 	}
 
@@ -354,20 +349,18 @@ void menu_autorcm()
 		return;
 	}
 
+	u8 mod0, mod1;
+	// Get the correct RSA modulus byte masks.
+	nx_emmc_get_autorcm_masks(&mod0, &mod1);
+
 	u8 *tempbuf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
 	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
-	if ((fuse_read_odm(4) & 3) != 3)
-	{
-		if (tempbuf[0x10] != 0xF7)
+	// Check if 2nd byte of modulus is correct.
+	if (tempbuf[0x11] == mod1)
+		if (tempbuf[0x10] != mod0)
 			disabled = false;
-	}
-	else
-	{
-		if (tempbuf[0x10] != 0x37)
-			disabled = false;
-	}
 
 	free(tempbuf);
 	sdmmc_storage_end(&storage);
