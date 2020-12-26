@@ -1229,17 +1229,19 @@ static void _change_dll_src(emc_table_t *mtc_table_entry, u32 clk_src_emc)
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL) = dll_setting;
 
-	//OLD
-	u32 clk_enb_emc_dll = ((mtc_table_entry->clk_out_enb_x_0_clk_enb_emc_dll & 1) << 14) | (CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X) & 0xFFFFBFFF);
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X) = clk_enb_emc_dll;
+	// Commit clock write.
+	(void)CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X);
+	_usleep(2);
 
-	//NEW
-	// _usleep(2);
-	// if (mtc_table_entry->clk_out_enb_x_0_clk_enb_emc_dll)
-	// 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) |= 0x4000;
-	// else
-	// 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_CLR) |= 0x4000;
-	// _usleep(2);
+	// Enable/Disable EMC DLL.
+	if (mtc_table_entry->clk_out_enb_x_0_clk_enb_emc_dll)
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = (1 << 14);
+	else
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_CLR) = (1 << 14);
+
+	// Commit clock write.
+	(void)CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X);
+	_usleep(2);
 }
 
 static u32 _digital_dll_prelock(emc_table_t *mtc_table_entry, u32 needs_tristate_training, u32 selected_clk_src_emc)
@@ -3057,14 +3059,13 @@ s32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u
 		// Writing burst_mc_regs.
 		for (u32 i = 0; dst_emc_entry->num_mc_regs > i; i++)
 			MC(burst_mc_regs_addr_table[i]) = dst_emc_entry->burst_mc_regs[i];
-	}
 
-	// Writing la_scale_regs.
-	//if ((dst_emc_entry->rate_khz < src_emc_entry->rate_khz) && dst_emc_entry->num_up_down) //NEW TODO
-	if ((dst_emc_entry->rate_khz < src_emc_entry->rate_khz) > needs_tristate_training)
-	{
-		for (u32 i = 0; dst_emc_entry->num_up_down > i; i++)
-			MC(la_scale_regs_mc_addr_table[i]) = dst_emc_entry->la_scale_regs[i];
+		// Writing la_scale_regs.
+		if (dst_emc_entry->rate_khz < src_emc_entry->rate_khz)
+		{
+			for (u32 i = 0; dst_emc_entry->num_up_down > i; i++)
+				MC(la_scale_regs_mc_addr_table[i]) = dst_emc_entry->la_scale_regs[i];
+		}
 	}
 
 	// Step 9 - LPDDR4.
@@ -3470,8 +3471,7 @@ step_19_2:
 
 	// Step 25 - Program MC updown regs.
 	EPRINTF("Step 25");
-	//if (dst_emc_entry->rate_khz > src_emc_entry->rate_khz) //NEW TODO
-	if ((dst_emc_entry->rate_khz > src_emc_entry->rate_khz) > needs_tristate_training)
+	if ((dst_emc_entry->rate_khz > src_emc_entry->rate_khz) && !needs_tristate_training)
 	{
 		for (u32 i = 0; dst_emc_entry->num_up_down > i; i++)
 			MC(la_scale_regs_mc_addr_table[i]) = dst_emc_entry->la_scale_regs[i];
