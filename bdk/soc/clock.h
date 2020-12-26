@@ -35,6 +35,10 @@
 #define CLK_RST_CONTROLLER_CLK_SYSTEM_RATE 0x30
 #define CLK_RST_CONTROLLER_MISC_CLK_ENB 0x48
 #define CLK_RST_CONTROLLER_OSC_CTRL 0x50
+#define CLK_RST_CONTROLLER_OSC_FREQ_DET 0x58
+#define CLK_RST_CONTROLLER_OSC_FREQ_DET_STATUS 0x5C
+#define CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL 0x60
+#define CLK_RST_CONTROLLER_PTO_CLK_CNT_STATUS 0x64
 #define CLK_RST_CONTROLLER_PLLC_BASE 0x80
 #define CLK_RST_CONTROLLER_PLLC_OUT 0x84
 #define CLK_RST_CONTROLLER_PLLC_MISC 0x88
@@ -156,6 +160,7 @@
 #define CLK_RST_CONTROLLER_CLK_SOURCE_UARTAPE 0x710
 
 #define CLK_NO_SOURCE 0x0
+#define CLK_NOT_USED  0x0
 
 /*! PLL control and status bits */
 #define PLLCX_BASE_LOCK      BIT(27)
@@ -177,6 +182,140 @@
 #define PLLC4_MISC_EN_LCKDET BIT(30)
 
 #define UTMIPLL_LOCK         BIT(31)
+
+/*! PTO_CLK_CNT */
+#define PTO_REF_CLK_WIN_CFG_MASK 0xF
+#define PTO_REF_CLK_WIN_CFG_16P  0xF
+#define PTO_CNT_EN               BIT(9)
+#define PTO_CNT_RST              BIT(10)
+#define PTO_CLK_ENABLE           BIT(13)
+#define PTO_SRC_SEL_SHIFT        14
+#define PTO_SRC_SEL_MASK         0x1FF
+#define PTO_DIV_SEL_MASK         (3 << 23)
+#define PTO_DIV_SEL_GATED        (0 << 23)
+#define PTO_DIV_SEL_DIV1         (1 << 23)
+#define PTO_DIV_SEL_DIV2_RISING  (2 << 23)
+#define PTO_DIV_SEL_DIV2_FALLING (3 << 23)
+#define PTO_DIV_SEL_CPU_EARLY    (0 << 23)
+#define PTO_DIV_SEL_CPU_LATE     (1 << 23)
+
+#define PTO_CLK_CNT_BUSY         BIT(31)
+#define PTO_CLK_CNT              0xFFFFFF
+
+/*! OSC_FREQ_DET */
+#define OSC_REF_CLK_WIN_CFG_MASK 0xF
+#define OSC_FREQ_DET_TRIG        BIT(31)
+
+#define OSC_FREQ_DET_BUSY        BIT(31)
+#define OSC_FREQ_DET_CNT         0xFFFF
+
+/*! PLLs omitted as they need PTO enabled in MISC registers. Norm div is 2. */
+typedef enum _clock_pto_id_t
+{
+	CLK_PTO_PCLK_SYS =          0x06,
+	CLK_PTO_HCLK_SYS =          0x07,
+
+	CLK_PTO_UTMIP_240 =         0x0C,
+
+	CLK_PTO_CCLK_G =            0x12,
+	CLK_PTO_CCLK_G_DIV2 =       0x13,
+
+	CLK_PTO_SPI1 =              0x17,
+	CLK_PTO_SPI2 =              0x18,
+	CLK_PTO_SPI3 =              0x19,
+	CLK_PTO_SPI4 =              0x1A,
+	CLK_PTO_MAUD =              0x1B,
+	CLK_PTO_SCLK =              0x1C,
+
+	CLK_PTO_SDMMC1 =            0x20,
+	CLK_PTO_SDMMC2 =            0x21,
+	CLK_PTO_SDMMC3 =            0x22,
+	CLK_PTO_SDMMC4 =            0x23,
+	CLK_PTO_EMC =               0x24,
+
+	CLK_PTO_MSELECT =           0x2F,
+
+	CLK_PTO_VIC =               0x36,
+
+	CLK_PTO_NVDEC =             0x39,
+
+	CLK_PTO_NVENC =             0x3A,
+	CLK_PTO_NVJPG =             0x3B,
+	CLK_PTO_TSEC =              0x3C,
+	CLK_PTO_TSECB =             0x3D,
+	CLK_PTO_SE =                0x3E,
+
+	CLK_PTO_DSIA_LP =           0x62,
+
+	CLK_PTO_ISP =               0x64,
+	CLK_PTO_MC =                0x6A,
+
+	CLK_PTO_ACTMON =            0x6B,
+	CLK_PTO_CSITE =             0x6C,
+
+	CLK_PTO_HOST1X =            0x6F,
+
+	CLK_PTO_SE_2 =              0x74, // Same as CLK_PTO_SE.
+	CLK_PTO_SOC_THERM =         0x75,
+
+	CLK_PTO_TSEC_2 =            0x77, // Same as CLK_PTO_TSEC.
+
+	CLK_PTO_ACLK =              0x7C,
+	CLK_PTO_QSPI =              0x7D,
+
+	CLK_PTO_I2S1 =              0x80,
+	CLK_PTO_I2S2 =              0x81,
+	CLK_PTO_I2S3 =              0x82,
+	CLK_PTO_I2S4 =              0x83,
+	CLK_PTO_I2S5 =              0x84,
+	CLK_PTO_AHUB =              0x85,
+	CLK_PTO_APE =               0x86,
+
+	CLK_PTO_DVFS_SOC =          0x88,
+	CLK_PTO_DVFS_REF =          0x89,
+
+	CLK_PTO_SPDIF =             0x8F,
+	CLK_PTO_SPDIF_IN =          0x90,
+	CLK_PTO_UART_FST_MIPI_CAL = 0x91,
+
+	CLK_PTO_PWM =               0x93,
+	CLK_PTO_I2C1 =              0x94,
+	CLK_PTO_I2C2 =              0x95,
+	CLK_PTO_I2C3 =              0x96,
+	CLK_PTO_I2C4 =              0x97,
+	CLK_PTO_I2C5 =              0x98,
+	CLK_PTO_I2C6 =              0x99,
+	CLK_PTO_I2C_SLOW =          0x9A,
+	CLK_PTO_UARTAPE =           0x9B,
+
+	CLK_PTO_EXTPERIPH1 =        0x9D,
+	CLK_PTO_EXTPERIPH2 =        0x9E,
+
+	CLK_PTO_ENTROPY =           0xA0,
+	CLK_PTO_UARTA =             0xA1,
+	CLK_PTO_UARTB =             0xA2,
+	CLK_PTO_UARTC =             0xA3,
+	CLK_PTO_UARTD =             0xA4,
+	CLK_PTO_OWR =               0xA5,
+
+	CLK_PTO_HDA2CODEC_2X =      0xA7,
+	CLK_PTO_HDA =               0xA8,
+
+	CLK_PTO_SDMMC_LEGACY_TM =   0xAB,
+
+	CLK_PTO_SOR0 =              0xC0,
+	CLK_PTO_SOR1 =              0xC1,
+
+	CLK_PTO_DISP2 =             0xC4,
+	CLK_PTO_DISP1 =             0xC5,
+
+	CLK_PTO_XUSB_FALCON =       0x110,
+
+	CLK_PTO_XUSB_FS =           0x136,
+	CLK_PTO_XUSB_SS_HOST_DEV =  0x137,
+	CLK_PTO_XUSB_CORE_HOST =    0x138,
+	CLK_PTO_XUSB_CORE_DEV =     0x139,
+} clock_pto_id_t;
 
 /*
  * CLOCK Peripherals:
@@ -216,7 +355,7 @@ enum CLK_L_DEV
 	CLK_L_USBD    = 22,
 	CLK_L_ISP     = 23,
 	CLK_L_3D      = 24, // HIDDEN.
-	//CLK_L_      = 25,
+	CLK_L_IDE     = 25, // RESERVED.
 	CLK_L_DISP2   = 26,
 	CLK_L_DISP1   = 27,
 	CLK_L_HOST1X  = 28,
@@ -244,11 +383,11 @@ enum CLK_H_DEV
 	CLK_H_SPI3     = 14,
 	CLK_H_I2C5     = 15,
 	CLK_H_DSI      = 16,
-	//CLK_H_       = 17,
+	CLK_H_TVO      = 17, // RESERVED.
 	CLK_H_HSI      = 18, // HIDDEN.
 	CLK_H_HDMI     = 19, // HIDDEN.
 	CLK_H_CSI      = 20,
-	//CLK_H_       = 21,
+	CLK_H_TVDAC    = 21, // RESERVED.
 	CLK_H_I2C2     = 22,
 	CLK_H_UARTC    = 23,
 	CLK_H_MIPI_CAL = 24,
@@ -263,14 +402,14 @@ enum CLK_H_DEV
 
 enum CLK_U_DEV
 {
-	//CLK_U_             = 0,
+	CLK_U_SPEEDO         = 0, // RESERVED.
 	CLK_U_UARTD          = 1,
 	CLK_U_UARTE          = 2, // HIDDEN.
 	CLK_U_I2C3           = 3,
 	CLK_U_SPI4           = 4,
 	CLK_U_SDMMC3         = 5,
 	CLK_U_PCIE           = 6,
-	CLK_U_UNUSED         = 7, // RESERVED
+	CLK_U_OWR            = 7, // RESERVED.
 	CLK_U_AFI            = 8,
 	CLK_U_CSITE          = 9,
 	CLK_U_PCIEXCLK       = 10, // Only reset.
@@ -444,9 +583,9 @@ enum CLK_Y_DEV
 /*! Generic clock descriptor. */
 typedef struct _clock_t
 {
-	u32 reset;
-	u32 enable;
-	u32 source;
+	u16 reset;
+	u16 enable;
+	u16 source;
 	u8 index;
 	u8 clk_src;
 	u8 clk_div;
@@ -493,5 +632,8 @@ void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type);
 int  clock_sdmmc_is_not_reset_and_enabled(u32 id);
 void clock_sdmmc_enable(u32 id, u32 val);
 void clock_sdmmc_disable(u32 id);
+
+u32 clock_get_osc_freq();
+u32 clock_get_dev_freq(clock_pto_id_t id);
 
 #endif

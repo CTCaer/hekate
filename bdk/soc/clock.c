@@ -21,6 +21,23 @@
 #include <storage/sdmmc.h>
 #include <utils/util.h>
 
+typedef struct _clock_osc_t
+{
+	u32 freq;
+	u16 min;
+	u16 max;
+} clock_osc_t;
+
+static const clock_osc_t _clock_osc_cnt[] = {
+	{ 12000, 706,  757 },
+	{ 13000, 766,  820 },
+	{ 16800, 991,  1059 },
+	{ 19200, 1133, 1210 },
+	{ 26000, 1535, 1638 },
+	{ 38400, 2268, 2418 },
+	{ 48000, 2836, 3023 }
+};
+
 /* clock_t: reset, enable, source, index, clk_src, clk_div */
 
 static const clock_t _clock_uart[] = {
@@ -42,7 +59,7 @@ static const clock_t _clock_i2c[] = {
 };
 
 static clock_t _clock_se = {
-	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,     CLK_V_SE,       0, 0
+	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,     CLK_V_SE,       0, 0 // 408MHz.
 };
 
 static clock_t _clock_tzram = {
@@ -50,19 +67,19 @@ static clock_t _clock_tzram = {
 };
 
 static clock_t _clock_host1x = {
-	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X, CLK_L_HOST1X,   4, 3
+	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X, CLK_L_HOST1X,   4, 3 // 163.2MHz.
 };
 static clock_t _clock_tsec = {
-	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC,   CLK_U_TSEC,     0, 2
+	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC,   CLK_U_TSEC,     0, 2 // 204MHz.
 };
 static clock_t _clock_sor_safe = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_NO_SOURCE,                        CLK_Y_SOR_SAFE, 0, 0
 };
 static clock_t _clock_sor0 = {
-	CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_NO_SOURCE,                        CLK_X_SOR0,     0, 0
+	CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_NOT_USED,                         CLK_X_SOR0,     0, 0
 };
 static clock_t _clock_sor1 = {
-	CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_SOR1,   CLK_X_SOR1,     0, 2
+	CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_SOR1,   CLK_X_SOR1,     0, 2 //204MHz.
 };
 static clock_t _clock_kfuse = {
 	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                        CLK_H_KFUSE,    0, 0
@@ -72,11 +89,11 @@ static clock_t _clock_cl_dvfs =	{
 	CLK_RST_CONTROLLER_RST_DEVICES_W, CLK_RST_CONTROLLER_CLK_OUT_ENB_W, CLK_NO_SOURCE,                        CLK_W_DVFS,     0, 0
 };
 static clock_t _clock_coresight = {
-	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_CSITE,  CLK_U_CSITE,    0, 4
+	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_CSITE,  CLK_U_CSITE,    0, 4 // 136MHz.
 };
 
 static clock_t _clock_pwm = {
-	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM,    CLK_L_PWM,      6, 4 // Fref: 6.4MHz. Stock PLLP / 54: 7.55MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM,    CLK_L_PWM,      6, 4 // Fref: 6.4MHz. HOS: PLLP / 54 = 7.55MHz.
 };
 
 static clock_t _clock_sdmmc_legacy_tm = {
@@ -721,3 +738,44 @@ void clock_sdmmc_disable(u32 id)
 	_clock_sdmmc_is_reset(id);
 	_clock_disable_pllc4(BIT(id));
 }
+
+u32 clock_get_osc_freq()
+{
+	CLOCK(CLK_RST_CONTROLLER_OSC_FREQ_DET) = OSC_FREQ_DET_TRIG | (2 - 1); // 2 periods of 32.76KHz window.
+	while (CLOCK(CLK_RST_CONTROLLER_OSC_FREQ_DET_STATUS) & OSC_FREQ_DET_BUSY)
+		;
+	u32 cnt = (CLOCK(CLK_RST_CONTROLLER_OSC_FREQ_DET_STATUS) & OSC_FREQ_DET_CNT);
+	CLOCK(CLK_RST_CONTROLLER_OSC_FREQ_DET) = 0;
+
+	// Return frequency in KHz.
+	for (u32 i = 0; i < ARRAY_SIZE(_clock_osc_cnt); i++)
+		if (cnt >= _clock_osc_cnt[i].min && cnt <= _clock_osc_cnt[i].max)
+			return _clock_osc_cnt[i].freq;
+
+	return 0;
+}
+
+u32 clock_get_dev_freq(clock_pto_id_t id)
+{
+	u32 val = ((id & PTO_SRC_SEL_MASK) << PTO_SRC_SEL_SHIFT) | PTO_DIV_SEL_DIV1 | PTO_CLK_ENABLE | (16 - 1); // 16 periods of 32.76KHz window.
+	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val;
+	usleep(2);
+	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val | PTO_CNT_RST;
+	usleep(2);
+	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val;
+	usleep(2);
+	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val | PTO_CNT_EN;
+	usleep(502);
+
+	while (CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_STATUS) & PTO_CLK_CNT_BUSY)
+		;
+
+	u32 cnt = CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_STATUS) & PTO_CLK_CNT;
+
+	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = 0;
+
+	u32 freq = ((cnt << 8) | 0x3E) / 125;
+
+	return freq;
+}
+
