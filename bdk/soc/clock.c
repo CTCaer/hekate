@@ -235,13 +235,13 @@ void clock_disable_sor1()
 
 void clock_enable_kfuse()
 {
-	u32 kfuse_clk_unmask = ~BIT(CLK_H_KFUSE);
-	CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_H) = (CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_H) & kfuse_clk_unmask) | BIT(CLK_H_KFUSE);
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) &= kfuse_clk_unmask;
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) = (CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) & kfuse_clk_unmask) | BIT(CLK_H_KFUSE);
-	usleep(10);
-	CLOCK(CLK_RST_CONTROLLER_RST_DEVICES_H) &= kfuse_clk_unmask;
-	usleep(20);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = BIT(CLK_H_KFUSE);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_CLR) = BIT(CLK_H_KFUSE);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = BIT(CLK_H_KFUSE);
+	usleep(10); // Wait 10s to prevent glitching.
+
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_KFUSE);
+	usleep(20); // Wait 20s fo kfuse hw to init.
 }
 
 void clock_disable_kfuse()
