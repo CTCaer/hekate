@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 		if (nbytes > out_size)
 			goto error;
 
-		if((out_file = fopen(filename,"w")) == NULL)
+		if((out_file = fopen(filename,"wb")) == NULL)
 			goto error;
 
 		if (fwrite(out_buf, 1, nbytes, out_file) != nbytes)

@@ -103,7 +103,7 @@ all: $(TARGET).bin $(LDRDIR)
 	@if [ ${BIN_SIZE} -gt 126296 ]; then echo "\e[1;33mPayload size exceeds limit!\e[0m"; fi
 	@echo "--------------------------------------"
 
-clean:
+clean: $(TOOLS)
 	@rm -rf $(OBJS)
 	@rm -rf $(BUILDDIR)
 	@rm -rf $(OUTPUTDIR)
