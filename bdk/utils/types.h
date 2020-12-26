@@ -62,6 +62,9 @@ typedef int bool;
 #define true  1
 #define false 0
 
+#define DISABLE 0
+#define ENABLE  1
+
 #define BOOT_CFG_AUTOBOOT_EN BIT(0)
 #define BOOT_CFG_FROM_LAUNCH BIT(1)
 #define BOOT_CFG_FROM_ID     BIT(2)

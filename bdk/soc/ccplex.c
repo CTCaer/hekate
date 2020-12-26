@@ -88,12 +88,12 @@ void ccplex_boot_cpu0(u32 entry)
 	// CAR2PMC_CPU_ACK_WIDTH should be set to 0.
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
-	// Enable CPU rail.
-	pmc_enable_partition(0, 1);
+	// Enable CPU main rail.
+	pmc_enable_partition(POWER_RAIL_CRAIL, ENABLE);
 	// Enable cluster 0 non-CPU rail.
-	pmc_enable_partition(15, 1);
-	// Enable CE0 rail.
-	pmc_enable_partition(14, 1);
+	pmc_enable_partition(POWER_RAIL_C0NC,  ENABLE);
+	// Enable CPU0 rail.
+	pmc_enable_partition(POWER_RAIL_CE0,   ENABLE);
 
 	// Request and wait for RAM repair.
 	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = 1;

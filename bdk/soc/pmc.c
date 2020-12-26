@@ -76,7 +76,7 @@ void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 		PMC(APBDEV_PMC_SEC_DISABLE)  |= 0xFF000;    // RW lock: 4-7
 }
 
-int pmc_enable_partition(u32 part, int enable)
+int pmc_enable_partition(pmc_power_rail_t part, u32 enable)
 {
 	u32 part_mask = BIT(part);
 	u32 desired_state = enable << part;
