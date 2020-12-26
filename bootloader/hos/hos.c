@@ -1060,13 +1060,13 @@ int hos_launch(ini_sec_t *cfg)
 	if (kb <= KB_FIRMWARE_VERSION_500 && !exo_new)
 	{
 		memset((void *)SECMON_BCT_CFG_ADDR, 0, 0x3000);
-		if ((fuse_read_odm(4) & 3) == 3)
+		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
 			memcpy((void *)SECMON_BCT_CFG_ADDR, bootConfigBuf, 0x1000);
 	}
 	else
 	{
 		memset((void *)SECMON6_BCT_CFG_ADDR, 0, 0x800);
-		if ((fuse_read_odm(4) & 3) == 3)
+		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
 			memcpy((void *)SECMON6_BCT_CFG_ADDR, bootConfigBuf, 0x800);
 	}
 	free(bootConfigBuf);

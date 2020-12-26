@@ -556,23 +556,18 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	// Decode fuses.
 	char *sku;
 	char dram_man[32];
-	u32 odm4 = fuse_read_odm(4);
-	u8 dram_id = (odm4 >> 3) & 0x1F;
-	u32 hw_type3 = (odm4 & 0xF0000) >> 16;
+	u8 dram_id = fuse_read_dramid(true);
 
-	switch (hw_type3)
+	switch (fuse_read_hw_type())
 	{
-	case 0:
+	case FUSE_NX_HW_TYPE_ICOSA:
 		sku = "Icosa (Erista)";
 		break;
-	case 1:
+	case FUSE_NX_HW_TYPE_IOWA:
 		sku = "Iowa (Mariko)";
 		break;
-	case 2:
+	case FUSE_NX_HW_TYPE_HOAG:
 		sku = "Hoag (Mariko)";
-		break;
-	case 4:
-		sku = "Calcio (Mariko)";
 		break;
 	default:
 		sku = "Unknown";
@@ -673,7 +668,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
 		"ID: %02X, Major: A0%d, Minor: %d",
-		FUSE(FUSE_SKU_INFO), sku, (fuse_read_odm(4) & 3) ? "Dev" : "Retail",
+		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6,
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
@@ -709,7 +704,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 ranks = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
 	u32 die_channels = ranks * ((channels & 1) + ((channels & 2) >> 1));
-	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", hw_type3 ? "LPDDR4X" : "LPDDR4");
+	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", dram_id > 6 ? "LPDDR4X" : "LPDDR4");
 	switch (ram_vendor.rank0_ch0)
 	{
 	case 1:

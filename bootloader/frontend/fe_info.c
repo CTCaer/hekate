@@ -49,25 +49,18 @@ void print_fuseinfo()
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	u32 burntFuses = 0;
-	for (u32 i = 0; i < 32; i++)
-	{
-		if ((fuse_read_odm(7) >> i) & 1)
-			burntFuses++;
-	}
-
 	gfx_printf("\nSKU:         %X - ", FUSE(FUSE_SKU_INFO));
-	switch (fuse_read_odm(4) & 3)
+	switch (fuse_read_hw_state())
 	{
-	case 0:
+	case FUSE_NX_HW_STATE_PROD:
 		gfx_printf("Retail\n");
 		break;
-	case 3:
+	case FUSE_NX_HW_STATE_DEV:
 		gfx_printf("Dev\n");
 		break;
 	}
-	gfx_printf("Sdram ID:    %d\n", (fuse_read_odm(4) >> 3) & 0x1F);
-	gfx_printf("Burnt fuses: %d / 64\n", burntFuses);
+	gfx_printf("Sdram ID:    %d\n", fuse_read_dramid(true));
+	gfx_printf("Burnt fuses: %d / 64\n", fuse_count_burnt(fuse_read_odm(7)));
 	gfx_printf("Secure key:  %08X%08X%08X%08X\n\n\n",
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)));

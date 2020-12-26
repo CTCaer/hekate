@@ -2,6 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
+ * Copyright (c) 2019-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -64,8 +65,9 @@
 #define FUSE_OPT_X_COORDINATE 0x214
 #define FUSE_OPT_Y_COORDINATE 0x218
 #define FUSE_GPU_IDDQ_CALIB	0x228
-#define FUSE_RESERVED_ODM28 0x240
 #define FUSE_USB_CALIB_EXT 0x350
+
+#define FUSE_RESERVED_ODM28_T210B01 0x240
 
 /*! Fuse commands. */
 #define FUSE_READ 0x1
@@ -83,9 +85,17 @@ enum
 	FUSE_NX_HW_TYPE_HOAG
 };
 
+enum
+{
+	FUSE_NX_HW_STATE_PROD,
+	FUSE_NX_HW_STATE_DEV
+};
+
 void fuse_disable_program();
 u32  fuse_read_odm(u32 idx);
 u32  fuse_read_odm_keygen_rev();
+u32  fuse_read_dramid(bool raw_id);
+u32  fuse_read_hw_state();
 u32  fuse_read_hw_type();
 u8   fuse_count_burnt(u32 val);
 void fuse_wait_idle();

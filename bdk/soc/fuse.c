@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -76,6 +76,35 @@ u32 fuse_read_odm_keygen_rev()
 	return 0;
 }
 
+u32 fuse_read_dramid(bool raw_id)
+{
+	u32 dramid = (fuse_read_odm(4) & 0xF8) >> 3;
+
+	if (raw_id)
+		return raw_id;
+
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
+	{
+		if (dramid > 6)
+			dramid = 0;
+	}
+	else
+	{
+		if (dramid > 27)
+			dramid = 8;
+	}
+
+	return dramid;
+}
+
+u32 fuse_read_hw_state()
+{
+	if ((fuse_read_odm(4) & 3) != 3)
+		return FUSE_NX_HW_STATE_PROD;
+	else
+		return FUSE_NX_HW_STATE_DEV;
+}
+
 u32 fuse_read_hw_type()
 {
 	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
@@ -118,6 +147,7 @@ u32 fuse_read(u32 addr)
 	FUSE(FUSE_ADDR) = addr;
 	FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
 	fuse_wait_idle();
+
 	return FUSE(FUSE_RDATA);
 }
 

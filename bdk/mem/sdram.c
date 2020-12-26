@@ -54,11 +54,6 @@ typedef struct _sdram_vendor_patch_t
 
 #include "sdram_config_t210b01.inl"
 
-static u32 _sdram_get_id()
-{
-	return ((fuse_read_odm(4) & 0xF8) >> 3);
-}
-
 static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
 {
 	bool err = true;
@@ -1374,9 +1369,7 @@ static void _sdram_patch_model_params_t210b01(u32 dramid, u32 *params)
 static void *_sdram_get_params_t210()
 {
 	// Check if id is proper.
-	u32 dramid = _sdram_get_id();
-	if (dramid > 6)
-		dramid = 0;
+	u32 dramid = fuse_read_dramid(false);
 
 #ifdef CONFIG_SDRAM_COMPRESS_CFG
 
@@ -1413,9 +1406,7 @@ static void *_sdram_get_params_t210()
 void *sdram_get_params_t210b01()
 {
 	// Check if id is proper.
-	u32 dramid = _sdram_get_id();
-	if (dramid > 27)
-		dramid = 8;
+	u32 dramid = fuse_read_dramid(false);
 
 	u32 *buf = (u32 *)SDRAM_PARAMS_ADDR;
 	memcpy(buf, &_dram_cfg_08_10_12_14_samsung_hynix_4gb, sizeof(sdram_params_t210b01_t));

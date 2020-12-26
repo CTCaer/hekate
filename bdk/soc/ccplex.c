@@ -46,7 +46,7 @@ void _ccplex_enable_power_t210()
 
 void _ccplex_enable_power_t210b01()
 {
-	u8 pmic_cpu_addr = !(FUSE(FUSE_RESERVED_ODM28) & 1) ? MAX77812_PHASE31_CPU_I2C_ADDR : MAX77812_PHASE211_CPU_I2C_ADDR;
+	u8 pmic_cpu_addr = !(FUSE(FUSE_RESERVED_ODM28_T210B01) & 1) ? MAX77812_PHASE31_CPU_I2C_ADDR : MAX77812_PHASE211_CPU_I2C_ADDR;
 	u8 tmp = i2c_recv_byte(I2C_5, pmic_cpu_addr, MAX77812_REG_EN_CTRL);
 	i2c_send_byte(I2C_5, pmic_cpu_addr, MAX77812_REG_EN_CTRL, tmp | MAX77812_EN_CTRL_EN_M4);
 	i2c_send_byte(I2C_5, pmic_cpu_addr, MAX77812_REG_M4_VOUT, MAX77812_M4_VOUT_0_80V);
