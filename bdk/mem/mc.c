@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2020 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,6 +19,8 @@
 #include <soc/t210.h>
 #include <soc/clock.h>
 #include <utils/util.h>
+
+//#define CONFIG_ENABLE_AHB_REDIRECT
 
 void mc_config_tsec_carveout(u32 bom, u32 size1mb, bool lock)
 {
@@ -143,17 +145,19 @@ void mc_disable_ahb_redirect()
 
 void mc_enable()
 {
+	// Reset EMC source to PLLP.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) & 0x1FFFFFFF) | 0x40000000;
 	// Enable memory clocks.
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) & ~BIT(CLK_H_EMC))     | BIT(CLK_H_EMC);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) & ~BIT(CLK_H_MEM))     | BIT(CLK_H_MEM);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = (CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) & ~BIT(CLK_X_EMC_DLL)) | BIT(CLK_X_EMC_DLL);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = BIT(CLK_H_EMC);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = BIT(CLK_H_MEM);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = BIT(CLK_X_EMC_DLL);
 	// Clear clock resets for memory.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
 	usleep(5);
 
-	//#ifdef CONFIG_ENABLE_AHB_REDIRECT
+#ifdef CONFIG_ENABLE_AHB_REDIRECT
+	mc_enable_ahb_redirect();
+#else
 	mc_disable_ahb_redirect();
-	//mc_enable_ahb_redirect();
-	//#endif
+#endif
 }
