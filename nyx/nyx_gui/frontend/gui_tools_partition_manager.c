@@ -48,6 +48,8 @@ typedef struct _partition_ctxt_t
 	u32 l4t_size;
 	u32 and_size;
 
+	mbr_t *mbr_old;
+
 	lv_obj_t *bar_hos;
 	lv_obj_t *bar_emu;
 	lv_obj_t *bar_l4t;
@@ -213,6 +215,10 @@ static void _prepare_and_flash_mbr_gpt()
 
 	// Read current MBR.
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
+
+	// Copy over metadata if they exist.
+	if (part_info.mbr_old->bootstrap[0x80])
+		memcpy(&mbr.bootstrap[0x80], &part_info.mbr_old->bootstrap[0x80], 304);
 
 	// Clear the first 16MB.
 	memset((void *)SDMMC_UPPER_BUFFER, 0, 0x8000);
@@ -1308,6 +1314,10 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	u32 total_files = 0;
 	u32 total_size = 0;
 
+	// Read current MBR.
+	part_info.mbr_old = (mbr_t *)calloc(512, 1);
+	sdmmc_storage_read(&sd_storage, 0, 1, part_info.mbr_old);
+
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Initializing Ramdisk...");
 	lv_label_set_text(lbl_paths[0], "Please wait...");
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -1543,7 +1553,7 @@ static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn)
 	s_printf(txt_buf, "#FFDD00 Warning: This will partition your SD Card!#\n\n");
 
 	if (part_info.backup_possible)
-		strcat(txt_buf, "#C7EA46 Your files will be backed up and restored!#");
+		strcat(txt_buf, "#C7EA46 Your files will be backed up and restored!#\n#FFDD00Any other partition will be wiped!#");
 	else
 		strcat(txt_buf, "#FFDD00 Your files will be wiped!#\n#FFDD00 Use USB UMS to copy them over!#");
 
@@ -1790,7 +1800,8 @@ static void create_mbox_check_files_total_size()
 	if (part_info.backup_possible)
 	{
 		s_printf(txt_buf,
-			"#96FF00 Your SD Card files will be backed up automatically!#\n\n"
+			"#96FF00 Your SD Card files will be backed up automatically!#\n"
+			"#FFDD00 Any other partition will be wiped!#\n"
 			"#00DDFF Total files:# %d, #00DDFF Total size:# %d MiB", total_files, total_size >> 20);
 		lv_mbox_set_text(mbox, txt_buf);
 	}
