@@ -339,9 +339,12 @@ void display_init()
 
 #if 0
 	// Get Display ID.
-	_display_id = 0xCCCCCC;
+	_display_id = 0xCCCCCC; // Set initial value. 4th byte cleared.
 	display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_display_id, DSI_VIDEO_DISABLED);
 #else
+	// Drain RX FIFO.
+	_display_dsi_read_rx_fifo(NULL);
+
 	// Set reply size.
 	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, 3, 0);
 	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
