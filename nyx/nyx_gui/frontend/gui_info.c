@@ -438,6 +438,9 @@ t210b01:;
 		case 0x95:
 			strcat(txt_buf, "2");
 			break;
+		case 0x96:
+			strcat(txt_buf, "3");
+			break;
 		default:
 			strcat(txt_buf, "X");
 			break;
@@ -795,6 +798,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case 0x95:
 			strcat(txt_buf, "2");
+			break;
+		case 0x96:
+			strcat(txt_buf, "3");
 			break;
 		default:
 			strcat(txt_buf, "X #FFDD00 Contact me!#");
