@@ -27,7 +27,7 @@
 
 #include "../config.h"
 #include <utils/ini.h>
-#include <gfx/di.h>
+#include <display/di.h>
 #include <gfx_utils.h>
 #include <input/joycon.h>
 #include <input/touch.h>

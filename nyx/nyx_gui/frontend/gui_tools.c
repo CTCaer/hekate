@@ -24,7 +24,7 @@
 #include "fe_emummc_tools.h"
 #include <memory_map.h>
 #include "../config.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"

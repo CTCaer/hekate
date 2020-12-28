@@ -19,7 +19,7 @@
 #include "hos.h"
 #include "sept.h"
 #include "../config.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include <ianos/ianos.h>
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>

@@ -22,7 +22,7 @@
 #include <memory_map.h>
 
 #include "config.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include <gfx_utils.h>
 #include "gfx/logos.h"
 #include "gfx/tui.h"

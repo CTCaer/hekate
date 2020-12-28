@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gfx/di.h>
+#include <display/di.h>
 #include "tui.h"
 #include "../config.h"
 #include <power/max17050.h>

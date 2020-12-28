@@ -19,7 +19,7 @@
 #include "gui.h"
 #include "../config.h"
 #include <utils/ini.h>
-#include <gfx/di.h>
+#include <display/di.h>
 #include <input/joycon.h>
 #include <libs/lvgl/lvgl.h>
 #include <mem/heap.h>

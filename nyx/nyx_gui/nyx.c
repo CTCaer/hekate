@@ -22,7 +22,7 @@
 #include <memory_map.h>
 
 #include "config.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include <gfx_utils.h>
 #include "hos/hos.h"
 #include <ianos/ianos.h>

@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include <soc/hw_init.h>
-#include <gfx/di.h>
+#include <display/di.h>
 #include <input/joycon.h>
 #include <input/touch.h>
 #include <sec/se.h>

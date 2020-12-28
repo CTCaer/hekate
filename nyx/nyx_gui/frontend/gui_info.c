@@ -17,7 +17,7 @@
  */
 
 #include "gui.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include "../config.h"
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"

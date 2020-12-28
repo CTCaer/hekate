@@ -25,7 +25,7 @@
 #include "sept.h"
 #include "secmon_exo.h"
 #include "../config.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include <gfx_utils.h>
 #include <mem/heap.h>
 #include <mem/mc.h>

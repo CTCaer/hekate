@@ -20,7 +20,7 @@
 
 #include "hos.h"
 #include "../config.h"
-#include <gfx/di.h>
+#include <display/di.h>
 #include <gfx_utils.h>
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
