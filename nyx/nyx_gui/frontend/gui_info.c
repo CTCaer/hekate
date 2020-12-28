@@ -548,7 +548,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"Wafer ID:\n"
 		"X Coordinate:\n"
 		"Y Coordinate:\n"
-		"#FF8000 Chip ID Revision:#"
+		"#FF8000 Chip ID Revision:#\n"
+		"ODM Fields (4, 6, 7):"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
@@ -562,6 +563,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	// Decode fuses.
 	char *sku;
 	char dram_man[32];
+	char fuses_hos_version[64];
 	u8 dram_id = fuse_read_dramid(true);
 
 	switch (fuse_read_hw_type())
@@ -656,6 +658,55 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u8 burnt_fuses_7 = fuse_count_burnt(fuse_read_odm(7));
 	u8 burnt_fuses_6 = fuse_count_burnt(fuse_read_odm(6));
 
+	switch (burnt_fuses_7)
+	{
+	case 1:
+		strcpy(fuses_hos_version, "1.0.0");
+		break;
+	case 2:
+		strcpy(fuses_hos_version, "2.0.0 - 2.3.0");
+		break;
+	case 3:
+		strcpy(fuses_hos_version, "3.0.0");
+		break;
+	case 4:
+		strcpy(fuses_hos_version, "3.0.1 - 3.0.2");
+		break;
+	case 5:
+		strcpy(fuses_hos_version, "4.0.0 - 4.1.0");
+		break;
+	case 6:
+		strcpy(fuses_hos_version, "5.0.0 - 5.1.0");
+		break;
+	case 7:
+		strcpy(fuses_hos_version, "6.0.0 - 6.1.0");
+		break;
+	case 8:
+		strcpy(fuses_hos_version, "6.2.0");
+		break;
+	case 9:
+		strcpy(fuses_hos_version, "7.0.0 - 8.0.1");
+		break;
+	case 10:
+		strcpy(fuses_hos_version, "8.1.0 - 8.1.1");
+		break;
+	case 11:
+		strcpy(fuses_hos_version, "9.0.0 - 9.0.1");
+		break;
+	case 12:
+		strcpy(fuses_hos_version, "9.1.0 - 9.2.0");
+		break;
+	case 13:
+		strcpy(fuses_hos_version, "10.0.0 - 10.2.0");
+		break;
+	case 14:
+		strcpy(fuses_hos_version, "11.0.0+");
+		break;
+	default:
+		strcpy(fuses_hos_version, "#FF8000 Unknown#");
+		break;
+	}
+
 	// Calculate LOT.
 	u32 lot_code0 = (FUSE(FUSE_OPT_LOT_CODE_0) & 0xFFFFFFF) << 2;
 	u32 lot_bin = 0;
@@ -670,16 +721,17 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"\n%X - %s - %s\n%02d: %s\n%d - %d\n%08X%08X%08X%08X\n%08X\n"
+		"\n%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X%08X%08X%08X\n%08X\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
-		"ID: %02X, Major: A0%d, Minor: %d",
+		"ID: %02X, Major: A0%d, Minor: %d\n"
+		"%08X %08X %08X",
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
-		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6,
+		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)),
-		(FUSE(FUSE_RESERVED_SW) & 0x80) ? "XUSB" : "USB 2.0",
+		((FUSE(FUSE_RESERVED_SW) & 0x80) || h_cfg.t210b01) ? "XUSB" : "USB2",
 		(FUSE(FUSE_OPT_FT_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_FT_REV) & 0x1F, FUSE(FUSE_OPT_FT_REV),
 		(FUSE(FUSE_OPT_CP_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_CP_REV) & 0x1F, FUSE(FUSE_OPT_CP_REV),
 		FUSE(FUSE_FIRST_BOOTROM_PATCH_SIZE) & 0x7F,
@@ -688,7 +740,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB),
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
 		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
-		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
+		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF,
+		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7));
 
 	lv_label_set_text(lb_val, txt_buf);
 
