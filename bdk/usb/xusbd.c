@@ -895,14 +895,11 @@ int xusb_device_init()
 	XUSB_DEV_DEV(XUSB_DEV_INTR_MASK) |= DEV_INTR_MASK_IP_INT_MASK;
 
 	// AHB USB performance cfg.
-	//TODO: Doesn't help..
-/*
 	AHB_GIZMO(AHB_GIZMO_AHB_MEM) |= AHB_MEM_DONT_SPLIT_AHB_WR | AHB_MEM_ENB_FAST_REARBITRATE;
 	AHB_GIZMO(AHB_GIZMO_USB3) |= AHB_GIZMO_IMMEDIATE;
 	AHB_GIZMO(AHB_ARBITRATION_PRIORITY_CTRL) = PRIORITY_CTRL_WEIGHT(7) | PRIORITY_SELECT_USB3;
 	AHB_GIZMO(AHB_AHB_MEM_PREFETCH_CFG1) =
 		MEM_PREFETCH_ENABLE | MEM_PREFETCH_USB3_MST_ID | MEM_PREFETCH_ADDR_BNDRY(12) | 0x1000; // Addr boundary 64KB, Inactivity 4096 cycles.
-*/
 
 	// Initialize context.
 	usbd_xotg = &usbd_xotg_controller_ctxt;
@@ -1770,6 +1767,13 @@ int xusb_device_enumerate(usb_gadget_type gadget)
 	}
 
 	usbd_xotg->gadget = gadget;
+
+	/*
+	 * Set interrupt moderation to 0us.
+	 * This is important because default value creates a 4.62ms latency.
+	 * Effectively hurting transfers by having 15% to 96% performance loss.
+	 */
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_RT_IMOD) = 0;
 
 	// Disable Wake events.
 	XUSB_PADCTL(XUSB_PADCTL_ELPG_PROGRAM_0) = 0;

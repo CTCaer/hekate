@@ -198,6 +198,7 @@ typedef struct _t210_usb2d_t
 #define XUSB_DEV_XHCI_ST                 0x34
 #define  XHCI_ST_RC                      BIT(0)
 #define  XHCI_ST_IP                      BIT(4)
+#define XUSB_DEV_XHCI_RT_IMOD            0x38
 #define XUSB_DEV_XHCI_PORTSC             0x3C
 #define  XHCI_PORTSC_PR                  BIT(4)
 #define  XHCI_PORTSC_PLS_MASK            (0xF << 5)
