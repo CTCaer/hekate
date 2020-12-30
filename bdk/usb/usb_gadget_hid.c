@@ -309,7 +309,7 @@ static bool _fts_touch_read(touchpad_report_t *rpt)
 
 static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 {
-	u8 status = usb_ops.usb_device_ep1_in_write((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, USB_XFER_SYNCED);
+	u8 status = usb_ops.usb_device_ep1_in_write((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, USB_XFER_SYNCED_CMD);
 	if (status == USB_ERROR_XFER_ERROR)
 	{
 		usbs->set_text(usbs->label, "#FFDD00 Error:# EP IN transfer!");

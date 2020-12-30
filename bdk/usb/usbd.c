@@ -724,7 +724,7 @@ static usb_ep_status_t _usbd_get_ep_status(usb_ep_t endpoint)
 	return USB_EP_STATUS_IDLE;
 }
 
-static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, bool sync)
+static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, u32 sync_timeout)
 {
 	if (!buf)
 		len = 0;
@@ -797,12 +797,12 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, bool sync)
 
 	int res = USB_RES_OK;
 	usb_ep_status_t ep_status;
-	if (sync)
+	if (sync_timeout)
 	{
 		ep_status = _usbd_get_ep_status(endpoint);
 		if (ep_status == USB_EP_STATUS_ACTIVE)
 		{
-			u32 retries = 1000000; // Timeout 2s.
+			u32 retries = sync_timeout;
 			while (retries)
 			{
 				ep_status = _usbd_get_ep_status(endpoint);
@@ -834,7 +834,7 @@ out:
 
 static int _usbd_ep_ack(usb_ep_t ep)
 {
-	return _usbd_ep_operation(ep, NULL, 0, true);
+	return _usbd_ep_operation(ep, NULL, 0, USB_XFER_SYNCED_ENUM);
 }
 
 static void _usbd_set_ep0_stall()
@@ -1275,7 +1275,7 @@ static int _usbd_handle_ep0_control_transfer()
 
 		if (_wLength < size)
 			size = _wLength;
-		res = _usbd_ep_operation(USB_EP_CTRL_IN, usb_ep0_ctrl_buf, size, true);
+		res = _usbd_ep_operation(USB_EP_CTRL_IN, usb_ep0_ctrl_buf, size, USB_XFER_SYNCED_ENUM);
 		if (!res)
 			res = _usbd_ep_ack(USB_EP_CTRL_OUT);
 	}
@@ -1402,7 +1402,7 @@ static usb_ep_status_t _usbd_get_ep1_status(usb_dir_t dir)
 	return _usbd_get_ep_status(ep);
 }
 
-int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
+int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, u32 sync_timeout)
 {
 	if ((u32)buf % USB_EP_BUFFER_ALIGN)
 		return USB2_ERROR_XFER_NOT_ALIGNED;
@@ -1410,9 +1410,9 @@ int usb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 
-	int res = _usbd_ep_operation(USB_EP_BULK_OUT, buf, len, sync);
+	int res = _usbd_ep_operation(USB_EP_BULK_OUT, buf, len, sync_timeout);
 
-	if (sync && bytes_read)
+	if (sync_timeout && bytes_read)
 		*bytes_read = res ? 0 : len;
 
 	return res;
@@ -1435,7 +1435,7 @@ int usb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 	{
 		u32 len_ep = MIN(len, USB_EP_BUFFER_MAX_SIZE);
 
-		res = usb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED);
+		res = usb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED_DATA);
 		if (res)
 			return res;
 
@@ -1455,7 +1455,7 @@ static int _usbd_get_ep1_out_bytes_read()
 		return (usbdaemon->ep_bytes_requested[USB_EP_BULK_OUT] - (usbdaemon->qhs[USB_EP_BULK_OUT].token >> 16));
 }
 
-int usb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
+int usb_device_ep1_out_reading_finish(u32 *pending_bytes)
 {
 	usb_ep_status_t ep_status;
 	do
@@ -1480,7 +1480,7 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
 		return USB_ERROR_XFER_ERROR;
 }
 
-int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
+int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, u32 sync_timeout)
 {
 	if ((u32)buf % USB_EP_BUFFER_ALIGN)
 		return USB2_ERROR_XFER_NOT_ALIGNED;
@@ -1488,9 +1488,9 @@ int usb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 
-	int res = _usbd_ep_operation(USB_EP_BULK_IN, buf, len, sync);
+	int res = _usbd_ep_operation(USB_EP_BULK_IN, buf, len, sync_timeout);
 
-	if (sync && bytes_written)
+	if (sync_timeout && bytes_written)
 		*bytes_written = res ? 0 : len;
 
 	return res;

@@ -881,7 +881,7 @@ int xusb_device_init()
 	_xusbd_init_device_clocks();
 
 	// Enable AHB redirect for access to IRAM for Event/EP ring buffers.
-	mc_enable_ahb_redirect(); // can be skipped if IRAM is not used/////////////////
+	mc_enable_ahb_redirect(); // Can be skipped if IRAM is not used.
 
 	 // Enable XUSB device IPFS.
 	XUSB_DEV_DEV(XUSB_DEV_CONFIGURATION) |= DEV_CONFIGURATION_EN_FPCI;
@@ -1803,7 +1803,7 @@ int xusb_device_enumerate(usb_gadget_type gadget)
 	u32 timer = get_tmr_ms() + 90000;
 	while (true)
 	{
-		int res = _xusb_ep_operation(1000000); // 2s timeout.
+		int res = _xusb_ep_operation(USB_XFER_SYNCED_ENUM); // 2s timeout.
 		if (res && res != USB_ERROR_TIMEOUT)
 			return res;
 
@@ -1826,7 +1826,7 @@ void xusb_end(bool reset_ep, bool only_controller)
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_PADCTL);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB);
-	mc_disable_ahb_redirect();///////////////////
+	mc_disable_ahb_redirect(); // Can be skipped if IRAM is not used.
 }
 
 int xusb_handle_ep0_ctrl_setup()
@@ -1844,7 +1844,7 @@ int xusb_handle_ep0_ctrl_setup()
 	return USB_RES_OK;
 }
 
-int xusb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
+int xusb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, u32 sync_tries)
 {
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
@@ -1855,10 +1855,10 @@ int xusb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, bool sync)
 	_xusb_issue_normal_trb(buf, len, USB_DIR_OUT);
 	usbd_xotg->tx_count[USB_DIR_OUT]++;
 
-	if (sync)
+	if (sync_tries)
 	{
 		while (!res && usbd_xotg->tx_count[USB_DIR_OUT])
-			res = _xusb_ep_operation(1000000); // 2s timeout.
+			res = _xusb_ep_operation(sync_tries);
 
 		if (bytes_read)
 			*bytes_read = res ? 0 : usbd_xotg->bytes_remaining[USB_DIR_OUT];
@@ -1882,7 +1882,7 @@ int xusb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 	{
 		u32 len_ep = MIN(len, USB_EP_BUFFER_MAX_SIZE);
 
-		int res = xusb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED);
+		int res = xusb_device_ep1_out_read(buf_curr, len_ep, &bytes, USB_XFER_SYNCED_DATA);
 		if (res)
 			return res;
 
@@ -1894,11 +1894,11 @@ int xusb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 	return USB_RES_OK;
 }
 
-int xusb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
+int xusb_device_ep1_out_reading_finish(u32 *pending_bytes)
 {
 	int res = USB_RES_OK;
 	while (!res && usbd_xotg->tx_count[USB_DIR_OUT])
-		res = _xusb_ep_operation(tries);
+		res = _xusb_ep_operation(USB_XFER_SYNCED); // Infinite retries.
 
 	if (pending_bytes)
 		*pending_bytes = res ? 0 : usbd_xotg->bytes_remaining[USB_DIR_OUT];
@@ -1908,7 +1908,7 @@ int xusb_device_ep1_out_reading_finish(u32 *pending_bytes, int tries)
 	return res;
 }
 
-int xusb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
+int xusb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, u32 sync_tries)
 {
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
@@ -1921,10 +1921,10 @@ int xusb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, bool sync)
 	_xusb_issue_normal_trb(buf, len, USB_DIR_IN);
 	usbd_xotg->tx_count[USB_DIR_IN]++;
 
-	if (sync)
+	if (sync_tries)
 	{
 		while (!res && usbd_xotg->tx_count[USB_DIR_IN])
-			res = _xusb_ep_operation(1000000); // 2s timeout.
+			res = _xusb_ep_operation(sync_tries);
 
 		if (bytes_written)
 			*bytes_written = res ? 0 : usbd_xotg->bytes_remaining[USB_DIR_IN];
@@ -1947,7 +1947,7 @@ int xusb_device_ep1_in_writing_finish(u32 *pending_bytes)
 {
 	int res = USB_RES_OK;
 	while (!res && usbd_xotg->tx_count[USB_DIR_IN])
-		res = _xusb_ep_operation(1000000); // 2s timeout.
+		res = _xusb_ep_operation(USB_XFER_SYNCED); // Infinite retries.
 
 	if (pending_bytes)
 		*pending_bytes = res ? 0 : usbd_xotg->bytes_remaining[USB_DIR_IN];
@@ -1973,7 +1973,7 @@ bool xusb_device_class_send_max_lun(u8 max_lun)
 	// Wait for request and transfer start.
 	while (usbd_xotg->device_state != XUSB_LUN_CONFIGURED)
 	{
-		_xusb_ep_operation(500000);
+		_xusb_ep_operation(USB_XFER_SYNCED_CLASS);
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			return true;
 	}
@@ -1991,7 +1991,7 @@ bool xusb_device_class_send_hid_report()
 	// Wait for request and transfer start.
 	while (usbd_xotg->device_state != XUSB_HID_CONFIGURED)
 	{
-		_xusb_ep_operation(500000);
+		_xusb_ep_operation(USB_XFER_SYNCED_CLASS);
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			return true;
 	}

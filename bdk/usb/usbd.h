@@ -30,8 +30,12 @@
 #define USB_EP_BUFFER_MAX_SIZE  (USB_EP_BUFFER_4_TD)
 #define USB_EP_BUFFER_ALIGN     (USB_TD_BUFFER_PAGE_SIZE)
 
-#define USB_XFER_START  false
-#define USB_XFER_SYNCED true
+#define USB_XFER_START        0
+#define USB_XFER_SYNCED_ENUM  1000000
+#define USB_XFER_SYNCED_CMD   1000000
+#define USB_XFER_SYNCED_DATA  2000000
+#define USB_XFER_SYNCED_CLASS 5000000
+#define USB_XFER_SYNCED       -1
 
 typedef enum _usb_hid_type
 {
@@ -169,10 +173,10 @@ typedef struct _usb_ops_t
 	int  (*usb_device_class_send_max_lun)(u8);
 	int  (*usb_device_class_send_hid_report)();
 
-	int  (*usb_device_ep1_out_read)(u8 *, u32, u32 *, bool);
+	int  (*usb_device_ep1_out_read)(u8 *, u32, u32 *, u32);
 	int  (*usb_device_ep1_out_read_big)(u8 *, u32, u32 *);
-	int  (*usb_device_ep1_out_reading_finish)(u32 *, int);
-	int  (*usb_device_ep1_in_write)(u8 *, u32, u32 *, bool);
+	int  (*usb_device_ep1_out_reading_finish)(u32 *);
+	int  (*usb_device_ep1_in_write)(u8 *, u32, u32 *, u32);
 	int  (*usb_device_ep1_in_writing_finish)(u32 *);
 	bool (*usb_device_get_suspended)();
 	bool (*usb_device_get_port_in_sleep)();

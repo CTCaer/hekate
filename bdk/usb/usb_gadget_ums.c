@@ -315,13 +315,13 @@ static void ums_flush_endpoint(u32 ep)
 		usb_ops.usbd_flush_endpoint(ep);
 }
 
-static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, u32 ep, bool sync)
+static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, u32 ep, u32 sync_timeout)
 {
 	if (ep == bulk_ctxt->bulk_in)
 	{
 		bulk_ctxt->bulk_in_status = usb_ops.usb_device_ep1_in_write(
 			bulk_ctxt->bulk_in_buf, bulk_ctxt->bulk_in_length,
-			&bulk_ctxt->bulk_in_length_actual, sync);
+			&bulk_ctxt->bulk_in_length_actual, sync_timeout);
 
 		if (bulk_ctxt->bulk_in_status == USB_ERROR_XFER_ERROR)
 		{
@@ -331,14 +331,14 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 		else if (bulk_ctxt->bulk_in_status == USB2_ERROR_XFER_NOT_ALIGNED)
 			ums->set_text(ums->label, "#FFDD00 Error:# EP IN Buffer not aligned!");
 
-		if (sync)
+		if (sync_timeout)
 			bulk_ctxt->bulk_in_buf_state = BUF_STATE_EMPTY;
 	}
 	else
 	{
 		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_read(
 			bulk_ctxt->bulk_out_buf, bulk_ctxt->bulk_out_length,
-			&bulk_ctxt->bulk_out_length_actual, sync);
+			&bulk_ctxt->bulk_out_length_actual, sync_timeout);
 
 		if (bulk_ctxt->bulk_out_status == USB_ERROR_XFER_ERROR)
 		{
@@ -348,7 +348,7 @@ static void _ums_transfer_start(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, 
 		else if (bulk_ctxt->bulk_out_status == USB2_ERROR_XFER_NOT_ALIGNED)
 			ums->set_text(ums->label, "#FFDD00 Error:# EP OUT Buffer not aligned!");
 
-		if (sync)
+		if (sync_timeout)
 			bulk_ctxt->bulk_out_buf_state = BUF_STATE_FULL;
 	}
 }
@@ -386,7 +386,7 @@ static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt,
 	else
 	{
 		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_reading_finish(
-			&bulk_ctxt->bulk_out_length_actual, 1000000);
+			&bulk_ctxt->bulk_out_length_actual);
 
 		if (bulk_ctxt->bulk_out_status == USB_ERROR_XFER_ERROR)
 		{
@@ -1407,7 +1407,7 @@ static int pad_with_zeros(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		u32 nsend = MIN(ums->usb_amount_left, USB_EP_BUFFER_MAX_SIZE);
 		memset(bulk_ctxt->bulk_in_buf + current_len_to_keep, 0, nsend - current_len_to_keep);
 		bulk_ctxt->bulk_in_length = nsend;
-		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
+		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED_DATA);
 		ums->usb_amount_left -= nsend;
 		current_len_to_keep = 0;
 	}
@@ -1425,7 +1425,7 @@ static int throw_away_data(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			u32 amount = MIN(ums->usb_amount_left, USB_EP_BUFFER_MAX_SIZE);
 
 			bulk_ctxt->bulk_out_length = amount;
-			_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED);
+			_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED_DATA);
 			ums->usb_amount_left -= amount;
 
 			return UMS_RES_OK;
@@ -1472,7 +1472,7 @@ static int finish_reply(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			// If there's no residue, simply send the last buffer.
 			if (!ums->residue)
 			{
-				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
+				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED_DATA);
 
 			/* For Bulk-only, if we're allowed to stall then send the
 			 * short packet and halt the bulk-in endpoint.  If we can't
@@ -1480,7 +1480,7 @@ static int finish_reply(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			}
 			else if (ums->can_stall)
 			{
-				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
+				_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED_DATA);
 				rc = ums_set_stall(bulk_ctxt->bulk_in);
 				ums->set_text(ums->label, "#FFDD00 Error:# Residue. Stalled EP IN!");
 			}
@@ -1661,7 +1661,7 @@ static int get_next_command(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	bulk_ctxt->bulk_out_length = USB_BULK_CB_WRAP_LEN;
 
 	/* Queue a request to read a Bulk-only CBW */
-	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED);
+	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED_CMD);
 
 	/* We will drain the buffer in software, which means we
 	 * can reuse it for the next filling.  No need to advance
@@ -1707,7 +1707,7 @@ static void send_status(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	csw->Status = status;
 
 	bulk_ctxt->bulk_in_length = USB_BULK_CS_WRAP_LEN;
-	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
+	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED_CMD);
 }
 
 static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
