@@ -89,7 +89,7 @@ void emmcsn_impl(char *out_emmcSN, sdmmc_storage_t *storage)
 	else
 		itoa(storage->cid.serial, emmcSN, 16);
 
-	memcpy(out_emmcSN + strlen(out_emmcSN), emmcSN, 9);
+	memcpy(out_emmcSN, emmcSN, 9);
 
 	if (init_done)
 		sdmmc_storage_end(&storage2);
@@ -104,7 +104,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	u32 filename_len = strlen(filename); // Can be a null-terminator.
 
 	memcpy(path + strlen(path), "/", 2);
-	emmcsn_impl(path, storage);
+	emmcsn_impl(path + strlen(path), storage);
 	f_mkdir(path);
 	memcpy(path + strlen(path), sub_dir, sub_dir_len + 1);
 	if (sub_dir_len)
