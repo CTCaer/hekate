@@ -51,6 +51,7 @@ extern hekate_config h_cfg;
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
+extern void emmcsn_impl(char *out_emmcSN, sdmmc_storage_t *storage);
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static u8 *cal0_buf = NULL;
@@ -66,12 +67,14 @@ static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 
+	char emmcsn[9];
+	emmcsn_impl(emmcsn, NULL);
 	char *txt_buf = (char *)malloc(0x1000);
 
 	if (error)
 		s_printf(txt_buf, "#FFDD00 Failed to dump to# %s#FFDD00 !#\nError: %d", dump_filenames, error);
 	else
-		s_printf(txt_buf, "Dumping to SD card finished!\nFiles: #C7EA46 backup/{emmc_sn}/dumps/#%s", dump_filenames);
+		s_printf(txt_buf, "Dumping to SD card finished!\nFiles: #C7EA46 backup/%s/dumps/#%s", emmcsn, dump_filenames);
 	lv_mbox_set_text(mbox, txt_buf);
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.

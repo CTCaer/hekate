@@ -69,15 +69,12 @@ const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver
 volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
 volatile boot_cfg_t *b_cfg;
 
-void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
+void emmcsn_impl(char *out_emmcSN, sdmmc_storage_t *storage)
 {
 	sdmmc_storage_t storage2;
 	sdmmc_t sdmmc;
 	char emmcSN[9];
 	bool init_done = false;
-
-	memcpy(path, "backup", 7);
-	f_mkdir(path);
 
 	if (!storage)
 	{
@@ -92,20 +89,28 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	else
 		itoa(storage->cid.serial, emmcSN, 16);
 
+	memcpy(out_emmcSN + strlen(out_emmcSN), emmcSN, 9);
+
+	if (init_done)
+		sdmmc_storage_end(&storage2);
+}
+
+void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
+{
+	memcpy(path, "backup", 7);
+	f_mkdir(path);
+
 	u32 sub_dir_len = strlen(sub_dir);   // Can be a null-terminator.
 	u32 filename_len = strlen(filename); // Can be a null-terminator.
 
 	memcpy(path + strlen(path), "/", 2);
-	memcpy(path + strlen(path), emmcSN, 9);
+	emmcsn_impl(path, storage);
 	f_mkdir(path);
 	memcpy(path + strlen(path), sub_dir, sub_dir_len + 1);
 	if (sub_dir_len)
 		f_mkdir(path);
 	memcpy(path + strlen(path), "/", 2);
 	memcpy(path + strlen(path), filename, filename_len + 1);
-
-	if (init_done)
-		sdmmc_storage_end(&storage2);
 }
 
 // This is a safe and unused DRAM region for our payloads.
