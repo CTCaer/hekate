@@ -1527,60 +1527,51 @@ static u32 _dvfs_power_ramp_up(bool flip_backward, emc_table_t *src_emc_table_en
 
 static u32 _minerva_update_clock_tree_delay(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u32 dram_dev_num, u32 channel1_enabled, enum tree_update_mode_t update_type)
 {
-	s32 temp_ch0_0 = 0;
-	s32 temp_ch0_1 = 0;
-	s32 temp_ch1_0 = 0;
-	s32 temp_ch1_1 = 0;
-
-	s32 dst_rate_mhz;
-
 	u32 cval = 0;
-	s32 tdel0_0 = 0;
-	s32 tdel0_1 = 0;
-	s32 tdel1_0 = 0;
-	s32 tdel1_1 = 0;
-	s32 tmp_tdel0_0 = 0;
+	u32 adelta = 0;
+	s32 tdelta = 0;
 
-	temp_ch0_0 = 0x10624DD3; // div 1000 denominator
-	temp_ch0_1 = dst_emc_entry->rate_khz;
-	dst_rate_mhz = dst_emc_entry->rate_khz / 1000;
+	u32 temp_ch0_0 = 0;
+	u32 temp_ch0_1 = 0;
+	u32 temp_ch1_0 = 0;
+	u32 temp_ch1_1 = 0;
+
 	u32 upd_type_bits = 1 << update_type;
+	u32 dst_rate_mhz = dst_emc_entry->rate_khz / 1000;
+	u32 src_rate_mhz_2x = (src_emc_entry->rate_khz / 1000) * 2;
 
-	u32 tval = 1000 * (1000 * _actual_osc_clocks(src_emc_entry->run_clocks) / (src_emc_entry->rate_khz / 1000));
-	if (update_type <= PERIODIC_TRAINING_UPDATE)
+	u32 tval = 1000000 * _actual_osc_clocks(src_emc_entry->run_clocks);
+
+	if (update_type > PERIODIC_TRAINING_UPDATE)
+		return 0;
+
+	if (upd_type_bits & 0x5400)
 	{
-		temp_ch0_1 = 1 << update_type;
-		temp_ch0_0 = 0x5400;
-		if (upd_type_bits & 0x5400)
+		_request_mmr_data(0x80130000, channel1_enabled); // Dev0 MRR 19.
+		temp_ch0_0 = (EMC(EMC_MRR) & 0xFF) << 8;
+		temp_ch0_1 = EMC(EMC_MRR) & 0xFF00;
+		if (channel1_enabled)
 		{
-			_request_mmr_data(0x80130000, channel1_enabled); // Dev0 MRR 19.
-			temp_ch0_0 = (EMC(EMC_MRR) & 0xFF) << 8;
-			temp_ch0_1 = EMC(EMC_MRR) & 0xFF00;
-			if (channel1_enabled)
-			{
-				temp_ch1_0 = (EMC_CH1(EMC_MRR) & 0xFF) << 8;
-				temp_ch1_1 = EMC_CH1(EMC_MRR) & 0xFF00;
-			}
+			temp_ch1_0 = (EMC_CH1(EMC_MRR) & 0xFF) << 8;
+			temp_ch1_1 = EMC_CH1(EMC_MRR) & 0xFF00;
+		}
 
-			_request_mmr_data(0x80120000, channel1_enabled); // Dev0 MRR 18.
-			temp_ch0_0 |= EMC(EMC_MRR) & 0xFF;
-			temp_ch0_1 |= (EMC(EMC_MRR) & 0xFF00) >> 8;
-			if (channel1_enabled)
-			{
-				temp_ch1_0 |= EMC_CH1(EMC_MRR) & 0xFF;
-				temp_ch1_1 |= (EMC_CH1(EMC_MRR) & 0xFF00) >> 8;
-			}
+		_request_mmr_data(0x80120000, channel1_enabled); // Dev0 MRR 18.
+		temp_ch0_0 |= EMC(EMC_MRR) & 0xFF;
+		temp_ch0_1 |= (EMC(EMC_MRR) & 0xFF00) >> 8;
+		if (channel1_enabled)
+		{
+			temp_ch1_0 |= EMC_CH1(EMC_MRR) & 0xFF;
+			temp_ch1_1 |= (EMC_CH1(EMC_MRR) & 0xFF00) >> 8;
 		}
 	}
 
-	//u32 delay = (u64)((u64)_actual_osc_clocks(src_emc_entry->run_clocks) * 1000000) / (u64)(src_emc_entry->rate_khz * 2);
-	cval = tval / (2 * temp_ch0_0);
+	cval = tval / (src_rate_mhz_2x * temp_ch0_0);
 	switch (update_type)
 	{
 	case DVFS_PT1:
 	case TRAINING_PT1:
 		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx += 100 * cval;
-		tdel0_0 = 0;
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 			goto calc_td0_0;
 		break;
@@ -1598,20 +1589,20 @@ static u32 _minerva_update_clock_tree_delay(emc_table_t *src_emc_entry, emc_tabl
 			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
 		break;
 	default:
-		tdel0_0 = 0;
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 			goto calc_td0_0;
 		break;
 	}
 
-	tdel0_0 = dst_emc_entry->current_dram_clktree_c0d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100);
-	if (tdel0_0 < 0)
-		tdel0_0 = !tdel0_0;
-	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel0_0 << 7) / 1000000) > dst_emc_entry->tree_margin)
+	tdelta = dst_emc_entry->current_dram_clktree_c0d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100);
+	if (tdelta < 0)
+		tdelta = -tdelta;
+	adelta = tdelta;
+	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100;
 
 calc_td0_0:
-	cval = tval / (2 * temp_ch0_1);
+	cval = tval / (src_rate_mhz_2x * temp_ch0_1);
 	switch (update_type)
 	{
 	case DVFS_PT1:
@@ -1639,18 +1630,18 @@ calc_td0_0:
 		break;
 	}
 
-	tdel0_1 = dst_emc_entry->current_dram_clktree_c0d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100);
-	if (tdel0_1 < 0)
-		tdel0_1 = !tdel0_1;
-	if (tdel0_1 > tdel0_0)
-		tdel0_0 = tdel0_1;
-	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel0_1 << 7) / 1000000) > dst_emc_entry->tree_margin)
+	tdelta = dst_emc_entry->current_dram_clktree_c0d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100);
+	if (tdelta < 0)
+		tdelta = -tdelta;
+	if (tdelta > adelta)
+		adelta = tdelta;
+	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100;
 
 calc_td1_0:
 	if (channel1_enabled)
 	{
-		cval = tval / (2 * temp_ch1_0);
+		cval = tval / (src_rate_mhz_2x * temp_ch1_0);
 		switch (update_type)
 		{
 		case DVFS_PT1:
@@ -1678,16 +1669,16 @@ calc_td1_0:
 			break;
 		}
 
-		tdel1_0 = dst_emc_entry->current_dram_clktree_c1d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100);
-		if (tdel1_0 < 0)
-			tdel1_0 = !tdel1_0;
-		if (tdel1_0 > tdel0_0)
-			tdel0_0 = tdel1_0;
-		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel1_0 << 7) / 1000000) > dst_emc_entry->tree_margin)
+		tdelta = dst_emc_entry->current_dram_clktree_c1d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100);
+		if (tdelta < 0)
+			tdelta = -tdelta;
+		if (tdelta > adelta)
+			adelta = tdelta;
+		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100;
 
 calc_td1_1:
-		cval = tval / (2 * temp_ch1_1);
+		cval = tval / (src_rate_mhz_2x * temp_ch1_1);
 		switch (update_type)
 		{
 		case DVFS_PT1:
@@ -1715,12 +1706,12 @@ calc_td1_1:
 			break;
 		}
 
-		tdel1_1 = dst_emc_entry->current_dram_clktree_c1d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100);
-		if (tdel1_1 < 0)
-			tdel1_1 = !tdel1_1;
-		if (tdel1_1 > tdel0_0)
-			tdel0_0 = tdel1_1;
-		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel1_1 << 7) / 1000000) > dst_emc_entry->tree_margin)
+		tdelta = dst_emc_entry->current_dram_clktree_c1d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100);
+		if (tdelta < 0)
+			tdelta = -tdelta;
+		if (tdelta > adelta)
+			adelta = tdelta;
+		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100;
 	}
 
@@ -1749,7 +1740,7 @@ calc_dev2:
 		}
 	}
 
-	cval = tval / (2 * temp_ch0_0);
+	cval = tval / (src_rate_mhz_2x * temp_ch0_0);
 	switch (update_type )
 	{
 	case DVFS_PT1:
@@ -1777,16 +1768,16 @@ calc_dev2:
 		break;
 	}
 
-	tmp_tdel0_0 = dst_emc_entry->current_dram_clktree_c0d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100);
-	if (tmp_tdel0_0 < 0)
-		tmp_tdel0_0 = !tmp_tdel0_0;
-	if (tmp_tdel0_0 > tdel0_0)
-		tdel0_0 = tmp_tdel0_0;
-	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tmp_tdel0_0 << 7) / 1000000) > dst_emc_entry->tree_margin)
+	tdelta = dst_emc_entry->current_dram_clktree_c0d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100);
+	if (tdelta < 0)
+		tdelta = -tdelta;
+	if (tdelta > adelta)
+		adelta = tdelta;
+	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100;
 
 calc_tmp_td0_1:
-	cval = tval / (2 * temp_ch0_1);
+	cval = tval / (src_rate_mhz_2x * temp_ch0_1);
 	switch (update_type)
 	{
 	case DVFS_PT1:
@@ -1814,18 +1805,18 @@ calc_tmp_td0_1:
 		break;
 	}
 
-	tdel0_1 = dst_emc_entry->current_dram_clktree_c0d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100);
-	if (tdel0_1 < 0)
-		tdel0_1 = !tdel0_1;
-	if (tdel0_1 > tdel0_0)
-		tdel0_0 = tdel0_1;
-	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel0_1 << 7) / 1000000) > dst_emc_entry->tree_margin)
+	tdelta = dst_emc_entry->current_dram_clktree_c0d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100);
+	if (tdelta < 0)
+		tdelta = -tdelta;
+	if (tdelta > adelta)
+		adelta = tdelta;
+	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 		dst_emc_entry->current_dram_clktree_c0d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100;
 
 calc_tmp_td1_0:
 	if (channel1_enabled)
 	{
-		cval = tval / (2 * temp_ch1_0);
+		cval = tval / (src_rate_mhz_2x * temp_ch1_0);
 		switch (update_type)
 		{
 		case DVFS_PT1:
@@ -1853,16 +1844,16 @@ calc_tmp_td1_0:
 			break;
 		}
 
-		tdel1_0 = dst_emc_entry->current_dram_clktree_c1d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100);
-		if (tdel1_0 < 0)
-			tdel1_0 = !tdel1_0;
-		if (tdel1_0 > tdel0_0)
-			tdel0_0 = tdel1_0;
-		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel1_0 << 7) / 1000000) > dst_emc_entry->tree_margin)
+		tdelta = dst_emc_entry->current_dram_clktree_c1d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100);
+		if (tdelta < 0)
+			tdelta = -tdelta;
+		if (tdelta > adelta)
+			adelta = tdelta;
+		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100;
 
 calc_tmp_td1_1:
-		cval = tval / (2 * temp_ch1_1);
+		cval = tval / (src_rate_mhz_2x * temp_ch1_1);
 		switch (update_type)
 		{
 		case DVFS_PT1:
@@ -1890,12 +1881,12 @@ calc_tmp_td1_1:
 			break;
 		}
 
-		tdel1_1 = dst_emc_entry->current_dram_clktree_c1d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100);
-		if (tdel1_1 < 0)
-			tdel1_1 = !tdel1_1;
-		if (tdel1_1 > tdel0_0)
-			tdel0_0 = tdel1_1;
-		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdel1_1 << 7) / 1000000) > dst_emc_entry->tree_margin)
+		tdelta = dst_emc_entry->current_dram_clktree_c1d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100);
+		if (tdelta < 0)
+			tdelta = -tdelta;
+		if (tdelta > adelta)
+			adelta = tdelta;
+		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta << 7) / 1000000) > dst_emc_entry->tree_margin)
 			dst_emc_entry->current_dram_clktree_c1d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100;
 	}
 
@@ -1912,7 +1903,7 @@ out:
 		dst_emc_entry->trained_dram_clktree_c1d1u1 = dst_emc_entry->current_dram_clktree_c1d1u1;
 	}
 
-	return (u32)tdel0_0;
+	return (u32)adelta;
 }
 
 static u32 _minerva_periodic_compensation_handler(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u32 dram_dev_num, u32 channel1_enabled, enum comp_seq_t seq_type)
