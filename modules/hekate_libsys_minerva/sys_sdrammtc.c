@@ -28,6 +28,9 @@
 #define EPRINTF(...)
 #define EPRINTFARGS(...)
 
+#define MAX_FREQ_T210  1600000
+//#define OVERCLOCK_FREQ 1862400
+
 bool emc_2X_clk_src_is_pllmb;
 bool fsp_for_src_freq;
 bool train_ram_patterns;
@@ -3751,13 +3754,16 @@ u32 _minerva_do_periodic_compensation(emc_table_t *mtc_table_entry)
 
 u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 {
-	s32 src_emc_entry_idx = 0;
-	s32 dst_emc_entry_idx = 999;
+	u32 src_emc_entry_idx = 999;
+	u32 dst_emc_entry_idx = 999;
 	u32 selected_clk_src_emc;
 	u32 selected_emc_2x_clk_src;
 	bool freq_changed = false;
 	emc_table_t *src_emc_entry;
 	emc_table_t *dst_emc_entry;
+
+	if (mtc_cfg->table_entries > 900)
+		return 4;
 
 	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
 	{
@@ -3768,6 +3774,12 @@ u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 			dst_emc_entry_idx = i;
 	}
 
+	if (src_emc_entry_idx >= mtc_cfg->table_entries)
+		return 4;
+
+	if (dst_emc_entry_idx >= mtc_cfg->table_entries)
+		return 4;
+
 	src_emc_entry = (emc_table_t *)&mtc_cfg->mtc_table[src_emc_entry_idx];
 	dst_emc_entry = (emc_table_t *)&mtc_cfg->mtc_table[dst_emc_entry_idx];
 
@@ -3775,9 +3787,6 @@ u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 	u32 dst_rate_khz = dst_emc_entry->rate_khz;
 	u32 src_clk_src_emc = src_emc_entry->clk_src_emc;
 	u32 dst_clk_src_emc = dst_emc_entry->clk_src_emc;
-
-	if (mtc_cfg->table_entries > 900)
-		return 4;
 
 	freq_changed = _check_freq_changed(dst_rate_khz, dst_clk_src_emc, src_rate_khz, src_clk_src_emc);
 	EPRINTFARGS("Requested freq change from %d to %d.", src_rate_khz, dst_rate_khz);
@@ -3882,15 +3891,16 @@ void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
 		return;
 	}
 
-	// If this is set, it needs to be managed. Changing freq from OC to a lower
-	// must have the rate_from set to 2131200 and not 1600000
-	// bool overclock = true;
+#ifdef OVERCLOCK_FREQ
+	// Change max rate in table.
+	mtc_cfg->mtc_table[mtc_cfg->table_entries - 1].rate_khz = OVERCLOCK_FREQ;
 
-	// if (overclock && mtc_cfg->rate_to == 1600000)
-	// {
-	// 		mtc_cfg->rate_to = 2131200;
-	// 		mtc_cfg->mtc_table[9].rate_khz = 2131200;
-	// }
+	// Change rates for OC RAM.
+	if (mtc_cfg->rate_from == MAX_FREQ_T210)
+		mtc_cfg->rate_from = OVERCLOCK_FREQ;
+	if (mtc_cfg->rate_to == MAX_FREQ_T210)
+		mtc_cfg->rate_to = OVERCLOCK_FREQ;
+#endif
 
 	switch (mtc_cfg->train_mode)
 	{
@@ -3915,6 +3925,14 @@ void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
 		_minerva_do_over_temp_compensation(mtc_cfg);
 		break;
 	}
+
+#ifdef OVERCLOCK_FREQ
+	// Restore rates for OC RAM.
+	if (mtc_cfg->rate_from == OVERCLOCK_FREQ)
+		mtc_cfg->rate_from = MAX_FREQ_T210;
+	if (mtc_cfg->rate_to == OVERCLOCK_FREQ)
+		mtc_cfg->rate_to = MAX_FREQ_T210;
+#endif
 
 	mtc_cfg->train_ram_patterns = train_ram_patterns;
 	mtc_cfg->fsp_for_src_freq = fsp_for_src_freq;
