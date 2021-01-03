@@ -24,8 +24,8 @@
 
 typedef struct
 {
-	s32 pll_osc_in;
-	s32 pll_out;
+	u32 pll_osc_in;
+	u32 pll_out;
 	u32 pll_feedback_div;
 	u32 pll_input_div;
 	u32 pll_post_div;
@@ -255,7 +255,6 @@ typedef struct
 	u32 emc_training_mpc_idx;
 	u32 emc_mrw15_idx;
 } burst_regs_t;
-
 
 typedef struct
 {
