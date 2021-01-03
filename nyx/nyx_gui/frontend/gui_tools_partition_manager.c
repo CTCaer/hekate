@@ -81,6 +81,9 @@ typedef struct _l4t_flasher_ctxt_t
 partition_ctxt_t part_info;
 l4t_flasher_ctxt_t l4t_flash_ctxt;
 
+lv_obj_t *btn_flash_l4t;
+lv_obj_t *btn_flash_android;
+
 static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_size, const char *dst, const char *src, lv_obj_t **labels)
 {
 	FRESULT res;
@@ -718,44 +721,12 @@ exit:
 	return LV_RES_INV;
 }
 
-static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
+static u32 _get_available_l4t_partition()
 {
-	FILINFO fno;
-	char path[128];
 	mbr_t mbr = { 0 };
 	gpt_t gpt = { 0 };
 
 	memset(&l4t_flash_ctxt, 0, sizeof(l4t_flasher_ctxt_t));
-
-	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
-	lv_obj_set_style(dark_bg, &mbox_darken);
-	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
-
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
-	static const char *mbox_btn_map2[] = { "\222Continue", "\222Cancel", "" };
-	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
-	lv_mbox_set_recolor_text(mbox, true);
-	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
-
-	lv_mbox_set_text(mbox, "#FF8000 Linux Flasher#");
-
-	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
-	lv_label_set_recolor(lbl_status, true);
-	lv_label_set_text(lbl_status, "#C7EA46 Status:# Searching for files and partitions...");
-
-	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
-	lv_obj_set_top(mbox, true);
-
-	manual_system_maintenance(true);
-
-	sd_mount();
-
-	strcpy(path, "switchroot/install/l4t.00");
-	if (f_stat(path, NULL))
-	{
-		lv_label_set_text(lbl_status, "#FFDD00 Error:# Installation files not found!");
-		goto error;
-	}
 
 	// Read MBR.
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
@@ -793,7 +764,71 @@ static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
 		}
 	}
 
-	if (!l4t_flash_ctxt.offset_sct || size_sct < 0x800000)
+	return size_sct;
+}
+
+static bool _get_available_android_partition()
+{
+	gpt_t gpt = { 0 };
+
+	// Read main GPT.
+	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, &gpt);
+
+	// Check if GPT.
+	if (memcmp(&gpt.header.signature, "EFI PART", 8))
+		return false;
+
+	// Find kernel partition.
+	for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+	{
+		if (gpt.entries[i].lba_start && !memcmp(gpt.entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
+			return true;
+
+		if (i > 126)
+			break;
+	}
+
+	return false;
+}
+
+static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
+{
+	FILINFO fno;
+	char path[128];
+
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map2[] = { "\222Continue", "\222Cancel", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
+
+	lv_mbox_set_text(mbox, "#FF8000 Linux Flasher#");
+
+	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_status, true);
+	lv_label_set_text(lbl_status, "#C7EA46 Status:# Searching for files and partitions...");
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	manual_system_maintenance(true);
+
+	sd_mount();
+
+	strcpy(path, "switchroot/install/l4t.00");
+	if (f_stat(path, NULL))
+	{
+		lv_label_set_text(lbl_status, "#FFDD00 Error:# Installation files not found!");
+		goto error;
+	}
+
+	u32 size_sct = _get_available_l4t_partition();
+
+	if (!l4t_flash_ctxt.offset_sct || !size_sct || size_sct < 0x800000)
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Error:# No partition found!");
 		goto error;
@@ -1141,8 +1176,6 @@ error:
 
 static lv_res_t _action_flash_android(lv_obj_t *btn)
 {
-	memset(&l4t_flash_ctxt, 0, sizeof(l4t_flasher_ctxt_t));
-
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -1458,6 +1491,30 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	lv_label_set_text(lbl_paths[1], " ");
 	manual_system_maintenance(true);
 	_prepare_and_flash_mbr_gpt();
+
+	// Enable/Disable buttons depending on partition layout.
+	if (part_info.l4t_size)
+	{
+		lv_obj_set_click(btn_flash_l4t, true);
+		lv_btn_set_state(btn_flash_l4t, LV_BTN_STATE_REL);
+	}
+	else
+	{
+		lv_obj_set_click(btn_flash_l4t, false);
+		lv_btn_set_state(btn_flash_l4t, LV_BTN_STATE_INA);
+	}
+
+	// Enable/Disable buttons depending on partition layout.
+	if (part_info.and_size)
+	{
+		lv_obj_set_click(btn_flash_android, true);
+		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_REL);
+	}
+	else
+	{
+		lv_obj_set_click(btn_flash_android, false);
+		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_INA);
+	}
 
 	sd_unmount();
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Done!");
@@ -2312,19 +2369,34 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_obj_align(btn1, h1, LV_ALIGN_IN_TOP_LEFT, 0, LV_DPI * 5);
 	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _action_part_manager_ums_sd);
 
-	lv_obj_t *btn2 = lv_btn_create(h1, NULL);
-	lv_obj_t *label_btn2 = lv_label_create(btn2, NULL);
-	lv_btn_set_fit(btn2, true, true);
+	lv_obj_t *btn_flash_l4t = lv_btn_create(h1, NULL);
+	lv_obj_t *label_btn2 = lv_label_create(btn_flash_l4t, NULL);
+	lv_btn_set_fit(btn_flash_l4t, true, true);
 	lv_label_set_static_text(label_btn2, SYMBOL_DOWNLOAD"  Flash Linux");
-	lv_obj_align(btn2, btn1, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
-	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _action_check_flash_linux);
+	lv_obj_align(btn_flash_l4t, btn1, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
+	lv_btn_set_action(btn_flash_l4t, LV_BTN_ACTION_CLICK, _action_check_flash_linux);
 
-	btn1 = lv_btn_create(h1, NULL);
-	label_btn = lv_label_create(btn1, NULL);
-	lv_btn_set_fit(btn1, true, true);
+	// Disable Flash Linux button if partition not found.
+	u32 size_sct = _get_available_l4t_partition();
+	if (!l4t_flash_ctxt.offset_sct || !size_sct || size_sct < 0x800000)
+	{
+		lv_obj_set_click(btn_flash_l4t, false);
+		lv_btn_set_state(btn_flash_l4t, LV_BTN_STATE_INA);
+	}
+
+	btn_flash_android = lv_btn_create(h1, NULL);
+	label_btn = lv_label_create(btn_flash_android, NULL);
+	lv_btn_set_fit(btn_flash_android, true, true);
 	lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android");
-	lv_obj_align(btn1, btn2, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
-	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _action_flash_android);
+	lv_obj_align(btn_flash_android, btn_flash_l4t, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
+	lv_btn_set_action(btn_flash_android, LV_BTN_ACTION_CLICK, _action_flash_android);
+
+	// Disable Flash Android button if partition not found.
+	if (!_get_available_android_partition())
+	{
+		lv_obj_set_click(btn_flash_android, false);
+		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_INA);
+	}
 
 	btn1 = lv_btn_create(h1, NULL);
 	label_btn = lv_label_create(btn1, NULL);
