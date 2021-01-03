@@ -399,10 +399,19 @@ static void _prepare_and_flash_mbr_gpt()
 		curr_part_lba += 0x15E000;
 		gpt_idx++;
 
+		// Android Misc partition.
+		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		se_gen_prng128(random_number);
+		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
+		gpt.entries[gpt_idx].lba_start = curr_part_lba;
+		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x1800 - 1; // 3MB.
+		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'M', 0, 'S', 0, 'C', 0 }, 6);
+		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
+		curr_part_lba += 0x1800;
+		gpt_idx++;
+
 		// Android Userdata partition.
-		u32 align_diff = ALIGN(curr_part_lba, 0x8000) - curr_part_lba;
-		curr_part_lba += align_diff; // Align to 16MB.
-		u32 user_size = (part_info.and_size << 11) - 0x796800 - align_diff; // Subtract the other partitions (3885MB).
+		u32 user_size = (part_info.and_size << 11) - 0x798000 - curr_part_lba; // Subtract the other partitions (3888MB).
 		if (!part_info.emu_size)
 			user_size -= 0x800; // Reserve 1MB.
 		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
