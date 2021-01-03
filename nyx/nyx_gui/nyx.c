@@ -69,43 +69,55 @@ const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver
 volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
 volatile boot_cfg_t *b_cfg;
 
-void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
+char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
 {
-	sdmmc_storage_t storage2;
-	sdmmc_t sdmmc;
-	char emmcSN[9];
-	bool init_done = false;
+	static char emmc_sn[9] = {0};
 
-	memcpy(path, "backup", 7);
-	f_mkdir(path);
+	// Check if eMMC S/N storage has valid data and skip parsing in that case.
+	if (emmc_sn[0] && strcmp(emmc_sn, "00000000"))
+		goto create_dir;
 
+	// Get actual eMMC S/N.
 	if (!storage)
 	{
+		sdmmc_t sdmmc;
+		sdmmc_storage_t storage2;
+
 		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
-			memcpy(emmcSN, "00000000", 9);
+			strcpy(emmc_sn, "00000000");
 		else
 		{
-			init_done = true;
-			itoa(storage2.cid.serial, emmcSN, 16);
+			itoa(storage2.cid.serial, emmc_sn, 16);
+			sdmmc_storage_end(&storage2);
 		}
 	}
 	else
-		itoa(storage->cid.serial, emmcSN, 16);
+		itoa(storage->cid.serial, emmc_sn, 16);
 
-	u32 sub_dir_len = strlen(sub_dir);   // Can be a null-terminator.
-	u32 filename_len = strlen(filename); // Can be a null-terminator.
+create_dir:
+	// Check if only eMMC S/N was requested.
+	if (!path)
+		return emmc_sn;
 
-	memcpy(path + strlen(path), "/", 2);
-	memcpy(path + strlen(path), emmcSN, 9);
+	// Create main folder.
+	strcpy(path, "backup");
 	f_mkdir(path);
-	memcpy(path + strlen(path), sub_dir, sub_dir_len + 1);
-	if (sub_dir_len)
-		f_mkdir(path);
-	memcpy(path + strlen(path), "/", 2);
-	memcpy(path + strlen(path), filename, filename_len + 1);
 
-	if (init_done)
-		sdmmc_storage_end(&storage2);
+	// Create eMMC S/N folder.
+	strcat(path, "/");
+	strcat(path, emmc_sn);
+	f_mkdir(path);
+
+	// Create sub folder if defined. Dir slash must be included.
+	strcat(path, sub_dir);  // Can be a null-terminator.
+	if (strlen(sub_dir))
+		f_mkdir(path);
+
+	// Add filename.
+	strcat(path, "/");
+	strcat(path, filename); // Can be a null-terminator.
+
+	return emmc_sn;
 }
 
 // This is a safe and unused DRAM region for our payloads.

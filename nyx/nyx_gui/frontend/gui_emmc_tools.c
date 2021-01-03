@@ -37,7 +37,7 @@
 extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
 
-extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 lv_obj_t *ums_mbox;
 

@@ -45,7 +45,7 @@
 
 extern nyx_config n_cfg;
 
-extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_idx, bool backup)
 {

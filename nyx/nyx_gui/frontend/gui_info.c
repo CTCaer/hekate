@@ -51,7 +51,7 @@ extern hekate_config h_cfg;
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
-extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static u8 *cal0_buf = NULL;
 
@@ -71,7 +71,10 @@ static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 	if (error)
 		s_printf(txt_buf, "#FFDD00 Failed to dump to# %s#FFDD00 !#\nError: %d", dump_filenames, error);
 	else
-		s_printf(txt_buf, "Dumping to SD card finished!\nFiles: #C7EA46 backup/{emmc_sn}/dumps/#%s", dump_filenames);
+	{
+		char *sn = emmcsn_path_impl(NULL, NULL, NULL, NULL);
+		s_printf(txt_buf, "Dumping to SD card finished!\nFiles: #C7EA46 backup/%s/dumps/#\n%s", sn, dump_filenames);
+	}
 	lv_mbox_set_text(mbox, txt_buf);
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
@@ -223,7 +226,11 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 
 		sd_unmount();
 	}
-	_create_window_dump_done(error, "fuse_cached.bin, fuse_array_raw.bin");
+
+	if (!h_cfg.t210b01)
+		_create_window_dump_done(error, "fuse_cached_t210.bin, fuse_array_raw_t210.bin");
+	else
+		_create_window_dump_done(error, "fuse_cached_t210b01_partX.bin, fuse_array_raw_t210b01.bin");
 
 	return LV_RES_OK;
 }

@@ -31,7 +31,7 @@
 #include <utils/sprintf.h>
 #include <utils/types.h>
 
-extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 typedef struct _mbr_ctxt_t
 {

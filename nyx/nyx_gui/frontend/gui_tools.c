@@ -48,7 +48,7 @@ extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
 
-extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
+extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static lv_obj_t *_create_container(lv_obj_t *parent)
 {
