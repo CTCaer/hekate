@@ -287,19 +287,19 @@ static void _config_regulators(bool tegra_t210)
 {
 	// Set RTC/AO domain to POR voltage.
 	if (tegra_t210)
-		max77620_regulator_set_voltage(REGULATOR_LDO4, 1000000);
+		max7762x_regulator_set_voltage(REGULATOR_LDO4, 1000000);
 
 	// Disable low battery shutdown monitor.
 	max77620_low_battery_monitor_config(false);
 
 	// Disable SDMMC1 IO power.
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_LOW);
-	max77620_regulator_enable(REGULATOR_LDO2, 0);
+	max7762x_regulator_enable(REGULATOR_LDO2, false);
 	sd_power_cycle_time_start = get_tmr_ms();
 
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGBBC, MAX77620_CNFGBBC_RESISTOR_1K);
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1,
-		BIT(6) | (3 << MAX77620_ONOFFCNFG1_MRT_SHIFT)); // PWR delay for forced shutdown off.
+		MAX77620_ONOFFCNFG1_RSVD | (3 << MAX77620_ONOFFCNFG1_MRT_SHIFT)); // PWR delay for forced shutdown off.
 
 	if (tegra_t210)
 	{
@@ -317,28 +317,18 @@ static void _config_regulators(bool tegra_t210)
 			(4 << MAX77620_FPS_TIME_PERIOD_SHIFT) | (2 << MAX77620_FPS_PD_PERIOD_SHIFT)); // 3.x+
 
 		// Set vdd_core voltage to 1.125V.
-		max77620_regulator_set_voltage(REGULATOR_SD0, 1125000);
+		max7762x_regulator_set_voltage(REGULATOR_SD0, 1125000);
 
-		// Fix CPU/GPU after a L4T warmboot.
-		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO5, 2);
-		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO6, 2);
+		// Fix CPU/GPU after L4T warmboot.
+		max77620_config_gpio(5, MAX77620_GPIO_OUTPUT_DISABLE);
+		max77620_config_gpio(6, MAX77620_GPIO_OUTPUT_DISABLE);
 
-		i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_REG,     MAX77621_VOUT_0_95V); // Disable power.
-		i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_DVS_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_1_09V); // Enable DVS power.
-		i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CONTROL1_REG, MAX77621_RAMP_50mV_PER_US);
-		i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CONTROL2_REG,
-			MAX77621_T_JUNCTION_120 | MAX77621_FT_ENABLE | MAX77621_CKKADV_TRIP_75mV_PER_US_HIST_DIS |
-			MAX77621_CKKADV_TRIP_150mV_PER_US | MAX77621_INDUCTOR_NOMINAL);
-
-		i2c_send_byte(I2C_5, MAX77621_GPU_I2C_ADDR, MAX77621_VOUT_REG,     MAX77621_VOUT_0_95V); // Disable power.
-		i2c_send_byte(I2C_5, MAX77621_GPU_I2C_ADDR, MAX77621_VOUT_DVS_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_1_09V); // Enable DVS power.
-		i2c_send_byte(I2C_5, MAX77621_GPU_I2C_ADDR, MAX77621_CONTROL1_REG, MAX77621_RAMP_50mV_PER_US);
-		i2c_send_byte(I2C_5, MAX77621_GPU_I2C_ADDR, MAX77621_CONTROL2_REG,
-			MAX77621_T_JUNCTION_120 | MAX77621_FT_ENABLE | MAX77621_CKKADV_TRIP_75mV_PER_US_HIST_DIS |
-			MAX77621_CKKADV_TRIP_150mV_PER_US | MAX77621_INDUCTOR_NOMINAL);
+		// Set POR configuration.
+		max77621_config_default(REGULATOR_CPU0, MAX77621_CTRL_POR_CFG);
+		max77621_config_default(REGULATOR_GPU0, MAX77621_CTRL_POR_CFG);
 	}
 	else // Tegra X1+ set vdd_core voltage to 1.05V.
-		max77620_regulator_set_voltage(REGULATOR_SD0, 1050000);
+		max7762x_regulator_set_voltage(REGULATOR_SD0, 1050000);
 }
 
 void hw_init()
@@ -396,7 +386,10 @@ void hw_init()
 
 	//! TODO: Why? Device is NFC MCU on Lite.
 	if (nx_hoag)
-		max77620_regulator_set_volt_and_flags(REGULATOR_LDO8, 2800000, MAX77620_POWER_MODE_NORMAL);
+	{
+		max7762x_regulator_set_voltage(REGULATOR_LDO8, 2800000);
+		max7762x_regulator_enable(REGULATOR_LDO8, true);
+	}
 
 	// Initialize I2C1 for various power related devices.
 	i2c_init(I2C_1);

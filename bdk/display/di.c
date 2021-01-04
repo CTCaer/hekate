@@ -229,19 +229,20 @@ void display_init()
 	if (!tegra_t210)
 	{
 		// Set SD2 regulator voltage.
-		max77620_regulator_set_voltage(REGULATOR_SD2, 1325000);
+		max7762x_regulator_set_voltage(REGULATOR_SD2, 1325000);
 
 		// Set slew rate and enable SD2 regulator.
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD2_CFG, (1 << MAX77620_SD_SR_SHIFT) | MAX77620_SD_CFG1_FSRADE_SD_ENABLE);
-		max77620_regulator_enable(REGULATOR_SD2, 1);
+		max7762x_regulator_enable(REGULATOR_SD2, true);
 
 	}
 
 	// Enable power to display panel controller.
-	max77620_regulator_set_volt_and_flags(REGULATOR_LDO0, 1200000, MAX77620_POWER_MODE_NORMAL); // Configure to 1.2V.
+	max7762x_regulator_set_voltage(REGULATOR_LDO0, 1200000);
+	max7762x_regulator_enable(REGULATOR_LDO0, true);
+
 	if (tegra_t210)
-		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO7,
-			MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH | MAX77620_CNFG_GPIO_DRV_PUSHPULL); // T210: LD0 -> GPIO7 -> Display panel.
+		max77620_config_gpio(7, MAX77620_GPIO_OUTPUT_ENABLE); // T210: LD0 -> GPIO7 -> Display panel.
 
 	// Enable Display Interface specific clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_MIPI_CAL) | BIT(CLK_H_DSI);

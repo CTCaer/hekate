@@ -16,7 +16,6 @@
  */
 
 #include <soc/ccplex.h>
-#include <soc/fuse.h>
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
 #include <soc/clock.h>
@@ -29,27 +28,24 @@
 
 void _ccplex_enable_power_t210()
 {
-	u8 tmp = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO); // Get current pinmuxing
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_AME_GPIO, tmp & ~BIT(5)); // Disable GPIO5 pinmuxing.
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_GPIO5, MAX77620_CNFG_GPIO_DRV_PUSHPULL | MAX77620_CNFG_GPIO_OUTPUT_VAL_HIGH);
+	// Configure GPIO5 and enable output in order to power CPU pmic.
+	max77620_config_gpio(5, MAX77620_GPIO_OUTPUT_ENABLE);
 
-	// Enable cores power.
+	// Configure CPU pmic.
 	// 1-3.x: MAX77621_NFSR_ENABLE.
-	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CONTROL1_REG,
-		MAX77621_AD_ENABLE | MAX77621_NFSR_ENABLE | MAX77621_SNS_ENABLE | MAX77621_RAMP_12mV_PER_US);
 	// 1.0.0-3.x: MAX77621_T_JUNCTION_120 | MAX77621_CKKADV_TRIP_DISABLE | MAX77621_INDUCTOR_NOMINAL.
-	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CONTROL2_REG,
-		MAX77621_T_JUNCTION_120 | MAX77621_WDTMR_ENABLE | MAX77621_CKKADV_TRIP_75mV_PER_US| MAX77621_INDUCTOR_NOMINAL);
-	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_0_95V);
-	i2c_send_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_VOUT_DVS_REG, MAX77621_VOUT_ENABLE | MAX77621_VOUT_0_95V);
+	max77621_config_default(REGULATOR_CPU0, MAX77621_CTRL_HOS_CFG);
+
+	// Set voltage and enable cores power.
+	max7762x_regulator_set_voltage(REGULATOR_CPU0, 950000);
+	max7762x_regulator_enable(REGULATOR_CPU0, true);
 }
 
 void _ccplex_enable_power_t210b01()
 {
-	u8 pmic_cpu_addr = !(FUSE(FUSE_RESERVED_ODM28_T210B01) & 1) ? MAX77812_PHASE31_CPU_I2C_ADDR : MAX77812_PHASE211_CPU_I2C_ADDR;
-	u8 tmp = i2c_recv_byte(I2C_5, pmic_cpu_addr, MAX77812_REG_EN_CTRL);
-	i2c_send_byte(I2C_5, pmic_cpu_addr, MAX77812_REG_EN_CTRL, tmp | MAX77812_EN_CTRL_EN_M4);
-	i2c_send_byte(I2C_5, pmic_cpu_addr, MAX77812_REG_M4_VOUT, MAX77812_M4_VOUT_0_80V);
+	// Set voltage and enable cores power.
+	max7762x_regulator_set_voltage(REGULATOR_CPU1, 800000);
+	max7762x_regulator_enable(REGULATOR_CPU1, true);
 }
 
 void ccplex_boot_cpu0(u32 entry)

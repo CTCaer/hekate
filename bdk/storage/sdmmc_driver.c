@@ -1200,8 +1200,8 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	usleep(10000);
 
 	// Enable SD card IO power.
-	max77620_regulator_set_voltage(REGULATOR_LDO2, 3300000);
-	max77620_regulator_enable(REGULATOR_LDO2, 1);
+	max7762x_regulator_set_voltage(REGULATOR_LDO2, 3300000);
+	max7762x_regulator_enable(REGULATOR_LDO2, true);
 	usleep(1000);
 
 	// Set pad slew codes to get good quality clock.
@@ -1332,19 +1332,6 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 
 void sdmmc1_disable_power()
 {
-#if 0
-	// Ensure regulator is into default voltage.
-	if (PMC(APBDEV_PMC_PWR_DET_VAL) & PMC_PWR_DET_SDMMC1_IO_EN)
-	{
-		// Switch to 1.8V and wait for regulator to stabilize.
-		max77620_regulator_set_voltage(REGULATOR_LDO2, 1800000);
-		usleep(150);
-
-		// Inform IO pads that we switched to 1.8V.
-		PMC(APBDEV_PMC_PWR_DET_VAL) &= ~(PMC_PWR_DET_SDMMC1_IO_EN);
-		(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
-	}
-#endif
 	// T210B01 WAR: Clear pull down from CLK pad.
 	PINMUX_AUX(PINMUX_AUX_SDMMC1_CLK) &= ~PINMUX_PULL_MASK;
 
@@ -1352,7 +1339,7 @@ void sdmmc1_disable_power()
 	_sdmmc_config_sdmmc1_pads(true);
 
 	// Disable SD card IO power regulator.
-	max77620_regulator_enable(REGULATOR_LDO2, 0);
+	max7762x_regulator_enable(REGULATOR_LDO2, false);
 	usleep(4000);
 
 	// Disable SD card IO power pin.
@@ -1441,7 +1428,7 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 	_sdmmc_commit_changes(sdmmc);
 
 	// Switch to 1.8V and wait for regulator to stabilize. Assume max possible wait needed.
-	max77620_regulator_set_voltage(REGULATOR_LDO2, 1800000);
+	max7762x_regulator_set_voltage(REGULATOR_LDO2, 1800000);
 	usleep(150);
 
 	// Inform IO pads that we switched to 1.8V.

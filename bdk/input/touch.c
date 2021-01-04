@@ -23,7 +23,6 @@
 #include <soc/i2c.h>
 #include <soc/pinmux.h>
 #include <power/max7762x.h>
-#include <power/max77620.h>
 #include <soc/gpio.h>
 #include <soc/t210.h>
 #include <utils/btn.h>
@@ -358,10 +357,9 @@ static int touch_init()
 
 int touch_power_on()
 {
-	// Enables LDO6 for touchscreen VDD/AVDD supply
-	max77620_regulator_set_volt_and_flags(REGULATOR_LDO6, 2900000, MAX77620_POWER_MODE_NORMAL);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
-		 (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT | (3 << 3) | MAX77620_LDO_CFG2_ADE_ENABLE));
+	// Enable LDO6 for touchscreen VDD/AVDD supply.
+	max7762x_regulator_set_voltage(REGULATOR_LDO6, 2900000);
+	max7762x_regulator_enable(REGULATOR_LDO6, true);
 
 	// Configure touchscreen GPIO.
 	PINMUX_AUX(PINMUX_AUX_DAP4_SCLK) = PINMUX_PULL_DOWN | 1;
@@ -414,9 +412,7 @@ void touch_power_off()
 	gpio_write(GPIO_PORT_J, GPIO_PIN_7, GPIO_LOW);
 
 	// Disables LDO6 for touchscreen VDD, AVDD supply
-	max77620_regulator_enable(REGULATOR_LDO6, 0);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
-		MAX77620_LDO_CFG2_ADE_ENABLE | (2 << 3) | (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT));
+	max7762x_regulator_enable(REGULATOR_LDO6, false);
 
 	clock_disable_i2c(I2C_3);
 }

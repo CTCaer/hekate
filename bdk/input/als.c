@@ -17,7 +17,7 @@
  */
 
 #include "als.h"
-#include <power/max77620.h>
+#include <power/max7762x.h>
 #include <soc/clock.h>
 #include <soc/i2c.h>
 #include <soc/pinmux.h>
@@ -97,14 +97,16 @@ void get_als_lux(als_table_t *als_val)
 
 u8 als_init(als_table_t *als_val)
 {
+	// Enable power to ALS IC.
+	max7762x_regulator_set_voltage(REGULATOR_LDO6, 2900000);
+	max7762x_regulator_enable(REGULATOR_LDO6, true);
+
+	// Init I2C2.
 	pinmux_config_i2c(I2C_2);
 	clock_enable_i2c(I2C_2);
 	i2c_init(I2C_2);
 
-	max77620_regulator_set_volt_and_flags(REGULATOR_LDO6, 2900000, MAX77620_POWER_MODE_NORMAL);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_LDO6_CFG2,
-		 (MAX77620_POWER_MODE_NORMAL << MAX77620_LDO_POWER_MODE_SHIFT | (3 << 3) | MAX77620_LDO_CFG2_ADE_ENABLE));
-
+	// Initialize ALS.
 	u8 id = i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(0x12));
 	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_SPEC(BH1730_SPECCMD_RESET), 0);
 	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_GAIN_REG), HOS_GAIN);
