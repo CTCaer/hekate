@@ -164,7 +164,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 
 		if (mariko_not_supported)
 		{
-			EPRINTF("Mariko not supported on < 0.17.0!");
+			EPRINTF("\nMariko not supported on < 0.17.0!");
 			goto fail;
 		}
 

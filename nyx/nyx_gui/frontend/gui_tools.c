@@ -1186,6 +1186,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		if (!pkg1_decrypt(pkg1_id, pkg1))
 		{
 			strcat(txt_buf, "#FFDD00 Pkg1 decryption failed!#\n");
+			if (h_cfg.t210b01)
+				strcat(txt_buf, "#FFDD00 Is BEK missing?#\n");
 			lv_label_set_text(lb_desc, txt_buf);
 			goto out_free;
 		}

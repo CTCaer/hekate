@@ -756,22 +756,20 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Check if fuses lower than 4.0.0 or 9.0.0 or 11.0.0 and if yes apply NO Gamecard patch.
 	// Additionally check if running emuMMC and disable GC if v3/v4 fuses are burnt and HOS is <= 8.1.0 or != 11.0.0.
-	//TODO: Add better checks for 11.0.0 in case mkey doesn't change.
 	if (!ctxt.stock)
 	{
 		u32 fuses = fuse_read_odm(7);
-		bool is_hos_11000 = !memcmp(ctxt.pkg1_id->id, "20201030110855", 8);
 		if ((h_cfg.autonogc &&
 			  (
-				(!(fuses &    ~0xF) && (kb >= KB_FIRMWARE_VERSION_400)) || // LAFW v2.
-				(!(fuses &  ~0x3FF) && (kb >= KB_FIRMWARE_VERSION_900)) || // LAFW v3.
-				(!(fuses & ~0x1FFF) && is_hos_11000)                       // LAFW v4.
+				(!(fuses &    ~0xF) && (ctxt.pkg1_id->fuses >=  5)) || // LAFW v2,  4.0.0+
+				(!(fuses &  ~0x3FF) && (ctxt.pkg1_id->fuses >= 11)) || // LAFW v3,  9.0.0+
+				(!(fuses & ~0x1FFF) && (ctxt.pkg1_id->fuses >= 14))    // LAFW v4, 11.0.0+
 			  )
 			)
 		|| ((emummc_enabled) &&
 			  (
-				((fuses & 0x400) && (kb <= KB_FIRMWARE_VERSION_810)) || // HOS  9.0.0 fuses burnt.
-				((fuses & 0x2000) && !is_hos_11000)                     // HOS 11.0.0 fuses burnt.
+				((fuses & 0x400) &&  (ctxt.pkg1_id->fuses <= 10)) || // HOS  9.0.0+ fuses burnt.
+				((fuses & 0x2000) && (ctxt.pkg1_id->fuses <= 13))    // HOS 11.0.0+ fuses burnt.
 			  )
 			))
 			config_kip1patch(&ctxt, "nogc");
@@ -845,7 +843,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Configure and manage Warmboot binary.
-	pkg1_warmboot_config(&ctxt, kb, warmboot_base);
+	pkg1_warmboot_config(&ctxt, warmboot_base);
 
 	// Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)

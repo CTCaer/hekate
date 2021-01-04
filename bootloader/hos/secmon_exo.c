@@ -150,9 +150,8 @@ typedef struct _atm_fatal_error_ctx
 
 void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 {
-	u32 exoFwNo = 0;
-	u32 exoFlags = 0;
-	u32 kb = ctxt->pkg1_id->kb;
+	u32 exo_fw_no = 0;
+	u32 exo_flags = 0;
 	bool user_debug = false;
 	bool cal0_blanking = false;
 	bool cal0_allow_writes_sys = false;
@@ -161,71 +160,56 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 
 	volatile exo_cfg_t *exo_cfg = (exo_cfg_t *)EXO_CFG_ADDR;
 
-	// Old exosphere target versioning.
-	switch (kb)
-	{
-	case KB_FIRMWARE_VERSION_100_200:
-		if (!memcmp(ctxt->pkg1_id->id, "20161121183008", 8))
-			exoFwNo = 1;
-		else
-			exoFwNo = 2;
-		break;
-	case KB_FIRMWARE_VERSION_300:
-		exoFwNo = 3;
-		break;
-	default:
-		exoFwNo = kb + 1;
-		if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8) || (kb >= KB_FIRMWARE_VERSION_810))
-			exoFwNo++;    // ATM_TARGET_FW_800 and up.
-		if (!memcmp(ctxt->pkg1_id->id, "20200303104606", 8))
-			exoFwNo++;    // ATM_TARGET_FW_1000.
-		else if (!memcmp(ctxt->pkg1_id->id, "20201030110855", 8)) //TODO: Add better checks in case mkey doesn't change.
-			exoFwNo += 2; // ATM_TARGET_FW_1100.
-		break;
-	}
+	// Old exosphere target versioning. Use fuses for a simpler encoding.
+	if (ctxt->pkg1_id->fuses <= 3 || ctxt->pkg1_id->fuses >= 10) // 1.0.0 - 3.0.0, 8.1.0+.
+		exo_fw_no = ctxt->pkg1_id->fuses;
+	else
+		exo_fw_no = ctxt->pkg1_id->fuses - 1;                    // 3.0.1 - 7.0.1, 8.0.0 - 8.0.1.
 
-	// New exosphere target versioning.
+	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8))         // 8.0.0 - 8.0.1.
+	    exo_fw_no++;
+
+	// Feed old exosphere target versioning to new.
 	if (exo_new)
 	{
-		// Feed old versioning.
-		switch (exoFwNo)
+		switch (exo_fw_no)
 		{
 		case 1:
 		case 2:
 		case 3:
 		case 4:
 		case 6:
-			exoFwNo = EXO_FW_VER(exoFwNo, 0, 0);
+			exo_fw_no = EXO_FW_VER(exo_fw_no, 0, 0);
 			break;
 		case 5:
 			if (!ctxt->exo_ctx.fs_is_510)
-				exoFwNo = EXO_FW_VER(5, 0, 0);
+				exo_fw_no = EXO_FW_VER(5, 0, 0);
 			else
-				exoFwNo = EXO_FW_VER(5, 1, 0);
+				exo_fw_no = EXO_FW_VER(5, 1, 0);
 			break;
 		case 7:
-			exoFwNo = EXO_FW_VER(6, 2, 0);
+			exo_fw_no = EXO_FW_VER(6, 2, 0);
 			break;
 		case 8:
-			exoFwNo = EXO_FW_VER(7, 0, 0);
+			exo_fw_no = EXO_FW_VER(7, 0, 0);
 			break;
 		case 9:
-			exoFwNo = EXO_FW_VER(8, 0, 0);
+			exo_fw_no = EXO_FW_VER(8, 0, 0);
 			break;
 		case 10:
-			exoFwNo = EXO_FW_VER(8, 1, 0);
+			exo_fw_no = EXO_FW_VER(8, 1, 0);
 			break;
 		case 11:
-			exoFwNo = EXO_FW_VER(9, 0, 0);
+			exo_fw_no = EXO_FW_VER(9, 0, 0);
 			break;
 		case 12:
-			exoFwNo = EXO_FW_VER(9, 1, 0);
+			exo_fw_no = EXO_FW_VER(9, 1, 0);
 			break;
 		case 13:
-			exoFwNo = EXO_FW_VER(10, 0, 0);
+			exo_fw_no = EXO_FW_VER(10, 0, 0);
 			break;
 		case 14:
-			exoFwNo = EXO_FW_VER(11, 0, 0);
+			exo_fw_no = EXO_FW_VER(11, 0, 0);
 			break;
 		}
 	}
@@ -272,41 +256,41 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 
 	// To avoid problems, make private debug mode always on if not semi-stock.
 	if (!ctxt->stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))
-		exoFlags |= EXO_FLAG_DBG_PRIV;
+		exo_flags |= EXO_FLAG_DBG_PRIV;
 
 	// Enable user debug.
 	if (user_debug)
-		exoFlags |= EXO_FLAG_DBG_USER;
+		exo_flags |= EXO_FLAG_DBG_USER;
 
 	// Disable proper failure handling.
 	if (ctxt->exo_ctx.no_user_exceptions)
-		exoFlags |= EXO_FLAG_NO_USER_EXC;
+		exo_flags |= EXO_FLAG_NO_USER_EXC;
 
 	// Enable user access to PMU.
 	if (ctxt->exo_ctx.user_pmu)
-		exoFlags |= EXO_FLAG_USER_PMU;
+		exo_flags |= EXO_FLAG_USER_PMU;
 
 	// Enable prodinfo blanking. Check if exo ini value is overridden. If not, check if enabled in exo ini.
 	if ((ctxt->exo_ctx.cal0_blank && *ctxt->exo_ctx.cal0_blank)
 			|| (!ctxt->exo_ctx.cal0_blank && cal0_blanking))
-		exoFlags |= EXO_FLAG_CAL0_BLANKING;
+		exo_flags |= EXO_FLAG_CAL0_BLANKING;
 
 	// Allow prodinfo writes. Check if exo ini value is overridden. If not, check if enabled in exo ini.
 	if ((ctxt->exo_ctx.cal0_allow_writes_sys && *ctxt->exo_ctx.cal0_allow_writes_sys)
 			|| (!ctxt->exo_ctx.cal0_allow_writes_sys && cal0_allow_writes_sys))
-		exoFlags |= EXO_FLAG_CAL0_WRITES_SYS;
+		exo_flags |= EXO_FLAG_CAL0_WRITES_SYS;
 
 	// Set mailbox values.
 	exo_cfg->magic = EXO_MAGIC_VAL;
-	exo_cfg->fwno = exoFwNo;
-	exo_cfg->flags[0] = exoFlags;
+	exo_cfg->fwno = exo_fw_no;
+	exo_cfg->flags[0] = exo_flags;
 
 	// If warmboot is lp0fw, add in RSA modulus.
 	volatile wb_cfg_t *wb_cfg = (wb_cfg_t *)(warmboot_base + ATM_WB_HEADER_OFF);
 
 	if (wb_cfg->magic == ATM_WB_MAGIC)
 	{
-		wb_cfg->fwno = exoFwNo;
+		wb_cfg->fwno = exo_fw_no;
 
 		// Set warmboot binary rsa modulus.
 		u8 *rsa_mod = (u8 *)malloc(512);

@@ -53,9 +53,10 @@ typedef struct _bl_hdr_t210b01_t
 typedef struct _pkg1_id_t
 {
 	const char *id;
-	u32 kb;
-	u32 tsec_off;
-	u32 pkg11_off;
+	u16 kb;
+	u16 fuses;
+	u16 tsec_off;
+	u16 pkg11_off;
 	u32 secmon_base;
 	u32 warmboot_base;
 	patch_t *secmon_patchset;
@@ -80,6 +81,6 @@ int  pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
 const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
 void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01);
 void pkg1_warmboot_patch(void *hos_ctxt);
-void pkg1_warmboot_config(void *hos_ctxt, u32 kb, u32 warmboot_base);
+void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base);
 
 #endif
