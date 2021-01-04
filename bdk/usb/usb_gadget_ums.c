@@ -1774,15 +1774,15 @@ static inline void _system_maintainance(usbd_gadget_ums_t *ums)
 
 	u32 time = get_tmr_ms();
 
-	if (timer_dram < time)
-	{
-		minerva_periodic_training();
-		timer_dram = get_tmr_ms() + 100;
-	}
-	else if (timer_status_bar < time)
+	if (timer_status_bar < time)
 	{
 		ums->system_maintenance(true);
 		timer_status_bar = get_tmr_ms() + 30000;
+	}
+	else if (timer_dram < time)
+	{
+		minerva_periodic_training();
+		timer_dram = get_tmr_ms() + EMC_PERIODIC_TRAIN_MS;
 	}
 }
 
