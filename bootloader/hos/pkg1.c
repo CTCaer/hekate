@@ -374,6 +374,8 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 					tmp_fuses++;
 				}
 			}
+			else // Replace burnt fuses with higher count.
+				burnt_fuses = fuses_fw;
 		}
 
 		// Configure Warmboot parameters. Anything lower is not supported.
