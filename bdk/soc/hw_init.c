@@ -419,7 +419,7 @@ void hw_init()
 	bpmp_mmu_enable();
 }
 
-void hw_reinit_workaround(bool extra_reconfig, u32 magic)
+void hw_reinit_workaround(bool coreboot, u32 magic)
 {
 	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
@@ -443,10 +443,10 @@ void hw_reinit_workaround(bool extra_reconfig, u32 magic)
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
 	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
 
-	if (extra_reconfig)
+	// Do coreboot mitigations.
+	if (coreboot)
 	{
 		msleep(10);
-		PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
 
 		clock_disable_cl_dvfs();
 
@@ -455,6 +455,9 @@ void hw_reinit_workaround(bool extra_reconfig, u32 magic)
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_SPIO);
+
+		// Reinstate SD controller power.
+		PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
 	}
 
 	// Power off display.

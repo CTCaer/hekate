@@ -21,7 +21,7 @@
 #include <utils/types.h>
 
 void hw_init();
-void hw_reinit_workaround(bool extra_reconfig, u32 magic);
+void hw_reinit_workaround(bool coreboot, u32 magic);
 u32  hw_get_chip_id();
 
 #endif
