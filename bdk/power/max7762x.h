@@ -58,7 +58,12 @@
 #define REGULATOR_LDO6 10
 #define REGULATOR_LDO7 11
 #define REGULATOR_LDO8 12
-#define REGULATOR_MAX 12
+#define REGULATOR_CPU0 13
+#define REGULATOR_GPU0 14
+#define REGULATOR_CPU1 15
+//#define REGULATOR_GPU1 16
+//#define REGULATOR_GPU1 17
+#define REGULATOR_MAX  15
 
 #define MAX77621_CPU_I2C_ADDR 0x1B
 #define MAX77621_GPU_I2C_ADDR 0x1C
@@ -132,10 +137,12 @@
 
 int max77620_regulator_get_status(u32 id);
 int max77620_regulator_config_fps(u32 id);
-int max77620_regulator_set_voltage(u32 id, u32 mv);
-int max77620_regulator_enable(u32 id, int enable);
-int max77620_regulator_set_volt_and_flags(u32 id, u32 mv, u8 flags);
+int max7762x_regulator_set_voltage(u32 id, u32 mv);
+int max7762x_regulator_enable(u32 id, bool enable);
+void max77620_config_gpio(u32 id, bool enable);
 void max77620_config_default();
 void max77620_low_battery_monitor_config(bool enable);
+
+void max77621_config_default(u32 id, bool por);
 
 #endif

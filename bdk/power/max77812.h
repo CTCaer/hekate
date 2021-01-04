@@ -73,6 +73,8 @@
 #define MAX77812_REG_GLB_CFG1		0x33
 #define MAX77812_REG_GLB_CFG2		0x34
 #define MAX77812_REG_GLB_CFG3		0x35
+
+/*! Protected area and settings only for MAX77812_REG_VERSION 4 */
 #define MAX77812_REG_GLB_CFG4		0x36
 #define MAX77812_REG_GLB_CFG5		0x37
 #define MAX77812_REG_GLB_CFG6		0x38
