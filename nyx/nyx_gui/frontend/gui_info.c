@@ -529,10 +529,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_style(lb_desc, &monospace_text);
 
 	lv_label_set_static_text(lb_desc,
-		"#00DDFF Detailed Info:#\n"
 		"SKU:\n"
 		"DRAM ID:\n"
 		"#FF8000 Burnt Fuses (ODM 7/6):#\n"
+		"ODM Fields (4, 6, 7):\n"
 		"Secure Boot key (SBK):\n"
 		"Device key (DK):\n"
 		"USB Stack:\n"
@@ -555,8 +555,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"Wafer ID:\n"
 		"X Coordinate:\n"
 		"Y Coordinate:\n"
-		"#FF8000 Chip ID Revision:#\n"
-		"ODM Fields (4, 6, 7):"
+		"#FF8000 Chip ID Revision:#"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
@@ -585,7 +584,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		sku = "Hoag (Mariko)";
 		break;
 	default:
-		sku = "Unknown";
+		sku = "#FF8000 Unknown#";
 		break;
 	}
 
@@ -657,7 +656,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(dram_man, "Micron 1y A 4GB");
 		break;
 	default:
-		strcpy(dram_man, "Unknown");
+		strcpy(dram_man, "#FF8000 Unknown#");
 		break;
 	}
 
@@ -728,13 +727,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"\n%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X%08X%08X%08X\n%08X\n"
+		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
-		"ID: %02X, Major: A0%d, Minor: %d\n"
-		"%08X %08X %08X",
+		"ID: %02X, Major: A0%d, Minor: %d",
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
+		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)),
@@ -747,8 +746,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB),
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
 		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
-		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF,
-		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7));
+		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
 
 	lv_label_set_text(lb_val, txt_buf);
 
@@ -783,10 +781,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		strcat(txt_buf, "Unknown");
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.rank0_ch0);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# ", ram_vendor.rank0_ch0);
+	strcat(txt_buf, " #FF8000 |# ");
 	switch (ram_vendor.rank0_ch1)
 	{
 	case 1:
@@ -799,12 +797,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		strcat(txt_buf, "Unknown");
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.rank0_ch1);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d)\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
-		ram_vendor.rank0_ch1, ram_rev0.rank0_ch0, ram_rev1.rank0_ch0, ram_rev0.rank0_ch1, ram_rev1.rank0_ch1,
-		die_channels);
+	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
+		ram_rev0.rank0_ch0, ram_rev1.rank0_ch0, ram_rev0.rank0_ch1, ram_rev1.rank0_ch1, die_channels);
 	switch ((ram_density.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
@@ -817,10 +814,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x 1GB");
 		break;
 	default:
-		strcat(txt_buf, " x Unk");
+		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d) #FF8000 |# %d", (ram_density.rank0_ch0 & 0x3C) >> 2, die_channels);
+	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", die_channels);
 	switch ((ram_density.rank0_ch1 & 0x3C) >> 2)
 	{
 	case 2:
@@ -833,10 +830,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x 1GB");
 		break;
 	default:
-		strcat(txt_buf, " x Unk");
+		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch1 & 0x3C) >> 2);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " (%d)\n\n", (ram_density.rank0_ch1 & 0x3C) >> 2);
+	strcat(txt_buf, "\n\n");
 
 	// Display info.
 	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;
@@ -853,35 +850,35 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "JDI LPM062M326A");
 		break;
 	case PANEL_INL_P062CCA_AZ1:
-		strcat(txt_buf, "InnoLux P062CCA-AZ");
+		strcat(txt_buf, "InnoLux P062CCA");
 		switch (display_rev)
 		{
 		case 0x93:
-			strcat(txt_buf, "1");
+			strcat(txt_buf, "-AZ1");
 			break;
 		case 0x95:
-			strcat(txt_buf, "2");
+			strcat(txt_buf, "-AZ2");
 			break;
 		case 0x96:
-			strcat(txt_buf, "3");
+			strcat(txt_buf, "-AZ3");
 			break;
 		default:
-			strcat(txt_buf, "X #FFDD00 Contact me!#");
+			strcat(txt_buf, " #FFDD00 Contact me!#");
 			break;
 		}
 		break;
 	case PANEL_AUO_A062TAN01:
-		strcat(txt_buf, "AUO A062TAN0");
+		strcat(txt_buf, "AUO A062");
 		switch (display_rev)
 		{
 		case 0x94:
-			strcat(txt_buf, "1");
+			strcat(txt_buf, "TAN01");
 			break;
 		case 0x95:
-			strcat(txt_buf, "2");
+			strcat(txt_buf, "TAN02");
 			break;
 		default:
-			strcat(txt_buf, "X #FFDD00 Contact me!#");
+			strcat(txt_buf, " #FFDD00 Contact me!#");
 			break;
 		}
 		break;
@@ -1404,7 +1401,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			rsvd_blocks = "Urgent (> 90%)";
 			break;
 		default:
-			rsvd_blocks = "Unknown";
+			rsvd_blocks = "#FF8000 Unknown#";
 			break;
 		}
 
