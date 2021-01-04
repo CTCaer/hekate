@@ -47,19 +47,26 @@
 #define STMFTS_ITO_CHECK               0xA7
 #define STMFTS_RELEASEINFO             0xAA
 #define STMFTS_WRITE_REG               0xB6
-#define STMFTS_AUTO_CALIBRATION        0xC3
+#define STMFTS_SWITCH_SENSE_MODE       0xC3
 #define STMFTS_NOISE_WRITE             0xC7
 #define STMFTS_NOISE_READ              0xC8
 #define STMFTS_RW_FRAMEBUFFER_REG      0xD0
 #define STMFTS_SAVE_CX_TUNING          0xFC
 
-#define STMFTS_UNK0 0xB8 //Request compensation
-#define STMFTS_UNK1 0xCF
-#define STMFTS_UNK2 0xF7
-#define STMFTS_UNK3 0xFA
-#define STMFTS_UNK4 0xF9
+#define STMFTS_REQU_COMP_DATA          0xB8
+#define STMFTS_VENDOR                  0xCF
+#define STMFTS_FLASH_UNLOCK            0xF7
+#define STMFTS_FLASH_WRITE_64K         0xF8
+#define STMFTS_FLASH_STATUS            0xF9
+#define STMFTS_FLASH_OP                0xFA
 #define STMFTS_UNK5 0x62
 
+/* cmd parameters */
+#define STMFTS_VENDOR_GPIO_STATE       0x01
+#define STMFTS_VENDOR_SENSE_MODE       0x02
+#define STMFTS_STYLUS_MODE             0x00
+#define STMFTS_FINGER_MODE             0x01
+#define STMFTS_HOVER_MODE              0x02
 
 /* events */
 #define STMFTS_EV_NO_EVENT             0x00
@@ -74,6 +81,7 @@
 #define STMFTS_EV_ERROR                0x0f
 #define STMFTS_EV_NOISE_READ           0x17
 #define STMFTS_EV_NOISE_WRITE          0x18
+#define STMFTS_EV_VENDOR               0x20
 
 #define STMFTS_EV_CONTROLLER_READY     0x10
 #define STMFTS_EV_STATUS               0x16
@@ -131,6 +139,15 @@ typedef struct _touch_event {
 	bool touch;
 } touch_event;
 
+typedef struct _touch_panel_info_t
+{
+	u8 idx;
+	u8 gpio0;
+	u8 gpio1;
+	u8 gpio2;
+	char *vendor;
+} touch_panel_info_t;
+
 typedef struct _touch_info {
 	u16 chip_id;
 	u16 fw_ver;
@@ -146,6 +163,7 @@ typedef struct _touch_fw_info_t {
 
 void touch_poll(touch_event *event);
 touch_event touch_poll_wait();
+touch_panel_info_t *touch_get_panel_vendor();
 int touch_get_fw_info(touch_fw_info_t *fw);
 touch_info touch_get_info();
 int touch_panel_ito_test(u8 *err);

@@ -909,37 +909,65 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		nyx_str->info.disp_id & 0xFF, (nyx_str->info.disp_id >> 8) & 0xFF, (nyx_str->info.disp_id >> 16) & 0xFF);
 
 	touch_fw_info_t touch_fw;
+	touch_panel_info_t *touch_panel;
+	bool panel_ic_paired = false;
 
 	if (!touch_get_fw_info(&touch_fw))
 	{
 		strcat(txt_buf, "\n\n#00DDFF Touch Panel:#\n#FF8000 Model:# ");
+
+		touch_panel = touch_get_panel_vendor();
+		if (touch_panel)
+			strcat(txt_buf, touch_panel->vendor);
+		else
+			strcat(txt_buf, "Unknown #FFDD00 Contact me!#");
+
+		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %08X (", touch_fw.fw_id);
+
 		switch (touch_fw.fw_id)
 		{
-		case 0x100100:
-			strcat(txt_buf, "NTD 4CD 1601");
+		case 0x00100100:
+			strcat(txt_buf, "4CD 1601");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == -1;
 			break;
 		case 0x00120100:
 		case 0x32000001:
-			strcat(txt_buf, "NTD 4CD 1801");
+			strcat(txt_buf, "4CD 1801");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == 0;
 			break;
 		case 0x001A0300:
 		case 0x32000102:
-			strcat(txt_buf, "NTD 4CD 2602");
+			strcat(txt_buf, "4CD 2602");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == 1;
 			break;
 		case 0x00290100:
 		case 0x32000302:
-			strcat(txt_buf, "NTD 4CD 3801");
+			strcat(txt_buf, "4CD 3801");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == 2;
 			break;
 		case 0x31051820:
 		case 0x32000402:
-			strcat(txt_buf, "NTD 4CD XXXX");
+			strcat(txt_buf, "4CD XXXX");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == 3;
+			break;
+		case 0x32000501:
+		case 0x33000502:
+			strcat(txt_buf, "4CD UNKN");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == 4;
 			break;
 		default:
-			strcat(txt_buf, "Unknown");
+			strcat(txt_buf, "#FF8000 Unknown#");
+			break;
 		}
 
-		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %X\n#FF8000 FTB ver:# %04X\n#FF8000 FW rev:# %04X",
-			touch_fw.fw_id, touch_fw.ftb_ver, touch_fw.fw_rev);
+		s_printf(txt_buf + strlen(txt_buf), " - %s)\n#FF8000 FTB ver:# %04X\n#FF8000 FW rev:# %04X",
+			panel_ic_paired ? "Paired" : "#FFDD00 Error#", touch_fw.ftb_ver, touch_fw.fw_rev);
 	}
 
 	// Check if patched unit.
