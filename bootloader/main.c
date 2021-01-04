@@ -1245,6 +1245,9 @@ static void _show_errors()
 
 static void _check_low_battery()
 {
+	if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
+		goto out;
+
 	int enough_battery;
 	int batt_volt = 0;
 	int charge_status = 0;

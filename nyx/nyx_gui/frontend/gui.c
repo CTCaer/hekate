@@ -718,11 +718,14 @@ lv_res_t mbox_action(lv_obj_t *btns, const char *txt)
 
 bool nyx_emmc_check_battery_enough()
 {
-	int batt_volt = 4000;
+	if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
+		return true;
+
+	int batt_volt = 0;
 
 	max17050_get_property(MAX17050_VCELL, &batt_volt);
 
-	if (batt_volt < 3650)
+	if (batt_volt && batt_volt < 3650)
 	{
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
