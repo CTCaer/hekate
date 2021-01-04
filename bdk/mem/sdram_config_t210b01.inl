@@ -122,7 +122,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	 * DRAM size information
 	 * Specifies the value for EMC_ADR_CFG
 	 */
-	.emc_adr_cfg                                     = 0x00000000, // 1 populated DRAM Device.
+	.emc_adr_cfg                                     = 0x00000000, // 1 Rank.
 
 	/*
 	 * Specifies the time to wait after asserting pin
@@ -273,7 +273,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	.emc_cfg_dig_dll                                 = 0x002C00A0,
 	.emc_cfg_dig_dll_1                               = 0x000F3701,
 	.emc_cfg_dig_dll_period                          = 0x00008000,
-	.emc_dev_select                                  = 0x00000002, // Dev0 only.
+	.emc_dev_select                                  = 0x00000002, // Rank 0 only.
 	.emc_sel_dpd_ctrl                                = 0x0004000C,
 
 	/* Pads trimmer delays */
@@ -543,9 +543,9 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	.emc_pmacro_cmd_ctrl2                            = 0x00000000,
 
 	/* DRAM size information */
-	.mc_emem_adr_cfg                                 = 0x00000000, // 1 populated DRAM Device.
-	.mc_emem_adr_cfg_dev0                            = 0x00080302, // Density 1024MB.
-	.mc_emem_adr_cfg_dev1                            = 0x00080302, // Density 1024MB.
+	.mc_emem_adr_cfg                                 = 0x00000000, // 1 Rank.
+	.mc_emem_adr_cfg_dev0                            = 0x00080302, // Rank 0 Density 1024MB.
+	.mc_emem_adr_cfg_dev1                            = 0x00080302, // Rank 1 Density 1024MB.
 	.mc_emem_adr_cfg_channel_mask                    = 0xFFFF2400,
 	.mc_emem_adr_cfg_bank_mask0                      = 0x6E574400,
 	.mc_emem_adr_cfg_bank_mask1                      = 0x39722800,
@@ -733,7 +733,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	// Samsung LPDDR4X 8GB K4UBE3D4AM-MGCJ for SDEV Iowa and Hoag.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_auto_cal_vref_sel0.
-	{ 0x00000001, 0x134 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_adr_cfg. 2 populated DRAM Devices.
+	{ 0x00000001, 0x134 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_adr_cfg. 2 Ranks.
 	{ 0x00000006, 0x1CC / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_quse.
 	{ 0x00000005, 0x1D0 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_quse_width.
 	{ 0x00000003, 0x1DC / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_einput.
@@ -764,7 +764,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x40000001, 0x45C / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_zcal_init_dev1.
 	{ 0x00000000, 0x594 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_pmacro_tx_pwrd4.
 	{ 0x00001000, 0x598 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // emc_pmacro_tx_pwrd5.
-	{ 0x00000001, 0x630 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // mc_emem_adr_cfg. 2 populated DRAM Devices.
+	{ 0x00000001, 0x630 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // mc_emem_adr_cfg. 2 Ranks.
 	{ 0x00002000, 0x64C / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // mc_emem_cfg. 8GB total density.
 	{ 0x00000002, 0x680 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // mc_emem_arb_timing_r2r.
 	{ 0x02020001, 0x694 / 4, DRAM_ID2(9) | DRAM_ID2(13) }, // mc_emem_arb_da_turns.
@@ -810,7 +810,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x2A800000, 0x6DC / 4, DRAM_ID2(16) }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, DRAM_ID2(16) }, // mc_video_protect_gpu_override1.
 
-	// Samsung LPDDR4X 4GB 10nm-class (1y) Die-X for Iowa, Hoag and SDS.
+	// Samsung LPDDR4X 4GB 10nm-class (1y) Die-X for Iowa, Hoag and Aula.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(17) | DRAM_ID2(19) | DRAM_ID2(24) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(17) | DRAM_ID2(19) | DRAM_ID2(24) }, // emc_auto_cal_vref_sel0.
 	{ 0x00000006, 0x1CC / 4, DRAM_ID2(17) | DRAM_ID2(19) | DRAM_ID2(24) }, // emc_quse.
@@ -822,10 +822,10 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x2A800000, 0x6DC / 4, DRAM_ID2(17) | DRAM_ID2(19) | DRAM_ID2(24) }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, DRAM_ID2(17) | DRAM_ID2(19) | DRAM_ID2(24) }, // mc_video_protect_gpu_override1.
 
-	// Samsung LPDDR4X 8GB 10nm-class (1y) Die-X for SDEV Iowa and SDS.
+	// Samsung LPDDR4X 8GB 10nm-class (1y) Die-X for SDEV Iowa and Aula.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_auto_cal_vref_sel0.
-	{ 0x00000001, 0x134 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_adr_cfg. 2 populated DRAM Devices.
+	{ 0x00000001, 0x134 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_adr_cfg. 2 Ranks.
 	{ 0x00000006, 0x1CC / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_quse.
 	{ 0x00000005, 0x1D0 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_quse_width.
 	{ 0x00000003, 0x1DC / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_einput.
@@ -847,7 +847,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x40000001, 0x45C / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_zcal_init_dev1.
 	{ 0x00000000, 0x594 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_pmacro_tx_pwrd4.
 	{ 0x00001000, 0x598 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // emc_pmacro_tx_pwrd5.
-	{ 0x00000001, 0x630 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // mc_emem_adr_cfg. 2 populated DRAM Devices.
+	{ 0x00000001, 0x630 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // mc_emem_adr_cfg. 2 Ranks.
 	{ 0x00002000, 0x64C / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // mc_emem_cfg. 8GB total density.
 	{ 0x00000001, 0x670 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // mc_emem_arb_timing_faw.
 	{ 0x00000002, 0x680 / 4, DRAM_ID2(18) | DRAM_ID2(23) }, // mc_emem_arb_timing_r2r.
@@ -881,7 +881,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	// Samsung LPDDR4X 8GB 10nm-class (1y) Die-Y for SDEV Iowa.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(21) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(21) }, // emc_auto_cal_vref_sel0.
-	{ 0x00000001, 0x134 / 4, DRAM_ID2(21) }, // emc_adr_cfg. 2 populated DRAM Devices.
+	{ 0x00000001, 0x134 / 4, DRAM_ID2(21) }, // emc_adr_cfg. 2 Ranks.
 	{ 0x00000008, 0x24C / 4, DRAM_ID2(21) }, // emc_tfaw.
 	{ 0x08010004, 0x2B8 / 4, DRAM_ID2(21) }, // emc_mrw1.
 	{ 0x08020000, 0x2BC / 4, DRAM_ID2(21) }, // emc_mrw2.
@@ -914,7 +914,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x40000001, 0x45C / 4, DRAM_ID2(21) }, // emc_zcal_init_dev1.
 	{ 0x00000000, 0x594 / 4, DRAM_ID2(21) }, // emc_pmacro_tx_pwrd4.
 	{ 0x00001000, 0x598 / 4, DRAM_ID2(21) }, // emc_pmacro_tx_pwrd5.
-	{ 0x00000001, 0x630 / 4, DRAM_ID2(21) }, // mc_emem_adr_cfg. 2 populated DRAM Devices.
+	{ 0x00000001, 0x630 / 4, DRAM_ID2(21) }, // mc_emem_adr_cfg. 2 Ranks.
 	{ 0x00002000, 0x64C / 4, DRAM_ID2(21) }, // mc_emem_cfg. 8GB total density.
 	{ 0x00000001, 0x670 / 4, DRAM_ID2(21) }, // mc_emem_arb_timing_faw.
 	{ 0x00000002, 0x680 / 4, DRAM_ID2(21) }, // mc_emem_arb_timing_r2r.
@@ -922,7 +922,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x2A800000, 0x6DC / 4, DRAM_ID2(21) }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, DRAM_ID2(21) }, // mc_video_protect_gpu_override1.
 
-	// Samsung LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown SDS.
+	// Samsung LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown Aula.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(22) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(22) }, // emc_auto_cal_vref_sel0.
 	{ 0x00000008, 0x24C / 4, DRAM_ID2(22) }, // emc_tfaw.
@@ -986,7 +986,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x00000002, 0x6E0 / 4, DRAM_ID2(22) }, // mc_video_protect_gpu_override1.
 	{ 0x0000009C, 0x814 / 4, DRAM_ID2(22) }, // swizzle_rank_byte_encode.
 
-	// Micron LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown Iowa/Hoag/SDS.
+	// Micron LPDDR4X 4GB 10nm-class (1y) Die-A for Unknown Iowa/Hoag/Aula.
 	{ 0x05500000, 0x0D4 / 4, DRAM_ID2(25) | DRAM_ID2(26) | DRAM_ID2(27) }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_ID2(25) | DRAM_ID2(26) | DRAM_ID2(27) }, // emc_auto_cal_vref_sel0.
 	{ 0x00000006, 0x1CC / 4, DRAM_ID2(25) | DRAM_ID2(26) | DRAM_ID2(27) }, // emc_quse.

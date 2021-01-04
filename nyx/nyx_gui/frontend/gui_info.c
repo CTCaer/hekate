@@ -635,11 +635,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_X:
 	case LPDDR4X_HOAG_4GB_SAMSUNG_1Y_X:
-	case LPDDR4X_SDS_4GB_SAMSUNG_1Y_X:
+	case LPDDR4X_AULA_4GB_SAMSUNG_1Y_X:
 		strcpy(dram_man, "Samsung 1y X 4GB");
 		break;
 	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_X:
-	case LPDDR4X_SDS_8GB_SAMSUNG_1Y_X:
+	case LPDDR4X_AULA_8GB_SAMSUNG_1Y_X:
 		strcpy(dram_man, "Samsung 1y X 8GB");
 		break;
 	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y:
@@ -648,12 +648,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
 		strcpy(dram_man, "Samsung 1y Y 8GB");
 		break;
-	case LPDDR4X_SDS_4GB_SAMSUNG_1Y_A:
+	case LPDDR4X_AULA_4GB_SAMSUNG_1Y_A:
 		strcpy(dram_man, "Samsung 1y A 4GB");
 		break;
 	case LPDDR4X_IOWA_4GB_MICRON_1Y_A:
 	case LPDDR4X_HOAG_4GB_MICRON_1Y_A:
-	case LPDDR4X_SDS_4GB_MICRON_1Y_A:
+	case LPDDR4X_AULA_4GB_MICRON_1Y_A:
 		strcpy(dram_man, "Micron 1y A 4GB");
 		break;
 	default:

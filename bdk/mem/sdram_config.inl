@@ -97,7 +97,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	 * DRAM size information
 	 * Specifies the value for EMC_ADR_CFG
 	 */
-	.emc_adr_cfg                                     = 0x00000001, // 2 populated DRAM Devices.
+	.emc_adr_cfg                                     = 0x00000001, // 2 Ranks.
 
 	/*
 	 * Specifies the time to wait after asserting pin
@@ -243,7 +243,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.emc_cfg_dig_dll                                 = 0x002C00A0,
 	.emc_cfg_dig_dll_1                               = 0x00003701,
 	.emc_cfg_dig_dll_period                          = 0x00008000,
-	.emc_dev_select                                  = 0x00000000, // Both devices.
+	.emc_dev_select                                  = 0x00000000, // Both Ranks.
 	.emc_sel_dpd_ctrl                                = 0x00040008,
 
 	/* Pads trimmer delays */
@@ -406,7 +406,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.pmc_ddr_ctrl                                    = 0x0007FF8B,
 	.emc_acpd_control                                = 0x00000000,
 
-	.emc_swizzle_rank0_byte0                         = 0x76543201,
+	.emc_swizzle_rank0_byte0                         = 0x76543201, // Overridden to 0x76543201 by spare6/7.
 	.emc_swizzle_rank0_byte1                         = 0x65324710,
 	.emc_swizzle_rank0_byte2                         = 0x25763410,
 	.emc_swizzle_rank0_byte3                         = 0x25673401,
@@ -454,7 +454,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.emc_pmacro_data_rx_term_mode                    = 0x00000010,
 	.emc_pmacro_cmd_rx_term_mode                     = 0x00003000,
 	.emc_pmacro_data_pad_tx_ctrl                     = 0x02000111,
-	.emc_pmacro_common_pad_tx_ctrl                   = 0x00000008,
+	.emc_pmacro_common_pad_tx_ctrl                   = 0x00000008, // Overridden to 0x0000000A by spare4/5.
 	.emc_pmacro_cmd_pad_tx_ctrl                      = 0x0A000000,
 
 	.emc_cfg3                                        = 0x00000040,
@@ -490,9 +490,9 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.emc_pmacro_cmd_ctrl2                            = 0x0A0A0A0A,
 
 	/* DRAM size information */
-	.mc_emem_adr_cfg                                 = 0x00000001, // 2 populated DRAM Devices.
-	.mc_emem_adr_cfg_dev0                            = 0x00070302, // Density 512MB.
-	.mc_emem_adr_cfg_dev1                            = 0x00070302, // Density 512MB.
+	.mc_emem_adr_cfg                                 = 0x00000001, // 2 Ranks.
+	.mc_emem_adr_cfg_dev0                            = 0x00070302, // Rank 0 Density 512MB.
+	.mc_emem_adr_cfg_dev1                            = 0x00070302, // Rank 1 Density 512MB.
 	.mc_emem_adr_cfg_channel_mask                    = 0xFFFF2400,
 	.mc_emem_adr_cfg_bank_mask0                      = 0x6E574400,
 	.mc_emem_adr_cfg_bank_mask1                      = 0x39722800,
@@ -653,8 +653,8 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	{ 0x00000005, 368, DRAM_ID(1) | DRAM_ID(5) }, // mc_emem_arb_timing_r2w.
 
 	// Samsung 6GB density config.
-	{ 0x000C0302, 347, DRAM_ID(4) },              // mc_emem_adr_cfg_dev0. 768MB sub-partition density.
-	{ 0x000C0302, 348, DRAM_ID(4) },              // mc_emem_adr_cfg_dev1. 768MB sub-partition density.
+	{ 0x000C0302, 347, DRAM_ID(4) },              // mc_emem_adr_cfg_dev0. 768MB Rank 0 density.
+	{ 0x000C0302, 348, DRAM_ID(4) },              // mc_emem_adr_cfg_dev1. 768MB Rank 1 density.
 	{ 0x00001800, 353, DRAM_ID(4) },              // mc_emem_cfg. 6GB total density.
 
 #ifdef CONFIG_SDRAM_COPPER_SUPPORT

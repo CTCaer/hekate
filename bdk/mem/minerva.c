@@ -129,6 +129,7 @@ void minerva_change_freq(minerva_freq_t freq)
 	if (!minerva_cfg)
 		return;
 
+	// Check if requested frequency is different. Do not allow otherwise because it will hang.
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 	if (mtc_cfg->rate_from != freq)
 	{
