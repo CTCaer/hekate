@@ -23,6 +23,8 @@
 gfx_ctxt_t gfx_ctxt;
 gfx_con_t gfx_con;
 
+static bool gfx_con_init_done = false;
+
 static const u8 _gfx_font[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Char 032 ( )
 	0x00, 0x30, 0x30, 0x18, 0x18, 0x00, 0x0C, 0x00, // Char 033 (!)
@@ -157,6 +159,8 @@ void gfx_con_init()
 	gfx_con.fillbg = 1;
 	gfx_con.bgcol = 0xFF1B1B1B;
 	gfx_con.mute = 0;
+
+	gfx_con_init_done = true;
 }
 
 void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol)
@@ -263,7 +267,7 @@ void gfx_putc(char c)
 
 void gfx_puts(char *s)
 {
-	if (!s || gfx_con.mute)
+	if (!s || !gfx_con_init_done || gfx_con.mute)
 		return;
 
 	for (; *s; s++)
@@ -319,7 +323,7 @@ void gfx_put_big_sep()
 
 void gfx_printf(const char *fmt, ...)
 {
-	if (gfx_con.mute)
+	if (!gfx_con_init_done || gfx_con.mute)
 		return;
 
 	va_list ap;
@@ -395,7 +399,7 @@ void gfx_printf(const char *fmt, ...)
 
 void gfx_hexdump(u32 base, const u8 *buf, u32 len)
 {
-	if (gfx_con.mute)
+	if (!gfx_con_init_done || gfx_con.mute)
 		return;
 
 	u8 prevFontSize = gfx_con.fntsz;
