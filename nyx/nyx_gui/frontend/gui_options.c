@@ -36,6 +36,7 @@ static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
 
 static bool ini_changes_made = false;
+static bool nyx_changes_made = false;
 
 void nyx_options_clear_ini_changes_made()
 {
@@ -298,8 +299,12 @@ static lv_res_t _autoboot_hide_delay_action(lv_obj_t *btn)
 
 static lv_res_t _autoboot_delay_action(lv_obj_t *ddlist)
 {
-	h_cfg.bootwait = lv_ddlist_get_selected(ddlist);
-	ini_changes_made = true;
+	u32 new_selection = lv_ddlist_get_selected(ddlist);
+	if (h_cfg.bootwait != new_selection)
+	{
+		h_cfg.bootwait = new_selection;
+		ini_changes_made = true;
+	}
 
 	return LV_RES_OK;
 }
@@ -315,7 +320,12 @@ static lv_res_t _slider_brightness_action(lv_obj_t * slider)
 
 static lv_res_t _data_verification_action(lv_obj_t *ddlist)
 {
-	n_cfg.verification = lv_ddlist_get_selected(ddlist);
+	u32 new_selection = lv_ddlist_get_selected(ddlist);
+	if (n_cfg.verification != new_selection)
+	{
+		n_cfg.verification = new_selection;
+		nyx_changes_made = true;
+	}
 
 	return LV_RES_OK;
 }
@@ -327,6 +337,8 @@ static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 
 	int res = !create_nyx_config_entry();
+
+	nyx_changes_made = false;
 
 	if (res)
 		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
@@ -610,6 +622,8 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 		u32 new_epoch = max77620_rtc_date_to_epoch(&time);
 
 		n_cfg.timeoff = new_epoch - epoch;
+
+		nyx_changes_made = true;
 	}
 
 	mbox_action(btns, txt);
@@ -620,7 +634,10 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 static lv_res_t _action_clock_edit_save(lv_obj_t *btns, const char * txt)
 {
 	_action_clock_edit(btns, txt);
-	_save_nyx_options_action(NULL);
+
+	// Save if changes were made.
+	if (nyx_changes_made)
+		_save_nyx_options_action(NULL);
 
 	return LV_RES_INV;
 }
@@ -874,16 +891,70 @@ disabled:;
 
 static lv_res_t _home_screen_action(lv_obj_t *ddlist)
 {
-	n_cfg.home_screen = lv_ddlist_get_selected(ddlist);
+	u32 new_selection = lv_ddlist_get_selected(ddlist);
+	if (n_cfg.home_screen != new_selection)
+	{
+		n_cfg.home_screen = new_selection;
+		nyx_changes_made = true;
+	}
 
 	return LV_RES_OK;
+}
+
+static lv_res_t _action_nyx_options_save(lv_obj_t *btns, const char * txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	mbox_action(btns, txt);
+
+	if (!btn_idx)
+		_save_nyx_options_action(NULL);
+
+	return LV_RES_INV;
+}
+
+static void _check_nyx_changes()
+{
+	if (nyx_changes_made)
+	{
+		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+		lv_obj_set_style(dark_bg, &mbox_darken);
+		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+		static const char * mbox_btn_map[] = { "\222Save", "\222Cancel", "" };
+		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+		lv_mbox_set_recolor_text(mbox, true);
+
+		lv_mbox_set_text(mbox,
+			"#FF8000 Nyx configuration#\n\n"
+			"You changed your configuration!\n\n"
+			"Do you want to save it?");
+
+		lv_mbox_add_btns(mbox, mbox_btn_map, _action_nyx_options_save);
+		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_set_top(mbox, true);
+
+		nyx_changes_made = false;
+	}
+}
+
+static lv_res_t _action_win_nyx_options_close(lv_obj_t *btn)
+{
+	lv_win_close_action(btn);
+
+	close_btn = NULL;
+
+	_check_nyx_changes();
+
+	return LV_RES_INV;
 }
 
 lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 {
 	lv_theme_t *th = lv_theme_get_current();
 
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_HOME" Nyx Options");
+	lv_obj_t *win = nyx_create_window_custom_close_btn(SYMBOL_HOME" Nyx Options", _action_win_nyx_options_close);
 
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);
