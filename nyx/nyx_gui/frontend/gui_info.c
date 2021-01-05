@@ -207,9 +207,9 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 		}
 		else
 		{
-			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01_part0.bin", NULL);
+			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01_x898.bin", NULL);
 			error = sd_save_to_file((u8 *)0x7000F898, 0x68, path);
-			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01_part1.bin", NULL);
+			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01_x900.bin", NULL);
 			if (!error)
 				error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
 		}
