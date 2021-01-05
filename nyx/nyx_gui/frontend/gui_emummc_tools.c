@@ -214,7 +214,7 @@ static void _create_mbox_emummc_raw()
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	char *txt_buf = (char *)malloc(0x500);
+	char *txt_buf = (char *)malloc(0x4000);
 	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 
 	memset(&mbr_ctx, 0, sizeof(mbr_ctxt_t));
@@ -607,8 +607,28 @@ static lv_res_t _create_emummc_mig4_action(lv_obj_t * btns, const char * txt)
 	return LV_RES_INV;
 }
 
-static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
+bool em_raw;
+bool em_file;
+static lv_res_t _create_emummc_migrate_action(lv_obj_t * btns, const char * txt)
 {
+	bool backup = false;
+	bool emummc = false;
+
+	switch (lv_btnm_get_pressed(btns))
+	{
+	case 0:
+		backup = true;
+		break;
+	case 1:
+		emummc = true;
+		break;
+	case 2:
+		break;
+	case 3:
+		mbox_action(btns, txt);
+		return LV_RES_INV;
+	}
+
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -620,7 +640,87 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	char *txt_buf = (char *)malloc(0x500);
+	char *txt_buf = (char *)malloc(0x4000);
+
+	if (backup)
+	{
+		s_printf(txt_buf,
+			"#C7EA46 Found suitable backup for emuMMC!#\n"
+			"#FF8000 Do you want to migrate it?#\n\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig4_action);
+	}
+	else if (emummc)
+	{
+		s_printf(txt_buf,
+			"#C7EA46 Found SD Partition based emuMMC!#\n"
+			"#FF8000 Do you want to repair the config for it?#\n\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig3_action);
+	}
+	else if (em_raw && em_file)
+	{
+		s_printf(txt_buf,
+			"#C7EA46 Found both foreign SD File and Partition emunand!#\n"
+			"#FF8000 Choose what to migrate:#\n\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map1, _create_emummc_mig1_action);
+	}
+	else if (em_raw)
+	{
+		s_printf(txt_buf,
+			"#C7EA46 Found foreign SD Partition emunand!#\n"
+			"#FF8000 Do you want to migrate it?#\n\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig2_action);
+	}
+	else if (em_file)
+	{
+		s_printf(txt_buf,
+			"#C7EA46 Found foreign SD File emunand!#\n"
+			"#FF8000 Do you want to migrate it?#\n\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig0_action);
+	}
+	else
+	{
+		s_printf(txt_buf, "No emuMMC or foreign emunand found!\n\n");
+		lv_mbox_add_btns(mbox, mbox_btn_map3, mbox_action);
+	}
+
+	lv_mbox_set_text(mbox, txt_buf);
+	free(txt_buf);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	mbox_action(btns, txt);
+
+	return LV_RES_INV;
+}
+
+typedef struct _emummc_images_t
+{
+	char *dirlist;
+	u32 part_sector[3];
+	u32 part_type[3];
+	u32 part_end[3];
+	char part_path[3 * 128];
+	lv_obj_t *win;
+} emummc_images_t;
+
+static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static char *mbox_btn_map[] = { "\262Backup", "\262Fix RAW", "\262Emunand", "\222Cancel", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
+
+	lv_mbox_set_text(mbox,
+		"Welcome to #C7EA46 emuMMC# migration tool!\n\n"
+		"Please choose what type of migration you want to do.\n"
+		"Anything that was not found will have the button disabled.");
+
+	char *path_buf = (char *)malloc(0x512);
 	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 	u8 *efi_part = (u8 *)malloc(0x200);
 
@@ -631,10 +731,12 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	sdmmc_t sdmmc;
 	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
+	em_raw = false;
+	em_file = false;
 	bool backup = false;
 	bool emummc = false;
-	bool file_based = false;
-	bool em = false;
+	bool rawnand_backup = false;
+
 	mbr_ctx.sector_start = 0;
 	mbr_ctx.part_idx = 0;
 
@@ -664,103 +766,60 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 		}
 	}
 
-	//! TODO: What about unallocated
-
 	if (!mbr_ctx.part_idx)
 	{
 		sdmmc_storage_read(&sd_storage, 0x4003, 1, efi_part);
 		if (!memcmp(efi_part, "EFI PART", 8))
-			em = true;
+			em_raw = true;
 	}
 
-	s_printf(txt_buf, "%c%c%c%c%s", 's', 'x', 'o','s', "/emunand/boot0.bin");
+	s_printf(path_buf, "%c%c%c%c%s", 's', 'x', 'o','s', "/emunand/boot0.bin");
 
-	if(!f_stat(txt_buf, NULL))
-		file_based = true;
+	if(!f_stat(path_buf, NULL))
+		em_file = true;
 
-	bool rawnand_backup_found = false;
-
-	emmcsn_path_impl(txt_buf, "", "BOOT0", &storage);
-	if(!f_stat(txt_buf, NULL))
+	emmcsn_path_impl(path_buf, "", "BOOT0", &storage);
+	if(!f_stat(path_buf, NULL))
 		backup = true;
 
-	emmcsn_path_impl(txt_buf, "", "rawnand.bin", &storage);
-	if(!f_stat(txt_buf, NULL))
-		rawnand_backup_found = true;
+	emmcsn_path_impl(path_buf, "", "rawnand.bin", &storage);
+	if(!f_stat(path_buf, NULL))
+		rawnand_backup = true;
 
-	emmcsn_path_impl(txt_buf, "", "rawnand.bin.00", &storage);
-	if(!f_stat(txt_buf, NULL))
-		rawnand_backup_found = true;
+	emmcsn_path_impl(path_buf, "", "rawnand.bin.00", &storage);
+	if(!f_stat(path_buf, NULL))
+		rawnand_backup = true;
 
-	if (backup && rawnand_backup_found)
-		backup = true;
-	else
-		backup = false;
+	backup = backup && rawnand_backup;
 
 	sd_unmount();
 	sdmmc_storage_end(&storage);
 
+	// Check available types and enable the corresponding buttons.
 	if (backup)
-	{
-		s_printf(txt_buf,
-			"#C7EA46 Found suitable backup for emuMMC!#\n"
-			"#FF8000 Do you want to migrate it?#\n\n");
-		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig4_action);
-	}
-	else if (emummc)
-	{
-		s_printf(txt_buf,
-			"#C7EA46 Found SD Partition based emuMMC!#\n"
-			"#FF8000 Do you want to repair the config for it?#\n\n");
-		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig3_action);
-	}
-	else if (em && !file_based)
-	{
-		s_printf(txt_buf,
-			"#C7EA46 Found foreign SD Partition emunand!#\n"
-			"#FF8000 Do you want to migrate it?#\n\n");
-		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig2_action);
-	}
-	else if (!em && file_based)
-	{
-		s_printf(txt_buf,
-			"#C7EA46 Found foreign SD File emunand!#\n"
-			"#FF8000 Do you want to migrate it?#\n\n");
-		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig0_action);
-	}
-	else if (em && file_based)
-	{
-		s_printf(txt_buf,
-			"#C7EA46 Found both foreign SD File and Partition emunand!#\n"
-			"#FF8000 Choose what to migrate:#\n\n");
-		lv_mbox_add_btns(mbox, mbox_btn_map1, _create_emummc_mig1_action);
-	}
+		mbox_btn_map[0][0] = '\222';
 	else
-	{
-		s_printf(txt_buf, "No emuMMC or foreign emunand found!\n\n");
-		lv_mbox_add_btns(mbox, mbox_btn_map3, mbox_action);
-	}
+		mbox_btn_map[0][0] = '\262';
+	if (emummc)
+		mbox_btn_map[1][0] = '\222';
+	else
+		mbox_btn_map[1][0] = '\262';
+	if (em_raw || em_file)
+		mbox_btn_map[2][0] = '\222';
+	else
+		mbox_btn_map[2][0] = '\262';
 
-	lv_mbox_set_text(mbox, txt_buf);
-	free(txt_buf);
+	free(path_buf);
 	free(mbr);
 	free(efi_part);
+
+	lv_mbox_add_btns(mbox, (const char **)mbox_btn_map, _create_emummc_migrate_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
 	return LV_RES_OK;
 }
-
-typedef struct _emummc_images_t
-{
-	char *dirlist;
-	u32 part_sector[3];
-	u32 part_type[3];
-	u32 part_end[3];
-	char part_path[3 * 128];
-	lv_obj_t *win;
-} emummc_images_t;
 
 static emummc_images_t *emummc_img;
 
@@ -850,7 +909,7 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	emummc_img->win = win;
 
 	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
-	char *path = malloc(256);
+	char *path = malloc(512);
 
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
@@ -962,7 +1021,7 @@ out0:;
 	lv_btn_ext_t *ext;
 	lv_obj_t *btn_label = NULL;
 	lv_obj_t *lv_desc = NULL;
-	char *txt_buf = malloc(0x500);
+	char *txt_buf = malloc(0x4000);
 
 	// Create RAW buttons.
 	for (u32 raw_btn_idx = 0; raw_btn_idx < 3; raw_btn_idx++)
@@ -1109,7 +1168,7 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
-	char *txt_buf = (char *)malloc(0x200);
+	char *txt_buf = (char *)malloc(0x4000);
 
 	if (emu_info.enabled)
 	{
