@@ -31,6 +31,9 @@
 #include <power/bm92t36.h>
 #include <power/bq24193.h>
 #include <power/max17050.h>
+#include <power/max77620.h>
+#include <power/max7762x.h>
+#include <power/max77812.h>
 #include <sec/se.h>
 #include <sec/tsec.h>
 #include <soc/fuse.h>
@@ -1804,7 +1807,6 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	lv_label_set_static_text(lb_desc,
 		"#00DDFF Fuel Gauge IC Info:#\n"
 		"Capacity now:\n"
-		"Capacity now:\n"
 		"Capacity full:\n"
 		"Capacity (design):\n"
 		"Current now:\n"
@@ -1815,6 +1817,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		"Max voltage reached:\n"
 		"Empty voltage:\n"
 		"Battery temp:\n\n"
+		"#00DDFF PMIC IC Info:#\n"
+		"Main PMIC:\n\n"
+		"CPU/GPU PMIC:\n"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
@@ -1825,12 +1830,11 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	char *txt_buf = (char *)malloc(0x4000);
 	int value = 0;
+	int cap_pct = 0;
 
-	max17050_get_property(MAX17050_RepSOC, &value);
-	s_printf(txt_buf, "\n%d %\n", value >> 8);
-
+	max17050_get_property(MAX17050_RepSOC, &cap_pct);
 	max17050_get_property(MAX17050_RepCap, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
+	s_printf(txt_buf, "\n%d mAh [%d %]\n", value, cap_pct >> 8);
 
 	max17050_get_property(MAX17050_FullCAP, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
@@ -1869,9 +1873,36 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	max17050_get_property(MAX17050_TEMP, &value);
 	if (value >= 0)
-		s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n", value / 10, value % 10);
+		s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, value % 10);
 	else
-		s_printf(txt_buf + strlen(txt_buf), "-%d.%d oC\n", (~value + 1) / 10, (~value + 1) % 10);
+		s_printf(txt_buf + strlen(txt_buf), "-%d.%d oC\n\n\n", (~value + 1) / 10, (~value + 1) % 10);
+
+	value = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID4);
+	u32 main_pmic_version = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID3) & 0xF;
+
+	if (value == 0x35)
+		s_printf(txt_buf + strlen(txt_buf), "max77620 v%d\nErista OTP\n", main_pmic_version);
+	else if (value == 0x53)
+		s_printf(txt_buf + strlen(txt_buf), "max77620 v%d\nMariko OTP\n", main_pmic_version);
+	else
+		s_printf(txt_buf + strlen(txt_buf), "max77620 v%d\n#FF8000 Unknown OTP# (%02X)\n", main_pmic_version, value);
+
+	u32 cpu_gpu_pmic_type = h_cfg.t210b01 ? (FUSE(FUSE_RESERVED_ODM28_T210B01) & 1) + 1 : 0;
+	switch (cpu_gpu_pmic_type)
+	{
+	case 0:
+		s_printf(txt_buf + strlen(txt_buf), "max77621 v%d",
+			i2c_recv_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CHIPID1_REG));
+		break;
+	case 1:
+		s_printf(txt_buf + strlen(txt_buf), "max77812-2 v%d",
+			i2c_recv_byte(I2C_5, MAX77812_PHASE31_CPU_I2C_ADDR, MAX77812_REG_VERSION) & 7);
+		break;
+	case 2:
+		s_printf(txt_buf + strlen(txt_buf), "max77812-3 v%d.0",
+			i2c_recv_byte(I2C_5, MAX77812_PHASE211_CPU_I2C_ADDR, MAX77812_REG_VERSION) & 7);
+		break;
+	}
 
 	lv_label_set_text(lb_val, txt_buf);
 

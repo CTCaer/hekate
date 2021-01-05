@@ -38,6 +38,7 @@
 #include <power/max17050.h>
 #include <rtc/max77620-rtc.h>
 #include <soc/bpmp.h>
+#include <soc/fuse.h>
 #include <soc/hw_init.h>
 #include <soc/t210.h>
 #include <storage/nx_sd.h>
