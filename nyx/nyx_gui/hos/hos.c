@@ -180,7 +180,7 @@ void hos_eks_get()
 
 		// Check if valid and for this unit.
 		if (eks->magic == HOS_EKS_MAGIC &&
-			eks->lot0 == FUSE(FUSE_OPT_LOT_CODE_0))
+			(eks->lot0 == FUSE(FUSE_OPT_LOT_CODE_0) || eks->lot0 == FUSE(FUSE_PRIVATE_KEY0)))
 		{
 			h_cfg.eks = eks;
 			return;
