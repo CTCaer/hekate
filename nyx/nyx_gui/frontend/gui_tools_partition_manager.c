@@ -2378,7 +2378,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_obj_align(btn1, h1, LV_ALIGN_IN_TOP_LEFT, 0, LV_DPI * 5);
 	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _action_part_manager_ums_sd);
 
-	lv_obj_t *btn_flash_l4t = lv_btn_create(h1, NULL);
+	btn_flash_l4t = lv_btn_create(h1, NULL);
 	lv_obj_t *label_btn2 = lv_label_create(btn_flash_l4t, NULL);
 	lv_btn_set_fit(btn_flash_l4t, true, true);
 	lv_label_set_static_text(label_btn2, SYMBOL_DOWNLOAD"  Flash Linux");
