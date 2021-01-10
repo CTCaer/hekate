@@ -134,7 +134,12 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 
 			// Check for overflow.
 			if ((file_size + *total_size) < *total_size)
+			{
+				// Set size to > 1GB, skip next folders and return.
+				*total_size = 0x80000000;
+				res = -1;
 				break;
+			}
 
 			*total_size += file_size;
 			*total_files += 1;
@@ -177,7 +182,11 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 
 			// If total is > 1GB exit.
 			if (*total_size > (RAM_DISK_SZ - 0x1000000)) // 0x2400000.
+			{
+				// Skip next folders and return.
+				res = -1;
 				break;
+			}
 		}
 		else // It's a directory.
 		{
