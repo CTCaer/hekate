@@ -56,7 +56,7 @@ void set_fan_duty(u32 duty)
 	if (inv_duty == 236)
 	{
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (0x100 << 16); // Bit 24 is absolute 0%.
-		regulator_disable_5v(REGULATOR_5V_FAN);
+		regulator_5v_disable(REGULATOR_5V_FAN);
 
 		// Disable fan.
 		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) =
@@ -65,7 +65,7 @@ void set_fan_duty(u32 duty)
 	else // Set PWM duty.
 	{
 		// Fan power supply.
-		regulator_enable_5v(REGULATOR_5V_FAN);
+		regulator_5v_enable(REGULATOR_5V_FAN);
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (inv_duty << 16);
 
 		// Enable fan.

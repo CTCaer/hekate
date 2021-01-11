@@ -429,7 +429,7 @@ void hw_reinit_workaround(bool coreboot, u32 magic)
 	touch_power_off();
 	set_fan_duty(0);
 	jc_deinit();
-	regulator_disable_5v(REGULATOR_5V_ALL);
+	regulator_5v_disable(REGULATOR_5V_ALL);
 	clock_disable_uart(UART_B);
 	clock_disable_uart(UART_C);
 #endif

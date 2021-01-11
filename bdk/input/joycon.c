@@ -808,10 +808,10 @@ void jc_power_supply(u8 uart, bool enable)
 {
 	if (enable)
 	{
-		if (regulator_get_5v_dev_enabled(1 << uart))
+		if (regulator_5v_get_dev_enabled(1 << uart))
 			return;
 
-		regulator_enable_5v(1 << uart);
+		regulator_5v_enable(1 << uart);
 
 		if (jc_init_done)
 		{
@@ -841,10 +841,10 @@ void jc_power_supply(u8 uart, bool enable)
 	}
 	else
 	{
-		if (!regulator_get_5v_dev_enabled(1 << uart))
+		if (!regulator_5v_get_dev_enabled(1 << uart))
 			return;
 
-		regulator_disable_5v(1 << uart);
+		regulator_5v_disable(1 << uart);
 
 		if (uart == UART_C)
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_3, GPIO_LOW);

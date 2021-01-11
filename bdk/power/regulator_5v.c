@@ -21,8 +21,9 @@
 #include <utils/types.h>
 
 static u8 reg_5v_dev = 0;
+static bool batt_src = false;
 
-void regulator_enable_5v(u8 dev)
+void regulator_5v_enable(u8 dev)
 {
 	// The power supply selection from battery or USB is automatic.
 	if (!reg_5v_dev)
@@ -32,6 +33,7 @@ void regulator_enable_5v(u8 dev)
 		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
+		batt_src = true;
 
 		// Fan and Rail power from USB 5V VDD.
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = PINMUX_LPDR | 1;
@@ -47,7 +49,7 @@ void regulator_enable_5v(u8 dev)
 	reg_5v_dev |= dev;
 }
 
-void regulator_disable_5v(u8 dev)
+void regulator_5v_disable(u8 dev)
 {
 	reg_5v_dev &= ~dev;
 
@@ -58,6 +60,7 @@ void regulator_disable_5v(u8 dev)
 		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_DISABLE);
 		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_SPIO);
 		PINMUX_AUX(PINMUX_AUX_SATA_LED_ACTIVE) = PINMUX_PARKED | PINMUX_INPUT_ENABLE;
+		batt_src = false;
 
 		// Rail power from USB 5V VDD.
 		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
@@ -70,7 +73,15 @@ void regulator_disable_5v(u8 dev)
 	}
 }
 
-bool regulator_get_5v_dev_enabled(u8 dev)
+bool regulator_5v_get_dev_enabled(u8 dev)
 {
 	return (reg_5v_dev & dev);
+}
+
+void regulator_5v_batt_src_enable(bool enable)
+{
+	if (enable && !batt_src)
+		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
+	else if (!enable && batt_src)
+		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_LOW);
 }

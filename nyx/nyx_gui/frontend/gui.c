@@ -36,6 +36,7 @@
 #include <mem/minerva.h>
 #include <power/bq24193.h>
 #include <power/max17050.h>
+#include <power/regulator_5v.h>
 #include <rtc/max77620-rtc.h>
 #include <soc/bpmp.h>
 #include <soc/fuse.h>
@@ -1263,8 +1264,14 @@ static void _update_status_bar(void *params)
 	else
 		strcat(label, "#FF3C28 "SYMBOL_BATTERY_EMPTY"#");
 
+	// Set charging symbol and regulator 5V source based on USB state.
 	if (charge_status)
+	{
 		strcat(label, " #FFDD00 "SYMBOL_CHARGE"#");
+		regulator_5v_batt_src_enable(false);
+	}
+	else
+		regulator_5v_batt_src_enable(true);
 
 	lv_label_set_text(status_bar.battery, label);
 	lv_obj_realign(status_bar.battery);
