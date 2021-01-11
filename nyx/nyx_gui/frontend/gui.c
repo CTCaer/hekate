@@ -955,15 +955,13 @@ static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
 	switch (btnidx)
 	{
 	case 0:
-		if (h_cfg.rcm_patched)
-			power_set_state(POWER_OFF_REBOOT);
-		else
-			power_set_state(REBOOT_BYPASS_FUSES);
+		power_set_state(REBOOT_BYPASS_FUSES);
 		break;
 	case 1:
 		if (h_cfg.rcm_patched)
-			break;
-		power_set_state(REBOOT_RCM);
+			power_set_state(POWER_OFF_REBOOT);
+		else
+			power_set_state(REBOOT_RCM);
 		break;
 	}
 
@@ -1006,7 +1004,7 @@ static lv_res_t _create_mbox_reboot(lv_obj_t *btn)
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char * mbox_btn_map[] = { "\221OFW", "\221RCM", "\221Cancel", "" };
-	static const char * mbox_btn_map_patched[] = { "\221Reboot", "\221Cancel", "" };
+	static const char * mbox_btn_map_patched[] = { "\221OFW", "\221Normal", "\221Cancel", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 2);
