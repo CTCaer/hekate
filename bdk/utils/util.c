@@ -167,10 +167,10 @@ void power_set_state(power_state_t state)
 	default:
 		// Enable/Disable soft reset wake event.
 		reg = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2);
-		if (state == POWER_OFF_RESET)
-			reg &= ~MAX77620_ONOFFCNFG2_SFT_RST_WK; // Do not wake up after power off.
-		else // POWER_OFF_REBOOT.
-			reg |=  MAX77620_ONOFFCNFG2_SFT_RST_WK; // Wake up after power off.
+		if (state == POWER_OFF_RESET) // Do not wake up after power off.
+			reg &= ~(MAX77620_ONOFFCNFG2_SFT_RST_WK | MAX77620_ONOFFCNFG2_WK_ALARM1 | MAX77620_ONOFFCNFG2_WK_ALARM2);
+		else // POWER_OFF_REBOOT. Wake up after power off.
+			reg |= MAX77620_ONOFFCNFG2_SFT_RST_WK;
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2, reg);
 
 		// Initiate power down sequence and generate a reset (regulators' state resets).
