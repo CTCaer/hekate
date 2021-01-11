@@ -970,7 +970,8 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Patch kip1s in memory if needed.
-	gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	if (ctxt.kip1_patches)
+		gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
