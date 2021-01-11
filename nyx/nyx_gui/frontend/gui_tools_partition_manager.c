@@ -420,7 +420,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt_idx++;
 
 		// Android Userdata partition.
-		u32 user_size = (part_info.and_size << 11) - 0x798000 - curr_part_lba; // Subtract the other partitions (3888MB).
+		u32 user_size = (part_info.and_size << 11) - 0x798000; // Subtract the other partitions (3888MB).
 		if (!part_info.emu_size)
 			user_size -= 0x800; // Reserve 1MB.
 		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
@@ -1867,10 +1867,10 @@ static void create_mbox_check_files_total_size()
 	path[0] = 0;
 
 	// Check total size of files.
-	_backup_and_restore_files(path, &total_files, &total_size, NULL, NULL, NULL);
+	int res = _backup_and_restore_files(path, &total_files, &total_size, NULL, NULL, NULL);
 
 	// Not more than 1.0GB.
-	part_info.backup_possible = !(total_size > (RAM_DISK_SZ - 0x1000000)); // 0x2400000
+	part_info.backup_possible = !res && !(total_size > (RAM_DISK_SZ - 0x1000000)); // 0x2400000
 
 	if (part_info.backup_possible)
 	{
