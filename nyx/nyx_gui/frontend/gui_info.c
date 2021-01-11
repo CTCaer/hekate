@@ -975,9 +975,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	// Check if patched unit.
 	if (!fuse_check_patched_rcm())
-		strcat(txt_buf, "\n\n#96FF00 Your unit is exploitable#\n#96FF00 to the RCM bug!#");
+		strcat(txt_buf, "\n\n#96FF00 This unit is exploitable#\n#96FF00 to the RCM bug!#");
 	else
-		strcat(txt_buf, "\n\n#FF8000 Your unit is patched#\n#FF8000 to the RCM bug!#");
+		strcat(txt_buf, "\n\n#FF8000 This unit is patched#\n#FF8000 to the RCM bug!#");
 
 	lv_label_set_text(lb_desc2, txt_buf);
 
@@ -2122,8 +2122,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt4 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
-		"View and dump your cached #C7EA46 Fuses# and #C7EA46 KFuses#.\n"
-		"Fuses contain info about your SoC and device and KFuses contain HDCP.\n"
+		"View and dump the cached #C7EA46 Fuses# and #C7EA46 KFuses#.\n"
+		"Fuses contain info about the SoC/SKU and KFuses HDCP keys.\n"
 		"You can also see info about #C7EA46 DRAM#, #C7EA46 Screen# and #C7EA46 Touch panel#.");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
@@ -2172,7 +2172,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt5 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt5, true);
 	lv_label_set_static_text(label_txt5,
-		"View info about your eMMC or microSD and their partition list.\n"
+		"View info about the eMMC or microSD and their partition list.\n"
 		"Additionally you can benchmark read speeds.");
 	lv_obj_set_style(label_txt5, &hint_small_style);
 	lv_obj_align(label_txt5, btn5, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);

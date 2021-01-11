@@ -766,7 +766,7 @@ static void nyx_sd_card_issues(void *param)
 
 	lv_mbox_set_text(mbox,
 		"#FF8000 SD Card Issues Check#\n\n"
-		"#FFDD00 Your SD Card is initialized in 1-bit mode!#\n"
+		"#FFDD00 The SD Card is initialized in 1-bit mode!#\n"
 		"#FFDD00 This might mean detached or broken connector!#\n\n"
 		"You might want to check\n#C7EA46 Console Info# -> #C7EA46 SD Card#");
 
@@ -2007,7 +2007,7 @@ void nyx_check_ini_changes()
 
 		lv_mbox_set_text(mbox,
 			"#FF8000 Main configuration#\n\n"
-			"You changed your configuration!\n\n"
+			"You changed the configuration!\n\n"
 			"Do you want to save it?");
 
 		lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_save_changes_action);

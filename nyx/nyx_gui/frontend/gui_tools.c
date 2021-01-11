@@ -691,7 +691,7 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to mount your SD Card to a PC/Phone.\n"
+		"Allows you to mount the SD Card to a PC/Phone.\n"
 		"#C7EA46 All operating systems are supported. Access is# #FF8000 Read/Write.#");
 
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -737,7 +737,7 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to mount your eMMC/emuMMC.\n"
+		"Allows you to mount the eMMC/emuMMC.\n"
 		"#C7EA46 Default access is# #FF8000 read-only.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn_emu_gpp, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
@@ -788,8 +788,8 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	lv_obj_t *label_txt4 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
-		"Plug-in your Joy-Con and convert your device\n"
-		"into a gamepad for your PC/Phone.\n"
+		"Plug-in the Joy-Con and convert the device\n"
+		"into a gamepad for PC or Phone.\n"
 		"#C7EA46 Needs both Joy-Con in order to function.#");
 
 	lv_obj_set_style(label_txt4, &hint_small_style);
@@ -806,7 +806,7 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	label_txt4 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
-		"Control your PC via your device touchscreen.\n"
+		"Control the PC via the device\'s touchscreen.\n"
 		"#C7EA46 Two fingers tap acts like a# #FF8000 Right click##C7EA46 .#\n");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
@@ -1463,8 +1463,8 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to backup your eMMC partitions individually or as\n"
-		"a whole raw image to your SD card.\n"
+		"Allows you to backup the eMMC partitions individually or as\n"
+		"a whole raw image to the SD card.\n"
 		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
 		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -1480,8 +1480,8 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to restore your eMMC/emuMMC partitions individually\n"
-		"or as a whole raw image from your SD card.\n"
+		"Allows you to restore the eMMC/emuMMC partitions individually\n"
+		"or as a whole raw image from the SD card.\n"
 		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
 		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -1539,7 +1539,7 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_txt4,
 		"#C7EA46 USB mass storage#, #C7EA46 gamepad# and other USB tools.\n"
 		"Mass storage can mount SD, eMMC and emuMMC. The\n"
-		"gamepad transforms your Switch into an input device.#");
+		"gamepad transforms the Switch into an input device.#");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
@@ -1598,7 +1598,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to calibrate your touchscreen module.\n"
+		"Allows you to calibrate the touchscreen module.\n"
 		"#FF8000 This fixes any issues with touchscreen in Nyx and HOS.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
@@ -1653,7 +1653,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	s_printf(txt_buf,
 		"Allows you to enter RCM without using #C7EA46 VOL+# & #C7EA46 HOME# (jig).\n"
 		"#FF8000 It can restore all versions of AutoRCM whenever requested.#\n"
-		"#FF3C28 This corrupts your BCT and you can't boot without a custom#\n"
+		"#FF3C28 This corrupts the BCT and you can't boot without a custom#\n"
 		"#FF3C28 bootloader.#");
 
 	if (h_cfg.rcm_patched)
@@ -1681,7 +1681,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to partition your SD Card for using it with #C7EA46 emuMMC#,\n"
+		"Allows you to partition the SD Card for using it with #C7EA46 emuMMC#,\n"
 		"#C7EA46 Android# and #C7EA46 Linux#. You can also flash Linux and Android.");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);

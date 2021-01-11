@@ -1023,7 +1023,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			{
 				lv_obj_t *warn_mbox_bg = create_mbox_text(
 					"#FF8000 Size of SD Card split backup does not match,#\n#FF8000 eMMC's selected part size!#\n\n"
-					"#FFDD00 Your backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
+					"#FFDD00 The backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
 					"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
 				manual_system_maintenance(true);
 
@@ -1085,7 +1085,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		{
 			lv_obj_t *warn_mbox_bg = create_mbox_text(
 				"#FF8000 Size of the SD Card backup does not match,#\n#FF8000 eMMC's selected part size!#\n\n"
-				"#FFDD00 Your backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
+				"#FFDD00 The backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
 				"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
 			manual_system_maintenance(true);
 
@@ -1206,7 +1206,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		{
 			s_printf(gui->txt_buf,
 				"\n#FF0000 Fatal error (%d) when reading from SD!#\n"
-				"#FF0000 Your device may be in an inoperative state!#\n"
+				"#FF0000 This device may be in an inoperative state!#\n"
 				"#FFDD00 Please try again now!#\n", res);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
@@ -1235,7 +1235,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			if (retryCount >= 3)
 			{
 				s_printf(gui->txt_buf, "#FF0000 Aborting...#\n"
-					"#FF0000 Your device may be in an inoperative state!#\n"
+					"#FF0000 This device may be in an inoperative state!#\n"
 					"#FFDD00 Please try again now!#\n");
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
@@ -1328,7 +1328,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	manual_system_maintenance(true);
 
 	s_printf(txt_buf,
-		"#FFDD00 This may render your device inoperative!#\n\n"
+		"#FFDD00 This may render the device inoperative!#\n\n"
 		"#FFDD00 Are you really sure?#");
 	if ((restoreType & PART_BOOT) || (restoreType & PART_GP_ALL))
 	{

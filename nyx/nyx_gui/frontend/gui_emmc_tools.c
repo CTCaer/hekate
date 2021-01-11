@@ -333,15 +333,15 @@ lv_res_t create_window_backup_restore_tool(lv_obj_t *btn)
 	if (!emmc_btn_ctxt.restore)
 	{
 		lv_label_set_static_text(label_txt2,
-			"Allows you to backup your BOOT physical partitions.\n"
-			"They contain your BCT, keys and various package1.\n"
+			"Allows you to backup the BOOT physical partitions.\n"
+			"They contain the BCT, keys and various package1.\n"
 			"#FF8000 These are paired with the RAW GPP backup.#");
 	}
 	else
 	{
 		lv_label_set_static_text(label_txt2,
-			"Allows you to restore your BOOT physical partitions.\n"
-			"They contain your BCT, keys and various package1.\n"
+			"Allows you to restore the BOOT physical partitions.\n"
+			"They contain the BCT, keys and various package1.\n"
 			"#FF8000 These are paired with the RAW GPP restore.#");
 	}
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -363,14 +363,14 @@ lv_res_t create_window_backup_restore_tool(lv_obj_t *btn)
 	if (!emmc_btn_ctxt.restore)
 	{
 		lv_label_set_static_text(label_txt2,
-			"Allows you to backup your GPP physical partition.\n"
+			"Allows you to backup the GPP physical partition.\n"
 			"It contains, CAL0, various package2, SYSTEM, USER, etc.\n"
 			"#FF8000 This is paired with the BOOT0/1 backups.#");
 	}
 	else
 	{
 		lv_label_set_static_text(label_txt2,
-			"Allows you to restore your GPP physical partition.\n"
+			"Allows you to restore the GPP physical partition.\n"
 			"It contains, CAL0, various package2, SYSTEM, USER, etc.\n"
 			"#FF8000 This is paired with the BOOT0/1 restore.#");
 	}

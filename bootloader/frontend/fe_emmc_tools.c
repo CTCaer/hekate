@@ -735,7 +735,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 		{
 			gfx_con.fntsz = 16;
 			EPRINTFARGS("\nFatal error (%d) when reading from SD Card", res);
-			EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again now...\n");
+			EPRINTF("\nThis device may be in an inoperative state!\n\nPress any key and try again now...\n");
 
 			f_close(&fp);
 			return 0;
@@ -751,7 +751,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 				gfx_con.fntsz = 16;
 				EPRINTFARGS("\nFailed to write %d blocks @ LBA %08X\nfrom eMMC. Aborting..\n",
 					num, lba_curr);
-				EPRINTF("\nYour device may be in an inoperative state!\n\nPress any key and try again...\n");
+				EPRINTF("\nThis device may be in an inoperative state!\n\nPress any key and try again...\n");
 
 				f_close(&fp);
 				return 0;
@@ -797,7 +797,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 	tui_sbar(true);
 	gfx_con_setpos(0, 0);
 
-	gfx_printf("%kThis may render your device inoperative!\n\n", 0xFFFFDD00);
+	gfx_printf("%kThis may render the device inoperative!\n\n", 0xFFFFDD00);
 	gfx_printf("Are you really sure?\n\n%k", 0xFFCCCCCC);
 	if ((restoreType & PART_BOOT) || (restoreType & PART_GP_ALL))
 	{

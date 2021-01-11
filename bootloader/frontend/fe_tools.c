@@ -329,7 +329,7 @@ void menu_autorcm()
 	if (h_cfg.rcm_patched)
 	{
 		gfx_printf("%kThis device is RCM patched and\nAutoRCM function is disabled.\n\n"
-			"In case %kAutoRCM%k is enabled\nthis will %kBRICK%k your device PERMANENTLY!!%k",
+			"In case %kAutoRCM%k is enabled\nthis will %kBRICK%k the device PERMANENTLY!!%k",
 			0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
 		btn_wait();
 
@@ -393,7 +393,7 @@ void menu_autorcm()
 	ments[4].data = NULL;
 
 	memset(&ments[5], 0, sizeof(ment_t));
-	menu_t menu = {ments, "This corrupts your BOOT0!", 0, 0};
+	menu_t menu = {ments, "This corrupts BOOT0!", 0, 0};
 
 	tui_do_menu(&menu);
 }

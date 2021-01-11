@@ -272,7 +272,7 @@ static void _create_mbox_emummc_raw()
 
 	if (!mbr_ctx.available)
 		strcat(txt_buf,
-			"\n#FF8000 Do you want to partition your SD card?#\n"
+			"\n#FF8000 Do you want to partition the SD card?#\n"
 			"#FF8000 (You will be asked on how to proceed)#");
 
 	lv_mbox_set_text(mbox, txt_buf);
@@ -345,7 +345,7 @@ static lv_res_t _create_mbox_emummc_create(lv_obj_t *btn)
 	lv_mbox_set_text(mbox,
 		"Welcome to #C7EA46 emuMMC# creation tool!\n\n"
 		"Please choose what type of emuMMC you want to create.\n"
-		"#FF8000 SD File# is saved as files in your FAT partition.\n"
+		"#FF8000 SD File# is saved as files in the FAT partition.\n"
 		"#FF8000 SD Partition# is saved as raw image in an available partition.");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_action);

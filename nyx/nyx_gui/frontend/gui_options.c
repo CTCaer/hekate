@@ -927,7 +927,7 @@ static void _check_nyx_changes()
 
 		lv_mbox_set_text(mbox,
 			"#FF8000 Nyx configuration#\n\n"
-			"You changed your configuration!\n\n"
+			"You changed the configuration!\n\n"
 			"Do you want to save it?");
 
 		lv_mbox_add_btns(mbox, mbox_btn_map, _action_nyx_options_save);

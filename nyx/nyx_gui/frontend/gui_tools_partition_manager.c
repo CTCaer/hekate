@@ -1625,7 +1625,7 @@ static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn)
 	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
 	lv_label_set_recolor(lbl_status, true);
 
-	s_printf(txt_buf, "#FFDD00 Warning: This will partition your SD Card!#\n\n");
+	s_printf(txt_buf, "#FFDD00 Warning: This will partition the SD Card!#\n\n");
 
 	if (part_info.backup_possible)
 		strcat(txt_buf, "#C7EA46 Your files will be backed up and restored!#\n#FFDD00Any other partition will be wiped!#");
@@ -1875,7 +1875,7 @@ static void create_mbox_check_files_total_size()
 	if (part_info.backup_possible)
 	{
 		s_printf(txt_buf,
-			"#96FF00 Your SD Card files will be backed up automatically!#\n"
+			"#96FF00 The SD Card files will be backed up automatically!#\n"
 			"#FFDD00 Any other partition will be wiped!#\n"
 			"#00DDFF Total files:# %d, #00DDFF Total size:# %d MiB", total_files, total_size >> 20);
 		lv_mbox_set_text(mbox, txt_buf);
@@ -1883,7 +1883,7 @@ static void create_mbox_check_files_total_size()
 	else
 	{
 		lv_mbox_set_text(mbox,
-			"#FFDD00 Your SD Card cannot be backed up!#\n\n"
+			"#FFDD00 The SD Card cannot be backed up!#\n\n"
 			"You will be asked to back up your files later via UMS.");
 	}
 
