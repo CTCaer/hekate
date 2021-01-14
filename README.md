@@ -92,7 +92,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | emupath={SD folder}    | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
 | emummcforce=1          | Forces the use of emuMMC. If emummc.ini is disabled or not found, then it causes an error. |
 | emummc_force_disable=1 | Disables emuMMC, if it's enabled.                           |
-| stock=1                | Disables unneeded kernel patching when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
+| stock=1                | Disables unneeded kernel patching and CFW kips when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
 | id=idname              | Identifies boot entry for forced boot via id. Max 7 chars. |
 | payload={SD path}      | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
 | logopath={SD path}     | If no logopath, `bootloader/bootlogo.bmp` will be used if exists. If logopath exists, it will load the specified bitmap. |
