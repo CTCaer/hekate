@@ -1371,12 +1371,12 @@ void sdmmc_end(sdmmc_t *sdmmc)
 		_sdmmc_sd_clock_disable(sdmmc);
 		// Disable SDMMC power.
 		_sdmmc_set_io_power(sdmmc, SDMMC_POWER_OFF);
+		_sdmmc_commit_changes(sdmmc);
 
 		// Disable SD card power.
 		if (sdmmc->id == SDMMC_1)
 			sdmmc1_disable_power();
 
-		_sdmmc_commit_changes(sdmmc);
 		clock_sdmmc_disable(sdmmc->id);
 		sdmmc->clock_stopped = 1;
 	}
