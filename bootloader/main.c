@@ -1513,9 +1513,9 @@ ment_t ment_top[] = {
 	MDEF_MENU("Console info", &menu_cinfo),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_HANDLER("Reload", ipl_reload),
-	MDEF_HANDLER_EX("Reboot (Normal)", &STATE_REBOOT_BYPASS_FUSES, power_set_state_ex),
-	MDEF_HANDLER_EX("Reboot (RCM)",    &STATE_REBOOT_RCM,          power_set_state_ex),
-	MDEF_HANDLER_EX("Power off",       &STATE_POWER_OFF,           power_set_state_ex),
+	MDEF_HANDLER_EX("Reboot (OFW)", &STATE_REBOOT_BYPASS_FUSES, power_set_state_ex),
+	MDEF_HANDLER_EX("Reboot (RCM)", &STATE_REBOOT_RCM,          power_set_state_ex),
+	MDEF_HANDLER_EX("Power off",    &STATE_POWER_OFF,           power_set_state_ex),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_HANDLER("About", _about),
 	MDEF_END()
