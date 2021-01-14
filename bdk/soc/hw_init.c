@@ -42,6 +42,7 @@
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
 #include <thermal/fan.h>
+#include <thermal/tmp451.h>
 #include <utils/util.h>
 
 extern boot_cfg_t b_cfg;
@@ -425,9 +426,10 @@ void hw_reinit_workaround(bool coreboot, u32 magic)
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 #ifdef NYX
-	// Deinit touchscreen, 5V regulators and Joy-Con.
-	touch_power_off();
+	// Disable temperature sensor, touchscreen, 5V regulators and Joy-Con.
+	tmp451_end();
 	set_fan_duty(0);
+	touch_power_off();
 	jc_deinit();
 	regulator_5v_disable(REGULATOR_5V_ALL);
 	clock_disable_uart(UART_B);

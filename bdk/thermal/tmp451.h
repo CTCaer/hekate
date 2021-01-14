@@ -32,11 +32,15 @@
 #define TMP451_SOC_TMP_DEC_REG 0x10
 #define TMP451_PCB_TMP_DEC_REG 0x15
 
+#define TMP451_SOC_TMP_OFH_REG 0x11
+#define TMP451_SOC_TMP_OFL_REG 0x12
+
 // If input is false, the return value is packed. MSByte is the integer in oC
 // and the LSByte is the decimal point truncated to 2 decimal places.
 // Otherwise it's an integer oC.
 u16 tmp451_get_soc_temp(bool integer);
 u16 tmp451_get_pcb_temp(bool integer);
 void tmp451_init();
+void tmp451_end();
 
 #endif /* __TMP451_H_ */
