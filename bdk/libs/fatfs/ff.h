@@ -97,6 +97,7 @@ typedef DWORD FSIZE_t;
 typedef struct {
 	BYTE	win[FF_MAX_SS];	/* Disk access window for Directory, FAT (and file data at tiny cfg) */
 	BYTE	fs_type;		/* Filesystem type (0:not mounted) */
+	BYTE	part_type;		/* Partition type (0:MBR, 1:GPT) */
 	BYTE	pdrv;			/* Associated physical drive */
 	BYTE	n_fats;			/* Number of FATs (1 or 2) */
 	BYTE	wflag;			/* win[] flag (b0:dirty) */

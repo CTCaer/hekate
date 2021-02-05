@@ -46,11 +46,15 @@
 /* This option switches fast seek function. (0:Disable or 1:Enable) */
 
 #define FF_FASTFS 0
-
 #if FF_FASTFS
 #undef FF_USE_FASTSEEK
 #define FF_USE_FASTSEEK	1
 #endif
+/* This option switches fast access to chained clusters. (0:Disable or 1:Enable) */
+
+
+#define FF_SIMPLE_GPT 1
+/* This option switches support for the first GPT partition. (0:Disable or 1:Enable) */
 
 
 #define FF_USE_EXPAND	0
@@ -185,6 +189,7 @@
 /  not defined, a user defined volume string table needs to be defined as:
 /
 /  const char* VolumeStr[FF_VOLUMES] = {"ram","flash","sd","usb",...
+/  Order is important. Any change to order, must also be reflected to diskio drive enum.
 */
 
 
@@ -246,7 +251,7 @@
 #define FF_FS_NORTC		1
 #define FF_NORTC_MON	1
 #define FF_NORTC_MDAY	1
-#define FF_NORTC_YEAR	2020
+#define FF_NORTC_YEAR	2021
 /* The option FF_FS_NORTC switches timestamp function. If the system does not have
 /  any RTC function or valid timestamp is not needed, set FF_FS_NORTC = 1 to disable
 /  the timestamp function. Every object modified by FatFs will have a fixed timestamp

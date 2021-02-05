@@ -38,6 +38,7 @@
 
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
+#include <storage/mbr_gpt.h>
 #include <gfx_utils.h>
 
 #define EFSPRINTF(text, ...) print_error(); gfx_printf("%k"text"%k\n", 0xFFFFFF00, 0xFFFFFFFF);
@@ -3284,6 +3285,7 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	/* Following code attempts to mount the volume. (analyze BPB and initialize the filesystem object) */
 
 	fs->fs_type = 0;					/* Clear the filesystem object */
+	fs->part_type = 0;					/* Clear the Partition object */
 	fs->pdrv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
 	stat = disk_initialize(fs->pdrv);	/* Initialize the physical drive */
 	if (stat & STA_NOINIT) { 			/* Check if the initialization succeeded */
@@ -3318,6 +3320,18 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		EFSPRINTF("BRNL");
 		return FR_DISK_ERR;		/* An error occured in the disk I/O layer */
 	}
+#if FF_SIMPLE_GPT
+	if (fmt >= 2) {
+		/* If GPT Check the first partition */
+		gpt_t gpt;
+		if (disk_read(fs->pdrv, (BYTE *)&gpt, 1, sizeof(gpt_t) / SS(fs))) return FR_DISK_ERR;
+		if (!mem_cmp(&gpt.header.signature, "EFI PART", 8)) {
+			fs->part_type = 1;
+			bsect = gpt.entries[0].lba_start;
+			fmt = bsect ? check_fs(fs, bsect) : 3;	/* Check the partition */
+		}
+	}
+#endif
 	if (fmt >= 2) {
 		EFSPRINTF("NOFAT");
 		return FR_NO_FILESYSTEM;	/* No FAT volume is found */

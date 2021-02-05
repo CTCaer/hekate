@@ -180,6 +180,11 @@ static void _sd_deinit()
 void sd_unmount() { _sd_deinit(); }
 void sd_end()     { _sd_deinit(); }
 
+bool sd_is_gpt()
+{
+	return sd_fs.part_type;
+}
+
 void *sd_file_read(const char *path, u32 *fsize)
 {
 	FIL fp;

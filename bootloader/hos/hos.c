@@ -721,6 +721,10 @@ int hos_launch(ini_sec_t *cfg)
 		goto error;
 	}
 
+	// Check if SD Card is GPT.
+	if (sd_is_gpt())
+		_hos_crit_error("SD has GPT only!");
+
 	// Read package1 and the correct keyblob.
 	if (!_read_emmc_pkg1(&ctxt))
 		goto error;
