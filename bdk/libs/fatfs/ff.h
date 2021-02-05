@@ -95,7 +95,6 @@ typedef DWORD FSIZE_t;
 /* Filesystem object structure (FATFS) */
 
 typedef struct {
-	BYTE	win[FF_MAX_SS];	/* Disk access window for Directory, FAT (and file data at tiny cfg) */
 	BYTE	fs_type;		/* Filesystem type (0:not mounted) */
 	BYTE	part_type;		/* Partition type (0:MBR, 1:GPT) */
 	BYTE	pdrv;			/* Associated physical drive */
@@ -139,6 +138,7 @@ typedef struct {
 	DWORD	bitbase;		/* Allocation bitmap base sector */
 #endif
 	DWORD	winsect;		/* Current sector appearing in the win[] */
+	BYTE	win[FF_MAX_SS] __attribute__((aligned(8)));	/* Disk access window for Directory, FAT (and file data at tiny cfg). DMA aligned. */
 } FATFS;
 
 
@@ -169,9 +169,6 @@ typedef struct {
 /* File object structure (FIL) */
 
 typedef struct {
-#if !FF_FS_TINY
-	BYTE	buf[FF_MAX_SS];	/* File private data read/write window */
-#endif
 	FFOBJID	obj;			/* Object identifier (must be the 1st member to detect invalid object pointer) */
 	BYTE	flag;			/* File status flags */
 	BYTE	err;			/* Abort flag (error code) */
@@ -184,6 +181,9 @@ typedef struct {
 #endif
 #if FF_USE_FASTSEEK
 	DWORD*	cltbl;			/* Pointer to the cluster link map table (nulled on open, set by application) */
+#endif
+#if !FF_FS_TINY
+	BYTE	buf[FF_MAX_SS] __attribute__((aligned(8)));	/* File private data read/write window. DMA aligned. */
 #endif
 } FIL;
 
