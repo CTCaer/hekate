@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -331,10 +331,11 @@ static void _warmboot_filename(char *out, u32 fuses)
 	strcat(out, ".bin");
 }
 
-void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
+int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 {
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
 	u32 kb = ctxt->pkg1_id->kb;
+	int res = 1;
 
 	// Set warmboot address in PMC if required.
 	if (kb <= KB_FIRMWARE_VERSION_301)
@@ -347,7 +348,7 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 		u32 fuses_fw = ctxt->pkg1_id->fuses;
 		u8  burnt_fuses = fuse_count_burnt(fuse_read_odm(7));
 
-		// Save current warmboot in storage cache and check if another one is needed.
+		// Save current warmboot in storage cache (MWS) and check if another one is needed.
 		if (!ctxt->warmboot)
 		{
 			char path[128];
@@ -357,7 +358,7 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 			if (f_stat(path, NULL))
 				sd_save_to_file((void *)warmboot_base, ctxt->warmboot_size, path);
 
-			// Load warmboot fw from storage if not matched.
+			// Load warmboot fw from storage (MWS) if not matched.
 			if (burnt_fuses > fuses_fw)
 			{
 				u32 tmp_fuses = burnt_fuses;
@@ -374,6 +375,10 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 						break;
 					tmp_fuses++;
 				}
+
+				// Check if proper warmboot firmware was found.
+				if (!ctxt->warmboot)
+					res = 0;
 			}
 			else // Replace burnt fuses with higher count.
 				burnt_fuses = fuses_fw;
@@ -406,4 +411,6 @@ void pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 		else if (kb == KB_FIRMWARE_VERSION_301)
 			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 	}
+
+	return res;
 }

@@ -875,7 +875,17 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Configure and manage Warmboot binary.
-	pkg1_warmboot_config(&ctxt, warmboot_base);
+	if (!pkg1_warmboot_config(&ctxt, warmboot_base))
+	{
+		// Can only happen on T210B01.
+		_hos_crit_error("Failed to match warmboot with fuses!\nIf you continue, sleep wont work!");
+
+		gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
+		display_backlight_brightness(h_cfg.backlight, 1000);
+
+		if (!(btn_wait() & BTN_POWER))
+			goto error;
+	}
 
 	// Replace 'warmboot.bin' if requested.
 	if (ctxt.warmboot)
