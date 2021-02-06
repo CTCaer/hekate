@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -32,7 +32,7 @@ void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage)
 {
 	gpt_t *gpt_buf = (gpt_t *)calloc(NX_GPT_NUM_BLOCKS, NX_EMMC_BLOCKSIZE);
 
-	emummc_storage_read(storage, NX_GPT_FIRST_LBA, NX_GPT_NUM_BLOCKS, gpt_buf);
+	emummc_storage_read(NX_GPT_FIRST_LBA, NX_GPT_NUM_BLOCKS, gpt_buf);
 
 	for (u32 i = 0; i < gpt_buf->header.num_part_ents; i++)
 	{
@@ -78,7 +78,7 @@ int nx_emmc_part_read(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_of
 	if (part->lba_start + sector_off > part->lba_end)
 		return 0;
 
-	return emummc_storage_read(storage, part->lba_start + sector_off, num_sectors, buf);
+	return emummc_storage_read(part->lba_start + sector_off, num_sectors, buf);
 }
 
 int nx_emmc_part_write(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_off, u32 num_sectors, void *buf)
@@ -87,7 +87,7 @@ int nx_emmc_part_write(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_o
 	if (part->lba_start + sector_off > part->lba_end)
 		return 0;
 
-	return sdmmc_storage_write(storage, part->lba_start + sector_off, num_sectors, buf);
+	return sdmmc_storage_write(&emmc_storage, part->lba_start + sector_off, num_sectors, buf);
 }
 
 void nx_emmc_get_autorcm_masks(u8 *mod0, u8 *mod1)

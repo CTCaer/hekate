@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -131,13 +131,13 @@ static int emummc_raw_get_part_off(int part_idx)
 	return 2;
 }
 
-int emummc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
+int emummc_storage_init_mmc()
 {
 	FILINFO fno;
 	emu_cfg.active_part = 0;
 
 	// Always init eMMC even when in emuMMC. eMMC is needed from the emuMMC driver anyway.
-	if (!sdmmc_storage_init_mmc(storage, sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 		return 2;
 
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
@@ -173,21 +173,21 @@ out:
 	return 1;
 }
 
-int emummc_storage_end(sdmmc_storage_t *storage)
+int emummc_storage_end()
 {
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
-		sdmmc_storage_end(storage);
+		sdmmc_storage_end(&emmc_storage);
 	else
 		sd_end();
 
 	return 1;
 }
 
-int emummc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
+int emummc_storage_read(u32 sector, u32 num_sectors, void *buf)
 {
 	FIL fp;
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
-		return sdmmc_storage_read(storage, sector, num_sectors, buf);
+		return sdmmc_storage_read(&emmc_storage, sector, num_sectors, buf);
 	else if (emu_cfg.sector)
 	{
 		sector += emu_cfg.sector;
@@ -228,11 +228,11 @@ int emummc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, v
 	return 1;
 }
 
-int emummc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
+int emummc_storage_write(u32 sector, u32 num_sectors, void *buf)
 {
 	FIL fp;
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
-		return sdmmc_storage_write(storage, sector, num_sectors, buf);
+		return sdmmc_storage_write(&emmc_storage, sector, num_sectors, buf);
 	else if (emu_cfg.sector)
 	{
 		sector += emu_cfg.sector;
@@ -253,15 +253,13 @@ int emummc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, 
 				itoa(file_part, emu_cfg.emummc_file_based_path + strlen(emu_cfg.emummc_file_based_path) - 1, 10);
 			}
 		}
+
 		if (f_open(&fp, emu_cfg.emummc_file_based_path, FA_WRITE))
-		{
-			gfx_printf("e5\n");
 			return 0;
-		}
+
 		f_lseek(&fp, (u64)sector << 9);
 		if (f_write(&fp, buf, (u64)num_sectors << 9, NULL))
 		{
-			gfx_printf("e6\n");
 			f_close(&fp);
 			return 0;
 		}
@@ -271,13 +269,12 @@ int emummc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, 
 	}
 }
 
-int emummc_storage_set_mmc_partition(sdmmc_storage_t *storage, u32 partition)
+int emummc_storage_set_mmc_partition(u32 partition)
 {
 	emu_cfg.active_part = partition;
+	sdmmc_storage_set_mmc_partition(&emmc_storage, partition);
 
-	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
-		sdmmc_storage_set_mmc_partition(storage, partition);
-	else if (emu_cfg.sector)
+	if (!emu_cfg.enabled || h_cfg.emummc_force_disable || emu_cfg.sector)
 		return 1;
 	else
 	{

@@ -594,8 +594,8 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 
 try_load:
 	// Read package1.
-	emummc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	emummc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_set_mmc_partition(EMMC_BOOT0);
+	emummc_storage_read(bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1 + pk1_offset);
 	if (!ctxt->pkg1_id)
@@ -618,7 +618,7 @@ try_load:
 
 	// Read the correct keyblob.
 	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	emummc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+	emummc_storage_read(HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 
 	return 1;
 }
@@ -627,7 +627,7 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 {
 	u8 *bctBuf = NULL;
 
-	emummc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emummc_storage_set_mmc_partition(EMMC_GPP);
 
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
@@ -738,13 +738,13 @@ int hos_launch(ini_sec_t *cfg)
 	gfx_puts("Initializing...\n\n");
 
 	// Initialize eMMC/emuMMC.
-	int res = emummc_storage_init_mmc(&emmc_storage, &emmc_sdmmc);
+	int res = emummc_storage_init_mmc();
 	if (res)
 	{
 		if (res == 2)
-			_hos_crit_error("Failed to init eMMC");
+			_hos_crit_error("Failed to init eMMC.");
 		else
-			_hos_crit_error("Failed to init emuMMC");
+			_hos_crit_error("Failed to init emuMMC.");
 
 		goto error;
 	}

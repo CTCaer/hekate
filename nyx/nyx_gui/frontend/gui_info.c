@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ static lv_res_t _tsec_keys_dump_window_action(lv_obj_t * btn)
 	{
 		char path[64];
 		emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
-		error = sd_save_to_file(tsec_keys, 0x10 * 2, path);
+		error = sd_save_to_file(tsec_keys, SE_KEY_128_SIZE * 2, path);
 
 		sd_unmount();
 	}

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -41,7 +41,6 @@
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
 #define HASH_FILENAME_SZ (OUT_FILENAME_SZ + 11) // 11 == strlen(".sha256sums")
-#define SHA256_SZ 0x20
 
 extern nyx_config n_cfg;
 
@@ -156,8 +155,8 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 	const char hexa[] = "0123456789abcdef";
 	DWORD *clmt = NULL;
 
-	u8 hashEm[SHA256_SZ];
-	u8 hashSd[SHA256_SZ];
+	u8 hashEm[SE_SHA_256_SIZE];
+	u8 hashSd[SE_SHA_256_SIZE];
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
@@ -254,7 +253,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				manual_system_maintenance(false);
 				se_calc_sha256_finalize(hashEm, NULL);
 				se_calc_sha256_oneshot(hashSd, bufSd, num << 9);
-				res = memcmp(hashEm, hashSd, 0x10);
+				res = memcmp(hashEm, hashSd, SE_SHA_256_SIZE / 2);
 
 				if (res)
 				{
@@ -276,14 +275,14 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 				if (n_cfg.verification == 3)
 				{
 					// Transform computed hash to readable hexadecimal
-					char hashStr[SHA256_SZ * 2 + 1];
+					char hashStr[SE_SHA_256_SIZE * 2 + 1];
 					char *hashStrPtr = hashStr;
-					for (int i = 0; i < SHA256_SZ; i++)
+					for (int i = 0; i < SE_SHA_256_SIZE; i++)
 					{
 						*(hashStrPtr++) = hexa[hashSd[i] >> 4];
 						*(hashStrPtr++) = hexa[hashSd[i] & 0x0F];
 					}
-					hashStr[SHA256_SZ * 2] = '\0';
+					hashStr[SE_SHA_256_SIZE * 2] = '\0';
 
 					f_puts(hashStr, &hashFp);
 					f_puts("\n", &hashFp);

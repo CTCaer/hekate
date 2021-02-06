@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1095,19 +1095,14 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char *txt_buf  = (char *)malloc(0x4000);
 
-	tsec_ctxt_t tsec_ctxt;
-
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
 		goto out_free;
 	}
 
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	// Read package1.
 	static const u32 BOOTLOADER_SIZE          = 0x40000;
@@ -1116,7 +1111,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char *build_date = malloc(32);
 	u32 pk1_offset =  h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
-	sdmmc_storage_read(&storage, BOOTLOADER_MAIN_OFFSET / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_read(&emmc_storage, BOOTLOADER_MAIN_OFFSET / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
 
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
 
@@ -1132,7 +1127,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
-		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &emmc_storage);
 		if (sd_save_to_file(pkg1, BOOTLOADER_SIZE, path))
 			goto out_free;
 
@@ -1147,6 +1142,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	if (!h_cfg.se_keygen_done)
 	{
+		tsec_ctxt_t tsec_ctxt;
 		tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
 		tsec_ctxt.pkg1 = (void *)pkg1;
 		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
@@ -1178,7 +1174,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Read keyblob.
 		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		sdmmc_storage_read(&storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+		sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 		// Decrypt.
 		hos_keygen(keyblob, kb, &tsec_ctxt);
@@ -1230,7 +1226,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		manual_system_maintenance(true);
 
 		// Dump package1.1.
-		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &emmc_storage);
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
 		strcat(txt_buf, "pkg1 dumped to pkg1_decr.bin\n");
@@ -1238,7 +1234,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		manual_system_maintenance(true);
 
 		// Dump nxbootloader.
-		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &emmc_storage);
 		if (sd_save_to_file(loader, hdr_pk11->ldr_size, path))
 			goto out_free;
 		strcat(txt_buf, "NX Bootloader dumped to nxloader.bin\n");
@@ -1246,7 +1242,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		manual_system_maintenance(true);
 
 		// Dump secmon.
-		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &emmc_storage);
 		if (sd_save_to_file(secmon, hdr_pk11->sm_size, path))
 			goto out_free;
 		strcat(txt_buf, "Secure Monitor dumped to secmon.bin\n");
@@ -1254,7 +1250,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		manual_system_maintenance(true);
 
 		// Dump warmboot.
-		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &emmc_storage);
 		if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 			goto out_free;
 		// If T210B01, save a copy of decrypted warmboot binary also.
@@ -1263,7 +1259,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 			se_aes_iv_clear(13);
 			se_aes_crypt_cbc(13, 0, warmboot + 0x330, hdr_pk11->wb_size - 0x330, warmboot + 0x330, hdr_pk11->wb_size - 0x330);
-			emmcsn_path_impl(path, "/pkg1", "warmboot_dec.bin", &storage);
+			emmcsn_path_impl(path, "/pkg1", "warmboot_dec.bin", &emmc_storage);
 			if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 				goto out_free;
 		}
@@ -1273,10 +1269,10 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	}
 
 	// Dump package2.1.
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &storage);
+	nx_emmc_gpt_parse(&gpt, &emmc_storage);
 	// Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
@@ -1284,17 +1280,17 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	// Read in package2 header and get package2 real size.
 	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
+	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
 	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
 	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
 	free(tmp);
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
+	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
 #if 0
-	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &emmc_storage);
 	if (sd_save_to_file(pkg2, pkg2_size_aligned, path))
 		goto out;
 	gfx_puts("\npkg2 dumped to pkg2_encr.bin\n");
@@ -1326,7 +1322,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	manual_system_maintenance(true);
 
 	// Dump pkg2.1.
-	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &emmc_storage);
 	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
 	strcat(txt_buf, "pkg2 dumped to pkg2_decr.bin\n");
@@ -1334,7 +1330,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	manual_system_maintenance(true);
 
 	// Dump kernel.
-	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &emmc_storage);
 	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
 		goto out;
 	strcat(txt_buf, "Kernel dumped to kernel.bin\n");
@@ -1358,7 +1354,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	}
 
 	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)(pkg2_hdr->data + ini1_off);
-	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &emmc_storage);
 	if (sd_save_to_file(ini1, ini1_size, path))
 		goto out;
 
@@ -1385,7 +1381,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 			kip1 = (pkg2_kip1_t *)kip_buffer;
 		}
 
-		emmcsn_path_impl(path, "/pkg2/ini1", filename, &storage);
+		emmcsn_path_impl(path, "/pkg2/ini1", filename, &emmc_storage);
 		if (sd_save_to_file(kip1, kip1_size, path))
 		{
 			free(kip_buffer);
@@ -1409,7 +1405,7 @@ out_free:
 	free(loader);
 	free(pkg2);
 	free(txt_buf);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 	sd_unmount();
 
 	if (kb >= KB_FIRMWARE_VERSION_620)

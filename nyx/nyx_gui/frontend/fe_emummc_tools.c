@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -349,6 +349,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	u32 timer = 0;
 
 	char *txt_buf = (char *)malloc(0x4000);
+	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -368,9 +369,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	// Get SD Card free space for Partial Backup.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
@@ -382,7 +381,6 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	f_mkdir("emuMMC");
 	strcpy(sdPath, "emuMMC/SD");
 	base_len = strlen(sdPath);
-	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 
 	for (int j = 0; j < 100; j++)
 	{
@@ -398,7 +396,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	strcpy(gui->base_path, sdPath);
 
 	timer = get_tmr_s();
-	const u32 BOOT_PART_SIZE = storage.ext_csd.boot_mult << 17;
+	const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
 
 	emmc_part_t bootPart;
 	memset(&bootPart, 0, sizeof(bootPart));
@@ -417,10 +415,10 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
 
-		sdmmc_storage_set_mmc_partition(&storage, i + 1);
+		sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
 
 		strcat(sdPath, bootPart.name);
-		res = _dump_emummc_file_part(gui, sdPath, &storage, &bootPart);
+		res = _dump_emummc_file_part(gui, sdPath, &emmc_storage, &bootPart);
 
 		if (!res)
 		{
@@ -437,10 +435,10 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	}
 
 	// Get GP partition size dynamically.
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 
 	// Get GP partition size dynamically.
-	const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
+	const u32 RAW_AREA_NUM_SECTORS = emmc_storage.sec_cnt;
 
 	emmc_part_t rawPart;
 	memset(&rawPart, 0, sizeof(rawPart));
@@ -455,7 +453,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
 
-		res = _dump_emummc_file_part(gui, sdPath, &storage, &rawPart);
+		res = _dump_emummc_file_part(gui, sdPath, &emmc_storage, &rawPart);
 
 		if (!res)
 			s_printf(txt_buf, "#FFDD00 Failed!#\n");
@@ -468,7 +466,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 out_failed:
 	timer = get_tmr_s() - timer;
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 
 	if (res)
 	{
@@ -637,6 +635,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	u32 timer = 0;
 
 	char *txt_buf = (char *)malloc(0x4000);
+	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -663,7 +662,6 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	// Create Restore folders, if they do not exist.
 	f_mkdir("emuMMC");
 	s_printf(sdPath, "emuMMC/RAW%d", part_idx);
-	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	f_mkdir(sdPath);
 	strcat(sdPath, "/");
 	strcpy(gui->base_path, sdPath);

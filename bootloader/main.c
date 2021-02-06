@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -73,8 +73,6 @@ volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
 
 void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
 {
-	sdmmc_storage_t storage2;
-	sdmmc_t sdmmc;
 	char emmcSN[9];
 	bool init_done = false;
 
@@ -83,12 +81,12 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 
 	if (!storage)
 	{
-		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+		if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 			memcpy(emmcSN, "00000000", 9);
 		else
 		{
 			init_done = true;
-			itoa(storage2.cid.serial, emmcSN, 16);
+			itoa(emmc_storage.cid.serial, emmcSN, 16);
 		}
 	}
 	else
@@ -107,7 +105,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	memcpy(path + strlen(path), filename, filename_len + 1);
 
 	if (init_done)
-		sdmmc_storage_end(&storage2);
+		sdmmc_storage_end(&emmc_storage);
 }
 
 void check_power_off_from_hos()
@@ -1120,18 +1118,15 @@ out:
 
 static void _patched_rcm_protection()
 {
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-
 	if (!h_cfg.rcm_patched || hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
 		return;
 
 	// Check if AutoRCM is enabled and protect from a permanent brick.
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 		return;
 
 	u8 *buf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	u32 sector;
 	u8 corr_mod0, mod1;
@@ -1143,7 +1138,7 @@ static void _patched_rcm_protection()
 	for (u32 i = 0; i < 4; i++)
 	{
 		sector = 1 + (32 * i); // 0x4000 bct + 0x200 offset.
-		sdmmc_storage_read(&storage, sector, 1, buf);
+		sdmmc_storage_read(&emmc_storage, sector, 1, buf);
 
 		// Check if 2nd byte of modulus is correct.
 		if (buf[0x11] != mod1)
@@ -1154,12 +1149,12 @@ static void _patched_rcm_protection()
 		{
 			buf[0x10] = corr_mod0;
 
-			sdmmc_storage_write(&storage, sector, 1, buf);
+			sdmmc_storage_write(&emmc_storage, sector, 1, buf);
 		}
 	}
 
 	free(buf);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC

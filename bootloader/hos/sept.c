@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -93,23 +93,21 @@ void check_sept(ini_sec_t *cfg_sec)
 
 	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	int res = emummc_storage_init_mmc(&storage, &sdmmc);
+	int res = emummc_storage_init_mmc();
 	if (res)
 	{
 		if (res == 2)
-			EPRINTF("Failed to init eMMC");
+			EPRINTF("Failed to init eMMC.");
 		else
-			EPRINTF("Failed to init emuMMC");
+			EPRINTF("Failed to init emuMMC.");
 
 		goto out_free;
 	}
 
-	emummc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
+	emummc_storage_set_mmc_partition(EMMC_BOOT0);
 
 	// Read package1.
-	emummc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	emummc_storage_read(0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
@@ -129,13 +127,13 @@ void check_sept(ini_sec_t *cfg_sec)
 			goto out_free;
 		}
 
-		sdmmc_storage_end(&storage);
+		sdmmc_storage_end(&emmc_storage);
 		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off, pkg1_id->kb, cfg_sec);
 	}
 
 out_free:
 	free(pkg1);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 }
 
 int reboot_to_sept(const u8 *tsec_fw, u32 kb, ini_sec_t *cfg_sec)

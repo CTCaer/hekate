@@ -66,23 +66,21 @@ void dump_packages12()
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out_free;
 	}
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	// Read package1.
-	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
 		EPRINTF("Unknown pkg1 version for reading\nTSEC firmware.");
 		// Dump package1.
-		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &emmc_storage);
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
 		gfx_puts("\nEnc pkg1 dumped to pkg1_enc.bin\n");
@@ -116,7 +114,7 @@ void dump_packages12()
 
 		// Read keyblob.
 		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		sdmmc_storage_read(&storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+		sdmmc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 		// Decrypt.
 		hos_keygen(keyblob, kb, &tsec_ctxt, NULL);
@@ -156,35 +154,35 @@ void dump_packages12()
 		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->wb_size);
 
 		// Dump package1.1.
-		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &emmc_storage);
 		if (sd_save_to_file(pkg1, 0x40000, path))
 			goto out_free;
 		gfx_puts("\npkg1 dumped to pkg1_decr.bin\n");
 
 		// Dump nxbootloader.
-		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &emmc_storage);
 		if (sd_save_to_file(loader, hdr_pk11->ldr_size, path))
 			goto out_free;
 		gfx_puts("NX Bootloader dumped to nxloader.bin\n");
 
 		// Dump secmon.
-		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &emmc_storage);
 		if (sd_save_to_file(secmon, hdr_pk11->sm_size, path))
 			goto out_free;
 		gfx_puts("Secure Monitor dumped to secmon.bin\n");
 
 		// Dump warmboot.
-		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &storage);
+		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &emmc_storage);
 		if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 			goto out_free;
 		gfx_puts("Warmboot dumped to warmboot.bin\n\n\n");
 	}
 
 	// Dump package2.1.
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &storage);
+	nx_emmc_gpt_parse(&gpt, &emmc_storage);
 	// Find package2 partition.
 	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
@@ -192,14 +190,14 @@ void dump_packages12()
 
 	// Read in package2 header and get package2 real size.
 	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
+	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
 	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
 	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
 	free(tmp);
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
-	nx_emmc_part_read(&storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
+	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);
@@ -214,19 +212,19 @@ void dump_packages12()
 	gfx_printf("%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
 	// Dump pkg2.1.
-	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &emmc_storage);
 	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
 		goto out;
 	gfx_puts("\npkg2 dumped to pkg2_decr.bin\n");
 
 	// Dump kernel.
-	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &emmc_storage);
 	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
 		goto out;
 	gfx_puts("Kernel dumped to kernel.bin\n");
 
 	// Dump INI1.
-	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &storage);
+	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &emmc_storage);
 	u32 ini1_off = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
 	u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
 	if (!ini1_size)
@@ -257,7 +255,7 @@ out_free:
 	free(warmboot);
 	free(loader);
 	free(pkg2);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 	sd_end();
 
 	if (kb >= KB_FIRMWARE_VERSION_620)
@@ -268,20 +266,17 @@ out_free:
 
 void _toggle_autorcm(bool enable)
 {
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
 	}
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	int i, sect = 0;
 	u8 corr_mod0, mod1;
@@ -293,7 +288,7 @@ void _toggle_autorcm(bool enable)
 	for (i = 0; i < 4; i++)
 	{
 		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
-		sdmmc_storage_read(&storage, sect, 1, tempbuf);
+		sdmmc_storage_read(&emmc_storage, sect, 1, tempbuf);
 
 		// Check if 2nd byte of modulus is correct.
 		if (tempbuf[0x11] != mod1)
@@ -303,11 +298,11 @@ void _toggle_autorcm(bool enable)
 			tempbuf[0x10] = 0;
 		else
 			tempbuf[0x10] = corr_mod0;
-		sdmmc_storage_write(&storage, sect, 1, tempbuf);
+		sdmmc_storage_write(&emmc_storage, sect, 1, tempbuf);
 	}
 
 	free(tempbuf);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 
 	if (enable)
 		gfx_printf("%kAutoRCM mode enabled!%k", 0xFFFFBA00, 0xFFCCCCCC);
@@ -338,11 +333,9 @@ void menu_autorcm()
 	}
 
 	// Do a simple check on the main BCT.
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
 	bool disabled = true;
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		EPRINTF("Failed to init eMMC.");
 		btn_wait();
@@ -355,8 +348,8 @@ void menu_autorcm()
 	nx_emmc_get_autorcm_masks(&mod0, &mod1);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
-	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	sdmmc_storage_read(&emmc_storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
 	// Check if 2nd byte of modulus is correct.
 	if (tempbuf[0x11] == mod1)
@@ -364,7 +357,7 @@ void menu_autorcm()
 			disabled = false;
 
 	free(tempbuf);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 
 	// Create AutoRCM menu.
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
