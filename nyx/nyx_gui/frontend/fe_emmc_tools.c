@@ -1133,7 +1133,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		_get_valid_partition(&sector_start, &sector_size, &part_idx, false);
 		if (!part_idx || !sector_size)
 		{
-			s_printf(gui->txt_buf, "#FFDD00 Failed to find a partition...#\n");
+			s_printf(gui->txt_buf, "\n#FFDD00 Failed to find a partition...#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -1160,7 +1160,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				// Verify part.
 				if (_dump_emmc_verify(gui, storage, lbaStartPart, outFilename, part))
 				{
-					s_printf(gui->txt_buf, "#FFDD00 Please try again...#\n");
+					s_printf(gui->txt_buf, "\n#FFDD00 Please try again...#\n");
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -1184,7 +1184,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			res = f_open(&fp, outFilename, FA_READ);
 			if (res)
 			{
-				s_printf(gui->txt_buf, "#FF0000 Error (%d) while opening file#\n#FFDD00 %s!#\n", res, outFilename);
+				s_printf(gui->txt_buf, "\n#FF0000 Error (%d) while opening file#\n#FFDD00 %s!#\n", res, outFilename);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
@@ -1224,8 +1224,8 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		while (res)
 		{
 			s_printf(gui->txt_buf,
-				"#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
-				"#FFDD00 from eMMC (try %d). #",
+				"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
+				"#FFDD00 from eMMC (try %d).\n#",
 				num, lba_curr, ++retryCount);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
