@@ -1160,6 +1160,19 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 				h_cfg.sept_run = true;
 			else
 			{
+				// Check that BCT is proper so sept can run.
+				u8 *bct_bldr = (u8 *)calloc(1, 512);
+				sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, &bct_bldr);
+				u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
+				free(bct_bldr);
+				if (bootloader_entrypoint > SEPT_PRI_ENTRY)
+				{
+					lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept because main BCT is improper!#\n"
+						"#FFDD00 Run sept with proper BCT at least once to cache keys.#\n");
+					goto out_free;
+				}
+
+				// Set boot cfg.
 				b_cfg->autoboot = 0;
 				b_cfg->autoboot_list = 0;
 				b_cfg->extra_cfg = EXTRA_CFG_NYX_DUMP;

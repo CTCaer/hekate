@@ -55,6 +55,7 @@ u8 warmboot_reboot[] = {
 };
 
 #define SEPT_PRI_ADDR   0x4003F000
+#define SEPT_PRI_ENTRY  0x40010340
 
 #define SEPT_PK1T_ADDR  0xC0400000
 #define SEPT_TCSZ_ADDR  (SEPT_PK1T_ADDR - 0x4)
@@ -124,6 +125,17 @@ void check_sept(ini_sec_t *cfg_sec)
 		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= pkg1_id->kb)
 		{
 			h_cfg.sept_run = true;
+			goto out_free;
+		}
+
+		u8 *bct_bldr = (u8 *)calloc(1, 512);
+		sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, &bct_bldr);
+		u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
+		free(bct_bldr);
+		if (bootloader_entrypoint > SEPT_PRI_ENTRY)
+		{
+			gfx_con.mute = false;
+			EPRINTF("Failed to run sept\n""Main BCT is improper!\nRun sept with proper BCT at least once\nto cache keys.");
 			goto out_free;
 		}
 

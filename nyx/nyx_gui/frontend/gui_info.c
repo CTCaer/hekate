@@ -312,7 +312,13 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
 	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
 	u8 *pkg1 = (u8 *)malloc(BOOTLOADER_SIZE);
-	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	{
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
+
+		goto out;
+	}
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 try_load:
@@ -326,7 +332,7 @@ try_load:
 
 	if (!pkg1_id)
 	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#\n");
+		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#\n");
 		// Try backup bootloader.
 		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
 		{
@@ -363,6 +369,19 @@ try_load:
 			h_cfg.sept_run = true;
 		else
 		{
+			// Check that BCT is proper so sept can run.
+			u8 *bct_bldr = (u8 *)calloc(1, 512);
+			sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, &bct_bldr);
+			u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
+			free(bct_bldr);
+			if (bootloader_entrypoint > SEPT_PRI_ENTRY)
+			{
+				lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept because main BCT is improper!#\n"
+					"#FFDD00 Run sept with proper BCT at least once to cache keys.#\n");
+				goto out;
+			}
+
+			// Set boot cfg.
 			b_cfg->autoboot = 0;
 			b_cfg->autoboot_list = 0;
 			b_cfg->extra_cfg = EXTRA_CFG_NYX_BIS;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -67,72 +67,6 @@ extern volatile nyx_storage_t *nyx_str;
 
 extern bool is_ipl_updated(void *buf);
 extern void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size);
-
-void check_sept()
-{
-	if (h_cfg.t210b01)
-	{
-		h_cfg.sept_run = true;
-		return;
-	}
-
-	hos_eks_get();
-
-	// Check if non-hekate payload is used for sept and restore it.
-	if (h_cfg.sept_run)
-	{
-		if (!f_stat("sept/payload.bak", NULL))
-		{
-			f_unlink("sept/payload.bin");
-			f_rename("sept/payload.bak", "sept/payload.bin");
-		}
-
-		return;
-	}
-
-	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
-
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
-	{
-		EPRINTF("Failed to init eMMC.");
-		goto out_free;
-	}
-
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
-
-	// Read package1.
-	char *build_date = malloc(32);
-	sdmmc_storage_read(&storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
-	free(build_date);
-	if (!pkg1_id)
-	{
-		EPRINTF("Unknown pkg1 version.");
-		goto out_free;
-	}
-
-	if (pkg1_id->kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
-	{
-		u32 key_idx = 0;
-		if (pkg1_id->kb >= KB_FIRMWARE_VERSION_810)
-			key_idx = 1;
-
-		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= pkg1_id->kb)
-		{
-			h_cfg.sept_run = true;
-			goto out_free;
-		}
-
-		sdmmc_storage_end(&storage);
-		reboot_to_sept((u8 *)pkg1 + pkg1_id->tsec_off, pkg1_id->kb);
-	}
-
-out_free:
-	free(pkg1);
-	sdmmc_storage_end(&storage);
-}
 
 int reboot_to_sept(const u8 *tsec_fw, u32 kb)
 {
