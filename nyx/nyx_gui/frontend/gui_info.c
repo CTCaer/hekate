@@ -413,8 +413,10 @@ t210b01:;
 	LIST_INIT(gpt);
 	nx_emmc_gpt_parse(&gpt, &emmc_storage);
 	emmc_part_t *cal0_part = nx_emmc_part_find(&gpt, "PRODINFO"); // check if null
-	nx_emmc_bis_init(cal0_part);
+	nx_emmc_bis_init(cal0_part, false, 0);
 	nx_emmc_bis_read(0, 0x40, cal0_buf);
+	nx_emmc_bis_end();
+	nx_emmc_gpt_free(&gpt);
 
 	// Clear BIS keys slots and reinstate SBK.
 	hos_bis_keys_clear();

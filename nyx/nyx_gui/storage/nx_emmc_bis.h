@@ -223,7 +223,8 @@ typedef struct _nx_emmc_cal0_t
 	u8   console_6axis_sensor_mount_type;
 } __attribute__((packed)) nx_emmc_cal0_t;
 
-int nx_emmc_bis_read(u32 sector, u32 count, void *buff);
-void nx_emmc_bis_init(emmc_part_t *part);
+int  nx_emmc_bis_read(u32 sector, u32 count, void *buff);
+void nx_emmc_bis_init(emmc_part_t *part, bool enable_cache, u32 emummc_offset);
+void nx_emmc_bis_end();
 
 #endif
