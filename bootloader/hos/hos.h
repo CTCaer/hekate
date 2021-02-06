@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,6 +20,7 @@
 
 #include "pkg1.h"
 #include "pkg2.h"
+#include <sec/se_t210.h>
 #include <utils/types.h>
 #include <utils/ini.h>
 #include <sec/tsec.h>
@@ -56,14 +57,14 @@ typedef struct _exo_ctxt_t
 
 typedef struct _hos_eks_keys_t
 {
-	u8 mkk[0x10];
-	u8 fdk[0x10];
+	u8 mkk[SE_KEY_128_SIZE];
+	u8 fdk[SE_KEY_128_SIZE];
 } hos_eks_keys_t;
 
 typedef struct _hos_eks_bis_keys_t
 {
-	u8 crypt[0x10];
-	u8 tweak[0x10];
+	u8 crypt[SE_KEY_128_SIZE];
+	u8 tweak[SE_KEY_128_SIZE];
 } hos_eks_bis_keys_t;
 
 typedef struct _hos_eks_mbr_t
@@ -73,8 +74,8 @@ typedef struct _hos_eks_mbr_t
 	u8  enabled_bis;
 	u8  rsvd[2];
 	u32 lot0;
-	u8  dkg[0x10];
-	u8  dkk[0x10];
+	u8  dkg[SE_KEY_128_SIZE];
+	u8  dkk[SE_KEY_128_SIZE];
 	hos_eks_keys_t keys[5];
 	hos_eks_bis_keys_t bis_keys[3];
 } hos_eks_mbr_t;
@@ -129,6 +130,6 @@ void hos_eks_get();
 void hos_eks_save(u32 kb);
 void hos_eks_clear(u32 kb);
 int  hos_launch(ini_sec_t *cfg);
-int  hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt);
+int  hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, launch_ctxt_t *hos_ctxt);
 
 #endif

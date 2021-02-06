@@ -62,7 +62,7 @@ static int _tsec_dma_pa_to_internal_100(int not_imem, int i_offset, int pa_offse
 	return _tsec_dma_wait_idle();
 }
 
-int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
+int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 {
 	int res = 0;
 	u8 *fwbuf = NULL;

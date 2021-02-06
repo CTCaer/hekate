@@ -29,6 +29,6 @@ typedef struct _tsec_ctxt_t
 	u32 secmon_base;
 } tsec_ctxt_t;
 
-int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt);
+int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt);
 
 #endif

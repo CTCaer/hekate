@@ -45,6 +45,28 @@ extern hekate_config h_cfg;
 
 static u8 *bis_keys = NULL;
 
+typedef struct _tsec_keys_t
+{
+	u8 tsec[SE_KEY_128_SIZE];
+	u8 tsec_root[SE_KEY_128_SIZE];
+	u8 tmp[SE_KEY_128_SIZE];
+} tsec_keys_t;
+
+typedef struct _kb_keys_t
+{
+	u8 master_keyseed[SE_KEY_128_SIZE];
+	u8 random_data[0x70];
+	u8 package1_key[SE_KEY_128_SIZE];
+} kb_keys_t;
+
+typedef struct _kb_t
+{
+	u8 cmac[SE_KEY_128_SIZE];
+	u8 ctr[SE_AES_IV_SIZE];
+	kb_keys_t keys;
+	u8 padding[0x150];
+} kb_t;
+
 static const u8 keyblob_keyseeds[][SE_KEY_128_SIZE] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, // 3.0.0.
@@ -417,10 +439,11 @@ int hos_keygen_t210b01(u32 kb)
 	return 1;
 }
 
-int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
+int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 {
-	u8 tmp[0x30];
 	u32 retries = 0;
+	tsec_keys_t tsec_keys;
+	kb_t *kb_data = (kb_t *)keyblob;
 
 	if (kb > KB_FIRMWARE_VERSION_MAX)
 		return 0;
@@ -448,9 +471,9 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	// Get TSEC key.
 	if (kb <= KB_FIRMWARE_VERSION_620)
 	{
-		while (tsec_query(tmp, kb, tsec_ctxt) < 0)
+		while (tsec_query(&tsec_keys, kb, tsec_ctxt) < 0)
 		{
-			memset(tmp, 0x00, 0x20);
+			memset(&tsec_keys, 0x00, 0x20);
 			retries++;
 
 			// We rely on racing conditions, make sure we cover even the unluckiest cases.
@@ -489,13 +512,13 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
 		// Set TSEC key.
-		se_aes_key_set(12, tmp, SE_KEY_128_SIZE);
+		se_aes_key_set(12, tsec_keys.tsec, SE_KEY_128_SIZE);
 		// Set TSEC root key.
-		se_aes_key_set(13, tmp + SE_KEY_128_SIZE, SE_KEY_128_SIZE);
+		se_aes_key_set(13, tsec_keys.tsec_root, SE_KEY_128_SIZE);
 
 		// Decrypt keyblob and set keyslots
-		se_aes_crypt_block_ecb(12, 0, tmp + 0x20, keyblob_keyseeds[0]);
-		se_aes_unwrap_key(15, 14, tmp + 0x20);
+		se_aes_crypt_block_ecb(12, 0, tsec_keys.tmp, keyblob_keyseeds[0]);
+		se_aes_unwrap_key(15, 14, tsec_keys.tmp);
 		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 		se_aes_unwrap_key(15, 15, console_keyseed);
 
@@ -507,33 +530,36 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	else
 	{
 		// Set TSEC key.
-		se_aes_key_set(13, tmp, SE_KEY_128_SIZE);
+		se_aes_key_set(13, tsec_keys.tsec, SE_KEY_128_SIZE);
 
 		// Derive keyblob keys from TSEC+SBK.
-		se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[0]);
-		se_aes_unwrap_key(15, 14, tmp);
-		se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[kb]);
-		se_aes_unwrap_key(13, 14, tmp);
+		se_aes_crypt_block_ecb(13, 0, tsec_keys.tsec, keyblob_keyseeds[0]);
+		se_aes_unwrap_key(15, 14, tsec_keys.tsec);
+		se_aes_crypt_block_ecb(13, 0, tsec_keys.tsec, keyblob_keyseeds[kb]);
+		se_aes_unwrap_key(13, 14, tsec_keys.tsec);
 
 		// Clear SBK.
 		se_aes_key_clear(14);
 
-		//TODO: verify keyblob CMAC.
-		//se_aes_unwrap_key(11, 13, cmac_keyseed);
-		//se_aes_cmac(tmp, 0x10, 11, keyblob + 0x10, 0xA0);
-		//if (!memcmp(keyblob, tmp, 0x10))
-		//	return 0;
+/*
+		// Verify keyblob CMAC.
+		u8 cmac[SE_KEY_128_SIZE];
+		se_aes_unwrap_key(11, 13, cmac_keyseed);
+		se_aes_cmac(cmac, SE_KEY_128_SIZE, 11, (void *)kb_data->ctr, sizeof(kb_data->ctr) + sizeof(kb_data->keys));
+		if (!memcmp(kb_data->cmac, cmac, SE_KEY_128_SIZE))
+			return 0;
+*/
 
-		se_aes_crypt_block_ecb(13, 0, tmp, cmac_keyseed);
+		se_aes_crypt_block_ecb(13, 0, tsec_keys.tsec, cmac_keyseed);
 		se_aes_unwrap_key(11, 13, cmac_keyseed);
 
 		// Decrypt keyblob and set keyslots.
-		se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-		se_aes_key_set(11, keyblob + 0x20 + 0x80, SE_KEY_128_SIZE); // Package1 key.
-		se_aes_key_set(12, keyblob + 0x20, SE_KEY_128_SIZE);
-		se_aes_key_set(13, keyblob + 0x20, SE_KEY_128_SIZE);
+		se_aes_crypt_ctr(13, &kb_data->keys, sizeof(kb_data->keys), &kb_data->keys, sizeof(kb_data->keys), kb_data->ctr);
+		se_aes_key_set(11, kb_data->keys.package1_key, SE_KEY_128_SIZE);
+		se_aes_key_set(12, kb_data->keys.master_keyseed, SE_KEY_128_SIZE);
+		se_aes_key_set(13, kb_data->keys.master_keyseed, SE_KEY_128_SIZE);
 
-		se_aes_crypt_block_ecb(12, 0, tmp, master_keyseed_retail);
+		se_aes_crypt_block_ecb(12, 0, tsec_keys.tsec, master_keyseed_retail);
 
 		switch (kb)
 		{
@@ -606,7 +632,7 @@ static void _hos_bis_print_key(u32 idx, u8 *key)
 	gfx_puts("\n");
 }
 
-int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
+int hos_bis_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 {
 	u32 keygen_rev = 0;
 	u32 console_key_slot = kb >= KB_FIRMWARE_VERSION_400 ? 15 : 13;
