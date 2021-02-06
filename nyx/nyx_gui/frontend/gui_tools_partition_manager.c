@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -47,6 +47,8 @@ typedef struct _partition_ctxt_t
 	u32 emu_size;
 	u32 l4t_size;
 	u32 and_size;
+
+	bool emu_double;
 
 	mbr_t *mbr_old;
 
@@ -244,26 +246,20 @@ static void _prepare_and_flash_mbr_gpt()
 	if (part_info.l4t_size && !part_info.and_size)
 	{
 		mbr.partitions[mbr_idx].type = 0x83; // Linux system partition.
-		mbr.partitions[mbr_idx].start_sct = 0x8000 + (part_info.hos_size << 11);
+		mbr.partitions[mbr_idx].start_sct = 0x8000 + ((u32)part_info.hos_size << 11);
 		mbr.partitions[mbr_idx].size_sct = part_info.l4t_size << 11;
 		sdmmc_storage_write(&sd_storage, mbr.partitions[mbr_idx].start_sct, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		mbr_idx++;
 	}
 
 	// emuMMC goes second or third. Next to L4T if no Android.
-	bool double_emummc = part_info.emu_size > 29856;
 	if (part_info.emu_size)
 	{
 		mbr.partitions[mbr_idx].type = 0xE0; // emuMMC partition.
-		mbr.partitions[mbr_idx].start_sct = 0x8000 + (part_info.hos_size << 11) + (part_info.l4t_size << 11) + (part_info.and_size << 11);
+		mbr.partitions[mbr_idx].start_sct = 0x8000 + ((u32)part_info.hos_size << 11) + (part_info.l4t_size << 11) + (part_info.and_size << 11);
 
-		if (!double_emummc)
-		{
-			if (!part_info.and_size)
-				mbr.partitions[mbr_idx].size_sct = part_info.emu_size << 11;
-			else
-				mbr.partitions[mbr_idx].size_sct = (part_info.emu_size << 11) - 0x800; // Reserve 1MB.
-		}
+		if (!part_info.emu_double)
+			mbr.partitions[mbr_idx].size_sct = (part_info.emu_size << 11) - 0x800; // Reserve 1MB.
 		else
 		{
 			mbr.partitions[mbr_idx].type = 0xE0; // emuMMC partition.
@@ -272,10 +268,7 @@ static void _prepare_and_flash_mbr_gpt()
 
 			// 2nd emuMMC.
 			mbr.partitions[mbr_idx].start_sct = mbr.partitions[mbr_idx - 1].start_sct + (part_info.emu_size << 10);
-			if (!part_info.and_size)
-				mbr.partitions[mbr_idx].size_sct = part_info.emu_size << 10;
-			else
-				mbr.partitions[mbr_idx].size_sct = (part_info.emu_size << 10) - 0x800; // Reserve 1MB.
+			mbr.partitions[mbr_idx].size_sct = (part_info.emu_size << 10) - 0x800; // Reserve 1MB.
 		}
 		mbr_idx++;
 	}
@@ -315,7 +308,7 @@ static void _prepare_and_flash_mbr_gpt()
 		memcpy(gpt.entries[0].name, (char[]) { 'h', 0, 'o', 0, 's', 0, '_', 0, 'd', 0, 'a', 0, 't', 0, 'a', 0 }, 16);
 
 		u8 gpt_idx = 1;
-		u32 curr_part_lba = 0x8000 + (part_info.hos_size << 11);
+		u32 curr_part_lba = 0x8000 + ((u32)part_info.hos_size << 11);
 		u8 android_part_guid[] = { 0xAF, 0x3D, 0xC6, 0x0F,  0x83, 0x84,  0x72, 0x47,  0x8E, 0x79,  0x3D, 0x69, 0xD8, 0x47, 0x7D, 0xE4 };
 		if (part_info.l4t_size)
 		{
@@ -440,14 +433,14 @@ static void _prepare_and_flash_mbr_gpt()
 			se_gen_prng128(random_number);
 			memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
 			gpt.entries[gpt_idx].lba_start = curr_part_lba;
-			if (!double_emummc)
+			if (!part_info.emu_double)
 				gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 11) - 0x800 - 1; // Reserve 1MB.
 			else
-				gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10); // Reserve 1MB.
+				gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 1;
 			memcpy(gpt.entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0 }, 12);
 			gpt_idx++;
 
-			if (double_emummc)
+			if (part_info.emu_double)
 			{
 				curr_part_lba += (part_info.emu_size << 10);
 				memcpy(gpt.entries[gpt_idx].type_guid, emu_part_guid, 16);
@@ -1292,7 +1285,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] =  { "\211", "\222OK", "\211", "" };
 	static const char *mbox_btn_map1[] = { "\222SD UMS", "\222Flash Linux", "\222Flash Android", "\221OK", "" };
 	static const char *mbox_btn_map2[] = { "\222SD UMS", "\222Flash Linux", "\221OK", "" };
 	static const char *mbox_btn_map3[] = { "\222SD UMS", "\222Flash Android", "\221OK", "" };
@@ -1677,12 +1670,33 @@ static void _update_partition_bar()
 
 static lv_res_t _action_slider_emu(lv_obj_t *slider)
 {
+	u32 size;
 	char lbl_text[64];
-
+	bool prev_emu_double = part_info.emu_double;
 	int slide_val = lv_slider_get_value(slider);
-	u32 size = slide_val ? ((slide_val < 2) ? 29856 : 59712) : 0;
-	s32 hos_size = (part_info.total_sct >> 11) - 16 - size - part_info.l4t_size - part_info.and_size;
+	const u32 rsvd_mb = 4 + 4 + 16 + 8; // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
 
+	part_info.emu_double = false;
+
+	size  = slide_val + 3; // Min 4GB.
+	size *= 1024;          // Convert to GB.
+	size += rsvd_mb;       // Add reserved size.
+
+	if (!slide_val)
+		size = 0; // Reset if 0.
+	else if (slide_val >= 11)
+	{
+		size *= 2;
+		part_info.emu_double = true;
+	}
+
+	// Handle special case.
+	if (slide_val == 10)
+		size = 29856;
+	else if (slide_val == 20)
+		size = 59712;
+
+	s32 hos_size = (part_info.total_sct >> 11) - 16 - size - part_info.l4t_size - part_info.and_size;
 	if (hos_size > 2048)
 	{
 		part_info.emu_size = size;
@@ -1692,28 +1706,35 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		lv_label_set_text(part_info.lbl_hos, lbl_text);
 		lv_bar_set_value(part_info.slider_bar_hos, hos_size >> 10);
 
-		if (slide_val < 2)
+		if (!part_info.emu_double)
 			s_printf(lbl_text, "#FF3C28 %d GiB#", size >> 10);
 		else
-			s_printf(lbl_text, "#FF3C28 2x%d GiB#", size >> 11);
+			s_printf(lbl_text, "#FFDD00 2x##FF3C28 %d GiB#", size >> 11);
 		lv_label_set_text(part_info.lbl_emu, lbl_text);
 	}
 	else
 	{
-		int new_slider_val;
-		switch (part_info.emu_size)
+		u32 emu_size = part_info.emu_size;
+
+		if (emu_size == 29856)
+			emu_size = 10;
+		else if (emu_size == 59712)
+			emu_size = 20;
+		else if (emu_size)
 		{
-		case 29856:
-			new_slider_val = 1;
-			break;
-		case 59712:
-			new_slider_val = 2;
-			break;
-		case 0:
-		default:
-			new_slider_val = 0;
-			break;
+			if (prev_emu_double)
+				emu_size /= 2;
+			emu_size -= rsvd_mb;
+			emu_size /= 1024;
+			emu_size -= 3;
+
+			if (prev_emu_double)
+				emu_size += 11;
 		}
+
+		int new_slider_val = emu_size;
+		part_info.emu_double = prev_emu_double ? true : false;
+
 		lv_slider_set_value(slider, new_slider_val);
 	}
 
@@ -2317,7 +2338,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	lv_obj_t *slider_emu = lv_slider_create(h1, NULL);
 	lv_obj_set_size(slider_emu, LV_DPI * 7, LV_DPI / 3);
-	lv_slider_set_range(slider_emu, 0, 2);
+	lv_slider_set_range(slider_emu, 0, 20);
 	lv_slider_set_value(slider_emu, 0);
 	lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_BG, &bar_emu_bg);
 	lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_INDIC, &bar_emu_ind);
@@ -2374,9 +2395,9 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_label_set_recolor(lbl_notes, true);
 	lv_label_set_static_text(lbl_notes,
 		"Note 1: Only up to #C7EA46 1GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
-		"Note 2: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# work independently and will flash files if suitable partitions and installer files are found.\n"
-		"Note 3: The installation files reside in #C7EA46 switchroot/install# folder. Linux uses #C7EA46 l4t.XX# and Android uses #C7EA46 twrp.img# and #C7EA46 tegra210-icosa.dtb#.\n"
-		"Note 4: #FFDD00 The installation files will be deleted after a successful flashing.#");
+		"Note 2: Resized emuMMC formats the USER partition. A save data manager can be used to move them over.\n"
+		"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n"
+		"Note 4: The installation folder is #C7EA46 switchroot/install#. Linux uses #C7EA46 l4t.XX# and Android uses #C7EA46 twrp.img# and #C7EA46 tegra210-icosa.dtb#.");
 	lv_label_set_style(lbl_notes, &hint_small_style);
 	lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 
