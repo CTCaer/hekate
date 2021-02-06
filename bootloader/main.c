@@ -642,12 +642,8 @@ void launch_firmware()
 
 	if (!cfg_sec)
 	{
-		gfx_puts("\nUsing default launch configuration...\n");
-		gfx_puts("\nPress POWER to Continue.\nPress VOL to go to the menu.");
-
-		u32 btn = btn_wait();
-		if (!(btn & BTN_POWER))
-			goto out;
+		gfx_printf("\nPress any key...\n");
+		goto out;
 	}
 
 	if (payload_path)
