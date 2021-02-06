@@ -1755,14 +1755,14 @@ ini_parsing:
 		{
 			lv_label_set_static_text(label_error,
 				"#FFDD00 No main boot entries found...#\n"
-				"You can use the following entry to boot stock,\n"
+				"Check that #96FF00 bootloader/hekate_ipl.ini# has boot entries\n"
 				"or use #C7EA46 More configs# button for more boot entries.");
 		}
 		else
 		{
 			lv_label_set_static_text(label_error,
 				"#FFDD00 No .ini or boot entries found...#\n"
-				"Check that a .ini file exists in #96FF00 /bootloader/ini/#,\n"
+				"Check that a .ini file exists in #96FF00 bootloader/ini/#\n"
 				"and that it contains at least one entry.");
 		}
 
