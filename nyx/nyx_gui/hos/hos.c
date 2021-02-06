@@ -541,7 +541,8 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		se_aes_unwrap_key(13, 14, tsec_keys.tsec);
 
 		// Clear SBK.
-		se_aes_key_clear(14);
+		if (!h_cfg.sbk_set)
+			se_aes_key_clear(14);
 
 /*
 		// Verify keyblob CMAC.
@@ -574,14 +575,16 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		case KB_FIRMWARE_VERSION_400:
 			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
-			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+			if (!h_cfg.sbk_set) // Do not clear SBK if patched. In this context the below key is useless.
+				se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
 		case KB_FIRMWARE_VERSION_500:
 		case KB_FIRMWARE_VERSION_600:
 			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
-			se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+			if (!h_cfg.sbk_set) // Do not clear SBK if patched. In this context the below key is useless.
+				se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
 		}
