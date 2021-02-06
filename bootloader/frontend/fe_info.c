@@ -260,7 +260,7 @@ void print_sdcard_info()
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	if (sd_initialize(true))
+	if (sd_initialize(false))
 	{
 		gfx_printf("%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
 		gfx_printf(
