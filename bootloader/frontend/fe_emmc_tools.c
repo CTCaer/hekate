@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -27,6 +27,7 @@
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <sec/se.h>
+#include <sec/se_t210.h>
 #include "../storage/nx_emmc.h"
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
@@ -96,7 +97,7 @@ static int _dump_emmc_verify(sdmmc_storage_t *storage, u32 lba_curr, char *outFi
 
 				se_calc_sha256_oneshot(hashEm, bufEm, num << 9);
 				se_calc_sha256_oneshot(hashSd, bufSd, num << 9);
-				res = memcmp(hashEm, hashSd, 0x10);
+				res = memcmp(hashEm, hashSd, SE_SHA_256_SIZE / 2);
 
 				if (res)
 				{

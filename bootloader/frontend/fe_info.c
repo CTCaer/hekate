@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <mem/smmu.h>
 #include <power/bq24193.h>
 #include <power/max17050.h>
+#include <sec/se_t210.h>
 #include <sec/tsec.h>
 #include <soc/fuse.h>
 #include <soc/i2c.h>
@@ -354,7 +355,7 @@ void print_tsec_key()
 		goto out_wait;
 	}
 
-	u8 keys[0x10 * 2];
+	u8 keys[SE_KEY_128_SIZE * 2];
 	memset(keys, 0x00, 0x20);
 
 	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
@@ -401,14 +402,14 @@ void print_tsec_key()
 
 	if (res >= 0)
 	{
-		for (u32 j = 0; j < 0x10; j++)
+		for (u32 j = 0; j < SE_KEY_128_SIZE; j++)
 			gfx_printf("%02X", keys[j]);
 
 		if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 		{
 			gfx_printf("\n%kTSEC root: %k", 0xFF00DDFF, 0xFFCCCCCC);
-			for (u32 j = 0; j < 0x10; j++)
-				gfx_printf("%02X", keys[0x10 + j]);
+			for (u32 j = 0; j < SE_KEY_128_SIZE; j++)
+				gfx_printf("%02X", keys[SE_KEY_128_SIZE + j]);
 		}
 	}
 	else
@@ -423,7 +424,7 @@ void print_tsec_key()
 		{
 			char path[64];
 			emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
-			if (!sd_save_to_file(keys, 0x10 * 2, path))
+			if (!sd_save_to_file(keys, SE_KEY_128_SIZE * 2, path))
 				gfx_puts("\nDone!\n");
 			sd_end();
 		}

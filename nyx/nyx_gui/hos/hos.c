@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ extern hekate_config h_cfg;
 
 static u8 *bis_keys = NULL;
 
-static const u8 keyblob_keyseeds[][0x10] = {
+static const u8 keyblob_keyseeds[][SE_KEY_128_SIZE] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, // 3.0.0.
 	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, // 3.0.1.
@@ -54,19 +54,19 @@ static const u8 keyblob_keyseeds[][0x10] = {
 	{ 0xD8, 0xCC, 0xE1, 0x26, 0x6A, 0x35, 0x3F, 0xCC, 0x20, 0xF3, 0x2D, 0x3B, 0x51, 0x7D, 0xE9, 0xC0 }  // 6.0.0.
 };
 
-static const u8 cmac_keyseed[0x10] =
+static const u8 cmac_keyseed[SE_KEY_128_SIZE] =
 	{ 0x59, 0xC7, 0xFB, 0x6F, 0xBE, 0x9B, 0xBE, 0x87, 0x65, 0x6B, 0x15, 0xC0, 0x53, 0x73, 0x36, 0xA5 };
 
-static const u8 master_keyseed_retail[0x10] =
+static const u8 master_keyseed_retail[SE_KEY_128_SIZE] =
 	{ 0xD8, 0xA2, 0x41, 0x0A, 0xC6, 0xC5, 0x90, 0x01, 0xC6, 0x1D, 0x6A, 0x26, 0x7C, 0x51, 0x3F, 0x3C };
 
-static const u8 master_keyseed_4xx_5xx_610[0x10] =
+static const u8 master_keyseed_4xx_5xx_610[SE_KEY_128_SIZE] =
 	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
 
-static const u8 master_keyseed_620[0x10] =
+static const u8 master_keyseed_620[SE_KEY_128_SIZE] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
-static const u8 master_kekseed_t210b01[][0x10] = {
+static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
 	{ 0x77, 0x60, 0x5A, 0xD2, 0xEE, 0x6E, 0xF8, 0x3C, 0x3F, 0x72, 0xE2, 0x59, 0x9D, 0xAC, 0x5E, 0x56 }, // 6.0.0.
 	{ 0x1E, 0x80, 0xB8, 0x17, 0x3E, 0xC0, 0x60, 0xAA, 0x11, 0xBE, 0x1A, 0x4A, 0xA6, 0x6F, 0xE4, 0xAE }, // 6.2.0.
 	{ 0x94, 0x08, 0x67, 0xBD, 0x0A, 0x00, 0x38, 0x84, 0x11, 0xD3, 0x1A, 0xDB, 0xDD, 0x8D, 0xF1, 0x8A }, // 7.0.0.
@@ -75,16 +75,16 @@ static const u8 master_kekseed_t210b01[][0x10] = {
 	{ 0x0E, 0x44, 0x0C, 0xED, 0xB4, 0x36, 0xC0, 0x3F, 0xAA, 0x1D, 0xAE, 0xBF, 0x62, 0xB1, 0x09, 0x82 }, // 9.1.0.
 };
 
-static const u8 console_keyseed[0x10] =
+static const u8 console_keyseed[SE_KEY_128_SIZE] =
 	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
 
-static const u8 console_keyseed_4xx_5xx[0x10] =
+static const u8 console_keyseed_4xx_5xx[SE_KEY_128_SIZE] =
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
-const u8 package2_keyseed[0x10] =
+const u8 package2_keyseed[SE_KEY_128_SIZE] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
-static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][0x10] = {
+static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][SE_KEY_128_SIZE] = {
 	{ 0x0C, 0xF0, 0x59, 0xAC, 0x85, 0xF6, 0x26, 0x65, 0xE1, 0xE9, 0x19, 0x55, 0xE6, 0xF2, 0x67, 0x3D }, // Zeroes  encrypted with mkey 00.
 	{ 0x29, 0x4C, 0x04, 0xC8, 0xEB, 0x10, 0xED, 0x9D, 0x51, 0x64, 0x97, 0xFB, 0xF3, 0x4D, 0x50, 0xDD }, // Mkey 00 encrypted with mkey 01.
 	{ 0xDE, 0xCF, 0xEB, 0xEB, 0x10, 0xAE, 0x74, 0xD8, 0xAD, 0x7C, 0xF4, 0x9E, 0x62, 0xE0, 0xE8, 0x72 }, // Mkey 01 encrypted with mkey 02.
@@ -98,7 +98,7 @@ static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][0x10] = {
 	{ 0xB8, 0x96, 0x9E, 0x4A, 0x00, 0x0D, 0xD6, 0x28, 0xB3, 0xD1, 0xDB, 0x68, 0x5F, 0xFB, 0xE1, 0x2A }, // Mkey 09 encrypted with mkey 10.
 };
 
-static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][0x10] = {
+static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][SE_KEY_128_SIZE] = {
 	{ 0x8B, 0x4E, 0x1C, 0x22, 0x42, 0x07, 0xC8, 0x73, 0x56, 0x94, 0x08, 0x8B, 0xCC, 0x47, 0x0F, 0x5D }, // 4.x   New Device Key Source.
 	{ 0x6C, 0xEF, 0xC6, 0x27, 0x8B, 0xEC, 0x8A, 0x91, 0x99, 0xAB, 0x24, 0xAC, 0x4F, 0x1C, 0x8F, 0x1C }, // 5.x   New Device Key Source.
 	{ 0x70, 0x08, 0x1B, 0x97, 0x44, 0x64, 0xF8, 0x91, 0x54, 0x9D, 0xC6, 0x84, 0x8F, 0x1A, 0xB2, 0xE4 }, // 6.x   New Device Key Source.
@@ -109,7 +109,7 @@ static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSIO
 	{ 0x14, 0xB8, 0x74, 0x12, 0xCB, 0xBD, 0x0B, 0x8F, 0x20, 0xFB, 0x30, 0xDA, 0x27, 0xE4, 0x58, 0x94 }, // 9.1.0 New Device Key Source.
 };
 
-static const u8 new_console_kekseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][0x10] = {
+static const u8 new_console_kekseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][SE_KEY_128_SIZE] = {
 	{ 0x88, 0x62, 0x34, 0x6E, 0xFA, 0xF7, 0xD8, 0x3F, 0xE1, 0x30, 0x39, 0x50, 0xF0, 0xB7, 0x5D, 0x5D }, // 4.x   New Device Keygen Source.
 	{ 0x06, 0x1E, 0x7B, 0xE9, 0x6D, 0x47, 0x8C, 0x77, 0xC5, 0xC8, 0xE7, 0x94, 0x9A, 0xA8, 0x5F, 0x2E }, // 5.x   New Device Keygen Source.
 	{ 0x99, 0xFA, 0x98, 0xBD, 0x15, 0x1C, 0x72, 0xFD, 0x7D, 0x9A, 0xD5, 0x41, 0x00, 0xFD, 0xB2, 0xEF }, // 6.x   New Device Keygen Source.
@@ -120,19 +120,19 @@ static const u8 new_console_kekseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSIO
 	{ 0xCE, 0xFE, 0x41, 0x0F, 0x46, 0x9A, 0x30, 0xD6, 0xF2, 0xE9, 0x0C, 0x6B, 0xB7, 0x15, 0x91, 0x36 }, // 9.1.0 New Device Keygen Source.
 };
 
-static const u8 gen_keyseed[0x10] =
+static const u8 gen_keyseed[SE_KEY_128_SIZE] =
 	{ 0x89, 0x61, 0x5E, 0xE0, 0x5C, 0x31, 0xB6, 0x80, 0x5F, 0xE5, 0x8F, 0x3D, 0xA2, 0x4F, 0x7A, 0xA8 };
 
-static const u8 gen_kekseed[0x10] =
+static const u8 gen_kekseed[SE_KEY_128_SIZE] =
 	{ 0x4D, 0x87, 0x09, 0x86, 0xC4, 0x5D, 0x20, 0x72, 0x2F, 0xBA, 0x10, 0x53, 0xDA, 0x92, 0xE8, 0xA9 };
 
-static const u8 gen_keyseed_retail[0x10] =
+static const u8 gen_keyseed_retail[SE_KEY_128_SIZE] =
 	{ 0xE2, 0xD6, 0xB8, 0x7A, 0x11, 0x9C, 0xB8, 0x80, 0xE8, 0x22, 0x88, 0x8A, 0x46, 0xFB, 0xA1, 0x95 };
 
-static const u8 bis_kekseed[0x10] =
+static const u8 bis_kekseed[SE_KEY_128_SIZE] =
 	{ 0x34, 0xC1, 0xA0, 0xC4, 0x82, 0x58, 0xF8, 0xB4, 0xFA, 0x9E, 0x5E, 0x6A, 0xDA, 0xFC, 0x7E, 0x4F };
 
-static const u8 bis_keyseed[][0x10] = {
+static const u8 bis_keyseed[][SE_KEY_128_SIZE] = {
 	{ 0xF8, 0x3F, 0x38, 0x6E, 0x2C, 0xD2, 0xCA, 0x32, 0xA8, 0x9A, 0xB9, 0xAA, 0x29, 0xBF, 0xC7, 0x48 }, // BIS 0 Crypt seed.
 	{ 0x7D, 0x92, 0xB0, 0x3A, 0xA8, 0xBF, 0xDE, 0xE1, 0xA7, 0x4C, 0x3B, 0x6E, 0x35, 0xCB, 0x71, 0x06 }, // BIS 0 Tweak seed.
 	{ 0x41, 0x00, 0x30, 0x49, 0xDD, 0xCC, 0xC0, 0x65, 0x64, 0x7A, 0x7E, 0xB4, 0x1E, 0xED, 0x9C, 0x5F }, // BIS 1 Crypt seed.
@@ -229,7 +229,7 @@ void hos_eks_save(u32 kb)
 
 			// Get keys.
 			u8 *keys = (u8 *)calloc(0x1000, 1);
-			se_get_aes_keys(keys + 0x800, keys, 0x10);
+			se_get_aes_keys(keys + 0x800, keys, SE_KEY_128_SIZE);
 
 			// Set magic and personalized info.
 			h_cfg.eks->magic = HOS_EKS_MAGIC;
@@ -237,18 +237,18 @@ void hos_eks_save(u32 kb)
 			h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
 
 			// Copy new keys.
-			memcpy(h_cfg.eks->dkg, keys + 10 * 0x10, 0x10);
-			memcpy(h_cfg.eks->dkk, keys + 15 * 0x10, 0x10);
+			memcpy(h_cfg.eks->dkg, keys + 10 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
+			memcpy(h_cfg.eks->dkk, keys + 15 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 
 			if (!h_cfg.aes_slots_new)
 			{
-				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * 0x10, 0x10);
-				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * 0x10, 0x10);
+				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
+				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 			}
 			else // New sept slots.
 			{
-				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 13 * 0x10, 0x10);
-				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 12 * 0x10, 0x10);
+				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 13 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
+				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 			}
 
 			// Encrypt EKS blob.
@@ -259,7 +259,6 @@ void hos_eks_save(u32 kb)
 			// Write EKS blob to SD.
 			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
 			hos_eks_rw_try(mbr, true);
-
 
 			free(eks);
 			free(keys);
@@ -346,14 +345,14 @@ void hos_eks_bis_save()
 		h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
 
 		// Copy new keys.
-		memcpy(h_cfg.eks->bis_keys[0].crypt, bis_keys + (0 * 0x10), 0x10);
-		memcpy(h_cfg.eks->bis_keys[0].tweak, bis_keys + (1 * 0x10), 0x10);
+		memcpy(h_cfg.eks->bis_keys[0].crypt, bis_keys + (0 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+		memcpy(h_cfg.eks->bis_keys[0].tweak, bis_keys + (1 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
-		memcpy(h_cfg.eks->bis_keys[1].crypt, bis_keys + (2 * 0x10), 0x10);
-		memcpy(h_cfg.eks->bis_keys[1].tweak, bis_keys + (3 * 0x10), 0x10);
+		memcpy(h_cfg.eks->bis_keys[1].crypt, bis_keys + (2 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+		memcpy(h_cfg.eks->bis_keys[1].tweak, bis_keys + (3 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
-		memcpy(h_cfg.eks->bis_keys[2].crypt, bis_keys + (4 * 0x10), 0x10);
-		memcpy(h_cfg.eks->bis_keys[2].tweak, bis_keys + (5 * 0x10), 0x10);
+		memcpy(h_cfg.eks->bis_keys[2].crypt, bis_keys + (4 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+		memcpy(h_cfg.eks->bis_keys[2].tweak, bis_keys + (5 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
 		// Encrypt EKS blob.
 		u8 *eks = calloc(512 , 1);
@@ -473,13 +472,13 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
 		{
 			// Set Device keygen key to slot 10.
-			se_aes_key_set(10, h_cfg.eks->dkg, 0x10);
+			se_aes_key_set(10, h_cfg.eks->dkg, SE_KEY_128_SIZE);
 			// Set Master key to slot 12.
-			se_aes_key_set(12, h_cfg.eks->keys[key_idx].mkk, 0x10);
+			se_aes_key_set(12, h_cfg.eks->keys[key_idx].mkk, SE_KEY_128_SIZE);
 			// Set FW Device key key to slot 13.
-			se_aes_key_set(13, h_cfg.eks->keys[key_idx].fdk, 0x10);
+			se_aes_key_set(13, h_cfg.eks->keys[key_idx].fdk, SE_KEY_128_SIZE);
 			// Set Device key to slot 15.
-			se_aes_key_set(15, h_cfg.eks->dkk, 0x10);
+			se_aes_key_set(15, h_cfg.eks->dkk, SE_KEY_128_SIZE);
 		}
 		else
 			h_cfg.aes_slots_new = se_key_acc_ctrl_get(12) == 0x6A;
@@ -490,9 +489,9 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
 		// Set TSEC key.
-		se_aes_key_set(12, tmp, 0x10);
+		se_aes_key_set(12, tmp, SE_KEY_128_SIZE);
 		// Set TSEC root key.
-		se_aes_key_set(13, tmp + 0x10, 0x10);
+		se_aes_key_set(13, tmp + SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 
 		// Decrypt keyblob and set keyslots
 		se_aes_crypt_block_ecb(12, 0, tmp + 0x20, keyblob_keyseeds[0]);
@@ -508,7 +507,7 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	else
 	{
 		// Set TSEC key.
-		se_aes_key_set(13, tmp, 0x10);
+		se_aes_key_set(13, tmp, SE_KEY_128_SIZE);
 
 		// Derive keyblob keys from TSEC+SBK.
 		se_aes_crypt_block_ecb(13, 0, tmp, keyblob_keyseeds[0]);
@@ -530,9 +529,9 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 		// Decrypt keyblob and set keyslots.
 		se_aes_crypt_ctr(13, keyblob + 0x20, 0x90, keyblob + 0x20, 0x90, keyblob + 0x10);
-		se_aes_key_set(11, keyblob + 0x20 + 0x80, 0x10); // Package1 key.
-		se_aes_key_set(12, keyblob + 0x20, 0x10);
-		se_aes_key_set(13, keyblob + 0x20, 0x10);
+		se_aes_key_set(11, keyblob + 0x20 + 0x80, SE_KEY_128_SIZE); // Package1 key.
+		se_aes_key_set(12, keyblob + 0x20, SE_KEY_128_SIZE);
+		se_aes_key_set(13, keyblob + 0x20, SE_KEY_128_SIZE);
 
 		se_aes_crypt_block_ecb(12, 0, tmp, master_keyseed_retail);
 
@@ -568,18 +567,18 @@ int hos_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 static void _hos_validate_sept_mkey(u32 kb)
 {
-	u8 tmp_mkey[0x10];
-	u32 mkey_idx = sizeof(mkey_vectors) / 0x10;
+	u8 tmp_mkey[SE_KEY_128_SIZE];
+	u32 mkey_idx = sizeof(mkey_vectors) / SE_KEY_128_SIZE;
 	u8 mkey_slot = !h_cfg.aes_slots_new ? 12 : 13;
 	do
 	{
 		mkey_idx--;
-		se_aes_crypt_ecb(mkey_slot, 0, tmp_mkey, 0x10, mkey_vectors[mkey_idx], 0x10);
+		se_aes_crypt_ecb(mkey_slot, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
 		for (u32 idx = 0; idx < mkey_idx; idx++)
 		{
 			se_aes_key_clear(2);
-			se_aes_key_set(2, tmp_mkey, 0x10);
-			se_aes_crypt_ecb(2, 0, tmp_mkey, 0x10, mkey_vectors[mkey_idx - 1 - idx], 0x10);
+			se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
+			se_aes_crypt_ecb(2, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
 		}
 
 		if (!memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8))
@@ -597,13 +596,13 @@ static void _hos_validate_sept_mkey(u32 kb)
 static void _hos_bis_print_key(u32 idx, u8 *key)
 {
 	gfx_printf("BIS %d Crypt: ", idx);
-	for (int i = 0; i < 0x10; i++)
-		gfx_printf("%02X", key[((idx * 2 + 0) * 0x10) + i]);
+	for (int i = 0; i < SE_KEY_128_SIZE; i++)
+		gfx_printf("%02X", key[((idx * 2 + 0) * SE_KEY_128_SIZE) + i]);
 	gfx_puts("\n");
 
 	gfx_printf("BIS %d Tweak: ", idx);
-	for (int i = 0; i < 0x10; i++)
-		gfx_printf("%02X", key[((idx * 2 + 1) * 0x10) + i]);
+	for (int i = 0; i < SE_KEY_128_SIZE; i++)
+		gfx_printf("%02X", key[((idx * 2 + 1) * SE_KEY_128_SIZE) + i]);
 	gfx_puts("\n");
 }
 
@@ -613,7 +612,7 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	u32 console_key_slot = kb >= KB_FIRMWARE_VERSION_400 ? 15 : 13;
 
 	if (!bis_keys)
-		bis_keys = malloc(0x10 * 6);
+		bis_keys = malloc(SE_KEY_128_SIZE * 6);
 
 	if (!h_cfg.eks || !h_cfg.eks->enabled_bis)
 	{
@@ -627,8 +626,8 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 		if (keygen_rev)
 		{
-			u8 tmp_mkey[0x10];
-			u32 mkey_idx = sizeof(mkey_vectors) / 0x10;
+			u8 tmp_mkey[SE_KEY_128_SIZE];
+			u32 mkey_idx = sizeof(mkey_vectors) / SE_KEY_128_SIZE;
 			u8 mkey_slot = kb >= KB_FIRMWARE_VERSION_700 ? (!h_cfg.aes_slots_new ? 12 : 13) : (kb == KB_FIRMWARE_VERSION_620 ? 9 : 12);
 
 			// Keygen revision uses bootloader version, which starts from 1.
@@ -642,19 +641,19 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 			do
 			{
 				mkey_idx--;
-				se_aes_crypt_ecb(mkey_slot, 0, tmp_mkey, 0x10, mkey_vectors[mkey_idx], 0x10);
+				se_aes_crypt_ecb(mkey_slot, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
 				for (u32 idx = 0; idx < mkey_idx; idx++)
 				{
 					se_aes_key_clear(2);
-					se_aes_key_set(2, tmp_mkey, 0x10);
-					se_aes_crypt_ecb(2, 0, tmp_mkey, 0x10, mkey_vectors[mkey_idx - 1 - idx], 0x10);
+					se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
+					se_aes_crypt_ecb(2, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
 				}
 			} while (memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0 && (mkey_idx - 1));
 
 			// Derive new device key.
 			se_aes_key_clear(1);
 			se_aes_unwrap_key(1, 10, new_console_keyseed[keygen_rev]); // Uses Device key 4x.
-			se_aes_crypt_ecb(10, 0, tmp_mkey, 0x10, new_console_keyseed[keygen_rev], 0x10); // Uses Device key 4x.
+			se_aes_crypt_ecb(10, 0, tmp_mkey, SE_KEY_128_SIZE, new_console_keyseed[keygen_rev], SE_KEY_128_SIZE); // Uses Device key 4x.
 			se_aes_unwrap_key(1, 2, new_console_kekseed[keygen_rev]); // Uses Master Key 0.
 			se_aes_unwrap_key(1, 1, tmp_mkey);
 
@@ -666,11 +665,11 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		se_aes_unwrap_key(2, console_key_slot, gen_keyseed_retail);
 
 		// Clear bis keys storage.
-		memset(bis_keys, 0, 0x10 * 6);
+		memset(bis_keys, 0, SE_KEY_128_SIZE * 6);
 
 		// Generate BIS 0 Keys.
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (0 * 0x10), bis_keyseed[0]);
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (1 * 0x10), bis_keyseed[1]);
+		se_aes_crypt_block_ecb(2, 0, bis_keys + (0 * SE_KEY_128_SIZE), bis_keyseed[0]);
+		se_aes_crypt_block_ecb(2, 0, bis_keys + (1 * SE_KEY_128_SIZE), bis_keyseed[1]);
 
 		// Generate generic kek.
 		se_aes_key_clear(2);
@@ -679,26 +678,26 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		se_aes_unwrap_key(2, 2, gen_keyseed);
 
 		// Generate BIS 1 Keys.
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (2 * 0x10), bis_keyseed[2]);
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (3 * 0x10), bis_keyseed[3]);
+		se_aes_crypt_block_ecb(2, 0, bis_keys + (2 * SE_KEY_128_SIZE), bis_keyseed[2]);
+		se_aes_crypt_block_ecb(2, 0, bis_keys + (3 * SE_KEY_128_SIZE), bis_keyseed[3]);
 
 		// Generate BIS 2/3 Keys.
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (4 * 0x10), bis_keyseed[4]);
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (5 * 0x10), bis_keyseed[5]);
+		se_aes_crypt_block_ecb(2, 0, bis_keys + (4 * SE_KEY_128_SIZE), bis_keyseed[4]);
+		se_aes_crypt_block_ecb(2, 0, bis_keys + (5 * SE_KEY_128_SIZE), bis_keyseed[5]);
 
 		if (!h_cfg.t210b01 && kb >= KB_FIRMWARE_VERSION_700)
 			_hos_validate_sept_mkey(kb);
 	}
 	else
 	{
-		memcpy(bis_keys + (0 * 0x10), h_cfg.eks->bis_keys[0].crypt, 0x10);
-		memcpy(bis_keys + (1 * 0x10), h_cfg.eks->bis_keys[0].tweak, 0x10);
+		memcpy(bis_keys + (0 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[0].crypt, SE_KEY_128_SIZE);
+		memcpy(bis_keys + (1 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[0].tweak, SE_KEY_128_SIZE);
 
-		memcpy(bis_keys + (2 * 0x10), h_cfg.eks->bis_keys[1].crypt, 0x10);
-		memcpy(bis_keys + (3 * 0x10), h_cfg.eks->bis_keys[1].tweak, 0x10);
+		memcpy(bis_keys + (2 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[1].crypt, SE_KEY_128_SIZE);
+		memcpy(bis_keys + (3 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[1].tweak, SE_KEY_128_SIZE);
 
-		memcpy(bis_keys + (4 * 0x10), h_cfg.eks->bis_keys[2].crypt, 0x10);
-		memcpy(bis_keys + (5 * 0x10), h_cfg.eks->bis_keys[2].tweak, 0x10);
+		memcpy(bis_keys + (4 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[2].crypt, SE_KEY_128_SIZE);
+		memcpy(bis_keys + (5 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[2].tweak, SE_KEY_128_SIZE);
 	}
 
 	_hos_bis_print_key(0, bis_keys);
@@ -710,14 +709,14 @@ int hos_bis_keygen(u8 *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		se_aes_key_clear(i);
 
 	// Set BIS keys.
-	se_aes_key_set(0, bis_keys + (0 * 0x10), 0x10);
-	se_aes_key_set(1, bis_keys + (1 * 0x10), 0x10);
+	se_aes_key_set(0, bis_keys + (0 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+	se_aes_key_set(1, bis_keys + (1 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
-	se_aes_key_set(2, bis_keys + (2 * 0x10), 0x10);
-	se_aes_key_set(3, bis_keys + (3 * 0x10), 0x10);
+	se_aes_key_set(2, bis_keys + (2 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+	se_aes_key_set(3, bis_keys + (3 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
-	se_aes_key_set(4, bis_keys + (4 * 0x10), 0x10);
-	se_aes_key_set(5, bis_keys + (5 * 0x10), 0x10);
+	se_aes_key_set(4, bis_keys + (4 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+	se_aes_key_set(5, bis_keys + (5 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
 	return 1;
 }
@@ -742,7 +741,7 @@ void hos_bis_keys_clear()
 			FUSE(FUSE_PRIVATE_KEY3)
 		};
 		// Set SBK to slot 14.
-		se_aes_key_set(14, sbk, 0x10);
+		se_aes_key_set(14, sbk, SE_KEY_128_SIZE);
 
 		// Lock SBK from being read.
 		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);

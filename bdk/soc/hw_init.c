@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -264,7 +264,7 @@ static void _config_se_brom()
 			FUSE(FUSE_PRIVATE_KEY3)
 		};
 		// Set SBK to slot 14.
-		se_aes_key_set(14, sbk, 0x10);
+		se_aes_key_set(14, sbk, SE_KEY_128_SIZE);
 
 		// Lock SBK from being read.
 		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
@@ -276,7 +276,7 @@ static void _config_se_brom()
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
 	memset((void *)TZRAM_BASE, 0, 0x10000);
 	PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_ENABLE;
-	SE(SE_INT_STATUS_REG_OFFSET) = 0x1F;
+	SE(SE_INT_STATUS_REG) = 0x1F; // Clear all SE interrupts.
 
 	// Clear the boot reason to avoid problems later
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	if (kb == KB_TSEC_FW_EMU_COMPAT)
 	{
 		u32 start = get_tmr_us();
-		u32 k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
+		u32 k = se[SE_CRYPTO_KEYTABLE_DATA_REG / 4];
 		u32 key[16] = {0};
 		u32 kidx = 0;
 
@@ -198,9 +198,9 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		{
 			smmu_flush_all();
 
-			if (k != se[SE_KEYTABLE_DATA0_REG_OFFSET / 4])
+			if (k != se[SE_CRYPTO_KEYTABLE_DATA_REG / 4])
 			{
-				k = se[SE_KEYTABLE_DATA0_REG_OFFSET / 4];
+				k = se[SE_CRYPTO_KEYTABLE_DATA_REG / 4];
 				key[kidx++] = k;
 			}
 
@@ -269,7 +269,7 @@ int tsec_query(u8 *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB) = 0;
 		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB) = 0;
 
-		memcpy(tsec_keys, &buf, 0x10);
+		memcpy(tsec_keys, &buf, SE_KEY_128_SIZE);
 	}
 
 out_free:;

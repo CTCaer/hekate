@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <sec/se.h>
+#include <sec/se_t210.h>
 #include "../storage/emummc.h"
 #include <storage/nx_sd.h>
 #include <utils/aarch64_util.h>
@@ -1335,7 +1336,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	return NULL;
 }
 
-static const u8 mkey_vector_8xx[][0x10] =
+static const u8 mkey_vector_8xx[][SE_KEY_128_SIZE] =
 {
 	// Master key 8 encrypted with 9.  (8.1.0 with 9.0.0)
 	{ 0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80 },
@@ -1346,10 +1347,10 @@ static const u8 mkey_vector_8xx[][0x10] =
 static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)
 {
 	// Decrypt older encrypted mkey.
-	se_aes_crypt_ecb(src_slot, 0, mkey, 0x10, key_seed, 0x10);
+	se_aes_crypt_ecb(src_slot, 0, mkey, SE_KEY_128_SIZE, key_seed, SE_KEY_128_SIZE);
 	// Set and unwrap pkg2 key.
 	se_aes_key_clear(9);
-	se_aes_key_set(9, mkey, 0x10);
+	se_aes_key_set(9, mkey, SE_KEY_128_SIZE);
 	se_aes_unwrap_key(9, 9, package2_keyseed);
 
 	// Decrypt header.
@@ -1383,9 +1384,9 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	// Decrypt older pkg2 via new mkeys.
 	if ((kb >= KB_FIRMWARE_VERSION_810) && (kb < KB_FIRMWARE_VERSION_MAX))
 	{
-		u8 tmp_mkey[0x10];
+		u8 tmp_mkey[SE_KEY_128_SIZE];
 		u8 decr_slot = !h_cfg.t210b01 ? (!h_cfg.aes_slots_new ? 12 : 13) : 7; // Sept mkey or T210B01 mkey.
-		u8 mkey_seeds_cnt = sizeof(mkey_vector_8xx) / 0x10;
+		u8 mkey_seeds_cnt = sizeof(mkey_vector_8xx) / SE_KEY_128_SIZE;
 		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
 		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (KB_FIRMWARE_VERSION_MAX - kb);
 
@@ -1405,7 +1406,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 				// Set current mkey in order to decrypt a lower mkey.
 				mkey_seeds_idx--;
 				se_aes_key_clear(9);
-				se_aes_key_set(9, tmp_mkey, 0x10);
+				se_aes_key_set(9, tmp_mkey, SE_KEY_128_SIZE);
 
 				decr_slot = 9; // Temp key.
 
@@ -1439,7 +1440,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(pkg2_keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * 0x10]);
+		se_aes_crypt_ctr(pkg2_keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
 		//gfx_hexdump((u32)pdata, pdata, 0x100);
 
 		pdata += hdr->sec_size[i];
@@ -1469,7 +1470,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 	{
 		hdr->sec_size[PKG2_SEC_INI1] = ini1_size;
 		hdr->sec_off[PKG2_SEC_INI1] = 0x14080000;
-		se_aes_crypt_ctr(8, ini1, ini1_size, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * 0x10]);
+		se_aes_crypt_ctr(8, ini1, ini1_size, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * SE_AES_IV_SIZE]);
 	}
 	else
 	{
@@ -1526,7 +1527,7 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
 	}
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
-	se_aes_crypt_ctr(pkg2_keyslot, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * 0x10]);
+	se_aes_crypt_ctr(pkg2_keyslot, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * SE_AES_IV_SIZE]);
 	pdst += kernel_size;
 DPRINTF("kernel encrypted\n");
 
@@ -1549,7 +1550,7 @@ DPRINTF("INI1 encrypted\n");
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
 	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
-	memset(hdr->ctr, 0 , 0x10);
+	memset(hdr->ctr, 0 , SE_AES_IV_SIZE);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
 
