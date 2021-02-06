@@ -145,6 +145,10 @@ static int _sdmmc_storage_readwrite_ex(sdmmc_storage_t *storage, u32 *blkcnt_out
 	sdmmc_cmd_t cmdbuf;
 	sdmmc_req_t reqbuf;
 
+	// If SDSC convert block address to byte address.
+	if (!storage->has_sector_access)
+		sector <<= 9;
+
 	sdmmc_init_cmd(&cmdbuf, is_write ? MMC_WRITE_MULTIPLE_BLOCK : MMC_READ_MULTIPLE_BLOCK, sector, SDMMC_RSP_TYPE_1, 0);
 
 	reqbuf.buf = buf;
@@ -694,53 +698,54 @@ static int _sd_storage_execute_app_cmd_type1(sdmmc_storage_t *storage, u32 *resp
 	return _sdmmc_storage_execute_cmd_type1_ex(storage, resp, cmd, arg, check_busy, expected_state, 0);
 }
 
-static int _sd_storage_send_if_cond(sdmmc_storage_t *storage)
+static int _sd_storage_send_if_cond(sdmmc_storage_t *storage, bool *is_sdsc)
 {
 	sdmmc_cmd_t cmdbuf;
 	u16 vhd_pattern = SD_VHD_27_36 | 0xAA;
 	sdmmc_init_cmd(&cmdbuf, SD_SEND_IF_COND, vhd_pattern, SDMMC_RSP_TYPE_5, 0);
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, NULL, NULL))
-		return 1; // The SD Card is version 1.X
+	{
+		*is_sdsc = 1; // The SD Card is version 1.X
+		return 1;
+	}
 
-	// Card version is >= 2.0, parse results.
+	// For Card version >= 2.0, parse results.
 	u32 resp = 0;
-	if (!sdmmc_get_rsp(storage->sdmmc, &resp, 4, SDMMC_RSP_TYPE_5))
-		return 2; // Failed.
+	sdmmc_get_rsp(storage->sdmmc, &resp, 4, SDMMC_RSP_TYPE_5);
 
 	// Check if VHD was accepted and pattern was properly returned.
 	if ((resp & 0xFFF) == vhd_pattern)
-		return 0;
+		return 1;
 
-	// Failed.
-	return 2;
+	return 0;
 }
 
-static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, int is_version_1, int bus_uhs_support)
+static int _sd_storage_get_op_cond_once(sdmmc_storage_t *storage, u32 *cond, bool is_sdsc, int bus_uhs_support)
 {
 	sdmmc_cmd_t cmdbuf;
 	// Support for Current > 150mA
-	u32 arg = !is_version_1 ? SD_OCR_XPC : 0;
+	u32 arg = !is_sdsc ? SD_OCR_XPC : 0;
 	// Support for handling block-addressed SDHC cards
-	arg	|= !is_version_1 ? SD_OCR_CCS : 0;
+	arg	|= !is_sdsc ? SD_OCR_CCS : 0;
 	// Support for 1.8V
-	arg |= (bus_uhs_support && !is_version_1) ? SD_OCR_S18R : 0;
+	arg |= (bus_uhs_support && !is_sdsc) ? SD_OCR_S18R : 0;
 	// This is needed for most cards. Do not set bit7 even if 1.8V is supported.
 	arg |= SD_OCR_VDD_32_33;
 	sdmmc_init_cmd(&cmdbuf, SD_APP_OP_COND, arg, SDMMC_RSP_TYPE_3, 0);
-	if (!_sd_storage_execute_app_cmd(storage, R1_SKIP_STATE_CHECK, is_version_1 ? R1_ILLEGAL_COMMAND : 0, &cmdbuf, NULL, NULL))
+	if (!_sd_storage_execute_app_cmd(storage, R1_SKIP_STATE_CHECK, is_sdsc ? R1_ILLEGAL_COMMAND : 0, &cmdbuf, NULL, NULL))
 		return 0;
 
 	return sdmmc_get_rsp(storage->sdmmc, cond, 4, SDMMC_RSP_TYPE_3);
 }
 
-static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, int is_version_1, int bus_uhs_support)
+static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, bool is_sdsc, int bus_uhs_support)
 {
 	u32 timeout = get_tmr_ms() + 1500;
 
 	while (true)
 	{
 		u32 cond = 0;
-		if (!_sd_storage_get_op_cond_once(storage, &cond, is_version_1, bus_uhs_support))
+		if (!_sd_storage_get_op_cond_once(storage, &cond, is_sdsc, bus_uhs_support))
 			break;
 
 		// Check if power up is done.
@@ -1222,6 +1227,7 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 	{
 	case 0:
 		storage->csd.capacity = (1 + unstuff_bits(raw_csd, 62, 12)) << (unstuff_bits(raw_csd, 47, 3) + 2);
+		storage->csd.capacity <<= unstuff_bits(raw_csd, 80, 4) - 9; // Convert native block size to LBA 512B.
 		break;
 
 	case 1:
@@ -1266,7 +1272,7 @@ void sdmmc_storage_init_wait_sd()
 int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type)
 {
 	u32  tmp = 0;
-	int is_version_1 = 0;
+	int  is_sdsc = 0;
 	u8  *buf = (u8 *)SDMMC_UPPER_BUFFER;
 	bool bus_uhs_support = _sdmmc_storage_get_bus_uhs_support(bus_width, type);
 
@@ -1288,12 +1294,11 @@ DPRINTF("[SD] after init\n");
 		return 0;
 DPRINTF("[SD] went to idle state\n");
 
-	is_version_1 = _sd_storage_send_if_cond(storage);
-	if (is_version_1 == 2) // Failed.
+	if (!_sd_storage_send_if_cond(storage, &is_sdsc))
 		return 0;
 DPRINTF("[SD] after send if cond\n");
 
-	if (!_sd_storage_get_op_cond(storage, is_version_1, bus_uhs_support))
+	if (!_sd_storage_get_op_cond(storage, is_sdsc, bus_uhs_support))
 		return 0;
 DPRINTF("[SD] got op cond\n");
 
