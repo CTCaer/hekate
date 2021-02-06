@@ -714,15 +714,11 @@ void nyx_load_run()
 	nyx_str->cfg = 0;
 	if (b_cfg.extra_cfg)
 	{
-		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_DUMP)
+		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_SEPT)
 		{
-			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_DUMP);
-			nyx_str->cfg |= NYX_CFG_DUMP;
-		}
-		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_BIS)
-		{
-			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_BIS);
-			nyx_str->cfg |= NYX_CFG_BIS;
+			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_SEPT);
+			nyx_str->cfg |= NYX_CFG_SEPT;
+			nyx_str->cfg |= b_cfg.sept << 24;
 		}
 		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
 		{
@@ -802,7 +798,7 @@ static void _bootloader_corruption_protect()
 
 static void _auto_launch_firmware()
 {
-	if(b_cfg.extra_cfg & (EXTRA_CFG_NYX_DUMP | EXTRA_CFG_NYX_BIS))
+	if(b_cfg.extra_cfg & EXTRA_CFG_NYX_SEPT)
 	{
 		if (!h_cfg.sept_run)
 			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -2206,17 +2206,21 @@ static void _nyx_main_menu(lv_theme_t * th)
 	lv_tabview_set_tab_load_action(tv, _show_hide_save_button);
 
 	// If we rebooted to run sept for dumping, lunch dump immediately.
-	if (nyx_str->cfg & NYX_CFG_DUMP)
+	if (nyx_str->cfg & NYX_CFG_SEPT)
 	{
-		nyx_str->cfg &= ~(NYX_CFG_DUMP);
-		lv_task_t *task_run_dump = lv_task_create(sept_run_dump, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
-		lv_task_once(task_run_dump);
-	}
-	else if (nyx_str->cfg & NYX_CFG_BIS)
-	{
-		nyx_str->cfg &= ~(NYX_CFG_BIS);
-		lv_task_t *task_run_cal0 = lv_task_create(sept_run_cal0, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
-		lv_task_once(task_run_cal0);
+		u32 type = nyx_str->cfg >> 24;
+		nyx_str->cfg &= ~(NYX_CFG_SEPT | NYX_CFG_EXTRA);
+
+		if (type == NYX_SEPT_DUMP)
+		{
+			lv_task_t *task_run_dump = lv_task_create(sept_run_dump, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
+			lv_task_once(task_run_dump);
+		}
+		else if (type == NYX_SEPT_CAL0)
+		{
+			lv_task_t *task_run_cal0 = lv_task_create(sept_run_cal0, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
+			lv_task_once(task_run_cal0);
+		}
 	}
 	else if (nyx_str->cfg & NYX_CFG_UMS)
 	{

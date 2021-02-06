@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -35,9 +35,10 @@ typedef enum
 
 typedef enum
 {
-	NYX_CFG_BIS  = BIT(5),
 	NYX_CFG_UMS  = BIT(6),
-	NYX_CFG_DUMP = BIT(7),
+	NYX_CFG_SEPT = BIT(7),
+
+	NYX_CFG_EXTRA = 0xFF << 24
 } nyx_cfg_t;
 
 typedef enum

@@ -607,7 +607,7 @@ void nyx_run_ums(void *param)
 	u32 *cfg = (u32 *)param;
 
 	u8 type = (*cfg) >> 24;
-	*cfg = *cfg & 0xFFFFFF;
+	*cfg = *cfg & (~NYX_CFG_EXTRA);
 
 	// Disable read only flag.
 	usb_msc_emmc_read_only = false;
@@ -1123,7 +1123,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	// Dump package1 in its encrypted state if unknown.
 	if (!pkg1_id)
 	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#");
+		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#");
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
@@ -1175,7 +1175,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 				// Set boot cfg.
 				b_cfg->autoboot = 0;
 				b_cfg->autoboot_list = 0;
-				b_cfg->extra_cfg = EXTRA_CFG_NYX_DUMP;
+				b_cfg->extra_cfg = EXTRA_CFG_NYX_SEPT;
+				b_cfg->sept = NYX_SEPT_DUMP;
 
 				if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
 				{

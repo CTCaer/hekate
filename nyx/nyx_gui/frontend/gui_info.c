@@ -384,7 +384,8 @@ try_load:
 			// Set boot cfg.
 			b_cfg->autoboot = 0;
 			b_cfg->autoboot_list = 0;
-			b_cfg->extra_cfg = EXTRA_CFG_NYX_BIS;
+			b_cfg->extra_cfg = EXTRA_CFG_NYX_SEPT;
+			b_cfg->sept = NYX_SEPT_CAL0;
 
 			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
 			{
@@ -415,7 +416,7 @@ t210b01:;
 	nx_emmc_bis_init(cal0_part);
 	nx_emmc_bis_read(0, 0x40, cal0_buf);
 
-	// Clear BIS keys slots.
+	// Clear BIS keys slots and reinstate SBK.
 	hos_bis_keys_clear();
 
 	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
@@ -1109,7 +1110,7 @@ try_load:
 
 	if (!pkg1_id)
 	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version for reading#\n#FFDD00 TSEC firmware!#\n");
+		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#\n");
 		// Try backup bootloader.
 		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
 		{

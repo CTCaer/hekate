@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2020 CTCaer
+* Copyright (c) 2018-2021 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -75,10 +75,9 @@ typedef int bool;
 #define EXTRA_CFG_PAYLOAD BIT(1)
 #define EXTRA_CFG_MODULE  BIT(2)
 
-#define EXTRA_CFG_NYX_BIS    BIT(4)
 #define EXTRA_CFG_NYX_UMS    BIT(5)
 #define EXTRA_CFG_NYX_RELOAD BIT(6)
-#define EXTRA_CFG_NYX_DUMP   BIT(7)
+#define EXTRA_CFG_NYX_SEPT   BIT(7)
 
 typedef enum _nyx_ums_type
 {
@@ -90,6 +89,12 @@ typedef enum _nyx_ums_type
 	NYX_UMS_EMUMMC_BOOT1,
 	NYX_UMS_EMUMMC_GPP
 } nyx_ums_type;
+
+typedef enum _nyx_sept_type
+{
+	NYX_SEPT_DUMP = 0,
+	NYX_SEPT_CAL0
+} nyx_sept_type;
 
 typedef struct __attribute__((__packed__)) _boot_cfg_t
 {
@@ -104,7 +109,8 @@ typedef struct __attribute__((__packed__)) _boot_cfg_t
 			char id[8]; // 7 char ASCII null teminated.
 			char emummc_path[0x78]; // emuMMC/XXX, ASCII null teminated.
 		};
-		u8 ums; // nyx_ums_type.
+		u8 ums;  // nyx_ums_type.
+		u8 sept; // nyx_sept_type.
 		u8 xt_str[0x80];
 	};
 } boot_cfg_t;
