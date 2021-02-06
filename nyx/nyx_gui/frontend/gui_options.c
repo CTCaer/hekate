@@ -842,10 +842,10 @@ disabled:;
 
 		// Check if pairing info was found.
 		if (joycon_found == 2)
-			strcat(txt_buf, "#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
+			strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
 		else
 		{
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
+			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Failed!#\n#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
 			success = false;
 		}
 
