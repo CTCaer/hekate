@@ -16,6 +16,8 @@
 #include <storage/ramdisk.h>
 #include <storage/sdmmc.h>
 
+static u32 sd_rsvd_sectors = 0;
+static u32 ramdisk_sectors = 0;
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -88,7 +90,6 @@ DRESULT disk_write (
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
-static u32 part_rsvd_size = 0;
 DRESULT disk_ioctl (
 	BYTE pdrv,		/* Physical drive nmuber (0..) */
 	BYTE cmd,		/* Control code */
@@ -102,7 +103,7 @@ DRESULT disk_ioctl (
 		switch (cmd)
 		{
 		case GET_SECTOR_COUNT:
-			*buf = sd_storage.sec_cnt - part_rsvd_size;
+			*buf = sd_storage.sec_cnt - sd_rsvd_sectors;
 			break;
 		case GET_BLOCK_SIZE:
 			*buf = 32768; // Align to 16MB.
@@ -114,7 +115,7 @@ DRESULT disk_ioctl (
 		switch (cmd)
 		{
 		case GET_SECTOR_COUNT:
-			*buf = RAM_DISK_SZ >> 9; // 1GB.
+			*buf = ramdisk_sectors;
 			break;
 		case GET_BLOCK_SIZE:
 			*buf = 2048; // Align to 1MB.
@@ -133,12 +134,15 @@ DRESULT disk_set_info (
 {
 	DWORD *buf = (DWORD *)buff;
 
-	if (pdrv == DRIVE_SD)
+	if (cmd == SET_SECTOR_COUNT)
 	{
-		switch (cmd)
+		switch (pdrv)
 		{
-		case SET_SECTOR_COUNT:
-			part_rsvd_size = *buf;
+		case DRIVE_SD:
+			sd_rsvd_sectors = *buf;
+			break;
+		case DRIVE_RAM:
+			ramdisk_sectors = *buf;
 			break;
 		}
 	}

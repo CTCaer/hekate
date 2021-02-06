@@ -1,7 +1,7 @@
 /*
  * Ramdisk driver for Tegra X1
  *
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -23,7 +23,7 @@
 
 #define RAMDISK_CLUSTER_SZ 32768
 
-int ram_disk_init(FATFS *ram_fs);
+int ram_disk_init(FATFS *ram_fs, u32 ramdisk_size);
 int ram_disk_read(u32 sector, u32 sector_count, void *buf);
 int ram_disk_write(u32 sector, u32 sector_count, const void *buf);
 

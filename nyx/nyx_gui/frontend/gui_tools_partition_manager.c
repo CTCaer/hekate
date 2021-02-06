@@ -1366,7 +1366,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	lv_label_set_text(lbl_paths[0], "Please wait...");
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	manual_system_maintenance(true);
-	if (ram_disk_init(&ram_fs))
+	if (ram_disk_init(&ram_fs, RAM_DISK_SZ))
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to initialize Ramdisk!");
 		goto error;
