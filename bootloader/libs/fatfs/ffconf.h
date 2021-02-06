@@ -41,6 +41,11 @@
 #define FF_USE_MKFS		0
 /* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
 
+#if FF_USE_MKFS
+#define FF_MKFS_LABEL "SWITCH SD  "
+#endif
+/* This sets FAT/FAT32 label. Exactly 11 characters, all caps. */
+
 
 #define FF_USE_FASTSEEK	0
 /* This option switches fast seek function. (0:Disable or 1:Enable) */

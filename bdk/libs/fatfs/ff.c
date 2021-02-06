@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -6183,7 +6183,9 @@ FRESULT f_mkfs (
 #endif
 		/* Create FAT VBR */
 		mem_set(buf, 0, ss);
-		mem_cpy(buf + BS_JmpBoot, "\xEB\xFE\x90" "MSDOS5.0", 11);/* Boot jump code (x86), OEM name */
+		/* Boot jump code (x86), OEM name */
+		if (!(opt & FM_PRF2)) mem_cpy(buf + BS_JmpBoot, "\xEB\xFE\x90" "NYX1.0.0", 11);
+		else mem_cpy(buf + BS_JmpBoot, "\xEB\xE9\x90\x00\x00\x00\x00\x00\x00\x00\x00", 11);
 		st_word(buf + BPB_BytsPerSec, ss);				/* Sector size [byte] */
 		buf[BPB_SecPerClus] = (BYTE)pau;				/* Cluster size [sector] */
 		st_word(buf + BPB_RsvdSecCnt, (WORD)sz_rsv);	/* Size of reserved area */
@@ -6196,23 +6198,27 @@ FRESULT f_mkfs (
 		}
 		buf[BPB_Media] = 0xF8;							/* Media descriptor byte */
 		st_word(buf + BPB_SecPerTrk, 63);				/* Number of sectors per track (for int13) */
-		st_word(buf + BPB_NumHeads, 255);				/* Number of heads (for int13) */
+		st_word(buf + BPB_NumHeads, (opt & FM_PRF2) ? 16 : 255);	/* Number of heads (for int13) */
 		st_dword(buf + BPB_HiddSec, b_vol);				/* Volume offset in the physical drive [sector] */
 		if (fmt == FS_FAT32) {
-			st_dword(buf + BS_VolID32, GET_FATTIME());	/* VSN */
+			st_dword(buf + BS_VolID32, (opt & FM_PRF2) ? 0 : GET_FATTIME());	/* VSN */
 			st_dword(buf + BPB_FATSz32, sz_fat);		/* FAT size [sector] */
 			st_dword(buf + BPB_RootClus32, 2);			/* Root directory cluster # (2) */
 			st_word(buf + BPB_FSInfo32, 1);				/* Offset of FSINFO sector (VBR + 1) */
 			st_word(buf + BPB_BkBootSec32, 6);			/* Offset of backup VBR (VBR + 6) */
 			buf[BS_DrvNum32] = 0x80;					/* Drive number (for int13) */
 			buf[BS_BootSig32] = 0x29;					/* Extended boot signature */
-			mem_cpy(buf + BS_VolLab32, "SWITCH SD  " "FAT32   ", 19);	/* Volume label, FAT signature */
+			/* Volume label, FAT signature */
+			if (!(opt & FM_PRF2)) mem_cpy(buf + BS_VolLab32, FF_MKFS_LABEL "FAT32   ", 19);
+			else mem_cpy(buf + BS_VolLab32, "NO NAME    " "FAT32   ", 19);
 		} else {
 			st_dword(buf + BS_VolID, GET_FATTIME());	/* VSN */
 			st_word(buf + BPB_FATSz16, (WORD)sz_fat);	/* FAT size [sector] */
 			buf[BS_DrvNum] = 0x80;						/* Drive number (for int13) */
 			buf[BS_BootSig] = 0x29;						/* Extended boot signature */
-			mem_cpy(buf + BS_VolLab, "SWITCH SD  " "FAT     ", 19);	/* Volume label, FAT signature */
+			/* Volume label, FAT signature */
+			if (!(opt & FM_PRF2)) mem_cpy(buf + BS_VolLab, FF_MKFS_LABEL "FAT     ", 19);
+			else mem_cpy(buf + BS_VolLab, "NO NAME    " "FAT     ", 19);
 		}
 		st_word(buf + BS_55AA, 0xAA55);					/* Signature (offset is fixed here regardless of sector size) */
 		if (disk_write(pdrv, buf, b_vol, 1) != RES_OK) LEAVE_MKFS(FR_DISK_ERR);	/* Write it to the VBR sector */
@@ -6228,6 +6234,16 @@ FRESULT f_mkfs (
 			st_word(buf + BS_55AA, 0xAA55);
 			disk_write(pdrv, buf, b_vol + 7, 1);		/* Write backup FSINFO (VBR + 7) */
 			disk_write(pdrv, buf, b_vol + 1, 1);		/* Write original FSINFO (VBR + 1) */
+		}
+
+		/* Create PRF2SAFE info */
+		if (fmt == FS_FAT32 && opt & FM_PRF2) {
+			mem_set(buf, 0, ss);
+			buf[16] = 0x64;							/* Record type */
+			st_dword(buf + 32, 0x03);				/* Unknown. SYSTEM: 0x3F00. USER: 0x03. Volatile. */
+			st_dword(buf + 36, 25);					/* Entries. SYSTEM: 22. USER: 25.Static? */
+			st_dword(buf + 508, 0x517BBFE0);		/* Custom CRC32. SYSTEM: 0x6B673904. USER: 0x517BBFE0. */
+			disk_write(pdrv, buf, b_vol + 3, 1);	/* Write PRF2SAFE info (VBR + 3) */
 		}
 
 		/* Initialize FAT area */

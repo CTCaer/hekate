@@ -366,6 +366,7 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 #define FM_EXFAT	0x04
 #define FM_ANY		0x07
 #define FM_SFD		0x08
+#define FM_PRF2		0x10
 
 /* Filesystem type (FATFS.fs_type) */
 #define FS_FAT12	1
