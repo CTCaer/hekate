@@ -60,6 +60,11 @@ bool sd_get_card_removed()
 	return false;
 }
 
+bool sd_get_card_initialized()
+{
+	return sd_init_done;
+}
+
 u32 sd_get_mode()
 {
 	return sd_mode;

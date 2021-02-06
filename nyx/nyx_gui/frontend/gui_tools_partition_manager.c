@@ -2017,7 +2017,8 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
 	lv_label_set_recolor(lbl_status, true);
 
-	if (!sd_mount())
+	// Try to init sd card. No need for valid MBR.
+	if (!sd_mount() && !sd_get_card_initialized())
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Failed to init SD!#");
 		goto out;
