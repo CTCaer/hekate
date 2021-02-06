@@ -149,13 +149,12 @@ void print_mmc_info()
 		case 4: /* MMC v4 */
 			gfx_printf(
 				" Vendor ID:  %X\n"
-				" Card/BGA:   %X\n"
 				" OEM ID:     %02X\n"
 				" Model:      %c%c%c%c%c%c\n"
 				" Prd Rev:    %X\n"
 				" S/N:        %04X\n"
 				" Month/Year: %02d/%04d\n\n",
-				emmc_storage.cid.manfid, emmc_storage.cid.card_bga, emmc_storage.cid.oemid,
+				emmc_storage.cid.manfid, emmc_storage.cid.oemid,
 				emmc_storage.cid.prod_name[0], emmc_storage.cid.prod_name[1], emmc_storage.cid.prod_name[2],
 				emmc_storage.cid.prod_name[3], emmc_storage.cid.prod_name[4],	emmc_storage.cid.prod_name[5],
 				emmc_storage.cid.prv, emmc_storage.cid.serial, emmc_storage.cid.month, emmc_storage.cid.year);

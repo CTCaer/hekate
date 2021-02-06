@@ -84,6 +84,11 @@
 #define MMC_APP_CMD              55   /* ac   [31:16] RCA        R1  */
 #define MMC_GEN_CMD              56   /* adtc [0] RD/WR          R1  */
 
+#define MMC_VENDOR_60_CMD        60   /* Vendor Defined              */
+#define MMC_VENDOR_61_CMD        61   /* Vendor Defined              */
+#define MMC_VENDOR_62_CMD        62   /* Vendor Defined              */
+#define MMC_VENDOR_63_CMD        63   /* Vendor Defined              */
+
 /* class 11 */
 #define MMC_QUE_TASK_PARAMS      44   /* ac   [20:16] task id    R1  */
 #define MMC_QUE_TASK_ADDR        45   /* ac   [31:0] data addr   R1  */
@@ -182,7 +187,10 @@ c : clear by read
 /*
 * OCR bits are mostly in host.h
 */
-#define MMC_CARD_BUSY	0x80000000	/* Card Power up status bit */
+#define MMC_CARD_VDD_18		(1 << 7)	/* Card VDD voltage 1.8 */
+#define MMC_CARD_VDD_27_34	(0x7F << 15)	/* Card VDD voltage 2.7 ~ 3.4 */
+#define MMC_CARD_CCS		(1 << 30)	/* Card Capacity status bit */
+#define MMC_CARD_BUSY		(1 << 31)	/* Card Power up status bit */
 
 /*
 * Card Command Classes (CCC)
@@ -244,6 +252,7 @@ c : clear by read
 #define EXT_CSD_GP_SIZE_MULT		143	/* R/W */
 #define EXT_CSD_PARTITION_SETTING_COMPLETED 155	/* R/W */
 #define EXT_CSD_PARTITION_ATTRIBUTE	156	/* R/W */
+#define EXT_CSD_MAX_ENH_SIZE_MULT	157	/* RO, 3 bytes */
 #define EXT_CSD_PARTITION_SUPPORT	160	/* RO */
 #define EXT_CSD_HPI_MGMT		161	/* R/W */
 #define EXT_CSD_RST_N_FUNCTION		162	/* R/W */

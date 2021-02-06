@@ -242,7 +242,7 @@ typedef struct _sdmmc_req_t
 	u32 num_sectors;
 	int is_write;
 	int is_multi_block;
-	int is_auto_cmd12;
+	int is_auto_stop_trn;
 } sdmmc_req_t;
 
 int  sdmmc_get_io_power(sdmmc_t *sdmmc);

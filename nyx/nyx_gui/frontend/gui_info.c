@@ -1389,8 +1389,8 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			break;
 		}
 
-		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%X\n%02X\n%c%c%c%c%c%c\n%X\n%04X\n%02d/%04d\n\n",
-			storage.cid.manfid, storage.cid.card_bga, storage.cid.oemid,
+		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%X\n%04X\n%02d/%04d\n\n",
+			storage.cid.manfid,
 			storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
 			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
 			storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
@@ -1464,8 +1464,6 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_label_set_static_text(lb_desc,
 			"#00DDFF CID:#\n"
 			"Vendor ID:\n"
-			"Card/BGA:\n"
-			"OEM ID:\n"
 			"Model:\n"
 			"Prd Rev:\n"
 			"S/N:\n"
@@ -1705,7 +1703,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		}
 
 		bool uhs_au_mb = false;
-		u32 uhs_au_size = sd_storage_ssr_get_au(&sd_storage);
+		u32 uhs_au_size = sd_storage_get_ssr_au(&sd_storage);
 		if (uhs_au_size >= 1024)
 		{
 			uhs_au_mb = true;

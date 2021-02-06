@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,18 +30,18 @@ typedef enum _sdmmc_type
 
 	EMMC_GPP   = 0,
 	EMMC_BOOT0 = 1,
-	EMMC_BOOT1 = 2
+	EMMC_BOOT1 = 2,
+	EMMC_RPMB  = 3
 } sdmmc_type;
 
 typedef struct _mmc_cid
 {
 	u32 manfid;
 	u8  prod_name[8];
-	u8  card_bga;
-	u8  prv;
 	u32 serial;
 	u16 oemid;
 	u16	year;
+	u8  prv;
 	u8  hwrev;
 	u8  fwrev;
 	u8  month;
@@ -65,19 +65,20 @@ typedef struct _mmc_csd
 
 typedef struct _mmc_ext_csd
 {
-	u32 sectors;
-	int bkops;        /* background support bit */
-	int bkops_en;     /* manual bkops enable bit */
+	//u8  bkops;        /* background support bit */
+	//u8  bkops_en;     /* manual bkops enable bit */
+	//u8  bkops_status; /* 246 */
 	u8  rev;
 	u8  ext_struct;   /* 194 */
 	u8  card_type;    /* 196 */
-	u8  bkops_status; /* 246 */
 	u8  pre_eol_info;
 	u8  dev_life_est_a;
 	u8  dev_life_est_b;
 	u8  boot_mult;
 	u8  rpmb_mult;
 	u16 dev_version;
+	u32 cache_size;
+	u32 max_enh_mult;
 } mmc_ext_csd_t;
 
 typedef struct _sd_scr
@@ -90,13 +91,13 @@ typedef struct _sd_scr
 
 typedef struct _sd_ssr
 {
-	u8 bus_width;
-	u8 speed_class;
-	u8 uhs_grade;
-	u8 video_class;
-	u8 app_class;
-	u8 au_size;
-	u8 uhs_au_size;
+	u8  bus_width;
+	u8  speed_class;
+	u8  uhs_grade;
+	u8  video_class;
+	u8  app_class;
+	u8  au_size;
+	u8  uhs_au_size;
 	u32 protected_size;
 } sd_ssr_t;
 
@@ -130,6 +131,7 @@ void sdmmc_storage_init_wait_sd();
 int  sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
 int  sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
 
-u32  sd_storage_ssr_get_au(sdmmc_storage_t *storage);
+int  sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf);
+u32  sd_storage_get_ssr_au(sdmmc_storage_t *storage);
 
 #endif
