@@ -20,6 +20,6 @@
 #include <utils/types.h>
 
 void check_sept(ini_sec_t *cfg_sec);
-int reboot_to_sept(const u8 *tsec_fw, u32 kb, ini_sec_t *cfg_sec);
+int  reboot_to_sept(const u8 *tsec_fw, u32 kb, ini_sec_t *cfg_sec);
 
 #endif

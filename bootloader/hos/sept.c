@@ -33,6 +33,7 @@
 #include <storage/sdmmc.h>
 #include <utils/btn.h>
 #include <utils/types.h>
+#include <utils/util.h>
 
 #include <gfx_utils.h>
 
@@ -129,13 +130,17 @@ void check_sept(ini_sec_t *cfg_sec)
 		}
 
 		u8 *bct_bldr = (u8 *)calloc(1, 512);
-		sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, &bct_bldr);
+		sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
 		u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
 		free(bct_bldr);
 		if (bootloader_entrypoint > SEPT_PRI_ENTRY)
 		{
 			gfx_con.mute = false;
 			EPRINTF("Failed to run sept\n""Main BCT is improper!\nRun sept with proper BCT at least once\nto cache keys.");
+			gfx_printf("\nPress any key...\n");
+			display_backlight_brightness(h_cfg.backlight, 1000);
+			msleep(500);
+			btn_wait();
 			goto out_free;
 		}
 

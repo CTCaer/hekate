@@ -1160,7 +1160,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 			{
 				// Check that BCT is proper so sept can run.
 				u8 *bct_bldr = (u8 *)calloc(1, 512);
-				sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, &bct_bldr);
+				sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
 				u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
 				free(bct_bldr);
 				if (bootloader_entrypoint > SEPT_PRI_ENTRY)

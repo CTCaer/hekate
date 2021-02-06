@@ -371,13 +371,13 @@ try_load:
 		{
 			// Check that BCT is proper so sept can run.
 			u8 *bct_bldr = (u8 *)calloc(1, 512);
-			sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, &bct_bldr);
+			sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
 			u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
 			free(bct_bldr);
 			if (bootloader_entrypoint > SEPT_PRI_ENTRY)
 			{
-				lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept because main BCT is improper!#\n"
-					"#FFDD00 Run sept with proper BCT at least once to cache keys.#\n");
+				lv_label_set_text(lb_desc, "#FFDD00 Main BCT is improper! Failed to run sept.#\n"
+					"#FFDD00 Run sept with proper BCT at least once#\n#FFDD00 to cache keys.#\n");
 				goto out;
 			}
 
