@@ -1678,9 +1678,9 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 
 	part_info.emu_double = false;
 
-	size  = slide_val + 3; // Min 4GB.
-	size *= 1024;          // Convert to GB.
-	size += rsvd_mb;       // Add reserved size.
+	size  = (slide_val > 10 ? (slide_val - 10) : slide_val) + 3; // Min 4GB.
+	size *= 1024;    // Convert to GB.
+	size += rsvd_mb; // Add reserved size.
 
 	if (!slide_val)
 		size = 0; // Reset if 0.
@@ -1707,9 +1707,14 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		lv_bar_set_value(part_info.slider_bar_hos, hos_size >> 10);
 
 		if (!part_info.emu_double)
-			s_printf(lbl_text, "#FF3C28 %d GiB#", size >> 10);
+		{
+			if (slide_val != 10)
+				s_printf(lbl_text, "#FF3C28 %d GiB#", size >> 10);
+			else
+				s_printf(lbl_text, "#FF3C28 %d FULL#", size >> 10);
+		}
 		else
-			s_printf(lbl_text, "#FFDD00 2x##FF3C28 %d GiB#", size >> 11);
+			s_printf(lbl_text, "#FFDD00 2x##FF3C28 %d#", size >> 11);
 		lv_label_set_text(part_info.lbl_emu, lbl_text);
 	}
 	else
