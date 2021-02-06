@@ -1214,8 +1214,6 @@ out:
 
 static lv_res_t _create_mbox_benchmark(bool sd_bench)
 {
-	sdmmc_t emmc_sdmmc;
-	sdmmc_storage_t emmc_storage;
 	sdmmc_storage_t *storage;
 
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -1325,8 +1323,6 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 			manual_system_maintenance(true);
 
-
-
 			pct = 0;
 			prevPct = 200;
 			timer = 0;
@@ -1368,9 +1364,6 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			lv_obj_align(lbl_status, NULL, LV_ALIGN_CENTER, 0, 0);
 			lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 			manual_system_maintenance(true);
-
-
-
 
 			u32 lba_idx = 0;
 			u32 *random_offsets = malloc(0x20000 * sizeof(u32));
@@ -1471,14 +1464,11 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-
 	char *txt_buf = (char *)malloc(0x4000);
 	txt_buf[0] = '\n';
 	txt_buf[1] = 0;
 
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
@@ -1489,15 +1479,15 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		char *rsvd_blocks;
 		char life_a_txt[8];
 		char life_b_txt[8];
-		u32 cache = storage.ext_csd.cache_size;
-		u32 life_a = storage.ext_csd.dev_life_est_a;
-		u32 life_b = storage.ext_csd.dev_life_est_b;
-		u16 card_type = storage.ext_csd.card_type;
+		u32 cache = emmc_storage.ext_csd.cache_size;
+		u32 life_a = emmc_storage.ext_csd.dev_life_est_a;
+		u32 life_b = emmc_storage.ext_csd.dev_life_est_b;
+		u16 card_type = emmc_storage.ext_csd.card_type;
 		char card_type_support[96];
 		card_type_support[0] = 0;
 
 		// Identify manufacturer. Only official eMMCs.
-		switch (storage.cid.manfid)
+		switch (emmc_storage.cid.manfid)
 		{
 		case 0x11:
 			strcat(txt_buf, "Toshiba ");
@@ -1514,11 +1504,11 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		}
 
 		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%d.%d\n%04X\n%02d/%04d\n\n",
-			storage.cid.manfid,
-			storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
-			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
-			storage.cid.prv & 0xF, storage.cid.prv >> 4,
-			storage.cid.serial, storage.cid.month, storage.cid.year);
+			emmc_storage.cid.manfid,
+			emmc_storage.cid.prod_name[0], emmc_storage.cid.prod_name[1], emmc_storage.cid.prod_name[2],
+			emmc_storage.cid.prod_name[3], emmc_storage.cid.prod_name[4],	emmc_storage.cid.prod_name[5],
+			emmc_storage.cid.prv & 0xF, emmc_storage.cid.prv >> 4,
+			emmc_storage.cid.serial, emmc_storage.cid.month, emmc_storage.cid.year);
 
 		if (card_type & EXT_CSD_CARD_TYPE_HS_26)
 		{
@@ -1564,7 +1554,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			s_printf(life_b_txt, "%d%%", life_b);
 		}
 
-		switch (storage.ext_csd.pre_eol_info)
+		switch (emmc_storage.ext_csd.pre_eol_info)
 		{
 		case 1:
 			rsvd_blocks = "Normal (< 80%)";
@@ -1582,11 +1572,11 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 		s_printf(txt_buf + strlen(txt_buf),
 			"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s\n%d %s\n%d MiB\nA: %s, B: %s\n%s",
-			storage.ext_csd.ext_struct, storage.ext_csd.rev,
-			storage.csd.cmdclass, speed & 0xFFFF, (speed >> 16) & 0xFFFF,
-			storage.csd.busspeed, card_type_support,
+			emmc_storage.ext_csd.ext_struct, emmc_storage.ext_csd.rev,
+			emmc_storage.csd.cmdclass, speed & 0xFFFF, (speed >> 16) & 0xFFFF,
+			emmc_storage.csd.busspeed, card_type_support,
 			!(cache % 1024) ? (cache / 1024) : cache, !(cache % 1024) ? "MiB" : "KiB",
-			storage.ext_csd.max_enh_mult * 512 / 1024,
+			emmc_storage.ext_csd.max_enh_mult * 512 / 1024,
 			life_a_txt, life_b_txt, rsvd_blocks);
 
 		lv_label_set_static_text(lb_desc,
@@ -1624,18 +1614,18 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_obj_t * lb_desc2 = lv_label_create(desc2, lb_desc);
 		lv_label_set_style(lb_desc2, &monospace_text);
 
-		u32 boot_size = storage.ext_csd.boot_mult << 17;
-		u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
+		u32 boot_size = emmc_storage.ext_csd.boot_mult << 17;
+		u32 rpmb_size = emmc_storage.ext_csd.rpmb_mult << 17;
 		strcpy(txt_buf, "#00DDFF eMMC Physical Partitions:#\n");
 		s_printf(txt_buf + strlen(txt_buf), "1: #96FF00 BOOT0# Size: %6d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / 512);
 		s_printf(txt_buf + strlen(txt_buf), "2: #96FF00 BOOT1# Size: %6d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / 512);
 		s_printf(txt_buf + strlen(txt_buf), "3: #96FF00 RPMB#  Size: %6d KiB (Sect: 0x%08X)\n", rpmb_size / 1024, rpmb_size / 512);
-		s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#   Size: %6d MiB (Sect: 0x%08X)\n", storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
+		s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#   Size: %6d MiB (Sect: 0x%08X)\n", emmc_storage.sec_cnt >> SECTORS_TO_MIB_COEFF, emmc_storage.sec_cnt);
 		strcat(txt_buf, "\n#00DDFF GPP (eMMC USER) Partition Table:#\n");
 
-		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
+		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 		LIST_INIT(gpt);
-		nx_emmc_gpt_parse(&gpt, &storage);
+		nx_emmc_gpt_parse(&gpt, &emmc_storage);
 
 		u32 idx = 0;
 		LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
@@ -1672,7 +1662,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
 	}
 
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 	free(txt_buf);
 
 	return LV_RES_OK;

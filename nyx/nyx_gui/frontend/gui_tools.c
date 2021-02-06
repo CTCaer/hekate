@@ -71,18 +71,16 @@ static lv_obj_t *_create_container(lv_obj_t *parent)
 bool get_autorcm_status(bool change)
 {
 	u8 corr_mod0, mod1;
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
 	bool enabled = false;
 
 	if (h_cfg.t210b01)
 		return false;
 
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&storage, EMMC_BOOT0);
-	sdmmc_storage_read(&storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	sdmmc_storage_read(&emmc_storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
 
 	// Get the correct RSA modulus byte masks.
 	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
@@ -103,20 +101,20 @@ bool get_autorcm_status(bool change)
 		for (i = 0; i < 4; i++)
 		{
 			sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
-			sdmmc_storage_read(&storage, sect, 1, tempbuf);
+			sdmmc_storage_read(&emmc_storage, sect, 1, tempbuf);
 
 			if (!enabled)
 				tempbuf[0x10] = 0;
 			else
 				tempbuf[0x10] = corr_mod0;
-			sdmmc_storage_write(&storage, sect, 1, tempbuf);
+			sdmmc_storage_write(&emmc_storage, sect, 1, tempbuf);
 		}
 		enabled = !(enabled);
 	}
 
 out:
 	free(tempbuf);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 
 	return enabled;
 }

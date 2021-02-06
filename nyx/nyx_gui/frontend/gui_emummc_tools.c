@@ -24,6 +24,7 @@
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <storage/mbr_gpt.h>
+#include "../storage/nx_emmc_bis.h"
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
 #include <utils/dirlist.h>
@@ -223,13 +224,11 @@ static void _create_mbox_emummc_raw()
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 	sd_unmount();
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
-	u32 emmc_size_safe = storage.sec_cnt + 0xC000; // eMMC GPP size + BOOT0/1.
+	u32 emmc_size_safe = emmc_storage.sec_cnt + 0xC000; // eMMC GPP size + BOOT0/1.
 
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 
 	for (int i = 1; i < 4; i++)
 	{
@@ -762,9 +761,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
 
 	em_raw = false;
 	em_file = false;
@@ -813,22 +810,22 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	if(!f_stat(path_buf, NULL))
 		em_file = true;
 
-	emmcsn_path_impl(path_buf, "", "BOOT0", &storage);
+	emmcsn_path_impl(path_buf, "", "BOOT0", &emmc_storage);
 	if(!f_stat(path_buf, NULL))
 		backup = true;
 
-	emmcsn_path_impl(path_buf, "", "rawnand.bin", &storage);
+	emmcsn_path_impl(path_buf, "", "rawnand.bin", &emmc_storage);
 	if(!f_stat(path_buf, NULL))
 		rawnand_backup = true;
 
-	emmcsn_path_impl(path_buf, "", "rawnand.bin.00", &storage);
+	emmcsn_path_impl(path_buf, "", "rawnand.bin.00", &emmc_storage);
 	if(!f_stat(path_buf, NULL))
 		rawnand_backup = true;
 
 	backup = backup && rawnand_backup;
 
 	sd_unmount();
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 
 	// Check available types and enable the corresponding buttons.
 	if (backup)
