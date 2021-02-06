@@ -18,6 +18,8 @@
 
 static u32 sd_rsvd_sectors = 0;
 static u32 ramdisk_sectors = 0;
+static u32 emummc_sectors = 0;
+
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
@@ -57,7 +59,8 @@ DRESULT disk_read (
 	case DRIVE_EMMC:
 		return sdmmc_storage_read(&emmc_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
 	case DRIVE_BIS:
-		return nx_emmc_bis_read(sector, count, (void *)buff);
+	case DRIVE_EMU:
+		return nx_emmc_bis_read(sector, count, (void *)buff) ? RES_OK : RES_ERROR;
 	}
 
 	return RES_ERROR;
@@ -82,6 +85,8 @@ DRESULT disk_write (
 	case DRIVE_EMMC:
 	case DRIVE_BIS:
 		return RES_WRPRT;
+	case DRIVE_EMU:
+		return nx_emmc_bis_write(sector, count, (void *)buff) ? RES_OK : RES_ERROR;
 	}
 
 	return RES_ERROR;
@@ -122,6 +127,18 @@ DRESULT disk_ioctl (
 			break;
 		}
 	}
+	else if (pdrv == DRIVE_EMU)
+	{
+		switch (cmd)
+		{
+		case GET_SECTOR_COUNT:
+			*buf = emummc_sectors;
+			break;
+		case GET_BLOCK_SIZE:
+			*buf = 32768; // Align to 16MB.
+			break;
+		}
+	}
 
 	return RES_OK;
 }
@@ -143,6 +160,9 @@ DRESULT disk_set_info (
 			break;
 		case DRIVE_RAM:
 			ramdisk_sectors = *buf;
+			break;
+		case DRIVE_EMU:
+			emummc_sectors = *buf;
 			break;
 		}
 	}
