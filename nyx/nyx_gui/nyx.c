@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -42,6 +42,7 @@
 #include <soc/pmc.h>
 #include <soc/t210.h>
 #include <soc/uart.h>
+#include "storage/nx_emmc.h"
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
 #include <utils/btn.h>
@@ -80,15 +81,12 @@ char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_
 	// Get actual eMMC S/N.
 	if (!storage)
 	{
-		sdmmc_t sdmmc;
-		sdmmc_storage_t storage2;
-
-		if (!sdmmc_storage_init_mmc(&storage2, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+		if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 			strcpy(emmc_sn, "00000000");
 		else
 		{
-			itoa(storage2.cid.serial, emmc_sn, 16);
-			sdmmc_storage_end(&storage2);
+			itoa(emmc_storage.cid.serial, emmc_sn, 16);
+			sdmmc_storage_end(&emmc_storage);
 		}
 	}
 	else
