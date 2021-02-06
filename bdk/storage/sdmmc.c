@@ -417,6 +417,17 @@ static void _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage, u8 *buf)
 	storage->ext_csd.dev_life_est_a = buf[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A];
 	storage->ext_csd.dev_life_est_b = buf[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B];
 
+	storage->ext_csd.cache_size =
+		 buf[EXT_CSD_CACHE_SIZE]            |
+		(buf[EXT_CSD_CACHE_SIZE + 1] << 8)  |
+		(buf[EXT_CSD_CACHE_SIZE + 2] << 16) |
+		(buf[EXT_CSD_CACHE_SIZE + 3] << 24);
+	storage->ext_csd.max_enh_mult =
+		(buf[EXT_CSD_MAX_ENH_SIZE_MULT]             |
+		(buf[EXT_CSD_MAX_ENH_SIZE_MULT + 1] << 8)   |
+		(buf[EXT_CSD_MAX_ENH_SIZE_MULT + 2] << 16)) *
+		buf[EXT_CSD_HC_WP_GRP_SIZE] * buf[EXT_CSD_HC_ERASE_GRP_SIZE];
+
 	storage->sec_cnt = *(u32 *)&buf[EXT_CSD_SEC_CNT];
 }
 

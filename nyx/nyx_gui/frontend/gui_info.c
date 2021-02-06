@@ -1369,6 +1369,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		char *rsvd_blocks;
 		char life_a_txt[8];
 		char life_b_txt[8];
+		u32 cache = storage.ext_csd.cache_size;
 		u32 life_a = storage.ext_csd.dev_life_est_a;
 		u32 life_b = storage.ext_csd.dev_life_est_b;
 		u16 card_type = storage.ext_csd.card_type;
@@ -1384,16 +1385,20 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		case 0x15:
 			strcat(txt_buf, "Samsung ");
 			break;
+		case 0x45: // Unofficial.
+			strcat(txt_buf, "SanDisk ");
+			break;
 		case 0x90:
 			strcat(txt_buf, "SK Hynix ");
 			break;
 		}
 
-		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%X\n%04X\n%02d/%04d\n\n",
+		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%d.%d\n%04X\n%02d/%04d\n\n",
 			storage.cid.manfid,
 			storage.cid.prod_name[0], storage.cid.prod_name[1], storage.cid.prod_name[2],
 			storage.cid.prod_name[3], storage.cid.prod_name[4],	storage.cid.prod_name[5],
-			storage.cid.prv, storage.cid.serial, storage.cid.month, storage.cid.year);
+			storage.cid.prv & 0xF, storage.cid.prv >> 4,
+			storage.cid.serial, storage.cid.month, storage.cid.year);
 
 		if (card_type & EXT_CSD_CARD_TYPE_HS_26)
 		{
@@ -1425,7 +1430,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		strcpy(life_b_txt, "-");
 
 		// Normalize cells life.
-		if (life_a)
+		if (life_a) // SK Hynix is 0 (undefined).
 		{
 			life_a--;
 			life_a = (10 - life_a) * 10;
@@ -1448,7 +1453,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			rsvd_blocks = "Warning (> 80%)";
 			break;
 		case 3:
-			rsvd_blocks = "Urgent (> 90%)";
+			rsvd_blocks = "Critical (> 90%)";
 			break;
 		default:
 			rsvd_blocks = "#FF8000 Unknown#";
@@ -1456,23 +1461,28 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		}
 
 		s_printf(txt_buf + strlen(txt_buf),
-			"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s\nA: %s, B: %s\n%s",
+			"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s\n%d %s\n%d MiB\nA: %s, B: %s\n%s",
 			storage.ext_csd.ext_struct, storage.ext_csd.rev,
 			storage.csd.cmdclass, speed & 0xFFFF, (speed >> 16) & 0xFFFF,
-			storage.csd.busspeed, card_type_support, life_a_txt, life_b_txt, rsvd_blocks);
+			storage.csd.busspeed, card_type_support,
+			!(cache % 1024) ? (cache / 1024) : cache, !(cache % 1024) ? "MiB" : "KiB",
+			storage.ext_csd.max_enh_mult * 512 / 1024,
+			life_a_txt, life_b_txt, rsvd_blocks);
 
 		lv_label_set_static_text(lb_desc,
 			"#00DDFF CID:#\n"
 			"Vendor ID:\n"
 			"Model:\n"
-			"Prd Rev:\n"
+			"Prod Rev:\n"
 			"S/N:\n"
 			"Month/Year:\n\n"
-			"#00DDFF Ext CSD#\n"
+			"#00DDFF Ext CSD:#\n"
 			"Cmd Classes:\n"
 			"Max Rate:\n"
 			"Current Rate:\n"
 			"Type Support:\n\n"
+			"Write Cache:\n"
+			"Enhanced Area:\n"
 			"Estimated Life:\n"
 			"Reserved Used:"
 		);
@@ -1496,12 +1506,12 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 		u32 boot_size = storage.ext_csd.boot_mult << 17;
 		u32 rpmb_size = storage.ext_csd.rpmb_mult << 17;
-		s_printf(txt_buf, "#00DDFF eMMC Physical Partitions:#\n");
-		s_printf(txt_buf + strlen(txt_buf), "1: #96FF00 BOOT0# Size: %5d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / 512);
-		s_printf(txt_buf + strlen(txt_buf), "2: #96FF00 BOOT1# Size: %5d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / 512);
-		s_printf(txt_buf + strlen(txt_buf), "3: #96FF00 RPMB#  Size: %5d KiB (Sect: 0x%08X)\n", rpmb_size / 1024, rpmb_size / 512);
-		s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#   Size: %5d MiB (Sect: 0x%08X)\n\n", storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
-		s_printf(txt_buf + strlen(txt_buf), "#00DDFF GPP (eMMC USER) Partition Table:#\n");
+		strcpy(txt_buf, "#00DDFF eMMC Physical Partitions:#\n");
+		s_printf(txt_buf + strlen(txt_buf), "1: #96FF00 BOOT0# Size: %6d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / 512);
+		s_printf(txt_buf + strlen(txt_buf), "2: #96FF00 BOOT1# Size: %6d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / 512);
+		s_printf(txt_buf + strlen(txt_buf), "3: #96FF00 RPMB#  Size: %6d KiB (Sect: 0x%08X)\n", rpmb_size / 1024, rpmb_size / 512);
+		s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#   Size: %6d MiB (Sect: 0x%08X)\n", storage.sec_cnt >> SECTORS_TO_MIB_COEFF, storage.sec_cnt);
+		strcat(txt_buf, "\n#00DDFF GPP (eMMC USER) Partition Table:#\n");
 
 		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
 		LIST_INIT(gpt);
@@ -1512,14 +1522,14 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		{
 			if (idx > 10)
 			{
-				strcat(txt_buf, "#FFDD00 Table truncated!#");
+				strcat(txt_buf, "#FFDD00 Table does not fit on screen!#");
 				break;
 			}
 
 			if (part->index < 2)
 			{
-				s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s# ", part->index, part->name);
-				s_printf(txt_buf + strlen(txt_buf), " Size: %d MiB (Sect: 0x%X), Start: %06X\n",
+				s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#%s Size: %d MiB (Sect: 0x%X), Start: %06X\n",
+					part->index, part->name, !part->name[8] ? " " : "",
 					(part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start);
 			}
@@ -1532,6 +1542,9 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 			idx++;
 		}
+		if (!idx)
+			strcat(txt_buf, "#FFDD00 Partition table is empty!#");
+
 		nx_emmc_gpt_free(&gpt);
 
 		lv_label_set_text(lb_desc2, txt_buf);
@@ -1572,8 +1585,8 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		lv_label_set_text(lb_desc,
 			"#00DDFF Card IDentification:#\n"
 			"Vendor ID:\n"
-			"OEM ID:\n"
 			"Model:\n"
+			"OEM ID:\n"
 			"HW rev:\n"
 			"FW rev:\n"
 			"S/N:\n"
@@ -1631,10 +1644,11 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			break;
 		}
 
-		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c\n%c%c%c%c%c\n%X\n%X\n%08x\n%02d/%04d\n\n",
-			sd_storage.cid.manfid, (sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF,
+		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c\n%c%c\n%X\n%X\n%08x\n%02d/%04d\n\n",
+			sd_storage.cid.manfid,
 			sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
 			sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
+			(sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF,
 			sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
 			sd_storage.cid.month, sd_storage.cid.year);
 
