@@ -265,6 +265,8 @@ void hos_eks_save(u32 kb)
 
 		// If matching blob doesn't exist, create it.
 		bool update_eks = key_idx ? (h_cfg.eks->enabled[key_idx] < kb) : !h_cfg.eks->enabled[0];
+		// If old EKS version was found, update it.
+		update_eks |= h_cfg.eks->lot0 != FUSE(FUSE_OPT_LOT_CODE_0);
 		if (update_eks)
 		{
 			// Read EKS blob.
@@ -281,8 +283,8 @@ void hos_eks_save(u32 kb)
 			}
 
 			// Get keys.
-			u8 *keys = (u8 *)calloc(0x1000, 1);
-			se_get_aes_keys(keys + 0x800, keys, SE_KEY_128_SIZE);
+			u8 *keys = (u8 *)calloc(0x2000, 1);
+			se_get_aes_keys(keys + 0x1000, keys, SE_KEY_128_SIZE);
 
 			// Set magic and personalized info.
 			h_cfg.eks->magic = HOS_EKS_MAGIC;
