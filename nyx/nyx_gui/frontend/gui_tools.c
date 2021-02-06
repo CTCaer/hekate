@@ -1505,14 +1505,14 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_sep, "");
 
 	lv_obj_t *label_txt3 = lv_label_create(h2, NULL);
-	lv_label_set_static_text(label_txt3, "Misc");
+	lv_label_set_static_text(label_txt3, "SD Partitions & USB");
 	lv_obj_set_style(label_txt3, th->label.prim);
 	lv_obj_align(label_txt3, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -LV_DPI * 3 / 10);
 
 	line_sep = lv_line_create(h2, line_sep);
 	lv_obj_align(line_sep, label_txt3, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
 
-	// Create Dump Package1/2 button.
+	// Create Partition SD Card button.
 	lv_obj_t *btn3 = lv_btn_create(h2, NULL);
 	if (hekate_bg)
 	{
@@ -1521,15 +1521,15 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	}
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
-	lv_label_set_static_text(label_btn, SYMBOL_MODULES"  Dump Package1/2");
+	lv_label_set_static_text(label_btn, SYMBOL_SD"  Partition SD Card");
 	lv_obj_align(btn3, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
-	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_window_dump_pk12_tool);
+	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, create_window_partition_manager);
 
 	lv_obj_t *label_txt4 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
-		"Allows you to dump and decrypt pkg1 and pkg2 and further\n"
-		"split it up into their individual parts. It also dumps the kip1.\n");
+		"Allows you to partition the SD Card for using it with #C7EA46 emuMMC#,\n"
+		"#C7EA46 Android# and #C7EA46 Linux#. You can also flash Linux and Android.\n");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1681,18 +1681,18 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_static_text(label_sep, "");
 	lv_obj_align(label_sep, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 11 / 7);
 
-	// Create Partition SD Card button.
+	// Create Dump Package1/2 button.
 	lv_obj_t *btn4 = lv_btn_create(h2, btn);
 	label_btn = lv_label_create(btn4, NULL);
-	lv_label_set_static_text(label_btn, SYMBOL_SD"  Partition SD Card");
+	lv_label_set_static_text(label_btn, SYMBOL_MODULES"  Dump Package1/2");
 	lv_obj_align(btn4, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
-	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, create_window_partition_manager);
+	lv_btn_set_action(btn4, LV_BTN_ACTION_CLICK, _create_window_dump_pk12_tool);
 
 	label_txt2 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to partition the SD Card for using it with #C7EA46 emuMMC#,\n"
-		"#C7EA46 Android# and #C7EA46 Linux#. You can also flash Linux and Android.");
+		"Allows you to dump and decrypt pkg1 and pkg2 and further\n"
+		"split it up into their individual parts. It also dumps the kip1.");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
@@ -1717,8 +1717,8 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 	lv_tabview_set_sliding(tv, false);
 	lv_tabview_set_btns_pos(tv, LV_TABVIEW_BTNS_POS_BOTTOM);
 
-	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" Pkg1/2 "SYMBOL_DOT" USB Tools");
-	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Arch bit "SYMBOL_DOT" RCM "SYMBOL_DOT" Touch "SYMBOL_DOT" Partitions");
+	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" SD Partitions "SYMBOL_DOT" USB");
+	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Arch bit "SYMBOL_DOT" RCM "SYMBOL_DOT" Touch "SYMBOL_DOT" Pkg1/2");
 
 	lv_obj_t *line_sep = lv_line_create(tv, NULL);
 	static const lv_point_t line_pp[] = { {0, 0}, { 0, LV_DPI / 4} };
