@@ -93,7 +93,8 @@ typedef enum _nyx_ums_type
 typedef enum _nyx_sept_type
 {
 	NYX_SEPT_DUMP = 0,
-	NYX_SEPT_CAL0
+	NYX_SEPT_CAL0,
+	NYX_SEPT_EMUF
 } nyx_sept_type;
 
 typedef struct __attribute__((__packed__)) _boot_cfg_t

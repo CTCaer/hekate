@@ -38,6 +38,8 @@ typedef struct _mbr_ctxt_t
 {
 	u32 available;
 	u32 sector[3];
+	u32 resized_cnt[3];
+
 	int part_idx;
 	u32 sector_start;
 } mbr_ctxt_t;
@@ -142,7 +144,7 @@ static void _create_window_emummc()
 	if (!mbr_ctx.part_idx)
 		dump_emummc_file(&emmc_tool_gui_ctxt);
 	else
-		dump_emummc_raw(&emmc_tool_gui_ctxt, mbr_ctx.part_idx, mbr_ctx.sector_start);
+		dump_emummc_raw(&emmc_tool_gui_ctxt, mbr_ctx.part_idx, mbr_ctx.sector_start, mbr_ctx.resized_cnt[mbr_ctx.part_idx - 1]);
 
 	nyx_window_toggle_buttons(win, false);
 }
@@ -239,10 +241,22 @@ static void _create_mbox_emummc_raw()
 		// Skip Linux, GPT (Android) and SFD partitions.
 		bool valid_part = (part_type != 0x83) && (part_type != 0xEE) && (part_type != 0xFF);
 
-		if ((part_size >= emmc_size_safe) && part_start > 0x8000 && valid_part)
+		// Check if at least 4GB and start above 16MB.
+		if ((part_size >= 0x80F000) && part_start > 0x8000 && valid_part)
 		{
-			mbr_ctx.available |= (1 << (i - 1));
+			mbr_ctx.available |= BIT(i - 1);
 			mbr_ctx.sector[i - 1] = part_start;
+
+			// Only allow up to 16GB resized emuMMC.
+			if (part_size <= 0x2010000)
+				mbr_ctx.resized_cnt[i - 1] = part_size - 0xC000; // Save sectors count without protective size and BOOT0/1.
+			else if (part_size >= emmc_size_safe)
+				mbr_ctx.resized_cnt[i - 1] = 0;
+			else
+			{
+				mbr_ctx.available &= ~BIT(i - 1);
+				mbr_ctx.sector[i - 1] = 0;
+			}
 		}
 	}
 
@@ -260,19 +274,21 @@ static void _create_mbox_emummc_raw()
 		"#C0C0C0 Part 0: Type: %02x, Start: %08x, Size: %08x#\n"
 		"#%s Part 1: Type: %02x, Start: %08x, Size: %08x#\n"
 		"#%s Part 2: Type: %02x, Start: %08x, Size: %08x#\n"
-		"#%s Part 3: Type: %02x, Start: %08x, Size: %08x#\n",
+		"#%s Part 3: Type: %02x, Start: %08x, Size: %08x#",
 		mbr->partitions[0].type, mbr->partitions[0].start_sct, mbr->partitions[0].size_sct,
-			(mbr_ctx.available & 1) ? "C7EA46" : "C0C0C0",
-		mbr->partitions[1].type, mbr->partitions[1].start_sct, mbr->partitions[1].size_sct,
-			(mbr_ctx.available & 2) ? "C7EA46" : "C0C0C0",
-		mbr->partitions[2].type, mbr->partitions[2].start_sct, mbr->partitions[2].size_sct,
-			(mbr_ctx.available & 4) ? "C7EA46" : "C0C0C0",
-		mbr->partitions[3].type, mbr->partitions[3].start_sct, mbr->partitions[3].size_sct);
+		(mbr_ctx.available & BIT(0)) ? (mbr_ctx.resized_cnt[0] ? "FFDD00" : "C7EA46") : "C0C0C0",
+		 mbr->partitions[1].type, mbr->partitions[1].start_sct, mbr->partitions[1].size_sct,
+		(mbr_ctx.available & BIT(1)) ? (mbr_ctx.resized_cnt[1] ? "FFDD00" : "C7EA46") : "C0C0C0",
+		 mbr->partitions[2].type, mbr->partitions[2].start_sct, mbr->partitions[2].size_sct,
+		(mbr_ctx.available & BIT(2)) ? (mbr_ctx.resized_cnt[2] ? "FFDD00" : "C7EA46") : "C0C0C0",
+		 mbr->partitions[3].type, mbr->partitions[3].start_sct, mbr->partitions[3].size_sct);
+
+	if (mbr_ctx.resized_cnt[0] || mbr_ctx.resized_cnt[1] || mbr_ctx.resized_cnt[2])
+		strcat(txt_buf, "\n\n#FFDD00 Note:# Yellow entries have USER partition resized.");
 
 	if (!mbr_ctx.available)
-		strcat(txt_buf,
-			"\n#FF8000 Do you want to partition the SD card?#\n"
-			"#FF8000 (You will be asked on how to proceed)#");
+		strcat(txt_buf, "\n#FF8000 Do you want to partition the SD card?#\n"
+						  "#FF8000 (You will be asked on how to proceed)#");
 
 	lv_mbox_set_text(mbox, txt_buf);
 	free(txt_buf);

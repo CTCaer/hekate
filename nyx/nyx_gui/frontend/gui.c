@@ -2221,6 +2221,10 @@ static void _nyx_main_menu(lv_theme_t * th)
 			lv_task_t *task_run_cal0 = lv_task_create(sept_run_cal0, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
 			lv_task_once(task_run_cal0);
 		}
+		else if (type == NYX_SEPT_EMUF)
+		{
+			// TODO: Maybe automatically relaunch emuMMC creation in the future.
+		}
 	}
 	else if (nyx_str->cfg & NYX_CFG_UMS)
 	{

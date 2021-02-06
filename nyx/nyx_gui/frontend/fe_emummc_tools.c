@@ -23,13 +23,16 @@
 
 #include "gui.h"
 #include "fe_emummc_tools.h"
+#include "../hos/sept.h"
 #include "../config.h"
 #include <utils/ini.h>
+#include <libs/fatfs/diskio.h>
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <sec/se.h>
 #include <storage/mbr_gpt.h>
 #include "../storage/nx_emmc.h"
+#include "../storage/nx_emmc_bis.h"
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
 #include <utils/btn.h>
@@ -40,6 +43,7 @@
 #define OUT_FILENAME_SZ 128
 
 extern hekate_config h_cfg;
+extern volatile boot_cfg_t *b_cfg;
 
 void load_emummc_cfg(emummc_cfg_t *emu_info)
 {
@@ -492,9 +496,15 @@ out:
 	sd_unmount();
 }
 
-static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part_idx, u32 sd_part_off, sdmmc_storage_t *storage, emmc_part_t *part)
+static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part_idx, u32 sd_part_off, sdmmc_storage_t *storage, emmc_part_t *part, u32 resized_count)
 {
-	u32 totalSectors = part->lba_end - part->lba_start + 1;
+	u32 num = 0;
+	u32 pct = 0;
+	u32 prevPct = 200;
+	int retryCount = 0;
+	u32 sd_sector_off = sd_part_off + (0x2000 * active_part);
+	u32 lba_curr = part->lba_start;
+	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
 
 	s_printf(gui->txt_buf, "\n\n\n");
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -509,24 +519,38 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 	manual_system_maintenance(true);
 
-	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
-	u32 sd_sector_off = sd_part_off + (0x2000 * active_part);
-	u32 lba_curr = part->lba_start;
-	u32 prevPct = 200;
-	int retryCount = 0;
-
-	u32 num = 0;
-	u32 pct = 0;
-
 	lv_obj_set_opa_scale(gui->bar, LV_OPA_COVER);
 	lv_obj_set_opa_scale(gui->label_pct, LV_OPA_COVER);
 
+	u32 user_offset = 0;
+
+	if (resized_count)
+	{
+		// Get USER partition info.
+		LIST_INIT(gpt);
+		nx_emmc_gpt_parse(&gpt, storage);
+		emmc_part_t *user_part = nx_emmc_part_find(&gpt, "USER");
+		if (!user_part)
+		{
+			s_printf(gui->txt_buf, "\n#FFDD00 USER partition not found!#\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
+
+			return 0;
+		}
+
+		user_offset = user_part->lba_start;
+		part->lba_end = user_offset - 1;
+		nx_emmc_gpt_free(&gpt);
+	}
+
+	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	while (totalSectors > 0)
 	{
 		// Check for cancellation combo.
 		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 		{
-			s_printf(gui->txt_buf, "#FFDD00 The emuMMC was cancelled!#\n");
+			s_printf(gui->txt_buf, "\n#FFDD00 The emuMMC was cancelled!#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -616,20 +640,319 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	lv_label_set_text(gui->label_pct, " "SYMBOL_DOT" 100%");
 	manual_system_maintenance(true);
 
-	// Hide the partition.
+	// Set partition type to emuMMC (0xE0).
 	if (active_part == 2)
 	{
-		mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
-		sdmmc_storage_read(&sd_storage, 0, 1, mbr);
-		mbr->partitions[part_idx].type = 0xE0;
-		sdmmc_storage_write(&sd_storage, 0, 1, mbr);
-		free(mbr);
+		mbr_t mbr;
+		sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
+		mbr.partitions[part_idx].type = 0xE0;
+		sdmmc_storage_write(&sd_storage, 0, 1, &mbr);
+	}
+
+	if (resized_count)
+	{
+		// Calculate USER size and set it for FatFS.
+		u32 user_sectors = resized_count - user_offset - 33;
+		disk_set_info(DRIVE_EMU, SET_SECTOR_COUNT, &user_sectors);
+
+		// Initialize BIS for emuMMC. BIS keys should be already in place.
+		emmc_part_t user_part = {0};
+		user_part.lba_start = user_offset;
+		user_part.lba_end = user_offset + user_sectors - 1;
+		strcpy(user_part.name, "USER");
+		nx_emmc_bis_init(&user_part, true, sd_sector_off);
+
+		s_printf(gui->txt_buf, "\nFormatting USER...\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		// Format USER partition.
+		u8 *buf = malloc(0x400000);
+		int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buf, 0x400000);
+		free(buf);
+
+		// Mount sd card back.
+		sd_mount();
+
+		if (mkfs_error)
+		{
+			s_printf(gui->txt_buf, "#FF0000 USER format failed (%d)...#\nPlease try again...\n", mkfs_error);
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+
+			return 0;
+		}
+
+		// Flush BIS cache, deinit, clear BIS keys slots and reinstate SBK.
+		nx_emmc_bis_end();
+		hos_bis_keys_clear();
+
+		s_printf(gui->txt_buf, "Writing new GPT...\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		// Read MBR, GPT and backup GPT.
+		mbr_t mbr;
+		gpt_t gpt_main;
+		gpt_header_t gpt_hdr_backup;
+		sdmmc_storage_read(storage, 0, 1, &mbr);
+		sdmmc_storage_read(storage, 1, sizeof(gpt_t) >> 9, &gpt_main);
+		sdmmc_storage_read(storage, gpt_main.header.alt_lba, 1, &gpt_hdr_backup);
+
+		// Find USER partition.
+		u32 gpt_entry_idx = 0;
+		for (gpt_entry_idx = 0; gpt_entry_idx < gpt_main.header.num_part_ents; gpt_entry_idx++)
+			if (!memcmp(gpt_main.entries[gpt_entry_idx].name, (char[]) { 'U', 0, 'S', 0, 'E', 0, 'R', 0 }, 8))
+				break;
+
+		if (gpt_entry_idx >= gpt_main.header.num_part_ents)
+		{
+			s_printf(gui->txt_buf, "#FF0000 No USER partition...#\nPlease try again...\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+
+			return 0;
+		}
+
+		// Set new emuMMC size and USER size.
+		mbr.partitions[0].size_sct = resized_count;
+		gpt_main.entries[gpt_entry_idx].lba_end = user_offset + user_sectors - 1;
+
+		// Update Main GPT.
+		gpt_main.header.alt_lba = resized_count - 1;
+		gpt_main.header.last_use_lba = resized_count - 34;
+		gpt_main.header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt_main.entries, sizeof(gpt_entry_t) * gpt_main.header.num_part_ents);
+		gpt_main.header.crc32 = 0; // Set to 0 for calculation.
+		gpt_main.header.crc32 = crc32_calc(0, (const u8 *)&gpt_main.header, gpt_main.header.size);
+
+		// Update Backup GPT.
+		gpt_hdr_backup.my_lba = resized_count - 1;
+		gpt_hdr_backup.part_ent_lba = resized_count - 33;
+		gpt_hdr_backup.part_ents_crc32 = gpt_main.header.part_ents_crc32;
+		gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
+		gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
+
+		// Write main GPT.
+		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_main.header.my_lba, sizeof(gpt_t) >> 9, &gpt_main);
+
+		// Write backup GPT partition table.
+		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_hdr_backup.part_ent_lba, ((sizeof(gpt_entry_t) * 128) >> 9), gpt_main.entries);
+
+		// Write backup GPT header.
+		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
+
+		// Write MBR.
+		sdmmc_storage_write(&sd_storage, sd_sector_off, 1, &mbr);
 	}
 
 	return 1;
 }
 
-void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
+u32 kb = 0;
+u8 *tsec_fw = NULL;
+bool sept_error = false;
+
+static lv_res_t _emummc_raw_check_sept_action(lv_obj_t *btns, const char * txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	mbox_action(btns, txt);
+
+	if (btn_idx == 1 && !sept_error)
+	{
+		// Set boot cfg.
+		b_cfg->autoboot = 0;
+		b_cfg->autoboot_list = 0;
+		b_cfg->extra_cfg = EXTRA_CFG_NYX_SEPT;
+		b_cfg->sept = NYX_SEPT_EMUF;
+
+		sd_mount();
+		reboot_to_sept(tsec_fw, kb);
+	}
+
+	return LV_RES_INV;
+}
+
+static int _emummc_raw_check_sept(emmc_tool_gui_t *gui, u32 resized_count)
+{
+	if (!resized_count)
+		return 1;
+
+	bool sept_needed = false;
+	sept_error = false;
+	tsec_fw = NULL;
+
+	char *txt_buf = (char *)malloc(0x4000);
+	txt_buf[0] = 0;
+
+	// Read package1.
+	static const u32 BOOTLOADER_SIZE          = 0x40000;
+	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
+	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
+	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+
+	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
+	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
+	u8 *pkg1 = (u8 *)malloc(BOOTLOADER_SIZE);
+
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+
+try_load:
+	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
+
+	char *build_date = malloc(32);
+	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
+
+	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
+	free(build_date);
+
+	if (!pkg1_id)
+	{
+		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#\n");
+		// Try backup bootloader.
+		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
+		{
+			strcat(txt_buf, "Trying backup bootloader...\n");
+			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
+			goto try_load;
+		}
+
+		sept_error = true;
+		goto out;
+	}
+
+	kb = pkg1_id->kb;
+
+	// Skip if Mariko.
+	if (h_cfg.t210b01)
+		goto bis_derivation;
+
+	tsec_ctxt_t tsec_ctxt;
+	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
+	tsec_ctxt.pkg1 = pkg1;
+	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
+	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
+
+	// Get keys.
+	hos_eks_get();
+	if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
+	{
+		u32 key_idx = 0;
+		if (kb >= KB_FIRMWARE_VERSION_810)
+			key_idx = 1;
+
+		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
+			h_cfg.sept_run = true;
+		else
+		{
+			// Check that BCT is proper so sept can run.
+			u8 *bct_bldr = (u8 *)calloc(1, 512);
+			sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
+			u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
+			free(bct_bldr);
+			if (bootloader_entrypoint > SEPT_PRI_ENTRY)
+			{
+				strcpy(txt_buf, "#FFDD00 Failed to run sept because main BCT is improper!#\n"
+					"#FFDD00 Run sept with proper BCT at least once to cache keys.#\n");
+				sept_error = true;
+				goto out;
+			}
+
+			// Set TSEC fw.
+			tsec_fw = (u8 *)tsec_ctxt.fw;
+
+			sept_needed = true;
+			goto out;
+		}
+	}
+
+bis_derivation:;
+	// Read the correct keyblob.
+	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
+	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+
+	// Generate BIS keys
+	hos_bis_keygen(keyblob, kb, &tsec_ctxt);
+
+	free(keyblob);
+
+	u8 *cal0_buf = malloc(0x10000);
+
+	// Read and decrypt CAL0 for validation of working BIS keys.
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	LIST_INIT(gpt);
+	nx_emmc_gpt_parse(&gpt, &emmc_storage);
+	emmc_part_t *cal0_part = nx_emmc_part_find(&gpt, "PRODINFO"); // check if null
+	nx_emmc_bis_init(cal0_part, false, 0);
+	nx_emmc_bis_read(0, 0x40, cal0_buf);
+	nx_emmc_bis_end();
+	nx_emmc_gpt_free(&gpt);
+
+	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
+
+	// If successful, save BIS keys.
+	if (memcmp(&cal0->magic, "CAL0", 4))
+	{
+		hos_bis_keys_clear();
+		hos_eks_bis_clear();
+
+		strcpy(txt_buf, "#FFDD00 BIS keys validation failed!#\n");
+		sept_error = true;
+	}
+	else
+		hos_eks_bis_save();
+	free(cal0_buf);
+
+out:
+	// Check if sept is not needed.
+	if (!sept_needed)
+		free(pkg1);
+
+	if (sept_needed || sept_error)
+	{
+		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+		lv_obj_set_style(dark_bg, &mbox_darken);
+		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+		static const char * mbox_btn_map[] = { "\211", "\222Launch", "\222Close", "\211", "" };
+		static const char * mbox_btn_map2[] = { "\211", "\222Close", "\211", "" };
+		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+		lv_mbox_set_recolor_text(mbox, true);
+		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+
+		lv_mbox_set_text(mbox, "#C7EA46 BIS Keys Generation#");
+
+		lv_obj_t * lb_desc = lv_label_create(mbox, NULL);
+		lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
+		lv_label_set_recolor(lb_desc, true);
+		lv_label_set_style(lb_desc, &monospace_text);
+		lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 4);
+
+		if (sept_error)
+		{
+			lv_label_set_text(lb_desc, txt_buf);
+			lv_mbox_add_btns(mbox, mbox_btn_map2, _emummc_raw_check_sept_action);
+			free(pkg1);
+		}
+		else
+		{
+			lv_label_set_text(lb_desc, "Sept needs to launch in order to generate keys\nneeded for emuMMC resizing.\n"
+				"After that enter this menu again.");
+			lv_mbox_add_btns(mbox, mbox_btn_map, _emummc_raw_check_sept_action);
+		}
+
+		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_set_top(mbox, true);
+
+		free(txt_buf);
+
+		return 0;
+	}
+
+	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+
+	return 1;
+}
+
+void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 resized_count)
 {
 	int res = 0;
 	u32 timer = 0;
@@ -652,6 +975,14 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
+		goto out;
+	}
+
+	if (!_emummc_raw_check_sept(gui, resized_count))
+	{
+		s_printf(gui->txt_buf, "#FFDD00 For formatting USER partition,#\n#FFDD00 BIS keys are needed!#\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		sdmmc_storage_end(&emmc_storage);
 		goto out;
 	}
 
@@ -692,7 +1023,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 		sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
 
 		strcat(sdPath, bootPart.name);
-		res = _dump_emummc_raw_part(gui, i, part_idx, sector_start, &emmc_storage, &bootPart);
+		res = _dump_emummc_raw_part(gui, i, part_idx, sector_start, &emmc_storage, &bootPart, 0);
 
 		if (!res)
 		{
@@ -726,7 +1057,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start)
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
 
-		res = _dump_emummc_raw_part(gui, 2, part_idx, sector_start, &emmc_storage, &rawPart);
+		res = _dump_emummc_raw_part(gui, 2, part_idx, sector_start, &emmc_storage, &rawPart, resized_count);
 
 		if (!res)
 			s_printf(txt_buf, "#FFDD00 Failed!#\n");
