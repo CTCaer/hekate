@@ -651,6 +651,8 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 	if (resized_count)
 	{
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, "Done!\n");
+
 		// Calculate USER size and set it for FatFS.
 		u32 user_sectors = resized_count - user_offset - 33;
 		disk_set_info(DRIVE_EMU, SET_SECTOR_COUNT, &user_sectors);
@@ -662,7 +664,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		strcpy(user_part.name, "USER");
 		nx_emmc_bis_init(&user_part, true, sd_sector_off);
 
-		s_printf(gui->txt_buf, "\nFormatting USER...\n");
+		s_printf(gui->txt_buf, "Formatting USER... \n");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 		manual_system_maintenance(true);
 
@@ -676,17 +678,18 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		if (mkfs_error)
 		{
-			s_printf(gui->txt_buf, "#FF0000 USER format failed (%d)...#\nPlease try again...\n", mkfs_error);
+			s_printf(gui->txt_buf, "#FF0000 Failed (%d)!#\nPlease try again...\n", mkfs_error);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 
 			return 0;
 		}
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, "Done!\n");
 
 		// Flush BIS cache, deinit, clear BIS keys slots and reinstate SBK.
 		nx_emmc_bis_end();
 		hos_bis_keys_clear();
 
-		s_printf(gui->txt_buf, "Writing new GPT...\n");
+		s_printf(gui->txt_buf, "Writing new GPT... ");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 		manual_system_maintenance(true);
 
@@ -706,7 +709,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		if (gpt_entry_idx >= gpt_main.header.num_part_ents)
 		{
-			s_printf(gui->txt_buf, "#FF0000 No USER partition...#\nPlease try again...\n");
+			s_printf(gui->txt_buf, "\n#FF0000 No USER partition...#\nPlease try again...\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 
 			return 0;
