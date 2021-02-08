@@ -694,9 +694,15 @@ retry:
 
 void jc_deinit()
 {
+	// Disable power.
+	jc_power_supply(UART_B, false);
+	jc_power_supply(UART_C, false);
+
+	// Turn off Joy-Con detect.
 	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
 	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 
+	// Send sleep command.
 	u8 data = HCI_STATE_SLEEP;
 
 	if (jc_r.connected && !(jc_r.type & JC_ID_HORI))
@@ -709,9 +715,6 @@ void jc_deinit()
 		jc_send_hid_cmd(UART_C, JC_HID_SUBCMD_HCI_STATE, &data, 1);
 		jc_rcv_pkt(&jc_l);
 	}
-
-	jc_power_supply(UART_B, false);
-	jc_power_supply(UART_C, false);
 }
 
 static void jc_init_conn(joycon_ctxt_t *jc)
