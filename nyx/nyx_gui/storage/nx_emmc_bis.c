@@ -167,7 +167,7 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 	if (!emu_offset)
 		res = nx_emmc_part_write(&emmc_storage, system_part, sector, count, bis_cache->dma_buff);
 	else
-		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
+		res = sdmmc_storage_write(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
 	if (!res)
 		return 1; // R/W error.
 
