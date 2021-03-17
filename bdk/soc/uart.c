@@ -122,7 +122,12 @@ u32 uart_get_IIR(u32 idx)
 {
 	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
 
-	return uart->UART_IIR_FCR;
+	u32 iir = uart->UART_IIR_FCR & UART_IIR_INT_MASK;
+
+	if (iir & UART_IIR_NO_INT)
+		return 0;
+	else
+		return ((iir >> 1) + 1); // Return encoded interrupt.
 }
 
 void uart_set_IIR(u32 idx)

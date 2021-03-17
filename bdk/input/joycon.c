@@ -463,7 +463,7 @@ static void jc_rcv_pkt(joycon_ctxt_t *jc)
 
 	// Check if device stopped sending data.
 	u32 uart_irq = uart_get_IIR(jc->uart);
-	if ((uart_irq & 0x8) != 0x8)
+	if (uart_irq != UART_IIR_REDI)
 		return;
 
 	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, 0x100);

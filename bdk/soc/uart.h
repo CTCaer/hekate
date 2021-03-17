@@ -54,6 +54,17 @@
 #define UART_IIR_FCR_RX_CLR 0x2
 #define UART_IIR_FCR_EN_FIFO 0x1
 
+#define UART_IIR_NO_INT BIT(0)
+#define UART_IIR_INT_MASK 0xF
+/* Custom returned interrupt results. Actual interrupts are -1 */
+#define UART_IIR_NOI   0 // No interrupt.
+#define UART_IIR_MSI   1 // Modem status interrupt.
+#define UART_IIR_THRI  2 // Transmitter holding register empty.
+#define UART_IIR_RDI   3 // Receiver data interrupt.
+#define UART_IIR_ERROR 4 // Overrun Error, Parity Error, Framing Error, Break.
+#define UART_IIR_REDI  5 // Receiver end of data interrupt.
+#define UART_IIR_RDTI  7 // Receiver data timeout interrupt.
+
 #define UART_MCR_RTS 0x2
 #define UART_MCR_DTR 0x1
 
