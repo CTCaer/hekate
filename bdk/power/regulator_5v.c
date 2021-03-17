@@ -81,7 +81,13 @@ bool regulator_5v_get_dev_enabled(u8 dev)
 void regulator_5v_batt_src_enable(bool enable)
 {
 	if (enable && !batt_src)
+	{
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
+		batt_src = true;
+	}
 	else if (!enable && batt_src)
+	{
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_LOW);
+		batt_src = false;
+	}
 }
