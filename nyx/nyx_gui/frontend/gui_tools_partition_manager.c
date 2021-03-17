@@ -750,7 +750,7 @@ static u32 _get_available_l4t_partition()
 
 	// Search for a suitable partition.
 	u32 size_sct = 0;
-	if (!memcmp(&gpt->header.signature, "EFI PART", 8))
+	if (!memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
 	{
 		for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 		{
@@ -791,7 +791,7 @@ static bool _get_available_android_partition()
 	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	// Check if GPT.
-	if (memcmp(&gpt->header.signature, "EFI PART", 8))
+	if (memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
 		goto out;
 
 	// Find kernel partition.
@@ -998,7 +998,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 		bool boot_twrp = false;
-		if (memcmp(&gpt->header.signature, "EFI PART", 8))
+		if (memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
 		{
 			lv_label_set_text(lbl_status, "#FFDD00 Error:# No Android GPT was found!");
 			goto error;
@@ -1941,7 +1941,7 @@ static void create_mbox_check_files_total_size()
 
 	lv_obj_t *lbl_part = lv_label_create(h1, NULL);
 	lv_label_set_recolor(lbl_part, true);
-	lv_label_set_text(lbl_part, "#00DDFF Current partition layout:#");
+	lv_label_set_text(lbl_part, "#00DDFF Current MBR partition layout:#");
 
 	// Read current MBR.
 	mbr_t mbr = { 0 };
@@ -2059,9 +2059,9 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 
 	sd_unmount();
 
-	if (memcmp(&gpt->header.signature, "EFI PART", 8))
+	if (memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
 	{
-		lv_label_set_text(lbl_status, "#FFDD00 Warning:# No GPT was found!");
+		lv_label_set_text(lbl_status, "#FFDD00 Warning:# No valid GPT was found!");
 		goto out;
 	}
 
@@ -2110,7 +2110,10 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 			break;
 	}
 
-	mbr[1].partitions[mbr_idx].type = 0xEE; // GPT protective partition.
+	nx_emmc_gpt_free(&gpt_parsed);
+
+	// Set GPT protective partition.
+	mbr[1].partitions[mbr_idx].type = 0xEE;
 	mbr[1].partitions[mbr_idx].start_sct = 1;
 	mbr[1].partitions[mbr_idx].size_sct = sd_storage.sec_cnt - 1;
 
