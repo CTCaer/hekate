@@ -1269,6 +1269,9 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 	if (sd_bench)
 	{
 		storage = &sd_storage;
+
+		// Re-initialize to update trimmers.
+		sd_end();
 		res = !sd_mount();
 	}
 	else

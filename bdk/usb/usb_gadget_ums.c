@@ -1837,6 +1837,7 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	// Initialize sdmmc.
 	if (usbs->type == MMC_SD)
 	{
+		sd_end();
 		sd_mount();
 		sd_unmount();
 		ums.lun.sdmmc = &sd_sdmmc;
