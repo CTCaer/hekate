@@ -26,7 +26,7 @@
 void set_fan_duty(u32 duty)
 {
 	static bool fan_init = false;
-	static u16 curr_duty = -1;
+	static u16  curr_duty = -1;
 
 	if (curr_duty == duty)
 		return;
@@ -79,15 +79,14 @@ void get_fan_speed(u32 *duty, u32 *rpm)
 {
 	if (rpm)
 	{
-		u32  irq_count = 1;
+		u32  irq_count = 0;
 		bool should_read = true;
-		bool irq_val = 0;
 
-		// Poll irqs for 2 seconds.
-		int timer = get_tmr_us() + 1000000;
-		while (timer - get_tmr_us())
+		// Poll irqs for 2 seconds. (5 seconds for accurate count).
+		int  timer = get_tmr_us() + 2000000;
+		while ((timer - get_tmr_us()) > 0)
 		{
-			irq_val = gpio_read(GPIO_PORT_S, GPIO_PIN_7);
+			bool irq_val = gpio_read(GPIO_PORT_S, GPIO_PIN_7);
 			if (irq_val && should_read)
 			{
 				irq_count++;
@@ -97,8 +96,11 @@ void get_fan_speed(u32 *duty, u32 *rpm)
 				should_read = true;
 		}
 
+		// Halve the irq count.
+		irq_count /= 2;
+
 		// Calculate rpm based on triggered interrupts.
-		*rpm = 60000000 / ((1000000 * 2) / irq_count);
+		*rpm = irq_count * (60 / 2);
 	}
 
 	if (duty)
