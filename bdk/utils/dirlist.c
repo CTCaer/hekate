@@ -21,16 +21,16 @@
 #include <mem/heap.h>
 #include <utils/types.h>
 
+#define MAX_ENTRIES 64
+
 char *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs)
 {
-	u8 max_entries = 61;
-
 	int res = 0;
 	u32 i = 0, j = 0, k = 0;
 	DIR dir;
 	FILINFO fno;
 
-	char *dir_entries = (char *)calloc(max_entries, 256);
+	char *dir_entries = (char *)calloc(MAX_ENTRIES, 256);
 	char *temp = (char *)calloc(1, 256);
 
 	if (!pattern && !f_opendir(&dir, directory))
@@ -49,7 +49,7 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 				{
 					strcpy(dir_entries + (k * 256), fno.fname);
 					k++;
-					if (k > (max_entries - 1))
+					if (k > (MAX_ENTRIES - 1))
 						break;
 				}
 			}
@@ -64,7 +64,7 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 			{
 				strcpy(dir_entries + (k * 256), fno.fname);
 				k++;
-				if (k > (max_entries - 1))
+				if (k > (MAX_ENTRIES - 1))
 					break;
 			}
 			res = f_findnext(&dir, &fno);

@@ -88,7 +88,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or as CSV. If not found, an error will show up |
 | fullsvcperm=1          | Disables SVC verification (full services permission)       |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
-| atmosphere=1           | Enables Atmosphère patching.                               |
+| atmosphere=1           | Enables Atmosphère patching. Not needed when `fss0` is used. |
 | emupath={SD folder}    | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
 | emummcforce=1          | Forces the use of emuMMC. If emummc.ini is disabled or not found, then it causes an error. |
 | emummc_force_disable=1 | Disables emuMMC, if it's enabled.                           |

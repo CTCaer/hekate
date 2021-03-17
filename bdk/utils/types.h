@@ -18,6 +18,8 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+#include <assert.h>
+
 #define NULL ((void *)0)
 
 #define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
@@ -115,6 +117,8 @@ typedef struct __attribute__((__packed__)) _boot_cfg_t
 		u8 xt_str[0x80];
 	};
 } boot_cfg_t;
+
+static_assert(sizeof(boot_cfg_t) == 0x84, "Boot CFG size is wrong!");
 
 typedef struct __attribute__((__packed__)) _ipl_ver_meta_t
 {
