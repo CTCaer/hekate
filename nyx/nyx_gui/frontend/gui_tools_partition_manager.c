@@ -2077,7 +2077,6 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 		part->index = i;
 		part->lba_start = gpt->entries[i].lba_start;
 		part->lba_end = gpt->entries[i].lba_end;
-		part->attrs = gpt.entries[i].attrs;
 
 		// ASCII conversion. Copy only the LSByte of the UTF-16LE name.
 		for (u32 j = 0; j < 36; j++)
@@ -2088,16 +2087,29 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	}
 	free(gpt);
 
-	u32 mbr_idx = 0;
+	// Set FAT and emuMMC partitions.
+	u32 mbr_idx = 1;
+	bool found_hos_data = false;
 	LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt_parsed, link)
 	{
-		if (!strcmp(part->name, "hos_data"))
+		// FatFS simple GPT found a fat partition, set it.
+		if (sd_fs.part_type && !part->index)
 		{
-			mbr[1].partitions[mbr_idx].type = sd_fs.fs_type == FS_EXFAT ? 0x7 : 0xC;
-			mbr[1].partitions[mbr_idx].start_sct = part->lba_start;
-			mbr[1].partitions[mbr_idx].size_sct = (part->lba_end - part->lba_start + 1);
-			mbr_idx++;
+			mbr[1].partitions[0].type = sd_fs.fs_type == FS_EXFAT ? 0x7 : 0xC;
+			mbr[1].partitions[0].start_sct = part->lba_start;
+			mbr[1].partitions[0].size_sct = (part->lba_end - part->lba_start + 1);
 		}
+
+		// FatFS simple GPT didn't find a fat partition as the first one.
+		if (!sd_fs.part_type && !found_hos_data && !strcmp(part->name, "hos_data"))
+		{
+			mbr[1].partitions[0].type = 0xC;
+			mbr[1].partitions[0].start_sct = part->lba_start;
+			mbr[1].partitions[0].size_sct = (part->lba_end - part->lba_start + 1);
+			found_hos_data = true;
+		}
+
+		// Set up to max 2 emuMMC partitions.
 		if (!strcmp(part->name, "emummc") || !strcmp(part->name, "emummc2"))
 		{
 			mbr[1].partitions[mbr_idx].type = 0xE0;
@@ -2106,7 +2118,8 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 			mbr_idx++;
 		}
 
-		if (mbr_idx > 2)
+		// Total reached last slot.
+		if (mbr_idx >= 3)
 			break;
 	}
 
