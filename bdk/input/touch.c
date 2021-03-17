@@ -206,6 +206,7 @@ touch_panel_info_t *touch_get_panel_vendor()
 {
 	u8 buf[5] = {0};
 	u8 cmd = STMFTS_VENDOR_GPIO_STATE;
+	static touch_panel_info_t panel_info = { -2,  0, 0, 0,  ""};
 
 	if (touch_command(STMFTS_VENDOR, &cmd, 1))
 		return NULL;
@@ -220,12 +221,19 @@ touch_panel_info_t *touch_get_panel_vendor()
 			return panel;
 	}
 
-	return NULL;
+	// Touch panel not found, return current gpios.
+	panel_info.gpio0 = buf[0];
+	panel_info.gpio1 = buf[1];
+	panel_info.gpio2 = buf[2];
+
+	return &panel_info;
 }
 
 int touch_get_fw_info(touch_fw_info_t *fw)
 {
 	u8 buf[8] = {0};
+
+	memset(fw, 0, sizeof(touch_fw_info_t));
 
 	// Get fw address info.
 	u8 cmd[3] = { STMFTS_RW_FRAMEBUFFER_REG, 0, 0x60 };
@@ -318,7 +326,7 @@ int touch_get_fb_info(u8 *buf)
 	int res = 0;
 
 
-	for (u32 i = 0; i < 0x10000; i+=4)
+	for (u32 i = 0; i < 0x10000; i += 4)
 	{
 		if (!res)
 		{
@@ -392,11 +400,11 @@ static int touch_init()
 
 int touch_power_on()
 {
-	// Enable LDO6 for touchscreen VDD/AVDD supply.
+	// Enable LDO6 for touchscreen AVDD supply.
 	max7762x_regulator_set_voltage(REGULATOR_LDO6, 2900000);
 	max7762x_regulator_enable(REGULATOR_LDO6, true);
 
-	// Configure touchscreen GPIO.
+	// Configure touchscreen VDD GPIO.
 	PINMUX_AUX(PINMUX_AUX_DAP4_SCLK) = PINMUX_PULL_DOWN | 1;
 	gpio_config(GPIO_PORT_J, GPIO_PIN_7, GPIO_MODE_GPIO);
 	gpio_output_enable(GPIO_PORT_J, GPIO_PIN_7, GPIO_OUTPUT_ENABLE);
@@ -410,7 +418,7 @@ int touch_power_on()
 	// Configure Touscreen and GCAsic shared GPIO.
 	PINMUX_AUX(PINMUX_AUX_CAM_I2C_SDA) = PINMUX_LPDR | PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP | 2;
 	PINMUX_AUX(PINMUX_AUX_CAM_I2C_SCL) = PINMUX_IO_HV | PINMUX_LPDR | PINMUX_TRISTATE | PINMUX_PULL_DOWN | 2;
-	gpio_config(GPIO_PORT_S, GPIO_PIN_3, GPIO_MODE_GPIO);
+	gpio_config(GPIO_PORT_S, GPIO_PIN_3, GPIO_MODE_GPIO); // GC detect.
 
 	// Initialize I2C3.
 	pinmux_config_i2c(I2C_3);

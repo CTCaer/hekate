@@ -943,7 +943,16 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 		touch_panel = touch_get_panel_vendor();
 		if (touch_panel)
-			strcat(txt_buf, touch_panel->vendor);
+		{
+			if (touch_panel->idx == -2) // Touch panel not found, print gpios.
+			{
+				s_printf(txt_buf + strlen(txt_buf), "%2X%2X%2X #FFDD00 Contact me!#",
+					touch_panel->gpio0, touch_panel->gpio1, touch_panel->gpio2);
+				touch_panel = NULL;
+			}
+			else
+				strcat(txt_buf, touch_panel->vendor);
+		}
 		else
 			strcat(txt_buf, "Unknown #FFDD00 Contact me!#");
 
@@ -994,6 +1003,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), " - %s)\n#FF8000 FTB ver:# %04X\n#FF8000 FW rev:# %04X",
 			panel_ic_paired ? "Paired" : "#FFDD00 Error#", touch_fw.ftb_ver, touch_fw.fw_rev);
 	}
+	else
+		strcat(txt_buf, "\n\n#FFDD00 Failed to get touch info!#");
 
 	// Check if patched unit.
 	if (!fuse_check_patched_rcm())
