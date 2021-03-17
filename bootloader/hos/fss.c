@@ -81,15 +81,16 @@ typedef struct _fss_content_t
 	char name[0x10];
 } fss_content_t;
 
-static void _update_r2p(const char *path)
+static void _update_r2p(launch_ctxt_t *ctxt, const char *path)
 {
-	char *r2p_path = malloc(256);
+	char *r2p_path = malloc(512);
 	u32 path_len = strlen(path);
+
 	strcpy(r2p_path, path);
 
 	while(path_len)
 	{
-		if ((r2p_path[path_len - 1] == '/') || (r2p_path[path_len - 1] == 0x5C))
+		if ((r2p_path[path_len - 1] == '/') || (r2p_path[path_len - 1] == '\\'))
 		{
 			r2p_path[path_len] = 0;
 			strcat(r2p_path, "reboot_payload.bin");
@@ -98,6 +99,15 @@ static void _update_r2p(const char *path)
 			is_ipl_updated(r2p_payload, r2p_path, h_cfg.updater2p ? true : false);
 
 			free(r2p_payload);
+
+			// Save fss0 parrent path.
+			if (ctxt)
+			{
+				r2p_path[path_len] = 0;
+				ctxt->fss0_main_path = r2p_path;
+				return;
+			}
+
 			break;
 		}
 		path_len--;
@@ -264,7 +274,7 @@ out:
 		gfx_printf("Done!\n");
 		f_close(&fp);
 
-		_update_r2p(path);
+		_update_r2p(ctxt, path);
 
 		return (!sept_ctxt ? 1 : sept_used);
 	}

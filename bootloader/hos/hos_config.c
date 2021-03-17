@@ -220,6 +220,19 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_exo_usb3_force(launch_ctxt_t *ctxt, const char *value)
+{
+	// Override key found.
+	ctxt->exo_ctx.usb3_force = calloc(sizeof(bool), 1);
+
+	if (*value == '1')
+	{
+		DPRINTF("Enabled USB 3.0\n");
+		*ctxt->exo_ctx.usb3_force = true;
+	}
+	return 1;
+}
+
 static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
@@ -291,6 +304,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "emummcforce", _config_emummc_forced },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },
 	{ "userpmu", _config_exo_user_pmu_access },
+	{ "usb3force", _config_exo_usb3_force },
 	{ "cal0blank", _config_exo_cal0_blanking },
 	{ "cal0writesys", _config_exo_cal0_writes_enable },
 	{ NULL, NULL },

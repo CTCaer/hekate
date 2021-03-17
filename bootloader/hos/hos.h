@@ -51,6 +51,7 @@ typedef struct _exo_ctxt_t
 	bool fs_is_510;
 	bool no_user_exceptions;
 	bool user_pmu;
+	bool *usb3_force;
 	bool *cal0_blank;
 	bool *cal0_allow_writes_sys;
 } exo_ctxt_t;
@@ -107,13 +108,15 @@ typedef struct _launch_ctxt_t
 	link_t kip1_list;
 	char*  kip1_patches;
 
-	u32  fss0_hosver;
 	bool svcperm;
 	bool debugmode;
 	bool stock;
-	bool atmosphere;
-	bool fss0_experimental;
 	bool emummc_forced;
+
+	char *fss0_main_path;
+	u32   fss0_hosver;
+	bool  fss0_experimental;
+	bool  atmosphere;
 
 	exo_ctxt_t exo_ctx;
 
