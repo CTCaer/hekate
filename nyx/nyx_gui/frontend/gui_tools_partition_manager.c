@@ -50,7 +50,7 @@ typedef struct _partition_ctxt_t
 
 	bool emu_double;
 
-	mbr_t *mbr_old;
+	mbr_t mbr_old;
 
 	lv_obj_t *bar_hos;
 	lv_obj_t *bar_emu;
@@ -222,17 +222,15 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 
 static void _prepare_and_flash_mbr_gpt()
 {
-	u8 random_number[16];
 	mbr_t mbr;
-	gpt_t gpt = { 0 };
-	gpt_header_t gpt_hdr_backup = { 0 };
+	u8 random_number[16];
 
 	// Read current MBR.
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
 
 	// Copy over metadata if they exist.
-	if (part_info.mbr_old->bootstrap[0x80])
-		memcpy(&mbr.bootstrap[0x80], &part_info.mbr_old->bootstrap[0x80], 304);
+	if (*(u32 *)&part_info.mbr_old.bootstrap[0x80])
+		memcpy(&mbr.bootstrap[0x80], &part_info.mbr_old.bootstrap[0x80], 304);
 
 	// Clear the first 16MB.
 	memset((void *)SDMMC_UPPER_BUFFER, 0, 0x8000);
@@ -275,49 +273,52 @@ static void _prepare_and_flash_mbr_gpt()
 
 	if (part_info.and_size)
 	{
+		gpt_t *gpt = calloc(1, sizeof(gpt_t));
+		gpt_header_t gpt_hdr_backup = { 0 };
+
 		mbr.partitions[mbr_idx].type = 0xEE; // GPT protective partition.
 		mbr.partitions[mbr_idx].start_sct = 1;
 		mbr.partitions[mbr_idx].size_sct = sd_storage.sec_cnt - 1;
 		mbr_idx++;
 
 		// Set GPT header.
-		memcpy(&gpt.header.signature, "EFI PART", 8);
-		gpt.header.revision = 0x10000;
-		gpt.header.size = 92;
-		gpt.header.my_lba = 1;
-		gpt.header.alt_lba = sd_storage.sec_cnt - 1;
-		gpt.header.first_use_lba = (sizeof(mbr_t) + sizeof(gpt_t)) >> 9;
-		gpt.header.last_use_lba = sd_storage.sec_cnt - 0x800 - 1; // sd_storage.sec_cnt - 33 is start of backup gpt partition entries.
+		memcpy(&gpt->header.signature, "EFI PART", 8);
+		gpt->header.revision = 0x10000;
+		gpt->header.size = 92;
+		gpt->header.my_lba = 1;
+		gpt->header.alt_lba = sd_storage.sec_cnt - 1;
+		gpt->header.first_use_lba = (sizeof(mbr_t) + sizeof(gpt_t)) >> 9;
+		gpt->header.last_use_lba = sd_storage.sec_cnt - 0x800 - 1; // sd_storage.sec_cnt - 33 is start of backup gpt partition entries.
 		se_gen_prng128(random_number);
-		memcpy(gpt.header.disk_guid, random_number, 10);
-		memcpy(gpt.header.disk_guid + 10, "NYXGPT", 6);
-		gpt.header.part_ent_lba = 2;
-		gpt.header.part_ent_size = 128;
+		memcpy(gpt->header.disk_guid, random_number, 10);
+		memcpy(gpt->header.disk_guid + 10, "NYXGPT", 6);
+		gpt->header.part_ent_lba = 2;
+		gpt->header.part_ent_size = 128;
 
 		// Set GPT partitions.
 		u8 basic_part_guid[] = { 0xA2, 0xA0, 0xD0, 0xEB,  0xE5, 0xB9,  0x33, 0x44,  0x87, 0xC0,  0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7 };
-		memcpy(gpt.entries[0].type_guid, basic_part_guid, 16);
+		memcpy(gpt->entries[0].type_guid, basic_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[0].part_guid, random_number, 16);
+		memcpy(gpt->entries[0].part_guid, random_number, 16);
 
 		// Clear non-standard Windows MBR attributes. bit4: Read only, bit5: Shadow copy, bit6: Hidden, bit7: No drive letter.
-		gpt.entries[0].part_guid[7] = 0;
+		gpt->entries[0].part_guid[7] = 0;
 
-		gpt.entries[0].lba_start = mbr.partitions[0].start_sct;
-		gpt.entries[0].lba_end = mbr.partitions[0].start_sct + mbr.partitions[0].size_sct - 1;
-		memcpy(gpt.entries[0].name, (char[]) { 'h', 0, 'o', 0, 's', 0, '_', 0, 'd', 0, 'a', 0, 't', 0, 'a', 0 }, 16);
+		gpt->entries[0].lba_start = mbr.partitions[0].start_sct;
+		gpt->entries[0].lba_end = mbr.partitions[0].start_sct + mbr.partitions[0].size_sct - 1;
+		memcpy(gpt->entries[0].name, (char[]) { 'h', 0, 'o', 0, 's', 0, '_', 0, 'd', 0, 'a', 0, 't', 0, 'a', 0 }, 16);
 
 		u8 gpt_idx = 1;
 		u32 curr_part_lba = 0x8000 + ((u32)part_info.hos_size << 11);
 		u8 android_part_guid[] = { 0xAF, 0x3D, 0xC6, 0x0F,  0x83, 0x84,  0x72, 0x47,  0x8E, 0x79,  0x3D, 0x69, 0xD8, 0x47, 0x7D, 0xE4 };
 		if (part_info.l4t_size)
 		{
-			memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+			memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 			se_gen_prng128(random_number);
-			memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-			gpt.entries[gpt_idx].lba_start = curr_part_lba;
-			gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.l4t_size << 11) - 1;
-			memcpy(gpt.entries[gpt_idx].name, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6);
+			memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+			gpt->entries[gpt_idx].lba_start = curr_part_lba;
+			gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.l4t_size << 11) - 1;
+			memcpy(gpt->entries[gpt_idx].name, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6);
 			sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 
 			curr_part_lba += (part_info.l4t_size << 11);
@@ -325,89 +326,89 @@ static void _prepare_and_flash_mbr_gpt()
 		}
 
 		// Android Vendor partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x200000 - 1; // 1GB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'v', 0, 'e', 0, 'n', 0, 'd', 0, 'o', 0, 'r', 0 }, 12);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x200000 - 1; // 1GB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'v', 0, 'e', 0, 'n', 0, 'd', 0, 'o', 0, 'r', 0 }, 12);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x200000;
 		gpt_idx++;
 
 		// Android System partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x400000 - 1; // 2GB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'A', 0, 'P', 0, 'P', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x400000 - 1; // 2GB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'A', 0, 'P', 0, 'P', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x400000;
 		gpt_idx++;
 
 		// Android Linux Kernel partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x10000 - 1; // 32MB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x10000 - 1; // 32MB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x10000;
 		gpt_idx++;
 
 		// Android Recovery partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x20000 - 1; // 64MB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x20000 - 1; // 64MB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x20000;
 		gpt_idx++;
 
 		// Android Device Tree Reference partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x800 - 1; // 1MB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x800 - 1; // 1MB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x800;
 		gpt_idx++;
 
 		// Android Encryption partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x8000 - 1; // 16MB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'M', 0, 'D', 0, 'A', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x8000 - 1; // 16MB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'M', 0, 'D', 0, 'A', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear 16MB.
 		curr_part_lba += 0x8000;
 		gpt_idx++;
 
 		// Android Cache partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x15E000 - 1; // 700MB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'C', 0, 'A', 0, 'C', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x15E000 - 1; // 700MB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'C', 0, 'A', 0, 'C', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x15E000;
 		gpt_idx++;
 
 		// Android Misc partition.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + 0x1800 - 1; // 3MB.
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'M', 0, 'S', 0, 'C', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + 0x1800 - 1; // 3MB.
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'M', 0, 'S', 0, 'C', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += 0x1800;
 		gpt_idx++;
@@ -416,12 +417,12 @@ static void _prepare_and_flash_mbr_gpt()
 		u32 user_size = (part_info.and_size << 11) - 0x798000; // Subtract the other partitions (3888MB).
 		if (!part_info.emu_size)
 			user_size -= 0x800; // Reserve 1MB.
-		memcpy(gpt.entries[gpt_idx].type_guid, android_part_guid, 16);
+		memcpy(gpt->entries[gpt_idx].type_guid, android_part_guid, 16);
 		se_gen_prng128(random_number);
-		memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-		gpt.entries[gpt_idx].lba_start = curr_part_lba;
-		gpt.entries[gpt_idx].lba_end = curr_part_lba + user_size - 1;
-		memcpy(gpt.entries[gpt_idx].name, (char[]) { 'U', 0, 'D', 0, 'A', 0 }, 6);
+		memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+		gpt->entries[gpt_idx].lba_start = curr_part_lba;
+		gpt->entries[gpt_idx].lba_end = curr_part_lba + user_size - 1;
+		memcpy(gpt->entries[gpt_idx].name, (char[]) { 'U', 0, 'D', 0, 'A', 0 }, 6);
 		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
 		curr_part_lba += user_size;
 		gpt_idx++;
@@ -429,51 +430,53 @@ static void _prepare_and_flash_mbr_gpt()
 		if (part_info.emu_size)
 		{
 			u8 emu_part_guid[] = { 0x00, 0x7E, 0xCA, 0x11,  0x00, 0x00,  0x00, 0x00,  0x00, 0x00,  'e', 'm', 'u', 'M', 'M', 'C' };
-			memcpy(gpt.entries[gpt_idx].type_guid, emu_part_guid, 16);
+			memcpy(gpt->entries[gpt_idx].type_guid, emu_part_guid, 16);
 			se_gen_prng128(random_number);
-			memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-			gpt.entries[gpt_idx].lba_start = curr_part_lba;
+			memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+			gpt->entries[gpt_idx].lba_start = curr_part_lba;
 			if (!part_info.emu_double)
-				gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 11) - 0x800 - 1; // Reserve 1MB.
+				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 11) - 0x800 - 1; // Reserve 1MB.
 			else
-				gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 1;
-			memcpy(gpt.entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0 }, 12);
+				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 1;
+			memcpy(gpt->entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0 }, 12);
 			gpt_idx++;
 
 			if (part_info.emu_double)
 			{
 				curr_part_lba += (part_info.emu_size << 10);
-				memcpy(gpt.entries[gpt_idx].type_guid, emu_part_guid, 16);
+				memcpy(gpt->entries[gpt_idx].type_guid, emu_part_guid, 16);
 				se_gen_prng128(random_number);
-				memcpy(gpt.entries[gpt_idx].part_guid, random_number, 16);
-				gpt.entries[gpt_idx].lba_start = curr_part_lba;
-				gpt.entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 0x800 - 1; // Reserve 1MB.
-				memcpy(gpt.entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0, '2', 0 }, 14);
+				memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+				gpt->entries[gpt_idx].lba_start = curr_part_lba;
+				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 0x800 - 1; // Reserve 1MB.
+				memcpy(gpt->entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0, '2', 0 }, 14);
 				gpt_idx++;
 			}
 		}
 
 		// Set final GPT header parameters.
-		gpt.header.num_part_ents = 128;
-		gpt.header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt.entries, sizeof(gpt_entry_t) * 128);
-		gpt.header.crc32 = 0; // Set to 0 for calculation.
-		gpt.header.crc32 = crc32_calc(0, (const u8 *)&gpt.header, gpt.header.size);
+		gpt->header.num_part_ents = 128;
+		gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, sizeof(gpt_entry_t) * 128);
+		gpt->header.crc32 = 0; // Set to 0 for calculation.
+		gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
 
-		memcpy(&gpt_hdr_backup, &gpt.header, sizeof(gpt_header_t));
+		memcpy(&gpt_hdr_backup, &gpt->header, sizeof(gpt_header_t));
 		gpt_hdr_backup.my_lba = sd_storage.sec_cnt - 1;
 		gpt_hdr_backup.alt_lba = 1;
 		gpt_hdr_backup.part_ent_lba = sd_storage.sec_cnt - 33;
 		gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
 		gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
-		// Write main GPT.
-		sdmmc_storage_write(&sd_storage, gpt.header.my_lba, sizeof(gpt_t) >> 9, &gpt);
+		// Write main gpt.
+		sdmmc_storage_write(&sd_storage, gpt->header.my_lba, sizeof(gpt_t) >> 9, gpt);
 
 		// Write backup GPT partition table.
-		sdmmc_storage_write(&sd_storage, gpt_hdr_backup.part_ent_lba, ((sizeof(gpt_entry_t) * 128) >> 9), gpt.entries);
+		sdmmc_storage_write(&sd_storage, gpt_hdr_backup.part_ent_lba, ((sizeof(gpt_entry_t) * 128) >> 9), gpt->entries);
 
 		// Write backup GPT header.
 		sdmmc_storage_write(&sd_storage, gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
+
+		free(gpt);
 	}
 
 	// Write MBR.
@@ -735,7 +738,7 @@ exit:
 static u32 _get_available_l4t_partition()
 {
 	mbr_t mbr = { 0 };
-	gpt_t gpt = { 0 };
+	gpt_t *gpt = calloc(1, sizeof(gpt_t));
 
 	memset(&l4t_flash_ctxt, 0, sizeof(l4t_flasher_ctxt_t));
 
@@ -743,18 +746,18 @@ static u32 _get_available_l4t_partition()
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
 
 	// Read main GPT.
-	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, &gpt);
+	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	// Search for a suitable partition.
 	u32 size_sct = 0;
-	if (!memcmp(&gpt.header.signature, "EFI PART", 8))
+	if (!memcmp(&gpt->header.signature, "EFI PART", 8))
 	{
-		for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+		for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 		{
-			if (!memcmp(gpt.entries[i].name, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6))
+			if (!memcmp(gpt->entries[i].name, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6))
 			{
-				l4t_flash_ctxt.offset_sct = gpt.entries[i].lba_start;
-				size_sct = (gpt.entries[i].lba_end + 1) - gpt.entries[i].lba_start;
+				l4t_flash_ctxt.offset_sct = gpt->entries[i].lba_start;
+				size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 				break;
 			}
 
@@ -775,29 +778,38 @@ static u32 _get_available_l4t_partition()
 		}
 	}
 
+	free(gpt);
+
 	return size_sct;
 }
 
 static bool _get_available_android_partition()
 {
-	gpt_t gpt = { 0 };
+	gpt_t *gpt = calloc(1, sizeof(gpt_t));
 
 	// Read main GPT.
-	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, &gpt);
+	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	// Check if GPT.
-	if (memcmp(&gpt.header.signature, "EFI PART", 8))
-		return false;
+	if (memcmp(&gpt->header.signature, "EFI PART", 8))
+		goto out;
 
 	// Find kernel partition.
-	for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (gpt.entries[i].lba_start && !memcmp(gpt.entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
+		if (gpt->entries[i].lba_start && !memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
+		{
+			free(gpt);
+
 			return true;
+		}
 
 		if (i > 126)
 			break;
 	}
+
+out:
+	free(gpt);
 
 	return false;
 }
@@ -956,7 +968,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 	if (!btn_idx)
 	{
 		char path[128];
-		gpt_t gpt = { 0 };
+		gpt_t *gpt = calloc(1, sizeof(gpt_t));
 		char *txt_buf = malloc(0x1000);
 
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -983,10 +995,10 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		sd_mount();
 
 		// Read main GPT.
-		sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, &gpt);
+		sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 		bool boot_twrp = false;
-		if (memcmp(&gpt.header.signature, "EFI PART", 8))
+		if (memcmp(&gpt->header.signature, "EFI PART", 8))
 		{
 			lv_label_set_text(lbl_status, "#FFDD00 Error:# No Android GPT was found!");
 			goto error;
@@ -997,12 +1009,12 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		{
 			u32 offset_sct = 0;
 			u32 size_sct = 0;
-			for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+			for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 			{
-				if (!memcmp(gpt.entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
+				if (!memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
 				{
-					offset_sct = gpt.entries[i].lba_start;
-					size_sct = (gpt.entries[i].lba_end + 1) - gpt.entries[i].lba_start;
+					offset_sct = gpt->entries[i].lba_start;
+					size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 					break;
 				}
 
@@ -1050,12 +1062,12 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		{
 			u32 offset_sct = 0;
 			u32 size_sct = 0;
-			for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+			for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 			{
-				if (!memcmp(gpt.entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
+				if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
 				{
-					offset_sct = gpt.entries[i].lba_start;
-					size_sct = (gpt.entries[i].lba_end + 1) - gpt.entries[i].lba_start;
+					offset_sct = gpt->entries[i].lba_start;
+					size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 					break;
 				}
 
@@ -1102,12 +1114,12 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		{
 			u32 offset_sct = 0;
 			u32 size_sct = 0;
-			for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+			for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 			{
-				if (!memcmp(gpt.entries[i].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6))
+				if (!memcmp(gpt->entries[i].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6))
 				{
-					offset_sct = gpt.entries[i].lba_start;
-					size_sct = (gpt.entries[i].lba_end + 1) - gpt.entries[i].lba_start;
+					offset_sct = gpt->entries[i].lba_start;
+					size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 					break;
 				}
 
@@ -1149,12 +1161,12 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 		lv_label_set_text(lbl_status, txt_buf);
 
 		// Check if TWRP is flashed unconditionally.
-		for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+		for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 		{
-			if (!memcmp(gpt.entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
+			if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
 			{
 				u8 *buf = malloc(512);
-				sdmmc_storage_read(&sd_storage, gpt.entries[i].lba_start, 1, buf);
+				sdmmc_storage_read(&sd_storage, gpt->entries[i].lba_start, 1, buf);
 				if (!memcmp(buf, "ANDROID", 7))
 					boot_twrp = true;
 				free(buf);
@@ -1178,6 +1190,7 @@ error:
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
 		free(txt_buf);
+		free(gpt);
 
 		sd_unmount();
 	}
@@ -1359,8 +1372,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	u32 total_size = 0;
 
 	// Read current MBR.
-	part_info.mbr_old = (mbr_t *)calloc(512, 1);
-	sdmmc_storage_read(&sd_storage, 0, 1, part_info.mbr_old);
+	sdmmc_storage_read(&sd_storage, 0, 1, &part_info.mbr_old);
 
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Initializing Ramdisk...");
 	lv_label_set_text(lbl_paths[0], "Please wait...");
@@ -2038,16 +2050,16 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	}
 
 	mbr_t mbr[2] = { 0 };
-	gpt_t gpt = { 0 };
+	gpt_t *gpt = calloc(1, sizeof(gpt_t));
 
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr[0]);
-	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, &gpt);
+	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	memcpy(&mbr[1], &mbr[0], sizeof(mbr_t));
 
 	sd_unmount();
 
-	if (memcmp(&gpt.header.signature, "EFI PART", 8))
+	if (memcmp(&gpt->header.signature, "EFI PART", 8))
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Warning:# No GPT was found!");
 		goto out;
@@ -2055,25 +2067,26 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 
 	// Parse GPT.
 	LIST_INIT(gpt_parsed);
-	for (u32 i = 0; i < gpt.header.num_part_ents; i++)
+	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
 		emmc_part_t *part = (emmc_part_t *)calloc(sizeof(emmc_part_t), 1);
 
-		if (gpt.entries[i].lba_start < gpt.header.first_use_lba)
+		if (gpt->entries[i].lba_start < gpt->header.first_use_lba)
 			continue;
 
 		part->index = i;
-		part->lba_start = gpt.entries[i].lba_start;
-		part->lba_end = gpt.entries[i].lba_end;
+		part->lba_start = gpt->entries[i].lba_start;
+		part->lba_end = gpt->entries[i].lba_end;
 		part->attrs = gpt.entries[i].attrs;
 
 		// ASCII conversion. Copy only the LSByte of the UTF-16LE name.
 		for (u32 j = 0; j < 36; j++)
-			part->name[j] = gpt.entries[i].name[j];
+			part->name[j] = gpt->entries[i].name[j];
 		part->name[35] = 0;
 
 		list_append(&gpt_parsed, &part->link);
 	}
+	free(gpt);
 
 	u32 mbr_idx = 0;
 	LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt_parsed, link)

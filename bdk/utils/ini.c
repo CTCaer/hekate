@@ -66,14 +66,14 @@ ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type
 
 int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 {
+	FIL fp;
 	u32 lblen;
 	u32 pathlen = strlen(ini_path);
 	u32 k = 0;
-	char lbuf[512];
-	char *filelist = NULL;
-	FIL fp;
 	ini_sec_t *csec = NULL;
 
+	char *lbuf = NULL;
+	char *filelist = NULL;
 	char *filename = (char *)malloc(256);
 
 	strcpy(filename, ini_path);
@@ -113,6 +113,8 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 
 			return 0;
 		}
+
+		lbuf = malloc(512);
 
 		do
 		{
@@ -168,6 +170,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 		}
 	} while (is_dir);
 
+	free(lbuf);
 	free(filename);
 	free(filelist);
 

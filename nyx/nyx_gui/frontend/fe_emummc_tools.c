@@ -527,9 +527,9 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	if (resized_count)
 	{
 		// Get USER partition info.
-		LIST_INIT(gpt);
-		nx_emmc_gpt_parse(&gpt, storage);
-		emmc_part_t *user_part = nx_emmc_part_find(&gpt, "USER");
+		LIST_INIT(gpt_parsed);
+		nx_emmc_gpt_parse(&gpt_parsed, storage);
+		emmc_part_t *user_part = nx_emmc_part_find(&gpt_parsed, "USER");
 		if (!user_part)
 		{
 			s_printf(gui->txt_buf, "\n#FFDD00 USER partition not found!#\n");
@@ -541,7 +541,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		user_offset = user_part->lba_start;
 		part->lba_end = user_offset - 1;
-		nx_emmc_gpt_free(&gpt);
+		nx_emmc_gpt_free(&gpt_parsed);
 	}
 
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
@@ -695,55 +695,58 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		// Read MBR, GPT and backup GPT.
 		mbr_t mbr;
-		gpt_t gpt_main;
+		gpt_t *gpt = calloc(1, sizeof(gpt_t));
 		gpt_header_t gpt_hdr_backup;
 		sdmmc_storage_read(storage, 0, 1, &mbr);
-		sdmmc_storage_read(storage, 1, sizeof(gpt_t) >> 9, &gpt_main);
-		sdmmc_storage_read(storage, gpt_main.header.alt_lba, 1, &gpt_hdr_backup);
+		sdmmc_storage_read(storage, 1, sizeof(gpt_t) >> 9, gpt);
+		sdmmc_storage_read(storage, gpt->header.alt_lba, 1, &gpt_hdr_backup);
 
 		// Find USER partition.
 		u32 gpt_entry_idx = 0;
-		for (gpt_entry_idx = 0; gpt_entry_idx < gpt_main.header.num_part_ents; gpt_entry_idx++)
-			if (!memcmp(gpt_main.entries[gpt_entry_idx].name, (char[]) { 'U', 0, 'S', 0, 'E', 0, 'R', 0 }, 8))
+		for (gpt_entry_idx = 0; gpt_entry_idx < gpt->header.num_part_ents; gpt_entry_idx++)
+			if (!memcmp(gpt->entries[gpt_entry_idx].name, (char[]) { 'U', 0, 'S', 0, 'E', 0, 'R', 0 }, 8))
 				break;
 
-		if (gpt_entry_idx >= gpt_main.header.num_part_ents)
+		if (gpt_entry_idx >= gpt->header.num_part_ents)
 		{
 			s_printf(gui->txt_buf, "\n#FF0000 No USER partition...#\nPlease try again...\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			free(gpt);
 
 			return 0;
 		}
 
 		// Set new emuMMC size and USER size.
 		mbr.partitions[0].size_sct = resized_count;
-		gpt_main.entries[gpt_entry_idx].lba_end = user_offset + user_sectors - 1;
+		gpt->entries[gpt_entry_idx].lba_end = user_offset + user_sectors - 1;
 
 		// Update Main GPT.
-		gpt_main.header.alt_lba = resized_count - 1;
-		gpt_main.header.last_use_lba = resized_count - 34;
-		gpt_main.header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt_main.entries, sizeof(gpt_entry_t) * gpt_main.header.num_part_ents);
-		gpt_main.header.crc32 = 0; // Set to 0 for calculation.
-		gpt_main.header.crc32 = crc32_calc(0, (const u8 *)&gpt_main.header, gpt_main.header.size);
+		gpt->header.alt_lba = resized_count - 1;
+		gpt->header.last_use_lba = resized_count - 34;
+		gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, sizeof(gpt_entry_t) * gpt->header.num_part_ents);
+		gpt->header.crc32 = 0; // Set to 0 for calculation.
+		gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
 
 		// Update Backup GPT.
 		gpt_hdr_backup.my_lba = resized_count - 1;
 		gpt_hdr_backup.part_ent_lba = resized_count - 33;
-		gpt_hdr_backup.part_ents_crc32 = gpt_main.header.part_ents_crc32;
+		gpt_hdr_backup.part_ents_crc32 = gpt->header.part_ents_crc32;
 		gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
 		gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
 		// Write main GPT.
-		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_main.header.my_lba, sizeof(gpt_t) >> 9, &gpt_main);
+		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt->header.my_lba, sizeof(gpt_t) >> 9, gpt);
 
 		// Write backup GPT partition table.
-		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_hdr_backup.part_ent_lba, ((sizeof(gpt_entry_t) * 128) >> 9), gpt_main.entries);
+		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_hdr_backup.part_ent_lba, ((sizeof(gpt_entry_t) * 128) >> 9), gpt->entries);
 
 		// Write backup GPT header.
 		sdmmc_storage_write(&sd_storage, sd_sector_off + gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
 
 		// Write MBR.
 		sdmmc_storage_write(&sd_storage, sd_sector_off, 1, &mbr);
+
+		free(gpt);
 	}
 
 	return 1;

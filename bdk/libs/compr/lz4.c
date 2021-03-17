@@ -839,9 +839,11 @@ int LZ4_compress_fast_extState_fastReset(void* state, const char* src, char* dst
 int LZ4_compress_fast(const char* source, char* dest, int inputSize, int maxOutputSize, int acceleration)
 {
     int result;
-    LZ4_stream_t ctx;
-    LZ4_stream_t* const ctxPtr = &ctx;
+    LZ4_stream_t* ctx = (LZ4_stream_t*)ALLOC(sizeof(LZ4_stream_t));
+    LZ4_stream_t* const ctxPtr = ctx;
     result = LZ4_compress_fast_extState(ctxPtr, source, dest, inputSize, maxOutputSize, acceleration);
+
+    FREEMEM(ctx);
 
     return result;
 }
@@ -857,13 +859,18 @@ int LZ4_compress_default(const char* source, char* dest, int inputSize, int maxO
 /* strangely enough, gcc generates faster code when this function is uncommented, even if unused */
 int LZ4_compress_fast_force(const char* source, char* dest, int inputSize, int maxOutputSize, int acceleration)
 {
-    LZ4_stream_t ctx;
-    LZ4_resetStream(&ctx);
+    int result;
+    LZ4_stream_t* ctx = (LZ4_stream_t*)ALLOC(sizeof(LZ4_stream_t));
+    LZ4_resetStream(ctx);
 
     if (inputSize < LZ4_64Klimit)
-        return LZ4_compress_generic(&ctx.internal_donotuse, source, dest, inputSize, maxOutputSize, limitedOutput, byU16,                        noDict, noDictIssue, acceleration);
+        result = LZ4_compress_generic(&ctx->internal_donotuse, source, dest, inputSize, maxOutputSize, limitedOutput, byU16,                        noDict, noDictIssue, acceleration);
     else
-        return LZ4_compress_generic(&ctx.internal_donotuse, source, dest, inputSize, maxOutputSize, limitedOutput, sizeof(void*)==8 ? byU32 : byPtr, noDict, noDictIssue, acceleration);
+        result = LZ4_compress_generic(&ctx->internal_donotuse, source, dest, inputSize, maxOutputSize, limitedOutput, sizeof(void*)==8 ? byU32 : byPtr, noDict, noDictIssue, acceleration);
+
+    FREEMEM(ctx);
+
+    return result;
 }
 
 
@@ -1045,10 +1052,12 @@ static int LZ4_compress_destSize_extState (LZ4_stream_t* state, const char* src,
 
 int LZ4_compress_destSize(const char* src, char* dst, int* srcSizePtr, int targetDstSize)
 {
-    LZ4_stream_t ctxBody;
-    LZ4_stream_t* ctx = &ctxBody;
+    LZ4_stream_t* ctxBody = (LZ4_stream_t*)ALLOC(sizeof(LZ4_stream_t));;
+    LZ4_stream_t* ctx = ctxBody;
 
     int result = LZ4_compress_destSize_extState(ctx, src, dst, srcSizePtr, targetDstSize);
+
+    FREEMEM(ctxBody);
 
     return result;
 }

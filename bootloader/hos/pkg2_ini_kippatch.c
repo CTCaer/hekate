@@ -86,9 +86,9 @@ static ini_kip_sec_t *_ini_create_kip_section(link_t *dst, ini_kip_sec_t *ksec, 
 
 int ini_patch_parse(link_t *dst, char *ini_path)
 {
+	FIL fp;
 	u32 lblen;
 	char lbuf[512];
-	FIL fp;
 	ini_kip_sec_t *ksec = NULL;
 
 	// Open ini.
