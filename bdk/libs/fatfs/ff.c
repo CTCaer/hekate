@@ -3323,11 +3323,13 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 #if FF_SIMPLE_GPT
 	if (fmt >= 2) {
 		/* If GPT Check the first partition */
-		gpt_t gpt;
-		if (disk_read(fs->pdrv, (BYTE *)&gpt, 1, sizeof(gpt_t) / SS(fs))) return FR_DISK_ERR;
-		if (!mem_cmp(&gpt.header.signature, "EFI PART", 8)) {
+		gpt_header_t *gpt_header = (gpt_header_t *)fs->win;
+		if (move_window(fs, 1) != FR_OK) return FR_DISK_ERR;
+		if (!mem_cmp(&gpt_header->signature, "EFI PART", 8)) {
+			if (move_window(fs, gpt_header->part_ent_lba) != FR_OK) return FR_DISK_ERR;
+			gpt_entry_t *gpt_entry = (gpt_entry_t *)fs->win;
 			fs->part_type = 1;
-			bsect = gpt.entries[0].lba_start;
+			bsect = gpt_entry->lba_start;
 			fmt = bsect ? check_fs(fs, bsect) : 3;	/* Check the partition */
 		}
 	}
