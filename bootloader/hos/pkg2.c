@@ -65,6 +65,7 @@ u32 pkg2_newkern_ini1_end;
 #define FREE_CODE_OFF_1ST_900  0x65780
 #define FREE_CODE_OFF_1ST_1000 0x67790
 #define FREE_CODE_OFF_1ST_1100 0x49EE8
+#define FREE_CODE_OFF_1ST_1200 0x48810
 
 #define ID_SND_OFF_100  0x23CC0
 #define ID_SND_OFF_200  0x3F134
@@ -79,6 +80,7 @@ u32 pkg2_newkern_ini1_end;
 #define ID_SND_OFF_1000 0x34404
 #define ID_SND_OFF_1100 0x245B4
 #define ID_SND_OFF_1101 0x245B8
+#define ID_SND_OFF_1200 0x24CF4
 
 #define ID_RCV_OFF_100  0x219F0
 #define ID_RCV_OFF_200  0x3D1A8
@@ -93,6 +95,7 @@ u32 pkg2_newkern_ini1_end;
 #define ID_RCV_OFF_1000 0x322F8
 #define ID_RCV_OFF_1100 0x22B24
 #define ID_RCV_OFF_1101 0x22B28
+#define ID_RCV_OFF_1200 0x23424
 
 static u32 PRC_ID_SND_100[] =
 {
@@ -225,6 +228,20 @@ static u32 PRC_ID_RCV_1100[] =
 {
 	0xA9BF2FEA, 0xF94073EB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF9400308, 0xF9401D08, 0xAA1803E0,
+	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
+};
+
+static u32 PRC_ID_SND_1200[] =
+{
+	0xA9BF2FEA, 0xF9404FEB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
+	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002C8, 0xF9401D08, 0xAA1603E0,
+	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
+};
+#define FREE_CODE_OFF_2ND_1200 (FREE_CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200) + sizeof(u32))
+static u32 PRC_ID_RCV_1200[] =
+{
+	0xA9BF2FEA, 0xF94073EB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
+	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF9400388, 0xF9401D08, 0xAA1C03E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
 
@@ -427,7 +444,23 @@ KERNEL_PATCHSET_DEF(_kernel_1101_patchset,
 		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1101 + sizeof(u32) * 4), NULL}
 );
 
-// Kernel sha256 hashes.
+KERNEL_PATCHSET_DEF(_kernel_12_patchset,
+	{ SVC_GENERIC,   0x2FCB4, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x38440, _NOP(), NULL },          // Disable SVC verifications.
+	{ DEBUG_MODE_EN, 0x45118, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
+	// Atmosphère kernel patches.
+	{ ATM_SYSM_INCR, 0x4809C, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
+	{ ATM_GEN_PATCH, ID_SND_OFF_1200, _B(ID_SND_OFF_1200, FREE_CODE_OFF_1ST_1200), NULL},    // Send process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1200, sizeof(PRC_ID_SND_1200) >> 2, PRC_ID_SND_1200}, // Send process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200),                       // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200), ID_SND_OFF_1200 + sizeof(u32) * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1200, _B(ID_RCV_OFF_1200, FREE_CODE_OFF_2ND_1200), NULL},    // Receive process id branch.
+	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1200, sizeof(PRC_ID_RCV_1200) >> 2, PRC_ID_RCV_1200}, // Receive process id code.
+	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1200 + sizeof(PRC_ID_RCV_1200),                       // Branch back and skip 4 instructions.
+		_B(FREE_CODE_OFF_2ND_1200 + sizeof(PRC_ID_RCV_1200), ID_RCV_OFF_1200 + sizeof(u32) * 4), NULL}
+);
+
+// Kernel sha256 hashes. Offset 0x800 up to INI1 start.
 static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 {
 	{ "\xb8\xc5\x0c\x68\x25\xa9\xb9\x5b", _kernel_1_patchset },   //  1.0.0
@@ -444,6 +477,7 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 	{ "\x21\xc1\xd7\x24\x8e\xcd\xbd\xa8", _kernel_10_patchset },  // 10.0.0. Kernel only.
 	{ "\xD5\xD0\xBA\x5D\x52\xB9\x77\x85", _kernel_11_patchset },  // 11.0.0. Kernel only.
 	{ "\xF8\x1E\xE0\x30\x3C\x7A\x08\x04", _kernel_1101_patchset },// 11.0.1. Kernel only.
+	{ "\xA6\xD8\xFF\xF3\x67\x4A\x33\xFC", _kernel_12_patchset },  // 12.0.0. Kernel only.
 };
 
 enum kip_offset_section
@@ -463,6 +497,7 @@ enum kip_offset_section
 #define GET_KIP_PATCH_OFFSET(x)  ((x) & KIP_PATCH_OFFSET_MASK)
 #define KPS(x) ((u32)(x) << KIP_PATCH_SECTION_SHIFT)
 
+// All kip patch offsets are without the 0x100-sized header.
 static kip1_patch_t _fs_emummc[] =
 {
 	{ KPS(KIP_TEXT) | 1, 0, "", "" },
@@ -686,6 +721,19 @@ static kip1_patchset_t _fs_patches_1100[] =
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nogc_1200[] =
+{
+	{ KPS(KIP_TEXT) | 0x13EA24, 8, "\xFD\x7B\xBE\xA9\xF4\x4F\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x155368, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_1200[] =
+{
+	{ "nogc",     _fs_nogc_1200 },
+	{ "emummc",   _fs_emummc },
+	{ NULL, NULL }
+};
 
 // SHA256 hashes.
 static kip1_id_t _kip_ids[] =
@@ -728,6 +776,8 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x16\x0D\x3E\x10\x4E\xAD\x61\x76", _fs_patches_1020 },      // FS 10.2.0 exfat
 	{ "FS", "\xE3\x99\x15\x6E\x84\x4E\xB0\xAA", _fs_patches_1100 },      // FS 11.0.0
 	{ "FS", "\x0B\xA1\x5B\xB3\x04\xB5\x05\x63", _fs_patches_1100 },      // FS 11.0.0 exfat
+	{ "FS", "\xDC\x2A\x08\x49\x96\xBB\x3C\x01", _fs_patches_1200 },      // FS 12.0.0
+	{ "FS", "\xD5\xA5\xBF\x36\x64\x0C\x49\xEA", _fs_patches_1200 },      // FS 12.0.0 exfat
 };
 
 static kip1_id_t *_kip_id_sets = _kip_ids;
@@ -1311,7 +1361,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				}
 				currPatchset++;
 			}
-			if (emummc_patch_selected && !strncmp(_kip_id_sets[currKipIdx].name, "FS", 2))
+			if (emummc_patch_selected && !strncmp(_kip_id_sets[currKipIdx].name, "FS", sizeof(ki->kip1->name)))
 			{
 				emummc_patch_selected = false;
 				emu_cfg.fs_ver = currKipIdx;

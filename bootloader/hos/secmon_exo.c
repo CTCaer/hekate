@@ -169,17 +169,17 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		exo_fw_no = ctxt->pkg1_id->fuses - 1;                    // 3.0.1 - 7.0.1, 8.0.0 - 8.0.1.
 
 	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8))         // 8.0.0 - 8.0.1.
-	    exo_fw_no++;
+		exo_fw_no++;
+
+	if (!memcmp(ctxt->pkg1_id->id, "20210129111626", 8))         // 12.0.0.
+		exo_fw_no++;
 
 	// Feed old exosphere target versioning to new.
 	if (exo_new)
 	{
 		switch (exo_fw_no)
 		{
-		case 1:
-		case 2:
-		case 3:
-		case 4:
+		case 1 ... 4:
 		case 6:
 			exo_fw_no = EXO_FW_VER(exo_fw_no, 0, 0);
 			break;
@@ -192,11 +192,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		case 7:
 			exo_fw_no = EXO_FW_VER(6, 2, 0);
 			break;
-		case 8:
-			exo_fw_no = EXO_FW_VER(7, 0, 0);
-			break;
-		case 9:
-			exo_fw_no = EXO_FW_VER(8, 0, 0);
+		case 8 ... 9:
+			exo_fw_no = EXO_FW_VER(exo_fw_no - 1, 0, 0);
 			break;
 		case 10:
 			exo_fw_no = EXO_FW_VER(8, 1, 0);
@@ -207,11 +204,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		case 12:
 			exo_fw_no = EXO_FW_VER(9, 1, 0);
 			break;
-		case 13:
-			exo_fw_no = EXO_FW_VER(10, 0, 0);
-			break;
-		case 14:
-			exo_fw_no = EXO_FW_VER(11, 0, 0);
+		case 13 ... 15:
+			exo_fw_no = EXO_FW_VER(exo_fw_no - 3, 0, 0);
 			break;
 		}
 	}

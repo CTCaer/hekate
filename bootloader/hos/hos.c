@@ -684,7 +684,7 @@ static bool _get_fs_exfat_compatible(link_t *info, bool *fs_is_510)
 
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 	{
-		if (strncmp((const char*)ki->kip1->name, "FS", 2))
+		if (strncmp((const char*)ki->kip1->name, "FS", sizeof(ki->kip1->name)))
 			continue;
 
 		if (!se_calc_sha256_oneshot(sha_buf, ki->kip1, ki->size))
@@ -798,12 +798,14 @@ int hos_launch(ini_sec_t *cfg)
 				(!(fuses &    ~0xF) && (ctxt.pkg1_id->fuses >=  5)) || // LAFW v2,  4.0.0+
 				(!(fuses &  ~0x3FF) && (ctxt.pkg1_id->fuses >= 11)) || // LAFW v3,  9.0.0+
 				(!(fuses & ~0x1FFF) && (ctxt.pkg1_id->fuses >= 14))    // LAFW v4, 11.0.0+
+				// Detection broken! Use kip1patch=nogc                // LAFW v5, 12.0.0+
 			  )
 			)
 		|| ((emummc_enabled) &&
 			  (
-				((fuses & 0x400) &&  (ctxt.pkg1_id->fuses <= 10)) || // HOS  9.0.0+ fuses burnt.
+				((fuses & 0x400)  && (ctxt.pkg1_id->fuses <= 10)) || // HOS  9.0.0+ fuses burnt.
 				((fuses & 0x2000) && (ctxt.pkg1_id->fuses <= 13))    // HOS 11.0.0+ fuses burnt.
+				// Detection broken! Use kip1patch=nogc              // HOS 12.0.0+
 			  )
 			))
 			config_kip1patch(&ctxt, "nogc");
