@@ -1140,6 +1140,10 @@ int hos_launch(ini_sec_t *cfg)
 	bpmp_mmu_disable();
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
+	// Scale down RAM OC if enabled.
+	if (ctxt.stock)
+		minerva_prep_boot_freq();
+
 	// emuMMC: Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
 
