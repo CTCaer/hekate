@@ -207,6 +207,21 @@ void gfx_putc(char c)
 				cbuf++;
 			}
 			gfx_con.x += 16;
+			if (gfx_con.x > gfx_ctxt.width - 16)
+			{
+				gfx_con.x = gfx_column;
+				gfx_con.y += 16;
+				if (gfx_con.y > gfx_ctxt.height - 33)
+				{
+					gfx_con.y = 0;
+
+					if (!gfx_column)
+						gfx_column = 640;
+					else
+						gfx_column = 0;
+					gfx_con.x = gfx_column;
+				}
+			}
 		}
 		else if (c == '\n')
 		{
@@ -243,6 +258,21 @@ void gfx_putc(char c)
 				}
 			}
 			gfx_con.x += 8;
+			if (gfx_con.x > gfx_ctxt.width / 2 + gfx_column - 8)
+			{
+				gfx_con.x = gfx_column;
+				gfx_con.y += 8;
+				if (gfx_con.y > gfx_ctxt.height - 33)
+				{
+					gfx_con.y = 0;
+
+					if (!gfx_column)
+						gfx_column = 640;
+					else
+						gfx_column = 0;
+					gfx_con.x = gfx_column;
+				}
+			}
 		}
 		else if (c == '\n')
 		{
