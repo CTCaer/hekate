@@ -706,6 +706,7 @@ void display_color_screen(u32 color);
 /*! Switches screen backlight ON/OFF. */
 void display_backlight(bool enable);
 void display_backlight_brightness(u32 brightness, u32 step_delay);
+u32  display_get_backlight_brightness();
 
 /*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
 u32 *display_init_framebuffer_pitch();

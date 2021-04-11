@@ -507,6 +507,11 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 		PWM(PWM_CONTROLLER_PWM_CSR_0) = 0;
 }
 
+u32 display_get_backlight_brightness()
+{
+	return ((PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF);
+}
+
 static void _display_panel_and_hw_end(bool no_panel_deinit)
 {
 	if (no_panel_deinit)
