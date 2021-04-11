@@ -991,6 +991,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case 0x32000501:
 		case 0x33000502:
+		case 0x33000503:
 			strcat(txt_buf, "4CD UNKN");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 4;
