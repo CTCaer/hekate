@@ -88,6 +88,7 @@ static void _config_oscillators()
 	CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2;             // Set HCLK div to 1 and PCLK div to 3.
 }
 
+// The uart is skipped for Copper, Hoag and Calcio. Used in Icosa, Iowa and Aula.
 static void _config_gpios(bool nx_hoag)
 {
 	// Clamp inputs when tristated.
@@ -420,7 +421,7 @@ void hw_init()
 	bpmp_mmu_enable();
 }
 
-void hw_reinit_workaround(bool coreboot, u32 magic)
+void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 {
 	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
@@ -462,11 +463,22 @@ void hw_reinit_workaround(bool coreboot, u32 magic)
 		PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
 	}
 
-	// Power off display.
-	display_end();
+	// Seamless display or display power off.
+	switch (bl_magic)
+	{
+	case BL_MAGIC_CRBOOT_SLD:;
+		// Set pwm to 0%, switch to gpio mode and restore pwm duty.
+		u32 brightness = display_get_backlight_brightness();
+		display_backlight_brightness(0, 1000);
+		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_GPIO);
+		display_backlight_brightness(brightness, 0);
+		break;
+	default:
+		display_end();
+	}
 
 	// Enable clock to USBD and init SDMMC1 to avoid hangs with bad hw inits.
-	if (magic == 0xBAADF00D)
+	if (bl_magic == BL_MAGIC_BROKEN_HWI)
 	{
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_USBD);
 		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, 0);

@@ -143,6 +143,7 @@ void check_power_off_from_hos()
 #define EXT_PAYLOAD_ADDR    0xC0000000
 #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
 #define COREBOOT_END_ADDR   0xD0000000
+#define COREBOOT_VER_OFF    0x41
 #define CBFS_DRAM_EN_ADDR   0x4003e000
 #define  CBFS_DRAM_MAGIC    0x4452414D // "DRAM"
 
@@ -268,7 +269,12 @@ int launch_payload(char *path, bool update)
 		else
 		{
 			reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
-			hw_reinit_workaround(true, 0);
+
+			// Get coreboot seamless display magic.
+			u32 magic = 0;
+			char *magic_ptr = buf + COREBOOT_VER_OFF;
+			memcpy(&magic, magic_ptr + strlen(magic_ptr) - 4, 4);
+			hw_reinit_workaround(true, magic);
 		}
 
 		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.

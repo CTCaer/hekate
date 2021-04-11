@@ -20,6 +20,9 @@
 
 #include <utils/types.h>
 
+#define BL_MAGIC_CRBOOT_SLD 0x30444C53 // SLD0, seamless display type 0.
+#define BL_MAGIC_BROKEN_HWI 0xBAADF00D // Broken hwinit.
+
 void hw_init();
 void hw_reinit_workaround(bool coreboot, u32 magic);
 u32  hw_get_chip_id();
