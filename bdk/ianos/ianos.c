@@ -45,6 +45,7 @@ static void _ianos_call_ep(moduleEntrypoint_t entrypoint, void *moduleConfig)
 	bdkParameters->sharedHeap = &_heap;
 
 	// Extra functions.
+	bdkParameters->extension_magic = IANOS_EXT0;
 	bdkParameters->reg_voltage_set = (reg_voltage_set_t)&max7762x_regulator_set_voltage;
 
 	entrypoint(moduleConfig, bdkParameters);

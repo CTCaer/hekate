@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <mem/heap.h>
 
+#define IANOS_EXT0 0x304E4149
+
 // Module Callback
 typedef void (*cbMainModule_t)(const char *s);
 typedef void (*memcpy_t)(void *, void *, size_t);
@@ -34,6 +36,7 @@ typedef struct _bdkParams_t
 	heap_t *sharedHeap;
 	memcpy_t memcpy;
 	memset_t memset;
+	u32 extension_magic;
 	reg_voltage_set_t reg_voltage_set;
 } *bdkParams_t;
 
