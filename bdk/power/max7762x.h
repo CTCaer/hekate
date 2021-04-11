@@ -32,11 +32,11 @@
 *  ldo1 | XUSB, PCIE    | 25000   | 800000 | 1050000    | 1050000 | 1.05V  (pcv)
 *  ldo2 | SDMMC1        | 50000   | 800000 | 1800000    | 3300000 |
 *  ldo3 | GC ASIC       | 50000   | 800000 | 3100000    | 3100000 | 3.1V   (pcv)
-*  ldo4 | RTC           | 12500   | 800000 |  850000    |  850000 |
+*  ldo4 | RTC           | 12500   | 800000 |  850000    |  850000 | 0.85V  (AO, pcv)
 *  ldo5 | GC Card       | 50000   | 800000 | 1800000    | 1800000 | 1.8V   (pcv)
-*  ldo6 | Touch, ALS    | 50000   | 800000 | 2900000    | 2900000 | 2.9V
-*  ldo7 | XUSB          | 50000   | 800000 | 1050000    | 1050000 |
-*  ldo8 | XUSB, DC      | 50000   | 800000 | 1050000    | 1050000 |
+*  ldo6 | Touch, ALS    | 50000   | 800000 | 2900000    | 2900000 | 2.9V   (pcv)
+*  ldo7 | XUSB          | 50000   | 800000 | 1050000    | 1050000 | 1.05V  (pcv)
+*  ldo8 | XUSB, DP, MCU | 50000   | 800000 | 1050000    | 2800000 | 1.05V/2.8V (pcv)
 */
 
 /*
@@ -135,10 +135,10 @@
 #define MAX77621_CTRL_HOS_CFG 0
 #define MAX77621_CTRL_POR_CFG 1
 
-int max77620_regulator_get_status(u32 id);
-int max77620_regulator_config_fps(u32 id);
-int max7762x_regulator_set_voltage(u32 id, u32 mv);
-int max7762x_regulator_enable(u32 id, bool enable);
+int  max77620_regulator_get_status(u32 id);
+int  max77620_regulator_config_fps(u32 id);
+int  max7762x_regulator_set_voltage(u32 id, u32 mv);
+int  max7762x_regulator_enable(u32 id, bool enable);
 void max77620_config_gpio(u32 id, bool enable);
 void max77620_config_default();
 void max77620_low_battery_monitor_config(bool enable);
