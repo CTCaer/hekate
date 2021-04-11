@@ -21,6 +21,7 @@
 #include "elfload/elfload.h"
 #include <module.h>
 #include <mem/heap.h>
+#include <power/max7762x.h>
 #include <storage/nx_sd.h>
 #include <utils/types.h>
 
@@ -42,6 +43,9 @@ static void _ianos_call_ep(moduleEntrypoint_t entrypoint, void *moduleConfig)
 	bdkParameters->memcpy = (memcpy_t)&memcpy;
 	bdkParameters->memset = (memset_t)&memset;
 	bdkParameters->sharedHeap = &_heap;
+
+	// Extra functions.
+	bdkParameters->reg_voltage_set = (reg_voltage_set_t)&max7762x_regulator_set_voltage;
 
 	entrypoint(moduleConfig, bdkParameters);
 }
