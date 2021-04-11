@@ -140,7 +140,4 @@ void _minerva_do_over_temp_compensation(mtc_config_t *mtc_cfg);
 /* Over temp and periodic compensation, should not access EMC_MRR at the same time. */
 u32  _minerva_do_periodic_compensation(emc_table_t *mtc_table_entry);
 
-/* Main function used to access all Minerva functions. */
-void _minerva_init(mtc_config_t *mtc_cfg, void* bp);
-
 #endif
