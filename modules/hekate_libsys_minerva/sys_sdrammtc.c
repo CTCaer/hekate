@@ -28,8 +28,9 @@
 #define EPRINTF(...)
 #define EPRINTFARGS(...)
 
-#define MAX_FREQ_T210  1600000
-//#define OVERCLOCK_FREQ 1862400
+#define MAX_FREQ_T210     1600000
+//#define OVERCLOCK_FREQ    1862400
+//#define OVERCLOCK_VOLTAGE 1200000 // Default is 1100mV and in HOS 1125mV.
 
 bool emc_2X_clk_src_is_pllmb;
 bool fsp_for_src_freq;
@@ -3876,7 +3877,7 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 	mtc_cfg->init_done = MTC_INIT_MAGIC;
 }
 
-void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
+void _minerva_init(mtc_config_t *mtc_cfg, bdkParams_t bp)
 {
 	EPRINTF("-- Minerva Training Cell --");
 
@@ -3887,7 +3888,14 @@ void _minerva_init(mtc_config_t *mtc_cfg, void* bp)
 	if (mtc_cfg->init_done != MTC_INIT_MAGIC)
 	{
 		if (mtc_cfg->init_done == MTC_NEW_MAGIC)
+		{
 			_minerva_get_table(mtc_cfg);
+#ifdef OVERCLOCK_VOLTAGE
+			// Set SD1 regulator voltage.
+			if ((bp->extension_magic & 0xF0FFFFFF) == IANOS_EXT0)
+				bp->reg_voltage_set(1, OVERCLOCK_VOLTAGE);
+#endif
+		}
 		return;
 	}
 
