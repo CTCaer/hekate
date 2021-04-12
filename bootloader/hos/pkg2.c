@@ -1183,7 +1183,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				if (numPatches >= MAX_NUM_PATCHES_REQUESTED)
 					return "too_many_patches";
 			}
-			else if (*p >= 'A' && *p <= 'Z')
+			else if (*p >= 'A' && *p <= 'Z') // Convert to lowercase.
 				*p += 0x20;
 		}
 	}
@@ -1308,7 +1308,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						emummc_patch_selected = true;
 						patchesApplied |= appliedMask;
 
-						break;
+						continue; // Continue in case it's double defined.
 					}
 
 					if (currPatchset->patches == NULL)
@@ -1316,7 +1316,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 						gfx_printf("Patch '%s' not necessary for %s KIP1\n", currPatchset->name, (const char*)ki->kip1->name);
 						patchesApplied |= appliedMask;
 
-						break;
+						continue; // Continue in case it's double defined.
 					}
 
 					unsigned char* kipSectData = ki->kip1->data;
@@ -1338,7 +1338,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 								}
 
 								u32 currOffset = GET_KIP_PATCH_OFFSET(currPatch->offset);
-								// If source is does not match and is not already patched, throw an error.
+								// If source does not match and is not already patched, throw an error.
 								if ((memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0) &&
 									(memcmp(&kipSectData[currOffset], currPatch->dstData, currPatch->length) != 0))
 								{
@@ -1357,7 +1357,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 					}
 
 					patchesApplied |= appliedMask;
-					break;
+					continue; // Continue in case it's double defined.
 				}
 				currPatchset++;
 			}
