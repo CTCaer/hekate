@@ -205,9 +205,9 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 	return true;
 }
 
-int launch_payload(char *path, bool update)
+int launch_payload(char *path, bool update, bool clear_screen)
 {
-	if (!update)
+	if (clear_screen)
 		gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
@@ -216,7 +216,7 @@ int launch_payload(char *path, bool update)
 		FIL fp;
 		if (f_open(&fp, path, FA_READ))
 		{
-			gfx_con.mute = 0;
+			gfx_con.mute = false;
 			EPRINTFARGS("Payload file is missing!\n(%s)", path);
 
 			goto out;
@@ -236,7 +236,7 @@ int launch_payload(char *path, bool update)
 			{
 				f_close(&fp);
 
-				gfx_con.mute = 0;
+				gfx_con.mute = false;
 				EPRINTF("Coreboot not allowed on Mariko!");
 
 				goto out;
@@ -308,7 +308,7 @@ void auto_launch_update()
 	{
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
-			launch_payload("bootloader/update.bin", true);
+			launch_payload("bootloader/update.bin", true, false);
 		else
 		{
 			u8 *buf = calloc(0x200, 1);
@@ -393,7 +393,7 @@ void launch_tools()
 		memcpy(dir + strlen(dir), "/", 2);
 		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
 
-		launch_payload(dir, false);
+		launch_payload(dir, false, true);
 		EPRINTF("Failed to launch payload.");
 	}
 
@@ -512,7 +512,7 @@ void ini_list_launcher()
 
 	if (payload_path)
 	{
-		launch_payload(payload_path, false);
+		launch_payload(payload_path, false, true);
 		EPRINTF("Failed to launch payload.");
 		free(payload_path);
 	}
@@ -654,7 +654,7 @@ void launch_firmware()
 
 	if (payload_path)
 	{
-		launch_payload(payload_path, false);
+		launch_payload(payload_path, false, true);
 		EPRINTF("Failed to launch payload.");
 		free(payload_path);
 	}
@@ -1064,7 +1064,7 @@ skip_list:
 
 	if (payload_path)
 	{
-		launch_payload(payload_path, false);
+		launch_payload(payload_path, false, false);
 		free(payload_path);
 		goto payload_error;
 	}
@@ -1092,7 +1092,7 @@ wrong_emupath:
 		}
 
 payload_error:
-		gfx_con.mute = 0;
+		gfx_con.mute = false;
 		gfx_printf("\nPress any key...\n");
 		display_backlight_brightness(h_cfg.backlight, 1000);
 		msleep(500);
