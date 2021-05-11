@@ -59,11 +59,6 @@ const volatile char __attribute__((section ("._octopus"))) octopus[] =
 
 void loader_main()
 {
-	// Preserve sections.
-	__asm__ ("" : : "" (b_cfg));
-	__asm__ ("" : : "" (ipl_ver));
-	__asm__ ("" : : "" (octopus[0]));
-
 	// Preliminary BPMP clocks init.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 0x10;          // Set HCLK div to 2 and PCLK div to 1.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SYS) = 0;              // Set SCLK div to 1.
