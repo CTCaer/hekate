@@ -94,8 +94,8 @@ enum tree_update_mode_t
 
 enum emc_channels
 {
-	EMC_CH0 = 0,
-	EMC_CH1 = 1
+	EMC_CHANNEL0 = 0,
+	EMC_CHANNEL1 = 1
 };
 
 enum EMC_2X_CLK_SRC

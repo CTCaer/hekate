@@ -179,7 +179,8 @@
 #define  TIMING_UPDATE_STALLED  (1 << 23)
 #define  MRR_DIVLD              (1 << 20)
 #define  IN_SELF_REFRESH_MASK   (3 << 8)
-#define  IN_POWERDOWN_MASK      (3 << 4)
+#define  IN_POWERDOWN_BOTH_MASK (3 << 4)
+#define  IN_POWERDOWN_1DEV_MASK (1 << 4)
 #define  REQ_FIFO_EMPTY         (1 << 0)
 
 #define EMC_CFG_2                     0x2B8
