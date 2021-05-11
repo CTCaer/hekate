@@ -41,6 +41,7 @@ extern volatile nyx_storage_t *nyx_str;
 typedef struct _partition_ctxt_t
 {
 	u32 total_sct;
+	u32 alignment;
 	int backup_possible;
 
 	s32 hos_size;
@@ -260,11 +261,11 @@ static void _prepare_and_flash_mbr_gpt()
 			mbr.partitions[mbr_idx].size_sct = (part_info.emu_size << 11) - 0x800; // Reserve 1MB.
 		else
 		{
-			mbr.partitions[mbr_idx].type = 0xE0; // emuMMC partition.
 			mbr.partitions[mbr_idx].size_sct = part_info.emu_size << 10;
 			mbr_idx++;
 
 			// 2nd emuMMC.
+			mbr.partitions[mbr_idx].type = 0xE0; // emuMMC partition.
 			mbr.partitions[mbr_idx].start_sct = mbr.partitions[mbr_idx - 1].start_sct + (part_info.emu_size << 10);
 			mbr.partitions[mbr_idx].size_sct = (part_info.emu_size << 10) - 0x800; // Reserve 1MB.
 		}
@@ -467,7 +468,7 @@ static void _prepare_and_flash_mbr_gpt()
 		gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
 		gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
-		// Write main gpt.
+		// Write main GPT.
 		sdmmc_storage_write(&sd_storage, gpt->header.my_lba, sizeof(gpt_t) >> 9, gpt);
 
 		// Write backup GPT partition table.
@@ -1417,6 +1418,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 
 	// Set reserved size.
 	u32 part_rsvd_size = (part_info.emu_size << 11) + (part_info.l4t_size << 11) + (part_info.and_size << 11);
+	part_rsvd_size += part_info.alignment;
 	disk_set_info(DRIVE_SD, SET_SECTOR_COUNT, &part_rsvd_size);
 	u8 *buf = malloc(0x400000);
 
@@ -2293,6 +2295,11 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	char *txt_buf = malloc(0x2000);
 
 	part_info.total_sct = sd_storage.sec_cnt;
+
+	// Align down total size to ensure alignment of all partitions after HOS one.
+	part_info.alignment = part_info.total_sct - ALIGN_DOWN(part_info.total_sct, 0x8000);	
+	part_info.total_sct -= part_info.alignment;
+
 	u32 extra_sct = 0x8000 + 0x400000; // Reserved 16MB alignment for FAT partition + 2GB.
 
 	// Set initial HOS partition size, so the correct cluster size can be selected.
