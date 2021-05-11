@@ -55,12 +55,13 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 	*part_idx = 0;
 	int i = 0;
 	u32 curr_part_size = 0;
+	// Find first partition with emuMMC GPP.
 	for (i = 1; i < 4; i++)
 	{
 		curr_part_size = mbr->partitions[i].size_sct;
 		*sector_start = mbr->partitions[i].start_sct;
 		u8 type = mbr->partitions[i].type;
-		u32 sector_size_safe = !backup ? (*sector_size) + 0x8000 : (*sector_size);
+		u32 sector_size_safe = backup ? 0x400000 : (*sector_size) + 0x8000; // 2GB min safe size for backup.
 		if ((curr_part_size >= sector_size_safe) && *sector_start && type != 0x83 && (!backup || type == 0xE0))
 		{
 			if (backup)
@@ -84,6 +85,7 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 				break;
 		}
 	}
+	free(mbr);
 
 	if (i < 4)
 		*part_idx = i;
@@ -94,7 +96,7 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 		*part_idx = 0;
 	}
 
-	free(mbr);
+	// Get emuMMC GPP size.
 	if (backup && *part_idx && *sector_size)
 	{
 		gpt_t *gpt = (gpt_t *)calloc(sizeof(gpt_t), 1);
@@ -353,6 +355,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 	partial_sd_full_unmount = false;
 
 	u32 multipartSplitSize = (1u << 31);
+	u32 lba_end = part->lba_end;
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
@@ -384,7 +387,10 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 		}
 		sd_sector_off = sector_start + (0x2000 * active_part);
 		if (active_part == 2)
+		{
 			totalSectors = sector_size;
+			lba_end = sector_size + part->lba_start - 1;
+		}
 	}
 
 	s_printf(gui->txt_buf, "#96FF00 SD Card free space:# %d MiB\n#96FF00 Total backup size:# %d MiB\n\n",
@@ -670,7 +676,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 
 		manual_system_maintenance(false);
 
-		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
+		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
 			lv_bar_set_value(gui->bar, pct);
