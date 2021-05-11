@@ -454,7 +454,7 @@ void ini_list_launcher()
 				if (cfg_sec)
 				{
 					u32 non_cfg = 1;
-					for (int j = 2; j < i; j++)
+					for (u32 j = 2; j < i; j++)
 					{
 						if (ments[j].type != INI_CHOICE)
 							non_cfg++;
@@ -596,7 +596,7 @@ void launch_firmware()
 			if (cfg_sec)
 			{
 				u8 non_cfg = 4;
-				for (int j = 5; j < i; j++)
+				for (u32 j = 5; j < i; j++)
 				{
 					if (ments[j].type != INI_CHOICE)
 						non_cfg++;
@@ -1361,8 +1361,8 @@ void ipl_reload()
 static void _about()
 {
 	static const char credits[] =
-		"\nhekate     (c) 2018 naehrwert, st4rk\n\n"
-		"CTCaer mod (c) 2018 CTCaer\n"
+		"\nhekate   (c) 2018,      naehrwert, st4rk\n\n"
+		"         (c) 2018-2021, CTCaer\n\n"
 		" ___________________________________________\n\n"
 		"Thanks to: %kderrek, nedwill, plutoo,\n"
 		"           shuffle2, smea, thexyz, yellows8%k\n"
@@ -1371,15 +1371,15 @@ static void _about()
 		"              Shiny Quagsire, WinterMute\n"
 		" ___________________________________________\n\n"
 		"Open source and free packages used:\n\n"
-		" - FatFs R0.13b,\n"
-		"   Copyright (c) 2018, ChaN\n\n"
-		" - bcl-1.2.0,\n"
-		"   Copyright (c) 2003-2006, Marcus Geelnard\n\n"
-		" - Atmosphere (Exo st/types, prc id patches),\n"
-		"   Copyright (c) 2018-2019, Atmosphere-NX\n\n"
-		" - elfload,\n"
-		"   Copyright (c) 2014, Owen Shepherd\n"
-		"   Copyright (c) 2018, M4xw\n"
+		" - FatFs R0.13b\n"
+		"   (c) 2018, ChaN\n\n"
+		" - bcl-1.2.0\n"
+		"   (c) 2003-2006, Marcus Geelnard\n\n"
+		" - Atmosphere (Exo st/types, prc id patches)\n"
+		"   (c) 2018-2019, Atmosphere-NX\n\n"
+		" - elfload\n"
+		"   (c) 2014, Owen Shepherd\n"
+		"   (c) 2018, M4xw\n"
 		" ___________________________________________\n\n";
 	static const char octopus[] =
 		"                         %k___\n"
