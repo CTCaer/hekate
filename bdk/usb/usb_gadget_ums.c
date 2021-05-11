@@ -203,7 +203,7 @@ typedef struct _bulk_ctxt_t {
 typedef struct _usbd_gadget_ums_t {
 	bulk_ctxt_t bulk_ctxt;
 
-	int  cmnd_size;
+	u32  cmnd_size;
 	u8   cmnd[SCSI_MAX_CMD_SZ];
 
 	u32  lun_idx; // lun index
@@ -583,22 +583,20 @@ static int _scsi_write(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 	while (amount_left_to_write > 0)
 	{
-
 		/* Queue a request for more data from the host */
-		if (amount_left_to_req)
+		if (amount_left_to_req > 0)
 		{
 
 			// Limit write to max supported read from EP OUT.
 			amount = MIN(amount_left_to_req, UMS_EP_OUT_MAX_XFER);
 
-			if (usb_lba_offset >= ums->lun.num_sectors) //////////Check if it works with concurrency
+			if (usb_lba_offset >= ums->lun.num_sectors)
 			{
 				ums->set_text(ums->label, "#FFDD00 Error:# Write - Past last sector!");
-				amount_left_to_req = 0;
 				ums->lun.sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 				ums->lun.sense_data_info = usb_lba_offset;
 				ums->lun.info_valid = 1;
-				continue;
+				break;
 			}
 
 			// Get the next buffer.
@@ -1114,7 +1112,7 @@ static int _scsi_read_format_capacities(usbd_gadget_ums_t *ums, bulk_ctxt_t *bul
 
 // Check whether the command is properly formed and whether its data size
 // and direction agree with the values we already have.
-static int _ums_check_scsi_cmd(usbd_gadget_ums_t *ums, int cmnd_size,
+static int _ums_check_scsi_cmd(usbd_gadget_ums_t *ums, u32 cmnd_size,
 	enum data_direction data_dir, u32 mask, int needs_medium)
 {
 //const char dirletter[4] = {'u', 'o', 'i', 'n'};
@@ -1608,7 +1606,7 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 	/* Is the CBW meaningful? */
 	if (cbw->Lun >= UMS_MAX_LUN || cbw->Flags & ~USB_BULK_IN_FLAG ||
-			cbw->Length <= 0 || cbw->Length > SCSI_MAX_CMD_SZ)
+			cbw->Length == 0 || cbw->Length > SCSI_MAX_CMD_SZ)
 	{
 		gfx_printf("USB: non-meaningful CBW: lun = %X, flags = 0x%X, cmdlen %X\n",
 			cbw->Lun, cbw->Flags, cbw->Length);
@@ -1908,7 +1906,10 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 		send_status(&ums, &ums.bulk_ctxt);
 	} while (ums.state != UMS_STATE_TERMINATED);
 
-	ums.set_text(ums.label, "#C7EA46 Status:# Disk ejected");
+	if (ums.lun.prevent_medium_removal)
+		ums.set_text(ums.label, "#FFDD00 Error:# Disk unsafely ejected");
+	else
+		ums.set_text(ums.label, "#C7EA46 Status:# Disk ejected");
 	goto exit;
 
 error:
