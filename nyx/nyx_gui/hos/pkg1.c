@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ static const u8 sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTIO
 static const u8 sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
 static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
 
+    // ID (Timestamp),  KB, TSEC,   PK11,   SECMON,     Warmboot.
 static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121183008",  0, 0x1900, 0x3FE0, 0x40014020, 0x8000D000 }, //  1.0.0.
 	{ "20170210155124",  0, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000 }, //  2.0.0 - 2.3.0.
@@ -59,7 +60,6 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20200303104606", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 10.0.0 - 10.2.0.
 	{ "20201030110855", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 11.0.0 - 11.0.1
 	{ "20210129111626", 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 12.0.0+
-	{ NULL } //End.
 };
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
@@ -70,7 +70,7 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
 		build_date[14] = 0;
 	}
 
-	for (u32 i = 0; _pkg1_ids[i].id; i++)
+	for (u32 i = 0; i < ARRAY_SIZE(_pkg1_ids); i++)
 		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 8))
 			return &_pkg1_ids[i];
 	return NULL;
@@ -78,13 +78,13 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
 
 int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 {
-	// Decrypt package1.
 	pk11_hdr_t *hdr;
-	u8 *pkg11 = pkg1 + id->pkg11_off;
-	u32 pkg11_size = *(u32 *)pkg11;
 
+	// Decrypt package1.
 	if (!h_cfg.t210b01)
 	{
+		u8 *pkg11 = pkg1 + id->pkg11_off;
+		u32 pkg11_size = *(u32 *)pkg11;
 		hdr = (pk11_hdr_t *)(pkg11 + 0x20);
 		se_aes_crypt_ctr(11, hdr, pkg11_size, hdr, pkg11_size, pkg11 + 0x10);
 	}

@@ -127,10 +127,6 @@ PATCHSET_DEF(_warmboot_1_patchset,
 	{ 0x4DC, _NOPv7() } // Fuse check.
 );
 
-PATCHSET_DEF(_warmboot_2_patchset,
-	{ 0x4DC, _NOPv7() } // Fuse check.
-);
-
 PATCHSET_DEF(_warmboot_3_patchset,
 	{ 0x4DC, _NOPv7() }, // Fuse check.
 	{ 0x4F0, _NOPv7() }  // Segment id check.
@@ -155,29 +151,28 @@ static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTIO
 
     // ID (Timestamp), KB, Fuses, TSEC, PK11,   SECMON,     Warmboot.
 static const pkg1_id_t _pkg1_ids[] = {
-	{ "20161121183008",  0,  1, 0x1900, 0x3FE0, SM_100_ADR, 0x8000D000, _secmon_1_patchset,  _warmboot_1_patchset }, // 1.0.0 (Patched relocator).
-	{ "20170210155124",  0,  2, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_2_patchset,  _warmboot_2_patchset }, // 2.0.0 - 2.3.0.
-	{ "20170519101410",  1,  3, 0x1A00, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_3_patchset,  _warmboot_3_patchset }, // 3.0.0.
-	{ "20170710161758",  2,  4, 0x1A00, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_3_patchset,  _warmboot_3_patchset }, // 3.0.1 - 3.0.2.
-	{ "20170921172629",  3,  5, 0x1800, 0x3FE0, 0x4002B000, 0x4003B000, _secmon_4_patchset,  _warmboot_4_patchset }, // 4.0.0 - 4.1.0.
-	{ "20180220163747",  4,  6, 0x1900, 0x3FE0, 0x4002B000, 0x4003B000, _secmon_5_patchset,  _warmboot_4_patchset }, // 5.0.0 - 5.1.0.
-	{ "20180802162753",  5,  7, 0x1900, 0x3FE0, 0x4002B000, 0x4003D800, _secmon_6_patchset,  _warmboot_4_patchset }, // 6.0.0 - 6.1.0.
-	{ "20181107105733",  6,  8, 0x0E00, 0x6FE0, 0x4002B000, 0x4003D800, _secmon_62_patchset, _warmboot_4_patchset }, // 6.2.0.
-	{ "20181218175730",  7,  9, 0x0F00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, //  7.0.0.
-	{ "20190208150037",  7,  9, 0x0F00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, //  7.0.1.
-	{ "20190314172056",  7,  9, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, //  8.0.0 - 8.0.1.
-	{ "20190531152432",  8, 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, //  8.1.0 - 8.1.1.
-	{ "20190809135709",  9, 11, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, //  9.0.0 - 9.0.1.
-	{ "20191021113848", 10, 12, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, //  9.1.0 - 9.2.0.
-	{ "20200303104606", 10, 13, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 10.0.0 - 10.2.0.
-	{ "20201030110855", 10, 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 11.0.0 - 11.0.1
-	{ "20210129111626", 10, 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL, NULL }, // 12.0.0+
-	{ NULL } // End.
+	{ "20161121183008",  0,  1, 0x1900, 0x3FE0, SM_100_ADR, 0x8000D000, _secmon_1_patchset }, // 1.0.0 (Patched relocator).
+	{ "20170210155124",  0,  2, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_2_patchset }, // 2.0.0 - 2.3.0.
+	{ "20170519101410",  1,  3, 0x1A00, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_3_patchset }, // 3.0.0.
+	{ "20170710161758",  2,  4, 0x1A00, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_3_patchset }, // 3.0.1 - 3.0.2.
+	{ "20170921172629",  3,  5, 0x1800, 0x3FE0, 0x4002B000, 0x4003B000, _secmon_4_patchset }, // 4.0.0 - 4.1.0.
+	{ "20180220163747",  4,  6, 0x1900, 0x3FE0, 0x4002B000, 0x4003B000, _secmon_5_patchset }, // 5.0.0 - 5.1.0.
+	{ "20180802162753",  5,  7, 0x1900, 0x3FE0, 0x4002B000, 0x4003D800, _secmon_6_patchset }, // 6.0.0 - 6.1.0.
+	{ "20181107105733",  6,  8, 0x0E00, 0x6FE0, 0x4002B000, 0x4003D800, _secmon_62_patchset}, // 6.2.0.
+	{ "20181218175730",  7,  9, 0x0F00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, //  7.0.0.
+	{ "20190208150037",  7,  9, 0x0F00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, //  7.0.1.
+	{ "20190314172056",  7,  9, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, //  8.0.0 - 8.0.1.
+	{ "20190531152432",  8, 10, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, //  8.1.0 - 8.1.1.
+	{ "20190809135709",  9, 11, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, //  9.0.0 - 9.0.1.
+	{ "20191021113848", 10, 12, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, //  9.1.0 - 9.2.0.
+	{ "20200303104606", 10, 13, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 10.0.0 - 10.2.0.
+	{ "20201030110855", 10, 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 11.0.0 - 11.0.1
+	{ "20210129111626", 10, 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 12.0.0+
 };
 
 const pkg1_id_t *pkg1_get_latest()
 {
-	return &_pkg1_ids[ARRAY_SIZE(_pkg1_ids) - 2];
+	return &_pkg1_ids[ARRAY_SIZE(_pkg1_ids) - 1];
 }
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1)
@@ -187,7 +182,7 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1)
 	build_date[14] = 0;
 	gfx_printf("Found pkg1 ('%s').\n\n", build_date);
 
-	for (u32 i = 0; _pkg1_ids[i].id; i++)
+	for (u32 i = 0; i < ARRAY_SIZE(_pkg1_ids); i++)
 		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 8))
 			return &_pkg1_ids[i];
 	return NULL;
@@ -195,13 +190,13 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1)
 
 int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 {
-	// Decrypt package1.
 	pk11_hdr_t *hdr;
-	u8 *pkg11 = pkg1 + id->pkg11_off;
-	u32 pkg11_size = *(u32 *)pkg11;
 
+	// Decrypt package1.
 	if (!h_cfg.t210b01)
 	{
+		u8 *pkg11 = pkg1 + id->pkg11_off;
+		u32 pkg11_size = *(u32 *)pkg11;
 		hdr = (pk11_hdr_t *)(pkg11 + 0x20);
 		se_aes_crypt_ctr(11, hdr, pkg11_size, hdr, pkg11_size, pkg11 + 0x10);
 	}
@@ -312,9 +307,21 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 void pkg1_warmboot_patch(void *hos_ctxt)
 {
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
+	patch_t *warmboot_patchset;
 
 	// Patch warmboot on T210 to allow downgrading.
-	patch_t *warmboot_patchset = ctxt->pkg1_id->warmboot_patchset;
+	switch (ctxt->pkg1_id->kb)
+	{
+	case 0:
+		warmboot_patchset = _warmboot_1_patchset;
+		break;
+	case 1 ... 2:
+		warmboot_patchset = _warmboot_3_patchset;
+		break;
+	default: // 4.0.0 - 6.2.0.
+		warmboot_patchset = _warmboot_4_patchset;
+		break;
+	}
 	gfx_printf("%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
 	for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
 		*(vu32 *)(ctxt->pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;

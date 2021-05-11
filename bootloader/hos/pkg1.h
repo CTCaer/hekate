@@ -60,7 +60,6 @@ typedef struct _pkg1_id_t
 	u32 secmon_base;
 	u32 warmboot_base;
 	patch_t *secmon_patchset;
-	patch_t *warmboot_patchset;
 } pkg1_id_t;
 
 typedef struct _pk11_hdr_t
