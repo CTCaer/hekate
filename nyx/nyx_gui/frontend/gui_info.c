@@ -453,7 +453,7 @@ t210b01:;
 		cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5],
 		cal0->battery_lot);
 
-	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;
+	u8  display_rev = (cal0->lcd_vendor >> 8) & 0xFF;
 	u32 display_id = (cal0->lcd_vendor & 0xFF) << 8 | (cal0->lcd_vendor & 0xFF0000) >> 16;
 	switch (display_id)
 	{
@@ -887,6 +887,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x96:
 			strcat(txt_buf, "-AZ3");
 			break;
+		case 0x98:
+			strcat(txt_buf, "-???");
+			break;
 		default:
 			strcat(txt_buf, " #FFDD00 Contact me!#");
 			break;
@@ -954,7 +957,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 				strcat(txt_buf, touch_panel->vendor);
 		}
 		else
-			strcat(txt_buf, "Unknown #FFDD00 Contact me!#");
+			strcat(txt_buf, "#FFDD00 Error!#");
 
 		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %08X (", touch_fw.fw_id);
 
