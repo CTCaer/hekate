@@ -53,19 +53,19 @@ u32 pkg2_newkern_ini1_end;
 //TODO: Reduce hardcoded values without searching kernel for patterns?
 // The process ID send/receive kernel patches were taken from Atmosphère's kernel patches.
 // They should only be used when running Atmosphère.
-#define FREE_CODE_OFF_1ST_100  0x4797C
-#define FREE_CODE_OFF_1ST_200  0x6486C
-#define FREE_CODE_OFF_1ST_300  0x494A4
-#define FREE_CODE_OFF_1ST_302  0x494BC
-#define FREE_CODE_OFF_1ST_400  0x52890
-#define FREE_CODE_OFF_1ST_500  0x5C020
-#define FREE_CODE_OFF_1ST_600  0x5EE00
-#define FREE_CODE_OFF_1ST_700  0x5FEC0
-#define FREE_CODE_OFF_1ST_800  0x607F0
-#define FREE_CODE_OFF_1ST_900  0x65780
-#define FREE_CODE_OFF_1ST_1000 0x67790
-#define FREE_CODE_OFF_1ST_1100 0x49EE8
-#define FREE_CODE_OFF_1ST_1200 0x48810
+#define CODE_OFF_1ST_100  0x4797C
+#define CODE_OFF_1ST_200  0x6486C
+#define CODE_OFF_1ST_300  0x494A4
+#define CODE_OFF_1ST_302  0x494BC
+#define CODE_OFF_1ST_400  0x52890
+#define CODE_OFF_1ST_500  0x5C020
+#define CODE_OFF_1ST_600  0x5EE00
+#define CODE_OFF_1ST_700  0x5FEC0
+#define CODE_OFF_1ST_800  0x607F0
+#define CODE_OFF_1ST_900  0x65780
+#define CODE_OFF_1ST_1000 0x67790
+#define CODE_OFF_1ST_1100 0x49EE8
+#define CODE_OFF_1ST_1200 0x48810
 
 #define ID_SND_OFF_100  0x23CC0
 #define ID_SND_OFF_200  0x3F134
@@ -102,7 +102,7 @@ static u32 PRC_ID_SND_100[] =
 	0xA9BF2FEA, 0x2A0E03EB, 0xD37EF56B, 0xF86B6B8B, 0x92FFFFE9, 0x8A090168, 0xD2FFFFE9, 0x8A09016B,
 	0xD2FFFFC9, 0xEB09017F, 0x54000040, 0xF9412948,	0xA8C12FEA
 };
-#define FREE_CODE_OFF_2ND_100 (FREE_CODE_OFF_1ST_100 + sizeof(PRC_ID_SND_100) + sizeof(u32))
+#define CODE_OFF_2ND_100 (CODE_OFF_1ST_100 + sizeof(PRC_ID_SND_100) + sizeof(u32))
 static u32 PRC_ID_RCV_100[] =
 {
 	0xA9BF2FEA, 0x2A1C03EA, 0xD37EF54A, 0xF86A69AA, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9, 0x8A09014A,
@@ -114,7 +114,7 @@ static u32 PRC_ID_SND_200[] =
 	0xA9BF2FEA, 0x2A1803EB, 0xD37EF56B, 0xF86B6B8B, 0x92FFFFE9, 0x8A090168, 0xD2FFFFE9, 0x8A09016B,
 	0xD2FFFFC9, 0xEB09017F, 0x54000040, 0xF9413148, 0xA8C12FEA
 };
-#define FREE_CODE_OFF_2ND_200 (FREE_CODE_OFF_1ST_200 + sizeof(PRC_ID_SND_200) + sizeof(u32))
+#define CODE_OFF_2ND_200 (CODE_OFF_1ST_200 + sizeof(PRC_ID_SND_200) + sizeof(u32))
 static u32 PRC_ID_RCV_200[] =
 {
 	0xA9BF2FEA, 0x2A0F03EA, 0xD37EF54A, 0xF9405FEB, 0xF86A696A, 0xF9407BEB, 0x92FFFFE9, 0x8A090148,
@@ -126,21 +126,21 @@ static u32 PRC_ID_SND_300[] =
 	0xA9BF2FEA, 0x2A1803EB, 0xD37EF56B, 0xF86B6B8B, 0x92FFFFE9, 0x8A090168, 0xD2FFFFE9, 0x8A09016B,
 	0xD2FFFFC9, 0xEB09017F, 0x54000040, 0xF9415548, 0xA8C12FEA
 };
-#define FREE_CODE_OFF_2ND_300 (FREE_CODE_OFF_1ST_300 + sizeof(PRC_ID_SND_300) + sizeof(u32))
+#define CODE_OFF_2ND_300 (CODE_OFF_1ST_300 + sizeof(PRC_ID_SND_300) + sizeof(u32))
 static u32 PRC_ID_RCV_300[] =
 {
 	0xA9BF2FEA, 0x2A0F03EA, 0xD37EF54A, 0xF9405FEB, 0xF86A696A, 0xF9407BEB, 0x92FFFFE9, 0x8A090148,
 	0xD2FFFFE9, 0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000040, 0xF9415568, 0xA8C12FEA
 };
 
-#define FREE_CODE_OFF_2ND_302 (FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300) + sizeof(u32))
+#define CODE_OFF_2ND_302 (CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300) + sizeof(u32))
 
 static u32 PRC_ID_SND_400[] =
 {
 	0x2A1703EA, 0xD37EF54A, 0xF86A6B8A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9, 0x8A09014A, 0xD2FFFFC9,
 	0xEB09015F, 0x54000060, 0xF94053EA, 0xF9415948, 0xF94053EA
 };
-#define FREE_CODE_OFF_2ND_400 (FREE_CODE_OFF_1ST_400 + sizeof(PRC_ID_SND_400) + sizeof(u32))
+#define CODE_OFF_2ND_400 (CODE_OFF_1ST_400 + sizeof(PRC_ID_SND_400) + sizeof(u32))
 static u32 PRC_ID_RCV_400[] =
 {
 	0xF9403BED, 0x2A0E03EA, 0xD37EF54A, 0xF86A69AA, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9, 0x8A09014A,
@@ -152,7 +152,7 @@ static u32 PRC_ID_SND_500[] =
 	0x2A1703EA, 0xD37EF54A, 0xF86A6B6A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9, 0x8A09014A, 0xD2FFFFC9,
 	0xEB09015F, 0x54000060, 0xF94043EA, 0xF9415948, 0xF94043EA
 };
-#define FREE_CODE_OFF_2ND_500 (FREE_CODE_OFF_1ST_500 + sizeof(PRC_ID_SND_500) + sizeof(u32))
+#define CODE_OFF_2ND_500 (CODE_OFF_1ST_500 + sizeof(PRC_ID_SND_500) + sizeof(u32))
 static u32 PRC_ID_RCV_500[] =
 {
 	0xF9403BED, 0x2A1503EA, 0xD37EF54A, 0xF86A69AA, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9, 0x8A09014A,
@@ -165,7 +165,7 @@ static u32 PRC_ID_SND_600[] =
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF9400308, 0xF9401D08, 0xAA1803E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
-#define FREE_CODE_OFF_2ND_600 (FREE_CODE_OFF_1ST_600 + sizeof(PRC_ID_SND_600) + sizeof(u32))
+#define CODE_OFF_2ND_600 (CODE_OFF_1ST_600 + sizeof(PRC_ID_SND_600) + sizeof(u32))
 static u32 PRC_ID_RCV_600[] =
 {
 	0xA9BF2FEA, 0xF94043EB, 0x2A1503EA, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
@@ -179,7 +179,7 @@ static u32 PRC_ID_SND_700[] =
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002A8, 0xF9401D08, 0xAA1503E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
-#define FREE_CODE_OFF_2ND_700 (FREE_CODE_OFF_1ST_700 + sizeof(PRC_ID_SND_700) + sizeof(u32))
+#define CODE_OFF_2ND_700 (CODE_OFF_1ST_700 + sizeof(PRC_ID_SND_700) + sizeof(u32))
 static u32 PRC_ID_RCV_700[] =
 {
 	0xA9BF2FEA, 0xF9404FEB, 0x2A1603EA, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
@@ -187,7 +187,7 @@ static u32 PRC_ID_RCV_700[] =
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
 
-#define FREE_CODE_OFF_2ND_800 (FREE_CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700) + sizeof(u32))
+#define CODE_OFF_2ND_800 (CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700) + sizeof(u32))
 
 static u32 PRC_ID_SND_900[] =
 {
@@ -195,7 +195,7 @@ static u32 PRC_ID_SND_900[] =
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002E8, 0xF9401D08, 0xAA1703E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
-#define FREE_CODE_OFF_2ND_900 (FREE_CODE_OFF_1ST_900 + sizeof(PRC_ID_SND_900) + sizeof(u32))
+#define CODE_OFF_2ND_900 (CODE_OFF_1ST_900 + sizeof(PRC_ID_SND_900) + sizeof(u32))
 static u32 PRC_ID_RCV_900[] =
 {
 	0xA9BF2FEA, 0xF9404BEB, 0x2A1703EA, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
@@ -209,7 +209,7 @@ static u32 PRC_ID_SND_1000[] =
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002E8, 0xF9401D08, 0xAA1703E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
-#define FREE_CODE_OFF_2ND_1000 (FREE_CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000) + sizeof(u32))
+#define CODE_OFF_2ND_1000 (CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000) + sizeof(u32))
 static u32 PRC_ID_RCV_1000[] =
 {
 	0xA9BF2FEA, 0xF94067EB, 0x2A1A03EA, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
@@ -223,7 +223,7 @@ static u32 PRC_ID_SND_1100[] =
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002A8, 0xF9401D08, 0xAA1503E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
-#define FREE_CODE_OFF_2ND_1100 (FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100) + sizeof(u32))
+#define CODE_OFF_2ND_1100 (CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100) + sizeof(u32))
 static u32 PRC_ID_RCV_1100[] =
 {
 	0xA9BF2FEA, 0xF94073EB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
@@ -237,7 +237,7 @@ static u32 PRC_ID_SND_1200[] =
 	0x8A09014A, 0xD2FFFFC9, 0xEB09015F, 0x54000100, 0xA9BF27E8, 0xF94002C8, 0xF9401D08, 0xAA1603E0,
 	0xD63F0100, 0xA8C127E8, 0xAA0003E8, 0xA8C12FEA, 0xAA0803E0
 };
-#define FREE_CODE_OFF_2ND_1200 (FREE_CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200) + sizeof(u32))
+#define CODE_OFF_2ND_1200 (CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200) + sizeof(u32))
 static u32 PRC_ID_RCV_1200[] =
 {
 	0xA9BF2FEA, 0xF94073EB, 0x5280006A, 0xD37EF54A, 0xF86A696A, 0x92FFFFE9, 0x8A090148, 0xD2FFFFE9,
@@ -247,217 +247,217 @@ static u32 PRC_ID_RCV_1200[] =
 
 // Include kernel patches here, so we can utilize pkg1 id
 KERNEL_PATCHSET_DEF(_kernel_1_patchset,
-	{ SVC_VERIFY_DS, 0x3764C, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_VERIFY_DS, 0x3764C, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x44074, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
-	{ ATM_GEN_PATCH, ID_SND_OFF_100, _B(ID_SND_OFF_100, FREE_CODE_OFF_1ST_100), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_100, sizeof(PRC_ID_SND_100) >> 2, PRC_ID_SND_100}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_100 + sizeof(PRC_ID_SND_100),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_1ST_100 + sizeof(PRC_ID_SND_100), ID_SND_OFF_100 + sizeof(u32)), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_100, _B(ID_RCV_OFF_100, FREE_CODE_OFF_2ND_100), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_100, sizeof(PRC_ID_RCV_100) >> 2, PRC_ID_RCV_100}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_100 + sizeof(PRC_ID_RCV_100),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_2ND_100 + sizeof(PRC_ID_RCV_100), ID_RCV_OFF_100 + sizeof(u32)), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_100,   _B(ID_SND_OFF_100, CODE_OFF_1ST_100), NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_100, sizeof(PRC_ID_SND_100) >> 2,          PRC_ID_SND_100 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_100 + sizeof(PRC_ID_SND_100),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_1ST_100 + sizeof(PRC_ID_SND_100), ID_SND_OFF_100 + 0x4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_100,   _B(ID_RCV_OFF_100, CODE_OFF_2ND_100), NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_100, sizeof(PRC_ID_RCV_100) >> 2,          PRC_ID_RCV_100 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_100 + sizeof(PRC_ID_RCV_100),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_2ND_100 + sizeof(PRC_ID_RCV_100), ID_RCV_OFF_100 + 0x4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_2_patchset,
-	{ SVC_VERIFY_DS, 0x54834, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_VERIFY_DS, 0x54834, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x6086C, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
-	{ ATM_GEN_PATCH, ID_SND_OFF_200, _B(ID_SND_OFF_200, FREE_CODE_OFF_1ST_200), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_200, sizeof(PRC_ID_SND_200) >> 2, PRC_ID_SND_200}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_200 + sizeof(PRC_ID_SND_200),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_1ST_200 + sizeof(PRC_ID_SND_200), ID_SND_OFF_200 + sizeof(u32)), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_200, _B(ID_RCV_OFF_200, FREE_CODE_OFF_2ND_200), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_200, sizeof(PRC_ID_RCV_200) >> 2, PRC_ID_RCV_200}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_200 + sizeof(PRC_ID_RCV_200),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_2ND_200 + sizeof(PRC_ID_RCV_200), ID_RCV_OFF_200 + sizeof(u32)), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_200, _B(ID_SND_OFF_200, CODE_OFF_1ST_200),   NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_200, sizeof(PRC_ID_SND_200) >> 2,          PRC_ID_SND_200 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_200 + sizeof(PRC_ID_SND_200),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_1ST_200 + sizeof(PRC_ID_SND_200), ID_SND_OFF_200 + 0x4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_200, _B(ID_RCV_OFF_200, CODE_OFF_2ND_200),   NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_200, sizeof(PRC_ID_RCV_200) >> 2,          PRC_ID_RCV_200 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_200 + sizeof(PRC_ID_RCV_200),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_2ND_200 + sizeof(PRC_ID_RCV_200), ID_RCV_OFF_200 + 0x4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_3_patchset,
-	{ SVC_VERIFY_DS, 0x3BD24, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_VERIFY_DS, 0x3BD24, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x483FC, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
-	{ ATM_GEN_PATCH, ID_SND_OFF_300, _B(ID_SND_OFF_300, FREE_CODE_OFF_1ST_300), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_300, sizeof(PRC_ID_SND_300) >> 2, PRC_ID_SND_300}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_300 + sizeof(PRC_ID_SND_300),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_1ST_300 + sizeof(PRC_ID_SND_300), ID_SND_OFF_300 + sizeof(u32)), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_300, _B(ID_RCV_OFF_300, FREE_CODE_OFF_2ND_300), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_300, sizeof(PRC_ID_RCV_300) >> 2, PRC_ID_RCV_300}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_300 + sizeof(PRC_ID_RCV_300),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_2ND_300 + sizeof(PRC_ID_RCV_300), ID_RCV_OFF_300 + sizeof(u32)), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_300, _B(ID_SND_OFF_300, CODE_OFF_1ST_300),   NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_300, sizeof(PRC_ID_SND_300) >> 2,          PRC_ID_SND_300 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_300 + sizeof(PRC_ID_SND_300),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_1ST_300 + sizeof(PRC_ID_SND_300), ID_SND_OFF_300 + 0x4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_300, _B(ID_RCV_OFF_300, CODE_OFF_2ND_300),   NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_300, sizeof(PRC_ID_RCV_300) >> 2,          PRC_ID_RCV_300 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_300 + sizeof(PRC_ID_RCV_300),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_2ND_300 + sizeof(PRC_ID_RCV_300), ID_RCV_OFF_300 + 0x4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_302_patchset,
-	{ SVC_VERIFY_DS, 0x3BD24, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_VERIFY_DS, 0x3BD24, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x48414, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
-	{ ATM_GEN_PATCH, ID_SND_OFF_302, _B(ID_SND_OFF_302, FREE_CODE_OFF_1ST_302), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_302, sizeof(PRC_ID_SND_300) >> 2, PRC_ID_SND_300}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300), ID_SND_OFF_302 + sizeof(u32)), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_302, _B(ID_RCV_OFF_302, FREE_CODE_OFF_2ND_302), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_302, sizeof(PRC_ID_RCV_300) >> 2, PRC_ID_RCV_300}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_300),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_300), ID_RCV_OFF_302 + sizeof(u32)), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_302, _B(ID_SND_OFF_302, CODE_OFF_1ST_302),   NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_302, sizeof(PRC_ID_SND_300) >> 2,          PRC_ID_SND_300 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_1ST_302 + sizeof(PRC_ID_SND_300), ID_SND_OFF_302 + 0x4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_302, _B(ID_RCV_OFF_302, CODE_OFF_2ND_302),   NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_302, sizeof(PRC_ID_RCV_300) >> 2,          PRC_ID_RCV_300 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_300),                                // Branch back and skip 1 instruction.
+		_B(CODE_OFF_2ND_302 + sizeof(PRC_ID_RCV_300), ID_RCV_OFF_302 + 0x4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_4_patchset,
-	{ SVC_VERIFY_DS, 0x41EB4, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_VERIFY_DS, 0x41EB4, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x4EBFC, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
-	{ ATM_GEN_PATCH, ID_SND_OFF_400, _B(ID_SND_OFF_400, FREE_CODE_OFF_1ST_400), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_400, sizeof(PRC_ID_SND_400) >> 2, PRC_ID_SND_400}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_400 + sizeof(PRC_ID_SND_400),                      // Branch back and skip 2 instructions.
-		_B(FREE_CODE_OFF_1ST_400 + sizeof(PRC_ID_SND_400), ID_SND_OFF_400 + sizeof(u32) * 2), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_400, _B(ID_RCV_OFF_400, FREE_CODE_OFF_2ND_400), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_400, sizeof(PRC_ID_RCV_400) >> 2, PRC_ID_RCV_400}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_400 + sizeof(PRC_ID_RCV_400),                      // Branch back and skip 1 instruction.
-		_B(FREE_CODE_OFF_2ND_400 + sizeof(PRC_ID_RCV_400), ID_RCV_OFF_400 + sizeof(u32)), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_400, _B(ID_SND_OFF_400, CODE_OFF_1ST_400),       NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_400, sizeof(PRC_ID_SND_400) >> 2,              PRC_ID_SND_400 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_400 + sizeof(PRC_ID_SND_400),                                    // Branch back and skip 2 instructions.
+		_B(CODE_OFF_1ST_400 + sizeof(PRC_ID_SND_400), ID_SND_OFF_400 + 0x4 * 2), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_400, _B(ID_RCV_OFF_400, CODE_OFF_2ND_400),       NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_400, sizeof(PRC_ID_RCV_400) >> 2,              PRC_ID_RCV_400 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_400 + sizeof(PRC_ID_RCV_400),                                    // Branch back and skip 1 instruction.
+		_B(CODE_OFF_2ND_400 + sizeof(PRC_ID_RCV_400), ID_RCV_OFF_400 + 0x4),     NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_5_patchset,
-	{ SVC_GENERIC,   0x38C2C, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x45E6C, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_GENERIC,   0x38C2C, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x45E6C, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x5513C, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x54E30, _MOVZW(8, 0x1E00, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_500, _B(ID_SND_OFF_500, FREE_CODE_OFF_1ST_500), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_500, sizeof(PRC_ID_SND_500) >> 2, PRC_ID_SND_500}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_500 + sizeof(PRC_ID_SND_500),                      // Branch back and skip 2 instructions.
-		_B(FREE_CODE_OFF_1ST_500 + sizeof(PRC_ID_SND_500), ID_SND_OFF_500 + sizeof(u32) * 2), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_500, _B(ID_RCV_OFF_500, FREE_CODE_OFF_2ND_500), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_500, sizeof(PRC_ID_RCV_500) >> 2, PRC_ID_RCV_500}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_500 + sizeof(PRC_ID_RCV_500),                      // Branch back and skip 2 instructions.
-		_B(FREE_CODE_OFF_2ND_500 + sizeof(PRC_ID_RCV_500), ID_RCV_OFF_500 + sizeof(u32) * 2), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_500, _B(ID_SND_OFF_500, CODE_OFF_1ST_500),       NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_500, sizeof(PRC_ID_SND_500) >> 2,              PRC_ID_SND_500 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_500 + sizeof(PRC_ID_SND_500),                                    // Branch back and skip 2 instructions.
+		_B(CODE_OFF_1ST_500 + sizeof(PRC_ID_SND_500), ID_SND_OFF_500 + 0x4 * 2), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_500, _B(ID_RCV_OFF_500, CODE_OFF_2ND_500),       NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_500, sizeof(PRC_ID_RCV_500) >> 2,              PRC_ID_RCV_500 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_500 + sizeof(PRC_ID_RCV_500),                                    // Branch back and skip 2 instructions.
+		_B(CODE_OFF_2ND_500 + sizeof(PRC_ID_RCV_500), ID_RCV_OFF_500 + 0x4 * 2), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_6_patchset,
-	{ SVC_GENERIC,   0x3A8CC, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x47EA0, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_GENERIC,   0x3A8CC, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x47EA0, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x57548, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x57330, _MOVZW(8, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_600, _B(ID_SND_OFF_600, FREE_CODE_OFF_1ST_600), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_600, sizeof(PRC_ID_SND_600) >> 2, PRC_ID_SND_600}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_600 + sizeof(PRC_ID_SND_600),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_600 + sizeof(PRC_ID_SND_600), ID_SND_OFF_600 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_600, _B(ID_RCV_OFF_600, FREE_CODE_OFF_2ND_600), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_600, sizeof(PRC_ID_RCV_600) >> 2, PRC_ID_RCV_600}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_600 + sizeof(PRC_ID_RCV_600),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_600 + sizeof(PRC_ID_RCV_600), ID_RCV_OFF_600 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_600, _B(ID_SND_OFF_600, CODE_OFF_1ST_600),       NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_600, sizeof(PRC_ID_SND_600) >> 2,              PRC_ID_SND_600 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_600 + sizeof(PRC_ID_SND_600),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_600 + sizeof(PRC_ID_SND_600), ID_SND_OFF_600 + 0x4 * 4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_600, _B(ID_RCV_OFF_600, CODE_OFF_2ND_600),       NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_600, sizeof(PRC_ID_RCV_600) >> 2,              PRC_ID_RCV_600 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_600 + sizeof(PRC_ID_RCV_600),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_600 + sizeof(PRC_ID_RCV_600), ID_RCV_OFF_600 + 0x4 * 4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_7_patchset,
-	{ SVC_GENERIC,   0x3C6E0, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x49E5C, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_GENERIC,   0x3C6E0, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x49E5C, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x581B0, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x57F98, _MOVZW(8, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_700, _B(ID_SND_OFF_700, FREE_CODE_OFF_1ST_700), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_700, sizeof(PRC_ID_SND_700) >> 2, PRC_ID_SND_700}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_700 + sizeof(PRC_ID_SND_700),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_700 + sizeof(PRC_ID_SND_700), ID_SND_OFF_700 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_700, _B(ID_RCV_OFF_700, FREE_CODE_OFF_2ND_700), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_700, sizeof(PRC_ID_RCV_700) >> 2, PRC_ID_RCV_700}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_700 + sizeof(PRC_ID_RCV_700),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_700 + sizeof(PRC_ID_RCV_700), ID_RCV_OFF_700 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_700, _B(ID_SND_OFF_700, CODE_OFF_1ST_700),       NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_700, sizeof(PRC_ID_SND_700) >> 2,              PRC_ID_SND_700 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_700 + sizeof(PRC_ID_SND_700),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_700 + sizeof(PRC_ID_SND_700), ID_SND_OFF_700 + 0x4 * 4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_700, _B(ID_RCV_OFF_700, CODE_OFF_2ND_700),       NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_700, sizeof(PRC_ID_RCV_700) >> 2,              PRC_ID_RCV_700 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_700 + sizeof(PRC_ID_RCV_700),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_700 + sizeof(PRC_ID_RCV_700), ID_RCV_OFF_700 + 0x4 * 4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_8_patchset,
-	{ SVC_GENERIC,   0x3FAD0, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x4D15C, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_GENERIC,   0x3FAD0, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x4D15C, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x5BFAC, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x5F9A4, _MOVZW(19, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_800, _B(ID_SND_OFF_800, FREE_CODE_OFF_1ST_800), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_800, sizeof(PRC_ID_SND_700) >> 2, PRC_ID_SND_700}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700), ID_SND_OFF_800 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_800, _B(ID_RCV_OFF_800, FREE_CODE_OFF_2ND_800), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_800, sizeof(PRC_ID_RCV_700) >> 2, PRC_ID_RCV_700}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_800 + sizeof(PRC_ID_RCV_700),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_800 + sizeof(PRC_ID_RCV_700), ID_RCV_OFF_800 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_800, _B(ID_SND_OFF_800, CODE_OFF_1ST_800),       NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_800, sizeof(PRC_ID_SND_700) >> 2,              PRC_ID_SND_700 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_800 + sizeof(PRC_ID_SND_700), ID_SND_OFF_800 + 0x4 * 4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_800, _B(ID_RCV_OFF_800, CODE_OFF_2ND_800),       NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_800, sizeof(PRC_ID_RCV_700) >> 2,              PRC_ID_RCV_700 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_800 + sizeof(PRC_ID_RCV_700),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_800 + sizeof(PRC_ID_RCV_700), ID_RCV_OFF_800 + 0x4 * 4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_9_patchset,
-	{ SVC_GENERIC,   0x43DFC, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x50628, _NOP(), NULL },          // Disable SVC verifications
+	{ SVC_GENERIC,   0x43DFC, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x50628, _NOP(),          NULL }, // Disable SVC verifications
 	{ DEBUG_MODE_EN, 0x609E8, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x6493C, _MOVZW(19, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_900, _B(ID_SND_OFF_900, FREE_CODE_OFF_1ST_900), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_900, sizeof(PRC_ID_SND_900) >> 2, PRC_ID_SND_900}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_900 + sizeof(PRC_ID_SND_900),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_900 + sizeof(PRC_ID_SND_900), ID_SND_OFF_900 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_900, _B(ID_RCV_OFF_900, FREE_CODE_OFF_2ND_900), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_900, sizeof(PRC_ID_RCV_900) >> 2, PRC_ID_RCV_900}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_900 + sizeof(PRC_ID_RCV_900),                      // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_900 + sizeof(PRC_ID_RCV_900), ID_RCV_OFF_900 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_900, _B(ID_SND_OFF_900, CODE_OFF_1ST_900),       NULL },           // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_900, sizeof(PRC_ID_SND_900) >> 2,              PRC_ID_SND_900 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_900 + sizeof(PRC_ID_SND_900),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_900 + sizeof(PRC_ID_SND_900), ID_SND_OFF_900 + 0x4 * 4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_900, _B(ID_RCV_OFF_900, CODE_OFF_2ND_900),       NULL },           // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_900, sizeof(PRC_ID_RCV_900) >> 2,              PRC_ID_RCV_900 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_900 + sizeof(PRC_ID_RCV_900),                                    // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_900 + sizeof(PRC_ID_RCV_900), ID_RCV_OFF_900 + 0x4 * 4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_10_patchset,
-	{ SVC_GENERIC,   0x45DAC, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x523E4, _NOP(), NULL },          // Disable SVC verifications.
+	{ SVC_GENERIC,   0x45DAC, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x523E4, _NOP(),          NULL }, // Disable SVC verifications.
 	{ DEBUG_MODE_EN, 0x62B14, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x66950, _MOVZW(19, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_1000, _B(ID_SND_OFF_1000, FREE_CODE_OFF_1ST_1000), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1000, sizeof(PRC_ID_SND_1000) >> 2, PRC_ID_SND_1000}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000), ID_SND_OFF_1000 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_1000, _B(ID_RCV_OFF_1000, FREE_CODE_OFF_2ND_1000), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1000, sizeof(PRC_ID_RCV_1000) >> 2, PRC_ID_RCV_1000}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000), ID_RCV_OFF_1000 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_1000, _B(ID_SND_OFF_1000, CODE_OFF_1ST_1000),       NULL },            // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_1000, sizeof(PRC_ID_SND_1000) >> 2,               PRC_ID_SND_1000 }, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000),                                      // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_1000 + sizeof(PRC_ID_SND_1000), ID_SND_OFF_1000 + 0x4 * 4), NULL },
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1000, _B(ID_RCV_OFF_1000, CODE_OFF_2ND_1000),       NULL },            // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_1000, sizeof(PRC_ID_RCV_1000) >> 2,               PRC_ID_RCV_1000 }, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000),                                      // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_1000 + sizeof(PRC_ID_RCV_1000), ID_RCV_OFF_1000 + 0x4 * 4), NULL }
 );
 
 KERNEL_PATCHSET_DEF(_kernel_11_patchset,
-	{ SVC_GENERIC,   0x2FCE0, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x39194, _NOP(), NULL },          // Disable SVC verifications.
+	{ SVC_GENERIC,   0x2FCE0, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x39194, _NOP(),          NULL }, // Disable SVC verifications.
 	{ DEBUG_MODE_EN, 0x460C0, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x490C4, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_1100, _B(ID_SND_OFF_1100, FREE_CODE_OFF_1ST_1100), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2, PRC_ID_SND_1100}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1100 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_1100, _B(ID_RCV_OFF_1100, FREE_CODE_OFF_2ND_1100), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2, PRC_ID_RCV_1100}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1100 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_1100, _B(ID_SND_OFF_1100, CODE_OFF_1ST_1100),       NULL},            // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2,               PRC_ID_SND_1100}, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                                     // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1100 + 0x4 * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1100, _B(ID_RCV_OFF_1100, CODE_OFF_2ND_1100),       NULL},            // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2,               PRC_ID_RCV_1100}, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                                     // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1100 + 0x4 * 4), NULL}
 );
 
 KERNEL_PATCHSET_DEF(_kernel_1101_patchset,
-	{ SVC_GENERIC,   0x2FD04, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x39194, _NOP(), NULL },          // Disable SVC verifications.
+	{ SVC_GENERIC,   0x2FD04, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x39194, _NOP(),          NULL }, // Disable SVC verifications.
 	{ DEBUG_MODE_EN, 0x460C0, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x490C4, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_1101, _B(ID_SND_OFF_1101, FREE_CODE_OFF_1ST_1100), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2, PRC_ID_SND_1100}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1101 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_1101, _B(ID_RCV_OFF_1101, FREE_CODE_OFF_2ND_1100), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2, PRC_ID_RCV_1100}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1101 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_1101, _B(ID_SND_OFF_1101, CODE_OFF_1ST_1100),       NULL},            // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_1100, sizeof(PRC_ID_SND_1100) >> 2,               PRC_ID_SND_1100}, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100),                                     // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_1100 + sizeof(PRC_ID_SND_1100), ID_SND_OFF_1101 + 0x4 * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1101, _B(ID_RCV_OFF_1101, CODE_OFF_2ND_1100),       NULL},            // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_1100, sizeof(PRC_ID_RCV_1100) >> 2,               PRC_ID_RCV_1100}, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100),                                     // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_1100 + sizeof(PRC_ID_RCV_1100), ID_RCV_OFF_1101 + 0x4 * 4), NULL}
 );
 
 KERNEL_PATCHSET_DEF(_kernel_12_patchset,
-	{ SVC_GENERIC,   0x2FCB4, _NOP(), NULL },          // Allow same process on svcControlCodeMemory.
-	{ SVC_VERIFY_DS, 0x38440, _NOP(), NULL },          // Disable SVC verifications.
+	{ SVC_GENERIC,   0x2FCB4, _NOP(),          NULL }, // Allow same process on svcControlCodeMemory.
+	{ SVC_VERIFY_DS, 0x38440, _NOP(),          NULL }, // Disable SVC verifications.
 	{ DEBUG_MODE_EN, 0x45118, _MOVZX(8, 1, 0), NULL }, // Enable Debug Patch.
 	// Atmosphère kernel patches.
 	{ ATM_SYSM_INCR, 0x4809C, _MOVZW(21, 0x1D80, LSL16), NULL }, // System memory pool increase.
-	{ ATM_GEN_PATCH, ID_SND_OFF_1200, _B(ID_SND_OFF_1200, FREE_CODE_OFF_1ST_1200), NULL},    // Send process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_1ST_1200, sizeof(PRC_ID_SND_1200) >> 2, PRC_ID_SND_1200}, // Send process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200), ID_SND_OFF_1200 + sizeof(u32) * 4), NULL},
-	{ ATM_GEN_PATCH, ID_RCV_OFF_1200, _B(ID_RCV_OFF_1200, FREE_CODE_OFF_2ND_1200), NULL},    // Receive process id branch.
-	{ ATM_ARR_PATCH, FREE_CODE_OFF_2ND_1200, sizeof(PRC_ID_RCV_1200) >> 2, PRC_ID_RCV_1200}, // Receive process id code.
-	{ ATM_GEN_PATCH, FREE_CODE_OFF_2ND_1200 + sizeof(PRC_ID_RCV_1200),                       // Branch back and skip 4 instructions.
-		_B(FREE_CODE_OFF_2ND_1200 + sizeof(PRC_ID_RCV_1200), ID_RCV_OFF_1200 + sizeof(u32) * 4), NULL}
+	{ ATM_GEN_PATCH, ID_SND_OFF_1200, _B(ID_SND_OFF_1200, CODE_OFF_1ST_1200),       NULL},            // Send process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_1ST_1200, sizeof(PRC_ID_SND_1200) >> 2,               PRC_ID_SND_1200}, // Send process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200),                                     // Branch back and skip 4 instructions.
+		_B(CODE_OFF_1ST_1200 + sizeof(PRC_ID_SND_1200), ID_SND_OFF_1200 + 0x4 * 4), NULL},
+	{ ATM_GEN_PATCH, ID_RCV_OFF_1200, _B(ID_RCV_OFF_1200, CODE_OFF_2ND_1200),       NULL},            // Receive process id branch.
+	{ ATM_ARR_PATCH, CODE_OFF_2ND_1200, sizeof(PRC_ID_RCV_1200) >> 2,               PRC_ID_RCV_1200}, // Receive process id code.
+	{ ATM_GEN_PATCH, CODE_OFF_2ND_1200 + sizeof(PRC_ID_RCV_1200),                                     // Branch back and skip 4 instructions.
+		_B(CODE_OFF_2ND_1200 + sizeof(PRC_ID_RCV_1200), ID_RCV_OFF_1200 + 0x4 * 4), NULL}
 );
 
 // Kernel sha256 hashes. Offset 0x800 up to INI1 start.
