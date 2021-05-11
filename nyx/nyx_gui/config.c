@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -64,7 +64,7 @@ void set_nyx_default_configuration()
 	n_cfg.verification = 1;
 	n_cfg.ums_emmc_rw = 0;
 	n_cfg.jc_disable = 0;
-	n_cfg.new_powersave = 1;
+	n_cfg.bpmp_clock = 0;
 }
 
 int create_config_entry()
@@ -72,7 +72,7 @@ int create_config_entry()
 	if (!sd_mount())
 		return 1;
 
-	char lbuf[32];
+	char lbuf[64];
 	FIL fp;
 	bool mainIniFound = false;
 
@@ -173,12 +173,14 @@ int create_config_entry()
 	return 0;
 }
 
-int create_nyx_config_entry()
+int create_nyx_config_entry(bool force_unmount)
 {
+	bool sd_mounted = sd_get_card_mounted();
+
 	if (!sd_mount())
 		return 1;
 
-	char lbuf[32];
+	char lbuf[64];
 	FIL fp;
 
 	// Make sure that bootloader folder exists.
@@ -206,13 +208,15 @@ int create_nyx_config_entry()
 	f_puts("\njcdisable=", &fp);
 	itoa(n_cfg.jc_disable, lbuf, 10);
 	f_puts(lbuf, &fp);
-	f_puts("\nnewpowersave=", &fp);
-	itoa(n_cfg.new_powersave, lbuf, 10);
+	f_puts("\nbpmpclock=", &fp);
+	itoa(n_cfg.bpmp_clock, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\n", &fp);
 
 	f_close(&fp);
-	sd_unmount();
+
+	if (force_unmount || !sd_mounted)
+		sd_unmount();
 
 	return 0;
 }

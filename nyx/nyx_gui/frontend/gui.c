@@ -2106,6 +2106,14 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	s_printf(text_color, "#%06X", tmp_color.full & 0xFFFFFF);
 }
 
+lv_task_t *task_bpmp_clock;
+void first_time_bpmp_clock(void *param)
+{
+	n_cfg.bpmp_clock = 1;
+	create_nyx_config_entry(false);
+	lv_task_del(task_bpmp_clock);
+}
+
 static void _nyx_main_menu(lv_theme_t * th)
 {
 	static lv_style_t no_padding;
@@ -2240,30 +2248,9 @@ static void _nyx_main_menu(lv_theme_t * th)
 		lv_task_t *task_run_clock = lv_task_create(first_time_clock_edit, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
 		lv_task_once(task_run_clock);
 	}
-}
 
-static void _nyx_gui_loop_powersave_ram()
-{
-	// Saves 280 mW.
-	while (true)
-	{
-		minerva_change_freq(FREQ_1600);  // Takes 295 us.
-
-		lv_task_handler();
-
-		minerva_change_freq(FREQ_800);   // Takes 80 us.
-	}
-}
-
-static void _nyx_gui_loop_powersave_cpu()
-{
-	// Saves 75 mW.
-	while (true)
-	{
-		lv_task_handler();
-
-		bpmp_usleep(HALT_COP_MAX_CNT);   // Takes 200 us.
-	}
+	if (!n_cfg.bpmp_clock)
+		task_bpmp_clock = lv_task_create(first_time_bpmp_clock, 5000, LV_TASK_PRIO_LOWEST, NULL);
 }
 
 void nyx_load_and_run()
@@ -2331,8 +2318,16 @@ void nyx_load_and_run()
 		while (true)
 			lv_task_handler();
 	}
-	else if (n_cfg.new_powersave)
-		_nyx_gui_loop_powersave_ram(); // Alternate DRAM frequencies. Higher power savings.
 	else
-		_nyx_gui_loop_powersave_cpu(); // Suspend CPU. Lower power savings.
+	{
+		// Alternate DRAM frequencies. Saves 280 mW.
+		while (true)
+		{
+			minerva_change_freq(FREQ_1600);  // Takes 295 us.
+
+			lv_task_handler();
+
+			minerva_change_freq(FREQ_800);   // Takes 80 us.
+		}
+	}
 }

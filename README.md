@@ -70,7 +70,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
 | umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
-| newpowersave=1     | 0: Timer based, 1: DRAM frequency based (Better). Use 0 if Nyx hangs. |
+| bpmpclock=1        | 0: Auto, 1: Faster, 2: Fast. Use 2 if Nyx hangs or some functions like UMS/Backup Verification fail. |
 
 
 ### Boot entry key/value combinations:

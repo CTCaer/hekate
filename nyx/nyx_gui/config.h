@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -51,12 +51,12 @@ typedef struct _nyx_config
 	u32 verification;
 	u32 ums_emmc_rw;
 	u32 jc_disable;
-	u32 new_powersave;
+	u32 bpmp_clock;
 } nyx_config;
 
 void set_default_configuration();
 void set_nyx_default_configuration();
 int create_config_entry();
-int create_nyx_config_entry();
+int create_nyx_config_entry(bool force_unmount);
 
 #endif /* _CONFIG_H_ */

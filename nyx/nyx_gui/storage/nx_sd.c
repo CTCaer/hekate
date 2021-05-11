@@ -65,6 +65,11 @@ bool sd_get_card_initialized()
 	return sd_init_done;
 }
 
+bool sd_get_card_mounted()
+{
+	return sd_mounted;
+}
+
 u32 sd_get_mode()
 {
 	return sd_mode;
@@ -196,6 +201,11 @@ static void _sd_deinit(bool deinit)
 
 void sd_unmount() { _sd_deinit(false); }
 void sd_end()     { _sd_deinit(true); }
+
+bool sd_is_gpt()
+{
+	return sd_fs.part_type;
+}
 
 void *sd_file_read(const char *path, u32 *fsize)
 {

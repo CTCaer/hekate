@@ -336,7 +336,7 @@ static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
 	lv_obj_t * mbox = lv_mbox_create(lv_scr_act(), NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	int res = !create_nyx_config_entry();
+	int res = !create_nyx_config_entry(true);
 
 	nyx_changes_made = false;
 
@@ -400,7 +400,7 @@ static lv_res_t _save_theme_color_action(lv_obj_t *btn)
 	n_cfg.themecolor = color_test.hue;
 
 	// Save nyx config.
-	create_nyx_config_entry();
+	create_nyx_config_entry(true);
 
 	reload_nyx();
 
@@ -622,6 +622,8 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 		u32 new_epoch = max77620_rtc_date_to_epoch(&time);
 
 		n_cfg.timeoff = new_epoch - epoch;
+		if (!n_cfg.timeoff)
+			n_cfg.timeoff = 1;
 
 		nyx_changes_made = true;
 	}

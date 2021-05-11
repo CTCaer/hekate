@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -58,7 +58,7 @@ int create_config_entry()
 	if (!sd_mount())
 		return 1;
 
-	char lbuf[32];
+	char lbuf[64];
 	FIL fp;
 	bool mainIniFound = false;
 

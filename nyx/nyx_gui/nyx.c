@@ -292,8 +292,8 @@ void load_saved_configuration()
 						n_cfg.ums_emmc_rw = atoi(kv->val) == 1;
 					else if (!strcmp("jcdisable", kv->key))
 						n_cfg.jc_disable = atoi(kv->val) == 1;
-					else if (!strcmp("newpowersave", kv->key))
-						n_cfg.new_powersave = atoi(kv->val) == 1;
+					else if (!strcmp("bpmpclock", kv->key))
+						n_cfg.bpmp_clock = strtol(kv->val, NULL, 10);
 				}
 
 				break;
@@ -361,7 +361,9 @@ void nyx_init_load_res()
 {
 	bpmp_mmu_enable();
 	bpmp_clk_rate_get();
-	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
+
+	// Set a modest clock for init. It will be restored later if possible.
+	bpmp_clk_rate_set(BPMP_CLK_LOWER_BOOST);
 
 	// Set bootloader's default configuration.
 	set_default_configuration();
@@ -394,6 +396,19 @@ void nyx_init_load_res()
 	minerva_init();
 
 	load_saved_configuration();
+
+	// Initialize nyx cfg to lower clock for T210.
+	// In case of lower binned SoC, this can help with hangs.
+	if (!n_cfg.bpmp_clock)
+	{
+		n_cfg.bpmp_clock = h_cfg.t210b01 ? 1 : 2; // Set lower clock for T210.
+		create_nyx_config_entry(false);
+		n_cfg.bpmp_clock = h_cfg.t210b01 ? 1 : 0; // Restore for T210 and keep for T210B01.
+	}
+
+	// Restore clock to max.
+	if (n_cfg.bpmp_clock < 2)
+		bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
 
 	FIL fp;
 	if (!f_open(&fp, "bootloader/sys/res.pak", FA_READ))
