@@ -1,7 +1,7 @@
 /*
  * BPMP-Lite Cache/MMU and Frequency driver for Tegra X1
  *
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -53,6 +53,7 @@ typedef enum
 	BPMP_CLK_MAX
 } bpmp_freq_t;
 
+#define BPMP_CLK_LOWER_BOOST   BPMP_CLK_SUPER_BOOST
 #define BPMP_CLK_DEFAULT_BOOST BPMP_CLK_HYPER_BOOST
 
 void bpmp_mmu_maintenance(u32 op, bool force);
@@ -60,7 +61,7 @@ void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply);
 void bpmp_mmu_enable();
 void bpmp_mmu_disable();
 void bpmp_clk_rate_get();
-void bpmp_clk_rate_set(bpmp_freq_t fid);
+bpmp_freq_t bpmp_clk_rate_set(bpmp_freq_t fid);
 void bpmp_usleep(u32 us);
 void bpmp_msleep(u32 ms);
 void bpmp_halt();

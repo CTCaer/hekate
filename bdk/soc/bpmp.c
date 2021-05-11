@@ -1,7 +1,7 @@
 /*
  * BPMP-Lite Cache/MMU and Frequency driver for Tegra X1
  *
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -212,43 +212,45 @@ const u8 pll_divn[] = {
 	//95   // BPMP_CLK_DEV_BOOST: 608MHz 49% - 152MHz APB.
 };
 
-bpmp_freq_t bpmp_clock_set = BPMP_CLK_NORMAL;
+bpmp_freq_t bpmp_fid_current = BPMP_CLK_NORMAL;
 
 void bpmp_clk_rate_get()
 {
 	bool clk_src_is_pllp = ((CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) >> 4) & 7) == 3;
 
 	if (clk_src_is_pllp)
-		bpmp_clock_set = BPMP_CLK_NORMAL;
+		bpmp_fid_current = BPMP_CLK_NORMAL;
 	else
 	{
-		bpmp_clock_set = BPMP_CLK_HIGH_BOOST;
+		bpmp_fid_current = BPMP_CLK_HIGH_BOOST;
 
 		u8 pll_divn_curr = (CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) >> 10) & 0xFF;
 		for (u32 i = 1; i < sizeof(pll_divn); i++)
 		{
 			if (pll_divn[i] == pll_divn_curr)
 			{
-				bpmp_clock_set = i;
+				bpmp_fid_current = i;
 				break;
 			}
 		}
 	}
 }
 
-void bpmp_clk_rate_set(bpmp_freq_t fid)
+bpmp_freq_t bpmp_clk_rate_set(bpmp_freq_t fid)
 {
+	bpmp_freq_t prev_fid = bpmp_fid_current;
+
 	if (fid > (BPMP_CLK_MAX - 1))
 		fid = BPMP_CLK_MAX - 1;
 
-	if (bpmp_clock_set == fid)
-		return;
+	if (prev_fid == fid)
+		return prev_fid;
 
 	if (fid)
 	{
-		if (bpmp_clock_set)
+		if (prev_fid)
 		{
-			// Restore to PLLP source during PLLC4 configuration.
+			// Restore to PLLP source during PLLC configuration.
 			CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333; // PLLP_OUT.
 			msleep(1); // Wait a bit for clock source change.
 		}
@@ -269,7 +271,10 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 		// Disable PLLC to save power.
 		clock_disable_pllc();
 	}
-	bpmp_clock_set = fid;
+	bpmp_fid_current = fid;
+
+	// Return old fid in case of temporary swap.
+	return prev_fid;
 }
 
 // The following functions halt BPMP to reduce power while sleeping.

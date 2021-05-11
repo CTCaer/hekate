@@ -70,7 +70,7 @@ int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	u32 *pkg11_magic_off;
 
 	bpmp_mmu_disable();
-	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	// Enable clocks.
 	clock_enable_host1x();
@@ -284,7 +284,7 @@ out:;
 	clock_disable_sor_safe();
 	clock_disable_tsec();
 	bpmp_mmu_enable();
-	bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
+	bpmp_clk_rate_set(prev_fid);
 
 	return res;
 }
