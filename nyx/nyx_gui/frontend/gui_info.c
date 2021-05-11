@@ -1761,13 +1761,13 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		// Identify manufacturer.
 		switch (sd_storage.cid.manfid)
 		{
-		case 1:
+		case 0x01:
 			strcat(txt_buf, "Panasonic ");
 			break;
-		case 2:
+		case 0x02:
 			strcat(txt_buf, "Toshiba ");
 			break;
-		case 3:
+		case 0x03:
 			strcat(txt_buf, "SanDisk ");
 			break;
 		case 0x1B:
@@ -1796,6 +1796,14 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			break;
 		case 0x82:
 			strcat(txt_buf, "Sony ");
+			break;
+		//TODO: Investigate which OEM/ODM makes these.
+		// case 0x9C: // LX512 SO
+		// case 0xAD: // LX512 LS
+		// 	strcat(txt_buf, "Lexar ");
+		// 	break;
+		default:
+			strcat(txt_buf, "Unknown ");
 			break;
 		}
 
