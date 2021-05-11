@@ -715,6 +715,10 @@ void jc_deinit()
 		jc_send_hid_cmd(UART_C, JC_HID_SUBCMD_HCI_STATE, &data, 1);
 		jc_rcv_pkt(&jc_l);
 	}
+
+	// Disable UART B and C clocks.
+	clock_disable_uart(UART_B);
+	clock_disable_uart(UART_C);
 }
 
 static void jc_init_conn(joycon_ctxt_t *jc)

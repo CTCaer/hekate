@@ -433,8 +433,6 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 	touch_power_off();
 	jc_deinit();
 	regulator_5v_disable(REGULATOR_5V_ALL);
-	clock_disable_uart(UART_B);
-	clock_disable_uart(UART_C);
 #endif
 
 	// Flush/disable MMU cache and set DRAM clock to 204MHz.
