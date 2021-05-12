@@ -731,7 +731,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "10.0.0 - 10.2.0");
 		break;
 	case 14:
-		strcpy(fuses_hos_version, "11.0.0+");
+		strcpy(fuses_hos_version, "11.0.0 - 12.0.1");
+		break;
+	case 15:
+		strcpy(fuses_hos_version, "12.0.2+");
 		break;
 	default:
 		strcpy(fuses_hos_version, "#FF8000 Unknown#");
