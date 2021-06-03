@@ -99,6 +99,15 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | icon={SD path}         | Force Nyx to use the icon defined here. If this is not found, it will check for a bmp named as the boot entry ([Test 2] -> `bootloader/res/Test 2.bmp`). Otherwise default will be used. |
 
 
+**Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra single kips.
+
+**Note2**: When using FSS0 it parses exosphere, warmboot and all core kips. You can override the first 2 by using `secmon`/`warmboot` after defining `fss0`.
+You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage.
+
+**Warning**: Careful when you define *fss0 core* kips when using `fss0` or the folder (when using `/*`) includes them.
+This is in case the kips are incompatible between them. If compatible, you can override `fss0` kips with no issues (useful for testing with intermediate kip changes).
+
+
 ### Boot entry key/value Exosphère combinations:
 
 | Config option          | Description                                                |
@@ -107,15 +116,13 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | userpmu=1              | Enables user access to PMU when paired with Exosphère.     |
 | cal0blank=1            | Overrides Exosphère config `blank_prodinfo_{sys/emu}mmc`. If that key doesn't exist, `exosphere.ini` will be used. |
 | cal0writesys=1         | Overrides Exosphère config `allow_writing_to_cal_sysmmc`. If that key doesn't exist, `exosphere.ini` will be used. |
+| usb3force=1            | Overrides system settings mitm config `usb30_force_enabled`. If that key doesn't exist, `system_settings.ini` will be used. |
 
 
-**Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra single kips.
+**Note**: `cal0blank`, `cal0writesys`, `usb3force`, as stated override the `exosphere.ini` or `system_settings.ini`. 0: Disable, 1: Enable, Key Missing: Use original value.
 
-**Note2**: When using FSS0 it parses exosphere, warmboot and all core kips. You can override the first 2 by using `secmon`/`warmboot` after defining `fss0`.
-You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage.
 
-**Warning**: Never define *fss0 core* kips when using `fss0` and make sure that the folder (when using `/*`), does not include them.
-This is in case the kips are incompatible between them. If compatible, you can override `fss0` kips with no issues (useful for testing with intermediate kip changes).
+**Note2**: `blank_prodinfo_{sys/emu}mmc`, `allow_writing_to_cal_sysmmc` and `usb30_force_enabled` in `exosphere.ini` and `system_settings.ini` respectively, are the only atmosphere config keys that can affect hekate booting configuration externally, **if** the equivalent keys in hekate config are missing.
 
 
 ### Payload storage:
