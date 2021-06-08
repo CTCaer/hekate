@@ -689,8 +689,14 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u8 burnt_fuses_7 = bit_count(fuse_read_odm(7));
 	u8 burnt_fuses_6 = bit_count(fuse_read_odm(6));
 
-	switch (burnt_fuses_7)
+	// Check if overburnt.
+	u8 burnt_fuses_hos = (fuse_read_odm(7) & ~bit_count_mask(burnt_fuses_7)) ? 255 : burnt_fuses_7;
+
+	switch (burnt_fuses_hos)
 	{
+	case 0:
+		strcpy(fuses_hos_version, "#96FF00 Golden sample#");
+		break;
 	case 1:
 		strcpy(fuses_hos_version, "1.0.0");
 		break;
@@ -735,6 +741,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	case 15:
 		strcpy(fuses_hos_version, "12.0.2+");
+		break;
+	case 255:
+		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
 		break;
 	default:
 		strcpy(fuses_hos_version, "#FF8000 Unknown#");
@@ -936,7 +945,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	}
 
-	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# [%02X] %02X [%02X]",
+	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# #96FF00 %02X# %02X #96FF00 %02X#",
 		nyx_str->info.disp_id & 0xFF, (nyx_str->info.disp_id >> 8) & 0xFF, (nyx_str->info.disp_id >> 16) & 0xFF);
 
 	touch_fw_info_t touch_fw;
