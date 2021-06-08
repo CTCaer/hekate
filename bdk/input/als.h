@@ -48,18 +48,18 @@
 #define BH1730_ADDR(reg) (BH1730_CMD_MAGIC | BH1730_CMD_SETADDR | (reg))
 #define BH1730_SPEC(cmd) (BH1730_CMD_MAGIC | BH1730_CMD_SPECCMD | (cmd))
 
-typedef struct _als_table_t
+typedef struct _als_ctxt_t
 {
-	float lux;
+	u32  lux;
 	bool over_limit;
-	u32 vi_light;
-	u32 ir_light;
-	u8 gain;
-	u8 itime;
-} als_table_t;
+	u32  vi_light;
+	u32  ir_light;
+	u8   gain;
+	u8   cycle;
+} als_ctxt_t;
 
-void set_als_cfg(als_table_t *als_val, u8 gain, u8 itime);
-void get_als_lux(als_table_t *als_val);
-u8 als_init(als_table_t *als_val);
+void set_als_cfg(als_ctxt_t *als_ctxt, u8 gain, u8 cycle);
+void get_als_lux(als_ctxt_t *als_ctxt);
+u8   als_power_on(als_ctxt_t *als_ctxt);
 
 #endif /* __ALS_H_ */
