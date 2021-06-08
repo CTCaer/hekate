@@ -30,6 +30,27 @@
 
 extern volatile nyx_storage_t *nyx_str;
 
+u8 bit_count(u32 val)
+{
+	u8 cnt = 0;
+	for (u32 i = 0; i < 32; i++)
+	{
+		if ((val >> i) & 1)
+			cnt++;
+	}
+
+	return cnt;
+}
+
+u32 bit_count_mask(u8 bits)
+{
+	u32 val = 0;
+	for (u32 i = 0; i < bits; i++)
+		val |= 1 << i;
+
+	return val;
+}
+
 u32 get_tmr_s()
 {
 	return RTC(APBDEV_RTC_SECONDS);
