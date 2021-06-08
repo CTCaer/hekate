@@ -121,18 +121,6 @@ u32 fuse_read_hw_type()
 	return FUSE_NX_HW_TYPE_ICOSA;
 }
 
-u8 fuse_count_burnt(u32 val)
-{
-	u8 burnt_fuses = 0;
-	for (u32 i = 0; i < 32; i++)
-	{
-		if ((val >> i) & 1)
-			burnt_fuses++;
-	}
-
-	return burnt_fuses;
-}
-
 void fuse_wait_idle()
 {
 	u32 ctrl;
