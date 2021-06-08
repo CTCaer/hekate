@@ -609,7 +609,7 @@ try_load:
 		// Try backup bootloader.
 		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
 		{
-			EPRINTF("Trying backup bootloader...");
+			EPRINTF("\nTrying backup bootloader...");
 			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
 			goto try_load;
 		}

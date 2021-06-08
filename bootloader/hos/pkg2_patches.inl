@@ -684,6 +684,20 @@ static kip1_patchset_t _fs_patches_1200[] =
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nogc_1203[] =
+{
+	{ KPS(KIP_TEXT) | 0x13EB34, 8, "\xFD\x7B\xBE\xA9\xF4\x4F\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x155478, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_1203[] =
+{
+	{ "nogc",     _fs_nogc_1203 },
+	{ "emummc",   _fs_emummc },
+	{ NULL, NULL }
+};
+
 // SHA256 hashes.
 static kip1_id_t _kip_ids[] =
 {
@@ -727,4 +741,6 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x0B\xA1\x5B\xB3\x04\xB5\x05\x63", _fs_patches_1100 },      // FS 11.0.0 exfat
 	{ "FS", "\xDC\x2A\x08\x49\x96\xBB\x3C\x01", _fs_patches_1200 },      // FS 12.0.0
 	{ "FS", "\xD5\xA5\xBF\x36\x64\x0C\x49\xEA", _fs_patches_1200 },      // FS 12.0.0 exfat
+	{ "FS", "\xC8\x67\x62\xBE\x19\xA5\x1F\xA0", _fs_patches_1203 },      // FS 12.0.3
+	{ "FS", "\xE1\xE8\xD3\xD6\xA2\xFE\x0B\x10", _fs_patches_1203 },      // FS 12.0.3 exfat
 };
