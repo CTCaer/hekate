@@ -30,6 +30,6 @@ enum
 void regulator_5v_enable(u8 dev);
 void regulator_5v_disable(u8 dev);
 bool regulator_5v_get_dev_enabled(u8 dev);
-void regulator_5v_batt_src_enable(bool enable);
+void regulator_5v_usb_src_enable(bool enable);
 
 #endif

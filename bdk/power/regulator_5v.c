@@ -21,25 +21,25 @@
 #include <utils/types.h>
 
 static u8 reg_5v_dev = 0;
-static bool batt_src = false;
+static bool usb_src = false;
 
 void regulator_5v_enable(u8 dev)
 {
 	// The power supply selection from battery or USB is automatic.
 	if (!reg_5v_dev)
 	{
-		// Fan and Rail power from internal 5V regulator (battery).
+		// Fan and Rail power from battery 5V regulator.
 		PINMUX_AUX(PINMUX_AUX_SATA_LED_ACTIVE) = 1;
 		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
-		batt_src = true;
 
-		// Fan and Rail power from USB 5V VDD.
+		// Fan and Rail power from USB 5V VBUS.
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = PINMUX_LPDR | 1;
 		gpio_config(GPIO_PORT_CC, GPIO_PIN_4, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_HIGH);
+		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
+		usb_src = false;
 
 		// Make sure GPIO power is enabled.
 		PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_GPIO_IO_EN;
@@ -55,18 +55,18 @@ void regulator_5v_disable(u8 dev)
 
 	if (!reg_5v_dev)
 	{
-		// Rail power from internal 5V regulator (battery).
+		// Rail power from battery 5V regulator.
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_LOW);
 		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_DISABLE);
 		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_SPIO);
 		PINMUX_AUX(PINMUX_AUX_SATA_LED_ACTIVE) = PINMUX_PARKED | PINMUX_INPUT_ENABLE;
-		batt_src = false;
 
-		// Rail power from USB 5V VDD.
+		// Rail power from USB 5V VBUS.
 		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
 		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
 		gpio_config(GPIO_PORT_CC, GPIO_PIN_4, GPIO_MODE_SPIO);
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = PINMUX_IO_HV | PINMUX_LPDR | PINMUX_PARKED | PINMUX_INPUT_ENABLE;
+		usb_src = false;
 
 		// GPIO AO IO rails.
 		PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_GPIO_IO_EN;
@@ -78,16 +78,16 @@ bool regulator_5v_get_dev_enabled(u8 dev)
 	return (reg_5v_dev & dev);
 }
 
-void regulator_5v_batt_src_enable(bool enable)
+void regulator_5v_usb_src_enable(bool enable)
 {
-	if (enable && !batt_src)
+	if (enable && !usb_src)
 	{
-		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
-		batt_src = true;
+		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_HIGH);
+		usb_src = true;
 	}
-	else if (!enable && batt_src)
+	else if (!enable && usb_src)
 	{
-		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_LOW);
-		batt_src = false;
+		gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
+		usb_src = false;
 	}
 }
