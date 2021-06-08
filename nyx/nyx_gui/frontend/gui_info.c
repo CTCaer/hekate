@@ -686,8 +686,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	}
 
 	// Count burnt fuses.
-	u8 burnt_fuses_7 = fuse_count_burnt(fuse_read_odm(7));
-	u8 burnt_fuses_6 = fuse_count_burnt(fuse_read_odm(6));
+	u8 burnt_fuses_7 = bit_count(fuse_read_odm(7));
+	u8 burnt_fuses_6 = bit_count(fuse_read_odm(6));
 
 	switch (burnt_fuses_7)
 	{

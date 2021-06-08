@@ -32,6 +32,7 @@
 #include <soc/t210.h>
 #include <storage/nx_sd.h>
 #include <utils/aarch64_util.h>
+#include <utils/util.h>
 
 extern hekate_config h_cfg;
 
@@ -355,7 +356,7 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 		u32 pa_id;
 		u32 fuses_max = 32; // Current ODM7 max.
 		u32 fuses_fw = ctxt->pkg1_id->fuses;
-		u8  burnt_fuses = fuse_count_burnt(fuse_read_odm(7));
+		u8  burnt_fuses = bit_count(fuse_read_odm(7));
 
 		// Save current warmboot in storage cache (MWS) and check if another one is needed.
 		if (!ctxt->warmboot)

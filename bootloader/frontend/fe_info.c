@@ -61,7 +61,7 @@ void print_fuseinfo()
 		break;
 	}
 	gfx_printf("Sdram ID:    %d\n", fuse_read_dramid(true));
-	gfx_printf("Burnt fuses: %d / 64\n", fuse_count_burnt(fuse_read_odm(7)));
+	gfx_printf("Burnt fuses: %d / 64\n", bit_count(fuse_read_odm(7)));
 	gfx_printf("Secure key:  %08X%08X%08X%08X\n\n\n",
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)));
