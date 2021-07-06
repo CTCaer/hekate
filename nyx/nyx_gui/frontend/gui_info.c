@@ -1240,6 +1240,197 @@ out:
 	return LV_RES_OK;
 }
 
+static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
+{
+	static lv_style_t h_style;
+	lv_style_copy(&h_style, &lv_style_transp);
+	h_style.body.padding.inner = 0;
+	h_style.body.padding.hor = LV_DPI - (LV_DPI / 4);
+	h_style.body.padding.ver = LV_DPI / 6;
+
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\211", "\222Close", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 8);
+
+	lv_mbox_set_text(mbox, "#C7EA46 Sandisk Device Report#");
+
+	u8 *buf = calloc(512, 1);
+	char *txt_buf = (char *)malloc(0x8000);
+	char *txt_buf2 = (char *)malloc(0x8000);
+	txt_buf[0] = 0;
+	txt_buf2[0] = 0;
+
+	// Create SoC Info container.
+	lv_obj_t *h1 = lv_cont_create(mbox, NULL);
+	lv_cont_set_style(h1, &h_style);
+	lv_cont_set_fit(h1, false, true);
+	lv_obj_set_width(h1, (LV_HOR_RES / 9) * 7);
+	lv_obj_set_click(h1, false);
+	lv_cont_set_layout(h1, LV_LAYOUT_OFF);
+
+	lv_obj_t * lb_desc = lv_label_create(h1, NULL);
+	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
+	lv_label_set_recolor(lb_desc, true);
+	lv_label_set_style(lb_desc, &monospace_text);
+	lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 4);
+
+	lv_obj_t * lb_desc2 = lv_label_create(h1, NULL);
+	lv_label_set_long_mode(lb_desc2, LV_LABEL_LONG_BREAK);
+	lv_label_set_recolor(lb_desc2, true);
+	lv_label_set_style(lb_desc2, &monospace_text);
+	lv_obj_set_width(lb_desc2, LV_HOR_RES / 9 * 3);
+	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
+
+
+	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	{
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
+
+		goto out;
+	}
+
+	int res = sdmmc_storage_vendor_sandisk_report(&emmc_storage, buf);
+	sdmmc_storage_end(&emmc_storage);
+
+	if (!res)
+	{
+		lv_label_set_text(lb_desc, "#FFDD00 Device Report not supported!#");
+		lv_label_set_text(lb_desc2, " ");
+
+		goto out;
+	}
+
+	mmc_sandisk_report_t *rpt = (mmc_sandisk_report_t *)buf;
+
+	u8  fw_update_date[13] = {0};
+	u8  fw_update_time[9] = {0};
+	memcpy(fw_update_date, rpt->fw_update_date, sizeof(rpt->fw_update_date));
+	memcpy(fw_update_time, rpt->fw_update_time, sizeof(rpt->fw_update_time));
+
+	s_printf(txt_buf,
+		"#00DDFF Device report#\n"
+		//"#FF8000 Average Erases SYS:#    %d\n"
+		"#FF8000 Average Erases SLC:#    %d\n"
+		"#FF8000 Average Erases MLC:#    %d\n"
+		//"#FF8000 Read Reclaims SYS:#     %d\n"
+		"#FF8000 Read Reclaims SLC:#     %d\n"
+		"#FF8000 Read Reclaims MLC:#     %d\n"
+		"#FF8000 Bad Blocks Factory:#    %d\n"
+		"#FF8000 Bad Blocks SYS:#        %d\n"
+		"#FF8000 Bad Blocks SLC:#        %d\n"
+		"#FF8000 Bad Blocks MLC:#        %d\n"
+		"#FF8000 FW Updates:#            %d\n"
+		"#FF8000 FW Buildtime:#          %s %s\n"
+		"#FF8000 Total Writes:#          %d MB\n"
+		//"#FF8000 Voltage Drops:#         %d\n"
+		//"#FF8000 Voltage Droops:#        %d\n"
+		//"#FF8000 VD Failed Recovers:#    %d\n"
+		//"#FF8000 VD Recover Operations:# %d\n"
+		"#FF8000 Total Writes SLC:#      %d MB\n"
+		"#FF8000 Total Writes MLC:#      %d MB\n"
+		"#FF8000 BigFile limit status:#  %d\n"
+		"#FF8000 Average Erases Hybrid:# %d",
+
+		//rpt->avg_erase_cycles_sys,
+		rpt->avg_erase_cycles_slc,
+		rpt->avg_erase_cycles_mlc,
+		//rpt->read_reclaim_cnt_sys,
+		rpt->read_reclaim_cnt_slc,
+		rpt->read_reclaim_cnt_mlc,
+		rpt->bad_blocks_factory,
+		rpt->bad_blocks_sys,
+		rpt->bad_blocks_slc,
+		rpt->bad_blocks_mlc,
+		rpt->fw_updates_cnt,
+		fw_update_date,
+		fw_update_time,
+		rpt->total_writes_100mb * 100,
+		//rpt->vdrops,
+		//rpt->vdroops,
+		//rpt->vdrops_failed_data_rec,
+		//rpt->vdrops_data_rec_ops,
+		rpt->total_writes_slc_100mb * 100,
+		rpt->total_writes_mlc_100mb * 100,
+		rpt->mlc_bigfile_mode_limit_exceeded,
+		rpt->avg_erase_cycles_hybrid);
+
+	u8 advanced_report = 0;
+	for (u32 i = 0; i < sizeof(mmc_sandisk_advanced_report_t); i++)
+		advanced_report |= *(u8 *)((u8 *)&rpt->advanced + i);
+
+	if (advanced_report)
+	{
+		s_printf(txt_buf2,
+			"#00DDFF Advanced Health Status#\n"
+			"#FF8000 Power ups:#             %d\n"
+			//"#FF8000 Maximum Erases SYS:#    %d\n"
+			"#FF8000 Maximum Erases SLC:#    %d\n"
+			"#FF8000 Maximum Erases MLC:#    %d\n"
+			//"#FF8000 Minimum Erases SYS:#    %d\n"
+			"#FF8000 Minimum Erases SLC:#    %d\n"
+			"#FF8000 Minimum Erases MLC:#    %d\n"
+			"#FF8000 Maximum Erases EUDA:#   %d\n"
+			"#FF8000 Minimum Erases EUDA:#   %d\n"
+			"#FF8000 Average Erases EUDA:#   %d\n"
+			"#FF8000 Read Reclaims EUDA:#    %d\n"
+			"#FF8000 Bad Blocks EUDA:#       %d\n"
+			//"#FF8000 Pre EOL State EUDA:#    %d\n"
+			//"#FF8000 Pre EOL State SYS:#     %d\n"
+			//"#FF8000 Pre EOL State MLC:#     %d\n"
+			"#FF8000 Uncorrectable ECC:#     %d\n"
+			"#FF8000 Temperature Now:#       %d oC\n"
+			//"#FF8000 Temperature Min:#       %d oC\n"
+			"#FF8000 Temperature Max:#       %d oC\n"
+			"#FF8000 Health Level EUDA:#     %d%%\n"
+			//"#FF8000 Health Level SYS:#      %d%%\n"
+			"#FF8000 Health Level MLC:#      %d%%",
+
+			rpt->advanced.power_inits,
+			//rpt->advanced.max_erase_cycles_sys,
+			rpt->advanced.max_erase_cycles_slc,
+			rpt->advanced.max_erase_cycles_mlc,
+			//rpt->advanced.min_erase_cycles_sys,
+			rpt->advanced.min_erase_cycles_slc,
+			rpt->advanced.min_erase_cycles_mlc,
+			rpt->advanced.max_erase_cycles_euda,
+			rpt->advanced.min_erase_cycles_euda,
+			rpt->advanced.avg_erase_cycles_euda,
+			rpt->advanced.read_reclaim_cnt_euda,
+			rpt->advanced.bad_blocks_euda,
+			//rpt->advanced.pre_eol_euda,
+			//rpt->advanced.pre_eol_sys,
+			//rpt->advanced.pre_eol_mlc,
+			rpt->advanced.uncorrectable_ecc,
+			rpt->advanced.temperature_now,
+			//rpt->advanced.temperature_min,
+			rpt->advanced.temperature_max,
+			rpt->advanced.health_pct_euda ? 101 - rpt->advanced.health_pct_euda : 0,
+			//rpt->advanced.health_pct_sys ? 101 - rpt->advanced.health_pct_sys : 0,
+			rpt->advanced.health_pct_mlc ? 101 - rpt->advanced.health_pct_mlc : 0);
+	}
+	else
+		strcpy(txt_buf2, "#00DDFF Device report#\n#FFDD00 Empty!#");
+
+	lv_label_set_text(lb_desc, txt_buf);
+	lv_label_set_text(lb_desc2, txt_buf2);
+
+out:
+	free(buf);
+	free (txt_buf);
+	free (txt_buf2);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_benchmark(bool sd_bench)
 {
 	sdmmc_storage_t *storage;
@@ -1555,6 +1746,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 			break;
 		case 0x45: // Unofficial.
 			strcat(txt_buf, "SanDisk ");
+			lv_win_add_btn(win, NULL, SYMBOL_FILE_ALT" Device Report", _create_mbox_emmc_sandisk_report);
 			break;
 		case 0x90:
 			strcat(txt_buf, "SK Hynix ");
