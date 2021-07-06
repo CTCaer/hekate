@@ -2,6 +2,7 @@
  * Header for MultiMediaCard (MMC)
  *
  * Copyright 2002 Hewlett-Packard Company
+ * Copyright 2018-2021 CTCaer
  *
  * Use consistent with the GNU GPL is permitted,
  * provided that this copyright notice is
@@ -21,8 +22,8 @@
  *          15 May 2002
  */
 
-#ifndef LINUX_MMC_MMC_H
-#define LINUX_MMC_MMC_H
+#ifndef MMC_H
+#define MMC_H
 
 /* Standard MMC commands (4.1)           type  argument     response */
 /* class 1 */
@@ -97,29 +98,29 @@
 #define MMC_CMDQ_TASK_MGMT       48   /* ac   [20:16] task id    R1b */
 
 /*
-* MMC_SWITCH argument format:
-*
-*	[31:26] Always 0
-*	[25:24] Access Mode
-*	[23:16] Location of target Byte in EXT_CSD
-*	[15:08] Value Byte
-*	[07:03] Always 0
-*	[02:00] Command Set
-*/
+ * MMC_SWITCH argument format:
+ *
+ *	[31:26] Always 0
+ *	[25:24] Access Mode
+ *	[23:16] Location of target Byte in EXT_CSD
+ *	[15:08] Value Byte
+ *	[07:03] Always 0
+ *	[02:00] Command Set
+ */
 
 /*
-MMC status in R1, for native mode (SPI bits are different)
-Type
-e : error bit
-s : status bit
-r : detected and set for the actual command response
-x : detected and set during command execution. the host must poll
-the card by sending status command in order to read these bits.
-Clear condition
-a : according to the card state
-b : always related to the previous command. Reception of
-a valid command will clear it (with a delay of one command)
-c : clear by read
+ * MMC status in R1, for native mode (SPI bits are different)
+ * Type
+ * e : error bit
+ * s : status bit
+ * r : detected and set for the actual command response
+ * x : detected and set during command execution. the host must poll
+ *     the card by sending status command in order to read these bits.
+ * Clear condition
+ * a : according to the card state
+ * b : always related to the previous command. Reception of a valid
+ *     command will clear it (with a delay of one command)
+ * c : clear by read
 */
 
 #define R1_OUT_OF_RANGE		(1 << 31)	/* er, c */
@@ -151,6 +152,7 @@ c : clear by read
 #define R1_AKE_SEQ_ERROR	(1 << 3)
 
 /* R1_CURRENT_STATE 12:9 */
+#define R1_STATE(x)     ((x) << 9)
 #define R1_STATE_IDLE	0
 #define R1_STATE_READY	1
 #define R1_STATE_IDENT	2
@@ -162,9 +164,9 @@ c : clear by read
 #define R1_STATE_DIS	8
 
 /*
-* MMC/SD in SPI mode reports R1 status always, and R2 for SEND_STATUS
-* R1 is the low order byte; R2 is the next highest byte, when present.
-*/
+ * MMC/SD in SPI mode reports R1 status always, and R2 for SEND_STATUS
+ * R1 is the low order byte; R2 is the next highest byte, when present.
+ */
 #define R1_SPI_IDLE		(1 << 0)
 #define R1_SPI_ERASE_RESET	(1 << 1)
 #define R1_SPI_ILLEGAL_COMMAND	(1 << 2)
@@ -185,16 +187,16 @@ c : clear by read
 #define R2_SPI_CSD_OVERWRITE	R2_SPI_OUT_OF_RANGE
 
 /*
-* OCR bits are mostly in host.h
-*/
+ * OCR bits are mostly in host.h
+ */
 #define MMC_CARD_VDD_18		(1 << 7)	/* Card VDD voltage 1.8 */
 #define MMC_CARD_VDD_27_34	(0x7F << 15)	/* Card VDD voltage 2.7 ~ 3.4 */
 #define MMC_CARD_CCS		(1 << 30)	/* Card Capacity status bit */
 #define MMC_CARD_BUSY		(1 << 31)	/* Card Power up status bit */
 
 /*
-* Card Command Classes (CCC)
-*/
+ * Card Command Classes (CCC)
+ */
 #define CCC_BASIC		(1<<0)	/* (0) Basic protocol functions */
 /* (CMD0,1,2,3,4,7,9,10,12,13,15) */
 /* (and for SPI, CMD58,59) */
@@ -222,8 +224,8 @@ c : clear by read
 /* (CMD?) */
 
 /*
-* CSD field definitions
-*/
+ * CSD field definitions
+ */
 
 #define CSD_STRUCT_VER_1_0  0           /* Valid for system specification 1.0 - 1.2 */
 #define CSD_STRUCT_VER_1_1  1           /* Valid for system specification 1.4 - 2.2 */
@@ -237,8 +239,8 @@ c : clear by read
 #define CSD_SPEC_VER_4      4           /* Implements system specification 4.0 - 4.1 */
 
 /*
-* EXT_CSD fields
-*/
+ * EXT_CSD fields
+ */
 
 #define EXT_CSD_CMDQ_MODE_EN		15	/* R/W */
 #define EXT_CSD_FLUSH_CACHE		32      /* W */
@@ -316,8 +318,8 @@ c : clear by read
 #define EXT_CSD_HPI_FEATURES		503	/* RO */
 
 /*
-* EXT_CSD field definitions
-*/
+ * EXT_CSD field definitions
+ */
 
 #define EXT_CSD_WR_REL_PARAM_EN		(1<<2)
 
@@ -393,8 +395,8 @@ c : clear by read
 #define EXT_CSD_PACKED_EVENT_EN	(1<<3)
 
 /*
-* EXCEPTION_EVENT_STATUS field
-*/
+ * EXCEPTION_EVENT_STATUS field
+ */
 #define EXT_CSD_URGENT_BKOPS		(1<<0)
 #define EXT_CSD_DYNCAP_NEEDED		(1<<1)
 #define EXT_CSD_SYSPOOL_EXHAUSTED	(1<<2)
@@ -404,34 +406,34 @@ c : clear by read
 #define EXT_CSD_PACKED_INDEXED_ERROR	(1<<1)
 
 /*
-* BKOPS status level
-*/
+ * BKOPS status level
+ */
 #define EXT_CSD_BKOPS_LEVEL_2		0x2
 
 /*
-* BKOPS modes
-*/
+ * BKOPS modes
+ */
 #define EXT_CSD_MANUAL_BKOPS_MASK	0x01
 #define EXT_CSD_AUTO_BKOPS_MASK		0x02
 
 /*
-* Command Queue
-*/
+ * Command Queue
+ */
 #define EXT_CSD_CMDQ_MODE_ENABLED	(1<<0)
 #define EXT_CSD_CMDQ_DEPTH_MASK		0x1F
 #define EXT_CSD_CMDQ_SUPPORTED		(1<<0)
 
 /*
-* MMC_SWITCH access modes
-*/
+ * MMC_SWITCH access modes
+ */
 #define MMC_SWITCH_MODE_CMD_SET		0x00	/* Change the command set */
 #define MMC_SWITCH_MODE_SET_BITS	0x01	/* Set bits which are 1 in value */
 #define MMC_SWITCH_MODE_CLEAR_BITS	0x02	/* Clear bits which are 1 in value */
 #define MMC_SWITCH_MODE_WRITE_BYTE	0x03	/* Set target to value */
 
 /*
-* Erase/trim/discard
-*/
+ * Erase/trim/discard
+ */
 #define MMC_ERASE_ARG			0x00000000
 #define MMC_SECURE_ERASE_ARG		0x80000000
 #define MMC_TRIM_ARG			0x00000001
@@ -441,4 +443,9 @@ c : clear by read
 #define MMC_SECURE_ARGS			0x80000000
 #define MMC_TRIM_ARGS			0x00008001
 
-#endif /* LINUX_MMC_MMC_H */
+/*
+ * Vendor definitions and structs
+ */
+#define MMC_SANDISK_HEALTH_REPORT 0x96C9D71C
+
+#endif /* MMC_H */

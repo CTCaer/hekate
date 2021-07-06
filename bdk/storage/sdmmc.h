@@ -34,6 +34,81 @@ typedef enum _sdmmc_type
 	EMMC_RPMB  = 3
 } sdmmc_type;
 
+typedef struct _mmc_sandisk_advanced_report_t
+{
+	u32 power_inits;
+
+	u32 max_erase_cycles_sys;
+	u32 max_erase_cycles_slc;
+	u32 max_erase_cycles_mlc;
+
+	u32 min_erase_cycles_sys;
+	u32 min_erase_cycles_slc;
+	u32 min_erase_cycles_mlc;
+
+	u32 max_erase_cycles_euda;
+	u32 min_erase_cycles_euda;
+	u32 avg_erase_cycles_euda;
+	u32 read_reclaim_cnt_euda;
+	u32 bad_blocks_euda;
+
+	u32 pre_eol_euda;
+	u32 pre_eol_sys;
+	u32 pre_eol_mlc;
+
+	u32 uncorrectable_ecc;
+
+	u32 temperature_now;
+	u32 temperature_min;
+	u32 temperature_max;
+
+	u32 health_pct_euda;
+	u32 health_pct_sys;
+	u32 health_pct_mlc;
+
+	u32 unk0;
+	u32 unk1;
+	u32 unk2;
+
+	u32 reserved[78];
+} mmc_sandisk_advanced_report_t;
+
+typedef struct _mmc_sandisk_report_t
+{
+	u32 avg_erase_cycles_sys;
+	u32 avg_erase_cycles_slc;
+	u32 avg_erase_cycles_mlc;
+
+	u32 read_reclaim_cnt_sys;
+	u32 read_reclaim_cnt_slc;
+	u32 read_reclaim_cnt_mlc;
+
+	u32 bad_blocks_factory;
+	u32 bad_blocks_sys;
+	u32 bad_blocks_slc;
+	u32 bad_blocks_mlc;
+
+	u32 fw_updates_cnt;
+
+	u8  fw_update_date[12];
+	u8  fw_update_time[8];
+
+	u32 total_writes_100mb;
+	u32 vdrops;
+	u32 vdroops;
+
+	u32 vdrops_failed_data_rec;
+	u32 vdrops_data_rec_ops;
+
+	u32 total_writes_slc_100mb;
+	u32 total_writes_mlc_100mb;
+
+	u32 mlc_bigfile_mode_limit_exceeded;
+	u32 avg_erase_cycles_hybrid;
+
+	mmc_sandisk_advanced_report_t advanced;
+} mmc_sandisk_report_t;
+
 typedef struct _mmc_cid
 {
 	u32 manfid;
@@ -130,6 +205,9 @@ int  sdmmc_storage_set_mmc_partition(sdmmc_storage_t *storage, u32 partition);
 void sdmmc_storage_init_wait_sd();
 int  sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_width, u32 type);
 int  sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
+
+int  sdmmc_storage_execute_vendor_cmd(sdmmc_storage_t *storage, u32 arg);
+int  sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf);
 
 int  sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf);
 u32  sd_storage_get_ssr_au(sdmmc_storage_t *storage);

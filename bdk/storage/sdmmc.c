@@ -139,6 +139,60 @@ static int _sdmmc_storage_check_status(sdmmc_storage_t *storage)
 	return _sdmmc_storage_get_status(storage, &tmp, 0);
 }
 
+int sdmmc_storage_execute_vendor_cmd(sdmmc_storage_t *storage, u32 arg)
+{
+	sdmmc_cmd_t cmdbuf;
+	sdmmc_init_cmd(&cmdbuf, MMC_VENDOR_62_CMD, arg, SDMMC_RSP_TYPE_1, 1);
+	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, 0, 0))
+		return 0;
+
+	u32 resp;
+	sdmmc_get_rsp(storage->sdmmc, &resp, 4, SDMMC_RSP_TYPE_1);
+
+	resp = -1;
+	u32 timeout = get_tmr_ms() + 1500;
+	while (resp != (R1_READY_FOR_DATA | R1_STATE(R1_STATE_TRAN)))
+	{
+		_sdmmc_storage_get_status(storage, &resp, 0);
+
+		if (get_tmr_ms() > timeout)
+			break;
+	}
+
+	return _sdmmc_storage_check_card_status(resp);
+}
+
+int sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf)
+{
+	// Request health report.
+	if (!sdmmc_storage_execute_vendor_cmd(storage, MMC_SANDISK_HEALTH_REPORT))
+		return 2;
+
+	u32 tmp = 0;
+	sdmmc_cmd_t cmdbuf;
+	sdmmc_req_t reqbuf;
+
+	sdmmc_init_cmd(&cmdbuf, MMC_VENDOR_63_CMD, 0, SDMMC_RSP_TYPE_1, 0); // similar to CMD17 with arg 0x0.
+
+	reqbuf.buf = buf;
+	reqbuf.num_sectors = 1;
+	reqbuf.blksize = 512;
+	reqbuf.is_write = 0;
+	reqbuf.is_multi_block = 0;
+	reqbuf.is_auto_stop_trn = 0;
+
+	u32 blkcnt_out;
+	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, &blkcnt_out))
+	{
+		sdmmc_stop_transmission(storage->sdmmc, &tmp);
+		_sdmmc_storage_get_status(storage, &tmp, 0);
+
+		return 0;
+	}
+
+	return 1;
+}
+
 static int _sdmmc_storage_readwrite_ex(sdmmc_storage_t *storage, u32 *blkcnt_out, u32 sector, u32 num_sectors, void *buf, u32 is_write)
 {
 	u32 tmp = 0;
@@ -1360,8 +1414,6 @@ DPRINTF("[SD] SD does not support wide bus width\n");
 		if (!_sd_storage_enable_uhs_low_volt(storage, type, buf))
 			return 0;
 DPRINTF("[SD] enabled UHS\n");
-
-		sdmmc_card_clock_powersave(sdmmc, SDMMC_POWER_SAVE_ENABLE);
 	}
 	else if (type != SDHCI_TIMING_SD_DS12 && storage->scr.sda_vsn) // Not default speed and not SD Version 1.0.
 	{
@@ -1386,6 +1438,8 @@ DPRINTF("[SD] enabled HS\n");
 	{
 DPRINTF("[SD] got sd status\n");
 	}
+
+	sdmmc_card_clock_powersave(sdmmc, SDMMC_POWER_SAVE_ENABLE);
 
 	storage->initialized = 1;
 
