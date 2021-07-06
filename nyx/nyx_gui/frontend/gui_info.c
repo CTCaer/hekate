@@ -980,36 +980,37 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == -1;
 			break;
+		case 0x00100200: // 4CD 1602.
 		case 0x00120100:
 		case 0x32000001:
 			strcat(txt_buf, "4CD 1801");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 0;
+				panel_ic_paired = touch_panel->idx == 0; // NISSHA NFT-K12D.
 			break;
 		case 0x001A0300:
 		case 0x32000102:
 			strcat(txt_buf, "4CD 2602");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 1;
+				panel_ic_paired = touch_panel->idx == 1; // GiS GGM6 B2X.
 			break;
 		case 0x00290100:
 		case 0x32000302:
 			strcat(txt_buf, "4CD 3801");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 2;
+				panel_ic_paired = touch_panel->idx == 2; // NISSHA NBF-K9A.
 			break;
 		case 0x31051820:
 		case 0x32000402:
-			strcat(txt_buf, "4CD XXXX");
+			strcat(txt_buf, "4CD 4602"); // Assumed. Official is XXXX.
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 3;
+				panel_ic_paired = touch_panel->idx == 3; // GiS 5.5".
 			break;
 		case 0x32000501:
 		case 0x33000502:
 		case 0x33000503:
 			strcat(txt_buf, "4CD UNKN");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 4;
+				panel_ic_paired = touch_panel->idx == 4; // Unknown Aula 6.2".
 			break;
 		default:
 			strcat(txt_buf, "#FF8000 Unknown#");
