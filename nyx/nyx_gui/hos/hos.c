@@ -568,7 +568,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 		switch (kb)
 		{
-		case KB_FIRMWARE_VERSION_100_200:
+		case KB_FIRMWARE_VERSION_100:
 		case KB_FIRMWARE_VERSION_300:
 		case KB_FIRMWARE_VERSION_301:
 			se_aes_unwrap_key(13, 15, console_keyseed);
