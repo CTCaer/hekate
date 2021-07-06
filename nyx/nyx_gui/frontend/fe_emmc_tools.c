@@ -379,7 +379,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 		_get_valid_partition(&sector_start, &sector_size, &part_idx, true);
 		if (!part_idx || !sector_size)
 		{
-			s_printf(gui->txt_buf, "#FFDD00 Failed to find a partition...#\n");
+			s_printf(gui->txt_buf, "\n#FFDD00 Failed to find a partition...#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
@@ -995,18 +995,30 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 
 					return 0;
 				}
-				else if (f_stat(outFilename, &fno) && !gui->raw_emummc)
+				else if (f_stat(outFilename, &fno))
 				{
-					s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n\n", res, outFilename);
-					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-					manual_system_maintenance(true);
+					if (!gui->raw_emummc)
+					{
+						s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n\n", res, outFilename);
+						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+						manual_system_maintenance(true);
 
-					// Attempt a smaller restore.
-					break;
-				}
-				else if (f_stat(outFilename, &fno) && gui->raw_emummc)
-				{
-					totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
+						// Attempt a smaller restore.
+						if (numSplitParts)
+							break;
+					}
+					else
+						totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
+
+					// Restore folder is empty.
+					if (!numSplitParts)
+					{
+						s_printf(gui->txt_buf, "#FFDD00 Restore folder is empty.#\n\n");
+						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+						manual_system_maintenance(true);
+
+						return 0;
+					}
 				}
 				else
 				{
