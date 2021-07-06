@@ -159,24 +159,11 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt)
 	// Check if valid FSS0 and parse it.
 	if (fss_meta->magic == FSS0_MAGIC)
 	{
-		bool mariko_not_supported = false;
-		if (h_cfg.t210b01 && (fss_meta->version < FSS0_VERSION_0_17_0))
-		{
-			gfx_con.mute = false;
-			mariko_not_supported = true;
-		}
-
 		gfx_printf("Found FSS0, Atmosphere %d.%d.%d-%08x\n"
 			"Max HOS supported: %d.%d.%d\n"
 			"Unpacking and loading components..  ",
 			fss_meta->version >> 24, (fss_meta->version >> 16) & 0xFF, (fss_meta->version >> 8) & 0xFF, fss_meta->git_rev,
 			fss_meta->hos_ver >> 24, (fss_meta->hos_ver >> 16) & 0xFF, (fss_meta->hos_ver >> 8) & 0xFF);
-
-		if (mariko_not_supported)
-		{
-			EPRINTF("\nMariko not supported on < 0.17.0!");
-			goto fail;
-		}
 
 		if (!sept_ctxt)
 		{
@@ -279,7 +266,6 @@ out:
 		return (!sept_ctxt ? 1 : sept_used);
 	}
 
-fail:
 	f_close(&fp);
 	free(fss);
 
