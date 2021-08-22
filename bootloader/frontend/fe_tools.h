@@ -19,9 +19,6 @@
 #define _FE_TOOLS_H_
 
 void dump_packages12();
-void fix_sd_all_attr();
-void fix_sd_nin_attr();
-void fix_battery_desync();
 void menu_autorcm();
 
 #endif

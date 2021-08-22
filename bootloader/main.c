@@ -1411,19 +1411,6 @@ static void _about()
 	btn_wait();
 }
 
-ment_t ment_options[] = {
-	MDEF_BACK(),
-	MDEF_CHGLINE(),
-	MDEF_HANDLER("Auto boot", config_autoboot),
-	MDEF_HANDLER("Boot delay", config_bootdelay),
-	MDEF_HANDLER("Auto NoGC", config_nogc),
-	MDEF_HANDLER("Auto HOS power off", config_auto_hos_poweroff),
-	MDEF_HANDLER("Backlight", config_backlight),
-	MDEF_END()
-};
-
-menu_t menu_options = { ment_options, "Options", 0, 0 };
-
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
@@ -1431,7 +1418,6 @@ ment_t ment_cinfo[] = {
 	MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
 	MDEF_HANDLER("Fuses", print_fuseinfo),
 	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
-	//MDEF_HANDLER("Print TSEC keys", print_tsec_key),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
 	MDEF_HANDLER("eMMC", print_mmc_info),
@@ -1482,10 +1468,6 @@ ment_t ment_tools[] = {
 	//MDEF_CHGLINE(),
 	//MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
 	//MDEF_HANDLER("Dump package1/2", dump_packages12),
-	//MDEF_HANDLER("Fix archive bit (except Nintendo)", fix_sd_all_attr),
-	//MDEF_HANDLER("Fix archive bit (Nintendo only)", fix_sd_nin_attr),
-	//MDEF_HANDLER("Fix fuel gauge configuration", fix_fuel_gauge_configuration),
-	//MDEF_HANDLER("Reset all battery cfg", reset_pmic_fuel_gauge_charger_config),
 	//MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Other -------", 0xFFFFDD00),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
@@ -1500,7 +1482,6 @@ power_state_t STATE_REBOOT_BYPASS_FUSES = REBOOT_BYPASS_FUSES;
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
-	//MDEF_MENU("Options", &menu_options),
 	MDEF_CAPTION("---------------", 0xFF444444),
 	MDEF_MENU("Tools",        &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),

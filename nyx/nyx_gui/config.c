@@ -100,28 +100,35 @@ int create_config_entry()
 
 	if (f_open(&fp, "bootloader/hekate_ipl.ini", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 		return 1;
+
 	// Add config entry.
 	f_puts("[config]\nautoboot=", &fp);
 	itoa(h_cfg.autoboot, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nautoboot_list=", &fp);
 	itoa(h_cfg.autoboot_list, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\nbootwait=", &fp);
 	itoa(h_cfg.bootwait, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nbacklight=", &fp);
 	itoa(h_cfg.backlight, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nautohosoff=", &fp);
 	itoa(h_cfg.autohosoff, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nautonogc=", &fp);
 	itoa(h_cfg.autonogc, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nupdater2p=", &fp);
 	itoa(h_cfg.updater2p, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nbootprotect=", &fp);
 	itoa(h_cfg.bootprotect, lbuf, 10);
 	f_puts(lbuf, &fp);
