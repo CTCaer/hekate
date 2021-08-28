@@ -200,10 +200,10 @@ static const cfg_op_t _display_dsi_init_config_part6[14] = {
 
 //DSI panel config.
 static const cfg_op_t _display_init_config_jdi[43] = {
-	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+	{DSI_WR_DATA, 0x0439},     // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
-	{DSI_WR_DATA, 0x00BD15},   // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0 to 0xBD.
+	{DSI_WR_DATA, 0xBD15},     // MIPI_DSI_DCS_SHORT_WRITE_PARAM: 0 to 0xBD.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 	{DSI_WR_DATA, 0x1939},     // MIPI_DSI_DCS_LONG_WRITE: 25 bytes.
 	{DSI_WR_DATA, 0xAAAAAAD8}, // Register: 0xD8.

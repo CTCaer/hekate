@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -547,17 +547,17 @@
 #define MIPI_DCS_GET_DISPLAY_ID1       0xDA // GET_DISPLAY_ID Byte0, Module Manufacturer ID.
 #define MIPI_DCS_GET_DISPLAY_ID2       0xDB // GET_DISPLAY_ID Byte1, Module/Driver Version ID.
 #define MIPI_DCS_GET_DISPLAY_ID3       0xDC // GET_DISPLAY_ID Byte2, Module/Driver ID.
-#define MIPI_DCS_GET_NUM_ERRORS        0x05
+#define MIPI_DCS_GET_NUM_ERRORS        0x05 // 1 byte.
 #define MIPI_DCS_GET_RED_CHANNEL       0x06
 #define MIPI_DCS_GET_GREEN_CHANNEL     0x07
 #define MIPI_DCS_GET_BLUE_CHANNEL      0x08
-#define MIPI_DCS_GET_DISPLAY_STATUS    0x09
-#define MIPI_DCS_GET_POWER_MODE	       0x0A
-#define MIPI_DCS_GET_ADDRESS_MODE      0x0B
-#define MIPI_DCS_GET_PIXEL_FORMAT      0x0C
-#define MIPI_DCS_GET_DISPLAY_MODE      0x0D
-#define MIPI_DCS_GET_SIGNAL_MODE       0x0E
-#define MIPI_DCS_GET_DIAGNOSTIC_RESULT 0x0F
+#define MIPI_DCS_GET_DISPLAY_STATUS    0x09 // 4 bytes.
+#define MIPI_DCS_GET_POWER_MODE	       0x0A // 1 byte. 2: DISON, 3: NORON, 4: SLPOUT, 7: BSTON.
+#define MIPI_DCS_GET_ADDRESS_MODE      0x0B // Display Access Control. 1 byte. 0: GS, 1: SS, 3: BGR.
+#define MIPI_DCS_GET_PIXEL_FORMAT      0x0C // 1 byte. 4-6: DPI.
+#define MIPI_DCS_GET_DISPLAY_MODE      0x0D // 1 byte. 0-2: GCS, 3: ALLPOFF, 4: ALLPON, 5: INVON.
+#define MIPI_DCS_GET_SIGNAL_MODE       0x0E // 1 byte. 0: EODSI, 2: DEON, 3: PCLKON, 4: VSON, 5: HSON, 7: TEON.
+#define MIPI_DCS_GET_DIAGNOSTIC_RESULT 0x0F // 1 byte. 6: FUNDT, 7: REGLD.
 #define MIPI_DCS_ENTER_SLEEP_MODE      0x10
 #define MIPI_DCS_EXIT_SLEEP_MODE       0x11
 #define MIPI_DCS_ENTER_PARTIAL_MODE    0x12
@@ -567,7 +567,7 @@
 #define MIPI_DCS_ALL_PIXELS_OFF        0x22
 #define MIPI_DCS_ALL_PIXELS_ON         0x23
 #define MIPI_DCS_SET_CONTRAST          0x25 // VCON in 40mV steps. 7-bit integer.
-#define MIPI_DCS_SET_GAMMA_CURVE       0x26
+#define MIPI_DCS_SET_GAMMA_CURVE       0x26 // 1 byte. 0-7: GC.
 #define MIPI_DCS_SET_DISPLAY_OFF       0x28
 #define MIPI_DCS_SET_DISPLAY_ON        0x29
 #define MIPI_DCS_SET_COLUMN_ADDRESS    0x2A
@@ -580,11 +580,11 @@
 #define MIPI_DCS_SET_SCROLL_AREA       0x33
 #define MIPI_DCS_SET_TEAR_OFF          0x34
 #define MIPI_DCS_SET_TEAR_ON           0x35
-#define MIPI_DCS_SET_ADDRESS_MODE      0x36
+#define MIPI_DCS_SET_ADDRESS_MODE      0x36 // Display Access Control. 1 byte. 0: GS, 1: SS, 3: BGR.
 #define MIPI_DCS_SET_SCROLL_START      0x37
 #define MIPI_DCS_EXIT_IDLE_MODE        0x38
 #define MIPI_DCS_ENTER_IDLE_MODE       0x39
-#define MIPI_DCS_SET_PIXEL_FORMAT      0x3A
+#define MIPI_DCS_SET_PIXEL_FORMAT      0x3A // 1 byte. 4-6: DPI.
 #define MIPI_DCS_WRITE_MEMORY_CONTINUE 0x3C
 #define MIPI_DCS_READ_MEMORY_CONTINUE  0x3E
 #define MIPI_DCS_GET_3D_CONTROL        0x3F
@@ -593,26 +593,34 @@
 #define MIPI_DCS_GET_SCANLINE          0x45
 #define MIPI_DCS_SET_TEAR_SCANLINE_WIDTH 0x46
 #define MIPI_DCS_GET_SCANLINE_WIDTH    0x47
-#define MIPI_DCS_SET_BRIGHTNESS        0x51 // DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL.
-#define MIPI_DCS_GET_BRIGHTNESS        0x52
-#define MIPI_DCS_SET_CONTROL_DISPLAY   0x53
-#define MIPI_DCS_GET_CONTROL_DISPLAY   0x54
-#define MIPI_DCS_SET_CABC_VALUE        0x55
-#define MIPI_DCS_GET_CABC_VALUE        0x56
-#define MIPI_DCS_SET_CABC_MIN_BRI      0x5E
-#define MIPI_DCS_GET_CABC_MIN_BRI      0x5F
+#define MIPI_DCS_SET_BRIGHTNESS        0x51 // DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL. 1 byte. 0-7: DBV.
+#define MIPI_DCS_GET_BRIGHTNESS        0x52 // 1 byte. 0-7: DBV.
+#define MIPI_DCS_SET_CONTROL_DISPLAY   0x53 // 1 byte. 2: BL, 3: DD, 5: BCTRL.
+#define MIPI_DCS_GET_CONTROL_DISPLAY   0x54 // 1 byte. 2: BL, 3: DD, 5: BCTRL.
+#define MIPI_DCS_SET_CABC_VALUE        0x55 // 1 byte. 0-32: C, 4-7: C.
+#define MIPI_DCS_GET_CABC_VALUE        0x56 // 1 byte. 0-32: C, 4-7: C.
+#define MIPI_DCS_SET_CABC_MIN_BRI      0x5E // 1 byte. 0-7: CMB.
+#define MIPI_DCS_GET_CABC_MIN_BRI      0x5F // 1 byte. 0-7: CMB.
+#define MIPI_DCS_GET_AUTO_BRI_DIAG_RES 0x68 // 1 byte. 6-7: D.
 #define MIPI_DCS_READ_DDB_START        0xA1
-#define MIPI_DCS_READ_DDB_CONTINUE     0xA8
+#define MIPI_DCS_READ_DDB_CONTINUE     0xA8 // 0x100 size.
 
 /*! MIPI DCS Panel Private CMDs. */
 #define MIPI_DCS_PRIV_UNK_A0            0xA0
 #define MIPI_DCS_PRIV_SET_POWER_CONTROL 0xB1
-#define MIPI_DCS_PRIV_SET_EXTC          0xB9
+#define MIPI_DCS_PRIV_SET_EXTC          0xB9 // Enable extended commands.
 #define MIPI_DCS_PRIV_UNK_BD            0xBD
 #define MIPI_DCS_PRIV_UNK_D5            0xD5
 #define MIPI_DCS_PRIV_UNK_D6            0xD6
 #define MIPI_DCS_PRIV_UNK_D8            0xD8
 #define MIPI_DCS_PRIV_UNK_D9            0xD9
+#define MIPI_DCS_PRIV_READ_EXTC_CMD_SPI 0xFE // Read EXTC Command In SPI. 1 byte. 0-6: EXT_SPI_CNT, 7:EXT_SP.
+#define MIPI_DCS_PRIV_SET_EXTC_CMD_REG  0xFF // EXTC Command Set enable register. 5 bytes. Pass: FF 98 06 04, PAGE.
+
+/*! MIPI DCS Panel Private CMDs PAGE 1. */
+#define MIPI_DCS_PRIV_GET_DISPLAY_ID4   0x00
+#define MIPI_DCS_PRIV_GET_DISPLAY_ID5   0x01
+#define MIPI_DCS_PRIV_GET_DISPLAY_ID6   0x02
 
 /*! MIPI DCS CMD Defines. */
 #define DCS_POWER_MODE_DISPLAY_ON           BIT(2)
@@ -655,11 +663,15 @@
  * [20] 98 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
  * [30] 94 [0F]: AUO A062TAN01 (59.06A33.001)
  * [30] 95 [0F]: AUO A062TAN02 (59.06A33.002)
+ * [30] XX [0F]: AUO A062TAN03 (59.06A33.003) [UNCONFIRMED ID]
  *
  * 5.5" panels for Hoag skus:
  * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1)
- * [30] XX [10]: AUO A055TAN01 (59.05A30.001) [UNCONFIRMED ID]
+ * [30] 93 [10]: AUO A055TAN01 (59.05A30.001)
  * [40] XX [10]: Vendor 40 [UNCONFIRMED ID]
+ *
+ * 7.0" OLED panels for Aula skus:
+ * [50] XX [20]: Samsung AMS700XXXX [UNCONFIRMED ID and MODEL]
  */
 
 /* Display ID Decoding:
@@ -672,13 +684,13 @@
  * 10h: Japan Display Inc.
  * 20h: InnoLux Corporation
  * 30h: AU Optronics
- * 40h: Unknown1
- * 50h: Unknown2 (OLED? Samsung? LG?)
+ * 40h: Unknown0
+ * 50h: Samsung
  *
  * Boards, Panel Size:
  * 0Fh: Icosa/Iowa, 6.2"
  * 10h: Hoag,       5.5"
- * 20h: Unknown,    x.x"
+ * 20h: Aula,       7.0"
  */
 
 enum
@@ -690,7 +702,8 @@ enum
 	PANEL_AUO_A062TAN01   = 0x0F30,
 	PANEL_INL_2J055IA_27A = 0x1020,
 	PANEL_AUO_A055TAN01   = 0x1030,
-	PANEL_V40_55_UNK      = 0x1040
+	PANEL_V40_55_UNK      = 0x1040,
+	PANEL_SAM_70_UNK      = 0x2050
 };
 
 void display_init();

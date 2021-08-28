@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -22,6 +22,7 @@
 #include <power/max7762x.h>
 #include <mem/heap.h>
 #include <soc/clock.h>
+#include <soc/fuse.h>
 #include <soc/gpio.h>
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
@@ -35,6 +36,7 @@
 extern volatile nyx_storage_t *nyx_str;
 
 static u32 _display_id = 0;
+static bool nx_aula = false;
 
 static void _display_panel_and_hw_end(bool no_panel_deinit);
 
@@ -91,7 +93,7 @@ int display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled)
 
 		// Wait for vblank before starting the transfer.
 		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-		while (DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT)
+		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
 			;
 	}
 
@@ -134,19 +136,22 @@ int display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled)
 		case DCS_2_BYTE_SHORT_RD_RES:
 			memcpy(data, &fifo[2], 2);
 			break;
+
 		case ACK_ERROR_RES:
 		default:
 			res = 1;
 			break;
 		}
 	}
+	else
+		res = 1;
 
 	// Disable host cmd packets during video and restore host control.
 	if (video_enabled)
 	{
 		// Wait for vblank before reseting sync points.
 		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-		while (DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT)
+		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
 			;
 
 		// Reset all states of syncpt block.
@@ -181,7 +186,7 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 	host_control = DSI(_DSIREG(DSI_HOST_CONTROL));
 
 	// Enable host transfer trigger.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) |= DSI_HOST_CONTROL_TX_TRIG_HOST;
+	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control | DSI_HOST_CONTROL_TX_TRIG_HOST;
 
 	switch (len)
 	{
@@ -216,8 +221,71 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control;
 }
 
+void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
+{
+	u8  *fifo8;
+	u32 *fifo32;
+
+	// Enable vblank interrupt.
+	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = DC_CMD_INT_FRAME_END_INT;
+
+	// Use the 4th line to transmit the host cmd packet.
+	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE | DSI_DSI_LINE_TYPE(4);
+
+	// Wait for vblank before starting the transfer.
+	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
+	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
+		;
+
+	switch (len)
+	{
+	case 0:
+		DSI(_DSIREG(DSI_WR_DATA)) = (cmd << 8) | MIPI_DSI_DCS_SHORT_WRITE;
+		break;
+
+	case 1:
+		DSI(_DSIREG(DSI_WR_DATA)) = ((cmd | (*(u8 *)data << 8)) << 8) | MIPI_DSI_DCS_SHORT_WRITE_PARAM;
+		break;
+
+	default:
+		fifo32 = calloc(DSI_STATUS_RX_FIFO_SIZE * 8, 4);
+		fifo8 = (u8 *)fifo32;
+		fifo32[0] = (len << 8) | MIPI_DSI_DCS_LONG_WRITE;
+		fifo8[4] = cmd;
+		memcpy(&fifo8[5], data, len);
+		len += 4 + 1; // Increase length by CMD/length word and DCS CMD.
+		for (u32 i = 0; i < (ALIGN(len, 4) / 4); i++)
+			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
+		free(fifo32);
+		break;
+	}
+
+	// Wait for vblank before reseting sync points.
+	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
+	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
+		;
+
+	// Reset all states of syncpt block.
+	DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = DSI_INCR_SYNCPT_SOFT_RESET;
+	usleep(300); // Stabilization delay.
+
+	// Clear syncpt block reset.
+	DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = 0;
+	usleep(300); // Stabilization delay.
+
+	// Restore video mode and host control.
+	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
+
+	// Disable and clear vblank interrupt.
+	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = 0;
+	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT;
+}
+
 void display_init()
 {
+	// Get Hardware type, as it's used in various DI functions.
+	nx_aula = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
+
 	// Check if display is already initialized.
 	if (CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) & BIT(CLK_L_DISP1))
 		_display_panel_and_hw_end(true);
@@ -270,22 +338,31 @@ void display_init()
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) &= ~PINMUX_TRISTATE; // PULL_DOWN | 1
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_EN)  &= ~PINMUX_TRISTATE; // PULL_DOWN
 
-	// Set LCD +-5V pins mode and direction
-	gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO);
-	gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE);
+	if (nx_aula)
+	{
+		// Configure LCD RST pin.
+		gpio_config(GPIO_PORT_V, GPIO_PIN_2, GPIO_MODE_GPIO);
+		gpio_output_enable(GPIO_PORT_V, GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
+	}
+	else
+	{
+		// Set LCD +-5V pins mode and direction
+		gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO);
+		gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE);
 
-	// Enable LCD power.
-	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // LCD +5V enable.
-	usleep(10000);
-	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // LCD -5V enable.
-	usleep(10000);
+		// Enable LCD power.
+		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // LCD +5V enable.
+		usleep(10000);
+		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // LCD -5V enable.
+		usleep(10000);
 
-	// Configure Backlight PWM/EN and LCD RST pins (BL PWM, BL EN, LCD RST).
-	gpio_config(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO);
-	gpio_output_enable(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
+		// Configure Backlight PWM/EN and LCD RST pins (BL PWM, BL EN, LCD RST).
+		gpio_config(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO);
+		gpio_output_enable(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
 
-	 // Enable Backlight power.
-	gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH);
+		 // Enable Backlight power.
+		gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH);
+	}
 
 	// Power up supply regulator for display interface.
 	MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0;
@@ -336,35 +413,18 @@ void display_init()
 	usleep(60000);
 
 	// Setup DSI device takeover timeout.
-	DSI(_DSIREG(DSI_BTA_TIMING)) = 0x50204;
+	DSI(_DSIREG(DSI_BTA_TIMING)) = nx_aula ? 0x40103 : 0x50204;
 
-#if 0
 	// Get Display ID.
-	_display_id = 0xCCCCCC; // Set initial value. 4th byte cleared.
-	display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_display_id, DSI_VIDEO_DISABLED);
-#else
-	// Drain RX FIFO.
-	_display_dsi_read_rx_fifo(NULL);
-
-	// Set reply size.
-	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, 3, 0);
-	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
-
-	// Request register read.
-	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, MIPI_DCS_GET_DISPLAY_ID, 0);
-	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
-
-	// Transfer bus control to device for transmitting the reply.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) = DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_IMM_BTA | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC;
-	_display_dsi_wait(150000, _DSIREG(DSI_HOST_CONTROL), DSI_HOST_CONTROL_IMM_BTA);
-
-	// Wait a bit for the reply.
-	usleep(5000);
-
-	// MIPI_DCS_GET_DISPLAY_ID reply is a long read, size 3 x u32.
+	_display_id = 0xCCCCCC;
 	for (u32 i = 0; i < 3; i++)
-		_display_id = DSI(_DSIREG(DSI_RD_DATA)) & 0xFFFFFF; // Skip ack and msg type info and get the payload (display id).
-#endif
+	{
+		if (!display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_display_id, DSI_VIDEO_DISABLED))
+			break;
+
+		usleep(10000);
+	}
+
 	// Save raw Display ID to Nyx storage.
 	nyx_str->info.disp_id = _display_id;
 
@@ -374,9 +434,23 @@ void display_init()
 	if ((_display_id & 0xFF) == PANEL_JDI_XXX062M)
 		_display_id = PANEL_JDI_XXX062M;
 
+	// For Aula ensure that we have a compatible panel id.
+	if (nx_aula && _display_id == 0xCCCC)
+		_display_id = PANEL_SAM_70_UNK;
+
 	// Initialize display panel.
 	switch (_display_id)
 	{
+	case PANEL_SAM_70_UNK:
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, 0xA0, 0); // Write 0 to 0xA0.
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_SET_CONTROL_DISPLAY | (DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL << 8), 0); // Enable brightness control.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x339;    // MIPI_DSI_DCS_LONG_WRITE: 3 bytes.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x000051; // MIPI_DCS_SET_BRIGHTNESS 0000: 0%. FF07: 100%.
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		usleep(5000);
+		break;
+
 	case PANEL_JDI_XXX062M:
 		exec_cfg((u32 *)DSI_BASE, _display_init_config_jdi, 43);
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
@@ -415,7 +489,7 @@ void display_init()
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
 	// Configure PLLD for DISP1.
-	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 234 MHz (offset).
+	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 234 MHz (offset, it's ddr btw, so normally div2).
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
 
 	if (tegra_t210)
@@ -465,6 +539,9 @@ void display_init()
 
 void display_backlight_pwm_init()
 {
+	if (_display_id == PANEL_SAM_70_UNK)
+		return;
+
 	clock_enable_pwm();
 
 	PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN; // Enable PWM and set it to 25KHz PFM. 29.5KHz is stock.
@@ -478,20 +555,23 @@ void display_backlight(bool enable)
 	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); // Backlight PWM GPIO.
 }
 
-void display_backlight_brightness(u32 brightness, u32 step_delay)
+void display_dsi_backlight_brightness(u32 brightness)
+{
+	u16 bl_ctrl = byte_swap_16((u16)(brightness * 8));
+	display_dsi_vblank_write(MIPI_DCS_SET_BRIGHTNESS, 2, &bl_ctrl);
+}
+
+void display_pwm_backlight_brightness(u32 brightness, u32 step_delay)
 {
 	u32 old_value = (PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF;
 	if (brightness == old_value)
 		return;
 
-	if (brightness > 255)
-		brightness = 255;
-
 	if (old_value < brightness)
 	{
 		for (u32 i = old_value; i < brightness + 1; i++)
 		{
-			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16); // Enable PWM and set it to 25KHz PFM.
+			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16);
 			usleep(step_delay);
 		}
 	}
@@ -499,12 +579,23 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 	{
 		for (u32 i = old_value; i > brightness; i--)
 		{
-			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16); // Enable PWM and set it to 25KHz PFM.
+			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16);
 			usleep(step_delay);
 		}
 	}
 	if (!brightness)
 		PWM(PWM_CONTROLLER_PWM_CSR_0) = 0;
+}
+
+void display_backlight_brightness(u32 brightness, u32 step_delay)
+{
+	if (brightness > 255)
+		brightness = 255;
+
+	if (_display_id != PANEL_SAM_70_UNK)
+		display_pwm_backlight_brightness(brightness, step_delay);
+	else
+		display_dsi_backlight_brightness(brightness);
 }
 
 u32 display_get_backlight_brightness()
@@ -532,7 +623,9 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// De-initialize video controller.
 	exec_cfg((u32 *)DISPLAY_A_BASE, _display_video_disp_controller_disable_config, 17);
 	exec_cfg((u32 *)DSI_BASE, _display_dsi_timing_deinit_config, 16);
-	usleep(10000);
+
+	if (_display_id != PANEL_SAM_70_UNK)
+		usleep(10000);
 
 	// De-initialize display panel.
 	switch (_display_id)
@@ -584,16 +677,23 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	}
 
 	// Blank - powerdown.
-	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE, 50000);
+	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE,
+		(_display_id == PANEL_SAM_70_UNK) ? 120000 : 50000);
 
 skip_panel_deinit:
 	// Disable LCD power pins.
-	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW); // LCD Reset disable.
-	usleep(10000);
-	gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD -5V disable.
-	usleep(10000);
-	gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD +5V disable.
-	usleep(10000);
+	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);     // LCD Reset disable.
+
+	if (!nx_aula) // HOS uses panel id.
+	{
+		usleep(10000);
+		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD -5V disable.
+		usleep(10000);
+		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD +5V disable.
+		usleep(10000);
+	}
+	else
+		usleep(30000); // Aula Panel.
 
 	// Disable Display Interface specific clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = BIT(CLK_H_MIPI_CAL) | BIT(CLK_H_DSI);
@@ -606,9 +706,12 @@ skip_panel_deinit:
 	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
 
 	// Switch LCD PWM backlight pin to special function mode and enable PWM0 mode.
-	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
-	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_TRISTATE) | PINMUX_TRISTATE;
-	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
+	if (!nx_aula)
+	{
+		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
+		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_TRISTATE) | PINMUX_TRISTATE;
+		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
+	}
 }
 
 void display_end() { _display_panel_and_hw_end(false); };
@@ -620,11 +723,18 @@ u16 display_get_decoded_panel_id()
 
 void display_set_decoded_panel_id(u32 id)
 {
+	// Get Hardware type, as it's used in various DI functions.
+	nx_aula = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
+
 	// Decode Display ID.
 	_display_id = ((id >> 8) & 0xFF00) | (id & 0xFF);
 
 	if ((_display_id & 0xFF) == PANEL_JDI_XXX062M)
 		_display_id = PANEL_JDI_XXX062M;
+
+	// For Aula ensure that we have a compatible panel id.
+	if (nx_aula && _display_id == 0xCCCC)
+		_display_id = PANEL_SAM_70_UNK;
 }
 
 void display_color_screen(u32 color)
@@ -637,9 +747,12 @@ void display_color_screen(u32 color)
 	DISPLAY_A(_DIREG(DC_WIN_CD_WIN_OPTIONS)) = 0;
 	DISPLAY_A(_DIREG(DC_DISP_BLEND_BACKGROUND_COLOR)) = color;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = (DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) & 0xFFFFFFFE) | GENERAL_ACT_REQ;
-	usleep(35000);
+	usleep(35000); // No need to wait on Aula.
 
-	display_backlight(true);
+	if (_display_id != PANEL_SAM_70_UNK)
+		display_backlight(true);
+	else
+		display_backlight_brightness(255, 0);
 }
 
 u32 *display_init_framebuffer_pitch()
@@ -649,7 +762,7 @@ u32 *display_init_framebuffer_pitch()
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch, 32);
-	usleep(35000);
+	usleep(35000); // No need to wait on Aula.
 
 	return (u32 *)IPL_FB_ADDRESS;
 }
@@ -658,8 +771,7 @@ u32 *display_init_framebuffer_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch_inv, 34);
-
-	usleep(35000);
+	usleep(35000); // No need to wait on Aula.
 
 	return (u32 *)NYX_FB_ADDRESS;
 }
@@ -668,8 +780,7 @@ u32 *display_init_framebuffer_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_block, 34);
-
-	usleep(35000);
+	usleep(35000); // No need to wait on Aula.
 
 	return (u32 *)NYX_FB_ADDRESS;
 }
