@@ -53,6 +53,7 @@
 #define STMFTS_RW_FRAMEBUFFER_REG      0xD0
 #define STMFTS_SAVE_CX_TUNING          0xFC
 
+#define STMFTS_DETECTION_CONFIG        0xB0
 #define STMFTS_REQU_COMP_DATA          0xB8
 #define STMFTS_VENDOR                  0xCF
 #define STMFTS_FLASH_UNLOCK            0xF7
