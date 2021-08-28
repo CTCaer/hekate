@@ -217,6 +217,7 @@ typedef struct _usbd_gadget_ums_t {
 	u32  tag;
 	u32  residue;
 	u32  usb_amount_left;
+	bool cbw_req_queued;
 
 	u32  phase_error;
 	u32  short_packet_received;
@@ -1578,6 +1579,8 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			{
 				ums->set_text(ums->label, "#C7EA46 Status:# Medium unmounted");
 				ums->timeouts++;
+				if (!bulk_ctxt->bulk_out_status)
+					ums->timeouts += 3;
 			}
 
 			if (ums->timeouts > 20)
@@ -1587,6 +1590,9 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		if (bulk_ctxt->bulk_out_status || bulk_ctxt->bulk_out_ignore)
 			return UMS_RES_INVALID_ARG;
 	}
+
+	// Clear request flag to allow a new one to be queued.
+	ums->cbw_req_queued = false;
 
 	// Is the CBW valid?
 	bulk_recv_pkt_t *cbw = (bulk_recv_pkt_t *)bulk_ctxt->bulk_out_buf;
@@ -1665,7 +1671,19 @@ static int get_next_command(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	bulk_ctxt->bulk_out_length = USB_BULK_CB_WRAP_LEN;
 
 	// Queue a request to read a Bulk-only CBW.
-	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED_CMD);
+	if (!ums->cbw_req_queued)
+		_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED_CMD);
+	else
+		_ums_transfer_finish(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED_CMD);
+
+	/*
+	 * On XUSB do not allow multiple requests for CBW to be done.
+	 * This avoids an issue with some XHCI controllers and OS combos (e.g. ASMedia and Linux/Mac OS)
+	 * which confuse that and concatenate an old CBW request with another write request (SCSI Write)
+	 * and create a babble error (transmit overflow).
+	 */
+	if (ums->xusb)
+		ums->cbw_req_queued = true;
 
 	/* We will drain the buffer in software, which means we
 	 * can reuse it for the next filling.  No need to advance
