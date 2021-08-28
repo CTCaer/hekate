@@ -846,7 +846,17 @@ static void _auto_launch_firmware()
 							else if (!strcmp("autoboot_list", kv->key))
 								h_cfg.autoboot_list = atoi(kv->val);
 							else if (!strcmp("bootwait", kv->key))
+							{
 								h_cfg.bootwait = atoi(kv->val);
+
+								/*
+								 * Clamp value to default if it exceeds 20s.
+								 * Allow up to 20s though for use in cases where user needs lots of time.
+								 * For example dock-only use and r2p with enough time to rach dock and cancel it.
+								*/
+								if (h_cfg.bootwait > 20)
+									h_cfg.bootwait = 3;
+							}
 							else if (!strcmp("backlight", kv->key))
 								h_cfg.backlight = atoi(kv->val);
 							else if (!strcmp("autohosoff", kv->key))

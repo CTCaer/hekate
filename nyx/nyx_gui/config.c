@@ -105,6 +105,13 @@ int create_config_entry()
 	f_puts("\nautoboot_list=", &fp);
 	itoa(h_cfg.autoboot_list, lbuf, 10);
 	f_puts(lbuf, &fp);
+	/*
+	 * Clamp value to default if it exceeds 20s.
+	 * Allow up to 20s though for use in cases where user needs lots of time.
+	 * For example dock-only use and r2p with enough time to reach dock and cancel it.
+	*/
+	if (h_cfg.bootwait > 20)
+		h_cfg.bootwait = 3;
 	f_puts("\nbootwait=", &fp);
 	itoa(h_cfg.bootwait, lbuf, 10);
 	f_puts(lbuf, &fp);
