@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2020 CTCaer
+ * Copyright (c) 2020-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -646,46 +646,51 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 
 static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	// Hynix timing config.
-	{ 0x0000000D,  67, DRAM_ID(1) | DRAM_ID(5) }, // emc_r2w.
-	{ 0x00000001,  91, DRAM_ID(1) | DRAM_ID(5) }, // emc_puterm_extra.
-	{ 0x80000000,  92, DRAM_ID(1) | DRAM_ID(5) }, // emc_puterm_width.
-	{ 0x00000210, 317, DRAM_ID(1) | DRAM_ID(5) }, // emc_pmacro_data_rx_term_mode.
-	{ 0x00000005, 368, DRAM_ID(1) | DRAM_ID(5) }, // mc_emem_arb_timing_r2w.
+	{ 0x0000000D, 0x10C / 4, DRAM_ID(1) }, // emc_r2w.
+	{ 0x00000001, 0x16C / 4, DRAM_ID(1) }, // emc_puterm_extra.
+	{ 0x80000000, 0x170 / 4, DRAM_ID(1) }, // emc_puterm_width.
+	{ 0x00000210, 0x4F4 / 4, DRAM_ID(1) }, // emc_pmacro_data_rx_term_mode.
+	{ 0x00000005, 0x5C0 / 4, DRAM_ID(1) }, // mc_emem_arb_timing_r2w.
 
 	// Samsung 6GB density config.
-	{ 0x000C0302, 347, DRAM_ID(4) },              // mc_emem_adr_cfg_dev0. 768MB Rank 0 density.
-	{ 0x000C0302, 348, DRAM_ID(4) },              // mc_emem_adr_cfg_dev1. 768MB Rank 1 density.
-	{ 0x00001800, 353, DRAM_ID(4) },              // mc_emem_cfg. 6GB total density.
+	{ 0x000C0302, 0x56C / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev0. 768MB Rank 0 density.
+	{ 0x000C0302, 0x570 / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev1. 768MB Rank 1 density.
+	{ 0x00001800, 0x584 / 4, DRAM_ID(4) }, // mc_emem_cfg. 6GB total density.
 
 #ifdef CONFIG_SDRAM_COPPER_SUPPORT
 	// Copper prototype Samsung/Hynix/Micron timing configs.
-	{ 0x0000003A,  59, DRAM_ID(6) },              // emc_rfc. Auto refresh.
-	{ 0x0000001D,  60, DRAM_ID(6) },              // emc_rfc_pb. Bank Auto refresh.
-	{ 0x00000012, 108, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_rw2pden.
-	{ 0x0000003B, 112, DRAM_ID(6) },              // emc_txsr.
-	{ 0x0000003B, 113, DRAM_ID(6) },              // emc_txsr_dll.
-	{ 0x00000003, 119, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_tclkstable.
-	{ 0x00120015, 205, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank0_4.
-	{ 0x00160012, 206, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank0_5.
-	{ 0x00120015, 211, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank1_4.
-	{ 0x00160012, 212, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank1_5.
-	{ 0x002F0032, 213, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_0.
-	{ 0x00310032, 214, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_1.
-	{ 0x00360034, 215, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_2.
-	{ 0x0033002F, 216, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_3.
-	{ 0x00000006, 217, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_4.
-	{ 0x002F0032, 219, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_0.
-	{ 0x00310032, 220, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_1.
-	{ 0x00360034, 221, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_2.
-	{ 0x0033002F, 222, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_3.
-	{ 0x00000006, 223, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_4.
-	{ 0x00150015, 233, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_0.
-	{ 0x00120012, 235, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_2.
-	{ 0x00160016, 236, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_3.
-	{ 0x00000015, 237, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_4.
-	{ 0x00000012, 295, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_cmd_brlshft2.
-	{ 0x00000012, 296, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_cmd_brlshft3.
-	{ 0x00000007, 370, DRAM_ID(6) },              // mc_emem_arb_timing_rfcpb. Bank refresh.
-	{ 0x72A30504, 373, DRAM_ID(6) },              // mc_emem_arb_misc0.
+	{ 0x0000003A,  0xEC / 4, DRAM_ID(6) },              // emc_rfc. Auto refresh.
+	{ 0x0000001D,  0xF0 / 4, DRAM_ID(6) },              // emc_rfc_pb. Bank Auto refresh.
+	{ 0x0000000D, 0x10C / 4, DRAM_ID(5) },              // emc_r2w.
+	{ 0x00000001, 0x16C / 4, DRAM_ID(5) },              // emc_puterm_extra.
+	{ 0x80000000, 0x170 / 4, DRAM_ID(5) },              // emc_puterm_width.
+	{ 0x00000012, 0x1B0 / 4, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_rw2pden.
+	{ 0x0000003B, 0x1C0 / 4, DRAM_ID(6) },              // emc_txsr.
+	{ 0x0000003B, 0x1C4 / 4, DRAM_ID(6) },              // emc_txsr_dll.
+	{ 0x00000003, 0x1DC / 4, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_tclkstable.
+	{ 0x00120015, 0x334 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank0_4.
+	{ 0x00160012, 0x338 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank0_5.
+	{ 0x00120015, 0x34C / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank1_4.
+	{ 0x00160012, 0x350 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dq_rank1_5.
+	{ 0x002F0032, 0x354 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_0.
+	{ 0x00310032, 0x358 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_1.
+	{ 0x00360034, 0x35C / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_2.
+	{ 0x0033002F, 0x360 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_3.
+	{ 0x00000006, 0x364 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank0_4.
+	{ 0x002F0032, 0x36C / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_0.
+	{ 0x00310032, 0x370 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_1.
+	{ 0x00360034, 0x374 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_2.
+	{ 0x0033002F, 0x378 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_3.
+	{ 0x00000006, 0x37C / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ob_ddll_long_dqs_rank1_4.
+	{ 0x00150015, 0x3A4 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_0.
+	{ 0x00120012, 0x3AC / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_2.
+	{ 0x00160016, 0x3B0 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_3.
+	{ 0x00000015, 0x3B4 / 4, DRAM_ID(5) | DRAM_ID(6) }, // emc_pmacro_ddll_long_cmd_4.
+	{ 0x00000012, 0x49C / 4, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_cmd_brlshft2.
+	{ 0x00000012, 0x4A0 / 4, DRAM_ID(3) | DRAM_ID(5) | DRAM_ID(6) }, // emc_cmd_brlshft3.
+	{ 0x00000210, 0x4F4 / 4, DRAM_ID(5) },              // emc_pmacro_data_rx_term_mode.
+	{ 0x00000005, 0x5C0 / 4, DRAM_ID(5) },              // mc_emem_arb_timing_r2w.
+	{ 0x00000007, 0x5C8 / 4, DRAM_ID(6) },              // mc_emem_arb_timing_rfcpb. Bank refresh.
+	{ 0x72A30504, 0x5D4 / 4, DRAM_ID(6) },              // mc_emem_arb_misc0.
 #endif
 };

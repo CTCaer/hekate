@@ -92,7 +92,7 @@ u32 fuse_read_dramid(bool raw_id)
 	}
 	else
 	{
-		if (dramid > 27)
+		if (dramid > 28)
 			dramid = 8;
 	}
 

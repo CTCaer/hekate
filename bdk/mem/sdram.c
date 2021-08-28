@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -36,22 +36,46 @@
 
 #define CONFIG_SDRAM_KEEP_ALIVE
 
-//#define CONFIG_SDRAM_COMPRESS_CFG
-
 typedef struct _sdram_vendor_patch_t
 {
 	u32 val;
-	u32 addr:10;
-	u32 dramid:22;
+	u32 offset:16;
+	u32 dramcf:16;
 } sdram_vendor_patch_t;
 
-#ifdef CONFIG_SDRAM_COMPRESS_CFG
-	#include <libs/compr/lz.h>
-	#include "sdram_config_lz.inl"
-#else
-	#include "sdram_config.inl"
-#endif
+static const u8 dram_encoding_t210b01[] = {
+	LPDDR4X_UNUSED,
+	LPDDR4X_UNUSED,
+	LPDDR4X_UNUSED,
+	LPDDR4X_4GB_HYNIX_1Y_A,
+	LPDDR4X_UNUSED,
+	LPDDR4X_4GB_HYNIX_1Y_A,
+	LPDDR4X_4GB_HYNIX_1Y_A,
+	LPDDR4X_4GB_SAMSUNG_X1X2,
+	LPDDR4X_NO_PATCH,
+	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ,
+	LPDDR4X_NO_PATCH,
+	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046,
+	LPDDR4X_NO_PATCH,
+	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ,
+	LPDDR4X_NO_PATCH,
+	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046,
+	LPDDR4X_4GB_SAMSUNG_Y,
+	LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL,
+	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL,
+	LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL,
+	LPDDR4X_4GB_SAMSUNG_1Y_Y,
+	LPDDR4X_8GB_SAMSUNG_1Y_Y,
+	LPDDR4X_UNUSED, // Removed.
+	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL,
+	LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL,
+	LPDDR4X_4GB_MICRON_1Y_A,
+	LPDDR4X_4GB_MICRON_1Y_A,
+	LPDDR4X_4GB_MICRON_1Y_A,
+	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL,
+};
 
+#include "sdram_config.inl"
 #include "sdram_config_t210b01.inl"
 
 static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
@@ -1350,57 +1374,21 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	SYSREG(AHB_ARBITRATION_XBAR_CTRL) = (SYSREG(AHB_ARBITRATION_XBAR_CTRL) & 0xFFFEFFFF) | (params->ahb_arbitration_xbar_ctrl_meminit_done << 16);
 }
 
-#ifndef CONFIG_SDRAM_COMPRESS_CFG
-static void _sdram_patch_model_params_t210(u32 dramid, u32 *params)
-{
-	for (u32 i = 0; i < ARRAY_SIZE(sdram_cfg_vendor_patches_t210); i++)
-		if (sdram_cfg_vendor_patches_t210[i].dramid & DRAM_ID(dramid))
-			params[sdram_cfg_vendor_patches_t210[i].addr] = sdram_cfg_vendor_patches_t210[i].val;
-}
-#endif
-
-static void _sdram_patch_model_params_t210b01(u32 dramid, u32 *params)
-{
-	for (u32 i = 0; i < ARRAY_SIZE(sdram_cfg_vendor_patches_t210b01); i++)
-		if (sdram_cfg_vendor_patches_t210b01[i].dramid & DRAM_ID2(dramid))
-			params[sdram_cfg_vendor_patches_t210b01[i].addr] = sdram_cfg_vendor_patches_t210b01[i].val;
-}
-
 static void *_sdram_get_params_t210()
 {
 	// Check if id is proper.
 	u32 dramid = fuse_read_dramid(false);
 
-#ifdef CONFIG_SDRAM_COMPRESS_CFG
+	// Copy base parameters.
+	u32 *params = (u32 *)SDRAM_PARAMS_ADDR;
+	memcpy(params, &_dram_cfg_0_samsung_4gb, sizeof(sdram_params_t210_t));
 
-	u8 *buf = (u8 *)SDRAM_PARAMS_ADDR;
-	LZ_Uncompress(_dram_cfg_lz, buf, sizeof(_dram_cfg_lz));
-	return (void *)&buf[sizeof(sdram_params_t210_t) * dramid];
+	// Patch parameters if needed.
+	for (u32 i = 0; i < ARRAY_SIZE(sdram_cfg_vendor_patches_t210); i++)
+		if (sdram_cfg_vendor_patches_t210[i].dramcf & DRAM_ID(dramid))
+			params[sdram_cfg_vendor_patches_t210[i].offset] = sdram_cfg_vendor_patches_t210[i].val;
 
-#else
-
-	u32 *buf = (u32 *)SDRAM_PARAMS_ADDR;
-	memcpy(buf, &_dram_cfg_0_samsung_4gb, sizeof(sdram_params_t210_t));
-
-	switch (dramid)
-	{
-	case LPDDR4_ICOSA_4GB_SAMSUNG_K4F6E304HB_MGCH:
-	case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
-		break;
-
-	case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
-	case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
-#ifdef CONFIG_SDRAM_COPPER_SUPPORT
-	case LPDDR4_COPPER_4GB_SAMSUNG_K4F6E304HB_MGCH:
-	case LPDDR4_COPPER_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
-	case LPDDR4_COPPER_4GB_MICRON_MT53B512M32D2NP_062_WT:
-#endif
-		_sdram_patch_model_params_t210(dramid, (u32 *)buf);
-		break;
-	}
-	return (void *)buf;
-
-#endif
+	return (void *)params;
 }
 
 void *sdram_get_params_t210b01()
@@ -1408,38 +1396,20 @@ void *sdram_get_params_t210b01()
 	// Check if id is proper.
 	u32 dramid = fuse_read_dramid(false);
 
-	u32 *buf = (u32 *)SDRAM_PARAMS_ADDR;
-	memcpy(buf, &_dram_cfg_08_10_12_14_samsung_hynix_4gb, sizeof(sdram_params_t210b01_t));
+	// Copy base parameters.
+	u32 *params = (u32 *)SDRAM_PARAMS_ADDR;
+	memcpy(params, &_dram_cfg_08_10_12_14_samsung_hynix_4gb, sizeof(sdram_params_t210b01_t));
 
-	switch (dramid)
-	{
-	case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
-	case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
-	case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
-	case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
-		break;
+	// Patch parameters if needed.
+	u8 dram_code = dram_encoding_t210b01[dramid];
+	if (!dram_code)
+		return (void *)params;
 
-	case LPDDR4X_IOWA_4GB_SAMSUNG_X1X2:
-	case LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
-	case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WT:
-	case LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
-	case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WT:
-	case LPDDR4X_IOWA_4GB_SAMSUNG_Y:
-	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_X:
-	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_X:
-	case LPDDR4X_HOAG_4GB_SAMSUNG_1Y_X:
-	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y:
-	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
-	case LPDDR4X_AULA_4GB_SAMSUNG_1Y_A:
-	case LPDDR4X_AULA_8GB_SAMSUNG_1Y_X:
-	case LPDDR4X_AULA_4GB_SAMSUNG_1Y_X:
-	case LPDDR4X_IOWA_4GB_MICRON_1Y_A:
-	case LPDDR4X_HOAG_4GB_MICRON_1Y_A:
-	case LPDDR4X_AULA_4GB_MICRON_1Y_A:
-		_sdram_patch_model_params_t210b01(dramid, (u32 *)buf);
-		break;
-	}
-	return (void *)buf;
+	for (u32 i = 0; i < ARRAY_SIZE(sdram_cfg_vendor_patches_t210b01); i++)
+		if (sdram_cfg_vendor_patches_t210b01[i].dramcf == dram_code)
+			params[sdram_cfg_vendor_patches_t210b01[i].offset] = sdram_cfg_vendor_patches_t210b01[i].val;
+
+	return (void *)params;
 }
 
 /*
@@ -1485,7 +1455,7 @@ static void _sdram_init_t210()
 	const sdram_params_t210_t *params = (const sdram_params_t210_t *)_sdram_get_params_t210();
 
 	// Set DRAM voltage.
-	max7762x_regulator_set_voltage(REGULATOR_SD1, 1100000);
+	max7762x_regulator_set_voltage(REGULATOR_SD1, 1100000); // HOS uses 1.125V
 
 	// VDDP Select.
 	PMC(APBDEV_PMC_VDDP_SEL) = params->pmc_vddp_sel;
