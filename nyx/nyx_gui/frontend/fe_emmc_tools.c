@@ -388,6 +388,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 		sd_sector_off = sector_start + (0x2000 * active_part);
 		if (active_part == 2)
 		{
+			// Set new total sectors and lba end sector for percentage calculations.
 			totalSectors = sector_size;
 			lba_end = sector_size + part->lba_start - 1;
 		}
@@ -935,6 +936,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 {
 	const u32 SECTORS_TO_MIB_COEFF = 11;
 
+	u32 lba_end = part->lba_end;
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
@@ -1008,7 +1010,11 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 							break;
 					}
 					else
+					{
+						// Set new total sectors and lba end sector for percentage calculations.
 						totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
+						lba_end = totalSectors + part->lba_start - 1;
+					}
 
 					// Restore folder is empty.
 					if (!numSplitParts)
@@ -1046,7 +1052,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			if ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
 			{
 				lv_obj_t *warn_mbox_bg = create_mbox_text(
-					"#FF8000 Size of SD Card split backup does not match,#\n#FF8000 eMMC's selected part size!#\n\n"
+					"#FF8000 Size of SD Card split backup does not match#\n#FF8000 eMMC's selected part size!#\n\n"
 					"#FFDD00 The backup might be corrupted,#\n#FFDD00 or missing files!#\n#FFDD00 Aborting is suggested!#\n\n"
 					"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
 				manual_system_maintenance(true);
@@ -1054,7 +1060,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				if (!(btn_wait() & BTN_POWER))
 				{
 					lv_obj_del(warn_mbox_bg);
-					s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match,#\n#FF0000 eMMC's selected part size!#\n");
+					s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match#\n#FF0000 eMMC's selected part size!#\n");
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
@@ -1062,7 +1068,9 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				}
 				lv_obj_del(warn_mbox_bg);
 
+				// Set new total sectors and lba end sector for percentage calculations.
 				totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
+				lba_end = totalSectors + part->lba_start - 1;
 			}
 			use_multipart = true;
 			_update_filename(outFilename, sdPathLen, 0);
@@ -1118,7 +1126,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		else if (!gui->raw_emummc)
 		{
 			lv_obj_t *warn_mbox_bg = create_mbox_text(
-				"#FF8000 Size of the SD Card backup does not match,#\n#FF8000 eMMC's selected part size!#\n\n"
+				"#FF8000 Size of the SD Card backup does not match#\n#FF8000 eMMC's selected part size!#\n\n"
 				"#FFDD00 The backup might be corrupted!#\n#FFDD00 Aborting is suggested!#\n\n"
 				"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
 			manual_system_maintenance(true);
@@ -1126,7 +1134,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			if (!(btn_wait() & BTN_POWER))
 			{
 				lv_obj_del(warn_mbox_bg);
-				s_printf(gui->txt_buf, "\n#FF0000 Size of the SD Card backup does not match,#\n#FF0000 eMMC's selected part size.#\n", res);
+				s_printf(gui->txt_buf, "\n#FF0000 Size of the SD Card backup does not match#\n#FF0000 eMMC's selected part size.#\n", res);
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
@@ -1136,7 +1144,9 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			}
 			lv_obj_del(warn_mbox_bg);
 		}
+		// Set new total sectors and lba end sector for percentage calculations.
 		totalSectors = (u32)((u64)f_size(&fp) >> (u64)9);
+		lba_end = totalSectors + part->lba_start - 1;
 	}
 	else
 	{
@@ -1290,7 +1300,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				res = !sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
 			manual_system_maintenance(false);
 		}
-		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(part->lba_end - part->lba_start);
+		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(lba_end - part->lba_start);
 		if (pct != prevPct)
 		{
 			lv_bar_set_value(gui->bar, pct);
