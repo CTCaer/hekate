@@ -50,6 +50,9 @@
 #define SE_RSA1536_DIGEST_SIZE  192
 #define SE_RSA2048_DIGEST_SIZE  256
 
+#define  DECRYPT   0
+#define  ENCRYPT   1
+
 /* SE register definitions */
 #define SE_SE_SECURITY_REG 0x000
 #define  SE_HARD_SETTING   BIT(0)

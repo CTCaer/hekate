@@ -335,7 +335,7 @@ int se_aes_xts_crypt_sec(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *sr
 		tweak[i] = sec & 0xFF;
 		sec >>= 8;
 	}
-	if (!se_aes_crypt_block_ecb(ks1, 1, tweak, tweak))
+	if (!se_aes_crypt_block_ecb(ks1, ENCRYPT, tweak, tweak))
 		goto out;
 
 	// We are assuming a 0x10-aligned sector size in this implementation.
@@ -529,6 +529,6 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 	// Decrypt context.
 	se_aes_key_clear(3);
 	se_aes_key_set(3, srk, SE_KEY_128_SIZE);
-	se_aes_crypt_cbc(3, 0, keys, SE_AES_KEYSLOT_COUNT * keysize, keys, SE_AES_KEYSLOT_COUNT * keysize);
+	se_aes_crypt_cbc(3, DECRYPT, keys, SE_AES_KEYSLOT_COUNT * keysize, keys, SE_AES_KEYSLOT_COUNT * keysize);
 	se_aes_key_clear(3);
 }
