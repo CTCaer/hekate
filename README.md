@@ -150,7 +150,7 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: `Boot from ID`, bit3: `Boot to emuMMC`. |
 | '0x95' autoboot         | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
 | '0x96' autoboot_list    | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
-| '0x97' extra_cfg        | When menu is forced: bit5: `Run UMS`, bit7: `Run Dump pkg1/2`.    |
+| '0x97' extra_cfg        | When menu is forced: bit5: `Run UMS`.                             |
 | '0x98' xt_str[128]      | Depends on the set cfg bits.                                      |
 | '0x98' ums[1]           | When `Run UMS` is set, it will launch the selected UMS. 0: SD, 1: eMMC BOOT0, 2: eMMC BOOT1, 3: eMMC GPP, 4: emuMMC BOOT0, 5: emuMMC BOOT1, 6: emuMMC GPP,  |
 | '0x98' id[8]            | When `Boot from ID` is set, it will search all inis automatically and find the boot entry with that id and boot it. Must be NULL terminated. |
