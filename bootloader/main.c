@@ -107,6 +107,15 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 		sdmmc_storage_end(&emmc_storage);
 }
 
+void render_default_bootlogo()
+{
+	gfx_clear_grey(0x1B);
+	u8 *BOOTLOGO = (void *)malloc(0x4000);
+	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
+	gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+	free(BOOTLOGO);
+}
+
 void check_power_off_from_hos()
 {
 	// Power off on AutoRCM wakeup from HOS shutdown. For modchips/dongles.
@@ -120,10 +129,7 @@ void check_power_off_from_hos()
 
 		if (h_cfg.autohosoff == 1)
 		{
-			gfx_clear_grey(0x1B);
-			u8 *BOOTLOGO = (void *)malloc(0x4000);
-			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-			gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+			render_default_bootlogo();
 
 			display_backlight_brightness(10, 5000);
 			display_backlight_brightness(100, 25000);
@@ -287,6 +293,7 @@ int launch_payload(char *path, bool update, bool clear_screen)
 			(*ext_payload_ptr)();
 		else
 		{
+			// Set updated flag to skip check on launch.
 			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
 			(*update_ptr)();
 		}
@@ -301,6 +308,7 @@ out:
 
 void auto_launch_update()
 {
+	// Check if already chainloaded update and clear flag. Otherwise check for updates.
 	if (EMC(EMC_SCRATCH0) & EMC_HEKA_UPD)
 		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
 	else if (sd_mount())
@@ -682,12 +690,7 @@ void nyx_load_run()
 
 	sd_end();
 
-	// Show loading logo.
-	gfx_clear_grey(0x1B);
-	u8 *BOOTLOGO = (void *)malloc(0x4000);
-	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-	gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-	free(BOOTLOGO);
+	render_default_bootlogo();
 	display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Check if Nyx version is old.
@@ -1011,13 +1014,7 @@ skip_list:
 			free(BOOTLOGO);
 		}
 		else
-		{
-			gfx_clear_grey(0x1B);
-			BOOTLOGO = (void *)malloc(0x4000);
-			blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-			gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-		}
-		free(BOOTLOGO);
+			render_default_bootlogo();
 	}
 
 	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
