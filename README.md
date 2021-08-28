@@ -6,6 +6,23 @@
 Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many more.
 
 
+## Features
+
+- **Fully Configurable and Graphical** with Touchscreen and Joycon input support
+- **Launcher Style, Background and Color Themes**
+- **HOS (Switch OS) Bootloader** -- For CFW Sys/Emu, OFW Sys and Stock Sys
+- **Android & Linux Bootloader**
+- **Payload Launcher**
+- **eMMC/emuMMC Backup/Restore Tools**
+- **SD Card Partition Manager** -- Prepares and formats SD Card for any combo of HOS (Sys/emuMMC), Android and Linux
+- **emuMMC Creation & Manager** -- Can also migrate and fix existing emuMMC
+- **Switch Android & Linux flasher**
+- **USB Mass Storage (UMS) for SD/eMMC/emuMMC** -- Converts Switch into a SD Card Reader
+- **USB Gamepad** -- Converts Switch with Joycon into a USB HID Gamepad
+- **Hardware and Peripherals info** (SoC, Fuses, RAM, Display, Touch, eMMC, SD, Battery, PSU, Charger)
+- **Many other tools** like Archive Bit Fixer, Touch Calibration, SD/eMMC Benchmark, AutoRCM enabler and more
+
+
 ## Bootloader folders and files
 
 | Folder/File              | Description                                                           |
@@ -27,12 +44,11 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 |  \|__ libsys_minerva.bso | Minerva Training Cell. Used for DRAM Frequency training. Important!   |
 |  \|__ nyx.bin            | Nyx - Our GUI. Important!                                             |
 |  \|__ res.pak            | Nyx resources package. Important!                                     |
+|  \|__ thk.bin            | Atmosphère Tsec Hovi Keygen! Important!                               |
 | bootloader/screenshots/  | Folder where Nyx screenshots are saved                                |
 | bootloader/payloads/     | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
 | bootloader/libtools/     | Future reserved                                                       |
-| sept                     | Sept folder. This must always get updated via the Atmosphère release zip. Needed for tools and booting HOS on 7.0.0 and up. Unused for booting HOS if `fss0=` key is defined. |
 
-**Note**: Sept files for booting 7.0.0 and up are expected at /sept folder at root of sd card.
 
 
 ## Bootloader configuration
@@ -52,7 +68,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | ------------------ | ---------------------------------------------------------- |
 | autoboot=0         | 0: Disable, #: Boot entry number to auto boot.             |
 | autoboot_list=0    | 0: Read `autoboot` boot entry from hekate_ipl.ini, 1: Read from ini folder (ini files are ASCII ordered). |
-| bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. |
+| bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. Max: 20s. |
 | autohosoff=1       | 0: Disable, 1: If woke up from HOS via an RTC alarm, shows logo, then powers off completely, 2: No logo, immediately powers off.|
 | autonogc=1         | 0: Disable, 1: Automatically applies nogc patch if unburnt fuses found and a >= 4.0.0 HOS is booted. |
 | bootprotect=0      | 0: Disable, 1: Protect bootloader folder from being corrupted by disallowing reading or editing in HOS. |
@@ -82,7 +98,7 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | kernel={SD path}       | Replaces the kernel binary                                 |
 | kip1={SD path}         | Replaces/Adds kernel initial process. Multiple can be set. |
 | kip1={SD folder}/*     | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
-| fss0={SD path}         | Takes a fusee-secondary binary and `extracts` all needed parts from it. kips, exosphere, warmboot and sept. |
+| fss0={SD path}         | Takes a fusee-secondary binary and `extracts` all needed parts from it. kips, exosphere, warmboot and mesophere if enabled. |
 | fss0experimental=1     | Enables loading of experimental content from a FSS0 storage |
 | exofatal={SD path}     | Replaces the exosphere fatal binary for Mariko             |
 | kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or as CSV. If not found, an error will show up |
@@ -131,7 +147,7 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 
 | Offset / Name           | Description                                                       |
 | ----------------------- | ----------------------------------------------------------------- |
-| '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: `Boot from ID`, bit3: `Boot to emuMMC`, bit7: `sept run`. |
+| '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: `Boot from ID`, bit3: `Boot to emuMMC`. |
 | '0x95' autoboot         | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
 | '0x96' autoboot_list    | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
 | '0x97' extra_cfg        | When menu is forced: bit5: `Run UMS`, bit7: `Run Dump pkg1/2`.    |
