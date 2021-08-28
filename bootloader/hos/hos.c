@@ -600,10 +600,12 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 {
-	static const u32 BOOTLOADER_SIZE          = 0x40000;
-	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
-	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+	const u32 BOOTLOADER_SIZE          = 0x40000;
+	const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
+	const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
+	const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+
+	const u32 ERISTA_PKG1_ON_MARIKO_MAGIC = 0x20014770; // For 8.0.0 Erista and up.
 
 	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
 	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
@@ -617,9 +619,22 @@ try_load:
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1 + pk1_offset);
 	if (!ctxt->pkg1_id)
 	{
-		_hos_crit_error("Unknown pkg1 version.");
-		EPRINTFARGS("HOS version not supported!%s",
-			(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "\nOr emuMMC corrupt!" : "");
+		// Check if wrong pkg1 was flashed.
+		bool wrong_pkg1;
+		u32 pkg1_build_check = *(u32 *)(ctxt->pkg1 + pk1_offset + 0x10);
+		if (!h_cfg.t210b01) // For Erista check if start is 0 and build offset is not 0.
+			wrong_pkg1 = *(u32 *)ctxt->pkg1 == 0 && pkg1_build_check != 0;
+		else                // For Mariko works for 8.0.0 Erista pkg1 and up.
+			wrong_pkg1 = pkg1_build_check == ERISTA_PKG1_ON_MARIKO_MAGIC;
+
+		if (wrong_pkg1)
+			_hos_crit_error("Wrong pkg1 flashed!");
+		else
+		{
+			_hos_crit_error("Unknown pkg1 version.");
+			EPRINTFARGS("HOS version not supported!%s",
+				(emu_cfg.enabled && !h_cfg.emummc_force_disable) ? "\nOr emuMMC corrupt!" : "");
+		}
 
 		// Try backup bootloader.
 		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
@@ -656,7 +671,7 @@ DPRINTF("Parsed GPT\n");
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	static const u32 BCT_SIZE = 0x4000;
+	const u32 BCT_SIZE = 0x4000;
 	bctBuf = (u8 *)malloc(BCT_SIZE);
 	nx_emmc_part_read(&emmc_storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
 	u32 *hdr = (u32 *)(bctBuf + 0x100);
