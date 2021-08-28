@@ -38,8 +38,9 @@
 #include <utils/sprintf.h>
 #include <utils/util.h>
 
-#define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
+#define NAND_PATROL_SECTOR 0xC20
+#define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 
 extern hekate_config h_cfg;
 extern volatile boot_cfg_t *b_cfg;
@@ -590,9 +591,8 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		manual_system_maintenance(false);
 
-		retryCount = 0;
-
 		// Write data to SD card.
+		retryCount = 0;
 		while (!sdmmc_storage_write(&sd_storage, sd_sector_off + lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
@@ -668,9 +668,9 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		manual_system_maintenance(true);
 
 		// Format USER partition.
-		u8 *buf = malloc(0x400000);
-		int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buf, 0x400000);
-		free(buf);
+		u8 *buff = malloc(0x400000);
+		int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buff, 0x400000);
+		free(buff);
 
 		// Mount sd card back.
 		sd_mount();
@@ -744,6 +744,10 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		// Write MBR.
 		sdmmc_storage_write(&sd_storage, sd_sector_off, 1, &mbr);
+
+		// Clear nand patrol.
+		memset(buf, 0, NX_EMMC_BLOCKSIZE);
+		sdmmc_storage_write(&sd_storage, sd_part_off + NAND_PATROL_SECTOR, 1, buf);
 
 		free(gpt);
 	}
