@@ -195,8 +195,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	const u32 fuse_array_size_t210    = 192 * sizeof(u32);
-	const u32 fuse_array_size_t210b01 = 256 * sizeof(u32);
+	const u32 fuse_array_size = (h_cfg.t210b01 ? 256 : 192) * sizeof(u32);
 
 	int error = !sd_mount();
 	if (!error)
@@ -216,13 +215,13 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 				error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
 		}
 
-		u32 words[fuse_array_size_t210b01 / sizeof(u32)];
+		u32 words[256];
 		fuse_read_array(words);
 		if (!h_cfg.t210b01)
 			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
 		else
 			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210b01.bin", NULL);
-		int res = sd_save_to_file((u8 *)words, h_cfg.t210b01 ? fuse_array_size_t210b01 : fuse_array_size_t210, path);
+		int res = sd_save_to_file((u8 *)words, fuse_array_size, path);
 		if (!error)
 			error = res;
 
@@ -513,81 +512,101 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case FUSE_NX_HW_TYPE_HOAG:
 		sku = "Hoag (Mariko)";
 		break;
+	case FUSE_NX_HW_TYPE_AULA:
+		sku = "Aula (Mariko)";
+		break;
 	default:
 		sku = "#FF8000 Unknown#";
 		break;
 	}
 
-	switch (dram_id)
+	if (!h_cfg.t210b01)
 	{
-	// LPDDR4 3200Mbps.
-	case LPDDR4_ICOSA_4GB_SAMSUNG_K4F6E304HB_MGCH:
-	case LPDDR4_COPPER_4GB_SAMSUNG_K4F6E304HB_MGCH:
-		strcpy(dram_man, "Samsung K4F6E304HB-MGCH 4GB");
-		break;
-	case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
-	case LPDDR4_COPPER_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
-		strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
-		break;
-	case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
-	case LPDDR4_COPPER_4GB_MICRON_MT53B512M32D2NP_062_WT:
-		strcpy(dram_man, "Micron MT53B512M32D2NP-062");
-		break;
-	case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
-		strcpy(dram_man, "Samsung K4FHE3D4HM-MGCH 6GB");
-		break;
+		switch (dram_id)
+		{
+		// LPDDR4 3200Mbps.
+		case LPDDR4_ICOSA_4GB_SAMSUNG_K4F6E304HB_MGCH:
+		case LPDDR4_COPPER_4GB_SAMSUNG_K4F6E304HB_MGCH:
+			strcpy(dram_man, "Samsung K4F6E304HB-MGCH 4GB");
+			break;
+		case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
+		case LPDDR4_COPPER_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
+			strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
+			break;
+		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
+		case LPDDR4_COPPER_4GB_MICRON_MT53B512M32D2NP_062_WT:
+			strcpy(dram_man, "Micron MT53B512M32D2NP-062");
+			break;
+		case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
+			strcpy(dram_man, "Samsung K4FHE3D4HM-MGCH 6GB");
+			break;
+		default:
+			strcpy(dram_man, "#FF8000 Unknown#");
+			break;
+		}
+	}
+	else
+	{
+		switch (dram_id)
+		{
+		// LPDDR4X 3733Mbps.
+		case LPDDR4X_IOWA_4GB_SAMSUNG_X1X2:
+			strcpy(dram_man, "Samsung X1X2 4GB");
+			break;
+		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
+		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
+			strcpy(dram_man, "Samsung K4U6E3S4AM-MGCJ 4GB");
+			break;
+		case LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
+		case LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
+			strcpy(dram_man, "Samsung K4UBE3D4AM-MGCJ 8GB");
+			break;
+		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
+		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
+			strcpy(dram_man, "Hynix H9HCNNNBKMMLHR-NME 4GB");
+			break;
+		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
+		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
+			strcpy(dram_man, "Micron MT53E512M32D2NP-046 4GB");
+			break;
 
-	// LPDDR4X 3733Mbps.
-	case LPDDR4X_IOWA_4GB_SAMSUNG_X1X2:
-		strcpy(dram_man, "Samsung X1X2 4GB");
-		break;
-	case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
-	case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
-		strcpy(dram_man, "Samsung K4U6E3S4AM-MGCJ 4GB");
-		break;
-	case LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
-	case LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AM_MGCJ:
-		strcpy(dram_man, "Samsung K4UBE3D4AM-MGCJ 8GB");
-		break;
-	case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
-	case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
-		strcpy(dram_man, "Hynix H9HCNNNBKMMLHR-NME 4GB");
-		break;
-
-	case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
-	case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
-		strcpy(dram_man, "Micron MT53E512M32D2NP-046 4GB");
-		break;
-	// LPDDR4X 4266Mbps?
-	case LPDDR4X_IOWA_4GB_SAMSUNG_Y:
-		strcpy(dram_man, "Samsung Y 4GB");
-		break;
-	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_X:
-	case LPDDR4X_HOAG_4GB_SAMSUNG_1Y_X:
-	case LPDDR4X_AULA_4GB_SAMSUNG_1Y_X:
-		strcpy(dram_man, "Samsung 1y X 4GB");
-		break;
-	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_X:
-	case LPDDR4X_AULA_8GB_SAMSUNG_1Y_X:
-		strcpy(dram_man, "Samsung 1y X 8GB");
-		break;
-	case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y:
-		strcpy(dram_man, "Samsung 1y Y 4GB");
-		break;
-	case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
-		strcpy(dram_man, "Samsung 1y Y 8GB");
-		break;
-	case LPDDR4X_AULA_4GB_SAMSUNG_1Y_A:
-		strcpy(dram_man, "Samsung 1y A 4GB");
-		break;
-	case LPDDR4X_IOWA_4GB_MICRON_1Y_A:
-	case LPDDR4X_HOAG_4GB_MICRON_1Y_A:
-	case LPDDR4X_AULA_4GB_MICRON_1Y_A:
-		strcpy(dram_man, "Micron 1y A 4GB");
-		break;
-	default:
-		strcpy(dram_man, "#FF8000 Unknown#");
-		break;
+		// LPDDR4X 4266Mbps
+		case LPDDR4X_IOWA_4GB_SAMSUNG_Y:
+			strcpy(dram_man, "Samsung Y 4GB");
+			break;
+		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AA_MGCL:
+		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AA_MGCL:
+		case LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL:
+			strcpy(dram_man, "Samsung K4U6E3S4AA-MGCL 4GB");
+			break;
+		case LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AA_MGCL:
+		case LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AA_MGCL:
+		case LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL:
+			strcpy(dram_man, "Samsung K4UBE3D4AA-MGCL 8GB");
+			break;
+		case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y:
+			strcpy(dram_man, "Samsung 1y Y 4GB");
+			break;
+		case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
+			strcpy(dram_man, "Samsung 1y Y 8GB");
+			break;
+		// case LPDDR4X_AULA_4GB_SAMSUNG_1Y_A: // Unused.
+		// 	strcpy(dram_man, "Samsung 1y A 4GB");
+		// 	break;
+		case LPDDR4X_IOWA_4GB_MICRON_1Y_A:
+		case LPDDR4X_HOAG_4GB_MICRON_1Y_A:
+		case LPDDR4X_AULA_4GB_MICRON_1Y_A:
+			strcpy(dram_man, "Micron 1y A 4GB");
+			break;
+		case LPDDR4X_IOWA_4GB_HYNIX_1Y_A: // Replaced from Copper.
+		case LPDDR4X_HOAG_4GB_HYNIX_1Y_A: // Replaced from Copper.
+		case LPDDR4X_AULA_4GB_HYNIX_1Y_A: // Replaced from Copper.
+			strcpy(dram_man, "Hynix 1y A 4GB");
+			break;
+		default:
+			strcpy(dram_man, "#FF8000 Unknown#");
+			break;
+		}
 	}
 
 	// Count burnt fuses.
@@ -716,9 +735,37 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case 1:
 		strcat(txt_buf, "Samsung");
 		break;
+/*
+	case 5:
+		strcat(txt_buf, "Nanya");
+		break;
+*/
 	case 6:
 		strcat(txt_buf, "Hynix");
 		break;
+/*
+	case 8:
+		strcat(txt_buf, "Winbond");
+		break;
+	case 9:
+		strcat(txt_buf, "ESMT");
+		break;
+	case 26:
+		strcat(txt_buf, "Xi'an UniIC Semiconductors Co., Ltd");
+		break;
+	case 28:
+		strcat(txt_buf, "JSC");
+		break;
+	case 248:
+		strcat(txt_buf, "Fidelix");
+		break;
+	case 249:
+		strcat(txt_buf, "Ultra Memory");
+		break;
+	case 253:
+		strcat(txt_buf, "AP Memory");
+		break;
+ */
 	case 255:
 		strcat(txt_buf, "Micron");
 		break;
@@ -755,6 +802,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case 4:
 		strcat(txt_buf, " x 1GB");
 		break;
+	case 5:
+		strcat(txt_buf, " x 1.5GB");
+		break;
+	case 6:
+		strcat(txt_buf, " x 2GB");
+		break;
 	default:
 		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch0 & 0x3C) >> 2);
 		break;
@@ -770,6 +823,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	case 4:
 		strcat(txt_buf, " x 1GB");
+		break;
+	case 5:
+		strcat(txt_buf, " x 1.5GB");
+		break;
+	case 6:
+		strcat(txt_buf, " x 2GB");
 		break;
 	default:
 		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch1 & 0x3C) >> 2);
@@ -1873,6 +1932,9 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		// Identify manufacturer.
 		switch (sd_storage.cid.manfid)
 		{
+		case 0x00:
+			strcat(txt_buf, "Fake ");
+			break;
 		case 0x01:
 			strcat(txt_buf, "Panasonic ");
 			break;
@@ -1911,7 +1973,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			break;
 		//TODO: Investigate which OEM/ODM makes these.
 		// case 0x9C: // LX512 SO
-		// case 0xAD: // LX512 LS
+		// case 0xAD: // LX512 LS. Longsys ?
 		// 	strcat(txt_buf, "Lexar ");
 		// 	break;
 		default:
