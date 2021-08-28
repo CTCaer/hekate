@@ -33,7 +33,8 @@
 // #include <gfx_utils.h>
 
 #define PKG11_MAGIC 0x31314B50
-#define KB_TSEC_FW_EMU_COMPAT 6 // KB ID for HOS 6.2.0.
+
+#define TSEC_HOS_KB_620 6
 
 static int _tsec_dma_wait_idle()
 {
@@ -62,10 +63,11 @@ static int _tsec_dma_pa_to_internal_100(int not_imem, int i_offset, int pa_offse
 	return _tsec_dma_wait_idle();
 }
 
-int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
+int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 {
 	int res = 0;
 	u8 *fwbuf = NULL;
+	u32 type = tsec_ctxt->type;
 	u32 *pdir, *car, *fuse, *pmc, *flowctrl, *se, *mc, *iram, *evec;
 	u32 *pkg11_magic_off;
 
@@ -82,6 +84,9 @@ int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	clock_enable_kfuse();
 
 	kfuse_wait_ready();
+
+	if (type == TSEC_FW_TYPE_NEW)
+		mc_enable_ahb_redirect(true);
 
 	// Configure Falcon.
 	TSEC(TSEC_DMACTL) = 0;
@@ -106,7 +111,7 @@ int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	}
 
 	// Load firmware or emulate memio environment for newer TSEC fw.
-	if (kb == KB_TSEC_FW_EMU_COMPAT)
+	if (type == TSEC_FW_TYPE_EMU)
 		TSEC(TSEC_DMATRFBASE) = (u32)tsec_ctxt->fw >> 8;
 	else
 	{
@@ -125,7 +130,7 @@ int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		}
 	}
 
-	if (kb == KB_TSEC_FW_EMU_COMPAT)
+	if (type == TSEC_FW_TYPE_EMU)
 	{
 		// Init SMMU translation for TSEC.
 		pdir = smmu_init_for_tsec();
@@ -144,8 +149,8 @@ int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 		fuse = page_alloc(1);
 		memcpy((void *)&fuse[0x800/4], (void *)FUSE_BASE, 0x400);
 		fuse[0x82C / 4] = 0;
-		fuse[0x9E0 / 4] = (1 << (kb + 2)) - 1;
-		fuse[0x9E4 / 4] = (1 << (kb + 2)) - 1;
+		fuse[0x9E0 / 4] = (1 << (TSEC_HOS_KB_620 + 2)) - 1;
+		fuse[0x9E4 / 4] = (1 << (TSEC_HOS_KB_620 + 2)) - 1;
 		smmu_map(pdir, (FUSE_BASE - 0x800), (u32)fuse, 1, _READABLE | _NONSECURE);
 
 		// Power management controller.
@@ -187,7 +192,7 @@ int tsec_query(void *tsec_keys, u8 kb, tsec_ctxt_t *tsec_ctxt)
 	TSEC(TSEC_BOOTVEC) = 0;
 	TSEC(TSEC_CPUCTL) = TSEC_CPUCTL_STARTCPU;
 
-	if (kb == KB_TSEC_FW_EMU_COMPAT)
+	if (type == TSEC_FW_TYPE_EMU)
 	{
 		u32 start = get_tmr_us();
 		u32 k = se[SE_CRYPTO_KEYTABLE_DATA_REG / 4];
@@ -285,6 +290,9 @@ out:;
 	clock_disable_tsec();
 	bpmp_mmu_enable();
 	bpmp_clk_rate_set(prev_fid);
+
+	if (type == TSEC_FW_TYPE_NEW)
+		mc_disable_ahb_redirect();
 
 	return res;
 }
