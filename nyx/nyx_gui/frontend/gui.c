@@ -2218,7 +2218,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	if (nyx_str->cfg & NYX_CFG_UMS)
 	{
 		nyx_str->cfg &= ~(NYX_CFG_UMS);
-		lv_task_t *task_run_ums = lv_task_create(nyx_run_ums, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, (void *)&nyx_str->cfg);
+		lv_task_t *task_run_ums = lv_task_create(nyx_run_ums, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, (void *)&nyx_str->cfg);
 		lv_task_once(task_run_ums);
 	}
 	else if (n_cfg.home_screen)
