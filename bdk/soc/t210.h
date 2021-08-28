@@ -281,7 +281,6 @@
 /*! Special registers. */
 #define EMC_SCRATCH0 0x324
 #define  EMC_HEKA_UPD BIT(30)
-#define  EMC_SEPT_RUN BIT(31)
 
 /*! Flow controller registers. */
 #define FLOW_CTLR_HALT_COP_EVENTS  0x4

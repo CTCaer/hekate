@@ -36,7 +36,6 @@ typedef enum
 typedef enum
 {
 	NYX_CFG_UMS  = BIT(6),
-	NYX_CFG_SEPT = BIT(7),
 
 	NYX_CFG_EXTRA = 0xFF << 24
 } nyx_cfg_t;
