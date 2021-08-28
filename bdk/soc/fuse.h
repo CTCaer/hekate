@@ -98,6 +98,7 @@ u32  fuse_read_odm_keygen_rev();
 u32  fuse_read_dramid(bool raw_id);
 u32  fuse_read_hw_state();
 u32  fuse_read_hw_type();
+int  fuse_set_sbk();
 void fuse_wait_idle();
 int  fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
 int  fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);

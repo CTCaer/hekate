@@ -19,6 +19,8 @@
 
 #include <string.h>
 
+#include <sec/se.h>
+#include <sec/se_t210.h>
 #include <soc/fuse.h>
 #include <soc/hw_init.h>
 #include <soc/t210.h>
@@ -122,6 +124,30 @@ u32 fuse_read_hw_type()
 	}
 
 	return FUSE_NX_HW_TYPE_ICOSA;
+}
+
+int fuse_set_sbk()
+{
+	if (FUSE(FUSE_PRIVATE_KEY0) != 0xFFFFFFFF)
+	{
+		// Read SBK from fuses.
+		u32 sbk[4] = {
+			FUSE(FUSE_PRIVATE_KEY0),
+			FUSE(FUSE_PRIVATE_KEY1),
+			FUSE(FUSE_PRIVATE_KEY2),
+			FUSE(FUSE_PRIVATE_KEY3)
+		};
+
+		// Set SBK to slot 14.
+		se_aes_key_set(14, sbk, SE_KEY_128_SIZE);
+
+		// Lock SBK from being read.
+		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
+
+		return 1;
+	}
+
+	return 0;
 }
 
 void fuse_wait_idle()

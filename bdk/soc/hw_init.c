@@ -250,29 +250,14 @@ static void _mbist_workaround()
 
 static void _config_se_brom()
 {
-	// Enable fuse clock.
+	// Enable Fuse visibility.
 	clock_enable_fuse(true);
 
-	// Skip SBK/SSK if sept was run.
-	bool sbk_skip = b_cfg.boot_cfg & BOOT_CFG_SEPT_RUN || FUSE(FUSE_PRIVATE_KEY0) == 0xFFFFFFFF;
-	if (!sbk_skip)
-	{
-		// Bootrom part we skipped.
-		u32 sbk[4] = {
-			FUSE(FUSE_PRIVATE_KEY0),
-			FUSE(FUSE_PRIVATE_KEY1),
-			FUSE(FUSE_PRIVATE_KEY2),
-			FUSE(FUSE_PRIVATE_KEY3)
-		};
-		// Set SBK to slot 14.
-		se_aes_key_set(14, sbk, SE_KEY_128_SIZE);
+	// Try to set SBK from fuses. If patched, skip.
+	fuse_set_sbk();
 
-		// Lock SBK from being read.
-		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
-
-		// Lock SSK (although it's not set and unused anyways).
-		se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEYREAD_FLAG);
-	}
+	// Lock SSK (although it's not set and unused anyways).
+	// se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEYREAD_FLAG);
 
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
 	memset((void *)TZRAM_BASE, 0, 0x10000);
@@ -352,7 +337,7 @@ void hw_init()
 	// Enable Security Engine clock.
 	clock_enable_se();
 
-	// Enable Fuse clock.
+	// Enable Fuse visibility.
 	clock_enable_fuse(true);
 
 	// Disable Fuse programming.
