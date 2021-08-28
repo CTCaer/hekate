@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ typedef struct _atm_fatal_error_ctx
 
 #define EXO_FW_VER(mj, mn, rv) (((mj) << 24) | ((mn) << 16) | ((rv) << 8))
 
-void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
+void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 {
 	u32 exo_fw_no = 0;
 	u32 exo_flags = 0;
@@ -175,39 +175,33 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new)
 		exo_fw_no++;
 
 	// Feed old exosphere target versioning to new.
-	if (exo_new)
+	switch (exo_fw_no)
 	{
-		switch (exo_fw_no)
-		{
-		case 1 ... 4:
-		case 6:
-			exo_fw_no = EXO_FW_VER(exo_fw_no, 0, 0);
-			break;
-		case 5:
-			if (!ctxt->exo_ctx.fs_is_510)
-				exo_fw_no = EXO_FW_VER(5, 0, 0);
-			else
-				exo_fw_no = EXO_FW_VER(5, 1, 0);
-			break;
-		case 7:
-			exo_fw_no = EXO_FW_VER(6, 2, 0);
-			break;
-		case 8 ... 9:
-			exo_fw_no = EXO_FW_VER(exo_fw_no - 1, 0, 0);
-			break;
-		case 10:
-			exo_fw_no = EXO_FW_VER(8, 1, 0);
-			break;
-		case 11:
-			exo_fw_no = EXO_FW_VER(9, 0, 0);
-			break;
-		case 12:
-			exo_fw_no = EXO_FW_VER(9, 1, 0);
-			break;
-		case 13 ... 15:
-			exo_fw_no = EXO_FW_VER(exo_fw_no - 3, 0, 0);
-			break;
-		}
+	case 1 ... 4:
+	case 6:
+		exo_fw_no = EXO_FW_VER(exo_fw_no, 0, 0);
+		break;
+	case 5:
+		exo_fw_no = EXO_FW_VER(5, ctxt->exo_ctx.hos_revision, 0);
+		break;
+	case 7:
+		exo_fw_no = EXO_FW_VER(6, 2, 0);
+		break;
+	case 8 ... 9:
+		exo_fw_no = EXO_FW_VER(exo_fw_no - 1, 0, 0);
+		break;
+	case 10:
+		exo_fw_no = EXO_FW_VER(8, 1, 0);
+		break;
+	case 11:
+		exo_fw_no = EXO_FW_VER(9, 0, 0);
+		break;
+	case 12:
+		exo_fw_no = EXO_FW_VER(9, 1, 0);
+		break;
+	case 13 ... 15:
+		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision, 0);
+		break;
 	}
 
 	// Parse exosphere.ini.

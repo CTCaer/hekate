@@ -691,7 +691,7 @@ static void _free_launch_components(launch_ctxt_t *ctxt)
 	free(ctxt->kip1_patches);
 }
 
-static bool _get_fs_exfat_compatible(link_t *info, bool *fs_is_510)
+static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 {
 	u32 fs_ids_cnt;
 	u32 sha_buf[32 / sizeof(u32)];
@@ -711,9 +711,11 @@ static bool _get_fs_exfat_compatible(link_t *info, bool *fs_is_510)
 		{
 			if (!memcmp(sha_buf, kip_ids[fs_idx].hash, 8))
 			{
-				// Check if it's 5.1.0.
-				if ((fs_idx & ~1) == 16)
-					*fs_is_510 = true;
+				// HOS Api special handling.
+				if ((fs_idx & ~1) == 16)      // Check if it's 5.1.0.
+					*hos_revision = 1;
+				else if ((fs_idx & ~1) == 34) // Check if it's 10.2.0.
+					*hos_revision = 2;
 
 				// Check if FAT32-only.
 				if (!(fs_idx & 1))
@@ -827,7 +829,7 @@ int hos_launch(ini_sec_t *cfg)
 			config_kip1patch(&ctxt, "nogc");
 	}
 
-	gfx_puts("Loaded config, pkg1 and keyblob\n");
+	gfx_printf("Loaded config and pkg1\n%s mode\n", ctxt.stock ? "Stock" : "CFW");
 
 	// Check if secmon is exosphere.
 	if (ctxt.secmon)
@@ -1005,7 +1007,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Check if FS is compatible with exFAT and if 5.1.0.
 	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || kb == KB_FIRMWARE_VERSION_500))
 	{
-		bool exfat_compat = _get_fs_exfat_compatible(&kip1_info, &ctxt.exo_ctx.fs_is_510);
+		bool exfat_compat = _get_fs_exfat_compatible(&kip1_info, &ctxt.exo_ctx.hos_revision);
 
 		if (sd_fs.fs_type == FS_EXFAT && !exfat_compat)
 		{

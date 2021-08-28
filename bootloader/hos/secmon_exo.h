@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,7 +19,7 @@
 
 #include <utils/types.h>
 
-void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base, bool exo_new);
+void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base);
 void secmon_exo_check_panic();
 
 #endif

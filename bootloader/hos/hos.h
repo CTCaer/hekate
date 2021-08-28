@@ -49,7 +49,7 @@
 
 typedef struct _exo_ctxt_t
 {
-	bool fs_is_510;
+	u32  hos_revision;
 	bool no_user_exceptions;
 	bool user_pmu;
 	bool *usb3_force;
