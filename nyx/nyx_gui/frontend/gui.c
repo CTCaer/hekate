@@ -1868,7 +1868,7 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	label_btn = lv_label_create(btn_emummc, label_btn);
 	s_printf(btn_colored_text, "%s%s", text_color, " "SYMBOL_LIST"#");
 	lv_label_set_text(label_btn, btn_colored_text);
-	lv_btn_set_action(btn_emummc, LV_BTN_ACTION_CLICK,create_win_emummc_tools);
+	lv_btn_set_action(btn_emummc, LV_BTN_ACTION_CLICK, create_win_emummc_tools);
 	lv_btn_set_layout(btn_emummc, LV_LAYOUT_OFF);
 	lv_obj_align(label_btn, NULL, LV_ALIGN_CENTER, 0, -28);
 	lv_obj_set_pos(btn_emummc, 959, 160);
@@ -2208,28 +2208,8 @@ static void _nyx_main_menu(lv_theme_t * th)
 	// Option save button.
 	lv_tabview_set_tab_load_action(tv, _show_hide_save_button);
 
-	// If we rebooted to run sept for dumping, lunch dump immediately.
-	if (nyx_str->cfg & NYX_CFG_SEPT)
-	{
-		u32 type = nyx_str->cfg >> 24;
-		nyx_str->cfg &= ~(NYX_CFG_SEPT | NYX_CFG_EXTRA);
-
-		if (type == NYX_SEPT_DUMP)
-		{
-			lv_task_t *task_run_dump = lv_task_create(sept_run_dump, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
-			lv_task_once(task_run_dump);
-		}
-		else if (type == NYX_SEPT_CAL0)
-		{
-			lv_task_t *task_run_cal0 = lv_task_create(sept_run_cal0, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
-			lv_task_once(task_run_cal0);
-		}
-		else if (type == NYX_SEPT_EMUF)
-		{
-			// TODO: Maybe automatically relaunch emuMMC creation in the future.
-		}
-	}
-	else if (nyx_str->cfg & NYX_CFG_UMS)
+	// Check if Nyx was launched with a function set.
+	if (nyx_str->cfg & NYX_CFG_UMS)
 	{
 		nyx_str->cfg &= ~(NYX_CFG_UMS);
 		lv_task_t *task_run_ums = lv_task_create(nyx_run_ums, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, (void *)&nyx_str->cfg);

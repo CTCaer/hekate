@@ -87,7 +87,7 @@ static int _nx_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, u32 enc, u8 *tweak,
 			tweak[i] = sec & 0xFF;
 			sec >>= 8;
 		}
-		if (!se_aes_crypt_block_ecb(tweak_ks, 1, tweak, tweak))
+		if (!se_aes_crypt_block_ecb(tweak_ks, ENCRYPT, tweak, tweak))
 			return 0;
 	}
 

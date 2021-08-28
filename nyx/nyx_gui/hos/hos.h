@@ -42,34 +42,20 @@
 #define KB_FIRMWARE_VERSION_MAX  KB_FIRMWARE_VERSION_1210
 
 #define HOS_PKG11_MAGIC 0x31314B50
-#define HOS_EKS_MAGIC   0x30534B45
-
-typedef struct _hos_eks_keys_t
-{
-	u8 mkk[SE_KEY_128_SIZE];
-	u8 fdk[SE_KEY_128_SIZE];
-} hos_eks_keys_t;
-
-typedef struct _hos_eks_bis_keys_t
-{
-	u8 crypt[SE_KEY_128_SIZE];
-	u8 tweak[SE_KEY_128_SIZE];
-} hos_eks_bis_keys_t;
+#define HOS_EKS_MAGIC   0x31534B45 // EKS1.
 
 typedef struct _hos_eks_mbr_t
 {
 	u32 magic;
-	u8  enabled[5];
-	u8  enabled_bis;
-	u8  rsvd[2];
+	u32 enabled;
 	u32 lot0;
-	u8  dkg[SE_KEY_128_SIZE];
-	u8  dkk[SE_KEY_128_SIZE];
-	hos_eks_keys_t keys[5];
-	hos_eks_bis_keys_t bis_keys[3];
+	u32 rsvd;
+	u8  tsec[SE_KEY_128_SIZE];
+	u8  troot[SE_KEY_128_SIZE];
+	u8  troot_dev[SE_KEY_128_SIZE];
 } hos_eks_mbr_t;
 
-static_assert(sizeof(hos_eks_mbr_t) == 304, "HOS EKS size is wrong!");
+static_assert(sizeof(hos_eks_mbr_t) == 64, "HOS EKS size is wrong!");
 
 typedef struct _launch_ctxt_t
 {
@@ -95,13 +81,9 @@ typedef struct _launch_ctxt_t
 	ini_sec_t *cfg;
 } launch_ctxt_t;
 
-void hos_eks_get();
-void hos_eks_save(u32 kb);
 void hos_eks_clear(u32 kb);
-void hos_eks_bis_save();
-void hos_eks_bis_clear();
 int  hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
-int  hos_bis_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
+int  hos_bis_keygen();
 void hos_bis_keys_clear();
 
 #endif

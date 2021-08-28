@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -33,9 +33,6 @@ typedef struct _hekate_config
 	u32 bootprotect;
 	// Global temporary config.
 	bool t210b01;
-	bool se_keygen_done;
-	bool sept_run;
-	bool aes_slots_new;
 	bool emummc_force_disable;
 	bool rcm_patched;
 	u32  errors;

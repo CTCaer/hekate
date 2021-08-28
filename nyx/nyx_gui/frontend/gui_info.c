@@ -21,7 +21,6 @@
 #include "../config.h"
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
-#include "../hos/sept.h"
 #include <libs/fatfs/ff.h>
 #include <input/touch.h>
 #include <mem/emc.h>
@@ -302,108 +301,16 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	sd_mount();
 
-	// Read package1.
-	static const u32 BOOTLOADER_SIZE          = 0x40000;
-	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
-	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
-
-	u8 kb = 0;
-	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
-	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
-	u8 *pkg1 = (u8 *)malloc(BOOTLOADER_SIZE);
-
+	// Init eMMC.
 	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
 		goto out;
 	}
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-
-try_load:
-	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
-
-	char *build_date = malloc(32);
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
-
-	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
-	free(build_date);
-
-	if (!pkg1_id)
-	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#\n");
-		// Try backup bootloader.
-		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
-		{
-			strcat(txt_buf, "Trying backup bootloader...\n");
-			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
-			goto try_load;
-		}
-		lv_label_set_text(lb_desc, txt_buf);
-
-		goto out;
-	}
-
-	kb = pkg1_id->kb;
-
-	// Skip if Mariko.
-	if (h_cfg.t210b01)
-		goto t210b01;
-
-	tsec_ctxt_t tsec_ctxt;
-	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
-	tsec_ctxt.pkg1 = pkg1;
-	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
-	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
-
-	// Get keys.
-	hos_eks_get();
-	if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
-	{
-		u32 key_idx = 0;
-		if (kb >= KB_FIRMWARE_VERSION_810)
-			key_idx = 1;
-
-		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
-			h_cfg.sept_run = true;
-		else
-		{
-			// Check that BCT is proper so sept can run.
-			u8 *bct_bldr = (u8 *)calloc(1, 512);
-			sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
-			u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
-			free(bct_bldr);
-			if (bootloader_entrypoint > SEPT_PRI_ENTRY)
-			{
-				lv_label_set_text(lb_desc, "#FFDD00 Main BCT is improper! Failed to run sept.#\n"
-					"#FFDD00 Run sept with proper BCT at least once#\n#FFDD00 to cache keys.#\n");
-				goto out;
-			}
-
-			// Set boot cfg.
-			b_cfg->autoboot = 0;
-			b_cfg->autoboot_list = 0;
-			b_cfg->extra_cfg = EXTRA_CFG_NYX_SEPT;
-			b_cfg->sept = NYX_SEPT_CAL0;
-
-			if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
-			{
-				lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept#\n");
-				goto out;
-			}
-		}
-	}
-
-t210b01:;
-	// Read the correct keyblob.
-	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 	// Generate BIS keys
-	hos_bis_keygen(keyblob, kb, &tsec_ctxt);
-
-	free(keyblob);
+	hos_bis_keygen();
 
 	if (!cal0_buf)
 		cal0_buf = malloc(0x10000);
@@ -418,24 +325,23 @@ t210b01:;
 	nx_emmc_bis_end();
 	nx_emmc_gpt_free(&gpt);
 
-	// Clear BIS keys slots and reinstate SBK.
+	// Clear BIS keys slots.
 	hos_bis_keys_clear();
 
 	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
 
-	// If successful, save BIS keys.
+	// Check keys validity.
 	if (memcmp(&cal0->magic, "CAL0", 4))
 	{
 		free(cal0_buf);
 		cal0_buf = NULL;
 
-		hos_eks_bis_clear();
+		// Clear EKS keys.
+		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
 
 		lv_label_set_text(lb_desc, "#FFDD00 CAL0 is corrupt or wrong keys!#\n");
 		goto out;
 	}
-	else
-		hos_eks_bis_save();
 
 	u32 hash[8];
 	se_calc_sha256_oneshot(hash, (u8 *)cal0 + 0x40, cal0->body_size);
@@ -526,7 +432,6 @@ t210b01:;
 	lv_label_set_text(lb_desc, txt_buf);
 
 out:
-	free(pkg1);
 	free(txt_buf);
 	sd_unmount();
 	sdmmc_storage_end(&emmc_storage);
@@ -1042,11 +947,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-void sept_run_cal0(void *param)
-{
-	_create_window_fuses_info_status(NULL);
-}
-
 static char *ipatches_txt;
 static void _ipatch_process(u32 offset, u32 value)
 {
@@ -1098,7 +998,7 @@ static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
 {
 	u32 retries = 0;
 
-	tsec_ctxt_t tsec_ctxt;
+	tsec_ctxt_t tsec_ctxt = {0};
 
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" TSEC Keys");
 
@@ -1173,28 +1073,35 @@ try_load:
 	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
 	if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+	{
 		tsec_ctxt.size = 0xF00;
-	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
-		tsec_ctxt.size = 0x2900;
-	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_700)
-	{
-		tsec_ctxt.size = 0x3000;
-		// Exit after TSEC key generation.
-		*((vu16 *)((u32)tsec_ctxt.fw + 0x2DB5)) = 0x02F8;
+		tsec_ctxt.type = TSEC_FW_TYPE_OLD;
 	}
-	else
-		tsec_ctxt.size = 0x3300;
-
-	if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
+	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
 	{
+		tsec_ctxt.size = 0x2900;
+		tsec_ctxt.type = TSEC_FW_TYPE_EMU;
+
 		u8 *tsec_paged = (u8 *)page_alloc(3);
 		memcpy(tsec_paged, (void *)tsec_ctxt.fw, tsec_ctxt.size);
 		tsec_ctxt.fw = tsec_paged;
 	}
+	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_700)
+	{
+		tsec_ctxt.size = 0x3000;
+		tsec_ctxt.type = TSEC_FW_TYPE_NEW;
+		// Exit after TSEC key generation.
+		*((vu16 *)((u32)tsec_ctxt.fw + 0x2DB5)) = 0x02F8;
+	}
+	else
+	{
+		tsec_ctxt.size = 0x3300;
+		tsec_ctxt.type = TSEC_FW_TYPE_NEW;
+	}
 
 	int res = 0;
 
-	while (tsec_query((u8 *)tsec_keys, pkg1_id->kb, &tsec_ctxt) < 0)
+	while (tsec_query((u8 *)tsec_keys, &tsec_ctxt) < 0)
 	{
 		memset(tsec_keys, 0x00, 0x20);
 

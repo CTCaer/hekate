@@ -24,7 +24,6 @@
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
-#include "../hos/sept.h"
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <sec/se.h>

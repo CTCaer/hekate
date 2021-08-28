@@ -28,7 +28,6 @@
 #include "gfx/tui.h"
 #include "hos/hos.h"
 #include "hos/secmon_exo.h"
-#include "hos/sept.h"
 #include <ianos/ianos.h>
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
@@ -489,9 +488,6 @@ void ini_list_launcher()
 					goto wrong_emupath;
 				}
 
-				if (cfg_sec && !payload_path)
-					check_sept(cfg_sec);
-
 				if (!cfg_sec)
 				{
 					free(ments);
@@ -630,9 +626,6 @@ void launch_firmware()
 				goto wrong_emupath;
 			}
 
-			if (cfg_sec && !payload_path)
-				check_sept(cfg_sec);
-
 			if (!cfg_sec)
 			{
 				free(ments);
@@ -720,12 +713,6 @@ void nyx_load_run()
 	nyx_str->cfg = 0;
 	if (b_cfg.extra_cfg)
 	{
-		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_SEPT)
-		{
-			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_SEPT);
-			nyx_str->cfg |= NYX_CFG_SEPT;
-			nyx_str->cfg |= b_cfg.sept << 24;
-		}
 		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
 		{
 			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_UMS);
@@ -804,24 +791,6 @@ static void _bootloader_corruption_protect()
 
 static void _auto_launch_firmware()
 {
-	if(b_cfg.extra_cfg & EXTRA_CFG_NYX_SEPT)
-	{
-		if (!h_cfg.sept_run)
-			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
-		check_sept(NULL);
-	}
-
-	if (!h_cfg.sept_run)
-		auto_launch_update();
-
-	u8 *BOOTLOGO = NULL;
-	char *payload_path = NULL;
-	char *emummc_path = NULL;
-	u32 btn = 0;
-	bool boot_from_id = (b_cfg.boot_cfg & BOOT_CFG_FROM_ID) && (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN);
-	if (boot_from_id)
-		b_cfg.id[7] = 0;
-
 	struct _bmp_data
 	{
 		u32 size;
@@ -832,14 +801,19 @@ static void _auto_launch_firmware()
 		u32 pos_y;
 	};
 
-	struct _bmp_data bmpData;
-	bool bootlogoFound = false;
+	char *emummc_path = NULL;
 	char *bootlogoCustomEntry = NULL;
+	ini_sec_t *cfg_sec = NULL;
+
+	auto_launch_update();
+
+	bool boot_from_id = (b_cfg.boot_cfg & BOOT_CFG_FROM_ID) && (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN);
+	if (boot_from_id)
+		b_cfg.id[7] = 0;
 
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 		gfx_con.mute = true;
 
-	ini_sec_t *cfg_sec = NULL;
 	LIST_INIT(ini_sections);
 	LIST_INIT(ini_list_sections);
 
@@ -883,16 +857,11 @@ static void _auto_launch_firmware()
 						}
 						boot_entry_id++;
 
-						// Override autoboot, otherwise save it for a possbile sept run.
+						// Override autoboot.
 						if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
 						{
 							h_cfg.autoboot = b_cfg.autoboot;
 							h_cfg.autoboot_list = b_cfg.autoboot_list;
-						}
-						else
-						{
-							b_cfg.autoboot = h_cfg.autoboot;
-							b_cfg.autoboot_list = h_cfg.autoboot_list;
 						}
 
 						// Apply bootloader protection against corruption.
@@ -983,9 +952,13 @@ skip_list:
 		goto out;
 
 	u8 *bitmap = NULL;
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait && !h_cfg.sept_run)
+	struct _bmp_data bmpData;
+	bool bootlogoFound = false;
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
 	{
 		u32 fsize;
+		u8 *BOOTLOGO = NULL;
+
 		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, &fsize);
 
@@ -1035,6 +1008,7 @@ skip_list:
 		{
 			gfx_render_bmp_argb((u32 *)BOOTLOGO, bmpData.size_x, bmpData.size_y,
 				bmpData.pos_x, bmpData.pos_y);
+			free(BOOTLOGO);
 		}
 		else
 		{
@@ -1048,19 +1022,19 @@ skip_list:
 
 	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
 		display_backlight_brightness(h_cfg.backlight, 0);
-	else if (!h_cfg.sept_run && h_cfg.bootwait)
+	else if (h_cfg.bootwait)
 		display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Wait before booting. If VOL- is pressed go into bootloader menu.
-	if (!h_cfg.sept_run && !(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
+	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
 	{
-		btn = btn_wait_timeout_single(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_SINGLE);
+		u32 btn = btn_wait_timeout_single(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_SINGLE);
 
 		if (btn & BTN_VOL_DOWN)
 			goto out;
 	}
 
-	payload_path = ini_check_payload_section(cfg_sec);
+	char *payload_path = ini_check_payload_section(cfg_sec);
 
 	if (payload_path)
 	{
@@ -1079,7 +1053,6 @@ skip_list:
 			goto wrong_emupath;
 		}
 
-		check_sept(cfg_sec);
 		hos_launch(cfg_sec);
 
 wrong_emupath:
@@ -1105,7 +1078,6 @@ out:
 	// Clear boot reasons from binary.
 	if (b_cfg.boot_cfg & (BOOT_CFG_FROM_ID | BOOT_CFG_TO_EMUMMC))
 		memset(b_cfg.xt_str, 0, sizeof(b_cfg.xt_str));
-	b_cfg.boot_cfg &= BOOT_CFG_SEPT_RUN;
 	h_cfg.emummc_force_disable = false;
 
 	// L4T: Clear custom boot mode flags from PMC_SCRATCH0.

@@ -673,8 +673,11 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 	return NULL;
 }
 
-static const u8 mkey_vector_8xx[][SE_KEY_128_SIZE] =
+//!TODO: Update on mkey changes.
+static const u8 mkey_vector_7xx[][SE_KEY_128_SIZE] =
 {
+	// Master key 7  encrypted with 8.  (7.0.0 with 8.1.0)
+	{ 0xEA, 0x60, 0xB3, 0xEA, 0xCE, 0x8F, 0x24, 0x46, 0x7D, 0x33, 0x9C, 0xD1, 0xBC, 0x24, 0x98, 0x29 },
 	// Master key 8  encrypted with 9.  (8.1.0 with 9.0.0)
 	{ 0x4D, 0xD9, 0x98, 0x42, 0x45, 0x0D, 0xB1, 0x3C, 0x52, 0x0C, 0x9A, 0x44, 0xBB, 0xAD, 0xAF, 0x80 },
 	// Master key 9  encrypted with 10. (9.0.0 with 9.1.0)
@@ -686,9 +689,8 @@ static const u8 mkey_vector_8xx[][SE_KEY_128_SIZE] =
 static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)
 {
 	// Decrypt older encrypted mkey.
-	se_aes_crypt_ecb(src_slot, 0, mkey, SE_KEY_128_SIZE, key_seed, SE_KEY_128_SIZE);
+	se_aes_crypt_ecb(src_slot, DECRYPT, mkey, SE_KEY_128_SIZE, key_seed, SE_KEY_128_SIZE);
 	// Set and unwrap pkg2 key.
-	se_aes_key_clear(9);
 	se_aes_key_set(9, mkey, SE_KEY_128_SIZE);
 	se_aes_unwrap_key(9, 9, package2_keyseed);
 
@@ -700,11 +702,13 @@ static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 
 }
 
 u8 pkg2_keyslot;
-pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
+bool pkg2_broken_keygen_700;
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo)
 {
 	pkg2_hdr_t mkey_test;
 	u8 *pdata = (u8 *)data;
 	pkg2_keyslot = 8;
+	pkg2_broken_keygen_700 = false;
 
 	// Skip signature.
 	pdata += 0x100;
@@ -714,26 +718,28 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 	// Skip header.
 	pdata += sizeof(pkg2_hdr_t);
 
-	// Check if we need to decrypt with newer mkeys. Valid for sept for 8.1.0 and up.
+	// Check if we need to decrypt with newer mkeys. Valid for THK for 7.0.0 and up.
 	se_aes_crypt_ctr(8, &mkey_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 
 	if (mkey_test.magic == PKG2_MAGIC)
 		goto key_found;
 
 	// Decrypt older pkg2 via new mkeys.
-	if ((kb >= KB_FIRMWARE_VERSION_810) && (kb < KB_FIRMWARE_VERSION_MAX))
+	if ((kb >= KB_FIRMWARE_VERSION_700) && (kb < KB_FIRMWARE_VERSION_MAX))
 	{
 		u8 tmp_mkey[SE_KEY_128_SIZE];
-		u8 decr_slot = !h_cfg.t210b01 ? (!h_cfg.aes_slots_new ? 12 : 13) : 7; // Sept mkey or T210B01 mkey.
-		u8 mkey_seeds_cnt = sizeof(mkey_vector_8xx) / SE_KEY_128_SIZE;
+		u8 decr_slot = (h_cfg.t210b01 || !is_exo) ? 7 : 13; // THK mkey or T210B01 mkey.
+		u8 mkey_seeds_cnt = sizeof(mkey_vector_7xx) / SE_KEY_128_SIZE;
 		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
 		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (KB_FIRMWARE_VERSION_MAX - kb);
+		// Re-encrypt with initial pkg2 key if 7.0.0 and Erista, because of a bug in Exo2.
+		pkg2_broken_keygen_700 = kb == KB_FIRMWARE_VERSION_700 && decr_slot == 13;
 
 		while (mkey_seeds_cnt)
 		{
 			// Decrypt and validate mkey.
 			int res = _pkg2_key_unwrap_validate(&mkey_test, hdr, decr_slot,
-				tmp_mkey, mkey_vector_8xx[mkey_seeds_idx - 1]);
+				tmp_mkey, mkey_vector_7xx[mkey_seeds_idx - 1]);
 
 			if (res)
 			{
@@ -744,23 +750,18 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 			{
 				// Set current mkey in order to decrypt a lower mkey.
 				mkey_seeds_idx--;
-				se_aes_key_clear(9);
 				se_aes_key_set(9, tmp_mkey, SE_KEY_128_SIZE);
 
 				decr_slot = 9; // Temp key.
 
 				// Check if we tried last key for that pkg2 version.
-				// And start with a lower mkey in case sept is older.
+				// And start with a lower mkey in case mkey is older.
 				if (mkey_seeds_idx == mkey_seeds_min_idx)
 				{
 					mkey_seeds_cnt--;
 					mkey_seeds_idx = mkey_seeds_cnt;
-					decr_slot = !h_cfg.aes_slots_new ? 12 : 13; // Sept mkey.
+					decr_slot = (h_cfg.t210b01 || !is_exo) ? 7 : 13; // THK mkey or T210B01 mkey.
 				}
-
-				// Out of keys. pkg2 is latest or process failed.
-				if (!mkey_seeds_cnt)
-					se_aes_key_clear(9);
 			}
 		}
 	}
@@ -784,6 +785,9 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 
 		pdata += hdr->sec_size[i];
 	}
+
+	if (pkg2_broken_keygen_700)
+		pkg2_keyslot = 8;
 
 	return hdr;
 }
@@ -826,6 +830,7 @@ void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info)
 	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
 	u32 kernel_size = ctxt->kernel_size;
 	bool is_meso = *(u32 *)(ctxt->kernel + 4) == ATM_MESOSPHERE;
+	u8 kb = ctxt->pkg1_id->kb;
 
 	// Force new Package2 if Mesosphere.
 	if (is_meso)
@@ -884,15 +889,16 @@ DPRINTF("INI1 encrypted\n");
 	se_calc_sha256_oneshot(&hdr->sec_sha256[0x20 * PKG2_SEC_INI1],
 		(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_INI1]);
 
+	// Set key version. For Erista 7.0.0, use max because of a bug in Exo2?
+	u8 key_ver = kb ? kb + 1 : 0;
+	if (pkg2_broken_keygen_700)
+		key_ver = KB_FIRMWARE_VERSION_MAX + 1;
+
 	//Encrypt header.
-	u8 key_ver = ctxt->pkg1_id->kb ? ctxt->pkg1_id->kb + 1 : 0;
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
 	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
 	memset(hdr->ctr, 0 , SE_AES_IV_SIZE);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
-
-	if (pkg2_keyslot != 8)
-		se_aes_key_clear(9);
 }

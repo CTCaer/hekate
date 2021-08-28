@@ -23,7 +23,6 @@
 
 #include "gui.h"
 #include "fe_emummc_tools.h"
-#include "../hos/sept.h"
 #include "../config.h"
 #include <utils/ini.h>
 #include <libs/fatfs/diskio.h>
@@ -752,133 +751,18 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	return 1;
 }
 
-u32 kb = 0;
-u8 *tsec_fw = NULL;
-bool sept_error = false;
-
-static lv_res_t _emummc_raw_check_sept_action(lv_obj_t *btns, const char * txt)
-{
-	int btn_idx = lv_btnm_get_pressed(btns);
-
-	mbox_action(btns, txt);
-
-	if (btn_idx == 1 && !sept_error)
-	{
-		// Set boot cfg.
-		b_cfg->autoboot = 0;
-		b_cfg->autoboot_list = 0;
-		b_cfg->extra_cfg = EXTRA_CFG_NYX_SEPT;
-		b_cfg->sept = NYX_SEPT_EMUF;
-
-		sd_mount();
-		reboot_to_sept(tsec_fw, kb);
-	}
-
-	return LV_RES_INV;
-}
-
-static int _emummc_raw_check_sept(emmc_tool_gui_t *gui, u32 resized_count)
+static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 {
 	if (!resized_count)
 		return 1;
 
-	bool sept_needed = false;
-	sept_error = false;
-	tsec_fw = NULL;
+	bool error = false;
 
 	char *txt_buf = (char *)malloc(0x4000);
 	txt_buf[0] = 0;
 
-	// Read package1.
-	static const u32 BOOTLOADER_SIZE          = 0x40000;
-	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
-	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
-
-	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
-	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
-	u8 *pkg1 = (u8 *)malloc(BOOTLOADER_SIZE);
-
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-
-try_load:
-	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
-
-	char *build_date = malloc(32);
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
-
-	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
-	free(build_date);
-
-	if (!pkg1_id)
-	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#\n");
-		// Try backup bootloader.
-		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
-		{
-			strcat(txt_buf, "Trying backup bootloader...\n");
-			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
-			goto try_load;
-		}
-
-		sept_error = true;
-		goto out;
-	}
-
-	kb = pkg1_id->kb;
-
-	// Skip if Mariko.
-	if (h_cfg.t210b01)
-		goto bis_derivation;
-
-	tsec_ctxt_t tsec_ctxt;
-	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
-	tsec_ctxt.pkg1 = pkg1;
-	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
-	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
-
-	// Get keys.
-	hos_eks_get();
-	if (kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
-	{
-		u32 key_idx = 0;
-		if (kb >= KB_FIRMWARE_VERSION_810)
-			key_idx = 1;
-
-		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
-			h_cfg.sept_run = true;
-		else
-		{
-			// Check that BCT is proper so sept can run.
-			u8 *bct_bldr = (u8 *)calloc(1, 512);
-			sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
-			u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
-			free(bct_bldr);
-			if (bootloader_entrypoint > SEPT_PRI_ENTRY)
-			{
-				strcpy(txt_buf, "#FFDD00 Failed to run sept because main BCT is improper!#\n"
-					"#FFDD00 Run sept with proper BCT at least once to cache keys.#\n");
-				sept_error = true;
-				goto out;
-			}
-
-			// Set TSEC fw.
-			tsec_fw = (u8 *)tsec_ctxt.fw;
-
-			sept_needed = true;
-			goto out;
-		}
-	}
-
-bis_derivation:;
-	// Read the correct keyblob.
-	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
-
-	// Generate BIS keys
-	hos_bis_keygen(keyblob, kb, &tsec_ctxt);
-
-	free(keyblob);
+	// Generate BIS keys.
+	hos_bis_keygen();
 
 	u8 *cal0_buf = malloc(0x10000);
 
@@ -894,32 +778,25 @@ bis_derivation:;
 
 	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
 
-	// If successful, save BIS keys.
+	// Check keys validity.
 	if (memcmp(&cal0->magic, "CAL0", 4))
 	{
-		hos_bis_keys_clear();
-		hos_eks_bis_clear();
+		// Clear EKS keys.
+		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
 
 		strcpy(txt_buf, "#FFDD00 BIS keys validation failed!#\n");
-		sept_error = true;
+		error = true;
 	}
-	else
-		hos_eks_bis_save();
+
 	free(cal0_buf);
 
-out:
-	// Check if sept is not needed.
-	if (!sept_needed)
-		free(pkg1);
-
-	if (sept_needed || sept_error)
+	if (error)
 	{
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-		static const char * mbox_btn_map[] = { "\211", "\222Launch", "\222Close", "\211", "" };
-		static const char * mbox_btn_map2[] = { "\211", "\222Close", "\211", "" };
+		static const char * mbox_btn_map[] = { "\211", "\222Close", "\211", "" };
 		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 		lv_mbox_set_recolor_text(mbox, true);
 		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
@@ -932,18 +809,8 @@ out:
 		lv_label_set_style(lb_desc, &monospace_text);
 		lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 4);
 
-		if (sept_error)
-		{
-			lv_label_set_text(lb_desc, txt_buf);
-			lv_mbox_add_btns(mbox, mbox_btn_map2, _emummc_raw_check_sept_action);
-			free(pkg1);
-		}
-		else
-		{
-			lv_label_set_text(lb_desc, "Sept needs to launch in order to generate keys\nneeded for emuMMC resizing.\n"
-				"After that enter this menu again.");
-			lv_mbox_add_btns(mbox, mbox_btn_map, _emummc_raw_check_sept_action);
-		}
+		lv_label_set_text(lb_desc, txt_buf);
+		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
 
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
@@ -953,7 +820,7 @@ out:
 		return 0;
 	}
 
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	free(txt_buf);
 
 	return 1;
 }
@@ -984,7 +851,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		goto out;
 	}
 
-	if (!_emummc_raw_check_sept(gui, resized_count))
+	if (!_emummc_raw_derive_bis_keys(gui, resized_count))
 	{
 		s_printf(gui->txt_buf, "#FFDD00 For formatting USER partition,#\n#FFDD00 BIS keys are needed!#\n");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);

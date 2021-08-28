@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "hos.h"
-#include "sept.h"
 #include "../config.h"
 #include <display/di.h>
 #include <gfx_utils.h>
@@ -54,7 +53,7 @@ typedef struct _tsec_keys_t
 
 typedef struct _kb_keys_t
 {
-	u8 master_keyseed[SE_KEY_128_SIZE];
+	u8 master_kekseed[SE_KEY_128_SIZE];
 	u8 random_data[0x70];
 	u8 package1_key[SE_KEY_128_SIZE];
 } kb_keys_t;
@@ -82,12 +81,18 @@ static const u8 cmac_keyseed[SE_KEY_128_SIZE] =
 static const u8 master_keyseed_retail[SE_KEY_128_SIZE] =
 	{ 0xD8, 0xA2, 0x41, 0x0A, 0xC6, 0xC5, 0x90, 0x01, 0xC6, 0x1D, 0x6A, 0x26, 0x7C, 0x51, 0x3F, 0x3C };
 
-static const u8 master_keyseed_4xx_5xx_610[SE_KEY_128_SIZE] =
-	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
+// Unused in this context.
+//static const u8 master_keyseed_4xx[SE_KEY_128_SIZE] =
+//	{ 0x2D, 0xC1, 0xF4, 0x8D, 0xF3, 0x5B, 0x69, 0x33, 0x42, 0x10, 0xAC, 0x65, 0xDA, 0x90, 0x46, 0x66 };
 
-static const u8 master_keyseed_620[SE_KEY_128_SIZE] =
+static const u8 master_kekseed_620[SE_KEY_128_SIZE] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
+//!TODO: Update on mkey changes.
+static const u8 master_kekseed_t210_max[SE_KEY_128_SIZE] =
+	{ 0x84, 0x67, 0xB6, 0x7F, 0x13, 0x11, 0xAE, 0xE6, 0x58, 0x9B, 0x19, 0xAF, 0x13, 0x6C, 0x80, 0x7A }; // 12.1.0.
+
+//!TODO: Update on mkey changes.
 static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
 	{ 0x77, 0x60, 0x5A, 0xD2, 0xEE, 0x6E, 0xF8, 0x3C, 0x3F, 0x72, 0xE2, 0x59, 0x9D, 0xAC, 0x5E, 0x56 }, // 6.0.0.
 	{ 0x1E, 0x80, 0xB8, 0x17, 0x3E, 0xC0, 0x60, 0xAA, 0x11, 0xBE, 0x1A, 0x4A, 0xA6, 0x6F, 0xE4, 0xAE }, // 6.2.0.
@@ -101,12 +106,13 @@ static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
 static const u8 console_keyseed[SE_KEY_128_SIZE] =
 	{ 0x4F, 0x02, 0x5F, 0x0E, 0xB6, 0x6D, 0x11, 0x0E, 0xDC, 0x32, 0x7D, 0x41, 0x86, 0xC2, 0xF4, 0x78 };
 
-static const u8 console_keyseed_4xx_5xx[SE_KEY_128_SIZE] =
+static const u8 console_keyseed_4xx[SE_KEY_128_SIZE] =
 	{ 0x0C, 0x91, 0x09, 0xDB, 0x93, 0x93, 0x07, 0x81, 0x07, 0x3C, 0xC4, 0x16, 0x22, 0x7C, 0x6C, 0x28 };
 
 const u8 package2_keyseed[SE_KEY_128_SIZE] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
+//!TODO: Update on mkey changes.
 static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][SE_KEY_128_SIZE] = {
 	{ 0x0C, 0xF0, 0x59, 0xAC, 0x85, 0xF6, 0x26, 0x65, 0xE1, 0xE9, 0x19, 0x55, 0xE6, 0xF2, 0x67, 0x3D }, // Zeroes  encrypted with mkey 00.
 	{ 0x29, 0x4C, 0x04, 0xC8, 0xEB, 0x10, 0xED, 0x9D, 0x51, 0x64, 0x97, 0xFB, 0xF3, 0x4D, 0x50, 0xDD }, // Mkey 00 encrypted with mkey 01.
@@ -122,6 +128,7 @@ static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][SE_KEY_128_SIZE] = {
 	{ 0xC1, 0x8D, 0x16, 0xBB, 0x2A, 0xE4, 0x1D, 0xD4, 0xC2, 0xC1, 0xB6, 0x40, 0x94, 0x35, 0x63, 0x98 }, // Mkey 10 encrypted with mkey 11.
 };
 
+//!TODO: Update on mkey changes.
 static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][SE_KEY_128_SIZE] = {
 	{ 0x8B, 0x4E, 0x1C, 0x22, 0x42, 0x07, 0xC8, 0x73, 0x56, 0x94, 0x08, 0x8B, 0xCC, 0x47, 0x0F, 0x5D }, // 4.x    New Device Key Source.
 	{ 0x6C, 0xEF, 0xC6, 0x27, 0x8B, 0xEC, 0x8A, 0x91, 0x99, 0xAB, 0x24, 0xAC, 0x4F, 0x1C, 0x8F, 0x1C }, // 5.x    New Device Key Source.
@@ -134,6 +141,7 @@ static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSIO
 	{ 0xAA, 0xFD, 0xBC, 0xBB, 0x25, 0xC3, 0xA4, 0xEF, 0xE3, 0xEE, 0x58, 0x53, 0xB7, 0xF8, 0xDD, 0xD6 }, // 12.1.0 New Device Key Source.
 };
 
+//!TODO: Update on mkey changes.
 static const u8 new_console_kekseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][SE_KEY_128_SIZE] = {
 	{ 0x88, 0x62, 0x34, 0x6E, 0xFA, 0xF7, 0xD8, 0x3F, 0xE1, 0x30, 0x39, 0x50, 0xF0, 0xB7, 0x5D, 0x5D }, // 4.x    New Device Keygen Source.
 	{ 0x06, 0x1E, 0x7B, 0xE9, 0x6D, 0x47, 0x8C, 0x77, 0xC5, 0xC8, 0xE7, 0x94, 0x9A, 0xA8, 0x5F, 0x2E }, // 5.x    New Device Keygen Source.
@@ -186,7 +194,7 @@ bool hos_eks_rw_try(u8 *buf, bool write)
 	return false;
 }
 
-void hos_eks_get()
+static void _hos_eks_get()
 {
 	// Check if Erista based unit.
 	if (h_cfg.t210b01)
@@ -202,11 +210,10 @@ void hos_eks_get()
 
 		// Decrypt EKS blob.
 		hos_eks_mbr_t *eks = (hos_eks_mbr_t *)(mbr + 0x80);
-		se_aes_crypt_ecb(14, 0, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+		se_aes_crypt_ecb(14, DECRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
 		// Check if valid and for this unit.
-		if (eks->magic == HOS_EKS_MAGIC &&
-			(eks->lot0 == FUSE(FUSE_OPT_LOT_CODE_0) || eks->lot0 == FUSE(FUSE_PRIVATE_KEY0)))
+		if (eks->magic == HOS_EKS_MAGIC && eks->lot0 == FUSE(FUSE_OPT_LOT_CODE_0))
 		{
 			h_cfg.eks = eks;
 			return;
@@ -217,133 +224,13 @@ out:
 	}
 }
 
-void hos_eks_save(u32 kb)
+static void _hos_eks_save(u32 kb)
 {
 	// Check if Erista based unit.
 	if (h_cfg.t210b01)
 		return;
 
-	if (kb >= KB_FIRMWARE_VERSION_700)
-	{
-		u32 key_idx = 0;
-		if (kb >= KB_FIRMWARE_VERSION_810)
-			key_idx = 1;
-
-		bool new_eks = false;
-		if (!h_cfg.eks)
-		{
-			h_cfg.eks = calloc(512 , 1);
-			new_eks = true;
-		}
-
-		// If matching blob doesn't exist, create it.
-		bool update_eks = key_idx ? (h_cfg.eks->enabled[key_idx] < kb) : !h_cfg.eks->enabled[0];
-		// If old EKS version was found, update it.
-		update_eks |= h_cfg.eks->lot0 != FUSE(FUSE_OPT_LOT_CODE_0);
-		if (update_eks)
-		{
-			// Read EKS blob.
-			u8 *mbr = calloc(512 , 1);
-			if (!hos_eks_rw_try(mbr, false))
-			{
-				if (new_eks)
-				{
-					free(h_cfg.eks);
-					h_cfg.eks = NULL;
-				}
-
-				goto out;
-			}
-
-			// Get keys.
-			u8 *keys = (u8 *)calloc(0x2000, 1);
-			se_get_aes_keys(keys + 0x1000, keys, SE_KEY_128_SIZE);
-
-			// Set magic and personalized info.
-			h_cfg.eks->magic = HOS_EKS_MAGIC;
-			h_cfg.eks->enabled[key_idx] = kb;
-			h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
-
-			// Copy new keys.
-			memcpy(h_cfg.eks->dkg, keys + 10 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
-			memcpy(h_cfg.eks->dkk, keys + 15 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
-
-			if (!h_cfg.aes_slots_new)
-			{
-				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
-				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 13 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
-			}
-			else // New sept slots.
-			{
-				memcpy(h_cfg.eks->keys[key_idx].mkk, keys + 13 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
-				memcpy(h_cfg.eks->keys[key_idx].fdk, keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
-			}
-
-			// Encrypt EKS blob.
-			u8 *eks = calloc(512 , 1);
-			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
-			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
-
-			// Write EKS blob to SD.
-			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-			hos_eks_rw_try(mbr, true);
-
-			free(eks);
-			free(keys);
-out:
-			free(mbr);
-		}
-	}
-}
-
-void hos_eks_clear(u32 kb)
-{
-	// Check if Erista based unit.
-	if (h_cfg.t210b01)
-		return;
-
-	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
-	{
-		u32 key_idx = 0;
-		if (kb >= KB_FIRMWARE_VERSION_810)
-			key_idx = 1;
-
-		// Check if Current Master key is enabled.
-		if (h_cfg.eks->enabled[key_idx])
-		{
-			// Read EKS blob.
-			u8 *mbr = calloc(512 , 1);
-			if (!hos_eks_rw_try(mbr, false))
-				goto out;
-
-			// Disable current Master key version.
-			h_cfg.eks->enabled[key_idx] = 0;
-
-			// Encrypt EKS blob.
-			u8 *eks = calloc(512 , 1);
-			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
-			se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
-
-			// Write EKS blob to SD.
-			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-			hos_eks_rw_try(mbr, true);
-
-			EMC(EMC_SCRATCH0) &= ~EMC_SEPT_RUN;
-			h_cfg.sept_run = false;
-
-			free(eks);
-out:
-			free(mbr);
-		}
-	}
-}
-
-void hos_eks_bis_save()
-{
-	// Check if Erista based unit.
-	if (h_cfg.t210b01)
-		return;
-
+	// EKS save. Only for 7.0.0 and up.
 	bool new_eks = false;
 	if (!h_cfg.eks)
 	{
@@ -352,7 +239,7 @@ void hos_eks_bis_save()
 	}
 
 	// If matching blob doesn't exist, create it.
-	if (!h_cfg.eks->enabled_bis)
+	if (h_cfg.eks->enabled < kb)
 	{
 		// Read EKS blob.
 		u8 *mbr = calloc(512 , 1);
@@ -367,73 +254,75 @@ void hos_eks_bis_save()
 			goto out;
 		}
 
+		// Get keys.
+		u8 *keys = (u8 *)calloc(0x2000, 1);
+		se_get_aes_keys(keys + 0x1000, keys, SE_KEY_128_SIZE);
+
 		// Set magic and personalized info.
 		h_cfg.eks->magic = HOS_EKS_MAGIC;
-		h_cfg.eks->enabled_bis = 1;
+		h_cfg.eks->enabled = KB_FIRMWARE_VERSION_MAX;
 		h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
 
 		// Copy new keys.
-		memcpy(h_cfg.eks->bis_keys[0].crypt, bis_keys + (0 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
-		memcpy(h_cfg.eks->bis_keys[0].tweak, bis_keys + (1 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
-
-		memcpy(h_cfg.eks->bis_keys[1].crypt, bis_keys + (2 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
-		memcpy(h_cfg.eks->bis_keys[1].tweak, bis_keys + (3 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
-
-		memcpy(h_cfg.eks->bis_keys[2].crypt, bis_keys + (4 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
-		memcpy(h_cfg.eks->bis_keys[2].tweak, bis_keys + (5 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
+		memcpy(h_cfg.eks->tsec,      keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
+		memcpy(h_cfg.eks->troot,     keys + 13 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
+		memcpy(h_cfg.eks->troot_dev, keys + 11 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 
 		// Encrypt EKS blob.
 		u8 *eks = calloc(512 , 1);
 		memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
-		se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+		se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
 		// Write EKS blob to SD.
 		memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
 		hos_eks_rw_try(mbr, true);
 
-
 		free(eks);
+		free(keys);
 out:
 		free(mbr);
 	}
 }
 
-void hos_eks_bis_clear()
+void hos_eks_clear(u32 kb)
 {
 	// Check if Erista based unit.
 	if (h_cfg.t210b01)
 		return;
 
-	// Check if BIS keys are enabled.
-	if (h_cfg.eks && h_cfg.eks->enabled_bis)
+	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
 	{
-		// Read EKS blob.
-		u8 *mbr = calloc(512 , 1);
-		if (!hos_eks_rw_try(mbr, false))
-			goto out;
+		// Check if current Master key is enabled.
+		if (h_cfg.eks->enabled)
+		{
+			// Read EKS blob.
+			u8 *mbr = calloc(512 , 1);
+			if (!hos_eks_rw_try(mbr, false))
+				goto out;
 
-		// Disable BIS storage.
-		h_cfg.eks->enabled_bis = 0;
+			// Disable current Master key version.
+			h_cfg.eks->enabled = 0;
 
-		// Encrypt EKS blob.
-		u8 *eks = calloc(512 , 1);
-		memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
-		se_aes_crypt_ecb(14, 1, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+			// Encrypt EKS blob.
+			u8 *eks = calloc(512 , 1);
+			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
+			se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
-		// Write EKS blob to SD.
-		memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-		hos_eks_rw_try(mbr, true);
+			// Write EKS blob to SD.
+			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
+			hos_eks_rw_try(mbr, true);
 
-		free(eks);
+			free(eks);
 out:
-		free(mbr);
+			free(mbr);
+		}
 	}
 }
 
 int hos_keygen_t210b01(u32 kb)
 {
 	// Use SBK as Device key 4x unsealer and KEK for mkey in T210B01 units.
-	se_aes_unwrap_key(10, 14, console_keyseed_4xx_5xx);
+	se_aes_unwrap_key(10, 14, console_keyseed_4xx);
 
 	// Derive master key.
 	se_aes_unwrap_key(7, 12, &master_kekseed_t210b01[kb - KB_FIRMWARE_VERSION_600]);
@@ -448,6 +337,7 @@ int hos_keygen_t210b01(u32 kb)
 int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 {
 	u32 retries = 0;
+	bool use_tsec = false;
 	tsec_keys_t tsec_keys;
 	kb_t *kb_data = (kb_t *)keyblob;
 
@@ -457,63 +347,95 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	if (h_cfg.t210b01)
 		return hos_keygen_t210b01(kb);
 
-	if (kb <= KB_FIRMWARE_VERSION_600)
-		tsec_ctxt->size = 0xF00;
-	else if (kb == KB_FIRMWARE_VERSION_620)
-		tsec_ctxt->size = 0x2900;
-	else if (kb == KB_FIRMWARE_VERSION_700)
-		tsec_ctxt->size = 0x3000;
-	else
-		tsec_ctxt->size = 0x3300;
+	// Do Erista keygen.
 
-	// Prepare smmu tsec page for 6.2.0.
-	if (kb == KB_FIRMWARE_VERSION_620)
+	// Use HOS EKS if it exists.
+	_hos_eks_get();
+
+	// Use tsec keygen for old firmware or if EKS keys do not exist for newer.
+	if (kb <= KB_FIRMWARE_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled < kb))
+		use_tsec = true;
+
+	if (kb <= KB_FIRMWARE_VERSION_600)
 	{
+		tsec_ctxt->size = 0xF00;
+		tsec_ctxt->type = TSEC_FW_TYPE_OLD;
+	}
+	else if (kb == KB_FIRMWARE_VERSION_620)
+	{
+		tsec_ctxt->size = 0x2900;
+		tsec_ctxt->type = TSEC_FW_TYPE_EMU;
+
+		// Prepare smmu tsec page for 6.2.0.
 		u8 *tsec_paged = (u8 *)page_alloc(3);
 		memcpy(tsec_paged, (void *)tsec_ctxt->fw, tsec_ctxt->size);
 		tsec_ctxt->fw = tsec_paged;
 	}
+	else if (use_tsec) // 7.0.0+
+	{
+		/*
+		 * 7.0.0/8.1.0 tsec fw are 0x3000/0x3300.
+		 * Unused here because of THK.
+		 */
+
+		// Use custom TSEC Hovi Keygen firmware.
+		tsec_ctxt->fw = sd_file_read("bootloader/sys/thk.bin", NULL);
+		if (!tsec_ctxt->fw)
+		{
+			EPRINTF("\nFailed to load thk.bin");
+			return 0;
+		}
+
+		tsec_ctxt->size = 0x1F00;
+		tsec_ctxt->type = TSEC_FW_TYPE_NEW;
+	}
+	else if (h_cfg.eks)
+	{
+		// EKS found. Set TSEC keys.
+		se_aes_key_set(12, h_cfg.eks->tsec, SE_KEY_128_SIZE);
+		se_aes_key_set(13, h_cfg.eks->troot, SE_KEY_128_SIZE);
+		se_aes_key_set(11, h_cfg.eks->troot_dev, SE_KEY_128_SIZE);
+	}
 
 	// Get TSEC key.
-	if (kb <= KB_FIRMWARE_VERSION_620)
+	while (use_tsec && tsec_query(&tsec_keys, tsec_ctxt) < 0)
 	{
-		while (tsec_query(&tsec_keys, kb, tsec_ctxt) < 0)
-		{
-			memset(&tsec_keys, 0x00, 0x20);
-			retries++;
+		memset(&tsec_keys, 0x00, 0x20);
+		retries++;
 
-			// We rely on racing conditions, make sure we cover even the unluckiest cases.
-			if (retries > 15)
-			{
-				EPRINTF("\nFailed to get TSEC keys. Please try again.\n");
-				return 0;
-			}
+		// We rely on racing conditions, make sure we cover even the unluckiest cases.
+		if (retries > 15)
+		{
+			EPRINTF("\nFailed to get TSEC keys. Please try again.");
+			return 0;
 		}
 	}
 
 	if (kb >= KB_FIRMWARE_VERSION_700)
 	{
-		// Use HOS EKS if it exists.
-		u32 key_idx = 0;
-		if (kb >= KB_FIRMWARE_VERSION_810)
-			key_idx = 1;
-
-		if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
+		// For 7.0.0 and up, save EKS slot if it doesn't exist.
+		if (use_tsec)
 		{
-			// Set Device keygen key to slot 10.
-			se_aes_key_set(10, h_cfg.eks->dkg, SE_KEY_128_SIZE);
-			// Set Master key to slot 12.
-			se_aes_key_set(12, h_cfg.eks->keys[key_idx].mkk, SE_KEY_128_SIZE);
-			// Set FW Device key key to slot 13.
-			se_aes_key_set(13, h_cfg.eks->keys[key_idx].fdk, SE_KEY_128_SIZE);
-			// Set Device key to slot 15.
-			se_aes_key_set(15, h_cfg.eks->dkk, SE_KEY_128_SIZE);
+			_hos_eks_save(kb);
+			free(tsec_ctxt->fw);
 		}
-		else
-			h_cfg.aes_slots_new = se_key_acc_ctrl_get(12) == 0x6A;
 
-		se_aes_key_clear(8);
-		se_aes_unwrap_key(8, !h_cfg.aes_slots_new ? 12 : 13, package2_keyseed);
+		// Decrypt keyblob and set keyslots.
+		se_aes_crypt_block_ecb(12, DECRYPT, tsec_keys.tmp, keyblob_keyseeds[0]);
+		se_aes_unwrap_key(15, 14, tsec_keys.tmp);
+
+		// Derive device keys.
+		se_aes_unwrap_key(10, 15, console_keyseed_4xx);
+		se_aes_unwrap_key(15, 15, console_keyseed);
+
+		// Derive master kek.
+		se_aes_unwrap_key(7, 13, master_kekseed_t210_max);
+
+		// Derive master key.
+		se_aes_unwrap_key(7, 7, master_keyseed_retail);
+
+		// Package2 key.
+		se_aes_unwrap_key(8, 7, package2_keyseed);
 	}
 	else if (kb == KB_FIRMWARE_VERSION_620)
 	{
@@ -522,16 +444,22 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		// Set TSEC root key.
 		se_aes_key_set(13, tsec_keys.tsec_root, SE_KEY_128_SIZE);
 
-		// Decrypt keyblob and set keyslots
-		se_aes_crypt_block_ecb(12, 0, tsec_keys.tmp, keyblob_keyseeds[0]);
+		// Decrypt keyblob and set keyslots.
+		se_aes_crypt_block_ecb(12, DECRYPT, tsec_keys.tmp, keyblob_keyseeds[0]);
 		se_aes_unwrap_key(15, 14, tsec_keys.tmp);
-		se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+
+		// Derive device keys.
+		se_aes_unwrap_key(10, 15, console_keyseed_4xx);
 		se_aes_unwrap_key(15, 15, console_keyseed);
 
+		// Derive master kek.
+		se_aes_unwrap_key(7, 13, master_kekseed_620);
+
+		// Derive master key.
+		se_aes_unwrap_key(7, 7, master_keyseed_retail);
+
 		// Package2 key.
-		se_aes_unwrap_key(8, 13, master_keyseed_620);
-		se_aes_unwrap_key(9, 8, master_keyseed_retail);
-		se_aes_unwrap_key(8, 9, package2_keyseed);
+		se_aes_unwrap_key(8, 7, package2_keyseed);
 	}
 	else
 	{
@@ -539,14 +467,10 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		se_aes_key_set(13, tsec_keys.tsec, SE_KEY_128_SIZE);
 
 		// Derive keyblob keys from TSEC+SBK.
-		se_aes_crypt_block_ecb(13, 0, tsec_keys.tsec, keyblob_keyseeds[0]);
+		se_aes_crypt_block_ecb(13, DECRYPT, tsec_keys.tsec, keyblob_keyseeds[0]);
 		se_aes_unwrap_key(15, 14, tsec_keys.tsec);
-		se_aes_crypt_block_ecb(13, 0, tsec_keys.tsec, keyblob_keyseeds[kb]);
+		se_aes_crypt_block_ecb(13, DECRYPT, tsec_keys.tsec, keyblob_keyseeds[kb]);
 		se_aes_unwrap_key(13, 14, tsec_keys.tsec);
-
-		// Clear SBK.
-		if (!h_cfg.sbk_set)
-			se_aes_key_clear(14);
 
 /*
 		// Verify keyblob CMAC.
@@ -557,16 +481,16 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 			return 0;
 */
 
-		se_aes_crypt_block_ecb(13, 0, tsec_keys.tsec, cmac_keyseed);
+		se_aes_crypt_block_ecb(13, DECRYPT, tsec_keys.tsec, cmac_keyseed);
 		se_aes_unwrap_key(11, 13, cmac_keyseed);
 
 		// Decrypt keyblob and set keyslots.
-		se_aes_crypt_ctr(13, &kb_data->keys, sizeof(kb_data->keys), &kb_data->keys, sizeof(kb_data->keys), kb_data->ctr);
+		se_aes_crypt_ctr(13, &kb_data->keys, sizeof(kb_keys_t), &kb_data->keys, sizeof(kb_keys_t), kb_data->ctr);
 		se_aes_key_set(11, kb_data->keys.package1_key, SE_KEY_128_SIZE);
-		se_aes_key_set(12, kb_data->keys.master_keyseed, SE_KEY_128_SIZE);
-		se_aes_key_set(13, kb_data->keys.master_keyseed, SE_KEY_128_SIZE);
+		se_aes_key_set(12, kb_data->keys.master_kekseed, SE_KEY_128_SIZE);
+		se_aes_key_set(13, kb_data->keys.master_kekseed, SE_KEY_128_SIZE);
 
-		se_aes_crypt_block_ecb(12, 0, tsec_keys.tsec, master_keyseed_retail);
+		se_aes_crypt_block_ecb(12, DECRYPT, tsec_keys.tsec, master_keyseed_retail);
 
 		switch (kb)
 		{
@@ -577,18 +501,16 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
 		case KB_FIRMWARE_VERSION_400:
-			se_aes_unwrap_key(13, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(13, 15, console_keyseed_4xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
-			if (!h_cfg.sbk_set) // Do not clear SBK if patched. In this context the below key is useless.
-				se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+			//se_aes_unwrap_key(14, 12, master_keyseed_4xx); // In this context it's useless. So don't kill SBK.
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
 		case KB_FIRMWARE_VERSION_500:
 		case KB_FIRMWARE_VERSION_600:
-			se_aes_unwrap_key(10, 15, console_keyseed_4xx_5xx);
+			se_aes_unwrap_key(10, 15, console_keyseed_4xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
-			if (!h_cfg.sbk_set) // Do not clear SBK if patched. In this context the below key is useless.
-				se_aes_unwrap_key(14, 12, master_keyseed_4xx_5xx_610);
+			//se_aes_unwrap_key(14, 12, master_keyseed_4xx); // In this context it's useless. So don't kill SBK.
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
 		}
@@ -600,32 +522,30 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	return 1;
 }
 
-static void _hos_validate_sept_mkey(u32 kb)
+static void _hos_validate_mkey()
 {
 	u8 tmp_mkey[SE_KEY_128_SIZE];
 	u32 mkey_idx = sizeof(mkey_vectors) / SE_KEY_128_SIZE;
-	u8 mkey_slot = !h_cfg.aes_slots_new ? 12 : 13;
 	do
 	{
 		mkey_idx--;
-		se_aes_crypt_ecb(mkey_slot, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
+		se_aes_crypt_ecb(7, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
 		for (u32 idx = 0; idx < mkey_idx; idx++)
 		{
 			se_aes_key_clear(2);
 			se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
-			se_aes_crypt_ecb(2, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
+			se_aes_crypt_ecb(2, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
 		}
 
 		if (!memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8))
 		{
 			se_aes_key_clear(2);
-			hos_eks_save(kb);
 			return;
 		}
 	} while (mkey_idx - 1);
 
 	se_aes_key_clear(2);
-	hos_eks_clear(kb);
+	hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
 }
 
 static void _hos_bis_print_key(u32 idx, u8 *key)
@@ -641,105 +561,90 @@ static void _hos_bis_print_key(u32 idx, u8 *key)
 	gfx_puts("\n");
 }
 
-int hos_bis_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
+int hos_bis_keygen()
 {
 	u32 keygen_rev = 0;
-	u32 console_key_slot = kb >= KB_FIRMWARE_VERSION_400 ? 15 : 13;
+	u32 console_key_slot = 15; // KB_FIRMWARE_VERSION_MAX. Only for Erista.
+	tsec_ctxt_t tsec_ctxt = {0};
 
 	if (!bis_keys)
 		bis_keys = malloc(SE_KEY_128_SIZE * 6);
 
-	if (!h_cfg.eks || !h_cfg.eks->enabled_bis)
+	// Run initial keygen.
+	hos_keygen(NULL, KB_FIRMWARE_VERSION_MAX, &tsec_ctxt);
+
+	// All Mariko use new device keygen. New keygen was introduced in 4.0.0.
+	// We check unconditionally in order to support downgrades.
+	keygen_rev = fuse_read_odm_keygen_rev();
+
+	gfx_printf("Keygen rev: %d\n", keygen_rev);
+
+	if (keygen_rev)
 	{
-		hos_keygen(keyblob, kb, tsec_ctxt);
+		u8 tmp_mkey[SE_KEY_128_SIZE];
+		u32 mkey_idx = sizeof(mkey_vectors) / SE_KEY_128_SIZE;
 
-		// All Mariko use new device keygen. New keygen was introduced in 4.0.0.
-		// We check unconditionally in order to support downgrades.
-		keygen_rev = fuse_read_odm_keygen_rev();
+		// Keygen revision uses bootloader version, which starts from 1.
+		keygen_rev -= (KB_FIRMWARE_VERSION_400 + 1);
 
-		gfx_printf("Keygen rev: %d\n", keygen_rev);
-
-		if (keygen_rev)
+		// Derive mkey 0.
+		do
 		{
-			u8 tmp_mkey[SE_KEY_128_SIZE];
-			u32 mkey_idx = sizeof(mkey_vectors) / SE_KEY_128_SIZE;
-			u8 mkey_slot = kb >= KB_FIRMWARE_VERSION_700 ? (!h_cfg.aes_slots_new ? 12 : 13) : (kb == KB_FIRMWARE_VERSION_620 ? 9 : 12);
-
-			// Keygen revision uses bootloader version, which starts from 1.
-			keygen_rev -= (KB_FIRMWARE_VERSION_400 + 1);
-
-			// Use SBK as Device key 4x unsealer and KEK for mkey in T210B01 units.
-			if (h_cfg.t210b01)
-				mkey_slot = 7;
-
-			// Derive mkey 0.
-			do
+			mkey_idx--;
+			se_aes_crypt_ecb(7, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
+			for (u32 idx = 0; idx < mkey_idx; idx++)
 			{
-				mkey_idx--;
-				se_aes_crypt_ecb(mkey_slot, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
-				for (u32 idx = 0; idx < mkey_idx; idx++)
-				{
-					se_aes_key_clear(2);
-					se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
-					se_aes_crypt_ecb(2, 0, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
-				}
-			} while (memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0 && (mkey_idx - 1));
+				se_aes_key_clear(2);
+				se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
+				se_aes_crypt_ecb(2, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
+			}
+		} while (memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0 && (mkey_idx - 1));
 
-			// Derive new device key.
-			se_aes_key_clear(1);
-			se_aes_unwrap_key(1, 10, new_console_keyseed[keygen_rev]); // Uses Device key 4x.
-			se_aes_crypt_ecb(10, 0, tmp_mkey, SE_KEY_128_SIZE, new_console_keyseed[keygen_rev], SE_KEY_128_SIZE); // Uses Device key 4x.
-			se_aes_unwrap_key(1, 2, new_console_kekseed[keygen_rev]); // Uses Master Key 0.
-			se_aes_unwrap_key(1, 1, tmp_mkey);
+		// Derive new device key.
+		se_aes_key_clear(1);
+		se_aes_unwrap_key(1, 10, new_console_keyseed[keygen_rev]); // Uses Device key 4x.
+		se_aes_crypt_ecb(10, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, new_console_keyseed[keygen_rev], SE_KEY_128_SIZE); // Uses Device key 4x.
+		se_aes_unwrap_key(1, 2, new_console_kekseed[keygen_rev]); // Uses Master Key 0.
+		se_aes_unwrap_key(1, 1, tmp_mkey);
 
-			console_key_slot = 1;
-		}
-
-		// Generate generic kek.
-		se_aes_key_clear(2);
-		se_aes_unwrap_key(2, console_key_slot, gen_keyseed_retail);
-
-		// Clear bis keys storage.
-		memset(bis_keys, 0, SE_KEY_128_SIZE * 6);
-
-		// Generate BIS 0 Keys.
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (0 * SE_KEY_128_SIZE), bis_keyseed[0]);
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (1 * SE_KEY_128_SIZE), bis_keyseed[1]);
-
-		// Generate generic kek.
-		se_aes_key_clear(2);
-		se_aes_unwrap_key(2, console_key_slot, gen_kekseed);
-		se_aes_unwrap_key(2, 2, bis_kekseed);
-		se_aes_unwrap_key(2, 2, gen_keyseed);
-
-		// Generate BIS 1 Keys.
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (2 * SE_KEY_128_SIZE), bis_keyseed[2]);
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (3 * SE_KEY_128_SIZE), bis_keyseed[3]);
-
-		// Generate BIS 2/3 Keys.
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (4 * SE_KEY_128_SIZE), bis_keyseed[4]);
-		se_aes_crypt_block_ecb(2, 0, bis_keys + (5 * SE_KEY_128_SIZE), bis_keyseed[5]);
-
-		if (!h_cfg.t210b01 && kb >= KB_FIRMWARE_VERSION_700)
-			_hos_validate_sept_mkey(kb);
-	}
-	else
-	{
-		memcpy(bis_keys + (0 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[0].crypt, SE_KEY_128_SIZE);
-		memcpy(bis_keys + (1 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[0].tweak, SE_KEY_128_SIZE);
-
-		memcpy(bis_keys + (2 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[1].crypt, SE_KEY_128_SIZE);
-		memcpy(bis_keys + (3 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[1].tweak, SE_KEY_128_SIZE);
-
-		memcpy(bis_keys + (4 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[2].crypt, SE_KEY_128_SIZE);
-		memcpy(bis_keys + (5 * SE_KEY_128_SIZE), h_cfg.eks->bis_keys[2].tweak, SE_KEY_128_SIZE);
+		console_key_slot = 1;
 	}
 
+	// Generate generic key.
+	se_aes_key_clear(2);
+	se_aes_unwrap_key(2, console_key_slot, gen_keyseed_retail);
+
+	// Clear bis keys storage.
+	memset(bis_keys, 0, SE_KEY_128_SIZE * 6);
+
+	// Generate BIS 0 Keys.
+	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (0 * SE_KEY_128_SIZE), bis_keyseed[0]);
+	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (1 * SE_KEY_128_SIZE), bis_keyseed[1]);
+
+	// Generate generic kek.
+	se_aes_key_clear(2);
+	se_aes_unwrap_key(2, console_key_slot, gen_kekseed);
+	se_aes_unwrap_key(2, 2, bis_kekseed);
+	se_aes_unwrap_key(2, 2, gen_keyseed);
+
+	// Generate BIS 1 Keys.
+	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (2 * SE_KEY_128_SIZE), bis_keyseed[2]);
+	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (3 * SE_KEY_128_SIZE), bis_keyseed[3]);
+
+	// Generate BIS 2/3 Keys.
+	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (4 * SE_KEY_128_SIZE), bis_keyseed[4]);
+	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (5 * SE_KEY_128_SIZE), bis_keyseed[5]);
+
+	// Validate key because KB_FIRMWARE_VERSION_MAX.
+	if (!h_cfg.t210b01)
+		_hos_validate_mkey();
+
+	// Print keys to console.
 	_hos_bis_print_key(0, bis_keys);
 	_hos_bis_print_key(1, bis_keys);
 	_hos_bis_print_key(2, bis_keys);
 
-	// Clear all AES keyslots.
+	// Clear all AES tmp and bis keyslots.
 	for (u32 i = 0; i < 6; i++)
 		se_aes_key_clear(i);
 
@@ -758,27 +663,7 @@ int hos_bis_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 void hos_bis_keys_clear()
 {
-	// Clear all aes keyslots.
+	// Clear all aes bis keyslots.
 	for (u32 i = 0; i < 6; i++)
 		se_aes_key_clear(i);
-
-	// Check if Erista based unit.
-	if (h_cfg.t210b01)
-		return;
-
-	// Set SBK back.
-	if (!h_cfg.sbk_set)
-	{
-		u32 sbk[4] = {
-			FUSE(FUSE_PRIVATE_KEY0),
-			FUSE(FUSE_PRIVATE_KEY1),
-			FUSE(FUSE_PRIVATE_KEY2),
-			FUSE(FUSE_PRIVATE_KEY3)
-		};
-		// Set SBK to slot 14.
-		se_aes_key_set(14, sbk, SE_KEY_128_SIZE);
-
-		// Lock SBK from being read.
-		se_key_acc_ctrl(14, SE_KEY_TBL_DIS_KEYREAD_FLAG);
-	}
 }

@@ -28,7 +28,6 @@
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
-#include "../hos/sept.h"
 #include <input/touch.h>
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
@@ -1138,62 +1137,19 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	kb = pkg1_id->kb;
 
-	if (!h_cfg.se_keygen_done)
-	{
-		tsec_ctxt_t tsec_ctxt;
-		tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
-		tsec_ctxt.pkg1 = (void *)pkg1;
-		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
-		tsec_ctxt.secmon_base = pkg1_id->secmon_base;
+	tsec_ctxt_t tsec_ctxt = {0};
+	tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
+	tsec_ctxt.pkg1 = (void *)pkg1;
+	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
+	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
-		hos_eks_get();
+	// Read keyblob.
+	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
+	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
 
-		if (!h_cfg.t210b01 && kb >= KB_FIRMWARE_VERSION_700 && !h_cfg.sept_run)
-		{
-			u32 key_idx = 0;
-			if (kb >= KB_FIRMWARE_VERSION_810)
-				key_idx = 1;
-
-			if (h_cfg.eks && h_cfg.eks->enabled[key_idx] >= kb)
-				h_cfg.sept_run = true;
-			else
-			{
-				// Check that BCT is proper so sept can run.
-				u8 *bct_bldr = (u8 *)calloc(1, 512);
-				sdmmc_storage_read(&emmc_storage, 0x2200 / NX_EMMC_BLOCKSIZE, 1, bct_bldr);
-				u32 bootloader_entrypoint = *(u32 *)&bct_bldr[0x144];
-				free(bct_bldr);
-				if (bootloader_entrypoint > SEPT_PRI_ENTRY)
-				{
-					lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept because main BCT is improper!#\n"
-						"#FFDD00 Run sept with proper BCT at least once to cache keys.#\n");
-					goto out_free;
-				}
-
-				// Set boot cfg.
-				b_cfg->autoboot = 0;
-				b_cfg->autoboot_list = 0;
-				b_cfg->extra_cfg = EXTRA_CFG_NYX_SEPT;
-				b_cfg->sept = NYX_SEPT_DUMP;
-
-				if (!reboot_to_sept((u8 *)tsec_ctxt.fw, kb))
-				{
-					lv_label_set_text(lb_desc, "#FFDD00 Failed to run sept#\n");
-					goto out_free;
-				}
-			}
-		}
-
-		// Read keyblob.
-		u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
-
-		// Decrypt.
-		hos_keygen(keyblob, kb, &tsec_ctxt);
-		if (kb <= KB_FIRMWARE_VERSION_600)
-			h_cfg.se_keygen_done = 1;
-		free(keyblob);
-	}
+	// Decrypt.
+	hos_keygen(keyblob, kb, &tsec_ctxt);
+	free(keyblob);
 
 	if (h_cfg.t210b01 || kb <= KB_FIRMWARE_VERSION_600)
 	{
@@ -1316,13 +1272,11 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
-		// Clear EKS slot, in case something went wrong with sept keygen.
+		// Clear EKS slot, in case something went wrong with tsec keygen.
 		hos_eks_clear(kb);
 
 		goto out;
 	}
-	else if (kb >= KB_FIRMWARE_VERSION_700)
-		hos_eks_save(kb); // Save EKS slot if it doesn't exist.
 
 	// Display info.
 	s_printf(txt_buf + strlen(txt_buf),
@@ -1427,11 +1381,6 @@ out_end:
 	nyx_window_toggle_buttons(win, false);
 
 	return LV_RES_OK;
-}
-
-void sept_run_dump(void *param)
-{
-	_create_window_dump_pk12_tool(NULL);
 }
 
 static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)

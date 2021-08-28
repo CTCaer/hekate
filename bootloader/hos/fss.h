@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,16 +19,6 @@
 
 #include "hos.h"
 
-typedef struct _fss0_sept_t
-{
-	u32 kb;
-	ini_sec_t *cfg_sec;
-	void *sept_primary;
-	void *sept_secondary;
-
-} fss0_sept_t;
-
-int parse_fss(launch_ctxt_t *ctxt, const char *path, fss0_sept_t *sept_ctxt);
-int load_sept_from_ffs0(fss0_sept_t *sept_ctxt);
+int parse_fss(launch_ctxt_t *ctxt, const char *path);
 
 #endif

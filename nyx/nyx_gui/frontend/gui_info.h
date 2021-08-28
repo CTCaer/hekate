@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,7 +19,6 @@
 
 #include <libs/lvgl/lvgl.h>
 
-void sept_run_cal0(void *param);
 void create_tab_info(lv_theme_t *th, lv_obj_t *parent);
 
 #endif
