@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -111,10 +111,13 @@ u32 fuse_read_hw_type()
 	{
 		switch ((fuse_read_odm(4) & 0xF0000) >> 16)
 		{
-		case 1:
-			return FUSE_NX_HW_TYPE_IOWA;
 		case 2:
 			return FUSE_NX_HW_TYPE_HOAG;
+		case 4:
+			return FUSE_NX_HW_TYPE_AULA;
+		case 1:
+		default:
+			return FUSE_NX_HW_TYPE_IOWA;
 		}
 	}
 

@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -82,7 +82,8 @@ enum
 {
 	FUSE_NX_HW_TYPE_ICOSA,
 	FUSE_NX_HW_TYPE_IOWA,
-	FUSE_NX_HW_TYPE_HOAG
+	FUSE_NX_HW_TYPE_HOAG,
+    FUSE_NX_HW_TYPE_AULA
 };
 
 enum
