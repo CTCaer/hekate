@@ -1,7 +1,7 @@
 /*
  * Enhanced USB Device (EDCI) driver for Tegra X1
  *
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1455,7 +1455,7 @@ static int _usbd_get_ep1_out_bytes_read()
 		return (usbdaemon->ep_bytes_requested[USB_EP_BULK_OUT] - (usbdaemon->qhs[USB_EP_BULK_OUT].token >> 16));
 }
 
-int usb_device_ep1_out_reading_finish(u32 *pending_bytes)
+int usb_device_ep1_out_reading_finish(u32 *pending_bytes, u32 sync_timeout)
 {
 	usb_ep_status_t ep_status;
 	do
@@ -1504,7 +1504,7 @@ static int _usbd_get_ep1_in_bytes_written()
 		return (usbdaemon->ep_bytes_requested[USB_EP_BULK_IN] - (usbdaemon->qhs[USB_EP_BULK_IN].token >> 16));
 }
 
-int usb_device_ep1_in_writing_finish(u32 *pending_bytes)
+int usb_device_ep1_in_writing_finish(u32 *pending_bytes, u32 sync_timeout)
 {
 	usb_ep_status_t ep_status;
 	do

@@ -1,7 +1,7 @@
 /*
  * Enhanced & eXtensible USB Device (EDCI & XDCI) driver for Tegra X1
  *
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -175,9 +175,9 @@ typedef struct _usb_ops_t
 
 	int  (*usb_device_ep1_out_read)(u8 *, u32, u32 *, u32);
 	int  (*usb_device_ep1_out_read_big)(u8 *, u32, u32 *);
-	int  (*usb_device_ep1_out_reading_finish)(u32 *);
+	int  (*usb_device_ep1_out_reading_finish)(u32 *, u32);
 	int  (*usb_device_ep1_in_write)(u8 *, u32, u32 *, u32);
-	int  (*usb_device_ep1_in_writing_finish)(u32 *);
+	int  (*usb_device_ep1_in_writing_finish)(u32 *, u32);
 	bool (*usb_device_get_suspended)();
 	bool (*usb_device_get_port_in_sleep)();
 } usb_ops_t;

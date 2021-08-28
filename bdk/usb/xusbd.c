@@ -1898,11 +1898,11 @@ int xusb_device_ep1_out_read_big(u8 *buf, u32 len, u32 *bytes_read)
 	return USB_RES_OK;
 }
 
-int xusb_device_ep1_out_reading_finish(u32 *pending_bytes)
+int xusb_device_ep1_out_reading_finish(u32 *pending_bytes, u32 sync_tries)
 {
 	int res = USB_RES_OK;
 	while (!res && usbd_xotg->tx_count[USB_DIR_OUT])
-		res = _xusb_ep_operation(USB_XFER_SYNCED); // Infinite retries.
+		res = _xusb_ep_operation(sync_tries); // Infinite retries.
 
 	if (pending_bytes)
 		*pending_bytes = res ? 0 : usbd_xotg->bytes_remaining[USB_DIR_OUT];
@@ -1947,11 +1947,11 @@ int xusb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, u32 sync_trie
 	return res;
 }
 
-int xusb_device_ep1_in_writing_finish(u32 *pending_bytes)
+int xusb_device_ep1_in_writing_finish(u32 *pending_bytes, u32 sync_tries)
 {
 	int res = USB_RES_OK;
 	while (!res && usbd_xotg->tx_count[USB_DIR_IN])
-		res = _xusb_ep_operation(USB_XFER_SYNCED); // Infinite retries.
+		res = _xusb_ep_operation(sync_tries); // Infinite retries.
 
 	if (pending_bytes)
 		*pending_bytes = res ? 0 : usbd_xotg->bytes_remaining[USB_DIR_IN];

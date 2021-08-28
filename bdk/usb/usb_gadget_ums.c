@@ -4,7 +4,7 @@
  * Copyright (c) 2003-2008 Alan Stern
  * Copyright (c) 2009 Samsung Electronics
  *                    Author: Michal Nazarewicz <m.nazarewicz@samsung.com>
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -109,7 +109,7 @@
 #define SS_WRITE_ERROR                        0x30C02
 #define SS_WRITE_PROTECTED                    0x72700
 
-#define SK(x)   ((u8) ((x) >> 16)) /* Sense Key byte, etc. */
+#define SK(x)   ((u8) ((x) >> 16)) // Sense Key byte, etc.
 #define ASC(x)  ((u8) ((x) >> 8))
 #define ASCQ(x) ((u8) (x))
 
@@ -368,12 +368,12 @@ static void _ums_transfer_out_big_read(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk
 		bulk_ctxt->bulk_out_buf_state = BUF_STATE_FULL;
 }
 
-static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, u32 ep)
+static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt, u32 ep, u32 sync_timeout)
 {
 	if (ep == bulk_ctxt->bulk_in)
 	{
 		bulk_ctxt->bulk_in_status = usb_ops.usb_device_ep1_in_writing_finish(
-			&bulk_ctxt->bulk_in_length_actual);
+			&bulk_ctxt->bulk_in_length_actual, sync_timeout);
 
 		if (bulk_ctxt->bulk_in_status == USB_ERROR_XFER_ERROR)
 		{
@@ -386,7 +386,7 @@ static void _ums_transfer_finish(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt,
 	else
 	{
 		bulk_ctxt->bulk_out_status = usb_ops.usb_device_ep1_out_reading_finish(
-			&bulk_ctxt->bulk_out_length_actual);
+			&bulk_ctxt->bulk_out_length_actual, sync_timeout);
 
 		if (bulk_ctxt->bulk_out_status == USB_ERROR_XFER_ERROR)
 		{
@@ -497,7 +497,7 @@ static int _scsi_read(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 		// Wait for the async USB transfer to finish.
 		if (!first_read)
-			_ums_transfer_finish(ums, bulk_ctxt, bulk_ctxt->bulk_in);
+			_ums_transfer_finish(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED);
 
 		lba_offset   += amount;
 		amount_left  -= amount;
