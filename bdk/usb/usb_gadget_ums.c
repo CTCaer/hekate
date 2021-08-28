@@ -460,6 +460,7 @@ static int _scsi_read(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	}
 	if (lba_offset >= ums->lun.num_sectors)
 	{
+		ums->set_text(ums->label, "#FF8000 Warn:# Read - Out of range! Host notified.");
 		ums->lun.sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 
 		return UMS_RES_INVALID_ARG;
@@ -548,6 +549,7 @@ static int _scsi_write(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 	if (ums->lun.ro)
 	{
+		ums->set_text(ums->label, "#FF8000 Warn:# Write - Read only! Host notified.");
 		ums->lun.sense_data = SS_WRITE_PROTECTED;
 
 		return UMS_RES_INVALID_ARG;
@@ -571,19 +573,20 @@ static int _scsi_write(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	// Check that starting LBA is not past the end sector offset.
 	if (lba_offset >= ums->lun.num_sectors)
 	{
+		ums->set_text(ums->label, "#FF8000 Warn:# Write - Out of range! Host notified.");
 		ums->lun.sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 
 		return UMS_RES_INVALID_ARG;
 	}
 
-	/* Carry out the file writes */
+	// Carry out the file writes.
 	usb_lba_offset = lba_offset;
 	amount_left_to_req = ums->data_size_from_cmnd;
 	amount_left_to_write = ums->data_size_from_cmnd;
 
 	while (amount_left_to_write > 0)
 	{
-		/* Queue a request for more data from the host */
+		// Queue a request for more data from the host.
 		if (amount_left_to_req > 0)
 		{
 
@@ -638,12 +641,12 @@ static int _scsi_write(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			 */
 			amount = MIN(amount, bulk_ctxt->bulk_out_length);
 
-			/* Don't write a partial block */
+			// Don't write a partial block.
 			amount -= (amount & 511);
 			if (amount == 0)
 				goto empty_write;
 
-			/* Perform the write */
+			// Perform the write.
 			if (!sdmmc_storage_write(ums->lun.storage, ums->lun.offset + lba_offset,
 				amount >> UMS_DISK_LBA_SHIFT, (u8 *)bulk_ctxt->bulk_out_buf))
 				amount = 0;
@@ -654,7 +657,7 @@ DPRINTF("file write %X @ %X\n", amount, lba_offset);
 			amount_left_to_write -= amount;
 			ums->residue         -= amount;
 
-			/* If an error occurred, report it and its position */
+			// If an error occurred, report it and its position.
 			if (!amount)
 			{
 				ums->set_text(ums->label, "#FFDD00 Error:# SDMMC Write!");
@@ -684,6 +687,7 @@ static int _scsi_verify(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	u32 lba_offset = get_array_be_to_le32(&ums->cmnd[2]);
 	if (lba_offset >= ums->lun.num_sectors)
 	{
+		ums->set_text(ums->label, "#FF8000 Warn:# Verif - Out of range! Host notified.");
 		ums->lun.sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 
 		return UMS_RES_INVALID_ARG;
@@ -1005,7 +1009,7 @@ static int _scsi_mode_sense(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		return UMS_RES_INVALID_ARG;
 	}
 
-	/*  Store the mode data length */
+	//  Store the mode data length.
 	if (ums->cmnd[0] == SC_MODE_SENSE_6)
 		buf0[0] = len - 1;
 	else
@@ -1538,12 +1542,12 @@ static int finish_reply(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 {
-	/* Was this a real packet?  Should it be ignored? */
+	// Was this a real packet?  Should it be ignored?
 	if (bulk_ctxt->bulk_out_status || bulk_ctxt->bulk_out_ignore || ums->lun.unmounted)
 	{
 		if (bulk_ctxt->bulk_out_status || ums->lun.unmounted)
 		{
-			DPRINTF("USB: EP timeout\n");
+			DPRINTF("USB: EP timeout (%d)\n", bulk_ctxt->bulk_out_status);
 			// In case we disconnected, exit UMS.
 			// Raise timeout if removable and didn't got a unit ready command inside 4s.
 			if (bulk_ctxt->bulk_out_status == USB2_ERROR_XFER_EP_DISABLED ||
@@ -1584,27 +1588,29 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			return UMS_RES_INVALID_ARG;
 	}
 
-	/* Is the CBW valid? */
+	// Is the CBW valid?
 	bulk_recv_pkt_t *cbw = (bulk_recv_pkt_t *)bulk_ctxt->bulk_out_buf;
 	if (bulk_ctxt->bulk_out_length_actual != USB_BULK_CB_WRAP_LEN || cbw->Signature != USB_BULK_CB_SIG)
 	{
 		gfx_printf("USB: invalid CBW: len %X sig 0x%X\n", bulk_ctxt->bulk_out_length_actual, cbw->Signature);
 
-		 // The Bulk-only spec says we MUST stall the IN endpoint
-		 // (6.6.1), so it's unavoidable.  It also says we must
-		 // retain this state until the next reset, but there's
-		 // no way to tell the controller driver it should ignore
-		 // Clear-Feature(HALT) requests.
-		 //
-		 // We aren't required to halt the OUT endpoint; instead
-		 // we can simply accept and discard any data received
-		 // until the next reset.
+		/*
+		 * The Bulk-only spec says we MUST stall the IN endpoint
+		 * (6.6.1), so it's unavoidable.  It also says we must
+		 * retain this state until the next reset, but there's
+		 * no way to tell the controller driver it should ignore
+		 * Clear-Feature(HALT) requests.
+		 *
+		 * We aren't required to halt the OUT endpoint; instead
+		 * we can simply accept and discard any data received
+		 * until the next reset.
+		 */
 		ums_wedge_bulk_in_endpoint(ums);
 		bulk_ctxt->bulk_out_ignore = 1;
 		return UMS_RES_INVALID_ARG;
 	}
 
-	/* Is the CBW meaningful? */
+	// Is the CBW meaningful?
 	if (cbw->Lun >= UMS_MAX_LUN || cbw->Flags & ~USB_BULK_IN_FLAG ||
 			cbw->Length == 0 || cbw->Length > SCSI_MAX_CMD_SZ)
 	{
@@ -1623,7 +1629,7 @@ static int received_cbw(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		return UMS_RES_INVALID_ARG;
 	}
 
-	/* Save the command for later */
+	// Save the command for later.
 	ums->cmnd_size = cbw->Length;
 	memcpy(ums->cmnd, cbw->CDB, ums->cmnd_size);
 
@@ -1658,7 +1664,7 @@ static int get_next_command(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 	bulk_ctxt->bulk_out_length = USB_BULK_CB_WRAP_LEN;
 
-	/* Queue a request to read a Bulk-only CBW */
+	// Queue a request to read a Bulk-only CBW.
 	_ums_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_out, USB_XFER_SYNCED_CMD);
 
 	/* We will drain the buffer in software, which means we
@@ -1696,7 +1702,7 @@ static void send_status(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 			SK(sd), ASC(sd), ASCQ(sd), ums->lun.sense_data_info);
 	}
 
-	/* Store and send the Bulk-only CSW */
+	// Store and send the Bulk-only CSW.
 	bulk_send_pkt_t *csw = (bulk_send_pkt_t *)bulk_ctxt->bulk_in_buf;
 
 	csw->Signature = USB_BULK_CS_SIG;
@@ -1712,7 +1718,7 @@ static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 {
 	enum ums_state old_state;
 
-	/* Clear out the controller's fifos */
+	// Clear out the controller's fifos.
 	ums_flush_endpoint(bulk_ctxt->bulk_in);
 	ums_flush_endpoint(bulk_ctxt->bulk_out);
 
@@ -1735,7 +1741,7 @@ static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 	ums->state = UMS_STATE_NORMAL;
 
-	/* Carry out any extra actions required for the exception */
+	// Carry out any extra actions required for the exception.
 	switch (old_state)
 	{
 	case UMS_STATE_NORMAL:
@@ -1757,7 +1763,7 @@ static void handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 		break;
 
 	case UMS_STATE_EXIT:
-		ums->state = UMS_STATE_TERMINATED;	/* Stop the thread */
+		ums->state = UMS_STATE_TERMINATED;	// Stop the thread.
 		break;
 
 	default:
