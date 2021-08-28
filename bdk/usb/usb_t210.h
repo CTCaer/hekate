@@ -1,7 +1,7 @@
 /*
  * Enhanced & eXtensible USB device (EDCI & XDCI) driver for Tegra X1
  *
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -200,6 +200,8 @@ typedef struct _t210_usb2d_t
 #define  XHCI_ST_IP                      BIT(4)
 #define XUSB_DEV_XHCI_RT_IMOD            0x38
 #define XUSB_DEV_XHCI_PORTSC             0x3C
+#define  XHCI_PORTSC_CCS                 BIT(0)
+#define  XHCI_PORTSC_PED                 BIT(1)
 #define  XHCI_PORTSC_PR                  BIT(4)
 #define  XHCI_PORTSC_PLS_MASK            (0xF << 5)
 #define   XHCI_PORTSC_PLS_U0             (0 << 5)
@@ -226,11 +228,12 @@ typedef struct _t210_usb2d_t
 #define XUSB_DEV_XHCI_ECPLO              0x40
 #define XUSB_DEV_XHCI_ECPHI              0x44
 #define XUSB_DEV_XHCI_EP_HALT            0x50
-#define  XHCI_EP_HALT_DCI                BIT(0)
+#define  XHCI_EP_HALT_DCI_EP0_IN         BIT(0)
 #define XUSB_DEV_XHCI_EP_PAUSE           0x54
 #define XUSB_DEV_XHCI_EP_RELOAD          0x58
 #define XUSB_DEV_XHCI_EP_STCHG           0x5C
 #define XUSB_DEV_XHCI_PORTHALT           0x6C
+#define XUSB_DEV_XHCI_EP_STOPPED         0x78
 #define  XHCI_PORTHALT_HALT_LTSSM        BIT(0)
 #define  XHCI_PORTHALT_STCHG_REQ         BIT(20)
 #define XUSB_DEV_XHCI_CFG_DEV_FE         0x85C

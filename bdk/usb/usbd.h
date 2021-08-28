@@ -148,6 +148,7 @@ typedef enum _usb_error_t
 	XUSB_ERROR_INVALID_EP           = USB_ERROR_XFER_ERROR,        // From 2.
 	XUSB_ERROR_XFER_BULK_IN_RESIDUE = 7,
 	XUSB_ERROR_INVALID_CYCLE        = USB2_ERROR_XFER_EP_DISABLED, // From 8.
+	XUSB_ERROR_BABBLE_DETECTED      = 50,
 	XUSB_ERROR_SEQ_NUM              = 51,
 	XUSB_ERROR_XFER_DIR             = 52,
 	XUSB_ERROR_PORT_CFG             = 54
