@@ -1117,20 +1117,23 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	lv_label_set_text(lb_desc, txt_buf);
 	manual_system_maintenance(true);
 
-	// Dump package1 in its encrypted state if unknown.
+	// Dump package1 in its encrypted state.
+	emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &emmc_storage);
+	bool res = sd_save_to_file(pkg1, BOOTLOADER_SIZE, path);
+
+	// Exit if unknown.
 	if (!pkg1_id)
 	{
 		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#");
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
-		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &emmc_storage);
-		if (sd_save_to_file(pkg1, BOOTLOADER_SIZE, path))
-			goto out_free;
-
-		strcat(txt_buf, "\nEncrypted pkg1 dumped to pkg1_enc.bin");
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
+		if (!res)
+		{
+			strcat(txt_buf, "\nEncrypted pkg1 dumped to pkg1_enc.bin");
+			lv_label_set_text(lb_desc, txt_buf);
+			manual_system_maintenance(true);
+		}
 
 		goto out_free;
 	}
@@ -1226,7 +1229,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		{
 
 			se_aes_iv_clear(13);
-			se_aes_crypt_cbc(13, 0, warmboot + 0x330, hdr_pk11->wb_size - 0x330, warmboot + 0x330, hdr_pk11->wb_size - 0x330);
+			se_aes_crypt_cbc(13, DECRYPT, warmboot + 0x330, hdr_pk11->wb_size - 0x330,
+				warmboot + 0x330, hdr_pk11->wb_size - 0x330);
 			emmcsn_path_impl(path, "/pkg1", "warmboot_dec.bin", &emmc_storage);
 			if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 				goto out_free;
@@ -1257,12 +1261,10 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	pkg2 = malloc(pkg2_size_aligned);
 	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
 		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
-#if 0
+
+	// Dump encrypted package2.
 	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &emmc_storage);
-	if (sd_save_to_file(pkg2, pkg2_size_aligned, path))
-		goto out;
-	gfx_puts("\npkg2 dumped to pkg2_encr.bin\n");
-#endif
+	res = sd_save_to_file(pkg2, pkg2_size, path);
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);
@@ -1271,6 +1273,13 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		strcat(txt_buf, "#FFDD00 Pkg2 decryption failed!#");
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
+		
+		if (!res)
+		{
+			strcat(txt_buf, "\npkg2 encrypted dumped to pkg2_encr.bin\n");
+			lv_label_set_text(lb_desc, txt_buf);
+			manual_system_maintenance(true);
+		}
 
 		// Clear EKS slot, in case something went wrong with tsec keygen.
 		hos_eks_clear(kb);
