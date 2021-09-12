@@ -6,6 +6,18 @@
 Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many more.
 
 
+
+- [Features](#features)
+- [Bootloader folders and files](#bootloader-folders-and-files)
+- [Bootloader configuration](#bootloader-configuration)
+  * [hekate global Configuration keys/values](#hekate-global-configuration-keysvalues-when-entry-is-config)
+  * [Boot entry key/value combinations](#boot-entry-keyvalue-combinations)
+  * [Boot entry key/value combinations for Exosphère](#boot-entry-keyvalue-combinations-for-exosphère)
+  * [Payload storage](#payload-storage)
+  * [Nyx Configuration keys/values](#nyx-configuration-keysvalues-nyxini)
+
+
+
 ## Features
 
 - **Fully Configurable and Graphical** with Touchscreen and Joycon input support
@@ -28,26 +40,26 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 | Folder/File              | Description                                                           |
 | ------------------------ | --------------------------------------------------------------------- |
 | bootloader               | Main folder.                                                          |
-|  \|__ bootlogo.bmp       | It is used when custom is on and no logopath found. Can be skipped.   |
-|  \|__ hekate_ipl.ini     | Main bootloader configuration and boot entries.                       |
+|  \|__ bootlogo.bmp       | It is if no `logopath` key is found. User provided. Can be skipped.   |
+|  \|__ hekate_ipl.ini     | Main bootloader configuration and boot entries in `Launch` menu.      |
+|  \|__ nyx.ini            | Nyx GUI configuration                                                 |
 |  \|__ patches.ini        | Add external patches. Can be skipped. A template can be found [here](./res/patches_template.ini) |
-|  \|__ update.bin         | If newer, it is loaded at boot. For modchips. Auto updated. Can be skipped. |
-| bootloader/ini/          | For individual inis. 'More configs...' menu. Autoboot is supported.   |
+|  \|__ update.bin         | If newer, it is loaded at boot. Normally for modchips. Auto updated and created at first boot. |
+| bootloader/ini/          | For individual inis. `More configs` menu. Autoboot is supported.   |
 | bootloader/res/          | Nyx user resources. Icons and more.                                   |
-|  \|__ background.bmp     | Nyx - custom background.                                              |
+|  \|__ background.bmp     | Nyx - Custom background. User provided.                               |
 |  \|__ icon_switch.bmp    | Nyx - Default icon for CFWs.                                          |
 |  \|__ icon_payload.bmp   | Nyx - Default icon for Payloads.                                      |
-|  \|__ icon_lakka.bmp     | Nyx - Default icon for Lakka.                                         |
-| bootloader/sys/          | For system modules.                                                   |
-|  \|__ emummc.kipm        | emuMMC KIP1 module. Important!                                        |
+| bootloader/sys/          | hekate and Nyx system modules folder.                                 |
+|  \|__ emummc.kipm        | emuMMC KIP1 module. !Important!                                       |
 |  \|__ libsys_lp0.bso     | LP0 (sleep mode) module. Important!                                   |
-|  \|__ libsys_minerva.bso | Minerva Training Cell. Used for DRAM Frequency training. Important!   |
-|  \|__ nyx.bin            | Nyx - Our GUI. Important!                                             |
-|  \|__ res.pak            | Nyx resources package. Important!                                     |
-|  \|__ thk.bin            | Atmosphère Tsec Hovi Keygen! Important!                               |
+|  \|__ libsys_minerva.bso | Minerva Training Cell. Used for DRAM Frequency training. !Important!  |
+|  \|__ nyx.bin            | Nyx - hekate's GUI. !Important!                                       |
+|  \|__ res.pak            | Nyx resources package. !Important!                                    |
+|  \|__ thk.bin            | Atmosphère Tsec Hovi Keygen. !Important!                              |
 | bootloader/screenshots/  | Folder where Nyx screenshots are saved                                |
-| bootloader/payloads/     | For payloads. 'Payloads...' menu. Autoboot only supported by including them into an ini. All CFW bootloaders, tools, Linux payloads are supported. |
-| bootloader/libtools/     | Future reserved                                                       |
+| bootloader/payloads/     | For the `Payloads` menu. All CFW bootloaders, tools, Linux payloads are supported. Autoboot only supported by including them into an ini. |
+| bootloader/libtools/     | Reserved                                                              |
 
 
 
@@ -59,10 +71,10 @@ The bootloader can be configured via 'bootloader/hekate_ipl.ini' (if it is prese
 There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Caption, "**#**": Comment, "*newline*": .ini cosmetic newline.
 
 
-You can find a template [Here](./res/hekate_ipl_template.ini)
+**You can find a template [Here](./res/hekate_ipl_template.ini)**
 
 
-### Global Configuration keys/values when boot entry is **config**:
+### hekate Global Configuration keys/values (when entry is *[config]*):
 
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
@@ -76,43 +88,33 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 | backlight=100      | Screen backlight level. 0-255.                             |
 
 
-### Nyx Global Configuration keys/values for (nyx.ini):
-
-| Config option      | Description                                                |
-| ------------------ | ---------------------------------------------------------- |
-| themecolor=167     | Sets Nyx color of text highlights.                         |
-| timeoff=100        | Sets time offset in HEX. Must be in HOS epoch format       |
-| homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
-| verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
-| umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
-| jcdisable=0        | 1: Disables Joycon driver completely.                      |
-| bpmpclock=1        | 0: Auto, 1: Faster, 2: Fast. Use 2 if Nyx hangs or some functions like UMS/Backup Verification fail. |
-
-
 ### Boot entry key/value combinations:
 
 | Config option          | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
-| warmboot={SD path}     | Replaces the warmboot binary                               |
-| secmon={SD path}       | Replaces the security monitor binary                       |
-| kernel={SD path}       | Replaces the kernel binary                                 |
-| kip1={SD path}         | Replaces/Adds kernel initial process. Multiple can be set. |
-| kip1={SD folder}/*     | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
-| fss0={SD path}         | Takes a fusee-secondary binary and `extracts` all needed parts from it. kips, exosphere, warmboot and mesophere if enabled. |
+| warmboot={FILE path}   | Replaces the warmboot binary                               |
+| secmon={FILE path}     | Replaces the security monitor binary                       |
+| kernel={FILE path}     | Replaces the kernel binary                                 |
+| kip1={FILE path}       | Replaces/Adds kernel initial process. Multiple can be set. |
+| kip1={FOLDER path}/*   | Loads every .kip/.kip1 inside a folder. Compatible with single kip1 keys. |
+| fss0={FILE path}       | Takes an Atmosphere `package3` binary (formerly fusee-secondary.bin) and `extracts` all needed parts from it. kips, exosphere, warmboot and mesophere if enabled. |
 | fss0experimental=1     | Enables loading of experimental content from a FSS0 storage |
-| exofatal={SD path}     | Replaces the exosphere fatal binary for Mariko             |
-| kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or as CSV. If not found, an error will show up |
-| fullsvcperm=1          | Disables SVC verification (full services permission)       |
-| debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
-| atmosphere=1           | Enables Atmosphère patching. Not needed when `fss0` is used. |
-| emupath={SD folder}    | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
+| exofatal={FILE path}   | Replaces the exosphere fatal binary for Mariko             |
+| ---------------------- | ---------------------------------------------------------- |
+| kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or in one line with `,` as separator. If actual patch is not found, a warning will show up |
+| emupath={FOLDER path}  | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
 | emummcforce=1          | Forces the use of emuMMC. If emummc.ini is disabled or not found, then it causes an error. |
 | emummc_force_disable=1 | Disables emuMMC, if it's enabled.                           |
 | stock=1                | Disables unneeded kernel patching and CFW kips when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disabled=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
-| id=idname              | Identifies boot entry for forced boot via id. Max 7 chars. |
-| payload={SD path}      | Payload launching. Tools, Linux, CFW bootloaders, etc.     |
-| logopath={SD path}     | If no logopath, `bootloader/bootlogo.bmp` will be used if exists. If logopath exists, it will load the specified bitmap. |
-| icon={SD path}         | Force Nyx to use the icon defined here. If this is not found, it will check for a bmp named as the boot entry ([Test 2] -> `bootloader/res/Test 2.bmp`). Otherwise default will be used. |
+| fullsvcperm=1          | Disables SVC verification (full services permission). Doesn't work with Mesosphere as kernel. |
+| debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
+| atmosphere=1           | Enables Atmosphère patching. Not needed when `fss0` is used. |
+| ---------------------- | ---------------------------------------------------------- |
+| payload={FILE path}    | Payload launching. Tools, Android/Linux, CFW bootloaders, etc. Any key above when used with that, doesn't get into account. |
+| ---------------------- | ---------------------------------------------------------- |
+| id=IDNAME              | Identifies boot entry for forced boot via id. Max 7 chars. |
+| logopath={FILE path}   | If it exists, it will load the specified bitmap. Otherwise `bootloader/bootlogo.bmp` will be used if exists |
+| icon={FILE path}       | Force Nyx to use the icon defined here. If this is not found, it will check for a bmp named as the boot entry ([Test 2] -> `bootloader/res/Test 2.bmp`). Otherwise defaults will be used. |
 
 
 **Note1**: When using the wildcard (`/*`) with `kip1` you can still use the normal `kip1` after that to load extra single kips.
@@ -121,10 +123,10 @@ You can find a template [Here](./res/hekate_ipl_template.ini)
 You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage.
 
 **Warning**: Careful when you define *fss0 core* kips when using `fss0` or the folder (when using `/*`) includes them.
-This is in case the kips are incompatible between them. If compatible, you can override `fss0` kips with no issues (useful for testing with intermediate kip changes).
+This is in case the kips are incompatible between them. If compatible, you can override `fss0` kips with no issues (useful for testing with intermediate kip changes). In such cases, the `kip1` line must be under `fss0` line.
 
 
-### Boot entry key/value Exosphère combinations:
+### Boot entry key/value combinations for Exosphère:
 
 | Config option          | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
@@ -148,7 +150,7 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | Offset / Name           | Description                                                       |
 | ----------------------- | ----------------------------------------------------------------- |
 | '0x94' boot_cfg         | bit0: `Force AutoBoot`, bit1: `Show launch log`, bit2: `Boot from ID`, bit3: `Boot to emuMMC`. |
-| '0x95' autoboot         | If `Force AutoBoot`: 0: Force go to menu, else boot that entry.   |
+| '0x95' autoboot         | If `Force AutoBoot`, 0: Force go to menu, else boot that entry.   |
 | '0x96' autoboot_list    | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
 | '0x97' extra_cfg        | When menu is forced: bit5: `Run UMS`.                             |
 | '0x98' xt_str[128]      | Depends on the set cfg bits.                                      |
@@ -157,7 +159,20 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | '0xA0' emummc_path[120] | When `Boot to emuMMC` is set, it will override the current emuMMC (boot entry or emummc.ini). Must be NULL terminated. |
 
 
-If the main .ini is not found, it is created on the first hekate boot.
+If the main .ini is not found, it is created on the first hekate boot and only has the `[config]` entry.
+
+
+### Nyx Configuration keys/values (nyx.ini):
+
+| Config option      | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| themecolor=167     | Sets Nyx color of text highlights.                         |
+| timeoff=100        | Sets time offset in HEX. Must be in HOS epoch format       |
+| homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
+| verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
+| umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
+| jcdisable=0        | 1: Disables Joycon driver completely.                      |
+| bpmpclock=1        | 0: Auto, 1: Faster, 2: Fast. Use 2 if Nyx hangs or some functions like UMS/Backup Verification fail. |
 
 
 ```
