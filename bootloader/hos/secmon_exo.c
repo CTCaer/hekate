@@ -246,11 +246,11 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		// Parse usb mtim settings. Avoid parsing if it's overridden.
 		if (ctxt->fss0_main_path && !ctxt->exo_ctx.usb3_force)
 		{
-			char set_path[256];
-			strcpy(set_path, ctxt->fss0_main_path);
-			strcat(set_path, "config/system_settings.ini");
+			char settings_path[256];
+			strcpy(settings_path, ctxt->fss0_main_path);
+			strcat(settings_path, "config/system_settings.ini");
 			LIST_INIT(sys_settings);
-			if (ini_parse(&ini_sections, set_path, false))
+			if (ini_parse(&ini_sections, settings_path, false))
 			{
 				LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 				{
@@ -416,6 +416,8 @@ static const char *get_error_desc(u32 error_desc)
 	}
 }
 
+#define HOS_PID_BOOT2 0x8
+
 void secmon_exo_check_panic()
 {
 	volatile atm_fatal_error_ctx *rpt = (atm_fatal_error_ctx *)ATM_FATAL_ERR_CTX_ADDR;
@@ -430,6 +432,10 @@ void secmon_exo_check_panic()
 	WPRINTF("Panic occurred while running Atmosphere.\n\n");
 	WPRINTFARGS("Title ID: %08X%08X", (u32)((u64)rpt->title_id >> 32), (u32)rpt->title_id);
 	WPRINTFARGS("Error:    %s (0x%x)\n", get_error_desc(rpt->error_desc), rpt->error_desc);
+
+	// Check if mixed atmosphere sysmodules.
+	if ((u32)rpt->title_id == HOS_PID_BOOT2)
+		WPRINTF("Is fss0 path correct?\n");
 
 	// Save context to the SD card.
 	char filepath[0x40];
