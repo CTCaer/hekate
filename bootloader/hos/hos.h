@@ -102,7 +102,6 @@ typedef struct _launch_ctxt_t
 
 	char *fss0_main_path;
 	u32   fss0_hosver;
-	bool  fss0_experimental;
 	bool  atmosphere;
 
 	exo_ctxt_t exo_ctx;

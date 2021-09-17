@@ -1,5 +1,5 @@
 /*
- * Atmosphère Fusée Secondary Storage parser.
+ * Atmosphère Fusée Secondary Storage (Package3) parser.
  *
  * Copyright (c) 2019-2021 CTCaer
  *
@@ -82,9 +82,9 @@ typedef struct _fss_content_t
 	char name[0x10];
 } fss_content_t;
 
-static void _update_r2p(launch_ctxt_t *ctxt, const char *path)
+static void _set_fss_path_and_update_r2p(launch_ctxt_t *ctxt, const char *path)
 {
-	char *r2p_path = malloc(512);
+	char *r2p_path = malloc(256);
 	u32 path_len = strlen(path);
 
 	strcpy(r2p_path, path);
@@ -101,15 +101,10 @@ static void _update_r2p(launch_ctxt_t *ctxt, const char *path)
 
 			free(r2p_payload);
 
-			// Save fss0 parrent path.
-			if (ctxt)
-			{
-				r2p_path[path_len] = 0;
-				ctxt->fss0_main_path = r2p_path;
-				return;
-			}
-
-			break;
+			// Save FSS0 parent path.
+			r2p_path[path_len] = 0;
+			ctxt->fss0_main_path = r2p_path;
+			return;
 		}
 		path_len--;
 	}
@@ -122,6 +117,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 	FIL fp;
 
 	bool stock = false;
+	bool experimental = false;
 
 	// Skip if stock and Exosphere and warmboot are not needed.
 	bool pkg1_old = ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620; // Should check if t210b01?
@@ -132,6 +128,10 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 		if (!strcmp("stock", kv->key))
 			if (kv->val[0] == '1')
 				stock = true;
+
+		if (!strcmp("fss0experimental", kv->key))
+			if (kv->val[0] == '1')
+				experimental = true;
 	}
 
 #ifdef HOS_MARIKO_STOCK_SECMON
@@ -142,12 +142,13 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 		return 1;
 #endif
 
+	// Try to open FSS0.
 	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return 0;
 
 	void *fss = malloc(f_size(&fp));
 
-	// Read first 1024 bytes of the fss file.
+	// Read first 1024 bytes of the FSS0 file.
 	f_read(&fp, fss, 1024, NULL);
 
 	// Get FSS0 Meta header offset.
@@ -157,7 +158,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 	// Check if valid FSS0 and parse it.
 	if (fss_meta->magic == FSS0_MAGIC)
 	{
-		gfx_printf("Found FSS0, Atmosphere %d.%d.%d-%08x\n"
+		gfx_printf("Found FSS/PK3, Atmosphere %d.%d.%d-%08x\n"
 			"Max HOS: %d.%d.%d\n"
 			"Unpacking..  ",
 			fss_meta->version >> 24, (fss_meta->version >> 16) & 0xFF, (fss_meta->version >> 8) & 0xFF, fss_meta->git_rev,
@@ -177,8 +178,8 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 			if ((curr_fss_cnt[i].offset + curr_fss_cnt[i].size) > fss_meta->size)
 				continue;
 
-			// If content is experimental and experimental flag is not enabled, skip it.
-			if ((curr_fss_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !ctxt->fss0_experimental)
+			// If content is experimental and experimental config is not enabled, skip it.
+			if ((curr_fss_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !experimental)
 				continue;
 
 			// Prepare content.
@@ -229,7 +230,8 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 		gfx_printf("Done!\n");
 		f_close(&fp);
 
-		_update_r2p(ctxt, path);
+		// Set FSS0 path and update r2p if needed.
+		_set_fss_path_and_update_r2p(ctxt, path);
 
 		return 1;
 	}
