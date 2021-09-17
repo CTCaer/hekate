@@ -850,9 +850,9 @@ static void _auto_launch_firmware()
 								h_cfg.bootwait = atoi(kv->val);
 
 								/*
-								 * Clamp value to default if it exceeds 20s.
+								 * Clamp value to default if it exceeds 20s to protect against corruption.
 								 * Allow up to 20s though for use in cases where user needs lots of time.
-								 * For example dock-only use and r2p with enough time to rach dock and cancel it.
+								 * For example dock-only use and r2p with enough time to reach dock and cancel it.
 								*/
 								if (h_cfg.bootwait > 20)
 									h_cfg.bootwait = 3;

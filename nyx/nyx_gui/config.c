@@ -106,7 +106,7 @@ int create_config_entry()
 	itoa(h_cfg.autoboot_list, lbuf, 10);
 	f_puts(lbuf, &fp);
 	/*
-	 * Clamp value to default if it exceeds 20s.
+	 * Clamp value to default if it exceeds 20s to protect against corruption.
 	 * Allow up to 20s though for use in cases where user needs lots of time.
 	 * For example dock-only use and r2p with enough time to reach dock and cancel it.
 	*/

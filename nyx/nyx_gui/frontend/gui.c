@@ -987,7 +987,8 @@ static lv_res_t _create_mbox_reload(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES * 4 / 10);
 
-	lv_mbox_set_text(mbox, "#FF8000 Do you really want#\n#FF8000 to reload hekate?#");
+	lv_mbox_set_text(mbox, "#FF8000 Do you really want#\n#FF8000 to reload hekate & Nyx?#\n\n"
+		"This also checks\n#96FF00 bootloader/update.bin#\nfor hekate updates");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, reload_action);
 

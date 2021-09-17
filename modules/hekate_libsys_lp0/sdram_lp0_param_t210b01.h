@@ -10,7 +10,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  */
- 
+
 #ifndef __TEGRA210B01_SDRAM_PARAM_H__
 #define __TEGRA210B01_SDRAM_PARAM_H__
 
@@ -227,7 +227,6 @@ struct sdram_params_t210b01
 	u32 emc_r2p;
 	/* Specifies the value for EMC_W2P */
 	u32 emc_w2p;
-	/* Specifies the value for EMC_RD_RCD */
 
 	u32 emc_tppd;
 	u32 emc_trtm;
@@ -237,6 +236,7 @@ struct sdram_params_t210b01
 	u32 emc_tr2ref;
 	u32 emc_ccdmw;
 
+	/* Specifies the value for EMC_RD_RCD */
 	u32 emc_rd_rcd;
 	/* Specifies the value for EMC_WR_RCD */
 	u32 emc_wr_rcd;
