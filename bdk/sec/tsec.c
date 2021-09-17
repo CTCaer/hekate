@@ -24,6 +24,7 @@
 #include <soc/bpmp.h>
 #include <soc/clock.h>
 #include <soc/kfuse.h>
+#include <soc/pmc.h>
 #include <soc/t210.h>
 #include <mem/heap.h>
 #include <mem/mc.h>
@@ -86,7 +87,16 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	kfuse_wait_ready();
 
 	if (type == TSEC_FW_TYPE_NEW)
+	{
+		// Disable all CCPLEX core rails.
+		pmc_enable_partition(POWER_RAIL_CE0, DISABLE);
+		pmc_enable_partition(POWER_RAIL_CE1, DISABLE);
+		pmc_enable_partition(POWER_RAIL_CE2, DISABLE);
+		pmc_enable_partition(POWER_RAIL_CE3, DISABLE);
+
+		// Enable AHB aperture and set it to full mmio.
 		mc_enable_ahb_redirect(true);
+	}
 
 	// Configure Falcon.
 	TSEC(TSEC_DMACTL) = 0;
@@ -291,6 +301,7 @@ out:;
 	bpmp_mmu_enable();
 	bpmp_clk_rate_set(prev_fid);
 
+	// Disable AHB aperture.
 	if (type == TSEC_FW_TYPE_NEW)
 		mc_disable_ahb_redirect();
 
