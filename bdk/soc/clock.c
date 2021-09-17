@@ -279,6 +279,32 @@ void clock_disable_pwm()
 	clock_disable(&_clock_pwm);
 }
 
+void clock_enable_pllx()
+{
+	// Configure and enable PLLX if disabled.
+	if (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & PLLX_BASE_ENABLE)) // PLLX_ENABLE.
+	{
+		CLOCK(CLK_RST_CONTROLLER_PLLX_MISC_3) &= ~PLLX_MISC3_IDDQ; // Disable IDDQ.
+		usleep(2);
+
+		// Set div configuration.
+		const u32 pllx_div_cfg = (2 << 20) | (156 << 8) | 2; // P div: 2 (3), N div: 156, M div: 2. 998.4 MHz.
+
+		// Bypass dividers.
+		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = PLLX_BASE_BYPASS | pllx_div_cfg;
+		// Disable bypass
+		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = pllx_div_cfg;
+		// Set PLLX_LOCK_ENABLE.
+		CLOCK(CLK_RST_CONTROLLER_PLLX_MISC) |= PLLX_MISC_LOCK_EN;
+		// Enable PLLX.
+		CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) = PLLX_BASE_ENABLE | pllx_div_cfg;
+	}
+
+	// Wait for PLL to stabilize.
+	while (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & PLLX_BASE_LOCK))
+		;
+}
+
 void clock_enable_pllc(u32 divn)
 {
 	u8 pll_divn_curr = (CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) >> 10) & 0xFF;

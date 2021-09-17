@@ -167,6 +167,8 @@
 #define PLLX_BASE_REF_DIS    BIT(29)
 #define PLLX_BASE_ENABLE     BIT(30)
 #define PLLX_BASE_BYPASS     BIT(31)
+#define PLLX_MISC_LOCK_EN    BIT(18)
+#define PLLX_MISC3_IDDQ      BIT(3)
 
 #define PLLCX_BASE_LOCK      BIT(27)
 #define PLLCX_BASE_REF_DIS   BIT(29)
@@ -628,6 +630,7 @@ void clock_enable_coresight();
 void clock_disable_coresight();
 void clock_enable_pwm();
 void clock_disable_pwm();
+void clock_enable_pllx();
 void clock_enable_pllc(u32 divn);
 void clock_disable_pllc();
 void clock_enable_pllu();
