@@ -110,7 +110,15 @@ void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
 		f_puts("\npath=", &fp);
 		f_puts(path, &fp);
 	}
-	f_puts("\nid=0x0000", &fp);
+
+	// Get ID from path.
+	u32 id_from_path = 0;
+	if (strlen(path) >= 4)
+		memcpy(&id_from_path, path + strlen(path) - 4, 4);
+	f_puts("\nid=0x", &fp);
+	itoa(id_from_path, lbuf, 16);
+	f_puts(lbuf, &fp);
+
 	f_puts("\nnintendo_path=", &fp);
 	if (path)
 	{
