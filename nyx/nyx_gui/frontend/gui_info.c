@@ -1822,6 +1822,21 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		case 0x03:
 			strcat(txt_buf, "SanDisk ");
 			break;
+		case 0x06:
+			strcat(txt_buf, "Ritek ");
+			break;
+		case 0x09:
+			strcat(txt_buf, "ATP ");
+			break;
+		case 0x13:
+			strcat(txt_buf, "Kingmax ");
+			break;
+		case 0x19:
+			strcat(txt_buf, "Dynacard ");
+			break;
+		case 0x1A:
+			strcat(txt_buf, "Power Quotient ");
+			break;
 		case 0x1B:
 			strcat(txt_buf, "Samsung ");
 			break;
@@ -1832,7 +1847,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "Phison ");
 			break;
 		case 0x28:
-			strcat(txt_buf, "Lexar ");
+			strcat(txt_buf, "Barun Electronics ");
 			break;
 		case 0x31:
 			strcat(txt_buf, "Silicon Power ");
@@ -1840,20 +1855,47 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		case 0x41:
 			strcat(txt_buf, "Kingston ");
 			break;
+		case 0x51:
+			strcat(txt_buf, "STEC ");
+			break;
+		case 0x5D:
+			strcat(txt_buf, "SwissBit ");
+			break;
+		case 0x61:
+			strcat(txt_buf, "Netlist ");
+			break;
+		case 0x63:
+			strcat(txt_buf, "Cactus ");
+			break;
+		case 0x73:
+			strcat(txt_buf, "Bongiovi ");
+			break;
 		case 0x74:
-			strcat(txt_buf, "Transcend ");
+			strcat(txt_buf, "Jiaelec ");
 			break;
 		case 0x76:
 			strcat(txt_buf, "Patriot ");
 			break;
 		case 0x82:
-			strcat(txt_buf, "Sony ");
+			strcat(txt_buf, "Jiang Tay ");
+			break;
+		case 0x83:
+			strcat(txt_buf, "Netcom ");
+			break;
+		case 0x84:
+			strcat(txt_buf, "Strontium ");
 			break;
 		//TODO: Investigate which OEM/ODM makes these.
-		// case 0x9C: // LX512 SO
-		// case 0xAD: // LX512 LS. Longsys ?
-		// 	strcat(txt_buf, "Lexar ");
-		// 	break;
+		case 0x9C: // BE, Angelbird | Barun Electronics? What about 0x28?
+				   // LX512 SO, Lexar, Angelbird, Hoodman, Sony | Solidgear?
+			strcat(txt_buf, "Solidgear ");
+			break;
+		case 0x9F:
+			strcat(txt_buf, "Taishin ");
+			break;
+		case 0xAD: // Lexar LX512 LS. Longsys?
+			strcat(txt_buf, "Longsys ");
+			break;
 		default:
 			strcat(txt_buf, "Unknown ");
 			break;
