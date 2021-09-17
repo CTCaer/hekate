@@ -1273,7 +1273,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		strcat(txt_buf, "#FFDD00 Pkg2 decryption failed!#");
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
-		
+
 		if (!res)
 		{
 			strcat(txt_buf, "\npkg2 encrypted dumped to pkg2_encr.bin\n");

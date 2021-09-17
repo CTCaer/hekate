@@ -40,7 +40,7 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 | Folder/File              | Description                                                           |
 | ------------------------ | --------------------------------------------------------------------- |
 | bootloader               | Main folder.                                                          |
-|  \|__ bootlogo.bmp       | It is if no `logopath` key is found. User provided. Can be skipped.   |
+|  \|__ bootlogo.bmp       | It is used if no `logopath` key is found. User provided. Can be skipped. |
 |  \|__ hekate_ipl.ini     | Main bootloader configuration and boot entries in `Launch` menu.      |
 |  \|__ nyx.ini            | Nyx GUI configuration                                                 |
 |  \|__ patches.ini        | Add external patches. Can be skipped. A template can be found [here](./res/patches_template.ini) |

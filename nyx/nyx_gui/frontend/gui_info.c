@@ -590,7 +590,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
 			strcpy(dram_man, "Samsung 1y Y 8GB");
 			break;
-		// case LPDDR4X_AULA_4GB_SAMSUNG_1Y_A: // Unused.
+		// case LPDDR4X_AULA_8GB_SAMSUNG_1Y_A: // Unused.
 		// 	strcpy(dram_man, "Samsung 1y A 4GB");
 		// 	break;
 		case LPDDR4X_IOWA_4GB_MICRON_1Y_A:
@@ -951,6 +951,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 0; // NISSHA NFT-K12D.
 			break;
+		case 0x98000004: // New 6.2" panel?
+			strcat(txt_buf, "FST2 UNK");
+			if (touch_panel)
+				panel_ic_paired = touch_panel->idx == 0;
+			break;
 		case 0x001A0300:
 		case 0x32000102:
 			strcat(txt_buf, "4CD 2602");
@@ -972,9 +977,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x32000501:
 		case 0x33000502:
 		case 0x33000503:
+		case 0x33000510:
 			strcat(txt_buf, "4CD UNKN");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 4; // Unknown Aula 6.2".
+				panel_ic_paired = touch_panel->idx == 4; // Unknown Aula 7.0".
 			break;
 		default:
 			strcat(txt_buf, "#FF8000 Unknown#");
