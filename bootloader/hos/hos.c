@@ -659,9 +659,12 @@ try_load:
 	}
 	gfx_printf("Identified pkg1 and mkey %d\n\n", ctxt->pkg1_id->kb);
 
-	// Read the correct keyblob.
-	ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	emummc_storage_read(HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+	// Read the correct keyblob for older HOS versions.
+	if (ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+	{
+		ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
+		emummc_storage_read(HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+	}
 
 	return 1;
 }
@@ -805,7 +808,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Try to parse config if present.
 	if (ctxt.cfg && !parse_boot_config(&ctxt))
 	{
-		_hos_crit_error("Wrong ini cfg or missing files!");
+		_hos_crit_error("Wrong ini cfg or missing/corrupt files!");
 		goto error;
 	}
 
@@ -1036,7 +1039,7 @@ int hos_launch(ini_sec_t *cfg)
 
 		if (sd_fs.fs_type == FS_EXFAT && !exfat_compat)
 		{
-			_hos_crit_error("SD Card is exFAT and installed HOS driver\nonly supports FAT32!");
+			_hos_crit_error("SD Card is exFAT but installed HOS driver\nonly supports FAT32!");
 
 			_free_launch_components(&ctxt);
 			goto error;
@@ -1068,9 +1071,7 @@ int hos_launch(ini_sec_t *cfg)
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, &ctxt, &kip1_info);
 
-	gfx_puts("Rebuilt & loaded pkg2\n");
-
-	gfx_printf("\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
+	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
 	// Set initial mailbox values.
 	int bootStateDramPkg2 = 0;
