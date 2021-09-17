@@ -87,7 +87,7 @@ enum sdram_ids_mariko
 	LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y                   = 20,
 	LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y                   = 21,
 
-	// LPDDR4X_AULA_4GB_SAMSUNG_1Y_A                   = 22, // Unused.
+	// LPDDR4X_AULA_8GB_SAMSUNG_1Y_A                   = 22, // Unused.
 
 	LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 23, // Die-A.
 	LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 24, // Die-A.
@@ -103,7 +103,7 @@ enum sdram_codes_mariko
 {
 	LPDDR4X_NO_PATCH                       = 0,
 	LPDDR4X_UNUSED                         = 0,
-	
+
 	// LPDDR4X_4GB_SAMSUNG_K4U6E3S4AM_MGCJ          DRAM IDs: 08, 12.
 	// LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLHR_NME         DRAM IDs: 10, 14.
 
@@ -115,7 +115,7 @@ enum sdram_codes_mariko
 	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL    = 6,  // DRAM IDs: 18, 23, 28.
 	LPDDR4X_4GB_SAMSUNG_1Y_Y               = 7,  // DRAM IDs: 20.
 	LPDDR4X_8GB_SAMSUNG_1Y_Y               = 8,  // DRAM IDs: 21.
-	//LPDDR4X_4GB_SAMSUNG_1Y_A               = 9,  // DRAM IDs: 22. Unused.
+	//LPDDR4X_8GB_SAMSUNG_1Y_A               = 9,  // DRAM IDs: 22. Unused.
 	LPDDR4X_4GB_MICRON_1Y_A                = 10, // DRAM IDs: 25, 26, 27.
 	LPDDR4X_4GB_HYNIX_1Y_A                 = 11, // DRAM IDs: 03, 05, 06.
 };
