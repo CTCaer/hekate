@@ -783,15 +783,25 @@ u32 clock_get_osc_freq()
 
 u32 clock_get_dev_freq(clock_pto_id_t id)
 {
-	u32 val = ((id & PTO_SRC_SEL_MASK) << PTO_SRC_SEL_SHIFT) | PTO_DIV_SEL_DIV1 | PTO_CLK_ENABLE | (16 - 1); // 16 periods of 32.76KHz window.
+	const u32 pto_win = 16;
+	const u32 pto_osc = 32768;
+
+	u32 val = ((id & PTO_SRC_SEL_MASK) << PTO_SRC_SEL_SHIFT) | PTO_DIV_SEL_DIV1 | PTO_CLK_ENABLE | (pto_win - 1);
 	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val;
+	(void)CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL);
 	usleep(2);
+
 	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val | PTO_CNT_RST;
+	(void)CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL);
 	usleep(2);
+
 	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val;
+	(void)CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL);
 	usleep(2);
+
 	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = val | PTO_CNT_EN;
-	usleep(502);
+	(void)CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL);
+	usleep((1000000 * pto_win / pto_osc) + 12 + 2);
 
 	while (CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_STATUS) & PTO_CLK_CNT_BUSY)
 		;
@@ -799,9 +809,11 @@ u32 clock_get_dev_freq(clock_pto_id_t id)
 	u32 cnt = CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_STATUS) & PTO_CLK_CNT;
 
 	CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL) = 0;
+	(void)CLOCK(CLK_RST_CONTROLLER_PTO_CLK_CNT_CNTL);
+	usleep(2);
 
-	u32 freq = ((cnt << 8) | 0x3E) / 125;
+	u32 freq_khz = (u64)cnt * pto_osc / pto_win / 1000;
 
-	return freq;
+	return freq_khz;
 }
 

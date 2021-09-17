@@ -217,7 +217,7 @@
 #define OSC_FREQ_DET_BUSY        BIT(31)
 #define OSC_FREQ_DET_CNT         0xFFFF
 
-/*! PLLs omitted as they need PTO enabled in MISC registers. Norm div is 2. */
+/*! PTO IDs. */
 typedef enum _clock_pto_id_t
 {
 	CLK_PTO_PCLK_SYS =          0x06,
@@ -240,6 +240,9 @@ typedef enum _clock_pto_id_t
 	CLK_PTO_SDMMC3 =            0x22,
 	CLK_PTO_SDMMC4 =            0x23,
 	CLK_PTO_EMC =               0x24,
+
+	CLK_PTO_CCLK_LP =           0x2B,
+	CLK_PTO_CCLK_LP_DIV2 =      0x2C,
 
 	CLK_PTO_MSELECT =           0x2F,
 
@@ -323,6 +326,32 @@ typedef enum _clock_pto_id_t
 	CLK_PTO_XUSB_SS_HOST_DEV =  0x137,
 	CLK_PTO_XUSB_CORE_HOST =    0x138,
 	CLK_PTO_XUSB_CORE_DEV =     0x139,
+
+	/*
+	 * PLL need PTO enabled in MISC registers.
+	 * Normal div is 2 so result is multiplied with it.
+	 */
+	CLK_PTO_PLLC_DIV2 =              0x01,
+	CLK_PTO_PLLM_DIV2 =              0x02,
+	CLK_PTO_PLLP_DIV2 =              0x03,
+	CLK_PTO_PLLA_DIV2 =              0x04,
+	CLK_PTO_PLLX_DIV2 =              0x05,
+
+	CLK_PTO_PLLMB_DIV2 =             0x25,
+
+	CLK_PTO_PLLC4_DIV2 =             0x51,
+
+	CLK_PTO_PLLA1_DIV2 =             0x55,
+	CLK_PTO_PLLC2_DIV2 =             0x58,
+	CLK_PTO_PLLC3_DIV2 =             0x5A,
+
+	CLK_PTO_PLLD_DIV2 =              0xCB,
+	CLK_PTO_PLLD2_DIV2 =             0xCD,
+	CLK_PTO_PLLDP_DIV2 =             0xCF,
+
+	CLK_PTO_PLLU_DIV2 =              0x10D,
+
+	CLK_PTO_PLLREFE_DIV2 =           0x10F,
 } clock_pto_id_t;
 
 /*
