@@ -53,6 +53,7 @@ extern hekate_config h_cfg;
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
+extern lv_res_t launch_payload(lv_obj_t *list);
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static u8 *cal0_buf = NULL;
@@ -254,24 +255,6 @@ static lv_res_t _kfuse_dump_window_action(lv_obj_t * btn)
 	}
 
 	_create_window_dump_done(error, "kfuses.bin");
-
-	return LV_RES_OK;
-}
-
-static u32 tsec_keys[8];
-
-static lv_res_t _tsec_keys_dump_window_action(lv_obj_t * btn)
-{
-	int error = !sd_mount();
-	if (!error)
-	{
-		char path[64];
-		emmcsn_path_impl(path, "/dumps", "tsec_keys.bin", NULL);
-		error = sd_save_to_file(tsec_keys, SE_KEY_128_SIZE * 2, path);
-
-		sd_unmount();
-	}
-	_create_window_dump_done(error, "tsec_keys.bin");
 
 	return LV_RES_OK;
 }
@@ -1059,155 +1042,44 @@ static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-static lv_res_t _create_window_tsec_keys_status(lv_obj_t *btn)
+static lv_res_t _launch_lockpick_action(lv_obj_t *btns, const char * txt)
 {
-	u32 retries = 0;
+	int btn_idx = lv_btnm_get_pressed(btns);
 
-	tsec_ctxt_t tsec_ctxt = {0};
+	mbox_action(btns, txt);
 
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" TSEC Keys");
-
-	//Disable buttons.
-	nyx_window_toggle_buttons(win, true);
-
-	lv_obj_t *desc = lv_cont_create(win, NULL);
-	lv_obj_set_size(desc, LV_HOR_RES / 2 / 2, LV_VER_RES - (LV_DPI * 11 / 6));
-	//lv_obj_align(desc, win, LV_ALIGN_ou_TOP_LEFT, 0, 40);
-
-	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
-	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
-	lv_label_set_recolor(lb_desc, true);
-	lv_label_set_style(lb_desc, &monospace_text);
-
-	char *txt_buf  = (char *)malloc(0x1000);
-	char *txt_buf2 = (char *)malloc(0x1000);
-	txt_buf[0] = 0;
-
-	// Read package1.
-	static const u32 BOOTLOADER_SIZE          = 0x40000;
-	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	static const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
-
-	u8 *pkg1 = (u8 *)malloc(0x40000);
-	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
-
-try_load:
-	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
-	sdmmc_storage_end(&emmc_storage);
-
-	char *build_date = malloc(32);
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1, build_date);
-
-	s_printf(txt_buf + strlen(txt_buf), "#00DDFF Found pkg1 ('%s')#\n", build_date);
-	free(build_date);
-
-	if (!pkg1_id)
+	if (btn_idx == 1)
 	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#\n");
-		// Try backup bootloader.
-		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
-		{
-			strcat(txt_buf, "Trying backup bootloader...\n");
-			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
-			goto try_load;
-		}
-		lv_label_set_text(lb_desc, txt_buf);
-		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
-
-		goto out;
-	}
-	lv_label_set_text(lb_desc, txt_buf);
-	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
-
-	lv_obj_t *val = lv_cont_create(win, NULL);
-	lv_obj_set_size(val, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 6));
-
-	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
-	lv_label_set_style(lb_val, &monospace_text);
-
-	lv_label_set_text(lb_val, "Please wait...");
-	lv_obj_set_width(lb_val, lv_obj_get_width(val));
-	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-	manual_system_maintenance(true);
-
-	tsec_ctxt.fw = (u8 *)pkg1 + pkg1_id->tsec_off;
-	tsec_ctxt.pkg1 = pkg1;
-	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
-	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
-
-	if (pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
-	{
-		tsec_ctxt.size = 0xF00;
-		tsec_ctxt.type = TSEC_FW_TYPE_OLD;
-	}
-	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
-	{
-		tsec_ctxt.size = 0x2900;
-		tsec_ctxt.type = TSEC_FW_TYPE_EMU;
-
-		u8 *tsec_paged = (u8 *)page_alloc(3);
-		memcpy(tsec_paged, (void *)tsec_ctxt.fw, tsec_ctxt.size);
-		tsec_ctxt.fw = tsec_paged;
-	}
-	else if (pkg1_id->kb == KB_FIRMWARE_VERSION_700)
-	{
-		tsec_ctxt.size = 0x3000;
-		tsec_ctxt.type = TSEC_FW_TYPE_NEW;
-		// Exit after TSEC key generation.
-		*((vu16 *)((u32)tsec_ctxt.fw + 0x2DB5)) = 0x02F8;
-	}
-	else
-	{
-		tsec_ctxt.size = 0x3300;
-		tsec_ctxt.type = TSEC_FW_TYPE_NEW;
+		lv_obj_t *list = lv_list_create(NULL, NULL);
+		lv_obj_set_size(list, 1, 1);
+		lv_list_set_single_mode(list, true);
+		lv_list_add(list, NULL, "Lockpick_RCM.bin", NULL);
+		lv_obj_t *btn;
+		btn = lv_list_get_prev_btn(list, NULL);
+		launch_payload(btn);
+		lv_obj_del(list);
 	}
 
-	int res = 0;
+	return LV_RES_INV;
+}
 
-	while (tsec_query((u8 *)tsec_keys, &tsec_ctxt) < 0)
-	{
-		memset(tsec_keys, 0x00, 0x20);
+static lv_res_t _create_mbox_lockpick(lv_obj_t *btn)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-		retries++;
+	static const char * mbox_btn_map[] = { "\211", "\222Continue", "\222Close", "\211", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
 
-		if (retries > 3)
-		{
-			res = -1;
-			break;
-		}
-	}
+	lv_mbox_set_text(mbox, "#FF8000 Lockpick RCM#\n\nThis will launch Lockpick RCM.\nDo you want to continue?\n\n"
+		"To return back from lockpick use\n#96FF00 Reboot to hekate#.");
 
-	strcat(txt_buf, "#C7EA46 TSEC Key:#\n");
-	if (res >= 0)
-	{
-		s_printf(txt_buf2, "\n%08X%08X%08X%08X\n",
-			byte_swap_32(tsec_keys[0]), byte_swap_32(tsec_keys[1]), byte_swap_32(tsec_keys[2]), byte_swap_32(tsec_keys[3]));
-
-		if (pkg1_id->kb == KB_FIRMWARE_VERSION_620)
-		{
-			strcat(txt_buf, "#C7EA46 TSEC root:#\n");
-			s_printf(txt_buf2 + strlen(txt_buf2), "%08X%08X%08X%08X\n",
-				byte_swap_32(tsec_keys[4]), byte_swap_32(tsec_keys[5]), byte_swap_32(tsec_keys[6]), byte_swap_32(tsec_keys[7]));
-		}
-		lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump Keys", _tsec_keys_dump_window_action);
-	}
-	else
-	{
-		s_printf(txt_buf2, "Error: %x", res);
-	}
-
-	lv_label_set_text(lb_desc, txt_buf);
-
-	lv_label_set_text(lb_val, txt_buf2);
-
-out:
-	free(pkg1);
-	free(txt_buf);
-	free(txt_buf2);
-
-	nyx_window_toggle_buttons(win, false);
+	lv_mbox_add_btns(mbox, mbox_btn_map, _launch_lockpick_action);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
 
 	return LV_RES_OK;
 }
@@ -2408,6 +2280,45 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static bool _lockpick_exists_check()
+{
+	#define LOCKPICK_MAGIC_OFFSET   0x118
+	#define LOCKPICK_VERSION_OFFSET 0x11C
+	#define LOCKPICK_MAGIC          0x4B434F4C // LOCK.
+	#define LOCKPICK_MIN_VERSION    0x1090500  // 1.9.5.
+
+	bool found = false;
+	void *buf = malloc(0x200);
+	if (sd_mount())
+	{
+		FIL fp;
+		if (f_open(&fp, "bootloader/payloads/Lockpick_RCM.bin", FA_READ))
+			goto out;
+
+		// Read Lockpick payload and check versioning.
+		if (f_read(&fp, buf, 0x200, NULL))
+		{
+			f_close(&fp);
+
+			goto out;
+		}
+
+		u32 magic = *(u32 *)(buf + LOCKPICK_MAGIC_OFFSET);
+		u32 version = byte_swap_32(*(u32 *)(buf + LOCKPICK_VERSION_OFFSET) - 0x303030);
+
+		if (magic == LOCKPICK_MAGIC && version >= LOCKPICK_MIN_VERSION)
+			found = true;
+
+		f_close(&fp);
+	}
+
+out:
+	free(buf);
+	sd_unmount();
+
+	return found;
+}
+
 void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
@@ -2456,17 +2367,30 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	// Create TSEC Keys button.
 	lv_obj_t *btn2 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn2, NULL);
-	lv_label_set_static_text(label_btn, SYMBOL_KEY"  TSEC Keys");
-	lv_obj_align(btn2, btn, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI * 4 / 9, 0);
-	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_window_tsec_keys_status);
-	if (h_cfg.t210b01)
+	lv_label_set_static_text(label_btn, SYMBOL_KEY"  Lockpick");
+	lv_obj_align(btn2, btn, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI * 11 / 15, 0);
+	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_mbox_lockpick);
+
+	bool lockpick_found = _lockpick_exists_check();
+	if (!lockpick_found)
 		lv_btn_set_state(btn2, LV_BTN_STATE_INA);
 
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
-	lv_label_set_static_text(label_txt2,
-		"View Ipatches and dump the unpatched and patched versions\nof BootROM.\n"
-		"Or view and dump the device's TSEC Keys.\n");
+
+	if (lockpick_found)
+	{
+		lv_label_set_static_text(label_txt2,
+			"View Ipatches and dump the unpatched and patched versions\nof BootROM.\n"
+			"Or dump every single key via #C7EA46 Lockpick RCM#.\n");
+	}
+	else
+	{
+		lv_label_set_static_text(label_txt2,
+			"View Ipatches and dump the unpatched and patched versions\nof BootROM. Or dump every single key via #C7EA46 Lockpick RCM#.\n"
+			"#FFDD00 bootloader/payloads/Lockpick_RCM.bin is missing or old!#\n");
+	}
+
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
