@@ -151,7 +151,7 @@ typedef struct _atm_fatal_error_ctx
 
 void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 {
-	u32 exo_fw_no = 0;
+	u32 exo_fw_no;
 	u32 exo_flags = 0;
 	bool usb3_force = false;
 	bool user_debug = false;
@@ -162,16 +162,19 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 
 	volatile exo_cfg_t *exo_cfg = (exo_cfg_t *)EXO_CFG_ADDR;
 
-	// Old exosphere target versioning. Use fuses for a simpler encoding.
+	//! TODO: Replace current HOS version decoding (as it's bound to break in the future).
+
+	// Old exosphere target versioning. Use fuses for a simpler decoding.
 	if (ctxt->pkg1_id->fuses <= 3 || ctxt->pkg1_id->fuses >= 10) // 1.0.0 - 3.0.0, 8.1.0+.
 		exo_fw_no = ctxt->pkg1_id->fuses;
 	else
-		exo_fw_no = ctxt->pkg1_id->fuses - 1;                    // 3.0.1 - 7.0.1, 8.0.0 - 8.0.1.
+		exo_fw_no = ctxt->pkg1_id->fuses - 1;                    // 3.0.1 - 7.0.1, 8.0.x.
 
-	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8))         // 8.0.0 - 8.0.1.
-		exo_fw_no++;
-
-	if (!memcmp(ctxt->pkg1_id->id, "20210129111626", 8))         // 12.0.0.
+	// Handle versions that change API and do not burn new fuse.
+	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8) || //  8.0.x, same fuses with  7.0.1.
+		!memcmp(ctxt->pkg1_id->id, "20210129111626", 8) || // 12.0.0, same fuses with 11.0.0.
+		!memcmp(ctxt->pkg1_id->id, "20210805123730", 8)    // 13.0.0, same fuses with 12.1.0.
+	   )
 		exo_fw_no++;
 
 	// Feed old exosphere target versioning to new.
@@ -199,7 +202,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	case 12:
 		exo_fw_no = EXO_FW_VER(9, 1, 0);
 		break;
-	case 13 ... 15:
+	case 13 ... 16: //!TODO: Update on API changes. 16: 13.0.0.
 		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision, 0);
 		break;
 	}

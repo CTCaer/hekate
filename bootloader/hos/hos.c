@@ -117,9 +117,14 @@ static const u8 master_keyseed_4xx[SE_KEY_128_SIZE] =
 static const u8 master_kekseed_620[SE_KEY_128_SIZE] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
-//!TODO: Update on mkey changes.
-static const u8 master_kekseed_t210_max[SE_KEY_128_SIZE] =
-	{ 0x84, 0x67, 0xB6, 0x7F, 0x13, 0x11, 0xAE, 0xE6, 0x58, 0x9B, 0x19, 0xAF, 0x13, 0x6C, 0x80, 0x7A }; // 12.1.0.
+//!TODO: Update on tsec/mkey changes.
+static const u8 master_kekseed_t210_tsec_v4[][SE_KEY_128_SIZE] = {
+	{ 0xDE, 0xDC, 0xE3, 0x39, 0x30, 0x88, 0x16, 0xF8, 0xAE, 0x97, 0xAD, 0xEC, 0x64, 0x2D, 0x41, 0x41 }, // 8.1.0.
+	{ 0x1A, 0xEC, 0x11, 0x82, 0x2B, 0x32, 0x38, 0x7A, 0x2B, 0xED, 0xBA, 0x01, 0x47, 0x7E, 0x3B, 0x67 }, // 9.0.0.
+	{ 0x30, 0x3F, 0x02, 0x7E, 0xD8, 0x38, 0xEC, 0xD7, 0x93, 0x25, 0x34, 0xB5, 0x30, 0xEB, 0xCA, 0x7A }, // 9.1.0.
+	{ 0x84, 0x67, 0xB6, 0x7F, 0x13, 0x11, 0xAE, 0xE6, 0x58, 0x9B, 0x19, 0xAF, 0x13, 0x6C, 0x80, 0x7A }, // 12.1.0.
+	{ 0x68, 0x3B, 0xCA, 0x54, 0xB8, 0x6F, 0x92, 0x48, 0xC3, 0x05, 0x76, 0x87, 0x88, 0x70, 0x79, 0x23 }, // 13.0.0.
+};
 
 //!TODO: Update on mkey changes.
 static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
@@ -130,6 +135,7 @@ static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
 	{ 0x86, 0x69, 0xF0, 0x09, 0x87, 0xC8, 0x05, 0xAE, 0xB5, 0x7B, 0x48, 0x74, 0xDE, 0x62, 0xA6, 0x13 }, // 9.0.0.
 	{ 0x0E, 0x44, 0x0C, 0xED, 0xB4, 0x36, 0xC0, 0x3F, 0xAA, 0x1D, 0xAE, 0xBF, 0x62, 0xB1, 0x09, 0x82 }, // 9.1.0.
 	{ 0xE5, 0x41, 0xAC, 0xEC, 0xD1, 0xA7, 0xD1, 0xAB, 0xED, 0x03, 0x77, 0xF1, 0x27, 0xCA, 0xF8, 0xF1 }, // 12.1.0.
+	{ 0x52, 0x71, 0x9B, 0xDF, 0xA7, 0x8B, 0x61, 0xD8, 0xD5, 0x85, 0x11, 0xE4, 0x8E, 0x4F, 0x74, 0xC6 }, // 13.0.0.
 };
 
 static const u8 console_keyseed[SE_KEY_128_SIZE] =
@@ -248,7 +254,7 @@ out:
 	}
 }
 
-static void _hos_eks_save(u32 kb)
+static void _hos_eks_save()
 {
 	// Check if Erista based unit.
 	if (h_cfg.t210b01)
@@ -263,7 +269,7 @@ static void _hos_eks_save(u32 kb)
 	}
 
 	// If matching blob doesn't exist, create it.
-	if (h_cfg.eks->enabled < kb)
+	if (h_cfg.eks->enabled != HOS_EKS_TSEC_VER)
 	{
 		// Read EKS blob.
 		u8 *mbr = calloc(512 , 1);
@@ -284,7 +290,7 @@ static void _hos_eks_save(u32 kb)
 
 		// Set magic and personalized info.
 		h_cfg.eks->magic = HOS_EKS_MAGIC;
-		h_cfg.eks->enabled = KB_FIRMWARE_VERSION_MAX;
+		h_cfg.eks->enabled = HOS_EKS_TSEC_VER;
 		h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
 
 		// Copy new keys.
@@ -387,8 +393,8 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 	// Use HOS EKS if it exists.
 	_hos_eks_get();
 
-	// Use tsec keygen for old firmware or if EKS keys do not exist for newer.
-	if (kb <= KB_FIRMWARE_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled < kb))
+	// Use tsec keygen for old firmware or if EKS keys does not exist for newer.
+	if (kb <= KB_FIRMWARE_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
 		use_tsec = true;
 
 	if (kb <= KB_FIRMWARE_VERSION_600)
@@ -451,14 +457,19 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 		// For 7.0.0 and up, save EKS slot if it doesn't exist.
 		if (use_tsec)
 		{
-			_hos_eks_save(kb);
+			_hos_eks_save();
 			free(tsec_ctxt->fw);
 		}
+
+		// Use 8.1.0 for 7.0.0 otherwise the proper one.
+		u32 mkey_idx = 0;
+		if (kb >= KB_FIRMWARE_VERSION_810)
+			mkey_idx = kb - KB_FIRMWARE_VERSION_810;
 
 		if (!is_exo)
 		{
 			// Derive Package2 key in secmon compatible way.
-			se_aes_unwrap_key(7, 13, master_kekseed_t210_max);
+			se_aes_unwrap_key(7, 13, master_kekseed_t210_tsec_v4[mkey_idx]);
 			se_aes_unwrap_key(7, 7, master_keyseed_retail);
 			se_aes_unwrap_key(8, 7, package2_keyseed);
 		}
@@ -472,7 +483,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 			se_aes_unwrap_key(15, 15, console_keyseed);
 
 			// Derive master kek.
-			se_aes_unwrap_key(13, 13, master_kekseed_t210_max);
+			se_aes_unwrap_key(13, 13, master_kekseed_t210_tsec_v4[mkey_idx]);
 
 			// Derive device master key and master key.
 			se_aes_unwrap_key(12, 13, master_keyseed_4xx);
@@ -949,8 +960,7 @@ int hos_launch(ini_sec_t *cfg)
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(ctxt.pkg2, kb, is_exo);
 	if (!pkg2_hdr)
 	{
-		_hos_crit_error("Pkg2 decryption failed!");
-		EPRINTF("Is hekate updated?");
+		_hos_crit_error("Pkg2 decryption failed!\npkg1/pkg2 mismatch or old hekate!");
 
 		// Clear EKS slot, in case something went wrong with tsec keygen.
 		hos_eks_clear(kb);

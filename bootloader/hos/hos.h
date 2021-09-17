@@ -39,10 +39,14 @@
 #define KB_FIRMWARE_VERSION_900  9
 #define KB_FIRMWARE_VERSION_910  10
 #define KB_FIRMWARE_VERSION_1210 11
-#define KB_FIRMWARE_VERSION_MAX  KB_FIRMWARE_VERSION_1210 //!TODO: Update on mkey changes.
+#define KB_FIRMWARE_VERSION_1300 12
+#define KB_FIRMWARE_VERSION_MAX  KB_FIRMWARE_VERSION_1300 //!TODO: Update on mkey changes.
 
-#define HOS_PKG11_MAGIC 0x31314B50
-#define HOS_EKS_MAGIC   0x31534B45 // EKS1.
+#define HOS_TSEC_VERSION 4 //! TODO: Update on TSEC Root Key changes.
+
+#define HOS_PKG11_MAGIC  0x31314B50
+#define HOS_EKS_MAGIC    0x31534B45 // EKS1.
+#define HOS_EKS_TSEC_VER (KB_FIRMWARE_VERSION_700 + HOS_TSEC_VERSION)
 
 // Use official Mariko secmon when in stock. Needs access to TZRAM.
 //#define HOS_MARIKO_STOCK_SECMON
