@@ -109,7 +109,14 @@ bool emummc_set_path(char *path)
 	if (found)
 	{
 		emu_cfg.enabled = 1;
-		emu_cfg.id = 0;
+
+		// Get ID from path.
+		u32 id_from_path = 0;
+		u32 path_size = strlen(path);
+		if (path_size >= 4)
+			memcpy(&id_from_path, path + path_size - 4, 4);
+		emu_cfg.id = id_from_path;
+
 		strcpy(emu_cfg.nintendo_path, path);
 		strcat(emu_cfg.nintendo_path, "/Nintendo");
 	}

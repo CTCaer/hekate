@@ -37,7 +37,7 @@ typedef struct _emummc_cfg_t
 {
 	int   enabled;
 	u64   sector;
-	u16   id;
+	u32   id;
 	char *path;
 	char *nintendo_path;
 	// Internal.
