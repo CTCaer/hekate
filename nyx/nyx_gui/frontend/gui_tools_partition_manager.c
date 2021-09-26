@@ -71,8 +71,6 @@ typedef struct _partition_ctxt_t
 	lv_obj_t *lbl_emu;
 	lv_obj_t *lbl_l4t;
 	lv_obj_t *lbl_and;
-
-	lv_obj_t *btn_partition;
 } partition_ctxt_t;
 
 typedef struct _l4t_flasher_ctxt_t
@@ -488,17 +486,13 @@ static lv_res_t _action_part_manager_ums_sd(lv_obj_t *btn)
 {
 	action_ums_sd(btn);
 
-	if (lv_btn_get_state(part_info.btn_partition) != LV_BTN_STATE_INA)
-	{
-		lv_action_t close_btn_action = lv_btn_get_action(close_btn, LV_BTN_ACTION_CLICK);
-		close_btn_action(close_btn);
-		lv_obj_del(ums_mbox);
-		create_window_partition_manager(NULL);
+	// Close and reopen partition manager.
+	lv_action_t close_btn_action = lv_btn_get_action(close_btn, LV_BTN_ACTION_CLICK);
+	close_btn_action(close_btn);
+	lv_obj_del(ums_mbox);
+	create_window_partition_manager(NULL);
 
-		return LV_RES_INV;
-	}
-
-	return LV_RES_OK;
+	return LV_RES_INV;
 }
 
 static lv_res_t _action_delete_linux_installer_files(lv_obj_t * btns, const char * txt)
@@ -2297,7 +2291,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	part_info.total_sct = sd_storage.sec_cnt;
 
 	// Align down total size to ensure alignment of all partitions after HOS one.
-	part_info.alignment = part_info.total_sct - ALIGN_DOWN(part_info.total_sct, 0x8000);	
+	part_info.alignment = part_info.total_sct - ALIGN_DOWN(part_info.total_sct, 0x8000);
 	part_info.total_sct -= part_info.alignment;
 
 	u32 extra_sct = 0x8000 + 0x400000; // Reserved 16MB alignment for FAT partition + 2GB.
@@ -2315,7 +2309,8 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	u32 bar_and_size = 0;
 
 	lv_obj_t *lbl = lv_label_create(h1, NULL);
-	lv_label_set_text(lbl, "New partition layout:");
+	lv_label_set_recolor(lbl, true);
+	lv_label_set_text(lbl, "Choose #FFDD00 new# partition layout:");
 
 	lv_obj_t *bar_hos = lv_bar_create(h1, NULL);
 	lv_obj_set_size(bar_hos, bar_hos_size, LV_DPI / 2);
@@ -2493,7 +2488,6 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_label_set_static_text(label_btn, SYMBOL_SD"  Next Step");
 	lv_obj_align(btn1, h1, LV_ALIGN_IN_TOP_RIGHT, 0, LV_DPI * 5);
 	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _create_mbox_partitioning_next);
-	part_info.btn_partition = btn1;
 
 	free(txt_buf);
 
