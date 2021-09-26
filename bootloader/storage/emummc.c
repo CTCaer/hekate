@@ -42,9 +42,9 @@ void emummc_load_cfg()
 	emu_cfg.active_part = 0;
 	emu_cfg.fs_ver = 0;
 	if (!emu_cfg.nintendo_path)
-		emu_cfg.nintendo_path = (char *)malloc(0x80);
+		emu_cfg.nintendo_path = (char *)malloc(0x200);
 	if (!emu_cfg.emummc_file_based_path)
-		emu_cfg.emummc_file_based_path = (char *)malloc(0x80);
+		emu_cfg.emummc_file_based_path = (char *)malloc(0x200);
 
 	emu_cfg.nintendo_path[0] = 0;
 	emu_cfg.emummc_file_based_path[0] = 0;

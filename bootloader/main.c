@@ -527,7 +527,7 @@ wrong_emupath:
 		if (emummc_path)
 		{
 			sd_mount();
-			emummc_load_cfg();
+			emummc_load_cfg(); // Reload emuMMC config in case of emupath.
 		}
 	}
 
@@ -550,6 +550,9 @@ void launch_firmware()
 
 	if (sd_mount())
 	{
+		// Load emuMMC configuration.
+		emummc_load_cfg();
+
 		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		{
 			// Build configuration menu.
@@ -666,7 +669,7 @@ wrong_emupath:
 		if (emummc_path)
 		{
 			sd_mount();
-			emummc_load_cfg();
+			emummc_load_cfg(); // Reload emuMMC config in case of emupath.
 		}
 	}
 
@@ -822,6 +825,9 @@ static void _auto_launch_firmware()
 
 	if (sd_mount())
 	{
+		// Load emuMMC configuration.
+		emummc_load_cfg();
+
 		if (f_stat("bootloader/hekate_ipl.ini", NULL))
 			create_config_entry();
 
@@ -1068,7 +1074,7 @@ wrong_emupath:
 		if (emummc_path || b_cfg.boot_cfg & BOOT_CFG_TO_EMUMMC)
 		{
 			sd_mount();
-			emummc_load_cfg();
+			emummc_load_cfg(); // Reload emuMMC config in case of emupath.
 		}
 
 payload_error:
@@ -1530,9 +1536,6 @@ void ipl_main()
 
 	// Check if RCM is patched and protect from a possible brick.
 	_patched_rcm_protection();
-
-	// Load emuMMC configuration from SD.
-	emummc_load_cfg();
 
 	// Show exception, library errors and L4T kernel panics.
 	_show_errors();
