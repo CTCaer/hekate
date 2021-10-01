@@ -48,14 +48,8 @@
 extern boot_cfg_t b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
-/*
- * CLK_OSC - 38.4 MHz crystal.
- * CLK_M   - 19.2 MHz (osc/2).
- * CLK_S   - 32.768 KHz (from PMIC).
- * SCLK    - 204MHz init (-> 408MHz -> OC).
- * HCLK    - 204MHz init (-> 408MHz -> OC).
- * PCLK    - 68MHz  init (-> 136MHz -> OC/4).
- */
+u32 hw_rst_status;
+u32 hw_rst_reason;
 
 u32 hw_get_chip_id()
 {
@@ -64,6 +58,15 @@ u32 hw_get_chip_id()
 	else
 		return GP_HIDREV_MAJOR_T210;
 }
+
+/*
+ * CLK_OSC - 38.4 MHz crystal.
+ * CLK_M   - 19.2 MHz (osc/2).
+ * CLK_S   - 32.768 KHz (from PMIC).
+ * SCLK    - 204MHz init (-> 408MHz -> OC).
+ * HCLK    - 204MHz init (-> 408MHz -> OC).
+ * PCLK    - 68MHz  init (-> 136MHz -> OC/4).
+ */
 
 static void _config_oscillators()
 {
@@ -264,7 +267,11 @@ static void _config_se_brom()
 	PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_ENABLE;
 	SE(SE_INT_STATUS_REG) = 0x1F; // Clear all SE interrupts.
 
-	// Clear the boot reason to avoid problems later
+	// Save reset reason.
+	hw_rst_status = PMC(APBDEV_PMC_SCRATCH200);
+	hw_rst_reason = PMC(APBDEV_PMC_RST_STATUS) & PMC_RST_STATUS_MASK;
+
+	// Clear the boot reason to avoid problems later.
 	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
 	PMC(APBDEV_PMC_RST_STATUS) = 0x0;
 	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) = (APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) & 0xF0) | (7 << 10);

@@ -46,6 +46,7 @@ typedef enum
 	ERR_SYSOLD_NYX = BIT(1),
 	ERR_LIBSYS_MTC = BIT(2),
 	ERR_SD_BOOT_EN = BIT(3),
+	ERR_PANIC_CODE = BIT(4),
 	ERR_L4T_KERNEL = BIT(24),
 	ERR_EXCEPTION  = BIT(31),
 } hekate_errors_t;

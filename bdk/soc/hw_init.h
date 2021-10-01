@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -22,6 +22,9 @@
 
 #define BL_MAGIC_CRBOOT_SLD 0x30444C53 // SLD0, seamless display type 0.
 #define BL_MAGIC_BROKEN_HWI 0xBAADF00D // Broken hwinit.
+
+extern u32 hw_rst_status;
+extern u32 hw_rst_reason;
 
 void hw_init();
 void hw_reinit_workaround(bool coreboot, u32 magic);
