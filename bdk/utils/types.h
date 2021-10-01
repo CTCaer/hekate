@@ -20,26 +20,16 @@
 
 #include <assert.h>
 
-#define NULL ((void *)0)
-
-#define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
-#define ALIGN_DOWN(x, a) ((x) & ~((a) - 1))
-#define BIT(n) (1U << (n))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
-
-#define OFFSET_OF(t, m) ((u32)&((t *)NULL)->m)
-#define CONTAINER_OF(mp, t, mn) ((t *)((u32)mp - OFFSET_OF(t, mn)))
-
+/* Types */
 typedef signed char s8;
 typedef short s16;
 typedef short SHORT;
 typedef int s32;
 typedef int INT;
+typedef int bool;
 typedef long LONG;
 typedef long long int s64;
+
 typedef unsigned char u8;
 typedef unsigned char BYTE;
 typedef unsigned short u16;
@@ -50,6 +40,7 @@ typedef unsigned int UINT;
 typedef unsigned long DWORD;
 typedef unsigned long long QWORD;
 typedef unsigned long long int u64;
+
 typedef volatile unsigned char vu8;
 typedef volatile unsigned short vu16;
 typedef volatile unsigned int vu32;
@@ -60,13 +51,59 @@ typedef u64 uptr;
 typedef u32 uptr;
 #endif
 
-typedef int bool;
-#define true  1
+/* Important */
 #define false 0
+#define true  1
 
+#define NULL ((void *)0)
+
+/* Misc */
 #define DISABLE 0
 #define ENABLE  1
 
+/* Sizes */
+#define SZ_1K   0x400
+#define SZ_2K   0x800
+#define SZ_4K   0x1000
+#define SZ_8K   0x2000
+#define SZ_16K  0x4000
+#define SZ_32K  0x08000
+#define SZ_64K  0x10000
+#define SZ_128K 0x20000
+#define SZ_256K 0x40000
+#define SZ_512K 0x80000
+#define SZ_1M   0x100000
+#define SZ_2M   0x200000
+#define SZ_4M   0x400000
+#define SZ_8M   0x800000
+#define SZ_16M  0x1000000
+#define SZ_32M  0x2000000
+#define SZ_64M  0x4000000
+#define SZ_128M 0x8000000
+#define SZ_256M 0x10000000
+#define SZ_512M 0x20000000
+#define SZ_1G   0x40000000
+#define SZ_2G   0x80000000
+#define SZ_4G   0x100000000
+
+/* Macros */
+#define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
+#define ALIGN_DOWN(x, a) ((x) & ~((a) - 1))
+#define BIT(n) (1U << (n))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+
+#define OFFSET_OF(t, m) ((uptr)&((t *)NULL)->m)
+#define CONTAINER_OF(mp, t, mn) ((t *)((uptr)mp - OFFSET_OF(t, mn)))
+
+#define byte_swap_16(num) ((((num) >> 8) & 0xff) | (((num) << 8) & 0xff00))
+#define byte_swap_32(num) ((((num) >> 24) & 0xff) | (((num) << 8) & 0xff0000) | \
+						(((num) >> 8 )& 0xff00) | (((num) << 24) & 0xff000000))
+
+
+/* Bootloader/Nyx */
 #define BOOT_CFG_AUTOBOOT_EN BIT(0)
 #define BOOT_CFG_FROM_LAUNCH BIT(1)
 #define BOOT_CFG_FROM_ID     BIT(2)
@@ -103,12 +140,12 @@ typedef struct __attribute__((__packed__)) _boot_cfg_t
 			char id[8]; // 7 char ASCII null teminated.
 			char emummc_path[0x78]; // emuMMC/XXX, ASCII null teminated.
 		};
-		u8 ums;  // nyx_ums_type.
+		u8 ums; // nyx_ums_type.
 		u8 xt_str[0x80];
 	};
 } boot_cfg_t;
 
-static_assert(sizeof(boot_cfg_t) == 0x84, "Boot CFG size is wrong!");
+static_assert(sizeof(boot_cfg_t) == 0x84, "Boot cfg storage size is wrong!");
 
 typedef struct __attribute__((__packed__)) _ipl_ver_meta_t
 {
