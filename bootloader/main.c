@@ -1154,17 +1154,23 @@ static void _show_errors()
 	u32 *excp_enabled = (u32 *)EXCP_EN_ADDR;
 	u32 *excp_type = (u32 *)EXCP_TYPE_ADDR;
 	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
+	u32 panic_status = hw_rst_status & 0xFFFFF;
 
 	if (*excp_enabled == EXCP_MAGIC)
 		h_cfg.errors |= ERR_EXCEPTION;
 
-	//! FIXME: Find a better way to identify if that scratch has proper data.
-	if (0 && PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
+#if 0 //! FIXME: Find a better way to identify if that scratch has proper data.
+	if (PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
 	{
 		// Set error and clear flag.
 		h_cfg.errors |= ERR_L4T_KERNEL;
 		PMC(APBDEV_PMC_SCRATCH37) &= ~PMC_SCRATCH37_KERNEL_PANIC_FLAG;
 	}
+#endif
+
+	if (hw_rst_reason == PMC_RST_STATUS_WATCHDOG &&
+		panic_status <= 0xFF && panic_status != 0x20 && panic_status != 0x21)
+		h_cfg.errors |= ERR_PANIC_CODE;
 
 	if (h_cfg.errors)
 	{
@@ -1207,17 +1213,34 @@ static void _show_errors()
 			*excp_enabled = 0;
 		}
 
+#if 0 //! FIXME: Find a better way to identify if that scratch has proper data.
 		if (0 && h_cfg.errors & ERR_L4T_KERNEL)
 		{
-			WPRINTF("Panic occurred while running L4T.\n");
+			WPRINTF("A kernel panic occurred!\n");
 			if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
 				WPRINTF("PSTORE saved to L4T_panic.bin\n");
+		}
+#endif
+
+		if (h_cfg.errors & ERR_PANIC_CODE)
+		{
+			u32 r = (hw_rst_status >> 20) & 0xF;
+			u32 g = (hw_rst_status >> 24) & 0xF;
+			u32 b = (hw_rst_status >> 28) & 0xF;
+			r = (r << 16) | (r << 20);
+			g = (g << 8) | (g << 12);
+			b = (b << 0) | (b << 4);
+			u32 color = r | g | b;
+
+			WPRINTF("A panic error occurred!\n");
+			gfx_printf("Color: %k####%k, Code: %02X\n\n", color, 0xFFCCCCCC, panic_status);
 		}
 
 		WPRINTF("Press any key...");
 
-		msleep(1000);
+		msleep(1000); // Guard against injection VOL+.
 		btn_wait();
+		msleep(500);  // Guard against force menu VOL-.
 	}
 }
 
