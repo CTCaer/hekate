@@ -4712,9 +4712,9 @@ DWORD *f_expand_cltbl (
 	}
 	if (f_lseek(fp, CREATE_LINKMAP)) {	/* Create cluster link table */
 		ff_memfree(fp->cltbl);
-		fp->cltbl = NULL;
+		fp->cltbl = (void *)0;
 		EFSPRINTF("CLTBLSZ");
-		return NULL;
+		return (void *)0;
 	}
 	f_lseek(fp, 0);
 
@@ -6737,6 +6737,8 @@ int f_puts (
 	putbuff pb;
 
 
+	if (str == (void *)0) return EOF; /* String is NULL */
+
 	putc_init(&pb, fp);
 	while (*str) putc_bfd(&pb, *str++);		/* Put the string */
 	return putc_flush(&pb);
@@ -6762,6 +6764,8 @@ int f_printf (
 	DWORD v;
 	TCHAR c, d, str[32], *p;
 
+
+	if (fmt == (void *)0) return EOF; /* String is NULL */
 
 	putc_init(&pb, fp);
 
