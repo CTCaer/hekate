@@ -211,9 +211,9 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 	u64 totalSize = (u64)((u64)totalSectors << 9);
 	if (totalSize <= FAT32_FILESIZE_LIMIT)
-		clmt = f_expand_cltbl(&fp, 0x400000, totalSize);
+		clmt = f_expand_cltbl(&fp, SZ_4M, totalSize);
 	else
-		clmt = f_expand_cltbl(&fp, 0x400000, MIN(totalSize, multipartSplitSize));
+		clmt = f_expand_cltbl(&fp, SZ_4M, MIN(totalSize, multipartSplitSize));
 
 	u32 num = 0;
 	u32 pct = 0;
@@ -250,7 +250,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 			bytesWritten = 0;
 
 			totalSize = (u64)((u64)totalSectors << 9);
-			clmt = f_expand_cltbl(&fp, 0x400000, MIN(totalSize, multipartSplitSize));
+			clmt = f_expand_cltbl(&fp, SZ_4M, MIN(totalSize, multipartSplitSize));
 		}
 
 		// Check for cancellation combo.
@@ -360,7 +360,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	int base_len = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	gui->txt_buf = txt_buf;
 
@@ -676,8 +676,8 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		manual_system_maintenance(true);
 
 		// Format USER partition.
-		u8 *buff = malloc(0x400000);
-		int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buff, 0x400000);
+		u8 *buff = malloc(SZ_4M);
+		int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buff, SZ_4M);
 		free(buff);
 
 		// Mount sd card back.
@@ -770,13 +770,13 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 
 	bool error = false;
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	txt_buf[0] = 0;
 
 	// Generate BIS keys.
 	hos_bis_keygen();
 
-	u8 *cal0_buf = malloc(0x10000);
+	u8 *cal0_buf = malloc(SZ_64K);
 
 	// Read and decrypt CAL0 for validation of working BIS keys.
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
@@ -842,7 +842,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 	int res = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	gui->txt_buf = txt_buf;
 
@@ -889,7 +889,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 	bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
 
 	// Clear partition start.
-	memset((u8 *)MIXD_BUF_ALIGNED, 0, 0x1000000);
+	memset((u8 *)MIXD_BUF_ALIGNED, 0, SZ_16M);
 	sdmmc_storage_write(&sd_storage, sector_start - 0x8000, 0x8000, (u8 *)MIXD_BUF_ALIGNED);
 
 	for (i = 0; i < 2; i++)

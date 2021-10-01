@@ -764,8 +764,8 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	bool is_r_hos = false;
 	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info(&is_l_hos, &is_r_hos);
 
-	char *data = (char *)malloc(0x4000);
-	char *txt_buf = (char *)malloc(0x1000);
+	char *data = (char *)malloc(SZ_16K);
+	char *txt_buf = (char *)malloc(SZ_4K);
 
 	if (!jc_pad)
 	{

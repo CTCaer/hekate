@@ -204,7 +204,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 		lv_label_set_text(gui->label_pct, gui->txt_buf);
 		manual_system_maintenance(true);
 
-		clmt = f_expand_cltbl(&fp, 0x400000, 0);
+		clmt = f_expand_cltbl(&fp, SZ_4M, 0);
 
 		u32 num = 0;
 		while (totalSectorsVer > 0)
@@ -526,9 +526,9 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 	}
 	u64 totalSize = (u64)((u64)totalSectors << 9);
 	if (!isSmallSdCard && (sd_fs.fs_type == FS_EXFAT || totalSize <= FAT32_FILESIZE_LIMIT))
-		clmt = f_expand_cltbl(&fp, 0x400000, totalSize);
+		clmt = f_expand_cltbl(&fp, SZ_4M, totalSize);
 	else
-		clmt = f_expand_cltbl(&fp, 0x400000, MIN(totalSize, multipartSplitSize));
+		clmt = f_expand_cltbl(&fp, SZ_4M, MIN(totalSize, multipartSplitSize));
 
 	u32 num = 0;
 	u32 pct = 0;
@@ -617,7 +617,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 			bytesWritten = 0;
 
 			totalSize = (u64)((u64)totalSectors << 9);
-			clmt = f_expand_cltbl(&fp, 0x400000, MIN(totalSize, multipartSplitSize));
+			clmt = f_expand_cltbl(&fp, SZ_4M, MIN(totalSize, multipartSplitSize));
 		}
 
 		retryCount = 0;
@@ -759,7 +759,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	int res = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");
@@ -1030,7 +1030,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 				{
 					totalCheckFileSize += (u64)fno.fsize;
 
-					if (check_4MB_aligned && (((u64)fno.fsize) % 0x400000))
+					if (check_4MB_aligned && (((u64)fno.fsize) % SZ_4M))
 					{
 						s_printf(gui->txt_buf, "#FFDD00 The split file must be a#\n#FFDD00 multiple of 4 MiB.#\n#FFDD00 Aborting...#", res, outFilename);
 						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -1167,7 +1167,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	u32 num = 0;
 	u32 pct = 0;
 
-	DWORD *clmt = f_expand_cltbl(&fp, 0x400000, 0);
+	DWORD *clmt = f_expand_cltbl(&fp, SZ_4M, 0);
 
 	u32 sector_start = 0, part_idx = 0;
 	u32 sector_size = totalSectors;
@@ -1237,7 +1237,7 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 			}
 			fileSize = (u64)f_size(&fp);
 			bytesWritten = 0;
-			clmt = f_expand_cltbl(&fp, 0x400000, 0);
+			clmt = f_expand_cltbl(&fp, SZ_4M, 0);
 		}
 
 		retryCount = 0;
@@ -1363,7 +1363,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	int res = 0;
 	u32 timer = 0;
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	gui->txt_buf = txt_buf;
 
 	s_printf(txt_buf, "");

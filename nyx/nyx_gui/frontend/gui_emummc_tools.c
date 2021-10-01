@@ -217,7 +217,7 @@ static void _create_mbox_emummc_raw()
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	mbr_t *mbr = (mbr_t *)malloc(sizeof(mbr_t));
 
 	memset(&mbr_ctx, 0, sizeof(mbr_ctxt_t));
@@ -690,7 +690,7 @@ static lv_res_t _create_emummc_migrate_action(lv_obj_t * btns, const char * txt)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 
 	if (backup)
 	{
@@ -1070,7 +1070,7 @@ out0:;
 	lv_btn_ext_t *ext;
 	lv_obj_t *btn_label = NULL;
 	lv_obj_t *lv_desc = NULL;
-	char *txt_buf = malloc(0x4000);
+	char *txt_buf = malloc(SZ_16K);
 
 	// Create RAW buttons.
 	for (u32 raw_btn_idx = 0; raw_btn_idx < 3; raw_btn_idx++)
@@ -1218,7 +1218,7 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 
 	if (emu_info.enabled)
 	{

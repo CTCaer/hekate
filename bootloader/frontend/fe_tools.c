@@ -53,10 +53,10 @@ void dump_packages12()
 
 	char path[64];
 
-	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
-	u8 *warmboot = (u8 *)calloc(1, 0x40000);
-	u8 *secmon = (u8 *)calloc(1, 0x40000);
-	u8 *loader = (u8 *)calloc(1, 0x40000);
+	u8 *pkg1 = (u8 *)calloc(1, SZ_256K);
+	u8 *warmboot = (u8 *)calloc(1, SZ_256K);
+	u8 *secmon = (u8 *)calloc(1, SZ_256K);
+	u8 *loader = (u8 *)calloc(1, SZ_256K);
 	u8 *pkg2 = NULL;
 	u8 kb = 0;
 
@@ -73,14 +73,14 @@ void dump_packages12()
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	// Read package1.
-	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, 0x40000 / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, SZ_256K / NX_EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
 		EPRINTF("Unknown pkg1 version for reading\nTSEC firmware.");
 		// Dump package1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &emmc_storage);
-		if (sd_save_to_file(pkg1, 0x40000, path))
+		if (sd_save_to_file(pkg1, SZ_256K, path))
 			goto out_free;
 		gfx_puts("\nEnc pkg1 dumped to pkg1_enc.bin\n");
 
@@ -134,7 +134,7 @@ void dump_packages12()
 
 		// Dump package1.1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &emmc_storage);
-		if (sd_save_to_file(pkg1, 0x40000, path))
+		if (sd_save_to_file(pkg1, SZ_256K, path))
 			goto out_free;
 		gfx_puts("\npkg1 dumped to pkg1_decr.bin\n");
 

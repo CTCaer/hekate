@@ -285,8 +285,8 @@ static void _hos_eks_save()
 		}
 
 		// Get keys.
-		u8 *keys = (u8 *)calloc(0x2000, 1);
-		se_get_aes_keys(keys + 0x1000, keys, SE_KEY_128_SIZE);
+		u8 *keys = (u8 *)calloc(SZ_4K, 2);
+		se_get_aes_keys(keys + SZ_4K, keys, SE_KEY_128_SIZE);
 
 		// Set magic and personalized info.
 		h_cfg.eks->magic = HOS_EKS_MAGIC;
@@ -611,7 +611,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 {
-	const u32 BOOTLOADER_SIZE          = 0x40000;
+	const u32 BOOTLOADER_SIZE          = SZ_256K;
 	const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
 	const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
 	const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
@@ -685,7 +685,7 @@ DPRINTF("Parsed GPT\n");
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	const u32 BCT_SIZE = 0x4000;
+	const u32 BCT_SIZE = SZ_16K;
 	bctBuf = (u8 *)malloc(BCT_SIZE);
 	nx_emmc_part_read(&emmc_storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
 	u32 *hdr = (u32 *)(bctBuf + 0x100);
@@ -1109,15 +1109,15 @@ int hos_launch(ini_sec_t *cfg)
 	// Clear BCT area for retail units and copy it over if dev unit.
 	if (kb <= KB_FIRMWARE_VERSION_500 && !is_exo)
 	{
-		memset((void *)SECMON_BCT_CFG_ADDR, 0, 0x3000);
+		memset((void *)SECMON_BCT_CFG_ADDR, 0, SZ_4K + SZ_8K);
 		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
-			memcpy((void *)SECMON_BCT_CFG_ADDR, bootConfigBuf, 0x1000);
+			memcpy((void *)SECMON_BCT_CFG_ADDR, bootConfigBuf, SZ_4K);
 	}
 	else
 	{
-		memset((void *)SECMON6_BCT_CFG_ADDR, 0, 0x800);
+		memset((void *)SECMON6_BCT_CFG_ADDR, 0, SZ_2K);
 		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
-			memcpy((void *)SECMON6_BCT_CFG_ADDR, bootConfigBuf, 0x800);
+			memcpy((void *)SECMON6_BCT_CFG_ADDR, bootConfigBuf, SZ_2K);
 	}
 	free(bootConfigBuf);
 

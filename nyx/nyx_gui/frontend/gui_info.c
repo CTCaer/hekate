@@ -69,7 +69,7 @@ static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(SZ_4K);
 
 	if (error)
 		s_printf(txt_buf, "#FFDD00 Failed to dump to# %s#FFDD00 !#\nError: %d", dump_filenames, error);
@@ -102,7 +102,7 @@ static lv_res_t _cal0_dump_window_action(lv_obj_t *btns, const char * txt)
 		{
 			char path[64];
 			emmcsn_path_impl(path, "/dumps", "cal0.bin", NULL);
-			error = sd_save_to_file((u8 *)cal0_buf, 0x8000, path);
+			error = sd_save_to_file((u8 *)cal0_buf, SZ_32K, path);
 
 			sd_unmount();
 		}
@@ -272,7 +272,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 
 	lv_mbox_set_text(mbox, "#C7EA46 CAL0 Info#");
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	txt_buf[0] = 0;
 
 	lv_obj_t * lb_desc = lv_label_create(mbox, NULL);
@@ -295,7 +295,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	hos_bis_keygen();
 
 	if (!cal0_buf)
-		cal0_buf = malloc(0x10000);
+		cal0_buf = malloc(SZ_64K);
 
 	// Read and decrypt CAL0.
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
@@ -476,7 +476,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 
 	// Decode fuses.
 	char *sku;
@@ -1025,7 +1025,7 @@ static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 	lv_label_set_recolor(lb_desc, true);
 	lv_label_set_style(lb_desc, &monospace_text);
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(SZ_4K);
 	ipatches_txt = txt_buf;
 	s_printf(txt_buf, "#00DDFF Ipatches:#\n#FF8000 Address  "SYMBOL_DOT"  Val  "SYMBOL_DOT"  Instruction#\n");
 
@@ -1104,8 +1104,8 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	lv_mbox_set_text(mbox, "#C7EA46 Sandisk Device Report#");
 
 	u8 *buf = calloc(512, 1);
-	char *txt_buf = (char *)malloc(0x8000);
-	char *txt_buf2 = (char *)malloc(0x8000);
+	char *txt_buf = (char *)malloc(SZ_32K);
+	char *txt_buf2 = (char *)malloc(SZ_32K);
 	txt_buf[0] = 0;
 	txt_buf2[0] = 0;
 
@@ -1288,7 +1288,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 7 * 4);
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 
 	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[Raw Reads] Abort: VOL- & VOL+",
 		sd_bench ? "SD Card" : "eMMC");
@@ -1557,7 +1557,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	txt_buf[0] = '\n';
 	txt_buf[1] = 0;
 
@@ -1803,7 +1803,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-		char *txt_buf = (char *)malloc(0x4000);
+		char *txt_buf = (char *)malloc(SZ_16K);
 		txt_buf[0] = '\n';
 		txt_buf[1] = 0;
 
@@ -2116,7 +2116,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-	char *txt_buf = (char *)malloc(0x4000);
+	char *txt_buf = (char *)malloc(SZ_16K);
 	int value = 0;
 	int cap_pct = 0;
 

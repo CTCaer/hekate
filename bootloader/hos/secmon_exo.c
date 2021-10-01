@@ -131,7 +131,7 @@ typedef struct _atm_fatal_error_ctx
 #define  ATM_FATAL_MAGIC       0x30454641 // AFE0
 
 #define ATM_EXO_FATAL_ADDR     0x80020000
-#define  ATM_EXO_FATAL_SIZE    0x20000
+#define  ATM_EXO_FATAL_SIZE    SZ_128K
 
 #define ATM_WB_HEADER_OFF      0x244
 #define  ATM_WB_MAGIC          0x30544257 // WBT0

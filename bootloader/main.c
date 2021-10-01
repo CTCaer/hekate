@@ -110,7 +110,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 void render_default_bootlogo()
 {
 	gfx_clear_grey(0x1B);
-	u8 *BOOTLOGO = (void *)malloc(0x4000);
+	u8 *BOOTLOGO = (void *)malloc(SZ_16K);
 	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
 	gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
 	free(BOOTLOGO);
@@ -1002,10 +1002,10 @@ skip_list:
 				bmpData.size_x <= 720 &&
 				bmpData.size_y <= 1280)
 			{
-				if (bmpData.size <= fsize && ((bmpData.size - bmpData.offset) < 0x400000))
+				if (bmpData.size <= fsize && ((bmpData.size - bmpData.offset) < SZ_4M))
 				{
 					// Avoid unaligned access from BM 2-byte MAGIC and remove header.
-					BOOTLOGO = (u8 *)malloc(0x400000);
+					BOOTLOGO = (u8 *)malloc(SZ_4M);
 					memcpy(BOOTLOGO, bitmap + bmpData.offset, bmpData.size - bmpData.offset);
 					free(bitmap);
 					// Center logo if res < 720x1280.
@@ -1262,7 +1262,7 @@ static void _check_low_battery()
 		goto out;
 
 	// Prepare battery icon resources.
-	u8 *battery_res = malloc(ALIGN(SZ_BATTERY_EMPTY, 0x1000));
+	u8 *battery_res = malloc(ALIGN(SZ_BATTERY_EMPTY, SZ_4K));
 	blz_uncompress_srcdest(BATTERY_EMPTY_BLZ, SZ_BATTERY_EMPTY_BLZ, battery_res, SZ_BATTERY_EMPTY);
 
 	u8 *battery_icon = malloc(0x95A);  // 21x38x3

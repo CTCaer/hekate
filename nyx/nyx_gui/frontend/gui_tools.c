@@ -169,7 +169,7 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	char *txt_buf = malloc(0x1000);
+	char *txt_buf = malloc(SZ_4K);
 
 	s_printf(txt_buf, "#FF8000 HID Emulation#\n\n#C7EA46 Device:# ");
 
@@ -214,7 +214,7 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	char *txt_buf = malloc(0x1000);
+	char *txt_buf = malloc(SZ_4K);
 
 	s_printf(txt_buf, "#FF8000 USB Mass Storage#\n\n#C7EA46 Device:# ");
 
@@ -951,7 +951,7 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	char *txt_buf = malloc(0x4000);
+	char *txt_buf = malloc(SZ_16K);
 	strcpy(txt_buf, "#FF8000 Don't touch the screen!#\n\nThe tuning process will start in ");
 	u32 text_idx = strlen(txt_buf);
 	lv_mbox_set_text(mbox, txt_buf);
@@ -1084,13 +1084,13 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	char path[128];
 
 	u8 kb = 0;
-	u8 *pkg1 = (u8 *)calloc(1, 0x40000);
-	u8 *warmboot = (u8 *)calloc(1, 0x40000);
-	u8 *secmon = (u8 *)calloc(1, 0x40000);
-	u8 *loader = (u8 *)calloc(1, 0x40000);
+	u8 *pkg1 = (u8 *)calloc(1, SZ_256K);
+	u8 *warmboot = (u8 *)calloc(1, SZ_256K);
+	u8 *secmon = (u8 *)calloc(1, SZ_256K);
+	u8 *loader = (u8 *)calloc(1, SZ_256K);
 	u8 *pkg2 = NULL;
 
-	char *txt_buf  = (char *)malloc(0x4000);
+	char *txt_buf  = (char *)malloc(SZ_16K);
 
 	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
 	{
@@ -1102,7 +1102,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	// Read package1.
-	static const u32 BOOTLOADER_SIZE          = 0x40000;
+	static const u32 BOOTLOADER_SIZE          = SZ_256K;
 	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
 	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
 
@@ -1198,7 +1198,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Dump package1.1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &emmc_storage);
-		if (sd_save_to_file(pkg1, 0x40000, path))
+		if (sd_save_to_file(pkg1, SZ_256K, path))
 			goto out_free;
 		strcat(txt_buf, "pkg1 dumped to pkg1_decr.bin\n");
 		lv_label_set_text(lb_desc, txt_buf);
@@ -1342,7 +1342,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	ptr += sizeof(pkg2_ini1_t);
 
 	// Dump all kips.
-	u8 *kip_buffer = (u8 *)malloc(0x400000);
+	u8 *kip_buffer = (u8 *)malloc(SZ_4M);
 
 	for (u32 i = 0; i < ini1->num_procs; i++)
 	{
@@ -1614,7 +1614,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	}
 	autorcm_btn = btn3;
 
-	char *txt_buf = (char *)malloc(0x1000);
+	char *txt_buf = (char *)malloc(SZ_4K);
 
 	s_printf(txt_buf,
 		"Allows you to enter RCM without using #C7EA46 VOL+# & #C7EA46 HOME# (jig).\n"
