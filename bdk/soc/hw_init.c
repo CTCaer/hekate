@@ -263,7 +263,7 @@ static void _config_se_brom()
 	// se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEYREAD_FLAG);
 
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
-	memset((void *)TZRAM_BASE, 0, 0x10000);
+	memset((void *)TZRAM_BASE, 0, SZ_64K);
 	PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_ENABLE;
 	SE(SE_INT_STATUS_REG) = 0x1F; // Clear all SE interrupts.
 

@@ -48,8 +48,8 @@ u8 smmu_payload[] __attribute__((aligned(16))) = {
 void *page_alloc(u32 num)
 {
 	u8 *res = _pageheap;
-	_pageheap += 0x1000 * num;
-	memset(res, 0, 0x1000 * num);
+	_pageheap += SZ_PAGE * num;
+	memset(res, 0, SZ_PAGE * num);
 	return res;
 }
 
@@ -150,8 +150,8 @@ void smmu_map(u32 *pdir, u32 addr, u32 page, int cnt, u32 attr)
 	{
 		u32 *pte = smmu_get_pte(pdir, addr);
 		*pte = SMMU_ADDR_TO_PFN(page) | attr;
-		addr += 0x1000;
-		page += 0x1000;
+		addr += SZ_PAGE;
+		page += SZ_PAGE;
 	}
 	smmu_flush_all();
 }

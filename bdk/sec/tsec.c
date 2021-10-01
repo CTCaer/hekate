@@ -125,7 +125,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		TSEC(TSEC_DMATRFBASE) = (u32)tsec_ctxt->fw >> 8;
 	else
 	{
-		fwbuf = (u8 *)malloc(0x4000);
+		fwbuf = (u8 *)malloc(SZ_16K);
 		u8 *fwbuf_aligned = (u8 *)ALIGN((u32)fwbuf, 0x100);
 		memcpy(fwbuf_aligned, tsec_ctxt->fw, tsec_ctxt->size);
 		TSEC(TSEC_DMATRFBASE) = (u32)fwbuf_aligned >> 8;
@@ -151,13 +151,13 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 
 		// Clock reset controller.
 		car = page_alloc(1);
-		memcpy(car, (void *)CLOCK_BASE, 0x1000);
+		memcpy(car, (void *)CLOCK_BASE, SZ_PAGE);
 		car[CLK_RST_CONTROLLER_CLK_SOURCE_TSEC / 4] = 2;
 		smmu_map(pdir, CLOCK_BASE, (u32)car, 1, _WRITABLE | _READABLE | _NONSECURE);
 
 		// Fuse driver.
 		fuse = page_alloc(1);
-		memcpy((void *)&fuse[0x800/4], (void *)FUSE_BASE, 0x400);
+		memcpy((void *)&fuse[0x800/4], (void *)FUSE_BASE, SZ_1K);
 		fuse[0x82C / 4] = 0;
 		fuse[0x9E0 / 4] = (1 << (TSEC_HOS_KB_620 + 2)) - 1;
 		fuse[0x9E4 / 4] = (1 << (TSEC_HOS_KB_620 + 2)) - 1;
@@ -173,12 +173,12 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 
 		// Security engine.
 		se = page_alloc(1);
-		memcpy(se, (void *)SE_BASE, 0x1000);
+		memcpy(se, (void *)SE_BASE, SZ_PAGE);
 		smmu_map(pdir, SE_BASE, (u32)se, 1, _READABLE | _WRITABLE | _NONSECURE);
 
 		// Memory controller.
 		mc = page_alloc(1);
-		memcpy(mc, (void *)MC_BASE, 0x1000);
+		memcpy(mc, (void *)MC_BASE, SZ_PAGE);
 		mc[MC_IRAM_BOM / 4] = 0;
 		mc[MC_IRAM_TOM / 4] = 0x80000000;
 		smmu_map(pdir, MC_BASE, (u32)mc, 1, _READABLE | _NONSECURE);

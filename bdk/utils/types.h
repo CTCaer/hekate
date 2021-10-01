@@ -67,7 +67,7 @@ typedef u32 uptr;
 #define SZ_4K   0x1000
 #define SZ_8K   0x2000
 #define SZ_16K  0x4000
-#define SZ_32K  0x08000
+#define SZ_32K  0x8000
 #define SZ_64K  0x10000
 #define SZ_128K 0x20000
 #define SZ_256K 0x40000
@@ -84,7 +84,7 @@ typedef u32 uptr;
 #define SZ_512M 0x20000000
 #define SZ_1G   0x40000000
 #define SZ_2G   0x80000000
-#define SZ_4G   0x100000000
+#define SZ_PAGE SZ_4K
 
 /* Macros */
 #define ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))

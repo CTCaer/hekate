@@ -23,7 +23,7 @@
 #define LDR_LOAD_ADDR     0x40007000
 
 #define IPL_LOAD_ADDR     0x40008000
-#define  IPL_SZ_MAX          0x20000 // 128KB.
+#define  IPL_SZ_MAX          SZ_128K
 
 /* --- XUSB EP context and TRB ring buffers --- */
 #define XUSB_RING_ADDR    0x40020000
@@ -35,16 +35,16 @@
 
 /* --- DRAM START --- */
 #define DRAM_START     0x80000000
-#define  HOS_RSVD       0x1000000 // Do not write anything in this area.
+#define  HOS_RSVD          SZ_16M // Do not write anything in this area.
 
 #define NYX_LOAD_ADDR  0x81000000
-#define  NYX_SZ_MAX     0x1000000 // 16MB
+#define  NYX_SZ_MAX        SZ_16M
 /* --- Gap: 0x82000000 - 0x82FFFFFF --- */
 
 /* Stack theoretical max: 33MB */
 #define IPL_STACK_TOP  0x83100000
 #define IPL_HEAP_START 0x84000000
-#define  IPL_HEAP_SZ   0x20000000 // 512MB.
+#define  IPL_HEAP_SZ      SZ_512M
 /* --- Gap: 1040MB 0xA4000000 - 0xE4FFFFFF --- */
 
 // Virtual disk / Chainloader buffers.
@@ -60,25 +60,25 @@
 
 // L4T Kernel Panic Storage (PSTORE).
 #define PSTORE_ADDR   0xB0000000
-#define  PSTORE_SZ      0x200000 // 2MB.
+#define  PSTORE_SZ         SZ_2M
 
 //#define DRAM_LIB_ADDR    0xE0000000
 /* --- Chnldr: 252MB 0xC03C0000 - 0xCFFFFFFF --- */ //! Only used when chainloading.
 
 // SDMMC DMA buffers 1
 #define SDMMC_UPPER_BUFFER 0xE5000000
-#define  SDMMC_UP_BUF_SZ    0x8000000 // 128MB.
+#define  SDMMC_UP_BUF_SZ      SZ_128M
 
 // Nyx buffers.
 #define NYX_STORAGE_ADDR 0xED000000
 #define NYX_RES_ADDR     0xEE000000
-#define  NYX_RES_SZ       0x1000000 // 16MB.
+#define  NYX_RES_SZ          SZ_16M
 
 // SDMMC DMA buffers 2
 #define SDXC_BUF_ALIGNED   0xEF000000
 #define MIXD_BUF_ALIGNED   0xF0000000
 #define EMMC_BUF_ALIGNED   MIXD_BUF_ALIGNED
-#define  SDMMC_DMA_BUF_SZ   0x1000000 // 16MB (4MB currently used).
+#define  SDMMC_DMA_BUF_SZ      SZ_16M // 4MB currently used.
 
 // Nyx LvGL buffers.
 #define NYX_LV_VDB_ADR   0xF1000000
@@ -106,7 +106,7 @@
 #define USB_EP_CONTROL_BUF_ADDR   0xFEF80000
 #define USB_EP_BULK_IN_BUF_ADDR   0xFF000000
 #define USB_EP_BULK_OUT_BUF_ADDR  0xFF800000
-#define  USB_EP_BULK_OUT_MAX_XFER   0x800000
+#define  USB_EP_BULK_OUT_MAX_XFER      SZ_8M
 
 // #define EXT_PAYLOAD_ADDR    0xC0000000
 // #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
