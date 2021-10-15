@@ -605,9 +605,8 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 			break;
 		case 4:
 		case 6:
-		case 8:
-		case 10:
-		case 12:
+		case 9:
+		case 11:
 			if (day > 30)
 				day = 30;
 			break;
