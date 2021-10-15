@@ -311,9 +311,7 @@ void menu_autorcm()
 
 	if (h_cfg.rcm_patched)
 	{
-		gfx_printf("%kThis device is RCM patched and\nAutoRCM function is disabled.\n\n"
-			"In case %kAutoRCM%k is enabled\nthis will %kBRICK%k the device PERMANENTLY!!%k",
-			0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFFF0000, 0xFFFFDD00, 0xFFCCCCCC);
+		WPRINTF("This device is RCM patched and the\nfunction is disabled to avoid BRICKS!\n");
 		btn_wait();
 
 		return;
