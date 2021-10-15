@@ -137,7 +137,7 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 	u32  aligned_sector = cluster * BIS_CLUSTER_SECTORS;
 	u32  sector_in_cluster = sector % BIS_CLUSTER_SECTORS;
 	u32  lookup_idx = cache_lookup_tbl[cluster];
-	bool is_cached = lookup_idx != BIS_CACHE_LOOKUP_TBL_EMPTY_ENTRY;
+	bool is_cached = lookup_idx != (u32)BIS_CACHE_LOOKUP_TBL_EMPTY_ENTRY;
 
 	// Write to cached cluster.
 	if (is_cached)
@@ -264,7 +264,7 @@ static int nx_emmc_bis_read_block_cached(u32 sector, u32 count, void *buff)
 	u32 lookup_idx = cache_lookup_tbl[cluster];
 
 	// Read from cached cluster.
-	if (lookup_idx != BIS_CACHE_LOOKUP_TBL_EMPTY_ENTRY)
+	if (lookup_idx != (u32)BIS_CACHE_LOOKUP_TBL_EMPTY_ENTRY)
 	{
 		memcpy(buff, bis_cache->clusters[lookup_idx].data + sector_in_cluster * NX_EMMC_BLOCKSIZE, count * NX_EMMC_BLOCKSIZE);
 
