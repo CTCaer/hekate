@@ -65,6 +65,18 @@ extern hekate_config h_cfg;
 #define SECMON_MAILBOX_ADDR  0x40002E00
 #define SECMON7_MAILBOX_ADDR 0x40000000
 #define  SECMON_STATE_OFFSET 0xF8
+
+typedef enum
+{
+	SECMON_STATE_NOT_READY    = 0,
+
+	PKG1_STATE_NOT_READY      = 0,
+	PKG1_STATE_BCT_COPIED     = 1,
+	PKG1_STATE_DRAM_READY     = 2,
+	PKG1_STATE_PKG2_READY_OLD = 3,
+	PKG1_STATE_PKG2_READY     = 4
+} pkg1_states_t;
+
 typedef struct _secmon_mailbox_t
 {
 	//  < 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
@@ -1073,16 +1085,15 @@ int hos_launch(ini_sec_t *cfg)
 
 	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
-	// Set initial mailbox values.
-	int bootStateDramPkg2 = 0;
-	int bootStatePkg2Continue = 0;
-
 	// Clear pkg1/pkg2 keys.
 	se_aes_key_clear(8);
 	se_aes_key_clear(11);
 
 	// Clear derived master key in case of Erista and 7.0.0+
 	se_aes_key_clear(9);
+
+	// Set secmon mailbox pkg2 ready state.
+	u32 pkg1_state_pkg2_ready = PKG1_STATE_PKG2_READY;
 
 	// Finalize per firmware key access. Skip access control if Exosphere 2.
 	switch (kb | (is_exo << 7))
@@ -1092,17 +1103,13 @@ int hos_launch(ini_sec_t *cfg)
 	case KB_FIRMWARE_VERSION_301:
 		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
 		se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
-		bootStateDramPkg2 = 2;
-		bootStatePkg2Continue = 3;
+		pkg1_state_pkg2_ready = PKG1_STATE_PKG2_READY_OLD;
 		break;
 	case KB_FIRMWARE_VERSION_400:
 	case KB_FIRMWARE_VERSION_500:
 	case KB_FIRMWARE_VERSION_600:
 		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
 		se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
-	default:
-		bootStateDramPkg2 = 2;
-		bootStatePkg2Continue = 4;
 		break;
 	}
 
@@ -1157,8 +1164,8 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Start from DRAM ready signal and reset outgoing value.
-	secmon_mailbox->in = bootStateDramPkg2;
-	secmon_mailbox->out = 0;
+	secmon_mailbox->in = PKG1_STATE_DRAM_READY;
+	secmon_mailbox->out = SECMON_STATE_NOT_READY;
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
 	display_end();
@@ -1192,7 +1199,7 @@ int hos_launch(ini_sec_t *cfg)
 		;
 
 	// Signal pkg2 ready and continue boot.
-	secmon_mailbox->in = bootStatePkg2Continue;
+	secmon_mailbox->in = pkg1_state_pkg2_ready;
 
 	// Halt ourselves in waitevent state and resume if there's JTAG activity.
 	while (true)
