@@ -1269,8 +1269,8 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 		while (res)
 		{
 			s_printf(gui->txt_buf,
-				"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
-				"#FFDD00 from eMMC (try %d).\n#",
+				"\n#FFDD00 Error writing %d blocks @ LBA %08X,#\n"
+				"#FFDD00 from eMMC (try %d). #",
 				num, lba_curr, ++retryCount);
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
