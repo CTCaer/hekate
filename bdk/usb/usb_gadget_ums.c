@@ -1092,8 +1092,7 @@ static int _scsi_prevent_allow_removal(usbd_gadget_ums_t *ums)
 
 	// Notify for possible unmounting?
 	// Normally we sync here but we do synced writes to SDMMC.
-	if (ums->lun.prevent_medium_removal && !prevent)
-		;
+	if (ums->lun.prevent_medium_removal && !prevent) { /* Do nothing */ }
 
 	ums->lun.prevent_medium_removal = prevent;
 
