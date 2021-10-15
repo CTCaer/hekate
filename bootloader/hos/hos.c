@@ -1092,6 +1092,14 @@ int hos_launch(ini_sec_t *cfg)
 	// Rebuild and encrypt package2.
 	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, &ctxt, &kip1_info);
 
+	// Configure Exosphere if secmon is replaced.
+	if (is_exo)
+		config_exosphere(&ctxt, warmboot_base);
+
+	// Unmount SD card and eMMC.
+	sd_end();
+	sdmmc_storage_end(&emmc_storage);
+
 	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
 
 	// Clear pkg1/pkg2 keys.
@@ -1135,15 +1143,6 @@ int hos_launch(ini_sec_t *cfg)
 		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
 			memcpy((void *)SECMON6_BCT_CFG_ADDR, bootConfigBuf, SZ_2K);
 	}
-	free(bootConfigBuf);
-
-	// Config Exosphère if booting full Atmosphère.
-	if (is_exo)
-		config_exosphere(&ctxt, warmboot_base);
-
-	// Unmount SD card and eMMC.
-	sd_end();
-	sdmmc_storage_end(&emmc_storage);
 
 	// Finalize MC carveout.
 	if (kb <= KB_FIRMWARE_VERSION_301 && !is_exo)
