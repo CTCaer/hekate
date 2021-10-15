@@ -3274,7 +3274,6 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		stat = disk_status(fs->pdrv);
 		if (!(stat & STA_NOINIT)) {		/* and the physical drive is kept initialized */
 			if (!FF_FS_READONLY && mode && (stat & STA_PROTECT)) {	/* Check write protection if needed */
-				EFSPRINTF("WPEN1");
 				return FR_WRITE_PROTECTED;
 			}
 			return FR_OK;				/* The filesystem object is valid */
@@ -3289,11 +3288,9 @@ static FRESULT find_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	fs->pdrv = LD2PD(vol);				/* Bind the logical drive and a physical drive */
 	stat = disk_initialize(fs->pdrv);	/* Initialize the physical drive */
 	if (stat & STA_NOINIT) { 			/* Check if the initialization succeeded */
-		EFSPRINTF("MDNR");
 		return FR_NOT_READY;			/* Failed to initialize due to no medium or hard error */
 	}
 	if (!FF_FS_READONLY && mode && (stat & STA_PROTECT)) { /* Check disk write protection if needed */
-		EFSPRINTF("WPEN2");
 		return FR_WRITE_PROTECTED;
 	}
 #if FF_MAX_SS != FF_MIN_SS				/* Get sector size (multiple sector size cfg only) */
