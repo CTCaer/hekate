@@ -1099,47 +1099,6 @@ out:
 	nyx_load_run();
 }
 
-static void _patched_rcm_protection()
-{
-	if (!h_cfg.rcm_patched || hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
-		return;
-
-	// Check if AutoRCM is enabled and protect from a permanent brick.
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
-		return;
-
-	u8 *buf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-
-	u32 sector;
-	u8 corr_mod0, mod1;
-
-	// Get the correct RSA modulus byte masks.
-	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
-
-	// Iterate BCTs.
-	for (u32 i = 0; i < 4; i++)
-	{
-		sector = 1 + (32 * i); // 0x4000 bct + 0x200 offset.
-		sdmmc_storage_read(&emmc_storage, sector, 1, buf);
-
-		// Check if 2nd byte of modulus is correct.
-		if (buf[0x11] != mod1)
-			continue;
-
-		// If AutoRCM is enabled, disable it.
-		if (buf[0x10] != corr_mod0)
-		{
-			buf[0x10] = corr_mod0;
-
-			sdmmc_storage_write(&emmc_storage, sector, 1, buf);
-		}
-	}
-
-	free(buf);
-	sdmmc_storage_end(&emmc_storage);
-}
-
 #define EXCP_EN_ADDR   0x4003FFFC
 #define  EXCP_MAGIC 0x30505645      // EVP0
 #define EXCP_TYPE_ADDR 0x4003FFF8
@@ -1171,6 +1130,9 @@ static void _show_errors()
 	if (hw_rst_reason == PMC_RST_STATUS_WATCHDOG &&
 		panic_status <= 0xFF && panic_status != 0x20 && panic_status != 0x21)
 		h_cfg.errors |= ERR_PANIC_CODE;
+
+	// Check if we had a panic while in CFW.
+	secmon_exo_check_panic();
 
 	if (h_cfg.errors)
 	{
@@ -1554,13 +1516,7 @@ void ipl_main()
 	// Overclock BPMP.
 	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
 
-	// Check if we had a panic while in CFW.
-	secmon_exo_check_panic();
-
-	// Check if RCM is patched and protect from a possible brick.
-	_patched_rcm_protection();
-
-	// Show exception, library errors and L4T kernel panics.
+	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	_show_errors();
 
 	// Load saved configuration and auto boot if enabled.

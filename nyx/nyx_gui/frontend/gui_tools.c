@@ -35,6 +35,8 @@
 #include <sec/se.h>
 #include <soc/bpmp.h>
 #include <soc/fuse.h>
+#include <soc/hw_init.h>
+#include <soc/t210.h>
 #include "../storage/nx_emmc.h"
 #include <storage/nx_sd.h>
 #include <storage/sdmmc.h>
@@ -67,8 +69,9 @@ static lv_obj_t *_create_container(lv_obj_t *parent)
 	return h1;
 }
 
-bool get_autorcm_status(bool change)
+bool get_autorcm_status(bool toggle)
 {
+	u32 sector;
 	u8 corr_mod0, mod1;
 	bool enabled = false;
 
@@ -91,24 +94,47 @@ bool get_autorcm_status(bool change)
 	if (tempbuf[0x10] != corr_mod0)
 		enabled = true;
 
-	// Change autorcm status if requested.
-	if (change)
+	// Toggle autorcm status if requested.
+	if (toggle)
 	{
-		int i, sect = 0;
-
 		// Iterate BCTs.
-		for (i = 0; i < 4; i++)
+		for (u32 i = 0; i < 4; i++)
 		{
-			sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
-			sdmmc_storage_read(&emmc_storage, sect, 1, tempbuf);
+			sector = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE; // 0x4000 bct + 0x200 offset.
+			sdmmc_storage_read(&emmc_storage, sector, 1, tempbuf);
 
 			if (!enabled)
 				tempbuf[0x10] = 0;
 			else
 				tempbuf[0x10] = corr_mod0;
-			sdmmc_storage_write(&emmc_storage, sect, 1, tempbuf);
+			sdmmc_storage_write(&emmc_storage, sector, 1, tempbuf);
 		}
-		enabled = !(enabled);
+		enabled = !enabled;
+	}
+
+	// Check if RCM is patched and protect from a possible brick.
+	if (enabled && h_cfg.rcm_patched && hw_get_chip_id() != GP_HIDREV_MAJOR_T210B01)
+	{
+		// Iterate BCTs.
+		for (u32 i = 0; i < 4; i++)
+		{
+			sector = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE; // 0x4000 bct + 0x200 offset.
+			sdmmc_storage_read(&emmc_storage, sector, 1, tempbuf);
+
+			// Check if 2nd byte of modulus is correct.
+			if (tempbuf[0x11] != mod1)
+				continue;
+
+			// If AutoRCM is enabled, disable it.
+			if (tempbuf[0x10] != corr_mod0)
+			{
+				tempbuf[0x10] = corr_mod0;
+
+				sdmmc_storage_write(&emmc_storage, sector, 1, tempbuf);
+			}
+		}
+
+		enabled = false;
 	}
 
 out:
