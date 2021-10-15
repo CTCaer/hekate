@@ -652,6 +652,9 @@
 #define DCS_CONTROL_DISPLAY_DIMMING_CTRL    BIT(3)
 #define DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL BIT(5)
 
+#define PANEL_OLED_BL_COEFF  82 // 82%.
+#define PANEL_OLED_BL_OFFSET 45 // Least legible backlight duty.
+
 /* Switch Panels:
  *
  * 6.2" panels for Icosa and Iowa skus:

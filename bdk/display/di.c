@@ -557,6 +557,10 @@ void display_backlight(bool enable)
 
 void display_dsi_backlight_brightness(u32 brightness)
 {
+	// Normalize brightness value by 82% and a base of 45 duty.
+	if (brightness)
+		brightness = (brightness * PANEL_OLED_BL_COEFF / 100) + PANEL_OLED_BL_OFFSET;
+
 	u16 bl_ctrl = byte_swap_16((u16)(brightness * 8));
 	display_dsi_vblank_write(MIPI_DCS_SET_BRIGHTNESS, 2, &bl_ctrl);
 }
