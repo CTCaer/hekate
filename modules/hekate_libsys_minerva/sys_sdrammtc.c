@@ -3604,7 +3604,7 @@ void _minerva_do_over_temp_compensation(mtc_config_t *mtc_cfg)
 
 	u32 dram_temp = _get_dram_temperature();
 
-	if (mtc_cfg->prev_temp == dram_temp || dram_temp < 0)
+	if (mtc_cfg->prev_temp == dram_temp || dram_temp == (u32)-1)
 		return;
 
 	u32 refr = mtc_cfg->current_emc_table->burst_regs.emc_refresh_idx;
