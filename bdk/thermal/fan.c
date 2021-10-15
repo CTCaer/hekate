@@ -1,7 +1,7 @@
 /*
  * Fan driver for Nintendo Switch
  *
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2021 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,6 +18,7 @@
 
 #include <thermal/fan.h>
 #include <power/regulator_5v.h>
+#include <soc/fuse.h>
 #include <soc/gpio.h>
 #include <soc/pinmux.h>
 #include <soc/t210.h>
@@ -29,6 +30,12 @@ void set_fan_duty(u32 duty)
 	static u16  curr_duty = -1;
 
 	if (curr_duty == duty)
+		return;
+
+	//! TODO: Add HOAG/AULA support.
+	u32 hw_type = fuse_read_hw_type();
+	if (hw_type != FUSE_NX_HW_TYPE_ICOSA &&
+		hw_type != FUSE_NX_HW_TYPE_IOWA)
 		return;
 
 	if (!fan_init)
