@@ -232,7 +232,7 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 	if (!h_cfg.t210b01)
 		_create_window_dump_done(error, "fuse_cached_t210.bin, fuse_array_raw_t210.bin");
 	else
-		_create_window_dump_done(error, "fuse_cached_t210b01_partX.bin, fuse_array_raw_t210b01.bin");
+		_create_window_dump_done(error, "fuse_cached_t210b01_x*.bin, fuse_array_raw_t210b01.bin");
 
 	return LV_RES_OK;
 }
@@ -390,6 +390,9 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	case PANEL_AUO_A055TAN01:
 		strcat(txt_buf, "AUO A055TAN01");
 		break;
+	case PANEL_SAM_AMS699VC01:
+		strcat(txt_buf, "Samsung AMS699VC01");
+		break;
 	default:
 		switch (cal0->lcd_vendor & 0xFF)
 		{
@@ -402,6 +405,9 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 			break;
 		case (PANEL_AUO_A062TAN01 & 0xFF):
 			strcat(txt_buf, "AUO ");
+			break;
+		case (PANEL_SAM_AMS699VC01 & 0xFF):
+			strcat(txt_buf, "Samsung ");
 			break;
 		}
 		strcat(txt_buf, "Unknown");
@@ -875,6 +881,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case PANEL_AUO_A055TAN01:
 		strcat(txt_buf, "AUO A055TAN01");
 		break;
+	case PANEL_SAM_AMS699VC01:
+		strcat(txt_buf, "Samsung AMS699VC01");
+		break;
 	default:
 		switch (display_id & 0xFF)
 		{
@@ -886,6 +895,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case (PANEL_AUO_A062TAN01 & 0xFF):
 			strcat(txt_buf, "AUO ");
+			break;
+		case (PANEL_SAM_AMS699VC01 & 0xFF):
+			strcat(txt_buf, "Samsung ");
 			break;
 		}
 		strcat(txt_buf, "Unknown #FFDD00 Contact me!#");
@@ -906,7 +918,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		touch_panel = touch_get_panel_vendor();
 		if (touch_panel)
 		{
-			if (touch_panel->idx == -2) // Touch panel not found, print gpios.
+			if ((u8)touch_panel->idx == (u8)-2) // Touch panel not found, print gpios.
 			{
 				s_printf(txt_buf + strlen(txt_buf), "%2X%2X%2X #FFDD00 Contact me!#",
 					touch_panel->gpio0, touch_panel->gpio1, touch_panel->gpio2);
@@ -925,7 +937,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x00100100:
 			strcat(txt_buf, "4CD 1601");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == -1;
+				panel_ic_paired = (u8)touch_panel->idx == (u8)-1;
 			break;
 		case 0x00100200: // 4CD 1602.
 		case 0x00120100:
@@ -961,9 +973,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x33000502:
 		case 0x33000503:
 		case 0x33000510:
-			strcat(txt_buf, "4CD UNKN");
+			strcat(txt_buf, "4CD 5XXX");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 4; // Unknown Aula 7.0".
+				panel_ic_paired = touch_panel->idx == 4; // Samsung OLED touch 7.0".
 			break;
 		default:
 			strcat(txt_buf, "#FF8000 Unknown#");
@@ -2183,11 +2195,11 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 			i2c_recv_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CHIPID1_REG));
 		break;
 	case 1:
-		s_printf(txt_buf + strlen(txt_buf), "max77812-2 v%d",
+		s_printf(txt_buf + strlen(txt_buf), "max77812-2 v%d", // High power. 2 Outputs, phases 3 1.
 			i2c_recv_byte(I2C_5, MAX77812_PHASE31_CPU_I2C_ADDR, MAX77812_REG_VERSION) & 7);
 		break;
 	case 2:
-		s_printf(txt_buf + strlen(txt_buf), "max77812-3 v%d.0",
+		s_printf(txt_buf + strlen(txt_buf), "max77812-3 v%d.0", // Low power. 3 Outputs, phases 2 1 1.
 			i2c_recv_byte(I2C_5, MAX77812_PHASE211_CPU_I2C_ADDR, MAX77812_REG_VERSION) & 7);
 		break;
 	}
