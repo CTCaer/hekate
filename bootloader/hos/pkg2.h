@@ -99,17 +99,17 @@ typedef struct _pkg2_kip1_sec_t
 
 typedef struct _pkg2_kip1_t
 {
-	u32 magic;
-	u8 name[12];
-	u64 tid;
-	u32 proc_cat;
-	u8 main_thrd_prio;
-	u8 def_cpu_core;
-	u8 res;
-	u8 flags;
-	pkg2_kip1_sec_t sections[KIP1_NUM_SECTIONS];
-	u32 caps[0x20];
-	u8 data[];
+/* 0x000 */	u32 magic;
+/* 0x004*/	u8 name[12]; 
+/* 0x010 */	u64 tid;
+/* 0x018 */	u32 proc_cat;
+/* 0x01C */	u8 main_thrd_prio;
+/* 0x01D */	u8 def_cpu_core;
+/* 0x01E */	u8 res;
+/* 0x01F */	u8 flags;
+/* 0x020 */	pkg2_kip1_sec_t sections[KIP1_NUM_SECTIONS];
+/* 0x080 */	u32 caps[0x20];
+/* 0x100 */	u8 data[];
 } pkg2_kip1_t;
 
 typedef struct _pkg2_kip1_info_t

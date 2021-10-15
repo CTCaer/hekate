@@ -623,35 +623,35 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 {
-	const u32 BOOTLOADER_SIZE          = SZ_256K;
-	const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	const u32 BOOTLOADER_BACKUP_OFFSET = 0x140000;
-	const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
-
-	const u32 ERISTA_PKG1_ON_MARIKO_MAGIC = 0x20014770; // For 8.0.0 Erista and up.
-
-	u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
-	u32 bootloader_offset = BOOTLOADER_MAIN_OFFSET;
-	ctxt->pkg1 = (void *)malloc(BOOTLOADER_SIZE);
+	const u32 pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
+	u32 bootloader_offset = PKG1_BOOTLOADER_MAIN_OFFSET;
+	ctxt->pkg1 = (void *)malloc(PKG1_BOOTLOADER_SIZE);
 
 try_load:
 	// Read package1.
 	emummc_storage_set_mmc_partition(EMMC_BOOT0);
-	emummc_storage_read(bootloader_offset / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_read(bootloader_offset / NX_EMMC_BLOCKSIZE, PKG1_BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
 
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1 + pk1_offset);
 	if (!ctxt->pkg1_id)
 	{
 		// Check if wrong pkg1 was flashed.
 		bool wrong_pkg1;
-		u32 pkg1_build_check = *(u32 *)(ctxt->pkg1 + pk1_offset + 0x10);
-		if (!h_cfg.t210b01) // For Erista check if start is 0 and build offset is not 0.
-			wrong_pkg1 = *(u32 *)ctxt->pkg1 == 0 && pkg1_build_check != 0;
-		else                // For Mariko works for 8.0.0 Erista pkg1 and up.
-			wrong_pkg1 = pkg1_build_check == ERISTA_PKG1_ON_MARIKO_MAGIC;
+
+		const u32 pkg1_erista_check = ((bl_hdr_t210b01_t *)ctxt->pkg1)->entrypoint;
+		const u32 pkg1_mariko_check = *(u32 *)(ctxt->pkg1 + sizeof(pk1_hdr_t) * 2);
+
+		if (!h_cfg.t210b01) // For Erista check if start is 0 and entrypoint matches Mariko.
+			wrong_pkg1 = *(u32 *)ctxt->pkg1 == 0 && pkg1_erista_check == PKG1_MARIKO_ON_ERISTA_MAGIC;
+		else                // For Mariko check if start is not 0 and build id. It works for 8.0.0 Erista pkg1 and up.
+			wrong_pkg1 = *(u32 *)ctxt->pkg1 != 0 && pkg1_mariko_check == PKG1_ERISTA_ON_MARIKO_MAGIC;
 
 		if (wrong_pkg1)
-			_hos_crit_error("Wrong pkg1 flashed!");
+		{
+			_hos_crit_error("Wrong pkg1 flashed:");
+			EPRINTFARGS("%s pkg1 on %s!",
+				!h_cfg.t210b01 ? "Mariko" : "Erista", !h_cfg.t210b01 ? "Erista" : "Mariko");
+		}
 		else
 		{
 			_hos_crit_error("Unknown pkg1 version.");
@@ -660,10 +660,10 @@ try_load:
 		}
 
 		// Try backup bootloader.
-		if (bootloader_offset != BOOTLOADER_BACKUP_OFFSET)
+		if (bootloader_offset != PKG1_BOOTLOADER_BACKUP_OFFSET)
 		{
 			EPRINTF("\nTrying backup bootloader...");
-			bootloader_offset = BOOTLOADER_BACKUP_OFFSET;
+			bootloader_offset = PKG1_BOOTLOADER_BACKUP_OFFSET;
 			goto try_load;
 		}
 
@@ -675,7 +675,7 @@ try_load:
 	if (ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
 	{
 		ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		emummc_storage_read(HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+		emummc_storage_read(PKG1_HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 	}
 
 	return 1;

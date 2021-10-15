@@ -182,13 +182,16 @@ const pkg1_id_t *pkg1_get_latest()
 const pkg1_id_t *pkg1_identify(u8 *pkg1)
 {
 	char build_date[15];
-	memcpy(build_date, (char *)(pkg1 + 0x10), 14);
+	pk1_hdr_t *hdr = (pk1_hdr_t *)pkg1;
+
+	memcpy(build_date, hdr->timestamp, 14);
 	build_date[14] = 0;
 	gfx_printf("Found pkg1 ('%s').\n\n", build_date);
 
-	for (u32 i = 0; i < ARRAY_SIZE(_pkg1_ids); i++)
-		if (!memcmp(pkg1 + 0x10, _pkg1_ids[i].id, 8))
+	for (int i = ARRAY_SIZE(_pkg1_ids) - 1; i >= 0; i--)
+		if (!memcmp(hdr->timestamp, _pkg1_ids[i].id, 8))
 			return &_pkg1_ids[i];
+
 	return NULL;
 }
 

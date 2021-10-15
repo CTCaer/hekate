@@ -648,6 +648,7 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 				}
 				currPatchset++;
 			}
+
 			if (emummc_patch_selected && !strncmp(_kip_id_sets[currKipIdx].name, "FS", sizeof(ki->kip1->name)))
 			{
 				emummc_patch_selected = false;
@@ -715,6 +716,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo)
 	if (hdr->magic != PKG2_MAGIC)
 		return NULL;
 
+	// Decrypt sections.
 	for (u32 i = 0; i < 4; i++)
 	{
 DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
