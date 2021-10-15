@@ -436,12 +436,12 @@ void display_init()
 
 	// For Aula ensure that we have a compatible panel id.
 	if (nx_aula && _display_id == 0xCCCC)
-		_display_id = PANEL_SAM_70_UNK;
+		_display_id = PANEL_SAM_AMS699VC01;
 
 	// Initialize display panel.
 	switch (_display_id)
 	{
-	case PANEL_SAM_70_UNK:
+	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, 0xA0, 0); // Write 0 to 0xA0.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_SET_CONTROL_DISPLAY | (DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL << 8), 0); // Enable brightness control.
@@ -539,7 +539,7 @@ void display_init()
 
 void display_backlight_pwm_init()
 {
-	if (_display_id == PANEL_SAM_70_UNK)
+	if (_display_id == PANEL_SAM_AMS699VC01)
 		return;
 
 	clock_enable_pwm();
@@ -592,7 +592,7 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 	if (brightness > 255)
 		brightness = 255;
 
-	if (_display_id != PANEL_SAM_70_UNK)
+	if (_display_id != PANEL_SAM_AMS699VC01)
 		display_pwm_backlight_brightness(brightness, step_delay);
 	else
 		display_dsi_backlight_brightness(brightness);
@@ -624,7 +624,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	exec_cfg((u32 *)DISPLAY_A_BASE, _display_video_disp_controller_disable_config, 17);
 	exec_cfg((u32 *)DSI_BASE, _display_dsi_timing_deinit_config, 16);
 
-	if (_display_id != PANEL_SAM_70_UNK)
+	if (_display_id != PANEL_SAM_AMS699VC01)
 		usleep(10000);
 
 	// De-initialize display panel.
@@ -678,7 +678,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 	// Blank - powerdown.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE,
-		(_display_id == PANEL_SAM_70_UNK) ? 120000 : 50000);
+		(_display_id == PANEL_SAM_AMS699VC01) ? 120000 : 50000);
 
 skip_panel_deinit:
 	// Disable LCD power pins.
@@ -734,7 +734,7 @@ void display_set_decoded_panel_id(u32 id)
 
 	// For Aula ensure that we have a compatible panel id.
 	if (nx_aula && _display_id == 0xCCCC)
-		_display_id = PANEL_SAM_70_UNK;
+		_display_id = PANEL_SAM_AMS699VC01;
 }
 
 void display_color_screen(u32 color)
@@ -749,7 +749,7 @@ void display_color_screen(u32 color)
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = (DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) & 0xFFFFFFFE) | GENERAL_ACT_REQ;
 	usleep(35000); // No need to wait on Aula.
 
-	if (_display_id != PANEL_SAM_70_UNK)
+	if (_display_id != PANEL_SAM_AMS699VC01)
 		display_backlight(true);
 	else
 		display_backlight_brightness(255, 0);
