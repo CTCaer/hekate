@@ -898,8 +898,17 @@ int hos_launch(ini_sec_t *cfg)
 			if (!pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1))
 			{
 				_hos_crit_error("Pkg1 decryption failed!");
+
+				// Check if T210B01 BEK is missing or wrong.
 				if (h_cfg.t210b01)
-					EPRINTF("Is BEK missing?");
+				{
+					u32 bek_vector[4] = {0};
+					se_aes_crypt_ecb(13, ENCRYPT, bek_vector, SE_KEY_128_SIZE, bek_vector, SE_KEY_128_SIZE);
+					if (bek_vector[0] == 0x59C14895) // Encrypted zeroes first 32bits.
+						EPRINTF("Pkg1 corrupt?");
+					else
+						EPRINTF("BEK is missing!");
+				}
 				goto error;
 			}
 		}
