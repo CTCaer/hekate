@@ -934,14 +934,14 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		switch (touch_fw.fw_id)
 		{
 		case 0x00100100:
-			strcat(txt_buf, "4CD 1601");
+			strcat(txt_buf, "4CD60D/0");
 			if (touch_panel)
 				panel_ic_paired = (u8)touch_panel->idx == (u8)-1;
 			break;
 		case 0x00100200: // 4CD 1602.
 		case 0x00120100:
 		case 0x32000001:
-			strcat(txt_buf, "4CD 1801");
+			strcat(txt_buf, "4CD60D/1");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 0; // NISSHA NFT-K12D.
 			break;
@@ -952,19 +952,19 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case 0x001A0300:
 		case 0x32000102:
-			strcat(txt_buf, "4CD 2602");
+			strcat(txt_buf, "4CD60D/2");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 1; // GiS GGM6 B2X.
 			break;
 		case 0x00290100:
 		case 0x32000302:
-			strcat(txt_buf, "4CD 3801");
+			strcat(txt_buf, "4CD60D/3");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 2; // NISSHA NBF-K9A.
 			break;
 		case 0x31051820:
 		case 0x32000402:
-			strcat(txt_buf, "4CD 4602"); // Assumed. Official is XXXX.
+			strcat(txt_buf, "4CD60D/4");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 3; // GiS 5.5".
 			break;
@@ -972,9 +972,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x33000502:
 		case 0x33000503:
 		case 0x33000510:
-			strcat(txt_buf, "4CD 5XXX");
+			strcat(txt_buf, "4CD60D/5");
 			if (touch_panel)
-				panel_ic_paired = touch_panel->idx == 4; // Samsung OLED touch 7.0".
+				panel_ic_paired = touch_panel->idx == 4; // Samsung BH2109.
 			break;
 		default:
 			strcat(txt_buf, "#FF8000 Unknown#");
@@ -982,7 +982,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		}
 
 		s_printf(txt_buf + strlen(txt_buf), " - %s)\n#FF8000 FTB ver:# %04X\n#FF8000 FW rev:# %04X",
-			panel_ic_paired ? "Paired" : "#FFDD00 Error#", touch_fw.ftb_ver, touch_fw.fw_rev);
+			panel_ic_paired ? "Paired" : "#FFDD00 Error#",
+			touch_fw.ftb_ver,
+			byte_swap_16(touch_fw.fw_rev)); // Byte swapping makes more sense here.
 	}
 	else
 		strcat(txt_buf, "\n\n#FFDD00 Failed to get touch info!#");
@@ -998,7 +1000,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	free(txt_buf);
 
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
-	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 4, 0);
 
 	if (!btn)
 		_create_mbox_cal0(NULL);
