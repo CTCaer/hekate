@@ -478,7 +478,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 	lv_obj_t *val = lv_cont_create(win, NULL);
-	lv_obj_set_size(val, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
+	lv_obj_set_size(val, LV_HOR_RES / 7 * 2 + LV_DPI / 11, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
@@ -524,7 +524,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
 		case LPDDR4_COPPER_4GB_MICRON_MT53B512M32D2NP_062_WT:
-			strcpy(dram_man, "Micron MT53B512M32D2NP-062");
+			strcpy(dram_man, "Micron MT53B512M32D2NP-062 WT:C");
 			break;
 		case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
 			strcpy(dram_man, "Samsung K4FHE3D4HM-MGCH 6GB");
@@ -554,9 +554,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
 			strcpy(dram_man, "Hynix H9HCNNNBKMMLHR-NME 4GB");
 			break;
-		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
-		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WT: // 4266Mbps.
-			strcpy(dram_man, "Micron MT53E512M32D2NP-046 4GB");
+		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTE: // 4266Mbps.
+		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTE: // 4266Mbps.
+			strcpy(dram_man, "Micron MT53E512M32D2NP-046 WT:E");
 			break;
 
 		// LPDDR4X 4266Mbps
@@ -582,10 +582,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		// case LPDDR4X_AULA_8GB_SAMSUNG_1Y_A: // Unused.
 		// 	strcpy(dram_man, "Samsung 1y A 4GB");
 		// 	break;
-		case LPDDR4X_IOWA_4GB_MICRON_1Y_A:
-		case LPDDR4X_HOAG_4GB_MICRON_1Y_A:
-		case LPDDR4X_AULA_4GB_MICRON_1Y_A:
-			strcpy(dram_man, "Micron 1y A 4GB");
+		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
+		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF:
+		case LPDDR4X_AULA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
+			strcpy(dram_man, "Micron MT53E512M32D2NP-046 WT:F");
 			break;
 		case LPDDR4X_IOWA_4GB_HYNIX_1Y_A: // Replaced from Copper.
 		case LPDDR4X_HOAG_4GB_HYNIX_1Y_A: // Replaced from Copper.
@@ -717,7 +717,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 ranks = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
 	u32 die_channels = ranks * ((channels & 1) + ((channels & 2) >> 1));
-	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", dram_id > 6 ? "LPDDR4X" : "LPDDR4");
+	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", h_cfg.t210b01 ? "LPDDR4X" : "LPDDR4");
 	switch (ram_vendor.rank0_ch0)
 	{
 	case 1:
