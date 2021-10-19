@@ -748,7 +748,7 @@ static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 
 		pkg2_get_ids(&kip_ids, &fs_ids_cnt);
 
-		for (u32 fs_idx = 0; fs_idx < fs_ids_cnt; fs_idx++)
+		for (int fs_idx = fs_ids_cnt - 1; fs_idx >= 0; fs_idx--)
 		{
 			if (!memcmp(sha_buf, kip_ids[fs_idx].hash, 8))
 			{
@@ -770,7 +770,7 @@ static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 		break;
 	}
 
-	// Hash didn't match or FAT32 + exFAT.
+	// FAT32 + exFAT or unknown FS version.
 	return true;
 }
 
