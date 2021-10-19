@@ -769,13 +769,13 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x2A800000, 0x6DC / 4, LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ }, // mc_video_protect_gpu_override1.
 
-	// Micron LPDDR4X 4GB MT53D1024M32D1NP-053-WT Die-E for retail Iowa and Hoag.
-	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046 }, // emc_auto_cal_config2.
-	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046 }, // emc_auto_cal_vref_sel0.
-	{ 0x88161414, 0x2E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046 }, // emc_mrw14.
-	{ 0x80000713, 0x32C / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046 }, // emc_dyn_self_ref_control.
-	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046 }, // mc_video_protect_gpu_override0.
-	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046 }, // mc_video_protect_gpu_override1.
+	// Micron LPDDR4X 4GB MT53D1024M32D1NP-053-WT:E Die-E for retail Iowa and Hoag.
+	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE }, // emc_auto_cal_config2.
+	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE }, // emc_auto_cal_vref_sel0.
+	{ 0x88161414, 0x2E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE }, // emc_mrw14.
+	{ 0x80000713, 0x32C / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE }, // emc_dyn_self_ref_control.
+	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE }, // mc_video_protect_gpu_override0.
+	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE }, // mc_video_protect_gpu_override1.
 
 	// Samsung LPDDR4X 4GB (Y01) Die-? for Iowa.
 	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_SAMSUNG_Y }, // emc_auto_cal_config2.
@@ -957,19 +957,20 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x00000002, 0x680 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_arb_timing_r2r.
 	{ 0x02020001, 0x694 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_arb_da_turns.
 */
-	// Micron LPDDR4X 4GB 10nm-class (1y-01) Die-A for Unknown Iowa/Hoag/Aula.
-	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_auto_cal_config2.
-	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_auto_cal_vref_sel0.
-	{ 0x00000006, 0x1CC / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_quse.
-	{ 0x00000005, 0x1D0 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_quse_width.
-	{ 0x00000003, 0x1DC / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_einput.
-	{ 0x0000000C, 0x1E0 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_einput_duration.
-	{ 0x00000008, 0x24C / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_tfaw.
-	{ 0x88161414, 0x2E0 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_mrw14.
-	{ 0x80000713, 0x32C / 4, LPDDR4X_4GB_MICRON_1Y_A }, // emc_dyn_self_ref_control.
-	{ 0x00000001, 0x670 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // mc_emem_arb_timing_faw.
-	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_MICRON_1Y_A }, // mc_video_protect_gpu_override0.
-	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_MICRON_1Y_A }, // mc_video_protect_gpu_override1.
+
+	// Micron LPDDR4X 4GB MT53D1024M32D1NP-053-WT:F 10nm-class (1y-01) Die-F for Newer Iowa/Hoag/Aula.
+	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_auto_cal_config2.
+	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_auto_cal_vref_sel0.
+	{ 0x00000006, 0x1CC / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_quse.
+	{ 0x00000005, 0x1D0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_quse_width.
+	{ 0x00000003, 0x1DC / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_einput.
+	{ 0x0000000C, 0x1E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_einput_duration.
+	{ 0x00000008, 0x24C / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_tfaw.
+	{ 0x88161414, 0x2E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_mrw14.
+	{ 0x80000713, 0x32C / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_dyn_self_ref_control.
+	{ 0x00000001, 0x670 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // mc_emem_arb_timing_faw.
+	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // mc_video_protect_gpu_override0.
+	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // mc_video_protect_gpu_override1.
 
 	// Hynix LPDDR4X 4GB 10nm-class (1y-01) Die-A for Unknown Iowa/Hoag/Aula.
 	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_HYNIX_1Y_A }, // emc_auto_cal_config2.
