@@ -39,7 +39,7 @@ static touch_panel_info_t _panels[] =
 	{  1,  0, 1, 1,  "GiS GGM6 B2X"    },
 	{  2,  0, 0, 0,  "NISSHA NBF-K9A"  },
 	{  3,  1, 0, 0,  "GiS 5.5\""       },
-	{  4,  0, 0, 1,  "Samsung PCAP"    },
+	{  4,  0, 0, 1,  "Samsung BH2109"  },
 	{ -1,  1, 0, 1,  "GiS VA 6.2\""    }
 };
 
