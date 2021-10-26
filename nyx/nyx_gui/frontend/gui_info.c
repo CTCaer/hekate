@@ -946,6 +946,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 				panel_ic_paired = touch_panel->idx == 0; // NISSHA NFT-K12D.
 			break;
 		case 0x98000004: // New 6.2" panel?
+		case 0x50000001:
 			strcat(txt_buf, "FST2 UNK");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 0;

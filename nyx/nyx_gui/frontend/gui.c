@@ -1209,7 +1209,7 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 
 static void _update_status_bar(void *params)
 {
-	char *label = (char *)malloc(128);
+	static char *label = NULL;
 
 	u16 soc_temp = 0;
 	u32 batt_percent = 0;
@@ -1239,6 +1239,9 @@ static void _update_status_bar(void *params)
 		set_fan_duty(51);
 	else if (soc_temp_dec < 40)
 		set_fan_duty(0);
+
+	if (!label)
+		label = (char *)malloc(512);
 
 	// Set time and SoC temperature.
 	s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d",
@@ -1283,8 +1286,6 @@ static void _update_status_bar(void *params)
 
 	lv_label_set_text(status_bar.battery_more, label);
 	lv_obj_realign(status_bar.battery_more);
-
-	free(label);
 }
 
 static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
