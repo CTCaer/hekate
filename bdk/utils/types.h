@@ -19,6 +19,7 @@
 #define _TYPES_H_
 
 #include <assert.h>
+#include <stdint.h>
 
 /* Types */
 typedef signed char s8;
