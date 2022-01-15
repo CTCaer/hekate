@@ -34,8 +34,6 @@
 
 #define PERF_HACK
 
-bool emc_2X_clk_src_is_pllmb;
-bool fsp_for_src_freq;
 bool train_ram_patterns;
 
 /*
@@ -1182,7 +1180,7 @@ out:
 	return mr4_0;
 }
 
-static u32 _pllm_clk_base_cfg(u32 rate_KHz, u32 clk_src_emc, bool emc_2X_clk_src_is_PLLMB)
+static u32 _pllm_clk_base_cfg(u32 rate_KHz, u32 clk_src_emc, bool new_src_is_PLLMB)
 {
 	u32 dividers = 0;
 	u32 i = 0;
@@ -1200,7 +1198,7 @@ static u32 _pllm_clk_base_cfg(u32 rate_KHz, u32 clk_src_emc, bool emc_2X_clk_src
 	if (pllm_clk_config->pll_osc_in)
 	{
 		dividers = pllm_clk_config->pll_input_div | (pllm_clk_config->pll_feedback_div << 8) | ((pllm_clk_config->pll_post_div & 0x1F) << 20);
-		if (emc_2X_clk_src_is_PLLMB)
+		if (new_src_is_PLLMB)
 		{
 			CLOCK(CLK_RST_CONTROLLER_PLLMB_BASE) = dividers;
 			CLOCK(CLK_RST_CONTROLLER_PLLMB_BASE) |= PLLM_ENABLE;
@@ -2561,8 +2559,8 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	u32 ramp_up_wait;
 	u32 ramp_down_wait;
 	u32 bg_regulator_mode_change;
-	u32 mr13_flip_fspop = 0;
-	u32 mr13_flip_fspwr = 0;
+	u32 mr13_flip_fspop;
+	u32 mr13_flip_fspwr;
 	u32 mr13_catr_enable;
 
 	/* needs_training flags */
@@ -2604,7 +2602,8 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	u32 src_clock_period = 1000000000 / src_emc_entry->rate_khz; // In picoseconds.
 	u32 dst_clock_period = 1000000000 / dst_emc_entry->rate_khz; // In picoseconds.
 
-	fsp_for_src_freq = !fsp_for_src_freq;
+	// Get current FSP op/write value.
+	bool enable_fsp_opwr = !(EMC(EMC_MRW3) & 0xC0);
 
 	if (dram_type != DRAM_TYPE_LPDDR4)
 	{
@@ -2834,7 +2833,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	// Step 7.2 - Program FSP reference registers and send MRWs to new FSPWR.
 	EPRINTF("Step 7.2");
-	if (fsp_for_src_freq)
+	if (enable_fsp_opwr)
 	{
 		mr13_flip_fspop = dst_emc_entry->emc_mrw3 | 0xC0;
 		mr13_flip_fspwr = (dst_emc_entry->emc_mrw3 & 0xFFFFFF3F) | 0x40;
@@ -3499,13 +3498,10 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	EMC(EMC_PMACRO_TRAINING_CTRL_1) = CH0_TRAINING_E_WRPTR;
 	EMC(EMC_PMACRO_CFG_PM_GLOBAL_0) = 0;
 
-	// Step 30 - Re-enable autocal and Restore FSP to account for switch back (training).
+	// Step 30 - Re-enable autocal.
 	EPRINTF("Step 30");
 	if (needs_tristate_training)
-	{
 		EMC(EMC_AUTO_CAL_CONFIG) = src_emc_entry->emc_auto_cal_config;
-		fsp_for_src_freq = !fsp_for_src_freq;
-	}
 	else
 	{
 		if (dst_emc_entry->burst_regs.emc_cfg_dig_dll_idx & 1)
@@ -3734,8 +3730,9 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 	u32 src_emc_entry_idx = 999;
 	u32 dst_emc_entry_idx = 999;
 	u32 selected_clk_src_emc;
-	u32 selected_emc_2x_clk_src;
+	u32 emc_clk_src;
 	bool freq_changed = false;
+	bool src_is_pllmb;
 	emc_table_t *src_emc_entry;
 	emc_table_t *dst_emc_entry;
 
@@ -3768,32 +3765,34 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 	freq_changed = _check_freq_changed(dst_rate_khz, dst_clk_src_emc, src_rate_khz, src_clk_src_emc);
 	EPRINTFARGS("Requested freq change from %d to %d.", src_rate_khz, dst_rate_khz);
 
+	// Get current clock source.
+	emc_clk_src = CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) >> EMC_2X_CLK_SRC_SHIFT;
+	src_is_pllmb = emc_clk_src == PLLMB_UD || emc_clk_src == PLLMB_OUT0;
+
 	if (freq_changed)
 	{
-		selected_emc_2x_clk_src = src_clk_src_emc >> EMC_2X_CLK_SRC_SHIFT;
-		if (selected_emc_2x_clk_src & 3)
+		if (emc_clk_src == PLLM_UD ||
+			emc_clk_src == PLLM_OUT0) // Clock source is PLLM. Switch based on src_is_pllmb.
 		{
-			if (selected_emc_2x_clk_src - PLLMB_UD <= 1)
-				emc_2X_clk_src_is_pllmb = 0;
+			src_is_pllmb = !src_is_pllmb;
 		}
-		else
+		else if (emc_clk_src == PLLMB_UD ||
+				 emc_clk_src == PLLMB_OUT0) // Clock source is PLLMB. Switch to PLLM.
 		{
-			emc_2X_clk_src_is_pllmb = !emc_2X_clk_src_is_pllmb;
+			src_is_pllmb = false;
 		}
-		selected_clk_src_emc = _pllm_clk_base_cfg(dst_rate_khz, dst_clk_src_emc, emc_2X_clk_src_is_pllmb);
+		selected_clk_src_emc = _pllm_clk_base_cfg(dst_rate_khz, dst_clk_src_emc, src_is_pllmb);
 	}
 	else
 	{
 		selected_clk_src_emc = dst_clk_src_emc;
-		selected_emc_2x_clk_src = selected_clk_src_emc >> EMC_2X_CLK_SRC_SHIFT;
-		if (selected_emc_2x_clk_src != PLLMB_OUT0 && selected_emc_2x_clk_src)
+		emc_clk_src = selected_clk_src_emc >> EMC_2X_CLK_SRC_SHIFT;
+		if (src_is_pllmb)
 		{
-			if (selected_emc_2x_clk_src - PLLM_UD <= PLLC_OUT0 && emc_2X_clk_src_is_pllmb)
+			if (emc_clk_src == PLLM_UD || emc_clk_src == PLLMB_UD)
 				selected_clk_src_emc = (selected_clk_src_emc & 0x1FFFFFFF) | (PLLMB_UD << EMC_2X_CLK_SRC_SHIFT);
-		}
-		else if (emc_2X_clk_src_is_pllmb)
-		{
-			selected_clk_src_emc = (selected_clk_src_emc & 0x1FFFFFFF) | (PLLMB_OUT0 << EMC_2X_CLK_SRC_SHIFT);
+			else if (emc_clk_src == PLLM_OUT0 || emc_clk_src == PLLMB_OUT0)
+				selected_clk_src_emc = (selected_clk_src_emc & 0x1FFFFFFF) | (PLLMB_OUT0 << EMC_2X_CLK_SRC_SHIFT);
 		}
 	}
 
@@ -3808,8 +3807,6 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 		return 0;
 	case OP_TRAIN:
 		_minerva_train_patterns(src_emc_entry, dst_emc_entry, false, selected_clk_src_emc);
-		if (freq_changed)
-			emc_2X_clk_src_is_pllmb = !emc_2X_clk_src_is_pllmb;
 		return 0;
 	case OP_TRAIN_SWITCH:
 		_minerva_train_patterns(src_emc_entry, dst_emc_entry, true, selected_clk_src_emc);
@@ -3847,8 +3844,6 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 	mtc_cfg->current_emc_table = NULL;
 
 	// Important!
-	mtc_cfg->emc_2X_clk_src_is_pllmb = false;
-	mtc_cfg->fsp_for_src_freq = false;
 	mtc_cfg->train_ram_patterns = true;
 	mtc_cfg->init_done = MTC_INIT_MAGIC;
 }
@@ -3858,8 +3853,6 @@ void _minerva_init(mtc_config_t *mtc_cfg, bdkParams_t bp)
 	EPRINTF("-- Minerva Training Cell --");
 
 	train_ram_patterns = mtc_cfg->train_ram_patterns;
-	fsp_for_src_freq = mtc_cfg->fsp_for_src_freq;
-	emc_2X_clk_src_is_pllmb = mtc_cfg->emc_2X_clk_src_is_pllmb;
 
 	if (mtc_cfg->init_done != MTC_INIT_MAGIC)
 	{
@@ -3919,6 +3912,4 @@ void _minerva_init(mtc_config_t *mtc_cfg, bdkParams_t bp)
 #endif
 
 	mtc_cfg->train_ram_patterns = train_ram_patterns;
-	mtc_cfg->fsp_for_src_freq = fsp_for_src_freq;
-	mtc_cfg->emc_2X_clk_src_is_pllmb = emc_2X_clk_src_is_pllmb;
 }
