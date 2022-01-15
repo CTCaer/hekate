@@ -299,11 +299,11 @@ static void _show_errors()
 	{
 		gfx_clear_grey(0);
 		gfx_con_setpos(0, 0);
-		display_backlight_brightness(100, 1000);
+		display_backlight_brightness(150, 1000);
 
 		display_activate_console();
 
-		WPRINTFARGS("An exception occurred (LR %08X):\n", *excp_lr);
+		WPRINTFARGS("Nyx exception occurred (LR %08X):\n", *excp_lr);
 		switch (*excp_type)
 		{
 		case EXCP_TYPE_RESET:
@@ -319,7 +319,7 @@ static void _show_errors()
 			WPRINTF("DABRT");
 			break;
 		}
-		WPRINTF("\n");
+		gfx_puts("\n");
 
 		// Clear the exception.
 		*excp_lr = 0;
@@ -328,7 +328,7 @@ static void _show_errors()
 
 		WPRINTF("Press any key...");
 
-		msleep(2000);
+		msleep(1500);
 		btn_wait();
 
 		reload_nyx();

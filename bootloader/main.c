@@ -1111,7 +1111,7 @@ static void _show_errors()
 		PMC(APBDEV_PMC_SCRATCH37) = 0;
 	}
 
-	if (hw_rst_reason == PMC_RST_STATUS_WATCHDOG &&
+	if (hw_rst_reason == PMC_RST_STATUS_WATCHDOG && panic_status &&
 		panic_status <= 0xFF && panic_status != 0x20 && panic_status != 0x21)
 		h_cfg.errors |= ERR_PANIC_CODE;
 
@@ -1125,19 +1125,24 @@ static void _show_errors()
 		display_backlight_brightness(150, 1000);
 
 		if (h_cfg.errors & ERR_SD_BOOT_EN)
-			WPRINTF("Failed to mount SD!\n");
+		{
+			WPRINTF("Failed to init or mount SD!\n");
+
+			// Clear the module bits as to not cram the error screen.
+			h_cfg.errors &= ~(ERR_LIBSYS_LP0 | ERR_LIBSYS_MTC);
+		}
 
 		if (h_cfg.errors & ERR_LIBSYS_LP0)
-			WPRINTF("Missing LP0 (sleep mode) lib!\n");
+			WPRINTF("Missing LP0 (sleep) lib!\n");
 		if (h_cfg.errors & ERR_LIBSYS_MTC)
-			WPRINTF("Missing or old Minerva lib!\n");
+			WPRINTF("Missing Minerva lib!\n");
 
 		if (h_cfg.errors & (ERR_LIBSYS_LP0 | ERR_LIBSYS_MTC))
 			WPRINTF("\nUpdate bootloader folder!\n\n");
 
 		if (h_cfg.errors & ERR_EXCEPTION)
 		{
-			WPRINTFARGS("An exception occurred (LR %08X):\n", *excp_lr);
+			WPRINTFARGS("hekate exception occurred (LR %08X):\n", *excp_lr);
 			switch (*excp_type)
 			{
 			case EXCP_TYPE_RESET:
@@ -1161,7 +1166,7 @@ static void _show_errors()
 
 		if (h_cfg.errors & ERR_L4T_KERNEL)
 		{
-			WPRINTF("A kernel panic occurred!\n");
+			WPRINTF("Kernel panic occurred!\n");
 			if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
 				WPRINTF("PSTORE saved to L4T_panic.bin");
 			pstore_buf_t *buf = (pstore_buf_t *)(PSTORE_ADDR + PSTORE_LOG_OFFSET);
@@ -1184,7 +1189,7 @@ static void _show_errors()
 			b = (b << 0) | (b << 4);
 			u32 color = r | g | b;
 
-			WPRINTF("A panic error occurred!\n");
+			WPRINTF("HOS panic occurred!\n");
 			gfx_printf("Color: %k####%k, Code: %02X\n\n", color, 0xFFCCCCCC, panic_status);
 		}
 
