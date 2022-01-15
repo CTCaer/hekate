@@ -30,6 +30,7 @@
 #define MC_SMMU_TLB_FLUSH            0x30
 #define MC_SMMU_PTC_FLUSH            0x34
 #define MC_SMMU_ASID_SECURITY        0x38
+#define MC_SMMU_AVPC_ASID            0x23C
 #define MC_SMMU_TSEC_ASID            0x294
 #define MC_SMMU_TRANSLATION_ENABLE_0 0x228
 #define MC_SMMU_TRANSLATION_ENABLE_1 0x22c

@@ -17,8 +17,8 @@
 #ifndef _MAX77812_H_
 #define _MAX77812_H_
 
-#define MAX77812_PHASE31_CPU_I2C_ADDR  0x31 // 2 Outputs: 3-phase M1 + 1-phase M4.
-#define MAX77812_PHASE211_CPU_I2C_ADDR 0x33 // 3 Outputs: 2-phase M1 + 1-phase M3 + 1-phase M4.
+#define MAX77812_PHASE31_CPU_I2C_ADDR  0x31 // High power GPU. 2 Outputs: 3-phase M1 + 1-phase M4.
+#define MAX77812_PHASE211_CPU_I2C_ADDR 0x33 // Low  power GPU. 3 Outputs: 2-phase M1 + 1-phase M3 + 1-phase M4.
 
 #define MAX77812_REG_RSET			0x00
 #define MAX77812_REG_INT_SRC		0x01
@@ -74,14 +74,14 @@
 #define MAX77812_REG_GLB_CFG2		0x34
 #define MAX77812_REG_GLB_CFG3		0x35
 
-/*! Protected area and settings only for MAX77812_REG_VERSION 4 */
+/*! Protected area and settings only for MAX77812_ES2_VERSION */
 #define MAX77812_REG_GLB_CFG4		0x36
 #define MAX77812_REG_GLB_CFG5		0x37
 #define MAX77812_REG_GLB_CFG6		0x38
 #define MAX77812_REG_GLB_CFG7		0x39
 #define MAX77812_REG_GLB_CFG8		0x3A
 #define MAX77812_REG_PROT_ACCESS	0xFD
-#define MAX77812_REG_MAX			0xFE
+#define MAX77812_REG_MAX			0xFD
 
 #define MAX77812_REG_EN_CTRL_MASK(n)		BIT(n)
 #define MAX77812_START_SLEW_RATE_MASK		0x07

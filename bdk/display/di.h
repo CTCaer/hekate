@@ -657,23 +657,24 @@
 
 /* Switch Panels:
  *
- * 6.2" panels for Icosa and Iowa skus:
+ * 6.2" panels for Icosa and Iowa SKUs:
  * [10] 81 [26]: JDI LPM062M326A
  * [10] 96 [09]: JDI LAM062M109A
  * [20] 93 [0F]: InnoLux P062CCA-AZ1 (Rev A1)
  * [20] 95 [0F]: InnoLux P062CCA-AZ2 (Rev B1)
  * [20] 96 [0F]: InnoLux P062CCA-AZ3 [UNCONFIRMED MODEL REV]
+ * [20] 97 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
  * [20] 98 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
  * [30] 94 [0F]: AUO A062TAN01 (59.06A33.001)
  * [30] 95 [0F]: AUO A062TAN02 (59.06A33.002)
  * [30] XX [0F]: AUO A062TAN03 (59.06A33.003) [UNCONFIRMED ID]
  *
- * 5.5" panels for Hoag skus:
+ * 5.5" panels for Hoag SKUs:
  * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1)
  * [30] 93 [10]: AUO A055TAN01 (59.05A30.001)
  * [40] XX [10]: Vendor 40 [UNCONFIRMED ID]
  *
- * 7.0" OLED panels for Aula skus:
+ * 7.0" OLED panels for Aula SKUs:
  * [50] 9B [20]: Samsung AMS699VC01-0 (Rev 2.5)
  */
 

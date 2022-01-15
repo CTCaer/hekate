@@ -21,6 +21,14 @@
 #include <utils/types.h>
 
 /*
+ * SDx actual min is 625 mV. Multipliers 0/1 reserved.
+ * SD0 max is 1400 mV
+ * SD1 max is 1550 mV
+ * SD2 max is 3787.5 mV
+ * SD3 max is 3787.5 mV
+ */
+
+/*
 * Switch Power domains (max77620):
 * Name  | Usage         | uV step | uV min | uV default | uV max  | Init
 *-------+---------------+---------+--------+------------+---------+------------------

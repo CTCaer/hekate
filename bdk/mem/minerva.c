@@ -19,8 +19,8 @@
 
 #include "minerva.h"
 
-#include <soc/clock.h>
 #include <ianos/ianos.h>
+#include <mem/emc.h>
 #include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/hw_init.h>

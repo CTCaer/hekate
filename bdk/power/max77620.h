@@ -95,9 +95,9 @@
 #define  MAX77620_IRQSD_PFI_SD1               BIT(6)
 #define  MAX77620_IRQSD_PFI_SD0               BIT(7)
 
-#define MAX77620_REG_IRQ_LVL2_L0_7  0x08 // LDO number that irq occured.
+#define MAX77620_REG_IRQ_LVL2_L0_7  0x08 // LDO number that irq occurred.
 #define MAX77620_REG_IRQ_MSK_L0_7   0x10
-#define MAX77620_REG_IRQ_LVL2_L8    0x09 // LDO number that irq occured. Only bit0: LDO8 is valid.
+#define MAX77620_REG_IRQ_LVL2_L8    0x09 // LDO number that irq occurred. Only bit0: LDO8 is valid.
 #define MAX77620_REG_IRQ_MSK_L8     0x11
 #define MAX77620_REG_IRQ_LVL2_GPIO  0x0A // Edge detection interrupt.
 
@@ -139,8 +139,8 @@
 #define MAX77620_REG_DVSSD0         0x1B
 #define MAX77620_REG_DVSSD1         0x1C
 #define  MAX77620_SDX_VOLT_MASK               0xFF
-#define  MAX77620_SD0_VOLT_MASK               0x3F
-#define  MAX77620_SD1_VOLT_MASK               0x7F
+#define  MAX77620_SD0_VOLT_MASK               0x7F // Max is 0x40.
+#define  MAX77620_SD1_VOLT_MASK               0x7F // Max is 0x4C.
 #define  MAX77620_LDO_VOLT_MASK               0x3F
 
 #define MAX77620_REG_SD0_CFG        0x1D

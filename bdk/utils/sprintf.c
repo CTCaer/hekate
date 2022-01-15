@@ -113,13 +113,6 @@ void s_printf(char *out_buf, const char *fmt, ...)
 			case 'X':
 				_s_putn(va_arg(ap, u32), 16, fill, fcnt);
 				break;
-			case 'k':
-				//gfx_con.fgcol = va_arg(ap, u32);
-				break;
-			case 'K':
-				//gfx_con.bgcol = va_arg(ap, u32);
-				//gfx_con.fillbg = 1;
-				break;
 			case '%':
 				_s_putc('%');
 				break;

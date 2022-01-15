@@ -46,9 +46,9 @@ typedef volatile unsigned short vu16;
 typedef volatile unsigned int vu32;
 
 #ifdef __aarch64__
-typedef u64 uptr;
+typedef unsigned long long uptr;
 #else /* __arm__ or __thumb__ */
-typedef u32 uptr;
+typedef unsigned long uptr;
 #endif
 
 /* Important */
@@ -137,8 +137,8 @@ typedef struct __attribute__((__packed__)) _boot_cfg_t
 	{
 		struct
 		{
-			char id[8]; // 7 char ASCII null teminated.
-			char emummc_path[0x78]; // emuMMC/XXX, ASCII null teminated.
+			char id[8]; // 7 char ASCII null terminated.
+			char emummc_path[0x78]; // emuMMC/XXX, ASCII null terminated.
 		};
 		u8 ums; // nyx_ums_type.
 		u8 xt_str[0x80];
