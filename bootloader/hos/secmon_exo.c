@@ -431,7 +431,7 @@ void secmon_exo_check_panic()
 
 	// Check if mixed atmosphere sysmodules.
 	if ((u32)rpt->title_id == HOS_PID_BOOT2)
-		WPRINTF("fss0 wrong path or mismatched atmo files\n");
+		WPRINTF("Mismatched Atmosphere files?\n");
 
 	// Save context to the SD card.
 	char filepath[0x40];
