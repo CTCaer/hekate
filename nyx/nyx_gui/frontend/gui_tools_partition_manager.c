@@ -189,6 +189,7 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 			{
 				f_chdrive(dst);
 				f_mkdir(path);
+				f_chmod(path, fno.fattrib, 0xFF);
 			}
 			// Enter the directory.
 			res = _backup_and_restore_files(path, total_files, total_size, dst, src, labels);
