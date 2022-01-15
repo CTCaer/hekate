@@ -2175,11 +2175,11 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 			i2c_recv_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CHIPID1_REG));
 		break;
 	case 1:
-		s_printf(txt_buf + strlen(txt_buf), "max77812-2 v%d", // High power. 2 Outputs, phases 3 1.
+		s_printf(txt_buf + strlen(txt_buf), "max77812-2 v%d",   // High power GPU. 2 Outputs, phases 3 1.
 			i2c_recv_byte(I2C_5, MAX77812_PHASE31_CPU_I2C_ADDR, MAX77812_REG_VERSION) & 7);
 		break;
 	case 2:
-		s_printf(txt_buf + strlen(txt_buf), "max77812-3 v%d.0", // Low power. 3 Outputs, phases 2 1 1.
+		s_printf(txt_buf + strlen(txt_buf), "max77812-3 v%d.0", // Low  power GPU. 3 Outputs, phases 2 1 1.
 			i2c_recv_byte(I2C_5, MAX77812_PHASE211_CPU_I2C_ADDR, MAX77812_REG_VERSION) & 7);
 		break;
 	}
@@ -2265,10 +2265,10 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		strcat(txt_buf, "Cool");
 		break;
 	case 5:
-		strcat(txt_buf, "Cold");
+		strcat(txt_buf, "#FF8000 Cold#");
 		break;
 	case 6:
-		strcat(txt_buf, "Hot");
+		strcat(txt_buf, "#FF8000 Hot#");
 		break;
 	default:
 		s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)", value);

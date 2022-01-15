@@ -413,12 +413,6 @@ void nyx_init_load_res()
 	sd_unmount();
 }
 
-#if (LV_LOG_PRINTF == 1)
-	#include <soc/clock.h>
-	#include <soc/gpio.h>
-	#include <soc/pinmux.h>
-#endif
-
 void ipl_main()
 {
 	//Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
