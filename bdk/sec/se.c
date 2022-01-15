@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "se.h"
-#include "se_t210.h"
 #include <mem/heap.h>
 #include <soc/bpmp.h>
 #include <soc/pmc.h>

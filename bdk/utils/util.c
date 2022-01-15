@@ -24,7 +24,7 @@
 #include <soc/i2c.h>
 #include <soc/pmc.h>
 #include <soc/t210.h>
-#include <storage/nx_sd.h>
+#include <storage/sd.h>
 
 #define USE_RTC_TIMER
 

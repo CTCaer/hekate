@@ -29,33 +29,34 @@
 
 #ifndef ELF_H
 #define ELF_H
-#include <stdint.h>
 
-typedef uint8_t Elf_Byte;
+#include <utils/types.h>
 
-typedef uint32_t Elf32_Addr; /* Unsigned program address */
-typedef uint32_t Elf32_Off;  /* Unsigned file offset */
-typedef int32_t Elf32_Sword; /* Signed large integer */
-typedef uint32_t Elf32_Word; /* Unsigned large integer */
-typedef uint16_t Elf32_Half; /* Unsigned medium integer */
+typedef u8 Elf_Byte;
 
-typedef uint64_t Elf64_Addr;
-typedef uint64_t Elf64_Off;
-typedef int32_t Elf64_Shalf;
+typedef u32 Elf32_Addr; /* Unsigned program address */
+typedef u32 Elf32_Off;  /* Unsigned file offset */
+typedef s32 Elf32_Sword; /* Signed large integer */
+typedef u32 Elf32_Word; /* Unsigned large integer */
+typedef u16 Elf32_Half; /* Unsigned medium integer */
+
+typedef u64 Elf64_Addr;
+typedef u64 Elf64_Off;
+typedef s32 Elf64_Shalf;
 
 #ifdef __alpha__
-typedef int64_t Elf64_Sword;
-typedef uint64_t Elf64_Word;
+typedef s64 Elf64_Sword;
+typedef u64 Elf64_Word;
 #else
-typedef int32_t Elf64_Sword;
-typedef uint32_t Elf64_Word;
+typedef s32 Elf64_Sword;
+typedef u32 Elf64_Word;
 #endif
 
-typedef int64_t Elf64_Sxword;
-typedef uint64_t Elf64_Xword;
+typedef s64 Elf64_Sxword;
+typedef u64 Elf64_Xword;
 
-typedef uint32_t Elf64_Half;
-typedef uint16_t Elf64_Quarter;
+typedef u32 Elf64_Half;
+typedef u16 Elf64_Quarter;
 
 /*
  * e_ident[] identification indexes
@@ -376,7 +377,7 @@ typedef struct
 
 #define ELF64_R_SYM(info) ((info) >> 32)
 #define ELF64_R_TYPE(info) ((info)&0xFFFFFFFF)
-#define ELF64_R_INFO(s, t) (((s) << 32) + (__uint32_t)(t))
+#define ELF64_R_INFO(s, t) (((s) << 32) + (u32)(t))
 
 #if defined(__mips64__) && defined(__MIPSEL__)
 /*
@@ -389,7 +390,7 @@ typedef struct
 #undef ELF64_R_INFO
 #define ELF64_R_TYPE(info) (swap32((info) >> 32))
 #define ELF64_R_SYM(info) ((info)&0xFFFFFFFF)
-#define ELF64_R_INFO(s, t) (((__uint64_t)swap32(t) << 32) + (__uint32_t)(s))
+#define ELF64_R_INFO(s, t) (((u64)swap32(t) << 32) + (u32)(s))
 #endif /* __mips64__ && __MIPSEL__ */
 
 /* Program Header */

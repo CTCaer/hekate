@@ -22,7 +22,7 @@
 #include <module.h>
 #include <mem/heap.h>
 #include <power/max7762x.h>
-#include <storage/nx_sd.h>
+#include <storage/sd.h>
 #include <utils/types.h>
 
 #include <gfx_utils.h>

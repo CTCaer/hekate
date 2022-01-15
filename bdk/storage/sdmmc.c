@@ -18,8 +18,8 @@
 #include <string.h>
 #include <storage/sdmmc.h>
 #include <storage/mmc.h>
-#include <storage/nx_sd.h>
 #include <storage/sd.h>
+#include <storage/sd_def.h>
 #include <memory_map.h>
 #include <gfx_utils.h>
 #include <mem/heap.h>

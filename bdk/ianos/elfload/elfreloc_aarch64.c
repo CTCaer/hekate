@@ -23,9 +23,9 @@
 
 el_status el_applyrela(el_ctx *ctx, Elf_RelA *rel)
 {
-	uintptr_t *p = (uintptr_t *)(rel->r_offset + ctx->base_load_paddr);
-	uint32_t type = ELF_R_TYPE(rel->r_info);
-	uint32_t sym = ELF_R_SYM(rel->r_info);
+	uptr *p = (uptr *)(rel->r_offset + ctx->base_load_paddr);
+	u32 type = ELF_R_TYPE(rel->r_info);
+	u32 sym = ELF_R_SYM(rel->r_info);
 
 	switch (type)
 	{
@@ -53,9 +53,9 @@ el_status el_applyrela(el_ctx *ctx, Elf_RelA *rel)
 
 el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel)
 {
-	uintptr_t *p = (uintptr_t *)(rel->r_offset + ctx->base_load_paddr);
-	uint32_t type = ELF_R_TYPE(rel->r_info);
-	uint32_t sym = ELF_R_SYM(rel->r_info);
+	uptr *p = (uptr *)(rel->r_offset + ctx->base_load_paddr);
+	u32 type = ELF_R_TYPE(rel->r_info);
+	u32 sym = ELF_R_SYM(rel->r_info);
 
 	switch (type)
 	{

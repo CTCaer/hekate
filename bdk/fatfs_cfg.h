@@ -17,8 +17,12 @@
 #ifndef _FATFS_CFG_H_
 #define _FATFS_CFG_H_
 
+// define FFCFG_INC in a project to use a specific FatFS configuration.
+// Example: FFCFG_INC := '"../$(PROJECT_DIR)/libs/fatfs/ffconf.h"'
 #ifdef FFCFG_INC
 #include FFCFG_INC
+#else
+#include "fatfs_conf.h"
 #endif
 
 #endif

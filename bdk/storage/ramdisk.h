@@ -19,11 +19,11 @@
 #ifndef RAM_DISK_H
 #define RAM_DISK_H
 
-#include <libs/fatfs/ff.h>
+#include <utils/types.h>
 
 #define RAMDISK_CLUSTER_SZ 32768
 
-int ram_disk_init(FATFS *ram_fs, u32 ramdisk_size);
+int ram_disk_init(void *ram_fs, u32 ramdisk_size);
 int ram_disk_read(u32 sector, u32 sector_count, void *buf);
 int ram_disk_write(u32 sector, u32 sector_count, const void *buf);
 

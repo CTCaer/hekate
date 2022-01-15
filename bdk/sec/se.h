@@ -18,6 +18,7 @@
 #ifndef _SE_H_
 #define _SE_H_
 
+#include "se_t210.h"
 #include <utils/types.h>
 
 void se_rsa_acc_ctrl(u32 rs, u32 flags);

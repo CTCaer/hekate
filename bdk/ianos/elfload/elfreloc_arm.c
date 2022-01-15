@@ -20,9 +20,9 @@
 
 el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel)
 {
-	uint32_t sym = ELF_R_SYM(rel->r_info);                              // Symbol offset
-	uint32_t type = ELF_R_TYPE(rel->r_info);                            // Relocation Type
-	uintptr_t *p = (uintptr_t *)(rel->r_offset + ctx->base_load_paddr); // Target Addr
+	u32 sym = ELF_R_SYM(rel->r_info);                              // Symbol offset
+	u32 type = ELF_R_TYPE(rel->r_info);                            // Relocation Type
+	uptr *p = (uptr *)(rel->r_offset + ctx->base_load_paddr); // Target Addr
 
 #if 0 // For later symbol usage
 	Elf32_Sym *elfSym;

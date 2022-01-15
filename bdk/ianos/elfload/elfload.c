@@ -25,7 +25,7 @@ el_status el_pread(el_ctx *ctx, void *def, size_t nb, size_t offset)
 }
 
 #define EL_PHOFF(ctx, num) (((ctx)->ehdr.e_phoff + (num) *(ctx)->ehdr.e_phentsize))
-el_status el_findphdr(el_ctx *ctx, Elf_Phdr *phdr, uint32_t type, unsigned *i)
+el_status el_findphdr(el_ctx *ctx, Elf_Phdr *phdr, u32 type, unsigned *i)
 {
 	el_status rv = EL_OK;
 	for (; *i < ctx->ehdr.e_phnum; (*i)++)
@@ -44,7 +44,7 @@ el_status el_findphdr(el_ctx *ctx, Elf_Phdr *phdr, uint32_t type, unsigned *i)
 }
 
 #define EL_SHOFF(ctx, num) (((ctx)->ehdr.e_shoff + (num) *(ctx)->ehdr.e_shentsize))
-el_status el_findshdr(el_ctx *ctx, Elf_Shdr *shdr, uint32_t type, unsigned *i)
+el_status el_findshdr(el_ctx *ctx, Elf_Shdr *shdr, u32 type, unsigned *i)
 {
 	el_status rv = EL_OK;
 
@@ -213,7 +213,7 @@ el_status el_load(el_ctx *ctx, el_alloc_cb alloc)
 	return rv;
 }
 
-el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, uint32_t tag)
+el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, u32 tag)
 {
 	el_status rv = EL_OK;
 	size_t ndyn = ctx->dynsize / sizeof(Elf_Dyn);
@@ -231,7 +231,7 @@ el_status el_finddyn(el_ctx *ctx, Elf_Dyn *dyn, uint32_t tag)
 	return EL_OK;
 }
 
-el_status el_findrelocs(el_ctx *ctx, el_relocinfo *ri, uint32_t type)
+el_status el_findrelocs(el_ctx *ctx, el_relocinfo *ri, u32 type)
 {
 	el_status rv = EL_OK;
 
