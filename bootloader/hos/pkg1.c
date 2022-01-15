@@ -20,19 +20,12 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "hos.h"
 #include "pkg1.h"
 #include "../config.h"
-#include <gfx_utils.h>
 #include <libs/compr/lz4.h>
-#include <mem/heap.h>
-#include <soc/fuse.h>
-#include <sec/se.h>
-#include <soc/pmc.h>
-#include <soc/t210.h>
-#include <storage/nx_sd.h>
-#include <utils/aarch64_util.h>
-#include <utils/util.h>
 
 extern hekate_config h_cfg;
 

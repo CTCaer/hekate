@@ -18,10 +18,9 @@
 #ifndef _NX_EMMC_H_
 #define _NX_EMMC_H_
 
-#include <storage/sdmmc.h>
+#include <bdk.h>
+
 #include <libs/fatfs/ff.h>
-#include <utils/types.h>
-#include <utils/list.h>
 
 #define NX_GPT_FIRST_LBA  1
 #define NX_GPT_NUM_BLOCKS 33

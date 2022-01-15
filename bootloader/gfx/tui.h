@@ -18,8 +18,7 @@
 #ifndef _TUI_H_
 #define _TUI_H_
 
-#include <utils/types.h>
-#include <gfx_utils.h>
+#include <bdk.h>
 
 #define MENT_END     0
 #define MENT_HANDLER 1

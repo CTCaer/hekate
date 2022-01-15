@@ -19,13 +19,11 @@
 
 #include <string.h>
 
+#include <bdk.h>
+
 #include "hos.h"
 #include "pkg1.h"
 #include "../config.h"
-#include <gfx_utils.h>
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <utils/aarch64_util.h>
 
 extern hekate_config h_cfg;
 

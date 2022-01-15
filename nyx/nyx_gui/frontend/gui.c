@@ -16,6 +16,8 @@
 
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "gui.h"
 #include "gui_emummc_tools.h"
 #include "gui_tools.h"
@@ -26,30 +28,7 @@
 #include "../gfx/logos-gui.h"
 
 #include "../config.h"
-#include <utils/ini.h>
-#include <display/di.h>
-#include <gfx_utils.h>
-#include <input/joycon.h>
-#include <input/touch.h>
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <mem/minerva.h>
-#include <power/bq24193.h>
-#include <power/max17050.h>
-#include <power/regulator_5v.h>
-#include <rtc/max77620-rtc.h>
-#include <soc/bpmp.h>
-#include <soc/fuse.h>
-#include <soc/hw_init.h>
-#include <soc/t210.h>
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <thermal/fan.h>
-#include <thermal/tmp451.h>
-#include <utils/dirlist.h>
-#include <utils/sprintf.h>
-#include <utils/types.h>
-#include <utils/util.h>
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;

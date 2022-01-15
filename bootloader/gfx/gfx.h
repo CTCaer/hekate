@@ -19,7 +19,7 @@
 #ifndef _GFX_H_
 #define _GFX_H_
 
-#include <utils/types.h>
+#include <bdk.h>
 
 #define EPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
 #define EPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)

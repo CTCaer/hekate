@@ -17,11 +17,9 @@
 
 #include <string.h>
 
+#include <bdk.h>
+
 #include "nx_emmc.h"
-#include <mem/heap.h>
-#include <soc/fuse.h>
-#include <storage/mbr_gpt.h>
-#include <utils/list.h>
 
 sdmmc_t emmc_sdmmc;
 sdmmc_storage_t emmc_storage;

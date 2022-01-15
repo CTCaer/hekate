@@ -16,36 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <bdk.h>
+
 #include "gui.h"
-#include <display/di.h>
 #include "../config.h"
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
 #include <libs/fatfs/ff.h>
-#include <input/touch.h>
-#include <mem/emc.h>
-#include <mem/heap.h>
-#include <mem/sdram.h>
-#include <mem/smmu.h>
-#include <power/bm92t36.h>
-#include <power/bq24193.h>
-#include <power/max17050.h>
-#include <power/max77620.h>
-#include <power/max7762x.h>
-#include <power/max77812.h>
-#include <sec/se.h>
-#include <sec/tsec.h>
-#include <soc/fuse.h>
-#include <soc/kfuse.h>
-#include <soc/i2c.h>
-#include <soc/t210.h>
-#include <storage/mmc.h>
 #include "../storage/nx_emmc_bis.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/sprintf.h>
-#include <utils/util.h>
 
 #define SECTORS_TO_MIB_COEFF 11
 

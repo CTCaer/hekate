@@ -1,11 +1,10 @@
 #ifndef _LOGOS_GUI_H_
 #define _LOGOS_GUI_H_
 
-#include <memory_map.h>
+#include <bdk.h>
 
 #include <libs/lv_conf.h>
 #include <libs/lvgl/lv_draw/lv_draw_img.h>
-#include <utils/types.h>
 
 #define HEKATE_LOGO
 

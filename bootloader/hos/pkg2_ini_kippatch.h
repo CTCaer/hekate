@@ -17,8 +17,7 @@
 #ifndef _INIPATCH_H_
 #define _INIPATCH_H_
 
-#include <utils/types.h>
-#include <utils/list.h>
+#include <bdk.h>
 
 typedef struct _ini_patchset_t
 {

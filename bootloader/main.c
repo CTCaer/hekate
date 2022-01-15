@@ -19,11 +19,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <memory_map.h>
+#include <bdk.h>
 
 #include "config.h"
-#include <display/di.h>
-#include <gfx_utils.h>
 #include "gfx/logos.h"
 #include "gfx/tui.h"
 #include "hos/hos.h"
@@ -31,29 +29,8 @@
 #include <ianos/ianos.h>
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <mem/minerva.h>
-#include <mem/sdram.h>
-#include <power/bq24193.h>
-#include <power/max17050.h>
-#include <power/max77620.h>
-#include <power/max7762x.h>
-#include <rtc/max77620-rtc.h>
-#include <soc/bpmp.h>
-#include <soc/fuse.h>
-#include <soc/hw_init.h>
-#include <soc/i2c.h>
-#include <soc/pmc.h>
-#include <soc/t210.h>
-#include <soc/uart.h>
 #include "storage/emummc.h"
 #include "storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/dirlist.h>
-#include <utils/list.h>
-#include <utils/util.h>
 
 #include "frontend/fe_emmc_tools.h"
 #include "frontend/fe_tools.h"

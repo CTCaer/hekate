@@ -19,15 +19,9 @@
 
 #include <string.h>
 
-#include <memory_map.h>
+#include <bdk.h>
 
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <sec/se_t210.h>
 #include "../storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/types.h>
 
 #define BIS_CLUSTER_SECTORS   32
 #define BIS_CLUSTER_SIZE      16384

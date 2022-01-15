@@ -20,32 +20,14 @@
 
 #include <string.h>
 
+#include <bdk.h>
+
 #include "hos.h"
 #include "hos_config.h"
 #include "secmon_exo.h"
 #include "../config.h"
-#include <display/di.h>
-#include <gfx_utils.h>
-#include <mem/heap.h>
-#include <mem/mc.h>
-#include <mem/minerva.h>
-#include <mem/smmu.h>
-#include <sec/se.h>
-#include <sec/se_t210.h>
-#include <sec/tsec.h>
-#include <soc/bpmp.h>
-#include <soc/ccplex.h>
-#include <soc/clock.h>
-#include <soc/fuse.h>
-#include <soc/pmc.h>
-#include <soc/t210.h>
 #include "../storage/emummc.h"
-#include <storage/mbr_gpt.h>
 #include "../storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/util.h>
 
 extern hekate_config h_cfg;
 

@@ -17,15 +17,12 @@
 
 #include <string.h>
 
+#include <bdk.h>
+
 #include "hos.h"
 #include "hos_config.h"
 #include "fss.h"
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <storage/nx_sd.h>
-#include <utils/dirlist.h>
-
-#include <gfx_utils.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

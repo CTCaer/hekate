@@ -15,12 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <storage/sdmmc_driver.h>
-#include <gfx_utils.h>
+#include <bdk.h>
+
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
 
 static bool sd_mounted = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.

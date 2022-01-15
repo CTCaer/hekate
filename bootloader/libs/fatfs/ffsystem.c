@@ -4,11 +4,7 @@
 /* (C) CTCaer, 2018                                                       */
 /*------------------------------------------------------------------------*/
 
-
-#include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-
-
+#include <bdk.h>
 
 #if FF_USE_LFN == 3	/* Dynamic memory allocation */
 

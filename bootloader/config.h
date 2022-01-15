@@ -17,8 +17,9 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+#include <bdk.h>
+
 #include "hos/hos.h"
-#include <utils/types.h>
 
 typedef struct _hekate_config
 {

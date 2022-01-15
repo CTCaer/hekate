@@ -4,11 +4,10 @@
 /* (C) CTCaer, 2018                                                       */
 /*------------------------------------------------------------------------*/
 
+#include <bdk.h>
 
 #include <libs/fatfs/ff.h>
 #include "../../config.h"
-#include <mem/heap.h>
-#include <rtc/max77620-rtc.h>
 
 extern nyx_config n_cfg;
 

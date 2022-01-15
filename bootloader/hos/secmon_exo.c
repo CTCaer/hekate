@@ -18,20 +18,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "hos.h"
 #include "../config.h"
-#include <display/di.h>
-#include <gfx_utils.h>
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <soc/fuse.h>
 #include "../storage/emummc.h"
 #include "../storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/util.h>
-#include <utils/types.h>
 
 extern hekate_config h_cfg;
 

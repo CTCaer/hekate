@@ -16,18 +16,11 @@
 
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "gui.h"
 #include "../config.h"
-#include <utils/ini.h>
-#include <display/di.h>
-#include <input/joycon.h>
 #include <libs/lvgl/lvgl.h>
-#include <mem/heap.h>
-#include <rtc/max77620-rtc.h>
-#include <storage/nx_sd.h>
-#include <utils/list.h>
-#include <utils/sprintf.h>
-#include <utils/types.h>
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;

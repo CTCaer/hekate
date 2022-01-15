@@ -17,7 +17,7 @@
 #ifndef _PKG1_H_
 #define _PKG1_H_
 
-#include <utils/types.h>
+#include <bdk.h>
 
 #define PKG1_MAGIC 0x31314B50
 

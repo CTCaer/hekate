@@ -21,22 +21,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "gui.h"
 #include "fe_emummc_tools.h"
 #include "../config.h"
-#include <utils/ini.h>
 #include <libs/fatfs/diskio.h>
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <storage/mbr_gpt.h>
 #include "../storage/nx_emmc.h"
 #include "../storage/nx_emmc_bis.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/sprintf.h>
-#include <utils/util.h>
 
 #define OUT_FILENAME_SZ 128
 #define NAND_PATROL_SECTOR 0xC20

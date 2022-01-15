@@ -17,33 +17,19 @@
 
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "gui.h"
 #include "gui_tools.h"
 #include "gui_tools_partition_manager.h"
 #include "gui_emmc_tools.h"
 #include "fe_emummc_tools.h"
-#include <memory_map.h>
 #include "../config.h"
-#include <display/di.h>
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
-#include <input/touch.h>
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <mem/minerva.h>
-#include <sec/se.h>
-#include <soc/bpmp.h>
-#include <soc/fuse.h>
-#include <soc/hw_init.h>
-#include <soc/t210.h>
 #include "../storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <usb/usbd.h>
-#include <utils/btn.h>
-#include <utils/sprintf.h>
-#include <utils/util.h>
 
 extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;

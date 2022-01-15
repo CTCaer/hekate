@@ -16,24 +16,14 @@
 
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "gui.h"
 #include "gui_tools.h"
 #include "gui_tools_partition_manager.h"
 #include <libs/fatfs/diskio.h>
 #include <libs/lvgl/lvgl.h>
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <soc/hw_init.h>
-#include <soc/pmc.h>
-#include <soc/t210.h>
-#include <storage/mbr_gpt.h>
 #include "../storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/ramdisk.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/sprintf.h>
-#include <utils/util.h>
 
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;

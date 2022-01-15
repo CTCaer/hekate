@@ -16,6 +16,8 @@
 
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "gui.h"
 #include "gui_emmc_tools.h"
 #include "gui_tools.h"
@@ -25,13 +27,6 @@
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <soc/fuse.h>
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/sprintf.h>
-#include <utils/util.h>
 
 extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;

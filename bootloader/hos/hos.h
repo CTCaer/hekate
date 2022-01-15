@@ -18,12 +18,10 @@
 #ifndef _HOS_H_
 #define _HOS_H_
 
+#include <bdk.h>
+
 #include "pkg1.h"
 #include "pkg2.h"
-#include <sec/se_t210.h>
-#include <utils/types.h>
-#include <utils/ini.h>
-#include <sec/tsec.h>
 
 #include <assert.h>
 

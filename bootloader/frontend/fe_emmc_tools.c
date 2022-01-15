@@ -19,20 +19,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <bdk.h>
+
 #include "fe_emmc_tools.h"
-#include <memory_map.h>
 #include "../config.h"
-#include <gfx_utils.h>
 #include "../gfx/tui.h"
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <sec/se_t210.h>
 #include "../storage/nx_emmc.h"
-#include <storage/nx_sd.h>
-#include <storage/sdmmc.h>
-#include <utils/btn.h>
-#include <utils/util.h>
 
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128

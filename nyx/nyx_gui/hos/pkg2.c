@@ -17,17 +17,14 @@
 
 #include <string.h>
 
+#include <bdk.h>
+
 #include "pkg2.h"
 #include "hos.h"
 
 #include "../config.h"
 #include <libs/fatfs/ff.h>
-#include <mem/heap.h>
-#include <sec/se.h>
-#include <sec/se_t210.h>
 #include <libs/compr/blz.h>
-
-#include <gfx_utils.h>
 
 extern hekate_config h_cfg;
 extern const u8 package2_keyseed[];
@@ -36,8 +33,7 @@ u32 pkg2_newkern_ini1_val;
 u32 pkg2_newkern_ini1_start;
 u32 pkg2_newkern_ini1_end;
 
-/*#include <utils/util.h>
-#define DPRINTF(...) gfx_printf(__VA_ARGS__)
+/*#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DEBUG_PRINTING*/
 #define DPRINTF(...)
 

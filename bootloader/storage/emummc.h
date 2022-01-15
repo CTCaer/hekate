@@ -17,8 +17,7 @@
 #ifndef EMUMMC_H
 #define EMUMMC_H
 
-#include <storage/sdmmc.h>
-#include <utils/types.h>
+#include <bdk.h>
 
 typedef enum
 {
