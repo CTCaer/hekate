@@ -1085,6 +1085,15 @@ out:
 #define  EXCP_TYPE_DABRT 0x54424144 // DABT
 #define EXCP_LR_ADDR   0x4003FFF4
 
+#define PSTORE_LOG_OFFSET 0x180000
+#define PSTORE_RAM_SIG    0x43474244 // DBGC.
+
+typedef struct _pstore_buf {
+	u32 sig;
+	u32 start;
+	u32 size;
+} pstore_buf_t;
+
 static void _show_errors()
 {
 	u32 *excp_enabled = (u32 *)EXCP_EN_ADDR;
@@ -1095,14 +1104,12 @@ static void _show_errors()
 	if (*excp_enabled == EXCP_MAGIC)
 		h_cfg.errors |= ERR_EXCEPTION;
 
-#if 0 //! FIXME: Find a better way to identify if that scratch has proper data.
-	if (PMC(APBDEV_PMC_SCRATCH37) & PMC_SCRATCH37_KERNEL_PANIC_FLAG)
+	if (PMC(APBDEV_PMC_SCRATCH37) == PMC_SCRATCH37_KERNEL_PANIC_MAGIC)
 	{
 		// Set error and clear flag.
 		h_cfg.errors |= ERR_L4T_KERNEL;
-		PMC(APBDEV_PMC_SCRATCH37) &= ~PMC_SCRATCH37_KERNEL_PANIC_FLAG;
+		PMC(APBDEV_PMC_SCRATCH37) = 0;
 	}
-#endif
 
 	if (hw_rst_reason == PMC_RST_STATUS_WATCHDOG &&
 		panic_status <= 0xFF && panic_status != 0x20 && panic_status != 0x21)
@@ -1146,20 +1153,26 @@ static void _show_errors()
 				WPRINTF("DABRT");
 				break;
 			}
-			WPRINTF("\n");
+			gfx_puts("\n");
 
 			// Clear the exception.
 			*excp_enabled = 0;
 		}
 
-#if 0 //! FIXME: Find a better way to identify if that scratch has proper data.
-		if (0 && h_cfg.errors & ERR_L4T_KERNEL)
+		if (h_cfg.errors & ERR_L4T_KERNEL)
 		{
 			WPRINTF("A kernel panic occurred!\n");
 			if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
-				WPRINTF("PSTORE saved to L4T_panic.bin\n");
+				WPRINTF("PSTORE saved to L4T_panic.bin");
+			pstore_buf_t *buf = (pstore_buf_t *)(PSTORE_ADDR + PSTORE_LOG_OFFSET);
+			if (buf->sig == PSTORE_RAM_SIG && buf->size < 0x80000)
+			{
+				u32 log_offset = PSTORE_ADDR + PSTORE_LOG_OFFSET + sizeof(pstore_buf_t);
+				if (!sd_save_to_file((void *)log_offset, buf->size, "L4T_panic.txt"))
+					WPRINTF("Log saved to L4T_panic.txt");
+			}
+			gfx_puts("\n");
 		}
-#endif
 
 		if (h_cfg.errors & ERR_PANIC_CODE)
 		{
