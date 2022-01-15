@@ -23,10 +23,12 @@
 #define BTN_POWER    BIT(0)
 #define BTN_VOL_DOWN BIT(1)
 #define BTN_VOL_UP   BIT(2)
+#define BTN_HOME     BIT(3)
 #define BTN_SINGLE   BIT(7)
 
 u8 btn_read();
 u8 btn_read_vol();
+u8 btn_read_home();
 u8 btn_wait();
 u8 btn_wait_timeout(u32 time_ms, u8 mask);
 u8 btn_wait_timeout_single(u32 time_ms, u8 mask);
