@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,8 +18,10 @@
 #include <string.h>
 
 #include "se.h"
+#include <memory_map.h>
 #include <mem/heap.h>
 #include <soc/bpmp.h>
+#include <soc/hw_init.h>
 #include <soc/pmc.h>
 #include <soc/t210.h>
 #include <utils/util.h>
@@ -30,6 +32,8 @@ typedef struct _se_ll_t
 	vu32 addr;
 	vu32 size;
 } se_ll_t;
+
+se_ll_t *ll_dst, *ll_src;
 
 static void _gf256_mul_x(void *block)
 {
@@ -62,16 +66,46 @@ static void _se_ll_set(se_ll_t *dst, se_ll_t *src)
 
 static int _se_wait()
 {
+	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
+
+	// Wait for operation to be done.
 	while (!(SE(SE_INT_STATUS_REG) & SE_INT_OP_DONE))
 		;
-	if (SE(SE_INT_STATUS_REG) & SE_INT_ERR_STAT ||
-	   (SE(SE_STATUS_REG) & SE_STATUS_STATE_MASK) != SE_STATUS_STATE_IDLE ||
-		SE(SE_ERR_STATUS_REG) != 0)
+
+	// Check for errors.
+	if ((SE(SE_INT_STATUS_REG) & SE_INT_ERR_STAT) ||
+		(SE(SE_STATUS_REG) & SE_STATUS_STATE_MASK) != SE_STATUS_STATE_IDLE ||
+		 SE(SE_ERR_STATUS_REG) != 0)
 		return 0;
+
+	// T210B01: IRAM/TZRAM/DRAM AHB coherency WAR.
+	if (!tegra_t210 && ll_dst)
+	{
+		u32 timeout = get_tmr_us() + 1000000;
+		// Ensure data is out from SE.
+		while (SE(SE_STATUS_REG) & SE_STATUS_MEM_IF_BUSY)
+		{
+			if (get_tmr_us() > timeout)
+				return 0;
+			usleep(1);
+		}
+
+		// Ensure data is out from AHB.
+		if(ll_dst->addr >= DRAM_START)
+		{
+			timeout = get_tmr_us() + 200000;
+			while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
+			{
+				if (get_tmr_us() > timeout)
+					return 0;
+				usleep(1);
+			}
+		}
+	}
+
 	return 1;
 }
 
-se_ll_t *ll_dst, *ll_src;
 static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size, bool is_oneshot)
 {
 	ll_dst = NULL;
@@ -105,9 +139,15 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 
 		if (src)
+		{
 			free(ll_src);
+			ll_src = NULL;
+		}
 		if (dst)
+		{
 			free(ll_dst);
+			ll_dst = NULL;
+		}
 
 		return res;
 	}
