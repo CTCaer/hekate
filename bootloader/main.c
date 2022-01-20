@@ -287,7 +287,7 @@ void auto_launch_update()
 	// Check if already chainloaded update and clear flag. Otherwise check for updates.
 	if (EMC(EMC_SCRATCH0) & EMC_HEKA_UPD)
 		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
-	else if (sd_mount())
+	else
 	{
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
@@ -661,8 +661,6 @@ out:
 
 void nyx_load_run()
 {
-	sd_mount();
-
 	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", NULL);
 	if (!nyx)
 		return;
@@ -799,152 +797,147 @@ static void _auto_launch_firmware()
 	LIST_INIT(ini_sections);
 	LIST_INIT(ini_list_sections);
 
-	if (sd_mount())
-	{
-		// Load emuMMC configuration.
-		emummc_load_cfg();
+	// Load emuMMC configuration.
+	emummc_load_cfg();
 
-		if (f_stat("bootloader/hekate_ipl.ini", NULL))
+	if (f_stat("bootloader/hekate_ipl.ini", NULL))
+		create_config_entry();
+
+	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	{
+		u32 configEntry = 0;
+		u32 boot_entry_id = 0;
+
+		// Load configuration.
+		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+		{
+			// Skip other ini entries for autoboot.
+			if (ini_sec->type == INI_CHOICE)
+			{
+				if (!strcmp(ini_sec->name, "config"))
+				{
+					configEntry = 1;
+					LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+					{
+						if (!strcmp("autoboot", kv->key))
+							h_cfg.autoboot = atoi(kv->val);
+						else if (!strcmp("autoboot_list", kv->key))
+							h_cfg.autoboot_list = atoi(kv->val);
+						else if (!strcmp("bootwait", kv->key))
+						{
+							h_cfg.bootwait = atoi(kv->val);
+
+							/*
+							 * Clamp value to default if it exceeds 20s to protect against corruption.
+							 * Allow up to 20s though for use in cases where user needs lots of time.
+							 * For example dock-only use and r2p with enough time to reach dock and cancel it.
+							*/
+							if (h_cfg.bootwait > 20)
+								h_cfg.bootwait = 3;
+						}
+						else if (!strcmp("backlight", kv->key))
+							h_cfg.backlight = atoi(kv->val);
+						else if (!strcmp("autohosoff", kv->key))
+							h_cfg.autohosoff = atoi(kv->val);
+						else if (!strcmp("autonogc", kv->key))
+							h_cfg.autonogc = atoi(kv->val);
+						else if (!strcmp("updater2p", kv->key))
+							h_cfg.updater2p = atoi(kv->val);
+						else if (!strcmp("bootprotect", kv->key))
+							h_cfg.bootprotect = atoi(kv->val);
+					}
+					boot_entry_id++;
+
+					// Override autoboot.
+					if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
+					{
+						h_cfg.autoboot = b_cfg.autoboot;
+						h_cfg.autoboot_list = b_cfg.autoboot_list;
+					}
+
+					// Apply bootloader protection against corruption.
+					_bootloader_corruption_protect();
+
+					continue;
+				}
+
+				if (boot_from_id)
+					cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
+				else if (h_cfg.autoboot == boot_entry_id && configEntry)
+				{
+					cfg_sec = ini_sec;
+					LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+					{
+						if (!strcmp("logopath", kv->key))
+							bootlogoCustomEntry = kv->val;
+						else if (!strcmp("emummc_force_disable", kv->key))
+							h_cfg.emummc_force_disable = atoi(kv->val);
+						else if (!strcmp("emupath", kv->key))
+							emummc_path = kv->val;
+					}
+				}
+				if (cfg_sec)
+					break;
+				boot_entry_id++;
+			}
+		}
+
+		if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
+			check_power_off_from_hos();
+
+		if (h_cfg.autoboot_list || (boot_from_id && !cfg_sec))
+		{
+			if (boot_from_id && cfg_sec)
+				goto skip_list;
+
+			cfg_sec = NULL;
+			boot_entry_id = 1;
+			bootlogoCustomEntry = NULL;
+
+			if (ini_parse(&ini_list_sections, "bootloader/ini", true))
+			{
+				LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
+				{
+					if (ini_sec_list->type == INI_CHOICE)
+					{
+						if (!strcmp(ini_sec_list->name, "config"))
+							continue;
+
+						if (boot_from_id)
+							cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
+						else if (h_cfg.autoboot == boot_entry_id)
+						{
+							h_cfg.emummc_force_disable = false;
+							cfg_sec = ini_sec_list;
+							LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+							{
+								if (!strcmp("logopath", kv->key))
+									bootlogoCustomEntry = kv->val;
+								else if (!strcmp("emummc_force_disable", kv->key))
+									h_cfg.emummc_force_disable = atoi(kv->val);
+								else if (!strcmp("emupath", kv->key))
+									emummc_path = kv->val;
+							}
+						}
+						if (cfg_sec)
+							break;
+						boot_entry_id++;
+					}
+				}
+
+			}
+
+		}
+skip_list:
+		// Add missing configuration entry.
+		if (!configEntry)
 			create_config_entry();
 
-		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
-		{
-			u32 configEntry = 0;
-			u32 boot_entry_id = 0;
-
-			// Load configuration.
-			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
-			{
-				// Skip other ini entries for autoboot.
-				if (ini_sec->type == INI_CHOICE)
-				{
-					if (!strcmp(ini_sec->name, "config"))
-					{
-						configEntry = 1;
-						LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
-						{
-							if (!strcmp("autoboot", kv->key))
-								h_cfg.autoboot = atoi(kv->val);
-							else if (!strcmp("autoboot_list", kv->key))
-								h_cfg.autoboot_list = atoi(kv->val);
-							else if (!strcmp("bootwait", kv->key))
-							{
-								h_cfg.bootwait = atoi(kv->val);
-
-								/*
-								 * Clamp value to default if it exceeds 20s to protect against corruption.
-								 * Allow up to 20s though for use in cases where user needs lots of time.
-								 * For example dock-only use and r2p with enough time to reach dock and cancel it.
-								*/
-								if (h_cfg.bootwait > 20)
-									h_cfg.bootwait = 3;
-							}
-							else if (!strcmp("backlight", kv->key))
-								h_cfg.backlight = atoi(kv->val);
-							else if (!strcmp("autohosoff", kv->key))
-								h_cfg.autohosoff = atoi(kv->val);
-							else if (!strcmp("autonogc", kv->key))
-								h_cfg.autonogc = atoi(kv->val);
-							else if (!strcmp("updater2p", kv->key))
-								h_cfg.updater2p = atoi(kv->val);
-							else if (!strcmp("bootprotect", kv->key))
-								h_cfg.bootprotect = atoi(kv->val);
-						}
-						boot_entry_id++;
-
-						// Override autoboot.
-						if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
-						{
-							h_cfg.autoboot = b_cfg.autoboot;
-							h_cfg.autoboot_list = b_cfg.autoboot_list;
-						}
-
-						// Apply bootloader protection against corruption.
-						_bootloader_corruption_protect();
-
-						continue;
-					}
-
-					if (boot_from_id)
-						cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
-					else if (h_cfg.autoboot == boot_entry_id && configEntry)
-					{
-						cfg_sec = ini_sec;
-						LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
-						{
-							if (!strcmp("logopath", kv->key))
-								bootlogoCustomEntry = kv->val;
-							else if (!strcmp("emummc_force_disable", kv->key))
-								h_cfg.emummc_force_disable = atoi(kv->val);
-							else if (!strcmp("emupath", kv->key))
-								emummc_path = kv->val;
-						}
-					}
-					if (cfg_sec)
-						break;
-					boot_entry_id++;
-				}
-			}
-
-			if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
-				check_power_off_from_hos();
-
-			if (h_cfg.autoboot_list || (boot_from_id && !cfg_sec))
-			{
-				if (boot_from_id && cfg_sec)
-					goto skip_list;
-
-				cfg_sec = NULL;
-				boot_entry_id = 1;
-				bootlogoCustomEntry = NULL;
-
-				if (ini_parse(&ini_list_sections, "bootloader/ini", true))
-				{
-					LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
-					{
-						if (ini_sec_list->type == INI_CHOICE)
-						{
-							if (!strcmp(ini_sec_list->name, "config"))
-								continue;
-
-							if (boot_from_id)
-								cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
-							else if (h_cfg.autoboot == boot_entry_id)
-							{
-								h_cfg.emummc_force_disable = false;
-								cfg_sec = ini_sec_list;
-								LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
-								{
-									if (!strcmp("logopath", kv->key))
-										bootlogoCustomEntry = kv->val;
-									else if (!strcmp("emummc_force_disable", kv->key))
-										h_cfg.emummc_force_disable = atoi(kv->val);
-									else if (!strcmp("emupath", kv->key))
-										emummc_path = kv->val;
-								}
-							}
-							if (cfg_sec)
-								break;
-							boot_entry_id++;
-						}
-					}
-
-				}
-
-			}
-skip_list:
-			// Add missing configuration entry.
-			if (!configEntry)
-				create_config_entry();
-
-			if (!cfg_sec)
-				goto out; // No configurations or auto boot is disabled.
-		}
-		else
-			goto out; // Can't load hekate_ipl.ini.
+		if (!cfg_sec)
+			goto out; // No configurations or auto boot is disabled.
 	}
 	else
-		goto out;
+		goto out; // Can't load hekate_ipl.ini.
 
 	u8 *bitmap = NULL;
 	struct _bmp_data bmpData;
@@ -1166,14 +1159,17 @@ static void _show_errors()
 		if (h_cfg.errors & ERR_L4T_KERNEL)
 		{
 			WPRINTF("Kernel panic occurred!\n");
-			if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
-				WPRINTF("PSTORE saved to L4T_panic.bin");
-			pstore_buf_t *buf = (pstore_buf_t *)(PSTORE_ADDR + PSTORE_LOG_OFFSET);
-			if (buf->sig == PSTORE_RAM_SIG && buf->size < 0x80000)
+			if (!(h_cfg.errors & ERR_SD_BOOT_EN))
 			{
-				u32 log_offset = PSTORE_ADDR + PSTORE_LOG_OFFSET + sizeof(pstore_buf_t);
-				if (!sd_save_to_file((void *)log_offset, buf->size, "L4T_panic.txt"))
-					WPRINTF("Log saved to L4T_panic.txt");
+				if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
+					WPRINTF("PSTORE saved to L4T_panic.bin");
+				pstore_buf_t *buf = (pstore_buf_t *)(PSTORE_ADDR + PSTORE_LOG_OFFSET);
+				if (buf->sig == PSTORE_RAM_SIG && buf->size < 0x80000)
+				{
+					u32 log_offset = PSTORE_ADDR + PSTORE_LOG_OFFSET + sizeof(pstore_buf_t);
+					if (!sd_save_to_file((void *)log_offset, buf->size, "L4T_panic.txt"))
+						WPRINTF("Log saved to L4T_panic.txt");
+				}
 			}
 			gfx_puts("\n");
 		}
@@ -1514,7 +1510,8 @@ void ipl_main()
 	_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
-	_auto_launch_firmware();
+	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
+		_auto_launch_firmware();
 
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();
