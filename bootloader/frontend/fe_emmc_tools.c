@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -25,7 +25,6 @@
 #include "../config.h"
 #include "../gfx/tui.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc.h"
 
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
@@ -180,7 +179,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 	if ((sd_storage.csd.capacity >> (20 - sd_storage.csd.read_blkbits)) <= 8192)
 		multipartSplitSize = (1u << 30);
 	// Maximum parts fitting the free space available.
-	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (multipartSplitSize / NX_EMMC_BLOCKSIZE);
+	maxSplitParts = (sd_fs.free_clst * sd_fs.csize) / (multipartSplitSize / EMMC_BLOCKSIZE);
 
 	// Check if the USER partition or the RAW eMMC fits the sd card free space.
 	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
@@ -198,7 +197,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		}
 	}
 	// Check if we are continuing a previous raw eMMC or USER partition backup in progress.
-	if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE))
+	if (f_open(&partialIdxFp, partialIdxFilename, FA_READ) == FR_OK && totalSectors > (FAT32_FILESIZE_LIMIT / EMMC_BLOCKSIZE))
 	{
 		gfx_printf("%kFound Partial Backup in progress. Continuing...%k\n\n", 0xFFAEFD14, 0xFFCCCCCC);
 
@@ -224,9 +223,9 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 		gfx_printf("%kPartial Backup enabled (with %d MiB parts)...%k\n\n", 0xFFFFBA00, multipartSplitSize >> 20, 0xFFCCCCCC);
 
 	// Check if filesystem is FAT32 or the free space is smaller and backup in parts.
-	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE)) || isSmallSdCard)
+	if (((sd_fs.fs_type != FS_EXFAT) && totalSectors > (FAT32_FILESIZE_LIMIT / EMMC_BLOCKSIZE)) || isSmallSdCard)
 	{
-		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
+		u32 multipartSplitSectors = multipartSplitSize / EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors + multipartSplitSectors - 1) / multipartSplitSectors;
 
 		outFilename[sdPathLen++] = '.';
@@ -273,8 +272,8 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 	// Continue from where we left, if Partial Backup in progress.
 	if (partialDumpInProgress)
 	{
-		lba_curr += currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
-		totalSectors -= currPartIdx * (multipartSplitSize / NX_EMMC_BLOCKSIZE);
+		lba_curr += currPartIdx * (multipartSplitSize / EMMC_BLOCKSIZE);
+		totalSectors -= currPartIdx * (multipartSplitSize / EMMC_BLOCKSIZE);
 		lbaStartPart = lba_curr; // Update the start LBA for verification.
 	}
 	u64 totalSize = (u64)((u64)totalSectors << 9);
@@ -376,7 +375,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 				return 0;
 			}
 		}
-		res = f_write(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
+		res = f_write(&fp, buf, EMMC_BLOCKSIZE * num, NULL);
 		if (res)
 		{
 			gfx_con.fntsz = 16;
@@ -397,7 +396,7 @@ static int _dump_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part_t 
 
 		lba_curr += num;
 		totalSectors -= num;
-		bytesWritten += num * NX_EMMC_BLOCKSIZE;
+		bytesWritten += num * EMMC_BLOCKSIZE;
 
 		// Force a flush after a lot of data if not splitting.
 		if (numSplitParts == 0 && bytesWritten >= multipartSplitSize)
@@ -471,9 +470,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 	// Get SD Card free space for Partial Backup.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
@@ -482,18 +479,18 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 	int i = 0;
 	char sdPath[OUT_FILENAME_SZ];
 	// Create Restore folders, if they do not exist.
-	emmcsn_path_impl(sdPath, "/restore", "", &storage);
-	emmcsn_path_impl(sdPath, "/restore/partitions", "", &storage);
+	emmcsn_path_impl(sdPath, "/restore", "", &emmc_storage);
+	emmcsn_path_impl(sdPath, "/restore/partitions", "", &emmc_storage);
 
 	timer = get_tmr_s();
 	if (dumpType & PART_BOOT)
 	{
-		const u32 BOOT_PART_SIZE = storage.ext_csd.boot_mult << 17;
+		const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
 
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
-		bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
+		bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
 		for (i = 0; i < 2; i++)
 		{
 			strcpy(bootPart.name, "BOOT");
@@ -503,21 +500,21 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 			gfx_printf("%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
-			sdmmc_storage_set_mmc_partition(&storage, i + 1);
+			sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
 
-			emmcsn_path_impl(sdPath, "", bootPart.name, &storage);
-			res = _dump_emmc_part(sdPath, &storage, &bootPart);
+			emmcsn_path_impl(sdPath, "", bootPart.name, &emmc_storage);
+			res = _dump_emmc_part(sdPath, &emmc_storage, &bootPart);
 		}
 	}
 
 	if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER) || (dumpType & PART_RAW))
 	{
-		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
+		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 
 		if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER))
 		{
 			LIST_INIT(gpt);
-			nx_emmc_gpt_parse(&gpt, &storage);
+			emmc_gpt_parse(&gpt);
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
 				if ((dumpType & PART_USER) == 0 && !strcmp(part->name, "USER"))
@@ -528,19 +525,19 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 				gfx_printf("%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-				emmcsn_path_impl(sdPath, "/partitions", part->name, &storage);
-				res = _dump_emmc_part(sdPath, &storage, part);
+				emmcsn_path_impl(sdPath, "/partitions", part->name, &emmc_storage);
+				res = _dump_emmc_part(sdPath, &emmc_storage, part);
 				// If a part failed, don't continue.
 				if (!res)
 					break;
 			}
-			nx_emmc_gpt_free(&gpt);
+			emmc_gpt_free(&gpt);
 		}
 
 		if (dumpType & PART_RAW)
 		{
 			// Get GP partition size dynamically.
-			const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
+			const u32 RAW_AREA_NUM_SECTORS = emmc_storage.sec_cnt;
 
 			emmc_part_t rawPart;
 			memset(&rawPart, 0, sizeof(rawPart));
@@ -551,8 +548,8 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 				gfx_printf("%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 					rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
-				emmcsn_path_impl(sdPath, "", rawPart.name, &storage);
-				res = _dump_emmc_part(sdPath, &storage, &rawPart);
+				emmcsn_path_impl(sdPath, "", rawPart.name, &emmc_storage);
+				res = _dump_emmc_part(sdPath, &emmc_storage, &rawPart);
 			}
 		}
 	}
@@ -560,7 +557,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 	gfx_putc('\n');
 	timer = get_tmr_s() - timer;
 	gfx_printf("Time taken: %dm %ds.\n", timer / 60, timer % 60);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 	if (res)
 		gfx_printf("\n%kFinished and verified!%k\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 
@@ -724,7 +721,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 		retryCount = 0;
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
-		res = f_read(&fp, buf, NX_EMMC_BLOCKSIZE * num, NULL);
+		res = f_read(&fp, buf, EMMC_BLOCKSIZE * num, NULL);
 		if (res)
 		{
 			gfx_con.fntsz = 16;
@@ -760,7 +757,7 @@ static int _restore_emmc_part(char *sd_path, sdmmc_storage_t *storage, emmc_part
 
 		lba_curr += num;
 		totalSectors -= num;
-		bytesWritten += num * NX_EMMC_BLOCKSIZE;
+		bytesWritten += num * EMMC_BLOCKSIZE;
 	}
 	tui_pbar(0, gfx_con.y, 100, 0xFFCCCCCC, 0xFF555555);
 
@@ -822,9 +819,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 	if (!sd_mount())
 		goto out;
 
-	sdmmc_storage_t storage;
-	sdmmc_t sdmmc;
-	if (!sdmmc_storage_init_mmc(&storage, &sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
@@ -836,12 +831,12 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 	timer = get_tmr_s();
 	if (restoreType & PART_BOOT)
 	{
-		const u32 BOOT_PART_SIZE = storage.ext_csd.boot_mult << 17;
+		const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
 
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
-		bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
+		bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
 		for (i = 0; i < 2; i++)
 		{
 			strcpy(bootPart.name, "BOOT");
@@ -851,34 +846,34 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf("%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i,
 				bootPart.name, bootPart.lba_start, bootPart.lba_end, 0xFFCCCCCC);
 
-			sdmmc_storage_set_mmc_partition(&storage, i + 1);
+			sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
 
-			emmcsn_path_impl(sdPath, "/restore", bootPart.name, &storage);
-			res = _restore_emmc_part(sdPath, &storage, &bootPart, false);
+			emmcsn_path_impl(sdPath, "/restore", bootPart.name, &emmc_storage);
+			res = _restore_emmc_part(sdPath, &emmc_storage, &bootPart, false);
 		}
 	}
 
 	if (restoreType & PART_GP_ALL)
 	{
-		sdmmc_storage_set_mmc_partition(&storage, EMMC_GPP);
+		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 
 		LIST_INIT(gpt);
-		nx_emmc_gpt_parse(&gpt, &storage);
+		emmc_gpt_parse(&gpt);
 		LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 		{
 			gfx_printf("%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 				part->name, part->lba_start, part->lba_end, 0xFFCCCCCC);
 
-			emmcsn_path_impl(sdPath, "/restore/partitions/", part->name, &storage);
-			res = _restore_emmc_part(sdPath, &storage, part, false);
+			emmcsn_path_impl(sdPath, "/restore/partitions/", part->name, &emmc_storage);
+			res = _restore_emmc_part(sdPath, &emmc_storage, part, false);
 		}
-		nx_emmc_gpt_free(&gpt);
+		emmc_gpt_free(&gpt);
 	}
 
 	if (restoreType & PART_RAW)
 	{
 		// Get GP partition size dynamically.
-		const u32 RAW_AREA_NUM_SECTORS = storage.sec_cnt;
+		const u32 RAW_AREA_NUM_SECTORS = emmc_storage.sec_cnt;
 
 		emmc_part_t rawPart;
 		memset(&rawPart, 0, sizeof(rawPart));
@@ -889,15 +884,15 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 			gfx_printf("%k%02d: %s (%07X-%07X)%k\n", 0xFF00DDFF, i++,
 				rawPart.name, rawPart.lba_start, rawPart.lba_end, 0xFFCCCCCC);
 
-			emmcsn_path_impl(sdPath, "/restore", rawPart.name, &storage);
-			res = _restore_emmc_part(sdPath, &storage, &rawPart, true);
+			emmcsn_path_impl(sdPath, "/restore", rawPart.name, &emmc_storage);
+			res = _restore_emmc_part(sdPath, &emmc_storage, &rawPart, true);
 		}
 	}
 
 	gfx_putc('\n');
 	timer = get_tmr_s() - timer;
 	gfx_printf("Time taken: %dm %ds.\n", timer / 60, timer % 60);
-	sdmmc_storage_end(&storage);
+	sdmmc_storage_end(&emmc_storage);
 	if (res)
 		gfx_printf("\n%kFinished and verified!%k\nPress any key...\n", 0xFF96FF00, 0xFFCCCCCC);
 

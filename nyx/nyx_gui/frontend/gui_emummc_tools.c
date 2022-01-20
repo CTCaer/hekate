@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -218,7 +218,7 @@ static void _create_mbox_emummc_raw()
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 	sd_unmount();
 
-	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	emmc_initialize(false);
 
 	u32 emmc_size_safe = emmc_storage.sec_cnt + 0xC000; // eMMC GPP size + BOOT0/1.
 
@@ -769,7 +769,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	sd_mount();
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
-	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	emmc_initialize(false);
 
 	em_raw = false;
 	em_file = false;

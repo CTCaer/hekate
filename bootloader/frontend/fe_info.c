@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc.h"
 
 extern hekate_config h_cfg;
 extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
@@ -123,7 +122,7 @@ void print_mmc_info()
 
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
@@ -226,7 +225,7 @@ void print_mmc_info()
 
 			sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 			LIST_INIT(gpt);
-			nx_emmc_gpt_parse(&gpt, &emmc_storage);
+			emmc_gpt_parse(&gpt);
 			int gpp_idx = 0;
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
@@ -235,7 +234,7 @@ void print_mmc_info()
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
 				gfx_put_small_sep();
 			}
-			nx_emmc_gpt_free(&gpt);
+			emmc_gpt_free(&gpt);
 		}
 	}
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -29,7 +29,6 @@
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc.h"
 
 extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
@@ -64,11 +63,11 @@ bool get_autorcm_status(bool toggle)
 	if (h_cfg.t210b01)
 		return false;
 
-	sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+	emmc_initialize(false);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
+	sdmmc_storage_read(&emmc_storage, 0x200 / EMMC_BLOCKSIZE, 1, tempbuf);
 
 	// Get the correct RSA modulus byte masks.
 	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
@@ -86,7 +85,7 @@ bool get_autorcm_status(bool toggle)
 		// Iterate BCTs.
 		for (u32 i = 0; i < 4; i++)
 		{
-			sector = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE; // 0x4000 bct + 0x200 offset.
+			sector = (0x200 + (0x4000 * i)) / EMMC_BLOCKSIZE; // 0x4000 bct + 0x200 offset.
 			sdmmc_storage_read(&emmc_storage, sector, 1, tempbuf);
 
 			if (!enabled)
@@ -104,7 +103,7 @@ bool get_autorcm_status(bool toggle)
 		// Iterate BCTs.
 		for (u32 i = 0; i < 4; i++)
 		{
-			sector = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE; // 0x4000 bct + 0x200 offset.
+			sector = (0x200 + (0x4000 * i)) / EMMC_BLOCKSIZE; // 0x4000 bct + 0x200 offset.
 			sdmmc_storage_read(&emmc_storage, sector, 1, tempbuf);
 
 			// Check if 2nd byte of modulus is correct.
@@ -1104,7 +1103,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char *txt_buf  = (char *)malloc(SZ_16K);
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
@@ -1120,7 +1119,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char *build_date = malloc(32);
 	u32 pk1_offset =  h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
-	sdmmc_storage_read(&emmc_storage, BOOTLOADER_MAIN_OFFSET / NX_EMMC_BLOCKSIZE, BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_read(&emmc_storage, BOOTLOADER_MAIN_OFFSET / EMMC_BLOCKSIZE, BOOTLOADER_SIZE / EMMC_BLOCKSIZE, pkg1);
 
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
 
@@ -1159,8 +1158,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
 	// Read keyblob.
-	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+	u8 *keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
+	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 	// Decrypt.
 	hos_keygen(keyblob, kb, &tsec_ctxt);
@@ -1256,23 +1255,23 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &emmc_storage);
+	emmc_gpt_parse(&gpt);
 	// Find package2 partition.
-	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
+	emmc_part_t *pkg2_part = emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
-	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
+	u8 *tmp = (u8 *)malloc(EMMC_BLOCKSIZE);
+	emmc_part_read(pkg2_part, 0x4000 / EMMC_BLOCKSIZE, 1, tmp);
 	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
 	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
 	free(tmp);
 	// Read in package2.
-	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
+	u32 pkg2_size_aligned = ALIGN(pkg2_size, EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
-	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
-		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
+	emmc_part_read(pkg2_part, 0x4000 / EMMC_BLOCKSIZE,
+		pkg2_size_aligned / EMMC_BLOCKSIZE, pkg2);
 
 	// Dump encrypted package2.
 	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &emmc_storage);
@@ -1384,7 +1383,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	free(kip_buffer);
 
 out:
-	nx_emmc_gpt_free(&gpt);
+	emmc_gpt_free(&gpt);
 out_free:
 	free(pkg1);
 	free(secmon);

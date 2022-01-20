@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  * Copyright (c) 2018 Reisyukaku
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc.h"
 
 extern boot_cfg_t b_cfg;
 extern hekate_config h_cfg;
@@ -57,7 +56,7 @@ void dump_packages12()
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out_free;
@@ -65,7 +64,7 @@ void dump_packages12()
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
 
 	// Read package1.
-	sdmmc_storage_read(&emmc_storage, 0x100000 / NX_EMMC_BLOCKSIZE, SZ_256K / NX_EMMC_BLOCKSIZE, pkg1);
+	sdmmc_storage_read(&emmc_storage, 0x100000 / EMMC_BLOCKSIZE, SZ_256K / EMMC_BLOCKSIZE, pkg1);
 	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1);
 	if (!pkg1_id)
 	{
@@ -87,8 +86,8 @@ void dump_packages12()
 	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
 	// Read keyblob.
-	u8 *keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-	sdmmc_storage_read(&emmc_storage, 0x180000 / NX_EMMC_BLOCKSIZE + kb, 1, keyblob);
+	u8 *keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
+	sdmmc_storage_read(&emmc_storage, 0x180000 / EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 	// Decrypt.
 	hos_keygen(keyblob, kb, &tsec_ctxt, false, false);
@@ -153,23 +152,23 @@ void dump_packages12()
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &emmc_storage);
+	emmc_gpt_parse(&gpt);
 	// Find package2 partition.
-	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
+	emmc_part_t *pkg2_part = emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	u8 *tmp = (u8 *)malloc(NX_EMMC_BLOCKSIZE);
-	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE, 1, tmp);
+	u8 *tmp = (u8 *)malloc(EMMC_BLOCKSIZE);
+	emmc_part_read(pkg2_part, 0x4000 / EMMC_BLOCKSIZE, 1, tmp);
 	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
 	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
 	free(tmp);
 	// Read in package2.
-	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
+	u32 pkg2_size_aligned = ALIGN(pkg2_size, EMMC_BLOCKSIZE);
 	pkg2 = malloc(pkg2_size_aligned);
-	nx_emmc_part_read(&emmc_storage, pkg2_part, 0x4000 / NX_EMMC_BLOCKSIZE,
-		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, pkg2);
+	emmc_part_read(pkg2_part, 0x4000 / EMMC_BLOCKSIZE,
+		pkg2_size_aligned / EMMC_BLOCKSIZE, pkg2);
 
 #if 0
 	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &emmc_storage);
@@ -227,7 +226,7 @@ void dump_packages12()
 	gfx_puts("\nDone. Press any key...\n");
 
 out:
-	nx_emmc_gpt_free(&gpt);
+	emmc_gpt_free(&gpt);
 out_free:
 	free(pkg1);
 	free(secmon);
@@ -248,7 +247,7 @@ void _toggle_autorcm(bool enable)
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
 		goto out;
@@ -266,7 +265,7 @@ void _toggle_autorcm(bool enable)
 	// Iterate BCTs.
 	for (i = 0; i < 4; i++)
 	{
-		sect = (0x200 + (0x4000 * i)) / NX_EMMC_BLOCKSIZE;
+		sect = (0x200 + (0x4000 * i)) / EMMC_BLOCKSIZE;
 		sdmmc_storage_read(&emmc_storage, sect, 1, tempbuf);
 
 		// Check if 2nd byte of modulus is correct.
@@ -312,7 +311,7 @@ void menu_autorcm()
 	// Do a simple check on the main BCT.
 	bool disabled = true;
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
 		btn_wait();
@@ -326,7 +325,7 @@ void menu_autorcm()
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, 0x200 / NX_EMMC_BLOCKSIZE, 1, tempbuf);
+	sdmmc_storage_read(&emmc_storage, 0x200 / EMMC_BLOCKSIZE, 1, tempbuf);
 
 	// Check if 2nd byte of modulus is correct.
 	if (tempbuf[0x11] == mod1)

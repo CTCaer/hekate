@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -262,7 +262,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	sd_mount();
 
 	// Init eMMC.
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
@@ -278,12 +278,12 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	// Read and decrypt CAL0.
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &emmc_storage);
-	emmc_part_t *cal0_part = nx_emmc_part_find(&gpt, "PRODINFO"); // check if null
+	emmc_gpt_parse(&gpt);
+	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
 	nx_emmc_bis_init(cal0_part, false, 0);
 	nx_emmc_bis_read(0, 0x40, cal0_buf);
 	nx_emmc_bis_end();
-	nx_emmc_gpt_free(&gpt);
+	emmc_gpt_free(&gpt);
 
 	// Clear BIS keys slots.
 	hos_bis_keys_clear();
@@ -1123,7 +1123,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
@@ -1321,7 +1321,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 	else
 	{
 		storage = &emmc_storage;
-		res = !sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+		res = !emmc_initialize(false);
 		if (!res)
 			sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	}
@@ -1553,7 +1553,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	txt_buf[0] = '\n';
 	txt_buf[1] = 0;
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
@@ -1711,7 +1711,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 		LIST_INIT(gpt);
-		nx_emmc_gpt_parse(&gpt, &emmc_storage);
+		emmc_gpt_parse(&gpt);
 
 		u32 idx = 0;
 		LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
@@ -1741,7 +1741,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		if (!idx)
 			strcat(txt_buf, "#FFDD00 Partition table is empty!#");
 
-		nx_emmc_gpt_free(&gpt);
+		emmc_gpt_free(&gpt);
 
 		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));

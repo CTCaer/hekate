@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 #include "../config.h"
 #include <libs/fatfs/ff.h>
 #include "../storage/emummc.h"
-#include "../storage/nx_emmc.h"
 
 extern hekate_config h_cfg;
 

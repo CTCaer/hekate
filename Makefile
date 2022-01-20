@@ -34,7 +34,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	bpmp.o ccplex.o clock.o di.o gpio.o i2c.o irq.o mc.o sdram.o \
 	pinmux.o pmc.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o minerva.o \
-	sdmmc.o sdmmc_driver.o sd.o emummc.o nx_emmc.o \
+	sdmmc.o sdmmc_driver.o emmc.o sd.o emummc.o \
 	bq24193.o max17050.o max7762x.o max77620-rtc.o \
 	hw_init.o \
 )
@@ -65,6 +65,9 @@ FFCFG_INC := '"../$(SOURCEDIR)/libs/fatfs/ffconf.h"'
 CUSTOMDEFINES := -DIPL_LOAD_ADDR=$(IPL_LOAD_ADDR) -DBL_MAGIC=$(IPL_MAGIC)
 CUSTOMDEFINES += -DBL_VER_MJ=$(BLVERSION_MAJOR) -DBL_VER_MN=$(BLVERSION_MINOR) -DBL_VER_HF=$(BLVERSION_HOTFX) -DBL_RESERVED=$(BLVERSION_RSVD)
 CUSTOMDEFINES += -DNYX_VER_MJ=$(NYXVERSION_MAJOR) -DNYX_VER_MN=$(NYXVERSION_MINOR) -DNYX_VER_HF=$(NYXVERSION_HOTFX) -DNYX_RESERVED=$(NYXVERSION_RSVD)
+
+# BDK defines.
+CUSTOMDEFINES += -DBDK_EMUMMC_ENABLE
 CUSTOMDEFINES += -DGFX_INC=$(GFX_INC) -DFFCFG_INC=$(FFCFG_INC)
 
 #CUSTOMDEFINES += -DDEBUG

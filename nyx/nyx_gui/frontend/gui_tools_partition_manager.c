@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -23,7 +23,6 @@
 #include "gui_tools_partition_manager.h"
 #include <libs/fatfs/diskio.h>
 #include <libs/lvgl/lvgl.h>
-#include "../storage/nx_emmc.h"
 
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
@@ -693,7 +692,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 
 			lba_curr += num;
 			total_size_sct -= num;
-			bytesWritten += num * NX_EMMC_BLOCKSIZE;
+			bytesWritten += num * EMMC_BLOCKSIZE;
 		}
 		lv_bar_set_value(bar, 100);
 		lv_label_set_text(label_pct, " "SYMBOL_DOT" 100%");
@@ -2110,7 +2109,7 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 			break;
 	}
 
-	nx_emmc_gpt_free(&gpt_parsed);
+	emmc_gpt_free(&gpt_parsed);
 
 	// Set GPT protective partition.
 	mbr[1].partitions[mbr_idx].type = 0xEE;

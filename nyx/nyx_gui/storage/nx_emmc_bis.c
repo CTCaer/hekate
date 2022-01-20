@@ -2,7 +2,7 @@
  * eMMC BIS driver for Nintendo Switch
  *
  * Copyright (c) 2019-2020 shchmue
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,8 +20,6 @@
 #include <string.h>
 
 #include <bdk.h>
-
-#include "../storage/nx_emmc.h"
 
 #define BIS_CLUSTER_SECTORS   32
 #define BIS_CLUSTER_SIZE      16384
@@ -52,74 +50,6 @@ static emmc_part_t *system_part = NULL;
 static u32 *cache_lookup_tbl = (u32 *)NX_BIS_LOOKUP_ADDR;
 static bis_cache_t *bis_cache = (bis_cache_t *)NX_BIS_CACHE_ADDR;
 
-static void _gf256_mul_x_le(void *block)
-{
-	u32 *pdata = (u32 *)block;
-	u32 carry = 0;
-
-	for (u32 i = 0; i < 4; i++)
-	{
-		u32 b = pdata[i];
-		pdata[i] = (b << 1) | carry;
-		carry = b >> 31;
-	}
-
-	if (carry)
-		pdata[0x0] ^= 0x87;
-}
-
-static int _nx_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, u32 enc, u8 *tweak, bool regen_tweak, u32 tweak_exp, u64 sec, void *dst, void *src, u32 sec_size)
-{
-	u32 *pdst = (u32 *)dst;
-	u32 *psrc = (u32 *)src;
-	u32 *ptweak = (u32 *)tweak;
-
-	if (regen_tweak)
-	{
-		for (int i = 0xF; i >= 0; i--)
-		{
-			tweak[i] = sec & 0xFF;
-			sec >>= 8;
-		}
-		if (!se_aes_crypt_block_ecb(tweak_ks, ENCRYPT, tweak, tweak))
-			return 0;
-	}
-
-	// tweak_exp allows us to use a saved tweak to reduce _gf256_mul_x_le calls.
-	for (u32 i = 0; i < (tweak_exp << 5); i++)
-		_gf256_mul_x_le(tweak);
-
-	u8 orig_tweak[SE_KEY_128_SIZE] __attribute__((aligned(4)));
-	memcpy(orig_tweak, tweak, SE_KEY_128_SIZE);
-
-	// We are assuming a 16 sector aligned size in this implementation.
-	for (u32 i = 0; i < (sec_size >> 4); i++)
-	{
-		for (u32 j = 0; j < 4; j++)
-			pdst[j] = psrc[j] ^ ptweak[j];
-
-		_gf256_mul_x_le(tweak);
-		psrc += 4;
-		pdst += 4;
-	}
-
-	if (!se_aes_crypt_ecb(crypt_ks, enc, dst, sec_size, dst, sec_size))
-		return 0;
-
-	pdst = (u32 *)dst;
-	ptweak = (u32 *)orig_tweak;
-	for (u32 i = 0; i < (sec_size >> 4); i++)
-	{
-		for (u32 j = 0; j < 4; j++)
-			pdst[j] = pdst[j] ^ ptweak[j];
-
-		_gf256_mul_x_le(orig_tweak);
-		pdst += 4;
-	}
-
-	return 1;
-}
-
 static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush)
 {
 	if (!system_part)
@@ -137,7 +67,7 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 	if (is_cached)
 	{
 		if (buff)
-			memcpy(bis_cache->clusters[lookup_idx].data + sector_in_cluster * NX_EMMC_BLOCKSIZE, buff, count * NX_EMMC_BLOCKSIZE);
+			memcpy(bis_cache->clusters[lookup_idx].data + sector_in_cluster * EMMC_BLOCKSIZE, buff, count * EMMC_BLOCKSIZE);
 		else
 			buff = bis_cache->clusters[lookup_idx].data;
 		if (!bis_cache->clusters[lookup_idx].dirty)
@@ -154,12 +84,12 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 	}
 
 	// Encrypt cluster.
-	if (!_nx_aes_xts_crypt_sec(ks_tweak, ks_crypt, 1, tweak, true, sector_in_cluster, cluster, bis_cache->dma_buff, buff, count * NX_EMMC_BLOCKSIZE))
+	if (!se_aes_xts_crypt_sec_nx(ks_tweak, ks_crypt, ENCRYPT, cluster, tweak, true, sector_in_cluster, bis_cache->dma_buff, buff, count * EMMC_BLOCKSIZE))
 		return 1; // Encryption error.
 
 	// If not reading from cache, do a regular read and decrypt.
 	if (!emu_offset)
-		res = nx_emmc_part_write(&emmc_storage, system_part, sector, count, bis_cache->dma_buff);
+		res = emmc_part_write(system_part, sector, count, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_write(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
 	if (!res)
@@ -219,7 +149,7 @@ static int nx_emmc_bis_read_block_normal(u32 sector, u32 count, void *buff)
 
 	// If not reading from cache, do a regular read and decrypt.
 	if (!emu_offset)
-		res = nx_emmc_part_read(&emmc_storage, system_part, sector, count, bis_cache->dma_buff);
+		res = emmc_part_read(system_part, sector, count, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
 	if (!res)
@@ -240,7 +170,7 @@ static int nx_emmc_bis_read_block_normal(u32 sector, u32 count, void *buff)
 		tweak_exp = sector_in_cluster;
 
 	// Maximum one cluster (1 XTS crypto block 16KB).
-	if (!_nx_aes_xts_crypt_sec(ks_tweak, ks_crypt, 0, tweak, regen_tweak, tweak_exp, prev_cluster, buff, bis_cache->dma_buff, count * NX_EMMC_BLOCKSIZE))
+	if (!se_aes_xts_crypt_sec_nx(ks_tweak, ks_crypt, DECRYPT, prev_cluster, tweak, regen_tweak, tweak_exp, buff, bis_cache->dma_buff, count * EMMC_BLOCKSIZE))
 		return 1; // R/W error.
 
 	prev_sector = sector + count - 1;
@@ -260,7 +190,7 @@ static int nx_emmc_bis_read_block_cached(u32 sector, u32 count, void *buff)
 	// Read from cached cluster.
 	if (lookup_idx != (u32)BIS_CACHE_LOOKUP_TBL_EMPTY_ENTRY)
 	{
-		memcpy(buff, bis_cache->clusters[lookup_idx].data + sector_in_cluster * NX_EMMC_BLOCKSIZE, count * NX_EMMC_BLOCKSIZE);
+		memcpy(buff, bis_cache->clusters[lookup_idx].data + sector_in_cluster * EMMC_BLOCKSIZE, count * EMMC_BLOCKSIZE);
 
 		return 0; // Success.
 	}
@@ -276,19 +206,19 @@ static int nx_emmc_bis_read_block_cached(u32 sector, u32 count, void *buff)
 
 	// Read the whole cluster the sector resides in.
 	if (!emu_offset)
-		res = nx_emmc_part_read(&emmc_storage, system_part, cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
+		res = emmc_part_read(system_part, cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
 	if (!res)
 		return 1; // R/W error.
 
 	// Decrypt cluster.
-	if (!_nx_aes_xts_crypt_sec(ks_tweak, ks_crypt, 0, cache_tweak, true, 0, cluster, bis_cache->dma_buff, bis_cache->dma_buff, BIS_CLUSTER_SIZE))
+	if (!se_aes_xts_crypt_sec_nx(ks_tweak, ks_crypt, DECRYPT, cluster, cache_tweak, true, 0, bis_cache->dma_buff, bis_cache->dma_buff, BIS_CLUSTER_SIZE))
 		return 1; // Decryption error.
 
 	// Copy to cluster cache.
 	memcpy(bis_cache->clusters[bis_cache->top_idx].data, bis_cache->dma_buff, BIS_CLUSTER_SIZE);
-	memcpy(buff, bis_cache->dma_buff + sector_in_cluster * NX_EMMC_BLOCKSIZE, count * NX_EMMC_BLOCKSIZE);
+	memcpy(buff, bis_cache->dma_buff + sector_in_cluster * EMMC_BLOCKSIZE, count * EMMC_BLOCKSIZE);
 
 	// Increment cache count.
 	bis_cache->top_idx++;
@@ -320,7 +250,7 @@ int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
 
 		count    -= sct_cnt;
 		curr_sct += sct_cnt;
-		buf      += sct_cnt * NX_EMMC_BLOCKSIZE;
+		buf      += sct_cnt * EMMC_BLOCKSIZE;
 	}
 
 	return 1;
@@ -339,7 +269,7 @@ int nx_emmc_bis_write(u32 sector, u32 count, void *buff)
 
 		count    -= sct_cnt;
 		curr_sct += sct_cnt;
-		buf      += sct_cnt * NX_EMMC_BLOCKSIZE;
+		buf      += sct_cnt * EMMC_BLOCKSIZE;
 	}
 
 	return 1;

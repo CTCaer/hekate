@@ -24,7 +24,6 @@
 
 #include "hos.h"
 #include "../config.h"
-#include "../storage/nx_emmc.h"
 
 extern hekate_config h_cfg;
 

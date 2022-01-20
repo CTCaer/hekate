@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -23,7 +23,6 @@
 
 #include "config.h"
 #include "hos/hos.h"
-#include "storage/nx_emmc.h"
 #include <ianos/ianos.h>
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
@@ -59,7 +58,7 @@ char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_
 	// Get actual eMMC S/N.
 	if (!storage)
 	{
-		if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+		if (!emmc_initialize(false))
 			strcpy(emmc_sn, "00000000");
 		else
 		{

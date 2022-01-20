@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -28,7 +28,6 @@
 #include "../config.h"
 #include <libs/fatfs/diskio.h>
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc.h"
 #include "../storage/nx_emmc_bis.h"
 
 #define OUT_FILENAME_SZ 128
@@ -169,9 +168,9 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	}
 
 	// Check if filesystem is FAT32 or the free space is smaller and backup in parts.
-	if (totalSectors > (FAT32_FILESIZE_LIMIT / NX_EMMC_BLOCKSIZE))
+	if (totalSectors > (FAT32_FILESIZE_LIMIT / EMMC_BLOCKSIZE))
 	{
-		u32 multipartSplitSectors = multipartSplitSize / NX_EMMC_BLOCKSIZE;
+		u32 multipartSplitSectors = multipartSplitSize / EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors + multipartSplitSectors - 1) / multipartSplitSectors;
 
 		// Continue from where we left, if Partial Backup in progress.
@@ -296,7 +295,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 		manual_system_maintenance(false);
 
-		res = f_write_fast(&fp, buf, NX_EMMC_BLOCKSIZE * num);
+		res = f_write_fast(&fp, buf, EMMC_BLOCKSIZE * num);
 
 		manual_system_maintenance(false);
 
@@ -325,7 +324,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 		lba_curr += num;
 		totalSectors -= num;
-		bytesWritten += num * NX_EMMC_BLOCKSIZE;
+		bytesWritten += num * EMMC_BLOCKSIZE;
 
 		// Force a flush after a lot of data if not splitting.
 		if (numSplitParts == 0 && bytesWritten >= multipartSplitSize)
@@ -374,7 +373,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	// Get SD Card free space for Partial Backup.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
@@ -406,7 +405,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	emmc_part_t bootPart;
 	memset(&bootPart, 0, sizeof(bootPart));
 	bootPart.lba_start = 0;
-	bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
+	bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
 	for (i = 0; i < 2; i++)
 	{
 		strcpy(bootPart.name, "BOOT");
@@ -497,7 +496,7 @@ out:
 	sd_unmount();
 }
 
-static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part_idx, u32 sd_part_off, sdmmc_storage_t *storage, emmc_part_t *part, u32 resized_count)
+static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part_idx, u32 sd_part_off, emmc_part_t *part, u32 resized_count)
 {
 	u32 num = 0;
 	u32 pct = 0;
@@ -529,8 +528,8 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	{
 		// Get USER partition info.
 		LIST_INIT(gpt_parsed);
-		nx_emmc_gpt_parse(&gpt_parsed, storage);
-		emmc_part_t *user_part = nx_emmc_part_find(&gpt_parsed, "USER");
+		emmc_gpt_parse(&gpt_parsed);
+		emmc_part_t *user_part = emmc_part_find(&gpt_parsed, "USER");
 		if (!user_part)
 		{
 			s_printf(gui->txt_buf, "\n#FFDD00 USER partition not found!#\n");
@@ -542,7 +541,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		user_offset = user_part->lba_start;
 		part->lba_end = user_offset - 1;
-		nx_emmc_gpt_free(&gpt_parsed);
+		emmc_gpt_free(&gpt_parsed);
 	}
 
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
@@ -564,7 +563,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
 		// Read data from eMMC.
-		while (!sdmmc_storage_read(storage, lba_curr, num, buf))
+		while (!sdmmc_storage_read(&emmc_storage, lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
 				"\n#FFDD00 Error reading %d blocks @LBA %08X,#\n"
@@ -697,9 +696,9 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		mbr_t mbr;
 		gpt_t *gpt = calloc(1, sizeof(gpt_t));
 		gpt_header_t gpt_hdr_backup;
-		sdmmc_storage_read(storage, 0, 1, &mbr);
-		sdmmc_storage_read(storage, 1, sizeof(gpt_t) >> 9, gpt);
-		sdmmc_storage_read(storage, gpt->header.alt_lba, 1, &gpt_hdr_backup);
+		sdmmc_storage_read(&emmc_storage, 0, 1, &mbr);
+		sdmmc_storage_read(&emmc_storage, 1, sizeof(gpt_t) >> 9, gpt);
+		sdmmc_storage_read(&emmc_storage, gpt->header.alt_lba, 1, &gpt_hdr_backup);
 
 		// Find USER partition.
 		u32 gpt_entry_idx = 0;
@@ -747,7 +746,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		sdmmc_storage_write(&sd_storage, sd_sector_off, 1, &mbr);
 
 		// Clear nand patrol.
-		memset(buf, 0, NX_EMMC_BLOCKSIZE);
+		memset(buf, 0, EMMC_BLOCKSIZE);
 		sdmmc_storage_write(&sd_storage, sd_part_off + NAND_PATROL_SECTOR, 1, buf);
 
 		free(gpt);
@@ -774,12 +773,12 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 	// Read and decrypt CAL0 for validation of working BIS keys.
 	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &emmc_storage);
-	emmc_part_t *cal0_part = nx_emmc_part_find(&gpt, "PRODINFO"); // check if null
+	emmc_gpt_parse(&gpt);
+	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
 	nx_emmc_bis_init(cal0_part, false, 0);
 	nx_emmc_bis_read(0, 0x40, cal0_buf);
 	nx_emmc_bis_end();
-	nx_emmc_gpt_free(&gpt);
+	emmc_gpt_free(&gpt);
 
 	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
 
@@ -850,7 +849,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		goto out;
 	}
 
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
@@ -879,7 +878,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 	emmc_part_t bootPart;
 	memset(&bootPart, 0, sizeof(bootPart));
 	bootPart.lba_start = 0;
-	bootPart.lba_end = (BOOT_PART_SIZE / NX_EMMC_BLOCKSIZE) - 1;
+	bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
 
 	// Clear partition start.
 	memset((u8 *)MIXD_BUF_ALIGNED, 0, SZ_16M);
@@ -901,7 +900,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
 
 		strcat(sdPath, bootPart.name);
-		res = _dump_emummc_raw_part(gui, i, part_idx, sector_start, &emmc_storage, &bootPart, 0);
+		res = _dump_emummc_raw_part(gui, i, part_idx, sector_start, &bootPart, 0);
 
 		if (!res)
 		{
@@ -935,7 +934,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
 
-		res = _dump_emummc_raw_part(gui, 2, part_idx, sector_start, &emmc_storage, &rawPart, resized_count);
+		res = _dump_emummc_raw_part(gui, 2, part_idx, sector_start, &rawPart, resized_count);
 
 		if (!res)
 			s_printf(txt_buf, "#FFDD00 Failed!#\n");

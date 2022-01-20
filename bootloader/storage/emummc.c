@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -22,7 +22,6 @@
 #include "emummc.h"
 #include "../config.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc.h"
 
 extern hekate_config h_cfg;
 emummc_cfg_t emu_cfg = { 0 };
@@ -139,7 +138,7 @@ int emummc_storage_init_mmc()
 	emu_cfg.active_part = 0;
 
 	// Always init eMMC even when in emuMMC. eMMC is needed from the emuMMC driver anyway.
-	if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+	if (!emmc_initialize(false))
 		return 2;
 
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)

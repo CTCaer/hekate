@@ -20,8 +20,6 @@
 
 #include <bdk.h>
 
-#include "../storage/nx_emmc.h"
-
 typedef struct _nx_emmc_cal0_spk_t
 {
 	u16 unk0;

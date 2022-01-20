@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "secmon_exo.h"
 #include "../config.h"
 #include "../storage/emummc.h"
-#include "../storage/nx_emmc.h"
 
 extern hekate_config h_cfg;
 
@@ -612,7 +611,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 try_load:
 	// Read package1.
 	emummc_storage_set_mmc_partition(EMMC_BOOT0);
-	emummc_storage_read(bootloader_offset / NX_EMMC_BLOCKSIZE, PKG1_BOOTLOADER_SIZE / NX_EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_read(bootloader_offset / EMMC_BLOCKSIZE, PKG1_BOOTLOADER_SIZE / EMMC_BLOCKSIZE, ctxt->pkg1);
 
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1 + pk1_offset);
 	if (!ctxt->pkg1_id)
@@ -656,8 +655,8 @@ try_load:
 	// Read the correct keyblob for older HOS versions.
 	if (ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
 	{
-		ctxt->keyblob = (u8 *)calloc(NX_EMMC_BLOCKSIZE, 1);
-		emummc_storage_read(PKG1_HOS_KEYBLOBS_OFFSET / NX_EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
+		ctxt->keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
+		emummc_storage_read(PKG1_HOS_KEYBLOBS_OFFSET / EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 	}
 
 	return 1;
@@ -671,34 +670,34 @@ static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
-	nx_emmc_gpt_parse(&gpt, &emmc_storage);
+	emmc_gpt_parse(&gpt);
 DPRINTF("Parsed GPT\n");
 	// Find package2 partition.
-	emmc_part_t *pkg2_part = nx_emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
+	emmc_part_t *pkg2_part = emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
 	if (!pkg2_part)
 		goto out;
 
 	// Read in package2 header and get package2 real size.
 	const u32 BCT_SIZE = SZ_16K;
 	bctBuf = (u8 *)malloc(BCT_SIZE);
-	nx_emmc_part_read(&emmc_storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE, 1, bctBuf);
+	emmc_part_read(pkg2_part, BCT_SIZE / EMMC_BLOCKSIZE, 1, bctBuf);
 	u32 *hdr = (u32 *)(bctBuf + 0x100);
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
 DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 
 	// Read in Boot Config.
 	memset(bctBuf, 0, BCT_SIZE);
-	nx_emmc_part_read(&emmc_storage, pkg2_part, 0, BCT_SIZE / NX_EMMC_BLOCKSIZE, bctBuf);
+	emmc_part_read(pkg2_part, 0, BCT_SIZE / EMMC_BLOCKSIZE, bctBuf);
 
 	// Read in package2.
-	u32 pkg2_size_aligned = ALIGN(pkg2_size, NX_EMMC_BLOCKSIZE);
+	u32 pkg2_size_aligned = ALIGN(pkg2_size, EMMC_BLOCKSIZE);
 DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
-	nx_emmc_part_read(&emmc_storage, pkg2_part, BCT_SIZE / NX_EMMC_BLOCKSIZE,
-		pkg2_size_aligned / NX_EMMC_BLOCKSIZE, ctxt->pkg2);
+	emmc_part_read(pkg2_part, BCT_SIZE / EMMC_BLOCKSIZE,
+		pkg2_size_aligned / EMMC_BLOCKSIZE, ctxt->pkg2);
 out:
-	nx_emmc_gpt_free(&gpt);
+	emmc_gpt_free(&gpt);
 
 	return bctBuf;
 }

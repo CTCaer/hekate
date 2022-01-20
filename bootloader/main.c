@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,7 +30,6 @@
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
 #include "storage/emummc.h"
-#include "storage/nx_emmc.h"
 
 #include "frontend/fe_emmc_tools.h"
 #include "frontend/fe_tools.h"
@@ -57,7 +56,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 
 	if (!storage)
 	{
-		if (!sdmmc_storage_init_mmc(&emmc_storage, &emmc_sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400))
+		if (!emmc_initialize(false))
 			memcpy(emmcSN, "00000000", 9);
 		else
 		{
