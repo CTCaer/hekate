@@ -36,7 +36,7 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	bpmp.o ccplex.o clock.o di.o gpio.o i2c.o irq.o pinmux.o pmc.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o \
 	mc.o sdram.o minerva.o ramdisk.o \
-	sdmmc.o sdmmc_driver.o nx_emmc.o nx_emmc_bis.o nx_sd.o \
+	sdmmc.o sdmmc_driver.o sd.o nx_emmc.o nx_emmc_bis.o \
 	bm92t36.o bq24193.o max17050.o max7762x.o max77620-rtc.o regulator_5v.o \
 	touch.o joycon.o tmp451.o fan.o \
 	usbd.o xusbd.o usb_descriptors.o usb_gadget_ums.o usb_gadget_hid.o \
@@ -52,7 +52,6 @@ OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Horizon.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	nx_emmc.o \
 	hos.o pkg1.o pkg2.o \
 )
 
