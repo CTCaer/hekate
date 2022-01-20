@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -81,6 +81,7 @@ typedef struct _nyx_storage_t
 
 u8   bit_count(u32 val);
 u32  bit_count_mask(u8 bits);
+char *strcpy_ns(char *dst, char *src);
 
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops);
 u32  crc32_calc(u32 crc, const u8 *buf, u32 len);
