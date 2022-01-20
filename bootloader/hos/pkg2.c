@@ -742,7 +742,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 	return ini1_size;
 }
 
-void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info)
+void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo)
 {
 	u8 *pdst = (u8 *)dst;
 	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
@@ -807,13 +807,16 @@ DPRINTF("kernel encrypted\n");
 		ini1_size = _pkg2_ini1_build(pdst, hdr, kips_info, false);
 DPRINTF("INI1 encrypted\n");
 
-	// Calculate SHA256 over encrypted Kernel and INI1.
-	u8 *pk2_hash_data = (u8 *)dst + 0x100 + sizeof(pkg2_hdr_t);
-	se_calc_sha256_oneshot(&hdr->sec_sha256[0x20 * PKG2_SEC_KERNEL],
-		(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_KERNEL]);
-	pk2_hash_data += hdr->sec_size[PKG2_SEC_KERNEL];
-	se_calc_sha256_oneshot(&hdr->sec_sha256[0x20 * PKG2_SEC_INI1],
-		(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_INI1]);
+	if (!is_exo) // Not needed on Exosphere 1.0.0 and up.
+	{
+		// Calculate SHA256 over encrypted Kernel and INI1.
+		u8 *pk2_hash_data = (u8 *)dst + 0x100 + sizeof(pkg2_hdr_t);
+		se_calc_sha256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * PKG2_SEC_KERNEL],
+			(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_KERNEL]);
+		pk2_hash_data += hdr->sec_size[PKG2_SEC_KERNEL];
+		se_calc_sha256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * PKG2_SEC_INI1],
+			(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_INI1]);
+	}
 
 	// Encrypt header.
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;

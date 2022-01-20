@@ -1071,7 +1071,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Rebuild and encrypt package2.
-	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, &ctxt, &kip1_info);
+	pkg2_build_encrypt((void *)PKG2_LOAD_ADDR, &ctxt, &kip1_info, is_exo);
 
 	// Configure Exosphere if secmon is replaced.
 	if (is_exo)
