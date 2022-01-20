@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -98,6 +98,10 @@ static clock_t _clock_pwm = {
 
 static clock_t _clock_sdmmc_legacy_tm = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC_LEGACY_TM, CLK_Y_SDMMC_LEGACY_TM, 4, 66
+};
+
+static clock_t _clock_actmon = {
+	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON,  CLK_V_ACTMON,  6, 0 // 19.2MHz.
 };
 
 void clock_enable(const clock_t *clk)
@@ -277,6 +281,16 @@ void clock_enable_pwm()
 void clock_disable_pwm()
 {
 	clock_disable(&_clock_pwm);
+}
+
+void clock_enable_actmon()
+{
+	clock_enable(&_clock_actmon);
+}
+
+void clock_disable_actmon()
+{
+	clock_disable(&_clock_actmon);
 }
 
 void clock_enable_pllx()

@@ -40,6 +40,7 @@
 #include <rtc/max77620-rtc.h>
 #include <sec/se.h>
 #include <sec/tsec.h>
+#include <soc/actmon.h>
 #include <soc/bpmp.h>
 #include <soc/ccplex.h>
 #include <soc/clock.h>

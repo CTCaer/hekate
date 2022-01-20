@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -660,6 +660,9 @@ void clock_enable_coresight();
 void clock_disable_coresight();
 void clock_enable_pwm();
 void clock_disable_pwm();
+void clock_enable_actmon();
+void clock_disable_actmon();
+
 void clock_enable_pllx();
 void clock_enable_pllc(u32 divn);
 void clock_disable_pllc();
