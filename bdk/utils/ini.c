@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -21,25 +21,7 @@
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <utils/dirlist.h>
-
-static char *_strdup(char *str)
-{
-	if (!str)
-		return NULL;
-
-	// Remove starting space.
-	if (str[0] == ' ' && strlen(str))
-		str++;
-
-	char *res = (char *)malloc(strlen(str) + 1);
-	strcpy(res, str);
-
-	// Remove trailing space.
-	if (strlen(res) && res[strlen(res) - 1] == ' ')
-		res[strlen(res) - 1] = 0;
-
-	return res;
-}
+#include <utils/util.h>
 
 u32 _find_section_name(char *lbuf, u32 lblen, char schar)
 {
@@ -57,8 +39,12 @@ ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type
 	if (csec)
 		list_append(dst, &csec->link);
 
-	csec = (ini_sec_t *)calloc(sizeof(ini_sec_t), 1);
-	csec->name = _strdup(name);
+	// Calculate total allocation size.
+	u32 len = name ? strlen(name) + 1 : 0;
+	char *buf = calloc(sizeof(ini_sec_t) + len, 1);
+
+	csec = (ini_sec_t *)buf;
+	csec->name = strcpy_ns(buf + sizeof(ini_sec_t), name);
 	csec->type = type;
 
 	return csec;
@@ -153,9 +139,16 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 			{
 				u32 i = _find_section_name(lbuf, lblen, '=');
 
-				ini_kv_t *kv = (ini_kv_t *)calloc(sizeof(ini_kv_t), 1);
-				kv->key = _strdup(&lbuf[0]);
-				kv->val = _strdup(&lbuf[i + 1]);
+				// Calculate total allocation size.
+				u32 klen = strlen(&lbuf[0]) + 1;
+				u32 vlen = strlen(&lbuf[i + 1]) + 1;
+				char *buf = calloc(sizeof(ini_kv_t) + klen + vlen, 1);
+
+				ini_kv_t *kv = (ini_kv_t *)buf;
+				buf += sizeof(ini_kv_t);
+				kv->key = strcpy_ns(buf, &lbuf[0]);
+				buf += klen;
+				kv->val = strcpy_ns(buf, &lbuf[i + 1]);
 				list_append(&csec->kvs, &kv->link);
 			}
 		} while (!f_eof(&fp));
