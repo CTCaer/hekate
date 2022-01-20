@@ -56,6 +56,7 @@
 #include <storage/emmc.h>
 #include <storage/mbr_gpt.h>
 #include <storage/mmc.h>
+#include <storage/nx_emmc_bis.h>
 #include <storage/ramdisk.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
