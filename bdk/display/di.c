@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -176,9 +176,13 @@ int display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled)
 
 void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 {
+	static u32 *fifo32 = NULL;
 	u8  *fifo8;
-	u32 *fifo32;
 	u32 host_control;
+
+	// Allocate fifo buffer.
+	if (!fifo32)
+		fifo32 = malloc(DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
 
 	// Enable host cmd packets during video and save host control.
 	if (video_enabled)
@@ -199,7 +203,7 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 		break;
 
 	default:
-		fifo32 = calloc(DSI_STATUS_RX_FIFO_SIZE * 8, 4);
+		memset(fifo32, 0, DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
 		fifo8 = (u8 *)fifo32;
 		fifo32[0] = (len << 8) | MIPI_DSI_DCS_LONG_WRITE;
 		fifo8[4] = cmd;
@@ -208,7 +212,6 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 		for (u32 i = 0; i < (ALIGN(len, 4) / 4); i++)
 			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
-		free(fifo32);
 		break;
 	}
 
@@ -223,8 +226,12 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 
 void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 {
+	static u32 *fifo32 = NULL;
 	u8  *fifo8;
-	u32 *fifo32;
+
+	// Allocate fifo buffer.
+	if (!fifo32)
+		fifo32 = malloc(DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
 
 	// Enable vblank interrupt.
 	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = DC_CMD_INT_FRAME_END_INT;
@@ -248,7 +255,7 @@ void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 		break;
 
 	default:
-		fifo32 = calloc(DSI_STATUS_RX_FIFO_SIZE * 8, 4);
+		memset(fifo32, 0, DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
 		fifo8 = (u8 *)fifo32;
 		fifo32[0] = (len << 8) | MIPI_DSI_DCS_LONG_WRITE;
 		fifo8[4] = cmd;
@@ -256,7 +263,6 @@ void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 		len += 4 + 1; // Increase length by CMD/length word and DCS CMD.
 		for (u32 i = 0; i < (ALIGN(len, 4) / 4); i++)
 			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
-		free(fifo32);
 		break;
 	}
 
