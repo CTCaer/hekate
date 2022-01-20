@@ -660,6 +660,10 @@ void clock_enable_coresight();
 void clock_disable_coresight();
 void clock_enable_pwm();
 void clock_disable_pwm();
+void clock_enable_apbdma();
+void clock_disable_apbdma();
+void clock_enable_ahbdma();
+void clock_disable_ahbdma();
 void clock_enable_actmon();
 void clock_disable_actmon();
 

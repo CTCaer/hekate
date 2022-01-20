@@ -100,6 +100,14 @@ static clock_t _clock_sdmmc_legacy_tm = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC_LEGACY_TM, CLK_Y_SDMMC_LEGACY_TM, 4, 66
 };
 
+static clock_t _clock_apbdma = {
+	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                         CLK_H_APBDMA,  0, 0
+};
+
+static clock_t _clock_ahbdma = {
+	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                         CLK_H_AHBDMA,  0, 0
+};
+
 static clock_t _clock_actmon = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON,  CLK_V_ACTMON,  6, 0 // 19.2MHz.
 };
@@ -281,6 +289,26 @@ void clock_enable_pwm()
 void clock_disable_pwm()
 {
 	clock_disable(&_clock_pwm);
+}
+
+void clock_enable_apbdma()
+{
+	clock_enable(&_clock_apbdma);
+}
+
+void clock_disable_apbdma()
+{
+	clock_disable(&_clock_apbdma);
+}
+
+void clock_enable_ahbdma()
+{
+	clock_enable(&_clock_ahbdma);
+}
+
+void clock_disable_ahbdma()
+{
+	clock_disable(&_clock_ahbdma);
 }
 
 void clock_enable_actmon()
