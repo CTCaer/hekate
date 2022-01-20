@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -733,7 +733,7 @@ bool nyx_emmc_check_battery_enough()
 	return true;
 }
 
-static void nyx_sd_card_issues(void *param)
+static void _nyx_sd_card_issues(void *param)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -747,7 +747,7 @@ static void nyx_sd_card_issues(void *param)
 		"#FF8000 SD Card Issues Check#\n\n"
 		"#FFDD00 The SD Card is initialized in 1-bit mode!#\n"
 		"#FFDD00 This might mean detached or broken connector!#\n\n"
-		"You might want to check\n#C7EA46 Console Info# -> #C7EA46 SD Card#");
+		"You might want to check\n#C7EA46 Console Info# -> #C7EA46 microSD#");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
@@ -926,6 +926,35 @@ static void _check_sd_card_removed(void *params)
 	// If in reload state and card was inserted, reload nyx.
 	if (do_reload && !sd_get_card_removed())
 		reload_nyx();
+}
+
+lv_task_t *task_emmc_errors;
+static void _nyx_emmc_issues(void *params)
+{
+	if (emmc_get_mode() < EMMC_MMC_HS400)
+	{
+		// Remove task.
+		lv_task_del(task_emmc_errors);
+
+		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+		lv_obj_set_style(dark_bg, &mbox_darken);
+		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+		static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+		lv_mbox_set_recolor_text(mbox, true);
+
+		lv_mbox_set_text(mbox,
+			"#FF8000 eMMC Issues Check#\n\n"
+			"#FFDD00 Your eMMC is initialized in slower mode!#\n"
+			"#FFDD00 This might mean hardware issues!#\n\n"
+			"You might want to check\n#C7EA46 Console Info# -> #C7EA46 eMMC#");
+
+		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_set_top(mbox, true);
+	}
 }
 
 static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
@@ -2092,9 +2121,11 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 lv_task_t *task_bpmp_clock;
 void first_time_bpmp_clock(void *param)
 {
+	// Remove task.
+	lv_task_del(task_bpmp_clock);
+
 	n_cfg.bpmp_clock = 1;
 	create_nyx_config_entry(false);
-	lv_task_del(task_bpmp_clock);
 }
 
 static void _nyx_main_menu(lv_theme_t * th)
@@ -2172,6 +2203,9 @@ static void _nyx_main_menu(lv_theme_t * th)
 	lv_task_ready(system_tasks.task.status_bar);
 
 	lv_task_create(_check_sd_card_removed, 2000, LV_TASK_PRIO_LOWEST, NULL);
+
+	task_emmc_errors = lv_task_create(_nyx_emmc_issues, 2000, LV_TASK_PRIO_LOWEST, NULL);
+	lv_task_ready(task_emmc_errors);
 
 	// Create top level global line separators.
 	lv_obj_t *line = lv_cont_create(lv_layer_top(), NULL);
@@ -2270,7 +2304,7 @@ void nyx_load_and_run()
 	// Check if sd card issues.
 	if (sd_get_mode() == SD_1BIT_HS25)
 	{
-		lv_task_t *task_run_sd_errors = lv_task_create(nyx_sd_card_issues, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
+		lv_task_t *task_run_sd_errors = lv_task_create(_nyx_sd_card_issues, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
 		lv_task_once(task_run_sd_errors);
 	}
 

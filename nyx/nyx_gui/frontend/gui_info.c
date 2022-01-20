@@ -1745,6 +1745,42 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 		lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
+
+		u16 *emmc_errors = emmc_get_error_count();
+		if (emmc_get_mode() < EMMC_MMC_HS400  ||
+			emmc_errors[EMMC_ERROR_INIT_FAIL] ||
+			emmc_errors[EMMC_ERROR_RW_FAIL]   ||
+			emmc_errors[EMMC_ERROR_RW_RETRY])
+		{
+			lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+			lv_obj_set_style(dark_bg, &mbox_darken);
+			lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+			static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+			lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+			lv_mbox_set_recolor_text(mbox, true);
+
+			s_printf(txt_buf,
+				"#FF8000 eMMC Issues Check#\n\n"
+				"#FFDD00 Your eMMC is initialized in slower mode,#\n"
+				"#FFDD00 or init/read/write errors occurred!#\n"
+				"#FFDD00 This might mean hardware issues!#\n\n"
+				"#00DDFF Bus Speed:# %d MB/s\n\n"
+				"#00DDFF SDMMC4 Errors:#\n"
+				"Init fails: %d\n"
+				"Read/Write fails: %d\n"
+				"Read/Write errors: %d",
+				emmc_storage.csd.busspeed,
+				emmc_errors[EMMC_ERROR_INIT_FAIL],
+				emmc_errors[EMMC_ERROR_RW_FAIL],
+				emmc_errors[EMMC_ERROR_RW_RETRY]);
+
+			lv_mbox_set_text(mbox, txt_buf);
+			lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+			lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+			lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+			lv_obj_set_top(mbox, true);
+		}
 	}
 
 	sdmmc_storage_end(&emmc_storage);
