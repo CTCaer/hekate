@@ -172,3 +172,22 @@ void uart_empty_fifo(u32 idx, u32 which)
 		}
 	}
 }
+
+#ifdef DEBUG_UART_PORT
+#include <stdarg.h>
+#include <string.h>
+
+#include <utils/sprintf.h>
+
+void uart_print(const char *fmt, ...)
+{
+	va_list ap;
+	char text[256];
+
+	va_start(ap, fmt);
+	s_vprintf(text, fmt, ap);
+	va_end(ap);
+
+	uart_send(DEBUG_UART_PORT, (u8 *)text, strlen(text));
+}
+#endif

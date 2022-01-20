@@ -94,5 +94,8 @@ void uart_invert(u32 idx, bool enable, u32 invert_mask);
 u32  uart_get_IIR(u32 idx);
 void uart_set_IIR(u32 idx);
 void uart_empty_fifo(u32 idx, u32 which);
+#ifdef DEBUG_UART_PORT
+void uart_print(const char *fmt, ...);
+#endif
 
 #endif
