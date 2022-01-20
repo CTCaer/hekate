@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -107,8 +107,11 @@
 #define APBDEV_PMC_SECURE_SCRATCH109 0xB0C
 #define APBDEV_PMC_SECURE_SCRATCH110 0xB10
 #define APBDEV_PMC_TZRAM_PWR_CNTRL 0xBE8
+#define  PMC_TZRAM_PWR_CNTRL_SD BIT(0)
 #define APBDEV_PMC_TZRAM_SEC_DISABLE 0xBEC
 #define APBDEV_PMC_TZRAM_NON_SEC_DISABLE 0xBF0
+#define  PMC_TZRAM_DISABLE_REG_WRITE BIT(0)
+#define  PMC_TZRAM_DISABLE_REG_READ  BIT(1)
 
 typedef enum _pmc_sec_lock_t
 {

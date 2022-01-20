@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -399,12 +399,12 @@ void hw_init()
 	// Set BPMP/SCLK to PLLP_OUT (408MHz).
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333;
 
-	// Disable TZRAM shutdown control and lock the regs.
+	// Power on T210B01 shadow TZRAM and lock the reg.
 	if (!tegra_t210)
 	{
-		PMC(APBDEV_PMC_TZRAM_PWR_CNTRL) &= 0xFFFFFFFE;
-		PMC(APBDEV_PMC_TZRAM_NON_SEC_DISABLE) = 3;
-		PMC(APBDEV_PMC_TZRAM_SEC_DISABLE) = 3;
+		PMC(APBDEV_PMC_TZRAM_PWR_CNTRL) &= ~PMC_TZRAM_PWR_CNTRL_SD;
+		PMC(APBDEV_PMC_TZRAM_NON_SEC_DISABLE) = PMC_TZRAM_DISABLE_REG_WRITE | PMC_TZRAM_DISABLE_REG_READ;
+		PMC(APBDEV_PMC_TZRAM_SEC_DISABLE) = PMC_TZRAM_DISABLE_REG_WRITE | PMC_TZRAM_DISABLE_REG_READ;
 	}
 
 	// Initialize External memory controller and configure DRAM parameters.
