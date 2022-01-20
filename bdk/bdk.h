@@ -53,6 +53,7 @@
 #include <soc/pmc.h>
 #include <soc/t210.h>
 #include <soc/uart.h>
+#include <storage/emmc.h>
 #include <storage/mbr_gpt.h>
 #include <storage/mmc.h>
 #include <storage/ramdisk.h>

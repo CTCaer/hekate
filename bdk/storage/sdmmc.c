@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -16,6 +16,7 @@
  */
 
 #include <string.h>
+#include <storage/emmc.h>
 #include <storage/sdmmc.h>
 #include <storage/mmc.h>
 #include <storage/sd.h>
@@ -264,20 +265,36 @@ reinit_try:
 			msleep(50);
 		} while (retries);
 
-		// Disk IO failure! Reinit SD Card to a lower speed.
-		if (storage->sdmmc->id == SDMMC_1)
+		// Disk IO failure! Reinit SD/EMMC to a lower speed.
+		if (storage->sdmmc->id == SDMMC_1 || storage->sdmmc->id == SDMMC_4)
 		{
 			int res;
 
-			sd_error_count_increment(SD_ERROR_RW_FAIL);
-
-			if (first_reinit)
-				res = sd_initialize(true);
-			else
+			if (storage->sdmmc->id == SDMMC_1)
 			{
-				res = sd_init_retry(true);
-				if (!res)
-					sd_error_count_increment(SD_ERROR_INIT_FAIL);
+				sd_error_count_increment(SD_ERROR_RW_FAIL);
+
+				if (first_reinit)
+					res = sd_initialize(true);
+				else
+				{
+					res = sd_init_retry(true);
+					if (!res)
+						sd_error_count_increment(SD_ERROR_INIT_FAIL);
+				}
+			}
+			else if (storage->sdmmc->id == SDMMC_4)
+			{
+				emmc_error_count_increment(EMMC_ERROR_RW_FAIL);
+
+				if (first_reinit)
+					res = emmc_initialize(true);
+				else
+				{
+					res = emmc_init_retry(true);
+					if (!res)
+						emmc_error_count_increment(EMMC_ERROR_INIT_FAIL);
+				}
 			}
 
 			// Reset values for a retry.
@@ -285,7 +302,7 @@ reinit_try:
 			retries = 3;
 			first_reinit = false;
 
-			// If succesful reinit, restart xfer.
+			// If successful reinit, restart xfer.
 			if (res)
 			{
 				bbuf = (u8 *)buf;
