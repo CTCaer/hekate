@@ -4,7 +4,7 @@
  * Copyright (c) 2003-2008 Alan Stern
  * Copyright (c) 2009 Samsung Electronics
  *                    Author: Michal Nazarewicz <m.nazarewicz@samsung.com>
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1810,8 +1810,6 @@ static inline void _system_maintainance(usbd_gadget_ums_t *ums)
 int usb_device_gadget_ums(usb_ctxt_t *usbs)
 {
 	int res = 0;
-	sdmmc_t sdmmc;
-	sdmmc_storage_t storage;
 	usbd_gadget_ums_t ums = {0};
 
 	// Get USB Controller ops.
@@ -1866,9 +1864,9 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	}
 	else
 	{
-		ums.lun.sdmmc = &sdmmc;
-		ums.lun.storage = &storage;
-		sdmmc_storage_init_mmc(ums.lun.storage, ums.lun.sdmmc, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS400);
+		ums.lun.sdmmc = &emmc_sdmmc;
+		ums.lun.storage = &emmc_storage;
+		emmc_initialize(false);
 		sdmmc_storage_set_mmc_partition(ums.lun.storage, ums.lun.partition - 1);
 	}
 
