@@ -51,6 +51,22 @@ static void _gf256_mul_x(void *block)
 		pdata[0xF] ^= 0x87;
 }
 
+static void _gf256_mul_x_le(void *block)
+{
+	u32 *pdata = (u32 *)block;
+	u32 carry = 0;
+
+	for (u32 i = 0; i < 4; i++)
+	{
+		u32 b = pdata[i];
+		pdata[i] = (b << 1) | carry;
+		carry = b >> 31;
+	}
+
+	if (carry)
+		pdata[0x0] ^= 0x87;
+}
+
 static void _se_ll_init(se_ll_t *ll, u32 addr, u32 size)
 {
 	ll->num = 0;
@@ -361,7 +377,7 @@ int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_s
 	return 1;
 }
 
-int se_aes_xts_crypt_sec(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u32 secsize)
+int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, u32 enc, u64 sec, void *dst, void *src, u32 secsize)
 {
 	int res = 0;
 	u8 *tweak = (u8 *)malloc(SE_AES_BLOCK_SIZE);
@@ -374,7 +390,7 @@ int se_aes_xts_crypt_sec(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *sr
 		tweak[i] = sec & 0xFF;
 		sec >>= 8;
 	}
-	if (!se_aes_crypt_block_ecb(ks1, ENCRYPT, tweak, tweak))
+	if (!se_aes_crypt_block_ecb(tweak_ks, ENCRYPT, tweak, tweak))
 		goto out;
 
 	// We are assuming a 0x10-aligned sector size in this implementation.
@@ -382,7 +398,7 @@ int se_aes_xts_crypt_sec(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *sr
 	{
 		for (u32 j = 0; j < SE_AES_BLOCK_SIZE; j++)
 			pdst[j] = psrc[j] ^ tweak[j];
-		if (!se_aes_crypt_block_ecb(ks2, enc, pdst, pdst))
+		if (!se_aes_crypt_block_ecb(crypt_ks, enc, pdst, pdst))
 			goto out;
 		for (u32 j = 0; j < SE_AES_BLOCK_SIZE; j++)
 			pdst[j] = pdst[j] ^ tweak[j];
@@ -398,13 +414,65 @@ out:;
 	return res;
 }
 
-int se_aes_xts_crypt(u32 ks1, u32 ks2, u32 enc, u64 sec, void *dst, void *src, u32 secsize, u32 num_secs)
+int se_aes_xts_crypt_sec_nx(u32 tweak_ks, u32 crypt_ks, u32 enc, u64 sec, u8 *tweak, bool regen_tweak, u32 tweak_exp, void *dst, void *src, u32 sec_size)
+{
+	u32 *pdst = (u32 *)dst;
+	u32 *psrc = (u32 *)src;
+	u32 *ptweak = (u32 *)tweak;
+
+	if (regen_tweak)
+	{
+		for (int i = 0xF; i >= 0; i--)
+		{
+			tweak[i] = sec & 0xFF;
+			sec >>= 8;
+		}
+		if (!se_aes_crypt_block_ecb(tweak_ks, ENCRYPT, tweak, tweak))
+			return 0;
+	}
+
+	// tweak_exp allows using a saved tweak to reduce _gf256_mul_x_le calls.
+	for (u32 i = 0; i < (tweak_exp << 5); i++)
+		_gf256_mul_x_le(tweak);
+
+	u8 orig_tweak[SE_KEY_128_SIZE] __attribute__((aligned(4)));
+	memcpy(orig_tweak, tweak, SE_KEY_128_SIZE);
+
+	// We are assuming a 16 sector aligned size in this implementation.
+	for (u32 i = 0; i < (sec_size >> 4); i++)
+	{
+		for (u32 j = 0; j < 4; j++)
+			pdst[j] = psrc[j] ^ ptweak[j];
+
+		_gf256_mul_x_le(tweak);
+		psrc += 4;
+		pdst += 4;
+	}
+
+	if (!se_aes_crypt_ecb(crypt_ks, enc, dst, sec_size, dst, sec_size))
+		return 0;
+
+	pdst = (u32 *)dst;
+	ptweak = (u32 *)orig_tweak;
+	for (u32 i = 0; i < (sec_size >> 4); i++)
+	{
+		for (u32 j = 0; j < 4; j++)
+			pdst[j] = pdst[j] ^ ptweak[j];
+
+		_gf256_mul_x_le(orig_tweak);
+		pdst += 4;
+	}
+
+	return 1;
+}
+
+int se_aes_xts_crypt(u32 tweak_ks, u32 crypt_ks, u32 enc, u64 sec, void *dst, void *src, u32 secsize, u32 num_secs)
 {
 	u8 *pdst = (u8 *)dst;
 	u8 *psrc = (u8 *)src;
 
 	for (u32 i = 0; i < num_secs; i++)
-		if (!se_aes_xts_crypt_sec(ks1, ks2, enc, sec + i, pdst + secsize * i, psrc + secsize * i, secsize))
+		if (!se_aes_xts_crypt_sec(tweak_ks, crypt_ks, enc, sec + i, pdst + secsize * i, psrc + secsize * i, secsize))
 			return 0;
 
 	return 1;
