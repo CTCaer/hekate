@@ -28,7 +28,6 @@
 #include "../config.h"
 #include <libs/fatfs/diskio.h>
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc_bis.h"
 
 #define OUT_FILENAME_SZ 128
 #define NAND_PATROL_SECTOR 0xC20

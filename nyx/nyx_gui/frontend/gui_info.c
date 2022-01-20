@@ -23,7 +23,6 @@
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc_bis.h"
 
 #define SECTORS_TO_MIB_COEFF 11
 

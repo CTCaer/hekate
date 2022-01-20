@@ -22,7 +22,6 @@
 #include "fe_emummc_tools.h"
 #include "gui_tools_partition_manager.h"
 #include <libs/fatfs/ff.h>
-#include "../storage/nx_emmc_bis.h"
 
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
