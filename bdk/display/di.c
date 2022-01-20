@@ -768,31 +768,31 @@ void display_color_screen(u32 color)
 u32 *display_init_framebuffer_pitch()
 {
 	// Sanitize framebuffer area.
-	memset((u32 *)IPL_FB_ADDRESS, 0, 0x3C0000);
+	memset((u32 *)IPL_FB_ADDRESS, 0, IPL_FB_SZ);
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch, 32);
-	usleep(35000); // No need to wait on Aula.
+	//usleep(35000); // No need to wait on Aula.
 
-	return (u32 *)IPL_FB_ADDRESS;
+	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
 u32 *display_init_framebuffer_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch_inv, 34);
-	usleep(35000); // No need to wait on Aula.
+	//usleep(35000); // No need to wait on Aula.
 
-	return (u32 *)NYX_FB_ADDRESS;
+	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
 u32 *display_init_framebuffer_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_block, 34);
-	usleep(35000); // No need to wait on Aula.
+	//usleep(35000); // No need to wait on Aula.
 
-	return (u32 *)NYX_FB_ADDRESS;
+	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
 u32 *display_init_framebuffer_log()
@@ -800,7 +800,7 @@ u32 *display_init_framebuffer_log()
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_log, 20);
 
-	return (u32 *)LOG_FB_ADDRESS;
+	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
 void display_activate_console()
