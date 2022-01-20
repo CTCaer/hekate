@@ -39,6 +39,7 @@ typedef struct _partition_ctxt_t
 	u32 and_size;
 
 	bool emu_double;
+	bool emmc_is_64gb;
 
 	mbr_t mbr_old;
 
@@ -1675,11 +1676,11 @@ static void _update_partition_bar()
 
 static lv_res_t _action_slider_emu(lv_obj_t *slider)
 {
+	const u32 rsvd_mb = 4 + 4 + 16 + 8; // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
 	u32 size;
 	char lbl_text[64];
 	bool prev_emu_double = part_info.emu_double;
 	int slide_val = lv_slider_get_value(slider);
-	const u32 rsvd_mb = 4 + 4 + 16 + 8; // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
 
 	part_info.emu_double = false;
 
@@ -1695,11 +1696,11 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		part_info.emu_double = true;
 	}
 
-	// Handle special case.
+	// Handle special cases. 2nd value is for 64GB Aula.
 	if (slide_val == 10)
-		size = 29856;
+		size = !part_info.emmc_is_64gb ? 29856 : 59664;
 	else if (slide_val == 20)
-		size = 59712;
+		size = !part_info.emmc_is_64gb ? 59712 : 119328;
 
 	s32 hos_size = (part_info.total_sct >> 11) - 16 - size - part_info.l4t_size - part_info.and_size;
 	if (hos_size > 2048)
@@ -1726,9 +1727,9 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 	{
 		u32 emu_size = part_info.emu_size;
 
-		if (emu_size == 29856)
+		if (emu_size == (!part_info.emmc_is_64gb ? 29856 : 59664))
 			emu_size = 10;
-		else if (emu_size == 59712)
+		else if (emu_size == (!part_info.emmc_is_64gb ? 59712 : 119328))
 			emu_size = 20;
 		else if (emu_size)
 		{
@@ -2288,6 +2289,9 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	// Set initial HOS partition size, so the correct cluster size can be selected.
 	part_info.hos_size = (part_info.total_sct >> 11) - 16; // Important if there's no slider change.
+
+	// Check if eMMC should be 64GB (Aula).
+	part_info.emmc_is_64gb = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
 
 	// Read current MBR.
 	mbr_t mbr = { 0 };
