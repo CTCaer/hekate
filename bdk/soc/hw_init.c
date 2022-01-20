@@ -418,7 +418,7 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 	// Disable BPMP max clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
-#ifdef NYX
+#ifdef BDK_HW_EXTRA_DEINIT
 	// Disable temperature sensor, touchscreen, 5V regulators and Joy-Con.
 	tmp451_end();
 	set_fan_duty(0);

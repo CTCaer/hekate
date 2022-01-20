@@ -42,7 +42,7 @@ u32 minerva_init()
 	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
 		return 0;
 
-#ifdef NYX
+#ifdef BDK_MINERVA_CFG_FROM_RAM
 	// Set table to nyx storage.
 	mtc_cfg->mtc_table = (emc_table_t *)nyx_str->mtc_table;
 

@@ -34,7 +34,7 @@
 //#define ERROR_EXTRA_PRINTING
 #define DPRINTF(...)
 
-#ifdef NYX
+#ifdef BDK_SDMMC_OC_AND_EXTRA_PRINT
 #define ERROR_EXTRA_PRINTING
 #define SDMMC_EMMC_OC
 #endif
