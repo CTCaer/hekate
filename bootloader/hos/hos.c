@@ -183,7 +183,7 @@ static void _se_lock(bool lock_se)
 
 void _sysctr0_reset()
 {
-	SYSCTR0(SYSCTR0_CNTCR) = 0;
+	//SYSCTR0(SYSCTR0_CNTCR) = 0; // Needs secure access.
 	SYSCTR0(SYSCTR0_COUNTERID0) = 0;
 	SYSCTR0(SYSCTR0_COUNTERID1) = 0;
 	SYSCTR0(SYSCTR0_COUNTERID2) = 0;
@@ -1152,8 +1152,8 @@ int hos_launch(ini_sec_t *cfg)
 		secmon_mailbox = (secmon_mailbox_t *)(SECMON_MAILBOX_ADDR + SECMON_STATE_OFFSET);
 	}
 
-	// Start from DRAM ready signal and reset outgoing value.
-	secmon_mailbox->in = PKG1_STATE_DRAM_READY;
+	// Start directly from PKG2 ready signal and reset outgoing value.
+	secmon_mailbox->in = pkg1_state_pkg2_ready;
 	secmon_mailbox->out = SECMON_STATE_NOT_READY;
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
@@ -1166,29 +1166,19 @@ int hos_launch(ini_sec_t *cfg)
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_USBD);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = BIT(CLK_H_AHBDMA) | BIT(CLK_H_APBDMA) | BIT(CLK_H_USB2);
 
-	// Flush cache and disable MMU.
-	bpmp_mmu_disable();
-	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-
 	// Scale down RAM OC if enabled.
 	if (ctxt.stock)
 		minerva_prep_boot_freq();
 
-	// emuMMC: Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-	sdmmc_storage_init_wait_sd();
+	// Flush cache and disable MMU.
+	bpmp_mmu_disable();
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	// Launch secmon.
 	if (smmu_is_used())
 		smmu_exit();
 	else
 		ccplex_boot_cpu0(secmon_base);
-
-	// Wait for secmon to get ready.
-	while (!secmon_mailbox->out)
-		;
-
-	// Signal pkg2 ready and continue boot.
-	secmon_mailbox->in = pkg1_state_pkg2_ready;
 
 	// Halt ourselves in waitevent state and resume if there's JTAG activity.
 	while (true)
