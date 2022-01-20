@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -53,6 +53,7 @@ enum train_mode_t
 typedef enum
 {
 	FREQ_204  = 204000,
+	FREQ_666  = 665600,
 	FREQ_800  = 800000,
 	FREQ_1600 = 1600000
 } minerva_freq_t;
@@ -61,6 +62,8 @@ extern void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
 u32  minerva_init();
 void minerva_change_freq(minerva_freq_t freq);
 void minerva_prep_boot_freq();
+void minerva_prep_boot_l4t();
 void minerva_periodic_training();
+emc_table_t *minerva_get_mtc_table();
 
 #endif

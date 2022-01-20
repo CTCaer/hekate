@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -97,9 +97,10 @@ u32 minerva_init()
 		return 1;
 
 	// Get current frequency
+	u32 current_emc_clk_src = CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
 	for (curr_ram_idx = 0; curr_ram_idx < 10; curr_ram_idx++)
 	{
-		if (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) == mtc_cfg->mtc_table[curr_ram_idx].clk_src_emc)
+		if (current_emc_clk_src == mtc_cfg->mtc_table[curr_ram_idx].clk_src_emc)
 			break;
 	}
 
@@ -156,6 +157,39 @@ void minerva_prep_boot_freq()
 	minerva_change_freq(FREQ_800);
 }
 
+void minerva_prep_boot_l4t()
+{
+	if (!minerva_cfg)
+		return;
+
+	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+
+	// Set init frequency.
+	minerva_change_freq(FREQ_204);
+
+	// Train the rest of the frequencies.
+	mtc_cfg->train_mode = OP_TRAIN;
+	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
+	{
+		mtc_cfg->rate_to = mtc_cfg->mtc_table[i].rate_khz;
+		// Skip already trained frequencies.
+		if (mtc_cfg->rate_to == FREQ_204 || mtc_cfg->rate_to == FREQ_800 || mtc_cfg->rate_to == FREQ_1600)
+			continue;
+
+		// Train frequency.
+		minerva_cfg(mtc_cfg, NULL);
+	}
+
+	// Do FSP WAR and scale to 800 MHz as boot freq.
+	bool fsp_opwr_enabled = !!(EMC(EMC_MRW3) & 0xC0);
+	if (fsp_opwr_enabled)
+		minerva_change_freq(FREQ_666);
+	minerva_change_freq(FREQ_800);
+
+	// Do not let other mtc ops.
+	mtc_cfg->init_done = 0;
+}
+
 void minerva_periodic_training()
 {
 	if (!minerva_cfg)
@@ -167,4 +201,13 @@ void minerva_periodic_training()
 		mtc_cfg->train_mode = OP_PERIODIC_TRAIN;
 		minerva_cfg(mtc_cfg, NULL);
 	}
+}
+
+emc_table_t *minerva_get_mtc_table()
+{
+	if (!minerva_cfg)
+		return NULL;
+
+	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+	return mtc_cfg->mtc_table;
 }
