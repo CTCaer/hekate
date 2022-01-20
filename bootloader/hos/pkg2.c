@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -72,17 +72,13 @@ void pkg2_get_ids(kip1_id_t **ids, u32 *entries)
 
 static void parse_external_kip_patches()
 {
-	static bool ext_patches_done = false;
+	static bool ext_patches_parsed = false;
 
-	if (ext_patches_done)
+	if (ext_patches_parsed)
 		return;
 
-	u32 curr_kip_idx = 0;
-	char path[64];
-	strcpy(path, "bootloader/patches.ini");
-
 	LIST_INIT(ini_kip_sections);
-	if (ini_patch_parse(&ini_kip_sections, path))
+	if (ini_patch_parse(&ini_kip_sections, "bootloader/patches.ini"))
 	{
 		// Copy ids into a new patchset.
 		_kip_id_sets = calloc(sizeof(kip1_id_t), 256); // Max 256 kip ids.
@@ -93,13 +89,15 @@ static void parse_external_kip_patches()
 		{
 			kip1_id_t* curr_kip = NULL;
 			bool found = false;
-			for (curr_kip_idx = 0; curr_kip_idx < _kip_id_sets_cnt + 1; curr_kip_idx++)
+			for (u32 curr_kip_idx = 0; curr_kip_idx < _kip_id_sets_cnt + 1; curr_kip_idx++)
 			{
 				curr_kip = &_kip_id_sets[curr_kip_idx];
 
+				// Check if reached the end of predefined list.
 				if (!curr_kip->name)
 					break;
 
+				// Check if name and hash match.
 				if (!strcmp(curr_kip->name, ini_psec->name) && !memcmp(curr_kip->hash, ini_psec->hash, 8))
 				{
 					found = true;
@@ -140,23 +138,18 @@ static void parse_external_kip_patches()
 				if (first_ext_patch)
 				{
 					first_ext_patch = false;
-					patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
-					strcpy(patchsets[curr_patchset_idx].name, pt->name);
+					patchsets[curr_patchset_idx].name = pt->name;
 					patchsets[curr_patchset_idx].patches = patches;
 				}
-				else
+				else if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
 				{
-					// Check if new patchset name is found and create a new set.
-					if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
-					{
-						curr_patchset_idx++;
-						curr_patch_idx = 0;
-						patches = calloc(sizeof(kip1_patch_t), 16); // Max 16 patches per set.
+					// New patchset name found, create a new set.
+					curr_patchset_idx++;
+					curr_patch_idx = 0;
+					patches = calloc(sizeof(kip1_patch_t), 32); // Max 32 patches per set.
 
-						patchsets[curr_patchset_idx].name = malloc(strlen(pt->name) + 1);
-						strcpy(patchsets[curr_patchset_idx].name, pt->name);
-						patchsets[curr_patchset_idx].patches = patches;
-					}
+					patchsets[curr_patchset_idx].name = pt->name;
+					patchsets[curr_patchset_idx].patches = patches;
 				}
 
 				if (pt->length)
@@ -164,10 +157,8 @@ static void parse_external_kip_patches()
 					patches[curr_patch_idx].offset = pt->offset;
 					patches[curr_patch_idx].length = pt->length;
 
-					patches[curr_patch_idx].srcData = malloc(pt->length);
-					patches[curr_patch_idx].dstData = malloc(pt->length);
-					memcpy(patches[curr_patch_idx].srcData, pt->srcData, pt->length);
-					memcpy(patches[curr_patch_idx].dstData, pt->dstData, pt->length);
+					patches[curr_patch_idx].srcData = (char *)pt->srcData;
+					patches[curr_patch_idx].dstData = (char *)pt->dstData;
 				}
 				else
 					patches[curr_patch_idx].srcData = malloc(1); // Empty patches check. Keep everything else as 0.
@@ -180,7 +171,7 @@ static void parse_external_kip_patches()
 		}
 	}
 
-	ext_patches_done = true;
+	ext_patches_parsed = true;
 }
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash)
@@ -436,18 +427,10 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 	return 1;
 }
 
-static bool ext_patches_parsed = false;
-
 const char* pkg2_patch_kips(link_t *info, char* patchNames)
 {
 	if (patchNames == NULL || patchNames[0] == 0)
 		return NULL;
-
-	if (!ext_patches_parsed)
-	{
-		parse_external_kip_patches();
-		ext_patches_parsed = true;
-	}
 
 	static const u32 MAX_NUM_PATCHES_REQUESTED = sizeof(u32) * 8;
 	char* patches[MAX_NUM_PATCHES_REQUESTED];
@@ -496,6 +479,16 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		patches[i][valueLen] = 0;
 
 		DPRINTF("Requested patch: '%s'\n", patches[i]);
+	}
+
+	// Parse external patches if needed.
+	for (u32 i = 0; i < numPatches; i++)
+	{
+		if (strcmp(patches[i], "emummc") && strcmp(patches[i], "nogc"))
+		{
+			parse_external_kip_patches();
+			break;
+		}
 	}
 
 	u32 shaBuf[32 / sizeof(u32)];
