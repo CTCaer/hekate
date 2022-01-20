@@ -1481,6 +1481,9 @@ void ipl_main()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
+	// Initialize display.
+	display_init();
+
 	// Mount SD Card.
 	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
 
@@ -1493,11 +1496,9 @@ void ipl_main()
 	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
-	display_init();
-
+	// Initialize display window, backlight and gfx console.
 	u32 *fb = display_init_framebuffer_pitch();
 	gfx_init_ctxt(fb, 720, 1280, 720);
-
 	gfx_con_init();
 
 	display_backlight_pwm_init();
@@ -1516,6 +1517,7 @@ void ipl_main()
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();
 
+	// Set ram to a freq that doesn't need periodic training.
 	minerva_change_freq(FREQ_800);
 
 	while (true)
