@@ -86,10 +86,10 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 void render_default_bootlogo()
 {
 	gfx_clear_grey(0x1B);
-	u8 *BOOTLOGO = (void *)malloc(SZ_16K);
-	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, BOOTLOGO, SZ_BOOTLOGO);
-	gfx_set_rect_grey(BOOTLOGO, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-	free(BOOTLOGO);
+	u8 *logo_buf = (void *)malloc(SZ_16K);
+	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, logo_buf, SZ_BOOTLOGO);
+	gfx_set_rect_grey(logo_buf, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+	free(logo_buf);
 }
 
 void check_power_off_from_hos()
@@ -98,8 +98,6 @@ void check_power_off_from_hos()
 	u8 hosWakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
 	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
-		sd_end();
-
 		// Stop the alarm, in case we injected too fast.
 		max77620_rtc_stop_alarm();
 
@@ -954,7 +952,7 @@ skip_list:
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
 	{
 		u32 fsize;
-		u8 *BOOTLOGO = NULL;
+		u8 *logo_buf = NULL;
 
 		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, &fsize);
@@ -983,15 +981,15 @@ skip_list:
 				if (bmpData.size <= fsize && ((bmpData.size - bmpData.offset) < SZ_4M))
 				{
 					// Avoid unaligned access from BM 2-byte MAGIC and remove header.
-					BOOTLOGO = (u8 *)malloc(SZ_4M);
-					memcpy(BOOTLOGO, bitmap + bmpData.offset, bmpData.size - bmpData.offset);
+					logo_buf = (u8 *)malloc(SZ_4M);
+					memcpy(logo_buf, bitmap + bmpData.offset, bmpData.size - bmpData.offset);
 					free(bitmap);
 					// Center logo if res < 720x1280.
 					bmpData.pos_x = (720  - bmpData.size_x) >> 1;
 					bmpData.pos_y = (1280 - bmpData.size_y) >> 1;
 					// Get background color from 1st pixel.
 					if (bmpData.size_x < 720 || bmpData.size_y < 1280)
-						gfx_clear_color(*(u32 *)BOOTLOGO);
+						gfx_clear_color(*(u32 *)logo_buf);
 
 					bootlogoFound = true;
 				}
@@ -1003,9 +1001,9 @@ skip_list:
 		// Render boot logo.
 		if (bootlogoFound)
 		{
-			gfx_render_bmp_argb((u32 *)BOOTLOGO, bmpData.size_x, bmpData.size_y,
+			gfx_render_bmp_argb((u32 *)logo_buf, bmpData.size_x, bmpData.size_y,
 				bmpData.pos_x, bmpData.pos_y);
-			free(BOOTLOGO);
+			free(logo_buf);
 		}
 		else
 			render_default_bootlogo();
