@@ -656,6 +656,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		// Calculate USER size and set it for FatFS.
 		u32 user_sectors = resized_count - user_offset - 33;
+		user_sectors = ALIGN_DOWN(user_sectors, 0x20); // Align down to cluster size.
 		disk_set_info(DRIVE_EMU, SET_SECTOR_COUNT, &user_sectors);
 
 		// Initialize BIS for emuMMC. BIS keys should be already in place.
@@ -719,7 +720,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		// Set new emuMMC size and USER size.
 		mbr.partitions[0].size_sct = resized_count;
-		gpt->entries[gpt_entry_idx].lba_end = user_offset + user_sectors - 1;
+		gpt->entries[gpt_entry_idx].lba_end = user_part.lba_end;
 
 		// Update Main GPT.
 		gpt->header.alt_lba = resized_count - 1;
