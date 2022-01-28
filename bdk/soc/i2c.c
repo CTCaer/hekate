@@ -95,9 +95,9 @@ static void _i2c_load_cfg_wait(vu32 *base)
 	base[I2C_CONFIG_LOAD] = BIT(5) | TIMEOUT_CONFIG_LOAD | MSTR_CONFIG_LOAD;
 	for (u32 i = 0; i < 20; i++)
 	{
-		usleep(1);
 		if (!(base[I2C_CONFIG_LOAD] & MSTR_CONFIG_LOAD))
 			break;
+		usleep(1);
 	}
 }
 
@@ -362,9 +362,9 @@ void i2c_init(u32 i2c_idx)
 
 	for (u32 i = 0; i < 10; i++)
 	{
-		usleep(20000);
 		if (base[I2C_INT_STATUS] & BUS_CLEAR_DONE)
 			break;
+		usleep(25);
 	}
 
 	(vu32)base[I2C_BUS_CLEAR_STATUS];
