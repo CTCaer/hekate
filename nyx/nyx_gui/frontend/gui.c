@@ -1608,149 +1608,151 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	u32 curr_btn_idx = 0; // Active buttons.
 	LIST_INIT(ini_sections);
 
-	if (sd_mount())
+	if (!sd_mount())
+		goto failed_sd_mount;
+
+	// Check if we use custom system icons.
+	bool icon_sw_custom = !f_stat("bootloader/res/icon_switch_custom.bmp", NULL);
+	bool icon_pl_custom = !f_stat("bootloader/res/icon_payload_custom.bmp", NULL);
+
+	// Choose what to parse.
+	bool ini_parse_success = false;
+	if (!more_cfg)
+		ini_parse_success = ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
+	else
+		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+
+	if (combined_cfg && !ini_parse_success)
 	{
-		// Check if we use custom system icons.
-		bool icon_sw_custom = !f_stat("bootloader/res/icon_switch_custom.bmp", NULL);
-		bool icon_pl_custom = !f_stat("bootloader/res/icon_payload_custom.bmp", NULL);
-
-		// Choose what to parse.
-		bool ini_parse_success = false;
-		if (!more_cfg)
-			ini_parse_success = ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
-		else
-			ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
-
-		if (combined_cfg && !ini_parse_success)
-		{
 ini_parsing:
-			// Reinit list.
-			ini_sections.prev = &ini_sections;
-			ini_sections.next = &ini_sections;
-			ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
-			more_cfg = true;
-		}
-
-		if (ini_parse_success)
-		{
-			// Iterate to all boot entries and load icons.
-			u32 entry_idx = 1;
-
-			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
-			{
-				if (!strcmp(ini_sec->name, "config") || (ini_sec->type != INI_CHOICE))
-					continue;
-
-				icon_path = NULL;
-				bool payload = false;
-				bool img_colorize = false;
-				lv_img_dsc_t *bmp = NULL;
-				lv_obj_t *img = NULL;
-
-				// Check for icons.
-				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
-				{
-					if (!strcmp("icon", kv->key))
-						icon_path = kv->val;
-					else if (!strcmp("payload", kv->key))
-						payload = true;
-				}
-
-				// If icon not found, check res folder for section_name.bmp.
-				// If not, use defaults.
-				if (!icon_path)
-				{
-					s_printf(tmp_path, "bootloader/res/%s.bmp", ini_sec->name);
-					bmp = bmp_to_lvimg_obj(tmp_path);
-					if (!bmp)
-					{
-						s_printf(tmp_path, "bootloader/res/%s_hue.bmp", ini_sec->name);
-						bmp = bmp_to_lvimg_obj(tmp_path);
-						if (bmp)
-							img_colorize = true;
-					}
-
-					if (!bmp && payload)
-					{
-						bmp = icon_payload;
-
-						if (!icon_pl_custom)
-							img_colorize = true;
-					}
-				}
-				else
-				{
-					bmp = bmp_to_lvimg_obj(icon_path);
-
-					// Check if colorization is enabled.
-					if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 8, "_hue", 4))
-						img_colorize = true;
-				}
-
-				// Enable button.
-				lv_obj_set_opa_scale(launch_ctxt.btn[curr_btn_idx], LV_OPA_COVER);
-
-				// Default to switch logo if no icon found at all.
-				if (!bmp)
-				{
-					bmp = icon_switch;
-
-					if (!icon_sw_custom)
-						img_colorize = true;
-				}
-
-				//Set icon.
-				if (bmp)
-				{
-					img = lv_img_create(launch_ctxt.btn[curr_btn_idx], NULL);
-
-					if (img_colorize)
-						lv_img_set_style(img, &img_style);
-
-					lv_img_set_src(img, bmp);
-				}
-
-				// Add button mask/radius and align icon.
-				lv_obj_t *btn = lv_btn_create(launch_ctxt.btn[curr_btn_idx], NULL);
-				lv_obj_set_size(btn, 200, 200);
-				lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_home_transp_rel);
-				lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
-				if (img)
-					lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
-
-				// Set autoboot index.
-				ext = lv_obj_get_ext_attr(btn);
-				ext->idx = entry_idx;
-				ext = lv_obj_get_ext_attr(launch_ctxt.btn[curr_btn_idx]); // Redundancy.
-				ext->idx = entry_idx;
-
-				// Set action.
-				if (!more_cfg)
-					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_action);
-				else
-					lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
-
-				// Set button's label text.
-				lv_label_set_text(launch_ctxt.label[curr_btn_idx], ini_sec->name);
-				lv_obj_set_opa_scale(launch_ctxt.label[curr_btn_idx], LV_OPA_COVER);
-
-				// Set rolling text if name is big.
-				if (strlen(ini_sec->name) > 22)
-					lv_label_set_long_mode(launch_ctxt.label[curr_btn_idx], LV_LABEL_LONG_ROLL);
-
-				entry_idx++;
-				curr_btn_idx++;
-
-				// Check if we exceed max buttons.
-				if (curr_btn_idx >= max_entries)
-					break;
-			}
-		}
-		// Reiterate the loop with more cfgs if combined.
-		if (combined_cfg && (curr_btn_idx < 8) && !more_cfg)
-			goto ini_parsing;
+		// Reinit list.
+		ini_sections.prev = &ini_sections;
+		ini_sections.next = &ini_sections;
+		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+		more_cfg = true;
 	}
 
+	if (!ini_parse_success)
+		goto ini_parse_failed;
+
+	// Iterate to all boot entries and load icons.
+	u32 entry_idx = 1;
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+	{
+		if (!strcmp(ini_sec->name, "config") || (ini_sec->type != INI_CHOICE))
+			continue;
+
+		icon_path = NULL;
+		bool payload = false;
+		bool img_colorize = false;
+		lv_img_dsc_t *bmp = NULL;
+		lv_obj_t *img = NULL;
+
+		// Check for icons.
+		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+		{
+			if (!strcmp("icon", kv->key))
+				icon_path = kv->val;
+			else if (!strcmp("payload", kv->key))
+				payload = true;
+		}
+
+		// If icon not found, check res folder for section_name.bmp.
+		// If not, use defaults.
+		if (!icon_path)
+		{
+			s_printf(tmp_path, "bootloader/res/%s.bmp", ini_sec->name);
+			bmp = bmp_to_lvimg_obj(tmp_path);
+			if (!bmp)
+			{
+				s_printf(tmp_path, "bootloader/res/%s_hue.bmp", ini_sec->name);
+				bmp = bmp_to_lvimg_obj(tmp_path);
+				if (bmp)
+					img_colorize = true;
+			}
+
+			if (!bmp && payload)
+			{
+				bmp = icon_payload;
+
+				if (!icon_pl_custom)
+					img_colorize = true;
+			}
+		}
+		else
+		{
+			bmp = bmp_to_lvimg_obj(icon_path);
+
+			// Check if colorization is enabled.
+			if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 8, "_hue", 4))
+				img_colorize = true;
+		}
+
+		// Enable button.
+		lv_obj_set_opa_scale(launch_ctxt.btn[curr_btn_idx], LV_OPA_COVER);
+
+		// Default to switch logo if no icon found at all.
+		if (!bmp)
+		{
+			bmp = icon_switch;
+
+			if (!icon_sw_custom)
+				img_colorize = true;
+		}
+
+		//Set icon.
+		if (bmp)
+		{
+			img = lv_img_create(launch_ctxt.btn[curr_btn_idx], NULL);
+
+			if (img_colorize)
+				lv_img_set_style(img, &img_style);
+
+			lv_img_set_src(img, bmp);
+		}
+
+		// Add button mask/radius and align icon.
+		lv_obj_t *btn = lv_btn_create(launch_ctxt.btn[curr_btn_idx], NULL);
+		lv_obj_set_size(btn, 200, 200);
+		lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_home_transp_rel);
+		lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
+		if (img)
+			lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
+
+		// Set autoboot index.
+		ext = lv_obj_get_ext_attr(btn);
+		ext->idx = entry_idx;
+		ext = lv_obj_get_ext_attr(launch_ctxt.btn[curr_btn_idx]); // Redundancy.
+		ext->idx = entry_idx;
+
+		// Set action.
+		if (!more_cfg)
+			lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_action);
+		else
+			lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
+
+		// Set button's label text.
+		lv_label_set_text(launch_ctxt.label[curr_btn_idx], ini_sec->name);
+		lv_obj_set_opa_scale(launch_ctxt.label[curr_btn_idx], LV_OPA_COVER);
+
+		// Set rolling text if name is big.
+		if (strlen(ini_sec->name) > 22)
+			lv_label_set_long_mode(launch_ctxt.label[curr_btn_idx], LV_LABEL_LONG_ROLL);
+
+		entry_idx++;
+		curr_btn_idx++;
+
+		// Check if we exceed max buttons.
+		if (curr_btn_idx >= max_entries)
+			break;
+	}
+
+ini_parse_failed:
+	// Reiterate the loop with more cfgs if combined.
+	if (combined_cfg && (curr_btn_idx < 8) && !more_cfg)
+		goto ini_parsing;
+
+failed_sd_mount:
 	if (curr_btn_idx < 1)
 		no_boot_entries = true;
 

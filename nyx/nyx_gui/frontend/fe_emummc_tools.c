@@ -42,26 +42,28 @@ void load_emummc_cfg(emummc_cfg_t *emu_info)
 
 	// Parse emuMMC configuration.
 	LIST_INIT(ini_sections);
-	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
+	if (!ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
+		return;
+
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 	{
-		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+		if (!strcmp(ini_sec->name, "emummc"))
 		{
-			if (!strcmp(ini_sec->name, "emummc"))
+			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
-				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
-				{
-					if (!strcmp("enabled", kv->key))
-						emu_info->enabled = atoi(kv->val);
-					else if (!strcmp("sector", kv->key))
-						emu_info->sector = strtol(kv->val, NULL, 16);
-					else if (!strcmp("id", kv->key))
-						emu_info->id = strtol(kv->val, NULL, 16);
-					else if (!strcmp("path", kv->key))
-						emu_info->path = kv->val;
-					else if (!strcmp("nintendo_path", kv->key))
-						emu_info->nintendo_path = kv->val;
-				}
+				if (!strcmp("enabled", kv->key))
+					emu_info->enabled = atoi(kv->val);
+				else if (!strcmp("sector", kv->key))
+					emu_info->sector = strtol(kv->val, NULL, 16);
+				else if (!strcmp("id", kv->key))
+					emu_info->id = strtol(kv->val, NULL, 16);
+				else if (!strcmp("path", kv->key))
+					emu_info->path = kv->val;
+				else if (!strcmp("nintendo_path", kv->key))
+					emu_info->nintendo_path = kv->val;
 			}
+
+			break;
 		}
 	}
 }
@@ -262,6 +264,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 
 		retryCount = 0;
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
+
 		while (!sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
@@ -405,6 +408,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	memset(&bootPart, 0, sizeof(bootPart));
 	bootPart.lba_start = 0;
 	bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+
 	for (i = 0; i < 2; i++)
 	{
 		strcpy(bootPart.name, "BOOT");
@@ -448,24 +452,23 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	rawPart.lba_start = 0;
 	rawPart.lba_end = RAW_AREA_NUM_SECTORS - 1;
 	strcpy(rawPart.name, "GPP");
-	{
-		s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
-			i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
-		lv_label_set_text(gui->label_info, txt_buf);
-		s_printf(txt_buf, "%02d: %s... ", i, rawPart.name);
-		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
-		manual_system_maintenance(true);
 
-		res = _dump_emummc_file_part(gui, sdPath, &emmc_storage, &rawPart);
+	s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
+		i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
+	lv_label_set_text(gui->label_info, txt_buf);
+	s_printf(txt_buf, "%02d: %s... ", i, rawPart.name);
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+	manual_system_maintenance(true);
 
-		if (!res)
-			s_printf(txt_buf, "#FFDD00 Failed!#\n");
-		else
-			s_printf(txt_buf, "Done!\n");
+	res = _dump_emummc_file_part(gui, sdPath, &emmc_storage, &rawPart);
 
-		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
-		manual_system_maintenance(true);
-	}
+	if (!res)
+		s_printf(txt_buf, "#FFDD00 Failed!#\n");
+	else
+		s_printf(txt_buf, "Done!\n");
+
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+	manual_system_maintenance(true);
 
 out_failed:
 	timer = get_tmr_s() - timer;

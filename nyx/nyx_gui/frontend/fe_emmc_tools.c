@@ -950,124 +950,125 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	bool use_multipart = false;
 	bool check_4MB_aligned = true;
 
-	if (allow_multi_part)
+	if (!allow_multi_part)
+		goto multipart_not_allowed;
+
+	// Check to see if there is a combined file and if so then use that.
+	if (f_stat(outFilename, &fno))
 	{
-		// Check to see if there is a combined file and if so then use that.
-		if (f_stat(outFilename, &fno))
+		// If not, check if there are partial files and the total size matches.
+		s_printf(gui->txt_buf, "\nNo single file, checking for part files...\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		outFilename[sdPathLen++] = '.';
+
+		_update_filename(outFilename, sdPathLen, numSplitParts);
+
+		s_printf(gui->txt_buf, "#96FF00 Filepath:#\n%s\n#96FF00 Filename:# #FF8000 %s#",
+			gui->base_path, outFilename + strlen(gui->base_path));
+		lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
+
+		// Stat total size of the part files.
+		while ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
 		{
-			// If not, check if there are partial files and the total size matches.
-			s_printf(gui->txt_buf, "\nNo single file, checking for part files...\n");
-			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-			manual_system_maintenance(true);
-
-			outFilename[sdPathLen++] = '.';
-
 			_update_filename(outFilename, sdPathLen, numSplitParts);
 
-			s_printf(gui->txt_buf, "#96FF00 Filepath:#\n%s\n#96FF00 Filename:# #FF8000 %s#",
-				gui->base_path, outFilename + strlen(gui->base_path));
+			s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
+			lv_label_cut_text(gui->label_info,
+				strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
+				strlen(outFilename + strlen(gui->base_path)) + 1);
 			lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
 
-			// Stat total size of the part files.
-			while ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
+			if ((u32)((u64)totalCheckFileSize >> (u64)9) > totalSectors)
 			{
-				_update_filename(outFilename, sdPathLen, numSplitParts);
-
-				s_printf(gui->txt_buf, "%s#", outFilename + strlen(gui->base_path));
-				lv_label_cut_text(gui->label_info,
-					strlen(lv_label_get_text(gui->label_info)) - strlen(outFilename + strlen(gui->base_path)) - 1,
-					strlen(outFilename + strlen(gui->base_path)) + 1);
-				lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
+				s_printf(gui->txt_buf, "#FF8000 Size of SD Card split backup exceeds#\n#FF8000 eMMC's selected part size!#\n#FFDD00 Aborting...#");
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 
-				if ((u32)((u64)totalCheckFileSize >> (u64)9) > totalSectors)
+				return 0;
+			}
+			else if (f_stat(outFilename, &fno))
+			{
+				if (!gui->raw_emummc)
 				{
-					s_printf(gui->txt_buf, "#FF8000 Size of SD Card split backup exceeds#\n#FF8000 eMMC's selected part size!#\n#FFDD00 Aborting...#");
+					s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n\n", res, outFilename);
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
-					return 0;
-				}
-				else if (f_stat(outFilename, &fno))
-				{
-					if (!gui->raw_emummc)
-					{
-						s_printf(gui->txt_buf, "#FFDD00 Error (%d) file not found#\n#FFDD00 %s.#\n\n", res, outFilename);
-						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-						manual_system_maintenance(true);
-
-						// Attempt a smaller restore.
-						if (numSplitParts)
-							break;
-					}
-					else
-					{
-						// Set new total sectors and lba end sector for percentage calculations.
-						totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
-						lba_end = totalSectors + part->lba_start - 1;
-					}
-
-					// Restore folder is empty.
-					if (!numSplitParts)
-					{
-						s_printf(gui->txt_buf, "#FFDD00 Restore folder is empty.#\n\n");
-						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-						manual_system_maintenance(true);
-
-						return 0;
-					}
+					// Attempt a smaller restore.
+					if (numSplitParts)
+						break;
 				}
 				else
 				{
-					totalCheckFileSize += (u64)fno.fsize;
-
-					if (check_4MB_aligned && (((u64)fno.fsize) % SZ_4M))
-					{
-						s_printf(gui->txt_buf, "#FFDD00 The split file must be a#\n#FFDD00 multiple of 4 MiB.#\n#FFDD00 Aborting...#", res, outFilename);
-						lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-						manual_system_maintenance(true);
-
-						return 0;
-					}
-
-					check_4MB_aligned = false;
+					// Set new total sectors and lba end sector for percentage calculations.
+					totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
+					lba_end = totalSectors + part->lba_start - 1;
 				}
 
-				numSplitParts++;
-			}
-
-			s_printf(gui->txt_buf, "%X sectors total.\n", (u32)((u64)totalCheckFileSize >> (u64)9));
-			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-			manual_system_maintenance(true);
-
-			if ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
-			{
-				lv_obj_t *warn_mbox_bg = create_mbox_text(
-					"#FF8000 Size of SD Card split backup does not match#\n#FF8000 eMMC's selected part size!#\n\n"
-					"#FFDD00 The backup might be corrupted,#\n#FFDD00 or missing files!#\n#FFDD00 Aborting is suggested!#\n\n"
-					"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
-				manual_system_maintenance(true);
-
-				if (!(btn_wait() & BTN_POWER))
+				// Restore folder is empty.
+				if (!numSplitParts)
 				{
-					lv_obj_del(warn_mbox_bg);
-					s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match#\n#FF0000 eMMC's selected part size!#\n");
+					s_printf(gui->txt_buf, "#FFDD00 Restore folder is empty.#\n\n");
 					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 					manual_system_maintenance(true);
 
 					return 0;
 				}
-				lv_obj_del(warn_mbox_bg);
-
-				// Set new total sectors and lba end sector for percentage calculations.
-				totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
-				lba_end = totalSectors + part->lba_start - 1;
 			}
-			use_multipart = true;
-			_update_filename(outFilename, sdPathLen, 0);
+			else
+			{
+				totalCheckFileSize += (u64)fno.fsize;
+
+				if (check_4MB_aligned && (((u64)fno.fsize) % SZ_4M))
+				{
+					s_printf(gui->txt_buf, "#FFDD00 The split file must be a#\n#FFDD00 multiple of 4 MiB.#\n#FFDD00 Aborting...#", res, outFilename);
+					lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+					manual_system_maintenance(true);
+
+					return 0;
+				}
+
+				check_4MB_aligned = false;
+			}
+
+			numSplitParts++;
 		}
+
+		s_printf(gui->txt_buf, "%X sectors total.\n", (u32)((u64)totalCheckFileSize >> (u64)9));
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		if ((u32)((u64)totalCheckFileSize >> (u64)9) != totalSectors)
+		{
+			lv_obj_t *warn_mbox_bg = create_mbox_text(
+				"#FF8000 Size of SD Card split backup does not match#\n#FF8000 eMMC's selected part size!#\n\n"
+				"#FFDD00 The backup might be corrupted,#\n#FFDD00 or missing files!#\n#FFDD00 Aborting is suggested!#\n\n"
+				"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", false);
+			manual_system_maintenance(true);
+
+			if (!(btn_wait() & BTN_POWER))
+			{
+				lv_obj_del(warn_mbox_bg);
+				s_printf(gui->txt_buf, "#FF0000 Size of SD Card split backup does not match#\n#FF0000 eMMC's selected part size!#\n");
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+				manual_system_maintenance(true);
+
+				return 0;
+			}
+			lv_obj_del(warn_mbox_bg);
+
+			// Set new total sectors and lba end sector for percentage calculations.
+			totalSectors = (u32)((u64)totalCheckFileSize >> (u64)9);
+			lba_end = totalSectors + part->lba_start - 1;
+		}
+		use_multipart = true;
+		_update_filename(outFilename, sdPathLen, 0);
 	}
 
+multipart_not_allowed:
 	res = f_open(&fp, outFilename, FA_READ);
 	if (use_multipart)
 	{

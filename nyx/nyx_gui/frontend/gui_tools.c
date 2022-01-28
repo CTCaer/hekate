@@ -993,66 +993,67 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	}
 
 	u8 err[2];
-	if (touch_panel_ito_test(err))
+	if (!touch_panel_ito_test(err))
+		goto ito_failed;
+
+	if (!err[0] && !err[1])
 	{
-		if (!err[0] && !err[1])
-		{
-			res = touch_execute_autotune();
-			if (res)
-				goto out;
-		}
-		else
-		{
-			touch_sense_enable();
+		res = touch_execute_autotune();
+		if (res)
+			goto out;
+	}
+	else
+	{
+		touch_sense_enable();
 
-			s_printf(txt_buf, "#FFFF00 ITO Test: ");
-			switch (err[0])
-			{
-			case ITO_FORCE_OPEN:
-				strcat(txt_buf, "Force Open");
-				break;
-			case ITO_SENSE_OPEN:
-				strcat(txt_buf, "Sense Open");
-				break;
-			case ITO_FORCE_SHRT_GND:
-				strcat(txt_buf, "Force Short to GND");
-				break;
-			case ITO_SENSE_SHRT_GND:
-				strcat(txt_buf, "Sense Short to GND");
-				break;
-			case ITO_FORCE_SHRT_VCM:
-				strcat(txt_buf, "Force Short to VDD");
-				break;
-			case ITO_SENSE_SHRT_VCM:
-				strcat(txt_buf, "Sense Short to VDD");
-				break;
-			case ITO_FORCE_SHRT_FORCE:
-				strcat(txt_buf, "Force Short to Force");
-				break;
-			case ITO_SENSE_SHRT_SENSE:
-				strcat(txt_buf, "Sense Short to Sense");
-				break;
-			case ITO_F2E_SENSE:
-				strcat(txt_buf, "Force Short to Sense");
-				break;
-			case ITO_FPC_FORCE_OPEN:
-				strcat(txt_buf, "FPC Force Open");
-				break;
-			case ITO_FPC_SENSE_OPEN:
-				strcat(txt_buf, "FPC Sense Open");
-				break;
-			default:
-				strcat(txt_buf, "Unknown");
-				break;
+		s_printf(txt_buf, "#FFFF00 ITO Test: ");
+		switch (err[0])
+		{
+		case ITO_FORCE_OPEN:
+			strcat(txt_buf, "Force Open");
+			break;
+		case ITO_SENSE_OPEN:
+			strcat(txt_buf, "Sense Open");
+			break;
+		case ITO_FORCE_SHRT_GND:
+			strcat(txt_buf, "Force Short to GND");
+			break;
+		case ITO_SENSE_SHRT_GND:
+			strcat(txt_buf, "Sense Short to GND");
+			break;
+		case ITO_FORCE_SHRT_VCM:
+			strcat(txt_buf, "Force Short to VDD");
+			break;
+		case ITO_SENSE_SHRT_VCM:
+			strcat(txt_buf, "Sense Short to VDD");
+			break;
+		case ITO_FORCE_SHRT_FORCE:
+			strcat(txt_buf, "Force Short to Force");
+			break;
+		case ITO_SENSE_SHRT_SENSE:
+			strcat(txt_buf, "Sense Short to Sense");
+			break;
+		case ITO_F2E_SENSE:
+			strcat(txt_buf, "Force Short to Sense");
+			break;
+		case ITO_FPC_FORCE_OPEN:
+			strcat(txt_buf, "FPC Force Open");
+			break;
+		case ITO_FPC_SENSE_OPEN:
+			strcat(txt_buf, "FPC Sense Open");
+			break;
+		default:
+			strcat(txt_buf, "Unknown");
+			break;
 
-			}
-			s_printf(txt_buf + strlen(txt_buf), " (%d), Chn: %d#\n\n", err[0], err[1]);
-			strcat(txt_buf, "#FFFF00 The touchscreen calibration failed!");
-			lv_mbox_set_text(mbox, txt_buf);
-			goto out2;
 		}
+		s_printf(txt_buf + strlen(txt_buf), " (%d), Chn: %d#\n\n", err[0], err[1]);
+		strcat(txt_buf, "#FFFF00 The touchscreen calibration failed!");
+		lv_mbox_set_text(mbox, txt_buf);
+		goto out2;
 	}
 
+ito_failed:
 	touch_sense_enable();
 
 out:

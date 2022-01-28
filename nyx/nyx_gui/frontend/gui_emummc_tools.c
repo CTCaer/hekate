@@ -782,25 +782,26 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	for (int i = 1; i < 4; i++)
 	{
 		mbr_ctx.sector_start = mbr->partitions[i].start_sct;
-		if (mbr_ctx.sector_start)
+
+		if (!mbr_ctx.sector_start)
+			continue;
+
+		sdmmc_storage_read(&sd_storage, mbr_ctx.sector_start + 0xC001, 1, efi_part);
+		if (!memcmp(efi_part, "EFI PART", 8))
 		{
-			sdmmc_storage_read(&sd_storage, mbr_ctx.sector_start + 0xC001, 1, efi_part);
+			mbr_ctx.sector_start += 0x8000;
+			emummc = true;
+			mbr_ctx.part_idx = i;
+			break;
+		}
+		else
+		{
+			sdmmc_storage_read(&sd_storage, mbr_ctx.sector_start + 0x4001, 1, efi_part);
 			if (!memcmp(efi_part, "EFI PART", 8))
 			{
-				mbr_ctx.sector_start += 0x8000;
 				emummc = true;
 				mbr_ctx.part_idx = i;
 				break;
-			}
-			else
-			{
-				sdmmc_storage_read(&sd_storage, mbr_ctx.sector_start + 0x4001, 1, efi_part);
-				if (!memcmp(efi_part, "EFI PART", 8))
-				{
-					emummc = true;
-					mbr_ctx.part_idx = i;
-					break;
-				}
 			}
 		}
 	}

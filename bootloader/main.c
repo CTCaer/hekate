@@ -192,87 +192,87 @@ int launch_payload(char *path, bool update, bool clear_screen)
 		gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (sd_mount())
+	if (!sd_mount())
+		goto out;
+
+	FIL fp;
+	if (f_open(&fp, path, FA_READ))
 	{
-		FIL fp;
-		if (f_open(&fp, path, FA_READ))
-		{
-			gfx_con.mute = false;
-			EPRINTFARGS("Payload file is missing!\n(%s)", path);
+		gfx_con.mute = false;
+		EPRINTFARGS("Payload file is missing!\n(%s)", path);
 
-			goto out;
-		}
+		goto out;
+	}
 
-		// Read and copy the payload to our chosen address
-		void *buf;
-		u32 size = f_size(&fp);
+	// Read and copy the payload to our chosen address
+	void *buf;
+	u32 size = f_size(&fp);
 
-		if (size < 0x30000)
-			buf = (void *)RCM_PAYLOAD_ADDR;
-		else
-		{
-			coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
-			buf = coreboot_addr;
-			if (h_cfg.t210b01)
-			{
-				f_close(&fp);
-
-				gfx_con.mute = false;
-				EPRINTF("Coreboot not allowed on Mariko!");
-
-				goto out;
-			}
-		}
-
-		if (f_read(&fp, buf, size, NULL))
+	if (size < 0x30000)
+		buf = (void *)RCM_PAYLOAD_ADDR;
+	else
+	{
+		coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
+		buf = coreboot_addr;
+		if (h_cfg.t210b01)
 		{
 			f_close(&fp);
 
+			gfx_con.mute = false;
+			EPRINTF("Coreboot not allowed on Mariko!");
+
 			goto out;
 		}
+	}
 
+	if (f_read(&fp, buf, size, NULL))
+	{
 		f_close(&fp);
 
-		if (update && is_ipl_updated(buf, path, false))
-			goto out;
+		goto out;
+	}
 
-		sd_end();
+	f_close(&fp);
 
-		if (size < 0x30000)
-		{
-			if (update)
-				memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
-			else
-				reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
+	if (update && is_ipl_updated(buf, path, false))
+		goto out;
 
-			hw_reinit_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
-		}
+	sd_end();
+
+	if (size < 0x30000)
+	{
+		if (update)
+			memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
 		else
-		{
-			reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
+			reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
-			// Get coreboot seamless display magic.
-			u32 magic = 0;
-			char *magic_ptr = buf + COREBOOT_VER_OFF;
-			memcpy(&magic, magic_ptr + strlen(magic_ptr) - 4, 4);
-			hw_reinit_workaround(true, magic);
-		}
+		hw_reinit_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
+	}
+	else
+	{
+		reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
 
-		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-		sdmmc_storage_init_wait_sd();
+		// Get coreboot seamless display magic.
+		u32 magic = 0;
+		char *magic_ptr = buf + COREBOOT_VER_OFF;
+		memcpy(&magic, magic_ptr + strlen(magic_ptr) - 4, 4);
+		hw_reinit_workaround(true, magic);
+	}
 
-		void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
-		void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
+	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+	sdmmc_storage_init_wait_sd();
 
-		// Launch our payload.
-		if (!update)
-			(*ext_payload_ptr)();
-		else
-		{
-			// Set updated flag to skip check on launch.
-			EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
-			(*update_ptr)();
-		}
+	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+	void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
+
+	// Launch our payload.
+	if (!update)
+		(*ext_payload_ptr)();
+	else
+	{
+		// Set updated flag to skip check on launch.
+		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
+		(*update_ptr)();
 	}
 
 out:
@@ -280,25 +280,6 @@ out:
 		sd_end();
 
 	return 1;
-}
-
-void auto_launch_update()
-{
-	// Check if already chainloaded update and clear flag. Otherwise check for updates.
-	if (EMC(EMC_SCRATCH0) & EMC_HEKA_UPD)
-		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
-	else
-	{
-		// Check if update.bin exists and is newer and launch it. Otherwise create it.
-		if (!f_stat("bootloader/update.bin", NULL))
-			launch_payload("bootloader/update.bin", true, false);
-		else
-		{
-			u8 *buf = calloc(0x200, 1);
-			is_ipl_updated(buf, "bootloader/update.bin", true);
-			free(buf);
-		}
-	}
 }
 
 void launch_tools()
@@ -313,63 +294,60 @@ void launch_tools()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (sd_mount())
+	if (!sd_mount())
 	{
-		dir = (char *)malloc(256);
-
-		memcpy(dir, "bootloader/payloads", 20);
-
-		filelist = dirlist(dir, NULL, false, false);
-
-		u32 i = 0;
-
-		if (filelist)
-		{
-			// Build configuration menu.
-			ments[0].type = MENT_BACK;
-			ments[0].caption = "Back";
-			ments[1].type = MENT_CHGLINE;
-
-			while (true)
-			{
-				if (i > max_entries || !filelist[i * 256])
-					break;
-				ments[i + 2].type = INI_CHOICE;
-				ments[i + 2].caption = &filelist[i * 256];
-				ments[i + 2].data = &filelist[i * 256];
-
-				i++;
-			}
-		}
-
-		if (i > 0)
-		{
-			memset(&ments[i + 2], 0, sizeof(ment_t));
-			menu_t menu = { ments, "Choose a file to launch", 0, 0 };
-
-			file_sec = (char *)tui_do_menu(&menu);
-
-			if (!file_sec)
-			{
-				free(ments);
-				free(dir);
-				free(filelist);
-				sd_end();
-
-				return;
-			}
-		}
-		else
-			EPRINTF("No payloads or modules found.");
-
 		free(ments);
-		free(filelist);
+		goto failed_sd_mount;
+	}
+
+	dir = (char *)malloc(256);
+	memcpy(dir, "bootloader/payloads", 20);
+
+	filelist = dirlist(dir, NULL, false, false);
+
+	u32 i = 0;
+
+	if (filelist)
+	{
+		// Build configuration menu.
+		ments[0].type = MENT_BACK;
+		ments[0].caption = "Back";
+		ments[1].type = MENT_CHGLINE;
+
+		while (true)
+		{
+			if (i > max_entries || !filelist[i * 256])
+				break;
+			ments[i + 2].type = INI_CHOICE;
+			ments[i + 2].caption = &filelist[i * 256];
+			ments[i + 2].data = &filelist[i * 256];
+
+			i++;
+		}
+	}
+
+	if (i > 0)
+	{
+		memset(&ments[i + 2], 0, sizeof(ment_t));
+		menu_t menu = { ments, "Choose a file to launch", 0, 0 };
+
+		file_sec = (char *)tui_do_menu(&menu);
+
+		if (!file_sec)
+		{
+			free(ments);
+			free(dir);
+			free(filelist);
+			sd_end();
+
+			return;
+		}
 	}
 	else
-	{
-		free(ments);
-		goto out;
-	}
+		EPRINTF("No payloads or modules found.");
+
+	free(ments);
+	free(filelist);
 
 	if (file_sec)
 	{
@@ -380,7 +358,7 @@ void launch_tools()
 		EPRINTF("Failed to launch payload.");
 	}
 
-out:
+failed_sd_mount:
 	sd_end();
 	free(dir);
 
@@ -399,94 +377,101 @@ void ini_list_launcher()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (sd_mount())
+	if (!sd_mount())
+		goto parse_failed;
+
+	// Check that ini files exist and parse them.
+	if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
 	{
-		if (ini_parse(&ini_list_sections, "bootloader/ini", true))
-		{
-			// Build configuration menu.
-			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
-			ments[0].type = MENT_BACK;
-			ments[0].caption = "Back";
-			ments[1].type = MENT_CHGLINE;
-
-			u32 i = 2;
-			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_list_sections, link)
-			{
-				if (!strcmp(ini_sec->name, "config") ||
-					ini_sec->type == INI_COMMENT || ini_sec->type == INI_NEWLINE)
-					continue;
-				ments[i].type = ini_sec->type;
-				ments[i].caption = ini_sec->name;
-				ments[i].data = ini_sec;
-				if (ini_sec->type == MENT_CAPTION)
-					ments[i].color = ini_sec->color;
-				i++;
-
-				if ((i - 1) > max_entries)
-					break;
-			}
-			if (i > 2)
-			{
-				memset(&ments[i], 0, sizeof(ment_t));
-				menu_t menu = {
-					ments, "Launch ini configurations", 0, 0
-				};
-
-				cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
-
-				if (cfg_sec)
-				{
-					u32 non_cfg = 1;
-					for (u32 j = 2; j < i; j++)
-					{
-						if (ments[j].type != INI_CHOICE)
-							non_cfg++;
-
-						if (ments[j].data == cfg_sec)
-						{
-							b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
-							b_cfg.autoboot = j - non_cfg;
-							b_cfg.autoboot_list = 1;
-
-							break;
-						}
-					}
-				}
-
-				payload_path = ini_check_payload_section(cfg_sec);
-
-				if (cfg_sec)
-				{
-					LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
-					{
-						if (!strcmp("emummc_force_disable", kv->key))
-							h_cfg.emummc_force_disable = atoi(kv->val);
-						else if (!strcmp("emupath", kv->key))
-							emummc_path = kv->val;
-					}
-				}
-
-				if (emummc_path && !emummc_set_path(emummc_path))
-				{
-					EPRINTF("emupath is wrong!");
-					goto wrong_emupath;
-				}
-
-				if (!cfg_sec)
-				{
-					free(ments);
-
-					return;
-				}
-			}
-			else
-				EPRINTF("No extra configs found.");
-			free(ments);
-		}
-		else
-			EPRINTF("Could not find any ini\nin bootloader/ini!");
+		EPRINTF("Could not find any ini\nin bootloader/ini!");
+		goto parse_failed;
 	}
 
+	// Build configuration menu.
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
+	ments[0].type = MENT_BACK;
+	ments[0].caption = "Back";
+	ments[1].type = MENT_CHGLINE;
+
+	u32 i = 2;
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_list_sections, link)
+	{
+		if (!strcmp(ini_sec->name, "config") ||
+			ini_sec->type == INI_COMMENT     ||
+			ini_sec->type == INI_NEWLINE)
+			continue;
+
+		ments[i].type = ini_sec->type;
+		ments[i].caption = ini_sec->name;
+		ments[i].data = ini_sec;
+
+		if (ini_sec->type == MENT_CAPTION)
+			ments[i].color = ini_sec->color;
+		i++;
+
+		if ((i - 1) > max_entries)
+			break;
+	}
+
+	if (i > 2)
+	{
+		memset(&ments[i], 0, sizeof(ment_t));
+		menu_t menu = {
+			ments, "Launch ini configurations", 0, 0
+		};
+
+		cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
+
+		if (cfg_sec)
+		{
+			u32 non_cfg = 1;
+			for (u32 j = 2; j < i; j++)
+			{
+				if (ments[j].type != INI_CHOICE)
+					non_cfg++;
+
+				if (ments[j].data == cfg_sec)
+				{
+					b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
+					b_cfg.autoboot = j - non_cfg;
+					b_cfg.autoboot_list = 1;
+
+					break;
+				}
+			}
+		}
+
+		payload_path = ini_check_payload_section(cfg_sec);
+
+		if (cfg_sec)
+		{
+			LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+			{
+				if (!strcmp("emummc_force_disable", kv->key))
+					h_cfg.emummc_force_disable = atoi(kv->val);
+				else if (!strcmp("emupath", kv->key))
+					emummc_path = kv->val;
+			}
+		}
+
+		if (emummc_path && !emummc_set_path(emummc_path))
+		{
+			EPRINTF("emupath is wrong!");
+			goto wrong_emupath;
+		}
+
+		if (!cfg_sec)
+		{
+			free(ments);
+
+			return;
+		}
+	}
+	else
+		EPRINTF("No extra configs found.");
+	free(ments);
+
+parse_failed:
 	if (!cfg_sec)
 		goto out;
 
@@ -524,108 +509,116 @@ void launch_firmware()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (sd_mount())
+	if (!sd_mount())
+		goto parse_failed;
+
+	// Load emuMMC configuration.
+	emummc_load_cfg();
+
+	// Check that main configuration exists and parse it.
+	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 	{
-		// Load emuMMC configuration.
-		emummc_load_cfg();
-
-		if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
-		{
-			// Build configuration menu.
-			ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
-			ments[0].type = MENT_BACK;
-			ments[0].caption = "Back";
-			ments[1].type = MENT_CHGLINE;
-
-			ments[2].type = MENT_HANDLER;
-			ments[2].caption = "Payloads...";
-			ments[2].handler = launch_tools;
-			ments[3].type = MENT_HANDLER;
-			ments[3].caption = "More configs...";
-			ments[3].handler = ini_list_launcher;
-
-			ments[4].type = MENT_CHGLINE;
-
-			u32 i = 5;
-			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
-			{
-				if (!strcmp(ini_sec->name, "config") ||
-					ini_sec->type == INI_COMMENT || ini_sec->type == INI_NEWLINE)
-					continue;
-				ments[i].type = ini_sec->type;
-				ments[i].caption = ini_sec->name;
-				ments[i].data = ini_sec;
-				if (ini_sec->type == MENT_CAPTION)
-					ments[i].color = ini_sec->color;
-				i++;
-
-				if ((i - 4) > max_entries)
-					break;
-			}
-			if (i < 6)
-			{
-				ments[i].type = MENT_CAPTION;
-				ments[i].caption = "No main configs found...";
-				ments[i].color = 0xFFFFDD00;
-				i++;
-			}
-			memset(&ments[i], 0, sizeof(ment_t));
-			menu_t menu = {
-				ments, "Launch configurations", 0, 0
-			};
-
-			cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
-
-			if (cfg_sec)
-			{
-				u8 non_cfg = 4;
-				for (u32 j = 5; j < i; j++)
-				{
-					if (ments[j].type != INI_CHOICE)
-						non_cfg++;
-					if (ments[j].data == cfg_sec)
-					{
-						b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
-						b_cfg.autoboot = j - non_cfg;
-						b_cfg.autoboot_list = 0;
-
-						break;
-					}
-				}
-			}
-
-			payload_path = ini_check_payload_section(cfg_sec);
-
-			if (cfg_sec)
-			{
-				LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
-				{
-					if (!strcmp("emummc_force_disable", kv->key))
-						h_cfg.emummc_force_disable = atoi(kv->val);
-					if (!strcmp("emupath", kv->key))
-						emummc_path = kv->val;
-				}
-			}
-
-			if (emummc_path && !emummc_set_path(emummc_path))
-			{
-				EPRINTF("emupath is wrong!");
-				goto wrong_emupath;
-			}
-
-			if (!cfg_sec)
-			{
-				free(ments);
-				sd_end();
-				return;
-			}
-
-			free(ments);
-		}
-		else
-			EPRINTF("Could not open 'bootloader/hekate_ipl.ini'.\nMake sure it exists!");
+		EPRINTF("Could not open 'bootloader/hekate_ipl.ini'!");
+		goto parse_failed;
 	}
 
+	// Build configuration menu.
+	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
+	ments[0].type = MENT_BACK;
+	ments[0].caption = "Back";
+	ments[1].type = MENT_CHGLINE;
+
+	ments[2].type = MENT_HANDLER;
+	ments[2].caption = "Payloads...";
+	ments[2].handler = launch_tools;
+	ments[3].type = MENT_HANDLER;
+	ments[3].caption = "More configs...";
+	ments[3].handler = ini_list_launcher;
+
+	ments[4].type = MENT_CHGLINE;
+
+	u32 i = 5;
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+	{
+		if (!strcmp(ini_sec->name, "config") ||
+			ini_sec->type == INI_COMMENT     ||
+			ini_sec->type == INI_NEWLINE)
+			continue;
+
+		ments[i].type = ini_sec->type;
+		ments[i].caption = ini_sec->name;
+		ments[i].data = ini_sec;
+
+		if (ini_sec->type == MENT_CAPTION)
+			ments[i].color = ini_sec->color;
+		i++;
+
+		if ((i - 4) > max_entries)
+			break;
+	}
+
+	if (i < 6)
+	{
+		ments[i].type = MENT_CAPTION;
+		ments[i].caption = "No main configs found...";
+		ments[i].color = 0xFFFFDD00;
+		i++;
+	}
+
+	memset(&ments[i], 0, sizeof(ment_t));
+	menu_t menu = {
+		ments, "Launch configurations", 0, 0
+	};
+
+	cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
+
+	if (cfg_sec)
+	{
+		u8 non_cfg = 4;
+		for (u32 j = 5; j < i; j++)
+		{
+			if (ments[j].type != INI_CHOICE)
+				non_cfg++;
+			if (ments[j].data == cfg_sec)
+			{
+				b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
+				b_cfg.autoboot = j - non_cfg;
+				b_cfg.autoboot_list = 0;
+
+				break;
+			}
+		}
+	}
+
+	payload_path = ini_check_payload_section(cfg_sec);
+
+	if (cfg_sec)
+	{
+		LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+		{
+			if (!strcmp("emummc_force_disable", kv->key))
+				h_cfg.emummc_force_disable = atoi(kv->val);
+			if (!strcmp("emupath", kv->key))
+				emummc_path = kv->val;
+		}
+	}
+
+	if (emummc_path && !emummc_set_path(emummc_path))
+	{
+		EPRINTF("emupath is wrong!");
+		goto wrong_emupath;
+	}
+
+	if (!cfg_sec)
+	{
+		free(ments);
+		sd_end();
+		return;
+	}
+
+	free(ments);
+
+parse_failed:
 	if (!cfg_sec)
 	{
 		gfx_printf("\nPress any key...\n");
@@ -769,6 +762,25 @@ static void _bootloader_corruption_protect()
 	}
 }
 
+void auto_launch_update()
+{
+	// Check if already chainloaded update and clear flag. Otherwise check for updates.
+	if (EMC(EMC_SCRATCH0) & EMC_HEKA_UPD)
+		EMC(EMC_SCRATCH0) &= ~EMC_HEKA_UPD;
+	else
+	{
+		// Check if update.bin exists and is newer and launch it. Otherwise create it.
+		if (!f_stat("bootloader/update.bin", NULL))
+			launch_payload("bootloader/update.bin", true, false);
+		else
+		{
+			u8 *buf = calloc(0x200, 1);
+			is_ipl_updated(buf, "bootloader/update.bin", true);
+			free(buf);
+		}
+	}
+}
+
 static void _auto_launch_firmware()
 {
 	struct _bmp_data
@@ -784,6 +796,8 @@ static void _auto_launch_firmware()
 	char *emummc_path = NULL;
 	char *bootlogoCustomEntry = NULL;
 	ini_sec_t *cfg_sec = NULL;
+	u32 boot_entry_id = 0;
+	bool config_entry_found = false;
 
 	auto_launch_update();
 
@@ -803,141 +817,136 @@ static void _auto_launch_firmware()
 	if (f_stat("bootloader/hekate_ipl.ini", NULL))
 		create_config_entry();
 
-	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
-	{
-		u32 configEntry = 0;
-		u32 boot_entry_id = 0;
-
-		// Load configuration.
-		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
-		{
-			// Skip other ini entries for autoboot.
-			if (ini_sec->type == INI_CHOICE)
-			{
-				if (!strcmp(ini_sec->name, "config"))
-				{
-					configEntry = 1;
-					LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
-					{
-						if (!strcmp("autoboot", kv->key))
-							h_cfg.autoboot = atoi(kv->val);
-						else if (!strcmp("autoboot_list", kv->key))
-							h_cfg.autoboot_list = atoi(kv->val);
-						else if (!strcmp("bootwait", kv->key))
-						{
-							h_cfg.bootwait = atoi(kv->val);
-
-							/*
-							 * Clamp value to default if it exceeds 20s to protect against corruption.
-							 * Allow up to 20s though for use in cases where user needs lots of time.
-							 * For example dock-only use and r2p with enough time to reach dock and cancel it.
-							*/
-							if (h_cfg.bootwait > 20)
-								h_cfg.bootwait = 3;
-						}
-						else if (!strcmp("backlight", kv->key))
-							h_cfg.backlight = atoi(kv->val);
-						else if (!strcmp("autohosoff", kv->key))
-							h_cfg.autohosoff = atoi(kv->val);
-						else if (!strcmp("autonogc", kv->key))
-							h_cfg.autonogc = atoi(kv->val);
-						else if (!strcmp("updater2p", kv->key))
-							h_cfg.updater2p = atoi(kv->val);
-						else if (!strcmp("bootprotect", kv->key))
-							h_cfg.bootprotect = atoi(kv->val);
-					}
-					boot_entry_id++;
-
-					// Override autoboot.
-					if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
-					{
-						h_cfg.autoboot = b_cfg.autoboot;
-						h_cfg.autoboot_list = b_cfg.autoboot_list;
-					}
-
-					// Apply bootloader protection against corruption.
-					_bootloader_corruption_protect();
-
-					continue;
-				}
-
-				if (boot_from_id)
-					cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
-				else if (h_cfg.autoboot == boot_entry_id && configEntry)
-				{
-					cfg_sec = ini_sec;
-					LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
-					{
-						if (!strcmp("logopath", kv->key))
-							bootlogoCustomEntry = kv->val;
-						else if (!strcmp("emummc_force_disable", kv->key))
-							h_cfg.emummc_force_disable = atoi(kv->val);
-						else if (!strcmp("emupath", kv->key))
-							emummc_path = kv->val;
-					}
-				}
-				if (cfg_sec)
-					break;
-				boot_entry_id++;
-			}
-		}
-
-		if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
-			check_power_off_from_hos();
-
-		if (h_cfg.autoboot_list || (boot_from_id && !cfg_sec))
-		{
-			if (boot_from_id && cfg_sec)
-				goto skip_list;
-
-			cfg_sec = NULL;
-			boot_entry_id = 1;
-			bootlogoCustomEntry = NULL;
-
-			if (ini_parse(&ini_list_sections, "bootloader/ini", true))
-			{
-				LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
-				{
-					if (ini_sec_list->type == INI_CHOICE)
-					{
-						if (!strcmp(ini_sec_list->name, "config"))
-							continue;
-
-						if (boot_from_id)
-							cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
-						else if (h_cfg.autoboot == boot_entry_id)
-						{
-							h_cfg.emummc_force_disable = false;
-							cfg_sec = ini_sec_list;
-							LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
-							{
-								if (!strcmp("logopath", kv->key))
-									bootlogoCustomEntry = kv->val;
-								else if (!strcmp("emummc_force_disable", kv->key))
-									h_cfg.emummc_force_disable = atoi(kv->val);
-								else if (!strcmp("emupath", kv->key))
-									emummc_path = kv->val;
-							}
-						}
-						if (cfg_sec)
-							break;
-						boot_entry_id++;
-					}
-				}
-
-			}
-
-		}
-skip_list:
-		// Add missing configuration entry.
-		if (!configEntry)
-			create_config_entry();
-
-		if (!cfg_sec)
-			goto out; // No configurations or auto boot is disabled.
-	}
-	else
+	// Parse hekate main configuration.
+	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		goto out; // Can't load hekate_ipl.ini.
+
+	// Load configuration.
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+	{
+		// Skip other ini entries for autoboot.
+		if (ini_sec->type == INI_CHOICE)
+		{
+			if (!config_entry_found && !strcmp(ini_sec->name, "config"))
+			{
+				config_entry_found = true;
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+				{
+					if (!strcmp("autoboot", kv->key))
+						h_cfg.autoboot = atoi(kv->val);
+					else if (!strcmp("autoboot_list", kv->key))
+						h_cfg.autoboot_list = atoi(kv->val);
+					else if (!strcmp("bootwait", kv->key))
+					{
+						h_cfg.bootwait = atoi(kv->val);
+
+						/*
+						 * Clamp value to default if it exceeds 20s to protect against corruption.
+						 * Allow up to 20s though for use in cases where user needs lots of time.
+						 * For example dock-only use and r2p with enough time to reach dock and cancel it.
+						*/
+						if (h_cfg.bootwait > 20)
+							h_cfg.bootwait = 3;
+					}
+					else if (!strcmp("backlight", kv->key))
+						h_cfg.backlight = atoi(kv->val);
+					else if (!strcmp("autohosoff", kv->key))
+						h_cfg.autohosoff = atoi(kv->val);
+					else if (!strcmp("autonogc", kv->key))
+						h_cfg.autonogc = atoi(kv->val);
+					else if (!strcmp("updater2p", kv->key))
+						h_cfg.updater2p = atoi(kv->val);
+					else if (!strcmp("bootprotect", kv->key))
+						h_cfg.bootprotect = atoi(kv->val);
+				}
+				boot_entry_id++;
+
+				// Override autoboot.
+				if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
+				{
+					h_cfg.autoboot = b_cfg.autoboot;
+					h_cfg.autoboot_list = b_cfg.autoboot_list;
+				}
+
+				// Apply bootloader protection against corruption.
+				_bootloader_corruption_protect();
+
+				continue;
+			}
+
+			if (boot_from_id)
+				cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
+			else if (h_cfg.autoboot == boot_entry_id && config_entry_found)
+			{
+				cfg_sec = ini_sec;
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+				{
+					if (!strcmp("logopath", kv->key))
+						bootlogoCustomEntry = kv->val;
+					else if (!strcmp("emummc_force_disable", kv->key))
+						h_cfg.emummc_force_disable = atoi(kv->val);
+					else if (!strcmp("emupath", kv->key))
+						emummc_path = kv->val;
+				}
+			}
+			if (cfg_sec)
+				break;
+			boot_entry_id++;
+		}
+	}
+
+	if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
+		check_power_off_from_hos();
+
+	if (h_cfg.autoboot_list || (boot_from_id && !cfg_sec))
+	{
+		if (boot_from_id && cfg_sec)
+			goto skip_list;
+
+		cfg_sec = NULL;
+		boot_entry_id = 1;
+		bootlogoCustomEntry = NULL;
+
+		if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
+			goto skip_list;
+
+		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
+		{
+			if (ini_sec_list->type != INI_CHOICE)
+				continue;
+
+			if (!strcmp(ini_sec_list->name, "config"))
+				continue;
+
+			if (boot_from_id)
+				cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
+			else if (h_cfg.autoboot == boot_entry_id)
+			{
+				h_cfg.emummc_force_disable = false;
+				cfg_sec = ini_sec_list;
+				LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+				{
+					if (!strcmp("logopath", kv->key))
+						bootlogoCustomEntry = kv->val;
+					else if (!strcmp("emummc_force_disable", kv->key))
+						h_cfg.emummc_force_disable = atoi(kv->val);
+					else if (!strcmp("emupath", kv->key))
+						emummc_path = kv->val;
+				}
+			}
+			if (cfg_sec)
+				break;
+			boot_entry_id++;
+		}
+	}
+
+skip_list:
+	// Add missing configuration entry.
+	if (!config_entry_found)
+		create_config_entry();
+
+	if (!cfg_sec)
+		goto out; // No configurations or auto boot is disabled.
 
 	u8 *bitmap = NULL;
 	struct _bmp_data bmpData;
