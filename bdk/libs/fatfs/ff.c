@@ -6228,8 +6228,13 @@ FRESULT f_mkfs (
 			mem_set(buf, 0, ss);
 			st_dword(buf + FSI_LeadSig, 0x41615252);
 			st_dword(buf + FSI_StrucSig, 0x61417272);
-			st_dword(buf + FSI_Free_Count, n_clst - 1);	/* Number of free clusters */
-			st_dword(buf + FSI_Nxt_Free, 2);			/* Last allocated cluster# */
+			if (opt & FM_PRF2) {
+				st_dword(buf + FSI_Free_Count, 0xFFFFFFFF);	/* Invalidate free count */
+				st_dword(buf + FSI_Nxt_Free, 0xFFFFFFFF);	/* Invalidate last allocated cluster */
+			} else {
+				st_dword(buf + FSI_Free_Count, n_clst - 1);	/* Number of free clusters */
+				st_dword(buf + FSI_Nxt_Free, 2);			/* Last allocated cluster# */
+			}
 			st_word(buf + BS_55AA, 0xAA55);
 			disk_write(pdrv, buf, b_vol + 7, 1);		/* Write backup FSINFO (VBR + 7) */
 			disk_write(pdrv, buf, b_vol + 1, 1);		/* Write original FSINFO (VBR + 1) */
@@ -6238,11 +6243,18 @@ FRESULT f_mkfs (
 		/* Create PRF2SAFE info */
 		if (fmt == FS_FAT32 && opt & FM_PRF2) {
 			mem_set(buf, 0, ss);
-			buf[16] = 0x64;							/* Record type */
-			st_dword(buf + 32, 0x03);				/* Unknown. SYSTEM: 0x3F00. USER: 0x03. Volatile. */
-			st_dword(buf + 36, 25);					/* Entries. SYSTEM: 22. USER: 25.Static? */
-			st_dword(buf + 508, 0x517BBFE0);		/* Custom CRC32. SYSTEM: 0x6B673904. USER: 0x517BBFE0. */
-			disk_write(pdrv, buf, b_vol + 3, 1);	/* Write PRF2SAFE info (VBR + 3) */
+			st_dword(buf + 0, 0x32465250);				/* Magic PRF2 */
+			st_dword(buf + 4, 0x45464153);				/* Magic SAFE */
+			buf[16] = 0x64;									/* Record type */
+			st_dword(buf + 32, 0x03);						/* Unknown. SYSTEM: 0x3F00. USER: 0x03. Volatile. */
+			if (sz_vol < 0x1000000) {
+				st_dword(buf + 36, 21 + 1);				/* 22 Entries. */
+				st_dword(buf + 508, 0x90BB2F39);			/* Sector CRC32 */
+			} else {
+				st_dword(buf + 36, 21 + 2);				/* 23 Entries. */
+				st_dword(buf + 508, 0x5EA8AFC8);			/* Sector CRC32 */
+			}
+			disk_write(pdrv, buf, b_vol + 3, 1);		/* Write PRF2SAFE info (VBR + 3) */
 		}
 
 		/* Initialize FAT area */
