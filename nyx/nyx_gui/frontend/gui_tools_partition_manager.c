@@ -1686,11 +1686,15 @@ static void _update_partition_bar()
 
 static lv_res_t _action_slider_emu(lv_obj_t *slider)
 {
+	#define EMUMMC_32GB_FULL 29856
+	#define EMUMMC_64GB_FULL (59664 + 1) // 1MB extra for backup GPT.
+
 	const u32 rsvd_mb = 4 + 4 + 16 + 8; // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
 	u32 size;
 	char lbl_text[64];
 	bool prev_emu_double = part_info.emu_double;
 	int slide_val = lv_slider_get_value(slider);
+	u32 max_emmc_size = !part_info.emmc_is_64gb ? EMUMMC_32GB_FULL : EMUMMC_64GB_FULL;
 
 	part_info.emu_double = false;
 
@@ -1708,9 +1712,9 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 
 	// Handle special cases. 2nd value is for 64GB Aula.
 	if (slide_val == 10)
-		size = !part_info.emmc_is_64gb ? 29856 : 59664;
+		size = max_emmc_size;
 	else if (slide_val == 20)
-		size = !part_info.emmc_is_64gb ? 59712 : 119328;
+		size = 2 * max_emmc_size;
 
 	s32 hos_size = (part_info.total_sct >> 11) - 16 - size - part_info.l4t_size - part_info.and_size;
 	if (hos_size > 2048)
@@ -1737,9 +1741,9 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 	{
 		u32 emu_size = part_info.emu_size;
 
-		if (emu_size == (!part_info.emmc_is_64gb ? 29856 : 59664))
+		if (emu_size == max_emmc_size)
 			emu_size = 10;
-		else if (emu_size == (!part_info.emmc_is_64gb ? 59712 : 119328))
+		else if (emu_size == 2 * max_emmc_size)
 			emu_size = 20;
 		else if (emu_size)
 		{
