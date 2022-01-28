@@ -1171,7 +1171,7 @@ static void _show_errors()
 				if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
 					WPRINTF("PSTORE saved to L4T_panic.bin");
 				pstore_buf_t *buf = (pstore_buf_t *)(PSTORE_ADDR + PSTORE_LOG_OFFSET);
-				if (buf->sig == PSTORE_RAM_SIG && buf->size < 0x80000)
+				if (buf->sig == PSTORE_RAM_SIG && buf->size && buf->size < 0x80000)
 				{
 					u32 log_offset = PSTORE_ADDR + PSTORE_LOG_OFFSET + sizeof(pstore_buf_t);
 					if (!sd_save_to_file((void *)log_offset, buf->size, "L4T_panic.txt"))
