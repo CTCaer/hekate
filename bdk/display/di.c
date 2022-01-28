@@ -311,12 +311,12 @@ void display_init()
 
 	}
 
-	// Enable power to display panel controller.
+	// Enable LCD DVDD.
 	max7762x_regulator_set_voltage(REGULATOR_LDO0, 1200000);
 	max7762x_regulator_enable(REGULATOR_LDO0, true);
 
 	if (tegra_t210)
-		max77620_config_gpio(7, MAX77620_GPIO_OUTPUT_ENABLE); // T210: LD0 -> GPIO7 -> Display panel.
+		max77620_config_gpio(7, MAX77620_GPIO_OUTPUT_ENABLE); // T210: LD0 -> GPIO7 -> LCD.
 
 	// Enable Display Interface specific clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_MIPI_CAL) | BIT(CLK_H_DSI);
@@ -352,14 +352,14 @@ void display_init()
 	}
 	else
 	{
-		// Set LCD +-5V pins mode and direction
+		// Set LCD AVDD pins mode and direction
 		gpio_config(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE);
 
-		// Enable LCD power.
-		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // LCD +5V enable.
+		// Enable LCD AVDD.
+		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // LCD AVDD +5.4V enable.
 		usleep(10000);
-		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // LCD -5V enable.
+		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // LCD AVDD -5.4V enable.
 		usleep(10000);
 
 		// Configure Backlight PWM/EN and LCD RST pins (BL PWM, BL EN, LCD RST).
@@ -697,9 +697,9 @@ skip_panel_deinit:
 	if (!nx_aula) // HOS uses panel id.
 	{
 		usleep(10000);
-		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD -5V disable.
+		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD AVDD -5.4V disable.
 		usleep(10000);
-		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD +5V disable.
+		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD AVDD +5.4V disable.
 		usleep(10000);
 	}
 	else
@@ -757,7 +757,7 @@ void display_color_screen(u32 color)
 	DISPLAY_A(_DIREG(DC_WIN_CD_WIN_OPTIONS)) = 0;
 	DISPLAY_A(_DIREG(DC_DISP_BLEND_BACKGROUND_COLOR)) = color;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = (DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) & 0xFFFFFFFE) | GENERAL_ACT_REQ;
-	usleep(35000); // No need to wait on Aula.
+	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		display_backlight(true);
@@ -772,7 +772,7 @@ u32 *display_init_framebuffer_pitch()
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch, 32);
-	//usleep(35000); // No need to wait on Aula.
+	//usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
@@ -781,7 +781,7 @@ u32 *display_init_framebuffer_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_pitch_inv, 34);
-	//usleep(35000); // No need to wait on Aula.
+	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
@@ -790,7 +790,7 @@ u32 *display_init_framebuffer_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	exec_cfg((u32 *)DISPLAY_A_BASE, cfg_display_framebuffer_block, 34);
-	//usleep(35000); // No need to wait on Aula.
+	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
