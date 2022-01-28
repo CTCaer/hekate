@@ -251,7 +251,12 @@ int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
 
 	while (count)
 	{
-		u32 sct_cnt = MIN(count, BIS_CLUSTER_SECTORS);
+		// Get sector index in cluster and use it as boundary check.
+		u32 cnt_max = (curr_sct % BIS_CLUSTER_SECTORS);
+		cnt_max = BIS_CLUSTER_SECTORS - cnt_max;
+
+		u32 sct_cnt = MIN(count, cnt_max); // Only allow cluster sized access.
+
 		if (nx_emmc_bis_read_block(curr_sct, sct_cnt, buf))
 			return 0;
 
@@ -270,7 +275,12 @@ int nx_emmc_bis_write(u32 sector, u32 count, void *buff)
 
 	while (count)
 	{
-		u32 sct_cnt = MIN(count, BIS_CLUSTER_SECTORS);
+		// Get sector index in cluster and use it as boundary check.
+		u32 cnt_max = (curr_sct % BIS_CLUSTER_SECTORS);
+		cnt_max = BIS_CLUSTER_SECTORS - cnt_max;
+
+		u32 sct_cnt = MIN(count, cnt_max); // Only allow cluster sized access.
+
 		if (nx_emmc_bis_write_block(curr_sct, sct_cnt, buf, false))
 			return 0;
 
