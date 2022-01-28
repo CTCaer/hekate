@@ -181,8 +181,8 @@ void minerva_prep_boot_l4t()
 	}
 
 	// Do FSP WAR and scale to 800 MHz as boot freq.
-	bool fsp_opwr_enabled = !!(EMC(EMC_MRW3) & 0xC0);
-	if (fsp_opwr_enabled)
+	bool fsp_opwr_disabled = !(EMC(EMC_MRW3) & 0xC0);
+	if (fsp_opwr_disabled)
 		minerva_change_freq(FREQ_666);
 	minerva_change_freq(FREQ_800);
 
