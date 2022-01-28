@@ -881,7 +881,7 @@ int xusb_device_init()
 	_xusbd_init_device_clocks();
 
 	// Enable AHB redirect for access to IRAM for Event/EP ring buffers.
-	mc_enable_ahb_redirect(false); // Can be skipped if IRAM is not used.
+	mc_enable_ahb_redirect();
 
 	 // Enable XUSB device IPFS.
 	XUSB_DEV_DEV(XUSB_DEV_CONFIGURATION) |= DEV_CONFIGURATION_EN_FPCI;
@@ -1912,7 +1912,6 @@ void xusb_end(bool reset_ep, bool only_controller)
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_PADCTL);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB);
-	mc_disable_ahb_redirect(); // Can be skipped if IRAM is not used.
 }
 
 int xusb_handle_ep0_ctrl_setup()

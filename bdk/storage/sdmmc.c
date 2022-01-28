@@ -327,8 +327,8 @@ out:
 
 int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
 {
-	// Ensure that buffer resides in DRAM and it's DMA aligned.
-	if (((u32)buf >= DRAM_START) && !((u32)buf % 8))
+	// Ensure that SDMMC has access to buffer and it's SDMMC DMA aligned.
+	if (mc_client_has_access(buf) && !((u32)buf % 8))
 		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 0);
 
 	if (num_sectors > (SDMMC_UP_BUF_SZ / 512))
@@ -345,8 +345,8 @@ int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, vo
 
 int sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
 {
-	// Ensure that buffer resides in DRAM and it's DMA aligned.
-	if (((u32)buf >= DRAM_START) && !((u32)buf % 8))
+	// Ensure that SDMMC has access to buffer and it's SDMMC DMA aligned.
+	if (mc_client_has_access(buf) && !((u32)buf % 8))
 		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 1);
 
 	if (num_sectors > (SDMMC_UP_BUF_SZ / 512))

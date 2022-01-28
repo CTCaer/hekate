@@ -95,7 +95,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		pmc_enable_partition(POWER_RAIL_CE3, DISABLE);
 
 		// Enable AHB aperture and set it to full mmio.
-		mc_enable_ahb_redirect(true);
+		mc_enable_ahb_redirect();
 	}
 
 	// Configure Falcon.
@@ -287,11 +287,10 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		memcpy(tsec_keys, &buf, SE_KEY_128_SIZE);
 	}
 
-out_free:;
+out_free:
 	free(fwbuf);
 
-out:;
-
+out:
 	// Disable clocks.
 	clock_disable_kfuse();
 	clock_disable_sor1();
@@ -300,10 +299,6 @@ out:;
 	clock_disable_tsec();
 	bpmp_mmu_enable();
 	bpmp_clk_rate_set(prev_fid);
-
-	// Disable AHB aperture.
-	if (type == TSEC_FW_TYPE_NEW)
-		mc_disable_ahb_redirect();
 
 	return res;
 }

@@ -23,8 +23,9 @@
 void mc_config_tsec_carveout(u32 bom, u32 size1mb, bool lock);
 void mc_config_carveout();
 void mc_config_carveout_finalize();
-void mc_enable_ahb_redirect(bool full_aperture);
+void mc_enable_ahb_redirect();
 void mc_disable_ahb_redirect();
+bool mc_client_has_access(void *address);
 void mc_enable();
 
 #endif
