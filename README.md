@@ -177,9 +177,9 @@ If the main .ini is not found, it is created on the first hekate boot and only h
 
 ```
 hekate  (c) 2018,      naehrwert, st4rk.
-        (c) 2018-2021, CTCaer.
+        (c) 2018-2022, CTCaer.
 
-Nyx GUI (c) 2019-2021, CTCaer.
+Nyx GUI (c) 2019-2022, CTCaer.
 
 Thanks to: derrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8.
 Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
