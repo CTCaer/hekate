@@ -144,7 +144,8 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 	SE(SE_ERR_STATUS_REG) = SE(SE_ERR_STATUS_REG);
 	SE(SE_INT_STATUS_REG) = SE(SE_INT_STATUS_REG);
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+	// Flush data before starting OP.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
 
 	SE(SE_OPERATION_REG) = op;
 
@@ -152,7 +153,8 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 	{
 		int res = _se_wait();
 
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+		// Invalidate data after OP is done.
+		bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
 		if (src)
 		{
@@ -175,7 +177,8 @@ static int _se_execute_finalize()
 {
 	int res = _se_wait();
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+	// Invalidate data after OP is done.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
 	if (ll_src)
 	{

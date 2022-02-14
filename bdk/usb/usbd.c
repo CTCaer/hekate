@@ -787,7 +787,7 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, u32 sync_time
 	if (direction == USB_DIR_IN)
 	{
 		prime_bit = USB2D_ENDPT_STATUS_TX_OFFSET << actual_ep;
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
 	}
 	else
 		prime_bit = USB2D_ENDPT_STATUS_RX_OFFSET << actual_ep;
@@ -826,7 +826,7 @@ out:
 			res = USB_ERROR_XFER_ERROR;
 
 		if (direction == USB_DIR_OUT)
-			bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+			bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 	}
 
 	return res;
@@ -1470,7 +1470,7 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes, u32 sync_timeout)
 
 	*pending_bytes = _usbd_get_ep1_out_bytes_read();
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
 	if (ep_status == USB_EP_STATUS_IDLE)
 		return USB_RES_OK;

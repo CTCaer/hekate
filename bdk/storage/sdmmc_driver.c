@@ -983,6 +983,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 					sdmmc->dma_addr_next += 0x80000;
 				}
 			}
+
 			if (result != SDMMC_MASKINT_NOERROR)
 			{
 #ifdef ERROR_EXTRA_PRINTING
@@ -1017,7 +1018,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		}
 
 		// Flush cache before starting the transfer.
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
 
 		is_data_present = true;
 	}
@@ -1066,8 +1067,8 @@ DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 	{
 		if (req)
 		{
-			// Flush cache after transfer.
-			bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+			// Invalidate cache after transfer.
+			bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
 			if (blkcnt_out)
 				*blkcnt_out = blkcnt;

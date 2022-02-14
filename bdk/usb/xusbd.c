@@ -993,7 +993,8 @@ static int _xusb_queue_trb(u32 ep_idx, void *trb, bool ring_doorbell)
 	// Ring doorbell.
 	if (ring_doorbell)
 	{
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+		// Flush data before transfer.
+		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
 		u32 target_id = (ep_idx << 8) & 0xFFFF;
 		if (ep_idx == XUSB_EP_CTRL_IN)
 			target_id |= usbd_xotg->ctrl_seq_num << 16;
@@ -1947,9 +1948,10 @@ int xusb_device_ep1_out_read(u8 *buf, u32 len, u32 *bytes_read, u32 sync_tries)
 
 		if (bytes_read)
 			*bytes_read = res ? 0 : usbd_xotg->tx_bytes[USB_DIR_OUT];
-
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
 	}
+
+	// Invalidate data after transfer.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
 	return res;
 }
@@ -1988,7 +1990,8 @@ int xusb_device_ep1_out_reading_finish(u32 *pending_bytes, u32 sync_tries)
 	if (pending_bytes)
 		*pending_bytes = res ? 0 : usbd_xotg->tx_bytes[USB_DIR_OUT];
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+	// Invalidate data after transfer.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
 	return res;
 }
@@ -1998,7 +2001,8 @@ int xusb_device_ep1_in_write(u8 *buf, u32 len, u32 *bytes_written, u32 sync_trie
 	if (len > USB_EP_BUFFER_MAX_SIZE)
 		len = USB_EP_BUFFER_MAX_SIZE;
 
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+	// Flush data before transfer.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
 
 	int res = USB_RES_OK;
 	usbd_xotg->tx_count[USB_DIR_IN] = 0;
