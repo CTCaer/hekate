@@ -312,6 +312,7 @@ void print_sdcard_info()
 			EPRINTF("Make sure that it is inserted.");
 		else
 			EPRINTF("SD Card Reader is not properly seated!");
+		sd_end();
 	}
 
 	btn_wait();
