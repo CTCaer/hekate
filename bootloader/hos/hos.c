@@ -181,23 +181,6 @@ static void _se_lock(bool lock_se)
 	gfx_hexdump(SE_BASE, (void *)SE_BASE, 0x400);*/
 }
 
-void _sysctr0_reset()
-{
-	//SYSCTR0(SYSCTR0_CNTCR) = 0; // Needs secure access.
-	SYSCTR0(SYSCTR0_COUNTERID0) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID1) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID2) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID3) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID4) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID5) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID6) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID7) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID8) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID9) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID10) = 0;
-	SYSCTR0(SYSCTR0_COUNTERID11) = 0;
-}
-
 bool hos_eks_rw_try(u8 *buf, bool write)
 {
 	for (u32 i = 0; i < 3; i++)
@@ -1134,7 +1117,10 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Reset sysctr0 counters.
 	if (kb >= KB_FIRMWARE_VERSION_620)
-		_sysctr0_reset();
+	{
+		for (u32 i = 0; i < SYSCTR0_COUNTERS; i += sizeof(u32))
+			SYSCTR0(SYSCTR0_COUNTERS_BASE + i) = 0;
+	}
 
 	// NX Bootloader locks LP0 Carveout secure scratch registers.
 	//pmc_scratch_lock(PMC_SEC_LOCK_LP0_PARAMS);
