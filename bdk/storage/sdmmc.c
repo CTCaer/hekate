@@ -152,12 +152,16 @@ int sdmmc_storage_execute_vendor_cmd(sdmmc_storage_t *storage, u32 arg)
 
 	resp = -1;
 	u32 timeout = get_tmr_ms() + 1500;
-	while (resp != (R1_READY_FOR_DATA | R1_STATE(R1_STATE_TRAN)))
+	while (true)
 	{
 		_sdmmc_storage_get_status(storage, &resp, 0);
 
+		if (resp == (R1_READY_FOR_DATA | R1_STATE(R1_STATE_TRAN)))
+			break;
+
 		if (get_tmr_ms() > timeout)
 			break;
+		msleep(10);
 	}
 
 	return _sdmmc_storage_check_card_status(resp);
@@ -703,7 +707,7 @@ DPRINTF("[MMC] set blocklen to 512\n");
 
 	// Check system specification version, only version 4.0 and later support below features.
 	if (storage->csd.mmca_vsn < CSD_SPEC_VER_4)
-		return 1;
+		goto done;
 
 	if (!_mmc_storage_switch_buswidth(storage, bus_width))
 		return 0;
@@ -730,6 +734,7 @@ DPRINTF("[MMC] successfully switched to HS mode\n");
 
 	sdmmc_card_clock_powersave(storage->sdmmc, SDMMC_POWER_SAVE_ENABLE);
 
+done:
 	storage->initialized = 1;
 
 	return 1;
