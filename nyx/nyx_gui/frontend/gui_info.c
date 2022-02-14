@@ -256,7 +256,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 	lv_label_set_style(lb_desc, &monospace_text);
-	lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 3);
+	lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 4);
 
 	sd_mount();
 
@@ -1252,7 +1252,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 			rpt->advanced.health_pct_mlc ? 101 - rpt->advanced.health_pct_mlc : 0);
 	}
 	else
-		strcpy(txt_buf2, "#00DDFF Device report#\n#FFDD00 Empty!#");
+		strcpy(txt_buf2, "#00DDFF Advanced Health Status#\n#FFDD00 Empty!#");
 
 	lv_label_set_text(lb_desc, txt_buf);
 	lv_label_set_text(lb_desc2, txt_buf2);
@@ -1442,7 +1442,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			// Generate new random numbers.
 			while (!se_gen_prng128(random_numbers))
 				;
-			// Clamp offsets to 512MBrange.
+			// Clamp offsets to 512MB range.
 			random_offsets[i + 0] = random_numbers[0] % 0x100000;
 			random_offsets[i + 1] = random_numbers[1] % 0x100000;
 			random_offsets[i + 2] = random_numbers[2] % 0x100000;

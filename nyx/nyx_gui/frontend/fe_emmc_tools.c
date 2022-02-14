@@ -328,7 +328,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 	}
 	else
 	{
-		s_printf(gui->txt_buf, "#FFDD00 File not found or could not be loaded!#\n#FFDD00 Verification failed..#\n");
+		s_printf(gui->txt_buf, "\n#FFDD00 File not found or could not be loaded!#\n#FFDD00 Verification failed..#\n");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 		manual_system_maintenance(true);
 
