@@ -61,16 +61,20 @@ static const clock_t _clock_i2c[] = {
 static clock_t _clock_se = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,     CLK_V_SE,       0, 0 // 408MHz.
 };
-
 static clock_t _clock_tzram = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_NO_SOURCE,                        CLK_V_TZRAM,    0, 0
 };
-
 static clock_t _clock_host1x = {
 	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X, CLK_L_HOST1X,   4, 3 // 163.2MHz.
 };
 static clock_t _clock_tsec = {
 	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC,   CLK_U_TSEC,     0, 2 // 204MHz.
+};
+static clock_t _clock_nvdec = {
+	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, 0x698,   CLK_Y_NVDEC,    4, 0 // 408 MHz.
+};
+static clock_t _clock_nvjpg = {
+	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, 0x69C,   CLK_Y_NVJPG,     4, 0 // 408 MHz.
 };
 static clock_t _clock_sor_safe = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_NO_SOURCE,                        CLK_Y_SOR_SAFE, 0, 0
@@ -84,30 +88,24 @@ static clock_t _clock_sor1 = {
 static clock_t _clock_kfuse = {
 	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                        CLK_H_KFUSE,    0, 0
 };
-
 static clock_t _clock_cl_dvfs =	{
 	CLK_RST_CONTROLLER_RST_DEVICES_W, CLK_RST_CONTROLLER_CLK_OUT_ENB_W, CLK_NO_SOURCE,                        CLK_W_DVFS,     0, 0
 };
 static clock_t _clock_coresight = {
 	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_CSITE,  CLK_U_CSITE,    0, 4 // 136MHz.
 };
-
 static clock_t _clock_pwm = {
 	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_PWM,    CLK_L_PWM,      6, 4 // Fref: 6.4MHz. HOS: PLLP / 54 = 7.55MHz.
 };
-
 static clock_t _clock_sdmmc_legacy_tm = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC_LEGACY_TM, CLK_Y_SDMMC_LEGACY_TM, 4, 66
 };
-
 static clock_t _clock_apbdma = {
 	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                         CLK_H_APBDMA,  0, 0
 };
-
 static clock_t _clock_ahbdma = {
 	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                         CLK_H_AHBDMA,  0, 0
 };
-
 static clock_t _clock_actmon = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON,  CLK_V_ACTMON,  6, 0 // 19.2MHz.
 };
@@ -213,6 +211,26 @@ void clock_enable_tsec()
 void clock_disable_tsec()
 {
 	clock_disable(&_clock_tsec);
+}
+
+void clock_enable_nvdec()
+{
+	clock_enable(&_clock_nvdec);
+}
+
+void clock_disable_nvdec()
+{
+	clock_disable(&_clock_nvdec);
+}
+
+void clock_enable_nvjpg()
+{
+	clock_enable(&_clock_nvjpg);
+}
+
+void clock_disable_nvjpg()
+{
+	clock_disable(&_clock_nvjpg);
 }
 
 void clock_enable_sor_safe()
