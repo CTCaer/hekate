@@ -31,8 +31,9 @@ typedef struct _hnode
 
 typedef struct _heap
 {
-	u32 start;
+	void *start;
 	hnode_t *first;
+    hnode_t *last;
 } heap_t;
 
 typedef struct
@@ -41,8 +42,8 @@ typedef struct
     u32 used;
 } heap_monitor_t;
 
-void heap_init(u32 base);
-void heap_copy(heap_t *heap);
+void heap_init(void *base);
+void heap_set(heap_t *heap);
 void *malloc(u32 size);
 void *calloc(u32 num, u32 size);
 void free(void *buf);
