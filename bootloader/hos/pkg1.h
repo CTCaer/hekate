@@ -100,5 +100,6 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01);
 void pkg1_warmboot_patch(void *hos_ctxt);
 int  pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base);
+void pkg1_warmboot_rsa_mod(u32 warmboot_base);
 
 #endif
