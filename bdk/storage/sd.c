@@ -210,6 +210,9 @@ bool sd_is_gpt()
 void *sd_file_read(const char *path, u32 *fsize)
 {
 	FIL fp;
+	if (!sd_get_card_mounted())
+		return NULL;
+
 	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return NULL;
 
@@ -236,6 +239,9 @@ int sd_save_to_file(void *buf, u32 size, const char *filename)
 {
 	FIL fp;
 	u32 res = 0;
+	if (!sd_get_card_mounted())
+		return NULL;
+
 	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
 	{

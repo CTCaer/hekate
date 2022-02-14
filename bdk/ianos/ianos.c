@@ -74,19 +74,16 @@ uintptr_t ianos_loader(char *path, elfType_t type, void *moduleConfig)
 	el_ctx ctx;
 	uintptr_t epaddr = 0;
 
-	if (!sd_mount())
-		goto elfLoadFinalOut;
-
 	// Read library.
 	fileBuf = sd_file_read(path, NULL);
 
 	if (!fileBuf)
-		goto elfLoadFinalOut;
+		goto out;
 
 	ctx.pread = _ianos_read_cb;
 
 	if (el_init(&ctx))
-		goto elfLoadFinalOut;
+		goto out;
 
 	// Set our relocated library's buffer.
 	switch (type & 0xFFFF)
@@ -100,15 +97,15 @@ uintptr_t ianos_loader(char *path, elfType_t type, void *moduleConfig)
 	}
 
 	if (!elfBuf)
-		goto elfLoadFinalOut;
+		goto out;
 
 	// Load and relocate library.
 	ctx.base_load_vaddr = ctx.base_load_paddr = (uintptr_t)elfBuf;
 	if (el_load(&ctx, _ianos_alloc_cb))
-		goto elfFreeOut;
+		goto out_free;
 
 	if (el_relocate(&ctx))
-		goto elfFreeOut;
+		goto out_free;
 
 	// Launch.
 	epaddr = ctx.ehdr.e_entry + (uintptr_t)elfBuf;
@@ -116,11 +113,11 @@ uintptr_t ianos_loader(char *path, elfType_t type, void *moduleConfig)
 
 	_ianos_call_ep(ep, moduleConfig);
 
-elfFreeOut:
+out_free:
 	free(fileBuf);
 	elfBuf = NULL;
 	fileBuf = NULL;
 
-elfLoadFinalOut:
+out:
 	return epaddr;
 }
