@@ -240,7 +240,7 @@ int sd_save_to_file(void *buf, u32 size, const char *filename)
 	FIL fp;
 	u32 res = 0;
 	if (!sd_get_card_mounted())
-		return NULL;
+		return FR_DISK_ERR;
 
 	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res)
