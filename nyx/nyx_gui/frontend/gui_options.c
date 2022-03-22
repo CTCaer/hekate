@@ -122,7 +122,6 @@ lv_obj_t *create_window_autoboot(const char *win_title)
 	return win;
 }
 
-// TODO: instant update of button for these.
 static lv_res_t _autoboot_disable_action(lv_obj_t *btn)
 {
 	h_cfg.autoboot = 0;
@@ -135,6 +134,8 @@ static lv_res_t _autoboot_disable_action(lv_obj_t *btn)
 	lv_obj_t * win = lv_win_get_from_btn(btn);
 
 	lv_obj_del(win);
+
+	close_btn = NULL;
 
 	return LV_RES_OK;
 }
@@ -155,6 +156,8 @@ static lv_res_t _autoboot_enable_main_action(lv_obj_t *btn)
 		obj = lv_obj_get_parent(obj);
 	lv_obj_del(obj);
 
+	close_btn = NULL;
+
 	return LV_RES_INV;
 }
 
@@ -171,6 +174,8 @@ static lv_res_t _autoboot_enable_more_action(lv_obj_t *btn)
 	for (int i = 0; i < 5; i++)
 		obj = lv_obj_get_parent(obj);
 	lv_obj_del(obj);
+
+	close_btn = NULL;
 
 	return LV_RES_INV;
 }
