@@ -5,4 +5,6 @@ output/*
 loader/payload_00.h
 loader/payload_01.h
 tools/bin2c/bin2c
+tools/bin2c/bin2c.exe
 tools/lz/lz77
+tools/lz/lz77.exe
