@@ -1338,7 +1338,7 @@ static void _about()
 		"              Shiny Quagsire, WinterMute\n"
 		" ___________________________________________\n\n"
 		"Open source and free packages used:\n\n"
-		" - FatFs R0.13b\n"
+		" - FatFs R0.13c\n"
 		"   (c) 2018, ChaN\n\n"
 		" - bcl-1.2.0\n"
 		"   (c) 2003-2006, Marcus Geelnard\n\n"
@@ -1382,7 +1382,7 @@ ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
-	MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
+	//MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
 	MDEF_HANDLER("Fuses", print_fuseinfo),
 	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_CHGLINE(),
