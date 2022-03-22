@@ -394,9 +394,23 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	// Calibrate left stick.
 	if (!jc_drv_ctx.centering_done)
 	{
-		if (jc_pad->conn_l
-			&& jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
-			&& jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
+		if (n_cfg.jc_force_right)
+		{
+			if (jc_pad->conn_r
+				&& jc_pad->rstick_x > 0x400 && jc_pad->rstick_y > 0x400
+				&& jc_pad->rstick_x < 0xC00 && jc_pad->rstick_y < 0xC00)
+			{
+				jc_drv_ctx.cx_max = jc_pad->rstick_x + 0x96;
+				jc_drv_ctx.cx_min = jc_pad->rstick_x - 0x96;
+				jc_drv_ctx.cy_max = jc_pad->rstick_y + 0x96;
+				jc_drv_ctx.cy_min = jc_pad->rstick_y - 0x96;
+				jc_drv_ctx.centering_done = true;
+				jc_drv_ctx.cursor_timeout = 0;
+			}
+		}
+		else if (jc_pad->conn_l
+			     && jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
+			     && jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
 		{
 			jc_drv_ctx.cx_max = jc_pad->lstick_x + 0x96;
 			jc_drv_ctx.cx_min = jc_pad->lstick_x - 0x96;
@@ -413,7 +427,12 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	}
 
 	// Re-calibrate on disconnection.
-	if (!jc_pad->conn_l)
+	if (n_cfg.jc_force_right)
+	{
+		if (!jc_pad->conn_r)
+			jc_drv_ctx.centering_done = 0;
+	}
+	else if (!jc_pad->conn_l)
 		jc_drv_ctx.centering_done = 0;
 
 	// Set button presses.
@@ -466,19 +485,38 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	}
 
 	// Calculate new cursor position.
-	if (jc_pad->lstick_x <= jc_drv_ctx.cx_max && jc_pad->lstick_x >= jc_drv_ctx.cx_min)
-		jc_drv_ctx.pos_x += 0;
-	else if (jc_pad->lstick_x > jc_drv_ctx.cx_max)
-		jc_drv_ctx.pos_x += ((jc_pad->lstick_x - jc_drv_ctx.cx_max) / 30);
-	else
-		jc_drv_ctx.pos_x -= ((jc_drv_ctx.cx_min - jc_pad->lstick_x) / 30);
+	if (!n_cfg.jc_force_right)
+	{
+		if (jc_pad->lstick_x <= jc_drv_ctx.cx_max && jc_pad->lstick_x >= jc_drv_ctx.cx_min)
+			jc_drv_ctx.pos_x += 0;
+		else if (jc_pad->lstick_x > jc_drv_ctx.cx_max)
+			jc_drv_ctx.pos_x += ((jc_pad->lstick_x - jc_drv_ctx.cx_max) / 30);
+		else
+			jc_drv_ctx.pos_x -= ((jc_drv_ctx.cx_min - jc_pad->lstick_x) / 30);
 
-	if (jc_pad->lstick_y <= jc_drv_ctx.cy_max && jc_pad->lstick_y >= jc_drv_ctx.cy_min)
-		jc_drv_ctx.pos_y += 0;
-	else if (jc_pad->lstick_y > jc_drv_ctx.cy_max)
-		jc_drv_ctx.pos_y -= ((jc_pad->lstick_y - jc_drv_ctx.cy_max) / 30);
+		if (jc_pad->lstick_y <= jc_drv_ctx.cy_max && jc_pad->lstick_y >= jc_drv_ctx.cy_min)
+			jc_drv_ctx.pos_y += 0;
+		else if (jc_pad->lstick_y > jc_drv_ctx.cy_max)
+			jc_drv_ctx.pos_y -= ((jc_pad->lstick_y - jc_drv_ctx.cy_max) / 30);
+		else
+			jc_drv_ctx.pos_y += ((jc_drv_ctx.cy_min - jc_pad->lstick_y) / 30);
+	}
 	else
-		jc_drv_ctx.pos_y += ((jc_drv_ctx.cy_min - jc_pad->lstick_y) / 30);
+	{
+		if (jc_pad->rstick_x <= jc_drv_ctx.cx_max && jc_pad->rstick_x >= jc_drv_ctx.cx_min)
+			jc_drv_ctx.pos_x += 0;
+		else if (jc_pad->rstick_x > jc_drv_ctx.cx_max)
+			jc_drv_ctx.pos_x += ((jc_pad->rstick_x - jc_drv_ctx.cx_max) / 30);
+		else
+			jc_drv_ctx.pos_x -= ((jc_drv_ctx.cx_min - jc_pad->rstick_x) / 30);
+
+		if (jc_pad->rstick_y <= jc_drv_ctx.cy_max && jc_pad->rstick_y >= jc_drv_ctx.cy_min)
+			jc_drv_ctx.pos_y += 0;
+		else if (jc_pad->rstick_y > jc_drv_ctx.cy_max)
+			jc_drv_ctx.pos_y -= ((jc_pad->rstick_y - jc_drv_ctx.cy_max) / 30);
+		else
+			jc_drv_ctx.pos_y += ((jc_drv_ctx.cy_min - jc_pad->rstick_y) / 30);
+	}
 
 	// Ensure value inside screen limits.
 	if (jc_drv_ctx.pos_x < 0)

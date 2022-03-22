@@ -271,6 +271,8 @@ skip_main_cfg_parse:
 					n_cfg.ums_emmc_rw = atoi(kv->val) == 1;
 				else if (!strcmp("jcdisable", kv->key))
 					n_cfg.jc_disable = atoi(kv->val) == 1;
+				else if (!strcmp("jcforceright", kv->key))
+					n_cfg.jc_force_right = atoi(kv->val) == 1;
 				else if (!strcmp("bpmpclock", kv->key))
 					n_cfg.bpmp_clock = strtol(kv->val, NULL, 10);
 			}

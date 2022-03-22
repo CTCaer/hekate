@@ -172,6 +172,7 @@ If the main .ini is not found, it is created on the first hekate boot and only h
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
 | umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
+| jcforceright=0     | 1: Forces right joycon to be used as main mouse control.   |
 | bpmpclock=1        | 0: Auto, 1: Faster, 2: Fast. Use 2 if Nyx hangs or some functions like UMS/Backup Verification fail. |
 
 
