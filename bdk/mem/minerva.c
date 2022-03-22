@@ -157,12 +157,22 @@ void minerva_prep_boot_freq()
 	minerva_change_freq(FREQ_800);
 }
 
-void minerva_prep_boot_l4t()
+void minerva_prep_boot_l4t(int oc_freq)
 {
 	if (!minerva_cfg)
 		return;
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+
+	// Add OC frequency.
+	if (oc_freq && mtc_cfg->mtc_table[mtc_cfg->table_entries - 1].rate_khz == FREQ_1600)
+	{
+		memcpy(&mtc_cfg->mtc_table[mtc_cfg->table_entries],
+			   &mtc_cfg->mtc_table[mtc_cfg->table_entries - 1],
+			   sizeof(emc_table_t));
+		mtc_cfg->mtc_table[mtc_cfg->table_entries].rate_khz = oc_freq;
+		mtc_cfg->table_entries++;
+	}
 
 	// Set init frequency.
 	minerva_change_freq(FREQ_204);
@@ -185,6 +195,20 @@ void minerva_prep_boot_l4t()
 	if (fsp_opwr_disabled)
 		minerva_change_freq(FREQ_666);
 	minerva_change_freq(FREQ_800);
+
+	// Trim table.
+	int entries = 0;
+	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
+	{
+		// Copy freqs from 204 MHz to 800 MHz and 1600 MHz and above.
+		int rate = mtc_cfg->mtc_table[i].rate_khz;
+		if ((rate >= FREQ_204 && rate <= FREQ_800) || rate >= FREQ_1600)
+		{
+			memcpy(&mtc_cfg->mtc_table[entries], &mtc_cfg->mtc_table[i], sizeof(emc_table_t));
+			entries++;
+		}
+	}
+	mtc_cfg->table_entries = entries;
 
 	// Do not let other mtc ops.
 	mtc_cfg->init_done = 0;
@@ -210,4 +234,13 @@ emc_table_t *minerva_get_mtc_table()
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 	return mtc_cfg->mtc_table;
+}
+
+int minerva_get_mtc_table_entries()
+{
+	if (!minerva_cfg)
+		return 0;
+
+	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+	return mtc_cfg->table_entries;
 }
