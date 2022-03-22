@@ -1409,7 +1409,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 
 	// Set reserved size.
 	u32 part_rsvd_size = (part_info.emu_size << 11) + (part_info.l4t_size << 11) + (part_info.and_size << 11);
-	part_rsvd_size += part_info.alignment;
+	part_rsvd_size += part_rsvd_size ? part_info.alignment : 0; // Do not reserve alignment space if no extra partitions.
 	disk_set_info(DRIVE_SD, SET_SECTOR_COUNT, &part_rsvd_size);
 	u8 *buf = malloc(SZ_4M);
 
