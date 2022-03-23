@@ -853,111 +853,6 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x2A800000, 0x6DC / 4, LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL }, // mc_video_protect_gpu_override1.
 
-	// Samsung LPDDR4X 4GB 10nm-class (1y-Y01) Die-? for Iowa.
-	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_auto_cal_config2.
-	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_auto_cal_vref_sel0.
-	{ 0x00000008, 0x24C / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_tfaw.
-	{ 0x88161414, 0x2E0 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_mrw14.
-	{ 0x80000713, 0x32C / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_dyn_self_ref_control.
-	{ 0x000F0018, 0x3AC / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dq_rank0_4.
-	{ 0x000F0018, 0x3C4 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dq_rank1_4.
-	{ 0x00440048, 0x3CC / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_0.
-	{ 0x00440045, 0x3D0 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_1.
-	{ 0x00470047, 0x3D4 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_2.
-	{ 0x0005000D, 0x3DC / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_4.
-	{ 0x00440048, 0x3E4 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_0.
-	{ 0x00440045, 0x3E8 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_1.
-	{ 0x00470047, 0x3EC / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_2.
-	{ 0x0005000D, 0x3F4 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_4.
-	{ 0x00180018, 0x41C / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ddll_long_cmd_0.
-	{ 0x000F000F, 0x420 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ddll_long_cmd_1.
-	{ 0x00000018, 0x42C / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // emc_pmacro_ddll_long_cmd_4.
-	{ 0x00000001, 0x670 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // mc_emem_arb_timing_faw.
-	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // mc_video_protect_gpu_override0.
-	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_SAMSUNG_1Y_Y }, // mc_video_protect_gpu_override1.
-
-	// Samsung LPDDR4X 8GB 10nm-class (1y-Y01) Die-? for SDEV Iowa.
-	{ 0x05500000, 0x0D4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_auto_cal_config2.
-	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_auto_cal_vref_sel0.
-	{ 0x00000001, 0x134 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_adr_cfg. 2 Ranks.
-	{ 0x00000008, 0x24C / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_tfaw.
-	{ 0x08010004, 0x2B8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw1.
-	{ 0x08020000, 0x2BC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw2.
-	{ 0x080D0000, 0x2C0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw3.
-	{ 0x08033131, 0x2C8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw6.
-	{ 0x080B0000, 0x2CC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw8.
-	{ 0x0C0E5D5D, 0x2D0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw9.
-	{ 0x080C5D5D, 0x2D4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw10.
-	{ 0x0C0D0808, 0x2D8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw12.
-	{ 0x0C0D0000, 0x2DC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw13.
-	{ 0x08161414, 0x2E0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw14.
-	{ 0x08010004, 0x2E4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_mrw_extra.
-	{ 0x00000000, 0x340 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_dev_select. Both devices.
-	{ 0x32323232, 0x350 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ib_vref_dq_0.
-	{ 0x32323232, 0x354 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ib_vref_dq_1.
-	{ 0x000F0018, 0x3AC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dq_rank0_4.
-	{ 0x000F0018, 0x3C4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dq_rank1_4.
-	{ 0x00440048, 0x3CC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_0.
-	{ 0x00440045, 0x3D0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_1.
-	{ 0x00470047, 0x3D4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_2.
-	{ 0x0005000D, 0x3DC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank0_4.
-	{ 0x00440048, 0x3E4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_0.
-	{ 0x00440045, 0x3E8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_1.
-	{ 0x00470047, 0x3EC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_2.
-	{ 0x0005000D, 0x3F4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ob_ddll_long_dqs_rank1_4.
-	{ 0x00180018, 0x41C / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ddll_long_cmd_0.
-	{ 0x000F000F, 0x420 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ddll_long_cmd_1.
-	{ 0x00000018, 0x42C / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_ddll_long_cmd_4.
-	{ 0x0051004F, 0x450 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_zcal_mrw_cmd.
-	{ 0x40000001, 0x45C / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_zcal_init_dev1.
-	{ 0x00000000, 0x594 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_tx_pwrd4.
-	{ 0x00001000, 0x598 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // emc_pmacro_tx_pwrd5.
-	{ 0x00000001, 0x630 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_emem_adr_cfg. 2 Ranks.
-	{ 0x00002000, 0x64C / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_emem_cfg. 8GB total density.
-	{ 0x00000001, 0x670 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_emem_arb_timing_faw.
-	{ 0x00000002, 0x680 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_emem_arb_timing_r2r.
-	{ 0x02020001, 0x694 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_emem_arb_da_turns.
-	{ 0x2A800000, 0x6DC / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_video_protect_gpu_override0.
-	{ 0x00000002, 0x6E0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_Y }, // mc_video_protect_gpu_override1.
-
-/*
-	// Samsung LPDDR4X 8GB 10nm-class (1y-A01) Die-? for SDEV Aula?
-	{ 0x00000001, 0x134 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_adr_cfg. 2 Ranks.
-	{ 0x08010004, 0x2B8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw1.
-	{ 0x08020000, 0x2BC / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw2.
-	{ 0x080D0000, 0x2C0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw3.
-	{ 0x08033131, 0x2C8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw6.
-	{ 0x080B0000, 0x2CC / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw8.
-	{ 0x0C0E5D5D, 0x2D0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw9.
-	{ 0x080C5D5D, 0x2D4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw10.
-	{ 0x0C0D0808, 0x2D8 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw12.
-	{ 0x0C0D0000, 0x2DC / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw13.
-	{ 0x08161414, 0x2E0 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw14.
-	{ 0x08010004, 0x2E4 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_mrw_extra.
-	{ 0x00000000, 0x340 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_dev_select. Both devices.
-	{ 0x35353535, 0x350 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_vref_dq_0.
-	{ 0x35353535, 0x354 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_vref_dq_1.
-	{ 0x35353535, 0x358 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_vref_dqs_0.
-	{ 0x35353535, 0x35C / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_vref_dqs_1.
-	{ 0x00480048, 0x3FC / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank0_0.
-	{ 0x00480048, 0x400 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank0_1.
-	{ 0x00480048, 0x404 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank0_2.
-	{ 0x00480048, 0x408 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank0_3.
-	{ 0x00480048, 0x40C / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank1_0.
-	{ 0x00480048, 0x410 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank1_1.
-	{ 0x00480048, 0x414 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank1_2.
-	{ 0x00480048, 0x418 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_ib_ddll_long_dqs_rank1_3.
-	{ 0x0051004F, 0x450 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_zcal_mrw_cmd.
-	{ 0x40000001, 0x45C / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_zcal_init_dev1.
-	{ 0x00010100, 0x594 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_tx_pwrd4.
-	{ 0x00400010, 0x598 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // emc_pmacro_tx_pwrd5.
-	{ 0x00000001, 0x630 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_adr_cfg. 2 Ranks.
-	{ 0x00002000, 0x64C / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_cfg. 8GB total density.
-	{ 0x00000002, 0x670 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_arb_timing_faw.
-	{ 0x00000002, 0x680 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_arb_timing_r2r.
-	{ 0x02020001, 0x694 / 4, LPDDR4X_8GB_SAMSUNG_1Y_A }, // mc_emem_arb_da_turns.
-*/
-
 	// Micron LPDDR4X 4GB MT53D1024M32D1NP-053-WT:F 10nm-class (1y-01) Die-F for Newer Iowa/Hoag/Aula.
 	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_auto_cal_config2.
 	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF }, // emc_auto_cal_vref_sel0.
@@ -987,6 +882,20 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x0600FED3, 0x6D8 / 4, LPDDR4X_4GB_HYNIX_1Y_A }, // mc_video_protect_vpr_override1. + TSECB, TSEC1, TSECB1.
 	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_HYNIX_1Y_A }, // mc_video_protect_gpu_override0.
 	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_HYNIX_1Y_A }, // mc_video_protect_gpu_override1.
+
+	// Samsung LPDDR4X 4GB 10nm-class (1z-B01) Die-? for Iowa/Hoag/Aula.
+	{ 0x05500000, 0x0D4 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_auto_cal_config2.
+	{ 0xC9AFBCBC, 0x0F4 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_auto_cal_vref_sel0.
+	{ 0x00000006, 0x1CC / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_quse.
+	{ 0x00000005, 0x1D0 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_quse_width.
+	{ 0x00000003, 0x1DC / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_einput.
+	{ 0x0000000C, 0x1E0 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_einput_duration.
+	{ 0x88161414, 0x2E0 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_mrw14.
+	{ 0x80000713, 0x32C / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // emc_dyn_self_ref_control.
+	{ 0xE4FACB43, 0x6D4 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // mc_video_protect_vpr_override. + TSEC, NVENC.
+	{ 0x0600FED3, 0x6D8 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // mc_video_protect_vpr_override1. + TSECB, TSEC1, TSECB1.
+	{ 0x2A800000, 0x6DC / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // mc_video_protect_gpu_override0.
+	{ 0x00000002, 0x6E0 / 4, LPDDR4X_4GB_SAMSUNG_1Z }, // mc_video_protect_gpu_override1.
 
 	//!TODO: Too many duplicates.
 };
