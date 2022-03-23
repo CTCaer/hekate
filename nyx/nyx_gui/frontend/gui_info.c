@@ -550,15 +550,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL:
 			strcpy(dram_man, "Samsung K4UBE3D4AA-MGCL 8GB");
 			break;
-		case LPDDR4X_IOWA_4GB_SAMSUNG_1Y_Y:
-			strcpy(dram_man, "Samsung 1y Y 4GB");
+		case LPDDR4X_IOWA_4GB_SAMSUNG_1Z:
+		case LPDDR4X_HOAG_4GB_SAMSUNG_1Z:
+		case LPDDR4X_AULA_4GB_SAMSUNG_1Z:
+			strcpy(dram_man, "Samsung 1z B 4GB");
 			break;
-		case LPDDR4X_IOWA_8GB_SAMSUNG_1Y_Y:
-			strcpy(dram_man, "Samsung 1y Y 8GB");
-			break;
-		// case LPDDR4X_AULA_8GB_SAMSUNG_1Y_A: // Unused.
-		// 	strcpy(dram_man, "Samsung 1y A 4GB");
-		// 	break;
 		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
 		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF:
 		case LPDDR4X_AULA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
@@ -927,6 +923,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case 0x98000004: // New 6.2" panel?
 		case 0x50000001:
+		case 0x50000002:
 			strcat(txt_buf, "FST2 UNK");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 0;
