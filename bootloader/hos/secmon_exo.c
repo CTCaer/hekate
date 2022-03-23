@@ -165,7 +165,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	// Handle versions that change API and do not burn new fuse.
 	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8) || //  8.0.x, same fuses with  7.0.1.
 		!memcmp(ctxt->pkg1_id->id, "20210129111626", 8) || // 12.0.0, same fuses with 11.0.0.
-		!memcmp(ctxt->pkg1_id->id, "20210805123730", 8)    // 13.0.0, same fuses with 12.1.0.
+		!memcmp(ctxt->pkg1_id->id, "20210805123730", 8) || // 13.0.0, same fuses with 12.1.0.
+		!memcmp(ctxt->pkg1_id->id, "20220209100018", 8)    // 14.0.0, same fuses with 13.2.1.
 	   )
 		exo_fw_no++;
 
@@ -194,7 +195,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	case 12:
 		exo_fw_no = EXO_FW_VER(9, 1, 0);
 		break;
-	case 13 ... 16: //!TODO: Update on API changes. 16: 13.0.0.
+	case 13 ... 17: //!TODO: Update on API changes. 17: 14.0.0.
 		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision, 0);
 		break;
 	}
