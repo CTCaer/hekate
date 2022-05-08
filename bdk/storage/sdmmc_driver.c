@@ -88,9 +88,9 @@ static int _sdmmc_set_io_power(sdmmc_t *sdmmc, u32 power)
 u32 sdmmc_get_bus_width(sdmmc_t *sdmmc)
 {
 	u32 h = sdmmc->regs->hostctl;
-	if (h & SDHCI_CTRL_8BITBUS)
+	if (h & SDHCI_CTRL_8BITBUS) // eMMC only (or UHS-II).
 		return SDMMC_BUS_WIDTH_8;
-	if (h & SDHCI_CTRL_4BITBUS)
+	if (h & SDHCI_CTRL_4BITBUS) // SD only.
 		return SDMMC_BUS_WIDTH_4;
 	return SDMMC_BUS_WIDTH_1;
 }
@@ -102,9 +102,9 @@ void sdmmc_set_bus_width(sdmmc_t *sdmmc, u32 bus_width)
 	if (bus_width == SDMMC_BUS_WIDTH_1)
 		sdmmc->regs->hostctl = host_control;
 	else if (bus_width == SDMMC_BUS_WIDTH_4)
-		sdmmc->regs->hostctl = host_control | SDHCI_CTRL_4BITBUS;
+		sdmmc->regs->hostctl = host_control | SDHCI_CTRL_4BITBUS; // SD only.
 	else if (bus_width == SDMMC_BUS_WIDTH_8)
-		sdmmc->regs->hostctl = host_control | SDHCI_CTRL_8BITBUS;
+		sdmmc->regs->hostctl = host_control | SDHCI_CTRL_8BITBUS; // eMMC only (or UHS-II).
 }
 
 void sdmmc_save_tap_value(sdmmc_t *sdmmc)
@@ -140,9 +140,9 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 	return 1;
 }
 
-static int _sdmmc_commit_changes(sdmmc_t *sdmmc)
+static void _sdmmc_commit_changes(sdmmc_t *sdmmc)
 {
-	return sdmmc->regs->clkcon;
+	(void)sdmmc->regs->clkcon;
 }
 
 static void _sdmmc_pad_config_fallback(sdmmc_t *sdmmc, u32 power)
@@ -330,7 +330,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 
 	case SDHCI_TIMING_MMC_HS52:
 	case SDHCI_TIMING_SD_HS25:
-		sdmmc->regs->hostctl  |= SDHCI_CTRL_HISPD;
+		sdmmc->regs->hostctl  |= SDHCI_CTRL_HISPD; // SD only?
 		sdmmc->regs->hostctl2 &= ~SDHCI_CTRL_VDD_180;
 		break;
 
@@ -340,23 +340,23 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	case SDHCI_TIMING_UHS_SDR82:
 	case SDHCI_TIMING_UHS_DDR50:
 	case SDHCI_TIMING_MMC_HS102:
-		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | UHS_SDR104_BUS_SPEED;
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR104_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 
 	case SDHCI_TIMING_MMC_HS400:
 		// Non standard.
-		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | HS400_BUS_SPEED;
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | HS400_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 
 	case SDHCI_TIMING_UHS_SDR25:
-		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | UHS_SDR25_BUS_SPEED;
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR25_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 
 	case SDHCI_TIMING_UHS_SDR12:
-		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & SDHCI_CTRL_UHS_MASK) | UHS_SDR12_BUS_SPEED;
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR12_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 	}
@@ -547,7 +547,7 @@ static int _sdmmc_wait_card_busy(sdmmc_t *sdmmc)
 	_sdmmc_commit_changes(sdmmc);
 
 	u32 timeout = get_tmr_ms() + 2000;
-	while (!(sdmmc->regs->prnsts & SDHCI_DATA_0_LVL_MASK))
+	while (!(sdmmc->regs->prnsts & SDHCI_DATA_0_LVL))
 		if (get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset(sdmmc);
@@ -734,6 +734,7 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 
 	sdmmc->regs->hostctl2 &= ~SDHCI_CTRL_PRESET_VAL_EN;
 	sdmmc->regs->clkcon   &= ~SDHCI_PROG_CLOCK_MODE;
+	// Enable 32bit addressing if used (sysad. if blkcnt it fallbacks to 16bit).
 	sdmmc->regs->hostctl2 |= SDHCI_HOST_VERSION_4_EN;
 
 	if (!(sdmmc->regs->capareg & SDHCI_CAN_64BIT))
@@ -741,7 +742,7 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 
 	sdmmc->regs->hostctl2 |= SDHCI_ADDRESSING_64BIT_EN;
 	sdmmc->regs->hostctl &= ~SDHCI_CTRL_DMA_MASK;
-	sdmmc->regs->timeoutcon = (sdmmc->regs->timeoutcon & 0xF0) | 0xE;
+	sdmmc->regs->timeoutcon = (sdmmc->regs->timeoutcon & 0xF0) | 14; // TMCLK * 2^27.
 
 	return 1;
 }
@@ -806,7 +807,7 @@ static void _sdmmc_mask_interrupts(sdmmc_t *sdmmc)
 	sdmmc->regs->norintstsen &= ~(SDHCI_INT_DMA_END | SDHCI_INT_DATA_END | SDHCI_INT_RESPONSE);
 }
 
-static int _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
+static u32 _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
 {
 	u16 norintsts = sdmmc->regs->norintsts;
 	u16 errintsts = sdmmc->regs->errintsts;
@@ -841,7 +842,7 @@ static int _sdmmc_wait_response(sdmmc_t *sdmmc)
 	u32 timeout = get_tmr_ms() + 2000;
 	while (true)
 	{
-		int result = _sdmmc_check_mask_interrupt(sdmmc, NULL, SDHCI_INT_RESPONSE);
+		u32 result = _sdmmc_check_mask_interrupt(sdmmc, NULL, SDHCI_INT_RESPONSE);
 		if (result == SDMMC_MASKINT_MASKED)
 			break;
 		if (result != SDMMC_MASKINT_NOERROR || get_tmr_ms() > timeout)
@@ -937,7 +938,7 @@ static int _sdmmc_config_dma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
 
 	// Set mulitblock request.
 	if (req->is_multi_block)
-		trnmode = SDHCI_TRNS_MULTI | SDHCI_TRNS_BLK_CNT_EN | SDHCI_TRNS_DMA;
+		trnmode |= SDHCI_TRNS_MULTI | SDHCI_TRNS_BLK_CNT_EN;
 
 	// Set request direction.
 	if (!req->is_write)
@@ -963,13 +964,13 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 		u32 timeout = get_tmr_ms() + 1500;
 		do
 		{
-			int result = 0;
+			u32 result = SDMMC_MASKINT_MASKED;
 			while (true)
 			{
 				u16 intr = 0;
 				result = _sdmmc_check_mask_interrupt(sdmmc, &intr,
 					SDHCI_INT_DATA_END | SDHCI_INT_DMA_END);
-				if (result < 0)
+				if (result != SDMMC_MASKINT_MASKED)
 					break;
 
 				if (intr & SDHCI_INT_DATA_END)
@@ -1186,6 +1187,8 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 		_sdmmc_config_sdmmc1_schmitt();
 
 	// Make sure the SDMMC1 controller is powered.
+	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1_IO_EN;
+	usleep(1000);
 	PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
 	(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
 
@@ -1194,7 +1197,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 	// Set enable SD card power.
-	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2; // Pull down.
+	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2;
 	gpio_config(GPIO_PORT_E, GPIO_PIN_4, GPIO_MODE_GPIO);
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
 	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
@@ -1252,7 +1255,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 
 	const u32 trim_values_t210[] = { 2, 8, 3, 8 };
 	const u32 trim_values_t210b01[] = { 14, 13, 15, 13 };
-	const u32 *trim_values = sdmmc->t210b01 ? trim_values_t210b01 : trim_values_t210;
+	const u32 *trim_values;
 
 	if (id > SDMMC_4 || id == SDMMC_3)
 		return 0;
@@ -1263,6 +1266,8 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	sdmmc->id = id;
 	sdmmc->clock_stopped = 1;
 	sdmmc->t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;
+
+	trim_values = sdmmc->t210b01 ? trim_values_t210b01 : trim_values_t210;
 
 	// Do specific SDMMC HW configuration.
 	switch (id)

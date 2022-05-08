@@ -408,7 +408,10 @@
 /*
  * BKOPS status level
  */
-#define EXT_CSD_BKOPS_LEVEL_2		0x2
+#define EXT_CSD_BKOPS_OK		0x0
+#define EXT_CSD_BKOPS_NON_CRITICAL	0x1
+#define EXT_CSD_BKOPS_PERF_IMPACTED	0x2
+#define EXT_CSD_BKOPS_CRITICAL		0x3
 
 /*
  * BKOPS modes

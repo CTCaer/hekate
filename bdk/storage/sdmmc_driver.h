@@ -22,10 +22,10 @@
 #include <storage/sdmmc_t210.h>
 
 /*! SDMMC controller IDs. */
-#define SDMMC_1 0
-#define SDMMC_2 1
-#define SDMMC_3 2
-#define SDMMC_4 3
+#define SDMMC_1 0 // Version 4.00.
+#define SDMMC_2 1 // Version 5.1.
+#define SDMMC_3 2 // Version 4.00.
+#define SDMMC_4 3 // Version 5.1.
 
 /*! SDMMC power types. */
 #define SDMMC_POWER_OFF 0
@@ -47,33 +47,43 @@
 
 /*! SDMMC mask interrupt status. */
 #define SDMMC_MASKINT_MASKED   0
-#define SDMMC_MASKINT_NOERROR -1
-#define SDMMC_MASKINT_ERROR   -2
+#define SDMMC_MASKINT_NOERROR  1
+#define SDMMC_MASKINT_ERROR    2
 
 /*! SDMMC present state. */
-#define SDHCI_CMD_INHIBIT      0x1
-#define SDHCI_DATA_INHIBIT     0x2
-#define SDHCI_DOING_WRITE      0x100
-#define SDHCI_DOING_READ       0x200
-#define SDHCI_SPACE_AVAILABLE  0x400
-#define SDHCI_DATA_AVAILABLE   0x800
-#define SDHCI_CARD_PRESENT     0x10000
-#define SDHCI_CD_STABLE        0x20000
-#define SDHCI_CD_LVL           0x40000
-#define SDHCI_WRITE_PROTECT    0x80000
+#define SDHCI_CMD_INHIBIT      BIT(0)
+#define SDHCI_DATA_INHIBIT     BIT(1)
+#define SDHCI_DAT_LINE_ACTIVE  BIT(2)
+#define SDHCI_RETUNING_REQUEST BIT(3)
+#define SDHCI_EMMC_LINE_LVL_MASK 0xF0
+#define  SDHCI_DATA_4_LVL      BIT(4) // eMMC only.
+#define  SDHCI_DATA_5_LVL      BIT(5) // eMMC only.
+#define  SDHCI_DATA_6_LVL      BIT(6) // eMMC only.
+#define  SDHCI_DATA_7_LVL      BIT(7) // eMMC only.
+#define SDHCI_DOING_WRITE      BIT(8)
+#define SDHCI_DOING_READ       BIT(9) // SD only.
+#define SDHCI_SPACE_AVAILABLE  BIT(10)
+#define SDHCI_DATA_AVAILABLE   BIT(11)
+#define SDHCI_CARD_PRESENT     BIT(16)
+#define SDHCI_CD_STABLE        BIT(17)
+#define SDHCI_CD_LVL           BIT(18)
+#define SDHCI_WRITE_PROTECT    BIT(19)
 #define SDHCI_DATA_LVL_MASK    0xF00000
-#define  SDHCI_DATA_0_LVL_MASK 0x100000
-#define SDHCI_CMD_LVL          0x1000000
+#define  SDHCI_DATA_0_LVL      BIT(20)
+#define  SDHCI_DATA_1_LVL      BIT(21)
+#define  SDHCI_DATA_2_LVL      BIT(22)
+#define  SDHCI_DATA_3_LVL      BIT(23)
+#define SDHCI_CMD_LVL          BIT(24)
+#define SDHCI_CMD_NOT_ISSUED   BIT(27)
 
 /*! SDMMC transfer mode. */
-#define SDHCI_TRNS_DMA        0x01
-#define SDHCI_TRNS_BLK_CNT_EN 0x02
-#define SDHCI_TRNS_AUTO_CMD12 0x04
-#define SDHCI_TRNS_AUTO_CMD23 0x08
-#define SDHCI_TRNS_AUTO_SEL   0x0C
-#define SDHCI_TRNS_WRITE      0x00
-#define SDHCI_TRNS_READ       0x10
-#define SDHCI_TRNS_MULTI      0x20
+#define SDHCI_TRNS_DMA        BIT(0)
+#define SDHCI_TRNS_BLK_CNT_EN BIT(1)
+#define SDHCI_TRNS_AUTO_CMD12 BIT(2)
+#define SDHCI_TRNS_AUTO_CMD23 BIT(3)
+#define SDHCI_TRNS_WRITE      0x00 // Bit4.
+#define SDHCI_TRNS_READ       BIT(4)
+#define SDHCI_TRNS_MULTI      BIT(5)
 
 /*! SDMMC command. */
 #define SDHCI_CMD_RESP_MASK       0x3
@@ -81,43 +91,43 @@
 #define SDHCI_CMD_RESP_LEN136     0x1
 #define SDHCI_CMD_RESP_LEN48      0x2
 #define SDHCI_CMD_RESP_LEN48_BUSY 0x3
-#define SDHCI_CMD_CRC       0x08
-#define SDHCI_CMD_INDEX     0x10
-#define SDHCI_CMD_DATA      0x20
-#define SDHCI_CMD_ABORTCMD  0xC0
+#define SDHCI_CMD_CRC             BIT(3)
+#define SDHCI_CMD_INDEX           BIT(4)
+#define SDHCI_CMD_DATA            BIT(5)
+#define SDHCI_CMD_ABORTCMD        0xC0
 
 /*! SDMMC host control. */
-#define SDHCI_CTRL_LED        0x01
-#define SDHCI_CTRL_4BITBUS    0x02
-#define SDHCI_CTRL_HISPD      0x04
+#define SDHCI_CTRL_LED        BIT(0)
+#define SDHCI_CTRL_4BITBUS    BIT(1) // SD only.
+#define SDHCI_CTRL_HISPD      BIT(2) // SD only.
 #define SDHCI_CTRL_DMA_MASK   0x18
 #define  SDHCI_CTRL_SDMA      0x00
 #define  SDHCI_CTRL_ADMA1     0x08
 #define  SDHCI_CTRL_ADMA32    0x10
 #define  SDHCI_CTRL_ADMA64    0x18
-#define  SDHCI_CTRL_8BITBUS   0x20
-#define SDHCI_CTRL_CDTEST_INS 0x40
-#define SDHCI_CTRL_CDTEST_EN  0x80
+#define SDHCI_CTRL_8BITBUS    BIT(5) // eMMC only (or UHS-II).
+#define SDHCI_CTRL_CDTEST_INS BIT(6)
+#define SDHCI_CTRL_CDTEST_EN  BIT(7)
 
 /*! SDMMC host control 2. */
-#define SDHCI_CTRL_UHS_MASK       0xFFF8
-#define SDHCI_CTRL_VDD_180        8
-#define SDHCI_CTRL_DRV_TYPE_B     0x00
-#define SDHCI_CTRL_DRV_TYPE_A     0x10
-#define SDHCI_CTRL_DRV_TYPE_C     0x20
-#define SDHCI_CTRL_DRV_TYPE_D     0x30
-#define SDHCI_CTRL_EXEC_TUNING    0x40
-#define SDHCI_CTRL_TUNED_CLK      0x80
-#define SDHCI_HOST_VERSION_4_EN   0x1000
-#define SDHCI_ADDRESSING_64BIT_EN 0x2000
-#define SDHCI_CTRL_PRESET_VAL_EN  0x8000
+#define SDHCI_CTRL_UHS_MASK       0x7
+#define SDHCI_CTRL_VDD_180        BIT(3)
+#define SDHCI_CTRL_DRV_TYPE_B     (0U << 4)
+#define SDHCI_CTRL_DRV_TYPE_A     (1U << 4)
+#define SDHCI_CTRL_DRV_TYPE_C     (2U << 4)
+#define SDHCI_CTRL_DRV_TYPE_D     (3U << 4)
+#define SDHCI_CTRL_EXEC_TUNING    BIT(6)
+#define SDHCI_CTRL_TUNED_CLK      BIT(7)
+#define SDHCI_HOST_VERSION_4_EN   BIT(12)
+#define SDHCI_ADDRESSING_64BIT_EN BIT(13)
+#define SDHCI_CTRL_PRESET_VAL_EN  BIT(15)
 
 /*! SDMMC power control. */
-#define SDHCI_POWER_ON   0x01
+#define SDHCI_POWER_ON   BIT(0)
 #define SDHCI_POWER_180  0x0A
 #define SDHCI_POWER_300  0x0C
 #define SDHCI_POWER_330  0x0E
-#define SDHCI_POWER_MASK 0xF1
+#define SDHCI_POWER_MASK 0xF1 // UHS-II only.
 
 // /*! SDMMC max current. */
 // #define SDHCI_MAX_CURRENT_330_MASK   0xFF
@@ -125,45 +135,48 @@
 // #define SDHCI_MAX_CURRENT_MULTIPLIER 4
 
 /*! SDMMC clock control. */
-#define SDHCI_DIVIDER_SHIFT    8
+#define SDHCI_CLOCK_INT_EN     BIT(0)
+#define SDHCI_CLOCK_INT_STABLE BIT(1)
+#define SDHCI_CLOCK_CARD_EN    BIT(2)
+#define SDHCI_PROG_CLOCK_MODE  BIT(5)
 #define SDHCI_DIVIDER_HI_SHIFT 6
-#define SDHCI_DIV_MASK         0xFF00
-#define SDHCI_DIV_HI_MASK      0xC0
-#define SDHCI_PROG_CLOCK_MODE  0x20
-#define SDHCI_CLOCK_CARD_EN    0x4
-#define SDHCI_CLOCK_INT_STABLE 0x2
-#define SDHCI_CLOCK_INT_EN     0x1
+#define SDHCI_DIV_HI_MASK      (3U << SDHCI_DIVIDER_HI_SHIFT)
+#define SDHCI_DIVIDER_SHIFT    8
+#define SDHCI_DIV_MASK         (0xFFU << SDHCI_DIVIDER_SHIFT)
+
 
 /*! SDMMC software reset. */
-#define SDHCI_RESET_ALL  0x01
-#define SDHCI_RESET_CMD  0x02
-#define SDHCI_RESET_DATA 0x04
+#define SDHCI_RESET_ALL  BIT(0)
+#define SDHCI_RESET_CMD  BIT(1)
+#define SDHCI_RESET_DATA BIT(2)
 
 /*! SDMMC interrupt status and control. */
-#define SDHCI_INT_RESPONSE     0x1
-#define SDHCI_INT_DATA_END     0x2
-#define SDHCI_INT_BLK_GAP      0x4
-#define SDHCI_INT_DMA_END      0x8
-#define SDHCI_INT_SPACE_AVAIL  0x10
-#define SDHCI_INT_DATA_AVAIL   0x20
-#define SDHCI_INT_CARD_INSERT  0x40
-#define SDHCI_INT_CARD_REMOVE  0x80
-#define SDHCI_INT_CARD_INT     0x100
-#define SDHCI_INT_RETUNE       0x1000
-#define SDHCI_INT_CQE          0x4000
-#define SDHCI_INT_ERROR        0x8000
+#define SDHCI_INT_RESPONSE     BIT(0)
+#define SDHCI_INT_DATA_END     BIT(1)
+#define SDHCI_INT_BLK_GAP      BIT(2)
+#define SDHCI_INT_DMA_END      BIT(3)
+#define SDHCI_INT_SPACE_AVAIL  BIT(4)
+#define SDHCI_INT_DATA_AVAIL   BIT(5)
+#define SDHCI_INT_CARD_INSERT  BIT(6)
+#define SDHCI_INT_CARD_REMOVE  BIT(7)
+#define SDHCI_INT_CARD_INT     BIT(8)
+#define SDHCI_INT_RETUNE       BIT(12)
+#define SDHCI_INT_CQE          BIT(14)
+#define SDHCI_INT_ERROR        BIT(15)
 
 /*! SDMMC error interrupt status and control. */
-#define SDHCI_ERR_INT_TIMEOUT      0x1
-#define SDHCI_ERR_INT_CRC          0x2
-#define SDHCI_ERR_INT_END_BIT      0x4
-#define SDHCI_ERR_INT_INDEX        0x8
-#define SDHCI_ERR_INT_DATA_TIMEOUT 0x10
-#define SDHCI_ERR_INT_DATA_CRC     0x20
-#define SDHCI_ERR_INT_DATA_END_BIT 0x40
-#define SDHCI_ERR_INT_BUS_POWER    0x80
-#define SDHCI_ERR_INT_AUTO_CMD_ERR 0x100
-#define SDHCI_ERR_INT_ADMA_ERROR   0x200
+#define SDHCI_ERR_INT_TIMEOUT      BIT(0)
+#define SDHCI_ERR_INT_CRC          BIT(1)
+#define SDHCI_ERR_INT_END_BIT      BIT(2)
+#define SDHCI_ERR_INT_INDEX        BIT(3)
+#define SDHCI_ERR_INT_DATA_TIMEOUT BIT(4)
+#define SDHCI_ERR_INT_DATA_CRC     BIT(5)
+#define SDHCI_ERR_INT_DATA_END_BIT BIT(6)
+#define SDHCI_ERR_INT_BUS_POWER    BIT(7)
+#define SDHCI_ERR_INT_AUTO_CMD_ERR BIT(8)
+#define SDHCI_ERR_INT_ADMA_ERROR   BIT(9)
+#define SDHCI_ERR_INT_TUNE_ERROR   BIT(10)
+#define SDHCI_ERR_INT_RSP_ERROR    BIT(11)
 
 #define SDHCI_ERR_INT_ALL_EXCEPT_ADMA_BUSPWR \
 	(SDHCI_ERR_INT_AUTO_CMD_ERR | SDHCI_ERR_INT_DATA_END_BIT | \
@@ -197,7 +210,7 @@
 #define SDHCI_TIMING_UHS_DDR50  13
 #define SDHCI_TIMING_MMC_HS102  14
 
-#define SDHCI_CAN_64BIT 0x10000000
+#define SDHCI_CAN_64BIT BIT(28)
 
 /*! SDMMC Low power features. */
 #define SDMMC_POWER_SAVE_DISABLE 0
