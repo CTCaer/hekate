@@ -339,6 +339,28 @@ void clock_disable_actmon()
 	clock_disable(&_clock_actmon);
 }
 
+void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)
+{
+	u32 plld_div = (divp << 20) | (divn << 11) | 1;
+
+	// N divider is fractional, so N = DIVN + 1/2 + PLLD_SDM_DIN/8192.
+	u32 misc = 0x2D0000 | 0xFC00; // Clock enable and PLLD_SDM_DIN: -1024 -> DIVN + 0.375.
+	if (lowpower && tegra_t210)
+		misc = 0x2D0000 | 0x0AAA; // Clock enable and PLLD_SDM_DIN:  2730 -> DIVN + 0.833.
+
+
+	// Set DISP1 clock source and parent clock.
+	if (lowpower)
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DISP1) = 0x40000000; // PLLD_OUT0.
+
+	// Set dividers and enable PLLD.
+	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE)  = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
+	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = tegra_t210 ? 0x20 : 0; // Keep default PLLD_SETUP.
+
+	// Set PLLD_SDM_DIN and enable PLLD to DSI pads.
+	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = misc;
+}
+
 void clock_enable_pllx()
 {
 	// Configure and enable PLLX if disabled.

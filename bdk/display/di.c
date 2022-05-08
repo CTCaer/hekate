@@ -434,21 +434,10 @@ void display_init()
 		APB_MISC(APB_MISC_GP_DSI_PAD_CONTROL) = 0;
 	}
 
-	// Set DISP1 clock source and parent clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DISP1) = 0x40000000; // PLLD_OUT.
-	u32 plld_div = (3 << 20) | (20 << 11) | 1; // DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 97.5 MHz (offset).
-	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
-
-	if (tegra_t210)
-	{
-		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20;     // PLLD_SETUP.
-		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC)  = 0x2D0AAA; // PLLD_ENABLE_CLK.
-	}
-	else
-	{
-		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0;
-		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC)  = 0x2DFC00; // PLLD_ENABLE_CLK.
-	}
+	// Set DISP1 clock source, parent clock and DSI/PCLK to low power mode.
+	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-PCLK): 50.0 MHz. (PCLK: 16.66 MHz)
+	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-PCLK): 48.9 MHz. (PCLK: 16.30 MHz)
+	clock_enable_plld(3, 20, true, tegra_t210);
 
 	// Setup Display Interface initial window configuration.
 	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, CFG_SIZE(_di_dc_setup_win_config));
@@ -553,15 +542,9 @@ void display_init()
 	// Unblank display.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
-	// Configure PLLD for DISP1.
-	plld_div = (1 << 20) | (24 << 11) | 1; // DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 768 MHz, PLLD_OUT0 (DSI): 234 MHz (offset, it's ddr btw, so normally div2).
-	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
-
-	if (tegra_t210)
-		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0x20; // PLLD_SETUP.
-	else
-		CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = 0;
-	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = 0x2DFC00;  // Use new PLLD_SDM_DIN.
+	// Setup final dsi clock.
+	// DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 468.0 MHz, PLLD_OUT0 (DSI): 234.0 MHz.
+	clock_enable_plld(1, 24, false, tegra_t210);
 
 	// Finalize DSI init packet sequence configuration.
 	DSI(_DSIREG(DSI_PAD_CONTROL_1)) = 0;
@@ -688,12 +671,20 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// Blank display.
 	DSI(_DSIREG(DSI_WR_DATA)) = (MIPI_DCS_SET_DISPLAY_OFF << 8) | MIPI_DSI_DCS_SHORT_WRITE;
 
+	// Wait for 5 frames (HOST1X_CH0_SYNC_SYNCPT_9).
+	// Not here.
+
 	// Propagate changes to all register buffers and disable host cmd packets during video.
 	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX | WRITE_MUX;
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
 
 	// De-initialize video controller.
 	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, CFG_SIZE(_di_dc_video_disable_config));
+
+	// Set DISP1 clock source, parent clock and DSI/PCLK to low power mode.
+	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-PCLK): 50.0 MHz. (PCLK: 16.66 MHz)
+	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-PCLK): 48.9 MHz. (PCLK: 16.30 MHz)
+	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210);
 
 	// Set timings for lowpower clocks.
 	exec_cfg((u32 *)DSI_BASE, _di_dsi_timing_deinit_config, CFG_SIZE(_di_dsi_timing_deinit_config));
