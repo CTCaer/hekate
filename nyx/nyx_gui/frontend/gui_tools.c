@@ -835,6 +835,11 @@ static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 		return res;
 
 	dirLength = strlen(path);
+
+	// Hard limit path to 1024 characters. Do not result to error.
+	if (dirLength > 1024)
+		goto out;
+
 	for (;;)
 	{
 		// Clear file or folder path.
@@ -884,6 +889,7 @@ static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 		}
 	}
 
+out:
 	f_closedir(&dir);
 
 	return res;
@@ -918,7 +924,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
-		char *path = malloc(1024);
+		char *path = malloc(0x1000);
 		path[0] = 0;
 
 		lv_label_set_text(lb_val, "");
@@ -936,7 +942,10 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 		char *txt_buf = (char *)malloc(0x500);
 
-		s_printf(txt_buf, "#96FF00 Total archive bits fixed:# #FF8000 %d unset, %d set!#", total[1], total[0]);
+		if (!total[0] && !total[1])
+			s_printf(txt_buf, "#96FF00 Done! No change was needed.#");
+		else
+			s_printf(txt_buf, "#96FF00 Done! Archive bits fixed:# #FF8000 %d unset, %d set!#", total[1], total[0]);
 
 		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
