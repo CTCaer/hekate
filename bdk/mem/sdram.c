@@ -36,6 +36,9 @@
 
 #define CONFIG_SDRAM_KEEP_ALIVE
 
+#define DRAM_ID(x) BIT(x)
+#define DRAM_CC(x) BIT(x)
+
 typedef struct _sdram_vendor_patch_t
 {
 	u32 val;
@@ -47,10 +50,10 @@ static const u8 dram_encoding_t210b01[] = {
 /* 00 */	LPDDR4X_UNUSED,
 /* 01 */	LPDDR4X_UNUSED,
 /* 02 */	LPDDR4X_UNUSED,
-/* 03 */	LPDDR4X_4GB_HYNIX_1Y_A,
+/* 03 */	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE,
 /* 04 */	LPDDR4X_UNUSED,
-/* 05 */	LPDDR4X_4GB_HYNIX_1Y_A,
-/* 06 */	LPDDR4X_4GB_HYNIX_1Y_A,
+/* 05 */	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE,
+/* 06 */	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE,
 /* 07 */	LPDDR4X_4GB_SAMSUNG_X1X2,
 /* 08 */	LPDDR4X_NO_PATCH,
 /* 09 */	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ,
@@ -1406,7 +1409,7 @@ void *sdram_get_params_t210b01()
 		return (void *)params;
 
 	for (u32 i = 0; i < ARRAY_SIZE(sdram_cfg_vendor_patches_t210b01); i++)
-		if (sdram_cfg_vendor_patches_t210b01[i].dramcf == dram_code)
+		if (sdram_cfg_vendor_patches_t210b01[i].dramcf & DRAM_CC(dram_code))
 			params[sdram_cfg_vendor_patches_t210b01[i].offset] = sdram_cfg_vendor_patches_t210b01[i].val;
 
 	return (void *)params;

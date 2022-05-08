@@ -17,8 +17,6 @@
 
 #define DRAM_CFG_T210_SIZE 1896
 
-#define DRAM_ID(x) BIT(x)
-
 static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	/* Specifies the type of memory device */
 	.memory_type                                     = MEMORY_TYPE_LPDDR4,

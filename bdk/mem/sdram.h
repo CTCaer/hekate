@@ -60,9 +60,9 @@ enum sdram_ids_erista
 enum sdram_ids_mariko
 {
 	// LPDDR4X 4266Mbps.
-	LPDDR4X_IOWA_4GB_HYNIX_1Y_A                     = 3, // Replaced from Copper.
-	LPDDR4X_HOAG_4GB_HYNIX_1Y_A                     = 5, // Replaced from Copper.
-	LPDDR4X_AULA_4GB_HYNIX_1Y_A                     = 6, // Replaced from Copper.
+	LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 3, // Replaced from Copper. Die-M. (1y-01).
+	LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 5, // Replaced from Copper. Die-M. (1y-01).
+	LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 6, // Replaced from Copper. Die-M. (1y-01).
 
 	// LPDDR4X 3733Mbps.
 	LPDDR4X_IOWA_4GB_SAMSUNG_X1X2                   = 7,
@@ -78,22 +78,22 @@ enum sdram_ids_mariko
 	LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTE = 15, // 4266Mbps. Die-E.
 
 	// LPDDR4X 4266Mbps.
-	LPDDR4X_IOWA_4GB_SAMSUNG_Y                      = 16,
+	LPDDR4X_IOWA_4GB_SAMSUNG_Y                      = 16, // (Y01).
 
-	LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 17, // Die-A.
-	LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 18, // Die-A.
-	LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 19, // Die-A.
+	LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 17, // Die-A. (1y-X03).
+	LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 18, // Die-A. (1y-X03).
+	LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 19, // Die-A. (1y-X03).
 
-	LPDDR4X_IOWA_4GB_SAMSUNG_1Z                     = 20, // 1z nm. 40% lower power usage.
-	LPDDR4X_HOAG_4GB_SAMSUNG_1Z                     = 21, // 1z nm. 40% lower power usage.
-	LPDDR4X_AULA_4GB_SAMSUNG_1Z                     = 22, // 1z nm. 40% lower power usage.
+	LPDDR4X_IOWA_4GB_SAMSUNG_1Z                     = 20, // 1z nm. 40% lower power usage. (1z-B01).
+	LPDDR4X_HOAG_4GB_SAMSUNG_1Z                     = 21, // 1z nm. 40% lower power usage. (1z-B01).
+	LPDDR4X_AULA_4GB_SAMSUNG_1Z                     = 22, // 1z nm. 40% lower power usage. (1z-B01).
 
-	LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 23, // Die-A.
-	LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 24, // Die-A.
+	LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 23, // Die-A. (1y-X03).
+	LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 24, // Die-A. (1y-X03).
 
-	LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF = 25, // 4266Mbps. Die-F.
-	LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF = 26, // 4266Mbps. Die-F.
-	LPDDR4X_AULA_4GB_MICRON_MT53E512M32D2NP_046_WTF = 27, // 4266Mbps. Die-F.
+	LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF = 25, // 4266Mbps. Die-F. D9XRR. 10nm-class (1y-01).
+	LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF = 26, // 4266Mbps. Die-F. D9XRR. 10nm-class (1y-01).
+	LPDDR4X_AULA_4GB_MICRON_MT53E512M32D2NP_046_WTF = 27, // 4266Mbps. Die-F. D9XRR. 10nm-class (1y-01).
 
 	LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 28, // Die-A.
 };
@@ -114,7 +114,7 @@ enum sdram_codes_mariko
 	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 6, // DRAM IDs: 18, 23, 28.
 	LPDDR4X_4GB_SAMSUNG_1Z                     = 7, // DRAM IDs: 20, 21, 22.
 	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF = 8, // DRAM IDs: 25, 26, 27.
-	LPDDR4X_4GB_HYNIX_1Y_A                     = 9, // DRAM IDs: 03, 05, 06.
+	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 9, // DRAM IDs: 03, 05, 06.
 };
 
 void sdram_init();
