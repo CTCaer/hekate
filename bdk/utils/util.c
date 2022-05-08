@@ -75,6 +75,34 @@ char *strcpy_ns(char *dst, char *src)
 	return dst;
 }
 
+// Approximate square root finder for a 64-bit number.
+u64 sqrt64(u64 num)
+{
+	u64 base = 0;
+	u64 limit = num;
+	u64 square_root = 0;
+
+	while (base <= limit)
+	{
+		u64 tmp_sqrt = (base + limit) / 2;
+
+		if (tmp_sqrt * tmp_sqrt == num) {
+			square_root = tmp_sqrt;
+			break;
+		}
+
+		if (tmp_sqrt * tmp_sqrt < num)
+		{
+			square_root = base;
+			base = tmp_sqrt + 1;
+		}
+		else
+			limit = tmp_sqrt - 1;
+	}
+
+	return square_root;
+}
+
 u32 get_tmr_s()
 {
 	return RTC(APBDEV_RTC_SECONDS);
