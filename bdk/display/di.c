@@ -36,6 +36,7 @@
 extern volatile nyx_storage_t *nyx_str;
 
 static u32  _display_id = 0;
+static u32  _dsi_bl = -1;
 static bool _nx_aula = false;
 
 static void _display_panel_and_hw_end(bool no_panel_deinit);
@@ -524,6 +525,7 @@ void display_init()
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x000051; // MIPI_DCS_SET_BRIGHTNESS 0000: 0%. FF07: 100%.
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
+		_dsi_bl = 0;
 		break;
 
 	case PANEL_JDI_XXX062M:
@@ -627,25 +629,33 @@ void display_backlight(bool enable)
 	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); // Backlight PWM GPIO.
 }
 
-void display_dsi_backlight_brightness(u32 brightness)
+static void _display_dsi_backlight_brightness(u32 duty)
 {
-	// Normalize brightness value by 82% and a base of 45 duty.
-	if (brightness)
-		brightness = (brightness * PANEL_OLED_BL_COEFF / 100) + PANEL_OLED_BL_OFFSET;
-
-	u16 bl_ctrl = byte_swap_16((u16)(brightness * 8));
-	display_dsi_vblank_write(MIPI_DCS_SET_BRIGHTNESS, 2, &bl_ctrl);
-}
-
-void display_pwm_backlight_brightness(u32 brightness, u32 step_delay)
-{
-	u32 old_value = (PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF;
-	if (brightness == old_value)
+	if (_dsi_bl == duty)
 		return;
 
-	if (old_value < brightness)
+	// Convert duty to candela.
+	u32 candela = duty * PANEL_SM_BL_CANDELA_MAX / 255;
+
+	u16 bl_ctrl = byte_swap_16((u16)candela);
+	display_dsi_vblank_write(MIPI_DCS_SET_BRIGHTNESS, 2, &bl_ctrl);
+
+	// Wait for backlight to completely turn off. 6+1 frames.
+	if (!duty)
+		usleep(120000);
+
+	_dsi_bl = duty;
+}
+
+static void _display_pwm_backlight_brightness(u32 duty, u32 step_delay)
+{
+	u32 old_value = (PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF;
+	if (duty == old_value)
+		return;
+
+	if (old_value < duty)
 	{
-		for (u32 i = old_value; i < brightness + 1; i++)
+		for (u32 i = old_value; i < duty + 1; i++)
 		{
 			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16);
 			usleep(step_delay);
@@ -653,13 +663,13 @@ void display_pwm_backlight_brightness(u32 brightness, u32 step_delay)
 	}
 	else
 	{
-		for (u32 i = old_value; i > brightness; i--)
+		for (u32 i = old_value; i > duty; i--)
 		{
 			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16);
 			usleep(step_delay);
 		}
 	}
-	if (!brightness)
+	if (!duty)
 		PWM(PWM_CONTROLLER_PWM_CSR_0) = 0;
 }
 
@@ -669,9 +679,9 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 		brightness = 255;
 
 	if (_display_id != PANEL_SAM_AMS699VC01)
-		display_pwm_backlight_brightness(brightness, step_delay);
+		_display_pwm_backlight_brightness(brightness, step_delay);
 	else
-		display_dsi_backlight_brightness(brightness);
+		_display_dsi_backlight_brightness(brightness);
 }
 
 u32 display_get_backlight_brightness()
@@ -838,7 +848,7 @@ void display_color_screen(u32 color)
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		display_backlight(true);
 	else
-		display_backlight_brightness(255, 0);
+		display_backlight_brightness(150, 0);
 }
 
 u32 *display_init_framebuffer_pitch()
