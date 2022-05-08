@@ -560,10 +560,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_AULA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
 			strcpy(dram_man, "Micron MT53E512M32D2NP-046 WT:F");
 			break;
-		case LPDDR4X_IOWA_4GB_HYNIX_1Y_A: // Replaced from Copper.
-		case LPDDR4X_HOAG_4GB_HYNIX_1Y_A: // Replaced from Copper.
-		case LPDDR4X_AULA_4GB_HYNIX_1Y_A: // Replaced from Copper.
-			strcpy(dram_man, "Hynix 1y A 4GB");
+		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
+		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
+		case LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
+			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEE 4GB");
 			break;
 		default:
 			strcpy(dram_man, "#FF8000 Unknown#");
