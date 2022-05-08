@@ -1479,7 +1479,7 @@ void ipl_main()
 
 #ifdef DEBUG_UART_PORT
 	uart_send(DEBUG_UART_PORT, (u8 *)"hekate: Hello!\r\n", 16);
-	uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
+	uart_wait_xfer(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 
 	// Check if battery is enough.

@@ -437,11 +437,11 @@ void ipl_main()
 	#endif
 	pinmux_config_uart(DEBUG_UART_PORT);
 	clock_enable_uart(DEBUG_UART_PORT);
-	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE);
+	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE, UART_AO_TX_AO_RX);
 	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
 
 	uart_send(DEBUG_UART_PORT, (u8 *)"hekate-NYX: Hello!\r\n", 20);
-	uart_wait_idle(DEBUG_UART_PORT, UART_TX_IDLE);
+	uart_wait_xfer(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 
 	// Initialize the rest of hw and load nyx's resources.
