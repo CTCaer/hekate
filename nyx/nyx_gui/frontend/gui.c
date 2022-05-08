@@ -1321,10 +1321,7 @@ static void _update_status_bar(void *params)
 	lv_obj_realign(status_bar.battery);
 
 	// Set battery current draw and voltage.
-	if (batt_curr >= 0)
-		s_printf(label, "#96FF00 +%d", batt_curr / 1000);
-	else
-		s_printf(label, "#FF3C28 -%d", (~batt_curr + 1) / 1000);
+	s_printf(label, "#%s%d", batt_curr >= 0 ? "96FF00 +" : "FF3C28 ", batt_curr / 1000);
 
 	bool voltage_empty = batt_volt < 3200;
 	s_printf(label + strlen(label), " mA# (%s%d mV%s)",

@@ -2162,16 +2162,10 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
 
 	max17050_get_property(MAX17050_Current, &value);
-	if (value >= 0)
-		s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
-	else
-		s_printf(txt_buf + strlen(txt_buf), "-%d mA\n", (~value + 1) / 1000);
+	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
 
 	max17050_get_property(MAX17050_AvgCurrent, &value);
-	if (value >= 0)
-		s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
-	else
-		s_printf(txt_buf + strlen(txt_buf), "-%d mA\n", (~value + 1) / 1000);
+	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
 
 	max17050_get_property(MAX17050_VCELL, &value);
 	bool voltage_empty = value < 3200;
@@ -2191,10 +2185,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
 
 	max17050_get_property(MAX17050_TEMP, &value);
-	if (value >= 0)
-		s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, value % 10);
-	else
-		s_printf(txt_buf + strlen(txt_buf), "-%d.%d oC\n\n\n", (~value + 1) / 10, (~value + 1) % 10);
+	s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, (value >= 0 ? value : (~value + 1)) % 10);
 
 	value = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID4);
 	u32 main_pmic_version = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID3) & 0xF;
