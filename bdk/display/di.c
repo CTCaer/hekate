@@ -246,23 +246,32 @@ int display_dsi_vblank_read(u8 cmd, u32 len, void *data)
 	return res;
 }
 
-void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
+void display_dsi_write(u8 cmd, u32 len, void *data)
 {
+	static u8  *fifo8  = NULL;
 	static u32 *fifo32 = NULL;
-	u8  *fifo8;
 	u32 host_control;
 
 	// Allocate fifo buffer.
 	if (!fifo32)
+	{
 		fifo32 = malloc(DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
+		fifo8 = (u8 *)fifo32;
+	}
 
-	// Enable host cmd packets during video and save host control.
-	if (video_enabled)
-		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE;
+	// Prepare data for long write.
+	if (len >= 2)
+	{
+		memcpy(&fifo8[5], data, len);
+		memset(&fifo8[5] + len, 0, len % sizeof(u32));
+		len++; // Increase length by CMD.
+	}
+
+	// Save host control.
 	host_control = DSI(_DSIREG(DSI_HOST_CONTROL));
 
 	// Enable host transfer trigger.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control | DSI_HOST_CONTROL_TX_TRIG_HOST;
+	DSI(_DSIREG(DSI_HOST_CONTROL)) = (host_control & ~(DSI_HOST_CONTROL_TX_TRIG_MASK)) | DSI_HOST_CONTROL_TX_TRIG_HOST;
 
 	switch (len)
 	{
@@ -275,13 +284,10 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 		break;
 
 	default:
-		memset(fifo32, 0, DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
-		fifo8 = (u8 *)fifo32;
 		fifo32[0] = (len << 8) | MIPI_DSI_DCS_LONG_WRITE;
 		fifo8[4] = cmd;
-		memcpy(&fifo8[5], data, len);
-		len += 4 + 1; // Increase length by CMD/length word and DCS CMD.
-		for (u32 i = 0; i < (ALIGN(len, 4) / 4); i++)
+		len += sizeof(u32); // Increase length by length word and DCS CMD.
+		for (u32 i = 0; i < (ALIGN(len, sizeof(u32)) / sizeof(u32)); i++)
 			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		break;
@@ -290,31 +296,31 @@ void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled)
 	// Wait for the write to happen.
 	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST);
 
-	// Disable host cmd packets during video and restore host control.
-	if (video_enabled)
-		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
+	// Restore host control.
 	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control;
 }
 
 void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 {
+	static u8  *fifo8  = NULL;
 	static u32 *fifo32 = NULL;
-	u8  *fifo8;
 
 	// Allocate fifo buffer.
 	if (!fifo32)
+	{
 		fifo32 = malloc(DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
+		fifo8 = (u8 *)fifo32;
+	}
 
-	// Enable vblank interrupt.
-	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = DC_CMD_INT_FRAME_END_INT;
+	// Prepare data for long write.
+	if (len >= 2)
+	{
+		memcpy(&fifo8[5], data, len);
+		memset(&fifo8[5] + len, 0, len % sizeof(u32));
+		len++; // Increase length by CMD.
+	}
 
-	// Use the 4th line to transmit the host cmd packet.
-	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE | DSI_DSI_LINE_TYPE(4);
-
-	// Wait for vblank before starting the transfer.
-	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
-		;
+	_display_dsi_wait_vblank(true);
 
 	switch (len)
 	{
@@ -327,36 +333,15 @@ void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 		break;
 
 	default:
-		memset(fifo32, 0, DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
-		fifo8 = (u8 *)fifo32;
 		fifo32[0] = (len << 8) | MIPI_DSI_DCS_LONG_WRITE;
 		fifo8[4] = cmd;
-		memcpy(&fifo8[5], data, len);
-		len += 4 + 1; // Increase length by CMD/length word and DCS CMD.
-		for (u32 i = 0; i < (ALIGN(len, 4) / 4); i++)
+		len += sizeof(u32); // Increase length by length word and DCS CMD.
+		for (u32 i = 0; i < (ALIGN(len, sizeof(u32)) / sizeof(u32)); i++)
 			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
 		break;
 	}
 
-	// Wait for vblank before reseting sync points.
-	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
-		;
-
-	// Reset all states of syncpt block.
-	DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = DSI_INCR_SYNCPT_SOFT_RESET;
-	usleep(300); // Stabilization delay.
-
-	// Clear syncpt block reset.
-	DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = 0;
-	usleep(300); // Stabilization delay.
-
-	// Restore video mode and host control.
-	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
-
-	// Disable and clear vblank interrupt.
-	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = 0;
-	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT;
+	_display_dsi_wait_vblank(false);
 }
 
 void display_init()
