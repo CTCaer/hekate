@@ -96,6 +96,11 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 		lv_label_set_text(labels[0], path);
 
 	dirLength = strlen(path);
+
+	// Hard limit path to 1024 characters. Do not result to error.
+	if (dirLength > 1024)
+		goto out;
+
 	for (;;)
 	{
 		// Clear file path.
@@ -205,6 +210,7 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 		}
 	}
 
+out:
 	f_closedir(&dir);
 
 	return res;
@@ -1359,7 +1365,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	sd_mount();
 
 	FATFS ram_fs;
-	char *path = malloc(1024);
+	char *path = malloc(0x1000);
 	u32 total_files = 0;
 	u32 total_size = 0;
 
@@ -1907,7 +1913,7 @@ static void create_mbox_check_files_total_size()
 	lv_obj_set_top(mbox, true);
 	manual_system_maintenance(true);
 
-	char *path = malloc(1024);
+	char *path = malloc(0x1000);
 	u32 total_files = 0;
 	u32 total_size = 0;
 	path[0] = 0;
