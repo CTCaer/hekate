@@ -57,34 +57,10 @@ static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
 		usleep(wait);
 }
 
-static void _display_dsi_read_rx_fifo(u32 *data)
+static void _display_dsi_wait_vblank(bool enable)
 {
-	u32 fifo_count = DSI(_DSIREG(DSI_STATUS)) & DSI_STATUS_RX_FIFO_SIZE;
-	for (u32 i = 0; i < fifo_count; i++)
+	if (enable)
 	{
-		// Read or Drain RX FIFO.
-		if (data)
-			data[i] = DSI(_DSIREG(DSI_RD_DATA));
-		else
-			(void)DSI(_DSIREG(DSI_RD_DATA));
-	}
-}
-
-int display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled)
-{
-	int res = 0;
-	u32 host_control = 0;
-	u32 cmd_timeout = video_enabled ? 0 : 250000;
-	u32 fifo[DSI_STATUS_RX_FIFO_SIZE] = {0};
-
-	// Drain RX FIFO.
-	_display_dsi_read_rx_fifo(NULL);
-
-	// Save host control and enable host cmd packets during video.
-	if (video_enabled)
-	{
-		host_control = DSI(_DSIREG(DSI_HOST_CONTROL));
-
 		// Enable vblank interrupt.
 		DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = DC_CMD_INT_FRAME_END_INT;
 
@@ -96,18 +72,67 @@ int display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled)
 		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
 			;
 	}
+	else
+	{
+		// Wait for vblank before reseting sync points.
+		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
+		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
+			;
+		usleep(14);
+
+		// Reset all states of syncpt block.
+		DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = DSI_INCR_SYNCPT_SOFT_RESET;
+		usleep(300); // Stabilization delay.
+
+		// Clear syncpt block reset.
+		DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = 0;
+		usleep(300); // Stabilization delay.
+
+		// Restore video mode and host control.
+		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
+
+		// Disable and clear vblank interrupt.
+		DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = 0;
+		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT;
+	}
+}
+
+static void _display_dsi_read_rx_fifo(u32 *data)
+{
+	u32 fifo_count = DSI(_DSIREG(DSI_STATUS)) & DSI_STATUS_RX_FIFO_SIZE;
+	if (fifo_count)
+		DSI(_DSIREG(DSI_TRIGGER)) = 0;
+
+	for (u32 i = 0; i < fifo_count; i++)
+	{
+		// Read or Drain RX FIFO.
+		if (data)
+			data[i] = DSI(_DSIREG(DSI_RD_DATA));
+		else
+			(void)DSI(_DSIREG(DSI_RD_DATA));
+	}
+}
+
+int display_dsi_read(u8 cmd, u32 len, void *data)
+{
+	int res = 0;
+	u32 fifo[DSI_STATUS_RX_FIFO_SIZE] = {0};
+
+	// Drain RX FIFO.
+	_display_dsi_read_rx_fifo(NULL);
 
 	// Set reply size.
 	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, len, 0);
-	_display_dsi_wait(cmd_timeout, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	// Request register read.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, cmd, 0);
-	_display_dsi_wait(cmd_timeout, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	// Transfer bus control to device for transmitting the reply.
-	u32 high_speed = video_enabled ? DSI_HOST_CONTROL_HS : 0;
-	DSI(_DSIREG(DSI_HOST_CONTROL)) = DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_IMM_BTA | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC | high_speed;
+	DSI(_DSIREG(DSI_HOST_CONTROL)) |= DSI_HOST_CONTROL_IMM_BTA;
+
+	// Wait for reply to complete. DSI_HOST_CONTROL_IMM_BTA bit acts as a DSI host read busy.
 	_display_dsi_wait(150000, _DSIREG(DSI_HOST_CONTROL), DSI_HOST_CONTROL_IMM_BTA);
 
 	// Wait a bit for the reply.
@@ -146,30 +171,77 @@ int display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled)
 	else
 		res = 1;
 
-	// Disable host cmd packets during video and restore host control.
-	if (video_enabled)
+	return res;
+}
+
+int display_dsi_vblank_read(u8 cmd, u32 len, void *data)
+{
+	int res = 0;
+	u32 host_control = 0;
+	u32 fifo[DSI_STATUS_RX_FIFO_SIZE] = {0};
+
+	// Drain RX FIFO.
+	_display_dsi_read_rx_fifo(NULL);
+
+	// Save host control and enable host cmd packets during video.
+	host_control = DSI(_DSIREG(DSI_HOST_CONTROL));
+
+	_display_dsi_wait_vblank(true);
+
+	// Set reply size.
+	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, len, 0);
+	_display_dsi_wait(0, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+
+	// Request register read.
+	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, cmd, 0);
+	_display_dsi_wait(0, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+
+	_display_dsi_wait_vblank(false);
+
+	// Transfer bus control to device for transmitting the reply.
+	DSI(_DSIREG(DSI_HOST_CONTROL)) |= DSI_HOST_CONTROL_IMM_BTA;
+
+	// Wait for reply to complete. DSI_HOST_CONTROL_IMM_BTA bit acts as a DSI host read busy.
+	_display_dsi_wait(150000, _DSIREG(DSI_HOST_CONTROL), DSI_HOST_CONTROL_IMM_BTA);
+
+	// Wait a bit for the reply.
+	usleep(5000);
+
+	// Read RX FIFO.
+	_display_dsi_read_rx_fifo(fifo);
+
+	// Parse packet and copy over the data.
+	if ((fifo[0] & 0xFF) == DSI_ESCAPE_CMD)
 	{
-		// Wait for vblank before reseting sync points.
-		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
-			;
+		// Act based on reply type.
+		switch (fifo[1] & 0xFF)
+		{
+		case GEN_LONG_RD_RES:
+		case DCS_LONG_RD_RES:
+			memcpy(data, &fifo[2], MIN((fifo[1] >> 8) & 0xFFFF, len));
+			break;
 
-		// Reset all states of syncpt block.
-		DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = DSI_INCR_SYNCPT_SOFT_RESET;
-		usleep(300); // Stabilization delay.
+		case GEN_1_BYTE_SHORT_RD_RES:
+		case DCS_1_BYTE_SHORT_RD_RES:
+			memcpy(data, &fifo[2], 1);
+			break;
 
-		// Clear syncpt block reset.
-		DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = 0;
-		usleep(300); // Stabilization delay.
+		case GEN_2_BYTE_SHORT_RD_RES:
+		case DCS_2_BYTE_SHORT_RD_RES:
+			memcpy(data, &fifo[2], 2);
+			break;
 
-		// Restore video mode and host control.
-		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
-		DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control;
-
-		// Disable and clear vblank interrupt.
-		DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = 0;
-		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT;
+		case ACK_ERROR_RES:
+		default:
+			res = 1;
+			break;
+		}
 	}
+	else
+		res = 1;
+
+	// Restore host control.
+	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control;
 
 	return res;
 }
@@ -425,7 +497,7 @@ void display_init()
 	_display_id = 0xCCCCCC;
 	for (u32 i = 0; i < 3; i++)
 	{
-		if (!display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_display_id, DSI_VIDEO_DISABLED))
+		if (!display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_display_id))
 			break;
 
 		usleep(10000);

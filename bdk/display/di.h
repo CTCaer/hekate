@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -737,7 +737,8 @@ void display_init_cursor(void *crs_fb, u32 size);
 void display_set_pos_cursor(u32 x, u32 y);
 void display_deinit_cursor();
 
+int  display_dsi_read(u8 cmd, u32 len, void *data);
+int  display_dsi_vblank_read(u8 cmd, u32 len, void *data);
 void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled);
-int  display_dsi_read(u8 cmd, u32 len, void *data, bool video_enabled);
 
 #endif
