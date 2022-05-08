@@ -311,12 +311,12 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		"#FF8000 Serial Number:#     %s\n"
 		"#FF8000 WLAN MAC:#          %02X:%02X:%02X:%02X:%02X:%02X\n"
 		"#FF8000 Bluetooth MAC:#     %02X:%02X:%02X:%02X:%02X:%02X\n"
-		"#FF8000 Battery LOT:#       %s\n"
+		"#FF8000 Battery LOT:#       %s (%d)\n"
 		"#FF8000 LCD Vendor:#        ",
 		cal0->version, cal0->update_cnt, cal0->serial_number,
 		cal0->wlan_mac[0], cal0->wlan_mac[1], cal0->wlan_mac[2], cal0->wlan_mac[3], cal0->wlan_mac[4], cal0->wlan_mac[5],
 		cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5],
-		cal0->battery_lot);
+		cal0->battery_lot, cal0->battery_ver);
 
 	u8  display_rev = (cal0->lcd_vendor >> 8) & 0xFF;
 	u32 display_id = (cal0->lcd_vendor & 0xFF) << 8 | (cal0->lcd_vendor & 0xFF0000) >> 16;
@@ -350,6 +350,9 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		strcat(txt_buf, "AUO A062TAN0");
 		switch (display_rev)
 		{
+		case 0x93:
+			strcat(txt_buf, "0");
+			break;
 		case 0x94:
 			strcat(txt_buf, "1");
 			break;
@@ -839,6 +842,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "AUO A062");
 		switch (display_rev)
 		{
+		case 0x93:
+			strcat(txt_buf, "TAN00");
+			break;
 		case 0x94:
 			strcat(txt_buf, "TAN01");
 			break;
