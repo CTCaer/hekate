@@ -497,8 +497,29 @@ void display_init()
 	{
 	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
-		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, 0xA0, 0); // Write 0 to 0xA0.
-		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_SET_CONTROL_DISPLAY | (DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL << 8), 0); // Enable brightness control.
+		// Set color mode to natural. Stock is Default (0x00) which is VIVID (0x65). (Reset value is 0x20).
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_NATURAL << 8), 0);
+		// Enable backlight and smooth PWM.
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
+							  MIPI_DCS_SET_CONTROL_DISPLAY | ((DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL | DCS_CONTROL_DISPLAY_DIMMING_CTRL) << 8), 0);
+
+		// Unlock Level 2 registers.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x5A5A5AE2; // MIPI_DCS_PRIV_SM_SET_REGS_LOCK: Unlock Level 2 registers.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x5A;
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+
+		// Set registers offset and set PWM transition to 6 frames (100ms).
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_REG_OFFSET | (7 << 8), 0);
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_ELVSS | (6 << 8), 0);
+
+		// Relock Level 2 registers.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0xA55A5AE2; // MIPI_DCS_PRIV_SM_SET_REGS_LOCK: Lock Level 2 registers.
+		DSI(_DSIREG(DSI_WR_DATA)) = 0xA5;
+		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+
+		// Set backlight to 0%.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x339;    // MIPI_DSI_DCS_LONG_WRITE: 3 bytes.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x000051; // MIPI_DCS_SET_BRIGHTNESS 0000: 0%. FF07: 100%.
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;

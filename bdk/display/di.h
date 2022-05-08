@@ -644,6 +644,7 @@
 #define MIPI_DCS_GET_SCANLINE          0x45
 #define MIPI_DCS_SET_TEAR_SCANLINE_WIDTH 0x46
 #define MIPI_DCS_GET_SCANLINE_WIDTH    0x47
+#define MIPI_DSI_AREA_COLOR_MODE       0x4C
 #define MIPI_DCS_SET_BRIGHTNESS        0x51 // DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL. 1 byte. 0-7: DBV.
 #define MIPI_DCS_GET_BRIGHTNESS        0x52 // 1 byte. 0-7: DBV.
 #define MIPI_DCS_SET_CONTROL_DISPLAY   0x53 // 1 byte. 2: BL, 3: DD, 5: BCTRL.
@@ -657,7 +658,9 @@
 #define MIPI_DCS_READ_DDB_CONTINUE     0xA8 // 0x100 size.
 
 /*! MIPI DCS Panel Private CMDs. */
-#define MIPI_DCS_PRIV_UNK_A0            0xA0
+#define MIPI_DCS_PRIV_SM_SET_COLOR_MODE 0xA0
+#define MIPI_DCS_PRIV_SM_SET_REG_OFFSET 0xB0
+#define MIPI_DCS_PRIV_SM_SET_ELVSS      0xB1 // OLED backlight tuning. Byte7: PWM transition time in frames.
 #define MIPI_DCS_PRIV_SET_POWER_CONTROL 0xB1
 #define MIPI_DCS_PRIV_SET_EXTC          0xB9 // Enable extended commands.
 #define MIPI_DCS_PRIV_UNK_BD            0xBD
@@ -665,6 +668,8 @@
 #define MIPI_DCS_PRIV_UNK_D6            0xD6
 #define MIPI_DCS_PRIV_UNK_D8            0xD8
 #define MIPI_DCS_PRIV_UNK_D9            0xD9
+                                             //                          LVL1 LVL2 LVL3 UNK0 UNK1
+#define MIPI_DCS_PRIV_SM_SET_REGS_LOCK  0xE2 // Samsung: Lock (default): 5A5A A5A5 A5A5 A500 A500. Unlock: A5A5 5A5A 5A5A UNK UNK.
 #define MIPI_DCS_PRIV_READ_EXTC_CMD_SPI 0xFE // Read EXTC Command In SPI. 1 byte. 0-6: EXT_SPI_CNT, 7:EXT_SP.
 #define MIPI_DCS_PRIV_SET_EXTC_CMD_REG  0xFF // EXTC Command Set enable register. 5 bytes. Pass: FF 98 06 04, PAGE.
 
@@ -699,12 +704,23 @@
 #define DCS_GAMMA_CURVE_GC2_1_0             BIT(2)
 #define DCS_GAMMA_CURVE_GC3_1_0             BIT(3) // Are there more?
 
+#define DCS_CONTROL_DISPLAY_SM_FLASHLIGHT   BIT(2)
 #define DCS_CONTROL_DISPLAY_BACKLIGHT_CTRL  BIT(2)
 #define DCS_CONTROL_DISPLAY_DIMMING_CTRL    BIT(3)
 #define DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL BIT(5)
 
-#define PANEL_OLED_BL_COEFF  82 // 82%.
-#define PANEL_OLED_BL_OFFSET 45 // Least legible backlight duty.
+#define DCS_SM_COLOR_MODE_DEFAULT   0x00 // Same with vivid.
+#define DCS_SM_COLOR_MODE_BASIC     0x03
+#define DCS_SM_COLOR_MODE_POR_RESET 0x20 // Reset value on power on.
+#define DCS_SM_COLOR_MODE_NATURAL   0x23
+#define DCS_SM_COLOR_MODE_VIVID     0x65
+#define DCS_SM_COLOR_MODE_NIGHT     0x23 // Basic with Night mode.
+
+#define DCS_SM_COLOR_MODE_ENABLE     BIT(0)
+#define DCS_SM_COLOR_MODE_COLOR_MASK (7 << 1)
+//#define DCS_SM_COLOR_MODE_NIGHT      BIT(6)
+
+#define PANEL_SM_BL_CANDELA_MAX 2047
 
 /* Switch Panels:
  *
@@ -716,12 +732,15 @@
  * [20] 96 [0F]: InnoLux P062CCA-AZ3 [UNCONFIRMED MODEL REV]
  * [20] 97 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
  * [20] 98 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
+ * [30] 93 [0F]: AUO A062TAN00 (59.06A33.000)
  * [30] 94 [0F]: AUO A062TAN01 (59.06A33.001)
  * [30] 95 [0F]: AUO A062TAN02 (59.06A33.002)
  * [30] XX [0F]: AUO A062TAN03 (59.06A33.003) [UNCONFIRMED ID]
  *
  * 5.5" panels for Hoag SKUs:
  * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1)
+ * [20] 95 [10]: InnoLux 2J055IA-27A (Rev B1) [UNCONFIRMED MODEL REV]
+ * [20] 96 [10]: InnoLux 2J055IA-27A (Rev B1) [UNCONFIRMED MODEL REV]
  * [30] 93 [10]: AUO A055TAN01 (59.05A30.001)
  * [40] XX [10]: Vendor 40 [UNCONFIRMED ID]
  *
@@ -790,6 +809,7 @@ void display_deinit_cursor();
 
 int  display_dsi_read(u8 cmd, u32 len, void *data);
 int  display_dsi_vblank_read(u8 cmd, u32 len, void *data);
-void display_dsi_write(u8 cmd, u32 len, void *data, bool video_enabled);
+void display_dsi_write(u8 cmd, u32 len, void *data);
+void display_dsi_vblank_write(u8 cmd, u32 len, void *data);
 
 #endif
