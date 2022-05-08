@@ -48,18 +48,25 @@ void regulator_5v_enable(u8 dev)
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
 		}
 
-		// Enable GPIO AO IO rail for T210.
-		if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
-		{
-			// Make sure GPIO power is enabled.
-			PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_GPIO_IO_EN;
-			(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
+		// Make sure GPIO IO power is enabled.
+		PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_GPIO_IO_EN;
+		(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
 
-			// Override power detect for GPIO AO IO rails.
-			PMC(APBDEV_PMC_PWR_DET_VAL) &= ~PMC_PWR_DET_GPIO_IO_EN;
-			(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
-		}
+		// Override power detect for GPIO AO IO rails.
+		PMC(APBDEV_PMC_PWR_DET_VAL) &= ~PMC_PWR_DET_GPIO_IO_EN;
+		(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
+
 		usb_src = false;
+
+		// Fan regulator 5V for Hoag/Aula.
+		if (hw_type == FUSE_NX_HW_TYPE_HOAG ||
+			hw_type == FUSE_NX_HW_TYPE_AULA)
+		{
+			PINMUX_AUX(PINMUX_AUX_ALS_PROX_INT) = PINMUX_PULL_DOWN;
+			gpio_config(GPIO_PORT_X, GPIO_PIN_3, GPIO_MODE_GPIO);
+			gpio_output_enable(GPIO_PORT_X, GPIO_PIN_3, GPIO_OUTPUT_ENABLE);
+			gpio_write(GPIO_PORT_X, GPIO_PIN_3, GPIO_HIGH);
+		}
 	}
 	reg_5v_dev |= dev;
 }
@@ -72,9 +79,6 @@ void regulator_5v_disable(u8 dev)
 	{
 		// Rail power from battery 5V regulator.
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_LOW);
-		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_DISABLE);
-		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_SPIO);
-		PINMUX_AUX(PINMUX_AUX_SATA_LED_ACTIVE) = PINMUX_PARKED | PINMUX_INPUT_ENABLE;
 
 		// Only Icosa and Iowa have USB 5V VBUS rails. Skip on Hoag/Aula.
 		u32 hw_type = fuse_read_hw_type();
@@ -83,19 +87,14 @@ void regulator_5v_disable(u8 dev)
 		{
 			// Rail power from USB 5V VBUS.
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
-			gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_4, GPIO_OUTPUT_DISABLE);
-			gpio_config(GPIO_PORT_CC, GPIO_PIN_4, GPIO_MODE_SPIO);
-			PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = PINMUX_IO_HV | PINMUX_LPDR | PINMUX_PARKED | PINMUX_INPUT_ENABLE;
 			usb_src = false;
 
 		}
 
-		// GPIO AO IO rails.
-		if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
-		{
-			PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_GPIO_IO_EN;
-			(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
-		}
+		// Fan regulator 5V for Hoag/Aula.
+		if (hw_type == FUSE_NX_HW_TYPE_HOAG ||
+			hw_type == FUSE_NX_HW_TYPE_AULA)
+			gpio_write(GPIO_PORT_X, GPIO_PIN_3, GPIO_LOW);
 	}
 }
 
