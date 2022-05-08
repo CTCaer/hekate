@@ -227,7 +227,7 @@ static u8 jc_crc(u8 *data, u16 len)
 void joycon_send_raw(u8 uart_port, const u8 *buf, u16 size)
 {
 	uart_send(uart_port, buf, size);
-	uart_wait_idle(uart_port, UART_TX_IDLE);
+	uart_wait_xfer(uart_port, UART_TX_IDLE);
 }
 
 static u16 jc_packet_add_uart_hdr(jc_wired_hdr_t *out, u8 wired_cmd, u8 *data, u16 size, bool crc)
@@ -741,7 +741,8 @@ static void jc_init_conn(joycon_ctxt_t *jc)
 			gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 		}
 
-		uart_init(jc->uart, 1000000);
+		// Initialize uart to 1 megabaud and manual RTS.
+		uart_init(jc->uart, 1000000, UART_AO_TX_MN_RX);
 		uart_invert(jc->uart, true, UART_INVERT_TXD);
 		uart_set_IIR(jc->uart);
 

@@ -102,7 +102,7 @@ static void _config_gpios(bool nx_hoag)
 		PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
 		PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
 
-		// Set pin mode for UARTB/C TX pins.
+		// Turn Joy-Con detect on. (GPIO mode for UARTB/C TX pins.)
 #if !defined (DEBUG_UART_PORT) || DEBUG_UART_PORT != UART_B
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
 #endif
@@ -179,7 +179,7 @@ static void _mbist_workaround()
 	I2S(I2S5_CG)   &= ~I2S_CG_SLCG_ENABLE;
 
 	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= 4; // DSC_SLCG_OVERRIDE.
-	VIC(0x8C) = 0xFFFFFFFF;
+	VIC(0x8C) = 0xFFFFFFFF; // NV_PVIC_THI_CONFIG0.
 	usleep(2);
 
 	// Set per-clock reset for APE/VIC/HOST1X/DISP1.
@@ -361,7 +361,7 @@ void hw_init()
 
 #ifdef DEBUG_UART_PORT
 	clock_enable_uart(DEBUG_UART_PORT);
-	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE);
+	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE, UART_AO_TX_AO_RX);
 	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
 #endif
 
@@ -378,7 +378,7 @@ void hw_init()
 	// Initialize I2C5, mandatory for PMIC.
 	i2c_init(I2C_5);
 
-	//! TODO: Why? Device is NFC MCU on Lite.
+	// Power up Joycon MCU (Sio) on Hoag as it's required for I2C1 communication.
 	if (nx_hoag)
 	{
 		max7762x_regulator_set_voltage(REGULATOR_LDO8, 2800000);

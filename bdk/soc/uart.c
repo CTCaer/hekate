@@ -23,12 +23,13 @@
 /* UART A, B, C, D and E. */
 static const u32 uart_baseoff[5] = { 0, 0x40, 0x200, 0x300, 0x400 };
 
-void uart_init(u32 idx, u32 baud)
+void uart_init(u32 idx, u32 baud, u32 mode)
 {
 	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
 
 	// Make sure no data is being sent.
-	uart_wait_idle(idx, UART_TX_IDLE);
+	if (!(mode & (UART_MCR_CTS_EN | UART_MCR_DTR)))
+		uart_wait_xfer(idx, UART_TX_IDLE);
 
 	// Set clock.
 	bool clk_type = clock_uart_use_src_div(idx, baud);
@@ -39,7 +40,8 @@ void uart_init(u32 idx, u32 baud)
 	uart->UART_LCR = UART_LCR_DLAB | UART_LCR_WORD_LENGTH_8; // Enable DLAB & set 8n1 mode.
 	uart->UART_THR_DLAB = (u8)div; // Divisor latch LSB.
 	uart->UART_IER_DLAB = (u8)(div >> 8); // Divisor latch MSB.
-	uart->UART_LCR = UART_LCR_WORD_LENGTH_8; // Disable DLAB.
+	// Disable DLAB and set 2 STOP bits (reduced efficiency but less errors on high baudrates).
+	uart->UART_LCR = UART_LCR_STOP | UART_LCR_WORD_LENGTH_8;
 	(void)uart->UART_SPR;
 
 	// Setup and flush fifo.
@@ -50,12 +52,14 @@ void uart_init(u32 idx, u32 baud)
 	usleep(96);
 	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | UART_IIR_FCR_TX_CLR | UART_IIR_FCR_RX_CLR;
 
+	uart->UART_MCR = mode;
+
 	// Wait 3 symbols for baudrate change.
 	usleep(3 * ((baud + 999999) / baud));
-	uart_wait_idle(idx, UART_TX_IDLE | UART_RX_IDLE);
+	uart_wait_xfer(idx, UART_TX_IDLE | UART_RX_RDYR);
 }
 
-void uart_wait_idle(u32 idx, u32 which)
+void uart_wait_xfer(u32 idx, u32 which)
 {
 	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
 	if (UART_TX_IDLE & which)
@@ -63,10 +67,10 @@ void uart_wait_idle(u32 idx, u32 which)
 		while (!(uart->UART_LSR & UART_LSR_TMTY))
 			;
 	}
-	if (UART_RX_IDLE & which)
+	if (UART_RX_RDYR & which)
 	{
 		while (uart->UART_LSR & UART_LSR_RDR)
-			;
+			(void)uart->UART_THR_DLAB;
 	}
 }
 
@@ -85,26 +89,31 @@ void uart_send(u32 idx, const u8 *buf, u32 len)
 u32 uart_recv(u32 idx, u8 *buf, u32 len)
 {
 	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	bool manual_mode = uart->UART_MCR & UART_MCR_RTS;
 	u32 timeout = get_tmr_us() + 250;
 	u32 i;
 
+	if (manual_mode)
+		uart->UART_MCR &= ~UART_MCR_RTS;
+
 	for (i = 0; ; i++)
 	{
-		while (!(uart->UART_LSR & UART_LSR_RDR))
-		{
-			if (timeout < get_tmr_us())
-				break;
-			if (len && len < i)
-				break;
-		}
-		if (timeout < get_tmr_us())
+		if (len && len <= i)
 			break;
+
+		while (!(uart->UART_LSR & UART_LSR_RDR))
+			if (timeout < get_tmr_us())
+				goto out;
 
 		buf[i] = uart->UART_THR_DLAB;
 		timeout = get_tmr_us() + 250;
 	}
 
-	return i ? (len ? (i - 1) : i) : 0;
+out:
+	if (manual_mode)
+		uart->UART_MCR |= UART_MCR_RTS;
+
+	return i;
 }
 
 void uart_invert(u32 idx, bool enable, u32 invert_mask)
@@ -115,6 +124,14 @@ void uart_invert(u32 idx, bool enable, u32 invert_mask)
 		uart->UART_IRDA_CSR |= invert_mask;
 	else
 		uart->UART_IRDA_CSR &= ~invert_mask;
+	(void)uart->UART_SPR;
+}
+
+void uart_set_mode(u32 idx, u32 mode)
+{
+	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+
+	uart->UART_MCR = mode;
 	(void)uart->UART_SPR;
 }
 
