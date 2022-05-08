@@ -15,8 +15,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//Display A config.
-static const cfg_op_t _display_dc_setup_win_config[94] = {
+// Display A config.
+static const cfg_op_t _di_dc_setup_win_config[] = {
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
@@ -119,18 +119,18 @@ static const cfg_op_t _display_dc_setup_win_config[94] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ}
 };
 
-//DSI Init config.
-static const cfg_op_t _display_dsi_init_config_part1[8] = {
+// DSI Init config.
+static const cfg_op_t _di_dsi_init_irq_pkt_config0[] = {
 	{DSI_WR_DATA, 0},
 	{DSI_INT_ENABLE, 0},
 	{DSI_INT_STATUS, 0},
-	{DSI_INT_MASK, 0},
+	{DSI_INT_MASK,   0},
 	{DSI_INIT_SEQ_DATA_0, 0},
 	{DSI_INIT_SEQ_DATA_1, 0},
 	{DSI_INIT_SEQ_DATA_2, 0},
 	{DSI_INIT_SEQ_DATA_3, 0}
 };
-static const cfg_op_t _display_dsi_init_config_part2[14] = {
+static const cfg_op_t _di_dsi_init_irq_pkt_config1[] = {
 	{DSI_DCS_CMDS, 0},
 	{DSI_PKT_SEQ_0_LO, 0},
 	{DSI_PKT_SEQ_1_LO, 0},
@@ -146,7 +146,7 @@ static const cfg_op_t _display_dsi_init_config_part2[14] = {
 	{DSI_PKT_SEQ_5_HI, 0},
 	{DSI_CONTROL, 0}
 };
-static const cfg_op_t _display_dsi_init_config_part3_t210b01[7] = {
+static const cfg_op_t _di_dsi_init_pads_t210b01[] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PAD_CONTROL_2, 0},
 	{DSI_PAD_CONTROL_3, 0},
@@ -155,10 +155,10 @@ static const cfg_op_t _display_dsi_init_config_part3_t210b01[7] = {
 	{DSI_PAD_CONTROL_6_B01, 0},
 	{DSI_PAD_CONTROL_7_B01, 0}
 };
-static const cfg_op_t _display_dsi_init_config_part4[10] = {
+static const cfg_op_t _di_dsi_init_timing_pkt_config2[] = {
 	{DSI_PAD_CONTROL_CD, 0},
-	{DSI_SOL_DELAY, 0x18},
-	{DSI_MAX_THRESHOLD, 0x1E0},
+	{DSI_SOL_DELAY,     24},
+	{DSI_MAX_THRESHOLD, 480},
 	{DSI_TRIGGER, 0},
 	{DSI_INIT_SEQ_CONTROL, 0},
 	{DSI_PKT_LEN_0_1, 0},
@@ -167,12 +167,12 @@ static const cfg_op_t _display_dsi_init_config_part4[10] = {
 	{DSI_PKT_LEN_6_7, 0},
 	{DSI_PAD_CONTROL_1, 0}
 };
-static const cfg_op_t _display_dsi_init_config_part5[12] = {
+static const cfg_op_t _di_dsi_init_timing_pwrctrl_config[] = {
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30109},
-	{DSI_BTA_TIMING, 0x190A14},
+	{DSI_BTA_TIMING,   0x190A14},
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
-	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x765) | DSI_TIMEOUT_TA(0x2000)},
+	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x765)   | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
 	{DSI_PAD_CONTROL_0, DSI_PAD_CONTROL_VS1_PULLDN(0) | DSI_PAD_CONTROL_VS1_PDIO(0)}, // Enable
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
@@ -181,25 +181,25 @@ static const cfg_op_t _display_dsi_init_config_part5[12] = {
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0}
 };
-static const cfg_op_t _display_dsi_init_config_part6[14] = {
+static const cfg_op_t _di_dsi_init_timing_pkt_config3[] = {
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
-	{DSI_BTA_TIMING, 0x190A14},
+	{DSI_BTA_TIMING,   0x190A14},
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
-	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343) | DSI_TIMEOUT_TA(0x2000)},
+	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
 	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CRC_RESET | DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
 	{DSI_CONTROL, DSI_CONTROL_LANES(3) | DSI_CONTROL_HOST_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
-	{DSI_MAX_THRESHOLD, 0x40},
+	{DSI_MAX_THRESHOLD, 64},
 	{DSI_TRIGGER, 0},
 	{DSI_TX_CRC, 0},
 	{DSI_INIT_SEQ_CONTROL, 0}
 };
 
-//DSI panel config.
-static const cfg_op_t _display_init_config_jdi[43] = {
+// DSI panel JDI config.
+static const cfg_op_t _di_dsi_panel_init_config_jdi[] = {
 	{DSI_WR_DATA, 0x0439},     // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -245,13 +245,13 @@ static const cfg_op_t _display_init_config_jdi[43] = {
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
-//DSI packet config.
-static const cfg_op_t _display_dsi_packet_config[19] = {
+// DSI packet config.
+static const cfg_op_t _di_dsi_init_seq_pkt_final_config[] = {
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30172},
-	{DSI_BTA_TIMING, 0x190A14},
+	{DSI_BTA_TIMING,   0x190A14},
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xA40)},
-	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x5A2F) | DSI_TIMEOUT_TA(0x2000)},
+	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x5A2F)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
 	{DSI_PKT_SEQ_0_LO, 0x40000208},
 	{DSI_PKT_SEQ_2_LO, 0x40000308},
@@ -261,66 +261,66 @@ static const cfg_op_t _display_dsi_packet_config[19] = {
 	{DSI_PKT_SEQ_3_HI, 0x2CC},
 	{DSI_PKT_SEQ_5_LO, 0x3F3B2B08},
 	{DSI_PKT_SEQ_5_HI, 0x2CC},
-	{DSI_PKT_LEN_0_1, 0xCE0000},
-	{DSI_PKT_LEN_2_3, 0x87001A2},
-	{DSI_PKT_LEN_4_5, 0x190},
-	{DSI_PKT_LEN_6_7, 0x190},
+	{DSI_PKT_LEN_0_1, PKT1_LEN(206)  | PKT0_LEN(0)},
+	{DSI_PKT_LEN_2_3, PKT1_LEN(2160) | PKT0_LEN(418)},
+	{DSI_PKT_LEN_4_5, PKT1_LEN(0)    | PKT0_LEN(400)},
+	{DSI_PKT_LEN_6_7, PKT1_LEN(0)    | PKT0_LEN(400)},
 	{DSI_HOST_CONTROL, 0}
 };
 
-//DSI mode config.
-static const cfg_op_t _display_dsi_mode_config[10] = {
+// DSI mode config.
+static const cfg_op_t _di_dsi_mode_config[] = {
 	{DSI_TRIGGER, 0},
 	{DSI_CONTROL, 0},
 	{DSI_SOL_DELAY, 6},
-	{DSI_MAX_THRESHOLD, 0x1E0},
+	{DSI_MAX_THRESHOLD, 480},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_CONTROL, DSI_CONTROL_HS_CLK_CTRL | DSI_CONTROL_FORMAT(3) | DSI_CONTROL_LANES(3) | DSI_CONTROL_VIDEO_ENABLE},
-	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_HS | DSI_HOST_CONTROL_FIFO_SEL| DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
+	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_HS | DSI_HOST_CONTROL_FIFO_SEL | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
 	{DSI_CONTROL, DSI_CONTROL_HS_CLK_CTRL | DSI_CONTROL_FORMAT(3) | DSI_CONTROL_LANES(3) | DSI_CONTROL_VIDEO_ENABLE},
-	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
-	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_HS | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC}
+	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_TX_TRIG_SOL | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
+	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_HS | DSI_HOST_CONTROL_TX_TRIG_SOL | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC}
 };
 
-//MIPI CAL config.
-static const cfg_op_t _display_mipi_pad_cal_config[4] = {
+// MIPI CAL config.
+static const cfg_op_t _di_mipi_pad_cal_config[] = {
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0},
 	{MIPI_CAL_CIL_MIPI_CAL_STATUS, 0xF3F10000},
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG0,  0},
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0}
 };
 
-//DSI config.
-static const cfg_op_t _display_dsi_pad_cal_config_t210[4] = {
+// DSI pad config.
+static const cfg_op_t _di_dsi_pad_cal_config_t210[] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PAD_CONTROL_2, 0},
 	{DSI_PAD_CONTROL_3, DSI_PAD_PREEMP_PD_CLK(0x3) | DSI_PAD_PREEMP_PU_CLK(0x3) | DSI_PAD_PREEMP_PD(0x03) | DSI_PAD_PREEMP_PU(0x3)},
 	{DSI_PAD_CONTROL_4, 0}
 };
-static const cfg_op_t _display_dsi_pad_cal_config_t210b01[7] = {
-	{DSI_PAD_CONTROL_1, 0},
-	{DSI_PAD_CONTROL_2, 0},
-	{DSI_PAD_CONTROL_3, 0},
-	{DSI_PAD_CONTROL_4, 0x77777},
+static const cfg_op_t _di_dsi_pad_cal_config_t210b01[] = {
+	{DSI_PAD_CONTROL_1,     0},
+	{DSI_PAD_CONTROL_2,     0},
+	{DSI_PAD_CONTROL_3,     0},
+	{DSI_PAD_CONTROL_4,     0x77777},
 	{DSI_PAD_CONTROL_5_B01, 0x77777},
 	{DSI_PAD_CONTROL_6_B01, 0x1111},
 	{DSI_PAD_CONTROL_7_B01, 0}
 };
 
-//MIPI CAL config.
-static const cfg_op_t _display_mipi_dsi_cal_offsets_config_t210[4] = {
+// MIPI CAL config.
+static const cfg_op_t _di_mipi_dsi_cal_offsets_config_t210[] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x200002},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x200002}
 };
-static const cfg_op_t _display_mipi_dsi_cal_offsets_config_t210b01[4] = {
+static const cfg_op_t _di_mipi_dsi_cal_offsets_config_t210b01[] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200006},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200006},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x260000},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x260000}
 };
-static const cfg_op_t _display_mipi_apply_dsi_cal_config[12] = {
+static const cfg_op_t _di_mipi_start_dsi_cal_config[] = {
 	{MIPI_CAL_CILA_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILB_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILC_MIPI_CAL_CONFIG,   0},
@@ -332,11 +332,11 @@ static const cfg_op_t _display_mipi_apply_dsi_cal_config[12] = {
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0},
 	{MIPI_CAL_DSIC_MIPI_CAL_CONFIG_2, 0},
 	{MIPI_CAL_DSID_MIPI_CAL_CONFIG_2, 0},
-	{MIPI_CAL_MIPI_CAL_CTRL,          0x2A000001}
+	{MIPI_CAL_MIPI_CAL_CTRL,          0x2A000001} // Set Prescale and filter and start calibration.
 };
 
-//Display A config.
-static const cfg_op_t _display_video_disp_controller_enable_config[113] = {
+// Display A enable config.
+static const cfg_op_t _di_dc_video_enable_config[] = {
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
@@ -397,7 +397,7 @@ static const cfg_op_t _display_video_disp_controller_enable_config[113] = {
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_COLOR_CONTROL, BASE_COLOR_SIZE_888},
 	{DC_DISP_DISP_INTERFACE_CONTROL, DISP_DATA_FORMAT_DF1P1C},
-	{DC_COM_PIN_OUTPUT_POLARITY(1), 0x1000000},
+	{DC_COM_PIN_OUTPUT_POLARITY(1), LSC0_OUTPUT_POLARITY_LOW},
 	{DC_COM_PIN_OUTPUT_POLARITY(3), 0},
 	{DC_DISP_BLEND_BACKGROUND_COLOR, 0},
 	{DC_COM_CRC_CONTROL, 0},
@@ -422,34 +422,13 @@ static const cfg_op_t _display_video_disp_controller_enable_config[113] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ},
 	{DC_CMD_STATE_ACCESS, 0},
 
-	/* Set Display timings
-	 *
-	 * DC_DISP_REF_TO_SYNC:
-	 *  V_REF_TO_SYNC - 1
-	 *  H_REF_TO_SYNC - 0
-	 *
-	 * DC_DISP_SYNC_WIDTH:
-	 *  V_SYNC_WIDTH - 1
-	 *  H_SYNC_WIDTH - 72
-	 *
-	 * DC_DISP_BACK_PORCH:
-	 *  V_BACK_PORCH - 9
-	 *  H_BACK_PORCH - 72
-	 *
-	 * DC_DISP_ACTIVE:
-	 *  V_DISP_ACTIVE - 1280
-	 *  H_DISP_ACTIVE - 720
-	 *
-	 * DC_DISP_FRONT_PORCH:
-	 *  V_FRONT_PORCH - 10
-	 *  H_FRONT_PORCH - 136
-	 */
-	{DC_DISP_DISP_TIMING_OPTIONS, 0},
-	{DC_DISP_REF_TO_SYNC, 0x10000},
-	{DC_DISP_SYNC_WIDTH,  0x10048},
-	{DC_DISP_BACK_PORCH,  0x90048},
-	{DC_DISP_ACTIVE,      0x50002D0},
-	{DC_DISP_FRONT_PORCH, 0xA0088},   // Sources say that this should happen before DC_DISP_ACTIVE cmd.
+	/* Set panel timings */
+	{DC_DISP_DISP_TIMING_OPTIONS, VSYNC_H_POSITION(0)},
+	{DC_DISP_REF_TO_SYNC, V_REF_TO_SYNC(1)    | H_REF_TO_SYNC(0)},
+	{DC_DISP_SYNC_WIDTH,  V_SYNC_WIDTH(1)     | H_SYNC_WIDTH(72)},
+	{DC_DISP_BACK_PORCH,  V_BACK_PORCH(9)     | H_BACK_PORCH(72)},
+	{DC_DISP_FRONT_PORCH, V_FRONT_PORCH(10)   | H_FRONT_PORCH(136)},
+	{DC_DISP_ACTIVE,      V_DISP_ACTIVE(1280) | H_DISP_ACTIVE(720)},
 	/* End of Display timings */
 
 	{DC_DISP_SHIFT_CLOCK_OPTIONS, SC1_H_QUALIFIER_NONE | SC0_H_QUALIFIER_NONE},
@@ -469,7 +448,7 @@ static const cfg_op_t _display_video_disp_controller_enable_config[113] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
 	{DC_CMD_STATE_ACCESS, READ_MUX | WRITE_MUX},
-	{DC_DISP_FRONT_PORCH, 0xA0088},
+	{DC_DISP_FRONT_PORCH, V_FRONT_PORCH(10) | H_FRONT_PORCH(136)},
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
@@ -483,9 +462,9 @@ static const cfg_op_t _display_video_disp_controller_enable_config[113] = {
 	{DC_CMD_DISPLAY_COMMAND_OPTION0, 0}
 };
 
-////Display A config.
-static const cfg_op_t _display_video_disp_controller_disable_config[17] = {
-	{DC_DISP_FRONT_PORCH, 0xA0088},
+// Display A disable config.
+static const cfg_op_t _di_dc_video_disable_config[] = {
+	{DC_DISP_FRONT_PORCH, V_FRONT_PORCH(10) | H_FRONT_PORCH(136)},
 	{DC_CMD_INT_MASK, 0},
 	{DC_CMD_STATE_ACCESS, 0},
 	{DC_CMD_INT_ENABLE, 0},
@@ -504,28 +483,28 @@ static const cfg_op_t _display_video_disp_controller_disable_config[17] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
 };
 
-//DSI config.
-static const cfg_op_t _display_dsi_timing_deinit_config[16] = {
+// DSI deinit config.
+static const cfg_op_t _di_dsi_timing_deinit_config[] = {
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PHY_TIMING_0, 0x6070601},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
-	{DSI_BTA_TIMING, 0x190A14},
+	{DSI_BTA_TIMING,   0x190A14},
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF) },
-	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343) | DSI_TIMEOUT_TA(0x2000)},
+	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
 	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CRC_RESET | DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
 	{DSI_CONTROL, DSI_CONTROL_LANES(3) | DSI_CONTROL_HOST_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
-	{DSI_MAX_THRESHOLD, 0x40},
+	{DSI_MAX_THRESHOLD, 64},
 	{DSI_TRIGGER, 0},
 	{DSI_TX_CRC, 0},
 	{DSI_INIT_SEQ_CONTROL, 0}
 };
 
-//DSI config (if ver == 0x10).
-static const cfg_op_t _display_deinit_config_jdi[22] = {
+// DSI panel JDI deinit config.
+static const cfg_op_t _di_dsi_panel_deinit_config_jdi[] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -550,7 +529,8 @@ static const cfg_op_t _display_deinit_config_jdi[22] = {
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
-static const cfg_op_t _display_deinit_config_auo[37] = {
+// DSI panel AUO deinit config.
+static const cfg_op_t _di_dsi_panel_deinit_config_auo[] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -591,14 +571,14 @@ static const cfg_op_t _display_deinit_config_auo[37] = {
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
-static const cfg_op_t _display_init_config_invert[3] = {
+static const cfg_op_t _di_init_config_invert[] = {
 	{DSI_WR_DATA, 0x239},
 	{DSI_WR_DATA, 0x02C1}, // INV_EN.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
 };
 
-//Display A config.
-static const cfg_op_t cfg_display_one_color[8] = {
+// Display A Window A one color config.
+static const cfg_op_t _di_win_one_color[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT},
@@ -609,8 +589,8 @@ static const cfg_op_t cfg_display_one_color[8] = {
 	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY} // Continuous display.
 };
 
-//Display A config linear pitch.
-static const cfg_op_t cfg_display_framebuffer_pitch[32] = {
+// Display A Window A linear pitch config.
+static const cfg_op_t _di_win_framebuffer_pitch[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_B_SELECT},
@@ -645,8 +625,8 @@ static const cfg_op_t cfg_display_framebuffer_pitch[32] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
 };
 
-//Display A config linear pitch inverse + Win D support.
-static const cfg_op_t cfg_display_framebuffer_pitch_inv[34] = {
+// Display A Window A linear pitch inverse + Win D support config.
+static const cfg_op_t _di_win_framebuffer_pitch_inv[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT},
@@ -683,8 +663,8 @@ static const cfg_op_t cfg_display_framebuffer_pitch_inv[34] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
 };
 
-//Display A config block linear.
-static const cfg_op_t cfg_display_framebuffer_block[34] = {
+// Display A Window A block linear config.
+static const cfg_op_t _di_win_framebuffer_block[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT},
@@ -721,8 +701,8 @@ static const cfg_op_t cfg_display_framebuffer_block[34] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
 };
 
-//Display D config.
-static const cfg_op_t cfg_display_framebuffer_log[20] = {
+// Display A Window D config.
+static const cfg_op_t _di_win_framebuffer_log[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8},

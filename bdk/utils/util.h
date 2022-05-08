@@ -21,6 +21,8 @@
 #include <utils/types.h>
 #include <mem/minerva.h>
 
+#define CFG_SIZE(array) (sizeof(array) / sizeof(cfg_op_t))
+
 #define NYX_NEW_INFO 0x3058594E
 
 typedef enum

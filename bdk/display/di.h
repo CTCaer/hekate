@@ -43,13 +43,17 @@
 
 // DC_CMD non-shadowed command/sync registers.
 #define DC_CMD_GENERAL_INCR_SYNCPT 0x00
+#define  SYNCPT_GENERAL_INDX(x) (((x) & 0xff) << 0)
+#define  SYNCPT_GENERAL_COND(x) (((x) & 0xff) << 8)
+#define  COND_REG_WR_SAFE 3
 
 #define DC_CMD_GENERAL_INCR_SYNCPT_CNTRL 0x01
 #define  SYNCPT_CNTRL_SOFT_RESET BIT(0)
 #define  SYNCPT_CNTRL_NO_STALL   BIT(8)
 
 #define DC_CMD_CONT_SYNCPT_VSYNC 0x28
-#define  SYNCPT_VSYNC_ENABLE BIT(8)
+#define  SYNCPT_VSYNC_INDX(x) (((x) & 0xff) << 0)
+#define  SYNCPT_VSYNC_ENABLE  BIT(8)
 
 #define DC_CMD_DISPLAY_COMMAND_OPTION0 0x031
 
@@ -98,7 +102,13 @@
 #define  WINDOW_C_SELECT BIT(6)
 #define  WINDOW_D_SELECT BIT(7)
 
-#define DC_CMD_REG_ACT_CONTROL 0x043
+#define DC_CMD_REG_ACT_CONTROL 0x43
+#define  GENERAL_ACT_HCNTR_SEL BIT(0)
+#define  WIN_A_ACT_HCNTR_SEL   BIT(2)
+#define  WIN_B_ACT_HCNTR_SEL   BIT(4)
+#define  WIN_C_ACT_HCNTR_SEL   BIT(6)
+#define  CURSOR_ACT_HCNTR_SEL  BIT(7)
+#define  WIN_D_ACT_HCNTR_SEL   BIT(10)
 
 // DC_D_WIN_DD window D instance of DC_WIN
 #define DC_D_WIN_DD_WIN_OPTIONS 0x80
@@ -124,6 +134,7 @@
 #define DC_COM_CRC_CONTROL 0x300
 #define DC_COM_PIN_OUTPUT_ENABLE(x) (0x302 + (x))
 #define DC_COM_PIN_OUTPUT_POLARITY(x) (0x306 + (x))
+#define  LSC0_OUTPUT_POLARITY_LOW BIT(24)
 
 #define DC_COM_DSC_TOP_CTL 0x33E
 
@@ -139,12 +150,29 @@
 
 #define DC_DISP_DISP_MEM_HIGH_PRIORITY 0x403
 #define DC_DISP_DISP_MEM_HIGH_PRIORITY_TIMER 0x404
+
 #define DC_DISP_DISP_TIMING_OPTIONS 0x405
+#define  VSYNC_H_POSITION(x) (((x) & 0x1fff) << 0)
+
 #define DC_DISP_REF_TO_SYNC 0x406
+#define  H_REF_TO_SYNC(x) (((x) & 0x1fff) <<  0) // Min 0 pixel clock.
+#define  V_REF_TO_SYNC(x) (((x) & 0x1fff) << 16) // Min 1 line  clock.
+
 #define DC_DISP_SYNC_WIDTH 0x407
+#define  H_SYNC_WIDTH(x) (((x) & 0x1fff) <<  0) // Min 1 pixel clock.
+#define  V_SYNC_WIDTH(x) (((x) & 0x1fff) << 16) // Min 1 line  clock.
+
 #define DC_DISP_BACK_PORCH 0x408
+#define  H_BACK_PORCH(x) (((x) & 0x1fff) <<  0)
+#define  V_BACK_PORCH(x) (((x) & 0x1fff) << 16)
+
 #define DC_DISP_ACTIVE 0x409
+#define  H_DISP_ACTIVE(x) (((x) & 0x1fff) <<  0) // Min 16 pixel clock.
+#define  V_DISP_ACTIVE(x) (((x) & 0x1fff) << 16) // Min 16 line  clock.
+
 #define DC_DISP_FRONT_PORCH 0x40A
+#define  H_FRONT_PORCH(x) (((x) & 0x1fff) <<  0) // Min -=PS_=-H_REF_TO_SYNC + 1
+#define  V_FRONT_PORCH(x) (((x) & 0x1fff) << 16) // Min -=PS_=-V_REF_TO_SYNC + 1
 
 #define DC_DISP_DISP_CLOCK_CONTROL 0x42E
 #define  SHIFT_CLK_DIVIDER(x)    ((x) & 0xff)
@@ -239,6 +267,10 @@
 #define DC_DISP_SD_BL_CONTROL 0x4DC
 #define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
 
+#define DC_WINC_COLOR_PALETTE 0x500
+#define DC_WINC_COLOR_PALETTE_IDX(off) (DC_WINC_COLOR_PALETTE + (off))
+#define DC_WINC_PALETTE_COLOR_EXT 0x600
+
 #define DC_WIN_CSC_YOF 0x611
 #define DC_WIN_CSC_KYRGB 0x612
 #define DC_WIN_CSC_KUR 0x613
@@ -253,12 +285,13 @@
 
 // The following registers are A/B/C shadows of the 0xB80/0xD80/0xF80 registers (see DISPLAY_WINDOW_HEADER).
 #define DC_WIN_WIN_OPTIONS 0x700
-#define  H_DIRECTION  BIT(0)
-#define  V_DIRECTION  BIT(2)
-#define  SCAN_COLUMN  BIT(4)
-#define  COLOR_EXPAND BIT(6)
-#define  CSC_ENABLE   BIT(18)
-#define  WIN_ENABLE   BIT(30)
+#define  H_DIRECTION          BIT(0)
+#define  V_DIRECTION          BIT(2)
+#define  SCAN_COLUMN          BIT(4)
+#define  COLOR_EXPAND         BIT(6)
+#define  COLOR_PALETTE_ENABLE BIT(16)
+#define  CSC_ENABLE           BIT(18)
+#define  WIN_ENABLE           BIT(30)
 
 #define DC_WIN_BUFFER_CONTROL 0x702
 #define  BUFFER_CONTROL_HOST  0
@@ -290,10 +323,22 @@
 #define  WIN_COLOR_DEPTH_YUV422R        0x17
 #define  WIN_COLOR_DEPTH_YCbCr422RA     0x18
 #define  WIN_COLOR_DEPTH_YUV422RA       0x19
+#define  WIN_COLOR_DEPTH_YCbCr444P      0x29
+#define  WIN_COLOR_DEPTH_YCrCb420SP     0x2A
+#define  WIN_COLOR_DEPTH_YCbCr420SP     0x2B
+#define  WIN_COLOR_DEPTH_YCrCb422SP     0x2C
+#define  WIN_COLOR_DEPTH_YCbCr422SP     0x2D
+#define  WIN_COLOR_DEPTH_YUV444P        0x34
+#define  WIN_COLOR_DEPTH_YVU420SP       0x35
+#define  WIN_COLOR_DEPTH_YUV420SP       0x36
+#define  WIN_COLOR_DEPTH_YVU422SP       0x37
+#define  WIN_COLOR_DEPTH_YUV422SP       0x38
+#define  WIN_COLOR_DEPTH_YVU444SP       0x3B
+#define  WIN_COLOR_DEPTH_YUV444SP       0x3C
 
 #define DC_WIN_POSITION 0x704
-#define  H_POSITION(x) (((x) & 0xFfff) <<  0)
-#define  V_POSITION(x) (((x) & 0x1fff) << 16)
+#define  H_POSITION(x) (((x) & 0xffff) <<  0) // Support negative.
+#define  V_POSITION(x) (((x) & 0xffff) << 16) // Support negative.
 
 #define DC_WIN_SIZE 0x705
 #define  H_SIZE(x) (((x) & 0x1fff) <<  0)
@@ -316,6 +361,7 @@
 #define DC_WIN_DV_CONTROL 0x70E
 
 #define DC_WINBUF_BLEND_LAYER_CONTROL 0x716
+#define  WIN_BLEND_DEPTH(x) (((x) & 0xff) << 0)
 #define  WIN_K1(x) (((x) & 0xff) << 8)
 #define  WIN_K2(x) (((x) & 0xff) << 16)
 #define  WIN_BLEND_ENABLE (0 << 24)
@@ -386,6 +432,7 @@
 #define  DSI_HOST_CONTROL_FIFO_SEL     BIT(4)
 #define  DSI_HOST_CONTROL_HS           BIT(5)
 #define  DSI_HOST_CONTROL_RAW          BIT(6)
+#define  DSI_HOST_CONTROL_TX_TRIG_MASK (3 << 12)
 #define  DSI_HOST_CONTROL_TX_TRIG_SOL  (0 << 12)
 #define  DSI_HOST_CONTROL_TX_TRIG_FIFO (1 << 12)
 #define  DSI_HOST_CONTROL_TX_TRIG_HOST (2 << 12)
@@ -433,10 +480,14 @@
 #define DSI_PKT_SEQ_5_LO 0x2D
 #define DSI_PKT_SEQ_5_HI 0x2E
 #define DSI_DCS_CMDS 0x33
+
 #define DSI_PKT_LEN_0_1 0x34
 #define DSI_PKT_LEN_2_3 0x35
 #define DSI_PKT_LEN_4_5 0x36
 #define DSI_PKT_LEN_6_7 0x37
+#define  PKT0_LEN(x) (((x) & 0xffff) <<  0)
+#define  PKT1_LEN(x) (((x) & 0xffff) << 16)
+
 #define DSI_PHY_TIMING_0 0x3C
 #define DSI_PHY_TIMING_1 0x3D
 #define DSI_PHY_TIMING_2 0x3E
@@ -726,7 +777,7 @@ void display_backlight(bool enable);
 void display_backlight_brightness(u32 brightness, u32 step_delay);
 u32  display_get_backlight_brightness();
 
-/*! Init display in full 1280x720 resolution (B8G8R8A8, line stride 768, framebuffer size = 1280*768*4 bytes). */
+/*! Init display in full 720x1280 resolution (B8G8R8A8, line stride 720, framebuffer size = 720*1280*4 bytes). */
 u32 *display_init_framebuffer_pitch();
 u32 *display_init_framebuffer_pitch_inv();
 u32 *display_init_framebuffer_block();
