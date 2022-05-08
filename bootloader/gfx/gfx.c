@@ -280,9 +280,18 @@ static void _gfx_putn(u32 v, int base, char fill, int fcnt)
 	static const char digits[] = "0123456789ABCDEFghijklmnopqrstuvwxyz";
 	char *p;
 	int c = fcnt;
+	bool negative = false;
 
 	if (base > 36)
 		return;
+
+	// Account for negative numbers.
+	if (base == 10 && v & 0x80000000)
+	{
+		negative = true;
+		v = (int)v * -1;
+		c--;
+	}
 
 	p = buf + 64;
 	*p = 0;
@@ -293,9 +302,12 @@ static void _gfx_putn(u32 v, int base, char fill, int fcnt)
 		v /= base;
 	} while (v);
 
+	if (negative)
+		*--p = '-';
+
 	if (fill != 0)
 	{
-		while (c > 0)
+		while (c > 0 && p > buf)
 		{
 			*--p = fill;
 			c--;

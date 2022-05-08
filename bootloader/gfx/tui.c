@@ -51,12 +51,9 @@ void tui_sbar(bool force_update)
 
 	max17050_get_property(MAX17050_Current, &battVoltCurr);
 
-	if (battVoltCurr >= 0)
-		gfx_printf(" %k+%d mA%k%K\n",
-			0xFF008800, battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
-	else
-		gfx_printf(" %k-%d mA%k%K\n",
-			0xFF880000, (~battVoltCurr) / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+	gfx_printf(" %k%d mA%k%K\n", battVoltCurr >= 0 ? 0xFF008800 : 0xFF880000,
+			   battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+
 	gfx_con.fntsz = prevFontSize;
 	gfx_con_setpos(cx, cy);
 }

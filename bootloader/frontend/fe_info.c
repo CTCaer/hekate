@@ -337,16 +337,10 @@ void print_fuel_gauge_info()
 	gfx_printf("Capacity (design):      %4d mAh\n", value);
 
 	max17050_get_property(MAX17050_Current, &value);
-	if (value >= 0)
-		gfx_printf("Current now:            %d mA\n", value / 1000);
-	else
-		gfx_printf("Current now:            -%d mA\n", ~value / 1000);
+	gfx_printf("Current now:            %d mA\n", value / 1000);
 
 	max17050_get_property(MAX17050_AvgCurrent, &value);
-	if (value >= 0)
-		gfx_printf("Current average:        %d mA\n", value / 1000);
-	else
-		gfx_printf("Current average:        -%d mA\n", ~value / 1000);
+	gfx_printf("Current average:        %d mA\n", value / 1000);
 
 	max17050_get_property(MAX17050_VCELL, &value);
 	gfx_printf("Voltage now:            %4d mV\n", value);
@@ -364,10 +358,8 @@ void print_fuel_gauge_info()
 	gfx_printf("Empty voltage (design): %4d mV\n", value);
 
 	max17050_get_property(MAX17050_TEMP, &value);
-	if (value >= 0)
-		gfx_printf("Battery temperature:    %d.%d oC\n", value / 10, value % 10);
-	else
-		gfx_printf("Battery temperature:    -%d.%d oC\n", ~value / 10, (~value) % 10);
+	gfx_printf("Battery temperature:    %d.%d oC\n", value / 10,
+			   (value >= 0 ? value : (~value)) % 10);
 }
 
 void print_battery_charger_info()
