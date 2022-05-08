@@ -451,8 +451,8 @@ static void _prepare_and_flash_mbr_gpt()
 		}
 
 		// Set final GPT header parameters.
-		gpt->header.num_part_ents = 128;
-		gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, sizeof(gpt_entry_t) * 128);
+		gpt->header.num_part_ents = gpt_idx;
+		gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, sizeof(gpt_entry_t) * gpt->header.num_part_ents);
 		gpt->header.crc32 = 0; // Set to 0 for calculation.
 		gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
 
