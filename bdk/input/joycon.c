@@ -194,6 +194,7 @@ typedef struct _joycon_ctxt_t
 	u32 last_status_req_time;
 	u8  rumble_sent;
 	u8  connected;
+	u8  detected;
 } joycon_ctxt_t;
 
 static joycon_ctxt_t jc_l = {0};
@@ -270,12 +271,32 @@ static void _jc_power_supply(u8 uart, bool enable)
 	}
 }
 
+static void _jc_detect()
+{
+	// Turn on Joy-Con detect. (UARTB/C TX).
+	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
+	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
+	usleep(20);
+
+	// Read H6/E6 which are shared with UART TX pins.
+	jc_r.detected = !gpio_read(GPIO_PORT_H, GPIO_PIN_6);
+	jc_l.detected = !gpio_read(GPIO_PORT_E, GPIO_PIN_6);
+
+	// Turn off Joy-Con detect. (UARTB/C TX).
+	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
+	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
+	usleep(20);
+}
+
 static void _jc_conn_check()
 {
+	_jc_detect();
+
 	// Check if a Joy-Con was disconnected.
-	if (gpio_read(GPIO_PORT_E, GPIO_PIN_6))
+	if (!jc_l.detected)
 	{
-		_jc_power_supply(UART_C, false);
+		if (jc_l.connected)
+			_jc_power_supply(UART_C, false);
 
 		hid_pkt_inc = 0;
 
@@ -289,9 +310,10 @@ static void _jc_conn_check()
 		jc_gamepad.bt_conn_l.type = 0;
 	}
 
-	if (gpio_read(GPIO_PORT_H, GPIO_PIN_6))
+	if (!jc_r.detected)
 	{
-		_jc_power_supply(UART_B, false);
+		if (jc_r.connected)
+			_jc_power_supply(UART_B, false);
 
 		hid_pkt_inc = 0;
 
@@ -535,9 +557,7 @@ static void jc_uart_pkt_parse(joycon_ctxt_t *jc, const u8* packet, size_t size)
 
 static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 {
-	if (gpio_read(GPIO_PORT_E, GPIO_PIN_6) && jc->uart == UART_C)
-		return;
-	else if (gpio_read(GPIO_PORT_H, GPIO_PIN_6) && jc->uart == UART_B)
+	if (!jc->detected)
 		return;
 
 	// Check if device stopped sending data.
@@ -561,20 +581,12 @@ static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
 	// Send init rumble or request nx pad status report.
 	if ((jc_r.connected && !jc_r.rumble_sent) || (jc_l.connected && !jc_l.rumble_sent))
 	{
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-
 		_jc_send_hid_cmd(jc->uart, JC_HID_SUBCMD_SND_RUMBLE, NULL, 0);
 
 		if (jc_l.connected)
 			jc_l.rumble_sent = true;
 		if (jc_r.connected)
 			jc_r.rumble_sent = true;
-
-		if (jc->uart != UART_B)
-			gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-		else
-			gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
 
 		return 1;
 	}
@@ -584,7 +596,13 @@ static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
 
 static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 {
+	if (!jc->detected)
+		return;
+
 	bool is_nxpad = !(jc->type & JC_ID_HORI);
+
+	if (jc->last_status_req_time > get_tmr_ms() || !jc->connected)
+		return;
 
 	if (is_nxpad)
 	{
@@ -594,25 +612,10 @@ static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 			return;
 	}
 
-	if (jc->last_status_req_time > get_tmr_ms() || !jc->connected)
-		return;
-
-	// Turn off Joy-Con detect.
-	if (jc->uart == UART_B)
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-	else
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-
 	if (is_nxpad)
 		_joycon_send_raw(jc->uart, nx_pad_status, sizeof(nx_pad_status));
 	else
 		_joycon_send_raw(jc->uart, hori_pad_status, sizeof(hori_pad_status));
-
-	// Turn Joy-Con detect on.
-	if (jc->uart == UART_B)
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-	else
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
 
 	jc->last_status_req_time = get_tmr_ms() + 15;
 }
@@ -653,6 +656,8 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	memset(bt_conn->host_mac, 0, 6);
 	memset(bt_conn->ltk, 0, 16);
 
+	_jc_conn_check();
+
 	while (jc_l.last_status_req_time > get_tmr_ms())
 	{
 		_jc_rcv_pkt(&jc_r);
@@ -666,10 +671,6 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	jc_hid_in_spi_read_t subcmd_data_r;
 	subcmd_data_r.addr = 0x2000;
 	subcmd_data_r.size = 0x1A;
-
-	// Turn off Joy-Con detect.
-	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 
 	bool jc_r_found = jc_r.connected ? false : true;
 	bool jc_l_found = jc_l.connected ? false : true;
@@ -773,22 +774,23 @@ retry:
 
 static void _jc_init_conn(joycon_ctxt_t *jc)
 {
+	if (!jc->detected)
+		return;
+
 	if (((u32)get_tmr_ms() - jc->last_received_time) > 1000)
 	{
 		_jc_power_supply(jc->uart, true);
 
-		// Turn off Joy-Con detect.
+		// Mask out buttons and set connected to false.
 		if (jc->uart == UART_B)
 		{
 			jc_gamepad.buttons &= ~JC_BTN_MASK_R;
 			jc_gamepad.conn_r = false;
-			gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
 		}
 		else
 		{
 			jc_gamepad.buttons &= ~JC_BTN_MASK_L;
 			jc_gamepad.conn_l = false;
-			gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 		}
 
 		// Initialize uart to 1 megabaud and manual RTS.
@@ -812,12 +814,6 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 			msleep(5);
 			_jc_rcv_pkt(jc);
 		}
-
-		// Turn Joy-Con detect on.
-		if (jc->uart == UART_B)
-			gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-		else
-			gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
 
 		jc->last_received_time = get_tmr_ms();
 
@@ -860,23 +856,18 @@ void jc_init_hw()
 	// Restore OC.
 	bpmp_clk_rate_set(prev_fid);
 
-	// Turn Joy-Con detect on.
-	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
-
 	jc_init_done = true;
 #endif
 }
 
 void jc_deinit()
 {
+	if (!jc_init_done)
+		return;
+
 	// Disable power.
 	_jc_power_supply(UART_B, false);
 	_jc_power_supply(UART_C, false);
-
-	// Turn off Joy-Con detect.
-	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 
 	// Send sleep command.
 	u8 data = HCI_STATE_SLEEP;
@@ -902,22 +893,16 @@ jc_gamepad_rpt_t *joycon_poll()
 	if (!jc_init_done)
 		return NULL;
 
-	if (!gpio_read(GPIO_PORT_H, GPIO_PIN_6))
-		_jc_init_conn(&jc_r);
-	if (!gpio_read(GPIO_PORT_E, GPIO_PIN_6))
-		_jc_init_conn(&jc_l);
-
-	if (!gpio_read(GPIO_PORT_H, GPIO_PIN_6))
-		_jc_req_nx_pad_status(&jc_r);
-	if (!gpio_read(GPIO_PORT_E, GPIO_PIN_6))
-		_jc_req_nx_pad_status(&jc_l);
-
-	if (!gpio_read(GPIO_PORT_H, GPIO_PIN_6))
-		_jc_rcv_pkt(&jc_r);
-	if (!gpio_read(GPIO_PORT_E, GPIO_PIN_6))
-		_jc_rcv_pkt(&jc_l);
-
 	_jc_conn_check();
+
+	_jc_init_conn(&jc_r);
+	_jc_init_conn(&jc_l);
+
+	_jc_req_nx_pad_status(&jc_r);
+	_jc_req_nx_pad_status(&jc_l);
+
+	_jc_rcv_pkt(&jc_r);
+	_jc_rcv_pkt(&jc_l);
 
 	return &jc_gamepad;
 }
