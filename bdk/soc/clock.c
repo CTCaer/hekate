@@ -157,7 +157,9 @@ int clock_uart_use_src_div(u32 idx, u32 baud)
 {
 	u32 clk_src_div = CLOCK(_clock_uart[idx].source) & 0xE0000000;
 
-	if (baud == 1000000)
+	if (baud == 3000000)
+		CLOCK(_clock_uart[idx].source) = clk_src_div | UART_SRC_CLK_DIV_EN | 15;
+	else if (baud == 1000000)
 		CLOCK(_clock_uart[idx].source) = clk_src_div | UART_SRC_CLK_DIV_EN | 49;
 	else
 	{
