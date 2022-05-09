@@ -89,7 +89,6 @@ typedef struct _jc_gamepad_rpt_t
 	jc_bt_conn_t bt_conn_r;
 } jc_gamepad_rpt_t;
 
-void jc_power_supply(u8 uart, bool enable);
 void jc_init_hw();
 void jc_deinit();
 jc_gamepad_rpt_t *joycon_poll();
