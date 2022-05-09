@@ -77,6 +77,14 @@
 #define APBDEV_PMC_CLK_OUT_CNTRL     0x1A8
 #define  PMC_CLK_OUT_CNTRL_CLK1_FORCE_EN   BIT(2)
 #define  PMC_CLK_OUT_CNTRL_CLK2_FORCE_EN   BIT(10)
+#define  PMC_CLK_OUT_CNTRL_CLK3_FORCE_EN   BIT(18)
+#define  PMC_CLK_OUT_CNTRL_CLK1_SRC_SEL(src) (((src) & 3) << 6)
+#define  PMC_CLK_OUT_CNTRL_CLK2_SRC_SEL(src) (((src) & 3) << 14)
+#define  PMC_CLK_OUT_CNTRL_CLK3_SRC_SEL(src) (((src) & 3) << 22)
+#define   OSC_DIV1                         0
+#define   OSC_DIV2                         1
+#define   OSC_DIV4                         2
+#define   OSC_CAR                          3
 #define APBDEV_PMC_RST_STATUS        0x1B4
 #define  PMC_RST_STATUS_MASK               7
 #define  PMC_RST_STATUS_POR                0

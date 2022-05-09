@@ -17,6 +17,7 @@
 
 #include <soc/clock.h>
 #include <soc/hw_init.h>
+#include <soc/pmc.h>
 #include <soc/t210.h>
 #include <storage/sdmmc.h>
 #include <utils/util.h>
@@ -108,6 +109,12 @@ static clock_t _clock_ahbdma = {
 };
 static clock_t _clock_actmon = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON,  CLK_V_ACTMON,  6, 0 // 19.2MHz.
+};
+static clock_t _clock_extperiph1 = {
+	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH1,  CLK_V_EXTPERIPH1,  0, 0
+};
+static clock_t _clock_extperiph2 = {
+	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH2,  CLK_V_EXTPERIPH2,  2, 202 // 4.0MHz
 };
 
 void clock_enable(const clock_t *clk)
@@ -339,6 +346,34 @@ void clock_enable_actmon()
 void clock_disable_actmon()
 {
 	clock_disable(&_clock_actmon);
+}
+
+void clock_enable_extperiph1()
+{
+	clock_enable(&_clock_extperiph1);
+	
+	PMC(APBDEV_PMC_CLK_OUT_CNTRL) |= PMC_CLK_OUT_CNTRL_CLK1_SRC_SEL(OSC_CAR) | PMC_CLK_OUT_CNTRL_CLK1_FORCE_EN;
+	usleep(5);
+}
+
+void clock_disable_extperiph1()
+{
+	PMC(APBDEV_PMC_CLK_OUT_CNTRL) &= ~((PMC_CLK_OUT_CNTRL_CLK1_SRC_SEL(OSC_CAR)) | PMC_CLK_OUT_CNTRL_CLK1_FORCE_EN);
+	clock_disable(&_clock_extperiph1);
+}
+
+void clock_enable_extperiph2()
+{
+	clock_enable(&_clock_extperiph2);
+
+	PMC(APBDEV_PMC_CLK_OUT_CNTRL) |= PMC_CLK_OUT_CNTRL_CLK2_SRC_SEL(OSC_CAR) | PMC_CLK_OUT_CNTRL_CLK2_FORCE_EN;
+	usleep(5);
+}
+
+void clock_disable_extperiph2()
+{
+	PMC(APBDEV_PMC_CLK_OUT_CNTRL) &= ~((PMC_CLK_OUT_CNTRL_CLK2_SRC_SEL(OSC_CAR)) | PMC_CLK_OUT_CNTRL_CLK2_FORCE_EN);
+	clock_disable(&_clock_extperiph2);
 }
 
 void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)

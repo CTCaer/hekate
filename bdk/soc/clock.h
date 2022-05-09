@@ -119,6 +119,7 @@
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C4 0x3C4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON 0x3E8
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH1 0x3EC
+#define CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH2 0x3F0
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SYS 0x400
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SOR1 0x410
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SE 0x42C
@@ -670,6 +671,10 @@ void clock_enable_ahbdma();
 void clock_disable_ahbdma();
 void clock_enable_actmon();
 void clock_disable_actmon();
+void clock_enable_extperiph1();
+void clock_disable_extperiph1();
+void clock_enable_extperiph2();
+void clock_disable_extperiph2();
 
 void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210);
 void clock_enable_pllx();
@@ -678,6 +683,7 @@ void clock_disable_pllc();
 void clock_enable_pllu();
 void clock_disable_pllu();
 void clock_enable_utmipll();
+
 void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 val);
 void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type);
 int  clock_sdmmc_is_not_reset_and_enabled(u32 id);
