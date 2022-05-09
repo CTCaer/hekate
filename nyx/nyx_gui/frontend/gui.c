@@ -473,7 +473,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
 		gfx_con_setpos(32, 630);
 		gfx_con.fntsz = 8;
-		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %0d | cx: %03X - %03x, cy: %03X - %03x",
+		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %d | cx: %03X - %03x, cy: %03X - %03x",
 			jc_pad->lstick_x, jc_pad->lstick_y, jc_pad->buttons,
 			jc_pad->batt_info_l, jc_pad->batt_info_r,
 			jc_drv_ctx.cx_min, jc_drv_ctx.cx_max, jc_drv_ctx.cy_min, jc_drv_ctx.cy_max);
@@ -497,9 +497,21 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		if (jc_pad->lstick_y <= jc_drv_ctx.cy_max && jc_pad->lstick_y >= jc_drv_ctx.cy_min)
 			jc_drv_ctx.pos_y += 0;
 		else if (jc_pad->lstick_y > jc_drv_ctx.cy_max)
-			jc_drv_ctx.pos_y -= ((jc_pad->lstick_y - jc_drv_ctx.cy_max) / 30);
+		{
+			s16 val = (jc_pad->lstick_y - jc_drv_ctx.cy_max) / 30;
+			// Hoag has inverted Y axis.
+			if (jc_pad->sio_mode)
+				val *= -1;
+			jc_drv_ctx.pos_y -= val;
+		}
 		else
-			jc_drv_ctx.pos_y += ((jc_drv_ctx.cy_min - jc_pad->lstick_y) / 30);
+		{
+			s16 val = (jc_drv_ctx.cy_min - jc_pad->lstick_y) / 30;
+			// Hoag has inverted Y axis.
+			if (jc_pad->sio_mode)
+				val *= -1;
+			jc_drv_ctx.pos_y += val;
+		}
 	}
 	else
 	{
@@ -513,9 +525,21 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		if (jc_pad->rstick_y <= jc_drv_ctx.cy_max && jc_pad->rstick_y >= jc_drv_ctx.cy_min)
 			jc_drv_ctx.pos_y += 0;
 		else if (jc_pad->rstick_y > jc_drv_ctx.cy_max)
-			jc_drv_ctx.pos_y -= ((jc_pad->rstick_y - jc_drv_ctx.cy_max) / 30);
+		{
+			s16 val = (jc_pad->rstick_y - jc_drv_ctx.cy_max) / 30;
+			// Hoag has inverted Y axis.
+			if (jc_pad->sio_mode)
+				val *= -1;
+			jc_drv_ctx.pos_y -= val;
+		}
 		else
-			jc_drv_ctx.pos_y += ((jc_drv_ctx.cy_min - jc_pad->rstick_y) / 30);
+		{
+			s16 val = (jc_drv_ctx.cy_min - jc_pad->rstick_y) / 30;
+			// Hoag has inverted Y axis.
+			if (jc_pad->sio_mode)
+				val *= -1;
+			jc_drv_ctx.pos_y += val;
+		}
 	}
 
 	// Ensure value inside screen limits.
