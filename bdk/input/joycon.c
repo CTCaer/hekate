@@ -44,6 +44,9 @@
 
 #define JC_WIRED_CMD_GET_INFO    0x01
 #define JC_WIRED_CMD_INIT_DONE   0x10
+#define JC_WIRED_CMD_BRATE_DONE  0x11
+#define JC_WIRED_CMD_SET_RATE    0x12 // Output report rate.
+#define JC_WIRED_CMD_SET_BRATE   0x20
 
 #define JC_HID_OUTPUT_RPT        0x01
 #define JC_HID_RUMBLE_RPT        0x10
@@ -72,6 +75,15 @@
 
 enum
 {
+	JC_STATE_START         = 0,
+	JC_STATE_HANDSHAKED    = 1,
+	JC_STATE_BRATE_CHANGED = 2,
+	JC_STATE_BRATE_OK      = 3,
+	JC_STATE_INIT_DONE     = 4
+};
+
+enum
+{
 	JC_BATT_EMTPY = 0,
 	JC_BATT_CRIT  = 2,
 	JC_BATT_LOW   = 4,
@@ -93,6 +105,32 @@ static const u8 init_get_info[]  = {
 	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_GET_INFO, // Wired cmd and subcmd.
 	0x00, 0x00, 0x00, 0x00, 0x24         // Wired subcmd data and crc.
+};
+
+static const u8 init_switch_brate[]  = {
+	0x19, 0x01, 0x03, 0x0F, 0x00,         // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_SET_BRATE, // Wired cmd and subcmd.
+	0x08, 0x00, 0x00, 0xBD, 0xB1,         // Wired subcmd data, data crc and crc.
+	// Baudrate 3 megabaud.
+	0xC0, 0xC6, 0x2D, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static const u8 init_switched_brate[]  = {
+	0x19, 0x01, 0x03, 0x07, 0x00,          // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_BRATE_DONE, // Wired cmd and subcmd.
+	0x00, 0x00, 0x00, 0x00, 0x0E           // Wired subcmd data and crc.
+};
+
+static const u8 init_set_rpt_rate[]  = {
+	0x19, 0x01, 0x03, 0x0B, 0x00,        // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_SET_RATE, // Wired cmd and subcmd.
+	0x04, 0x00, 0x00, 0x12, 0xA6,        // Wired subcmd data, data crc and crc.
+	// Output report rate 15 ms.
+	0x0F, 0x00, 0x00, 0x00
+
+	// 5 ms.
+	// 0x04, 0x00, 0x00, 0x0E, 0xD5,
+	// 0x05, 0x00, 0x00, 0x00
 };
 
 static const u8 init_finalize[]  = {
@@ -189,6 +227,7 @@ typedef struct _joycon_ctxt_t
 	u8  buf[0x100]; //FIXME: If heap is used, dumping breaks.
 	u8  uart;
 	u8  type;
+	u8  state;
 	u8  mac[6];
 	u32 last_received_time;
 	u32 last_status_req_time;
@@ -521,7 +560,6 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
 	default:
 		break;
 	}
-	jc->last_received_time = get_tmr_ms();
 }
 
 static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8* data, u32 size)
@@ -533,6 +571,16 @@ static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8* data, u32 size)
 			jc->mac[12 - i] = data[i];
 		jc->type = data[6];
 		jc->connected = true;
+		break;
+	case JC_WIRED_CMD_SET_BRATE:
+		jc->state = JC_STATE_BRATE_CHANGED;
+		break;
+	case JC_WIRED_CMD_BRATE_DONE:
+		jc->state = JC_STATE_BRATE_OK;
+		break;
+	case JC_WIRED_CMD_INIT_DONE:
+	case JC_WIRED_CMD_SET_RATE:
+		// done.
 	default:
 		break;
 	}
@@ -550,9 +598,14 @@ static void jc_uart_pkt_parse(joycon_ctxt_t *jc, const u8* packet, size_t size)
 	case JC_WIRED_INIT_REPLY:
 		_jc_parse_wired_init(jc, pkt->data, size - sizeof(jc_uart_hdr_t) - 1);
 		break;
+	case JC_INIT_HANDSHAKE:
+		jc->state = JC_STATE_HANDSHAKED;
+		break;
 	default:
 		break;
 	}
+
+	jc->last_received_time = get_tmr_ms();
 }
 
 static void _jc_rcv_pkt(joycon_ctxt_t *jc)
@@ -795,26 +848,76 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 
 		// Initialize uart to 1 megabaud and manual RTS.
 		uart_init(jc->uart, 1000000, UART_AO_TX_MN_RX);
+		jc->state = JC_STATE_START;
+
 		uart_invert(jc->uart, true, UART_INVERT_TXD);
 		uart_set_IIR(jc->uart);
 
+		// Wake up the controller.
 		_joycon_send_raw(jc->uart, init_wake, sizeof(init_wake));
-		_joycon_send_raw(jc->uart, init_handshake, sizeof(init_handshake));
+		_jc_rcv_pkt(jc); // Clear RX FIFO.
 
-		msleep(5);
-		_jc_rcv_pkt(jc);
+		// Do a handshake.
+		u32 retries = 10;
+		while (retries && jc->state != JC_STATE_HANDSHAKED)
+		{
+			_joycon_send_raw(jc->uart, init_handshake, sizeof(init_handshake));
 
+			msleep(5);
+			_jc_rcv_pkt(jc);
+			retries--;
+		}
+
+		if (jc->state != JC_STATE_HANDSHAKED)
+			goto out;
+
+		// Get info about the controller.
 		_joycon_send_raw(jc->uart, init_get_info, sizeof(init_get_info));
-		msleep(5);
+		msleep(2);
 		_jc_rcv_pkt(jc);
 
 		if (!(jc->type & JC_ID_HORI))
 		{
+			// Request 3 megabaud change.
+			_joycon_send_raw(jc->uart, init_switch_brate, sizeof(init_switch_brate));
+			msleep(2);
+			_jc_rcv_pkt(jc);
+
+			if (jc->state == JC_STATE_BRATE_CHANGED)
+			{
+				// Reinitialize uart to 3 megabaud and manual RTS.
+				uart_init(jc->uart, 3000000, UART_AO_TX_MN_RX);
+				uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
+
+				// Handshake with the new speed.
+				retries = 10;
+				while (retries && jc->state != JC_STATE_BRATE_OK)
+				{
+					_joycon_send_raw(jc->uart, init_switched_brate, sizeof(init_switched_brate));
+					msleep(5);
+					_jc_rcv_pkt(jc);
+					retries--;
+				}
+
+				if (jc->state != JC_STATE_BRATE_OK)
+					goto out;
+			}
+
+			// Finalize initialization.
 			_joycon_send_raw(jc->uart, init_finalize, sizeof(init_finalize));
-			msleep(5);
+			msleep(2);
+			_jc_rcv_pkt(jc);
+
+			// Set packet rate.
+			_joycon_send_raw(jc->uart, init_set_rpt_rate, sizeof(init_set_rpt_rate));
+			msleep(2);
 			_jc_rcv_pkt(jc);
 		}
 
+		// Initialization done.
+		jc->state = JC_STATE_INIT_DONE;
+
+out:
 		jc->last_received_time = get_tmr_ms();
 
 		if (jc->connected)
