@@ -159,14 +159,22 @@ static bool _jc_poll(gamepad_report_t *rpt)
 		u16 y_raw = (jc_pad->lstick_y - jc_cal_ctx.cly_max) / 7;
 		if (y_raw > 0x7F)
 			y_raw = 0x7F;
-		rpt->y = 0x7F - y_raw;
+		// Hoag has inverted Y axis.
+		if (!jc_pad->sio_mode)
+			rpt->y = 0x7F - y_raw;
+		else
+			rpt->y = 0x7F + y_raw;
 	}
 	else
 	{
 		u16 y_raw = (jc_cal_ctx.cly_min - jc_pad->lstick_y) / 7;
 		if (y_raw > 0x7F)
 			y_raw = 0x7F;
-		rpt->y = 0x7F + y_raw;
+		// Hoag has inverted Y axis.
+		if (!jc_pad->sio_mode)
+			rpt->y = 0x7F + y_raw;
+		else
+			rpt->y = 0x7F - y_raw;
 	}
 
 	// Calculate right analog stick.
@@ -194,14 +202,22 @@ static bool _jc_poll(gamepad_report_t *rpt)
 		u16 y_raw = (jc_pad->rstick_y - jc_cal_ctx.cry_max) / 7;
 		if (y_raw > 0x7F)
 			y_raw = 0x7F;
-		rpt->rz = 0x7F - y_raw;
+		// Hoag has inverted Y axis.
+		if (!jc_pad->sio_mode)
+			rpt->rz = 0x7F - y_raw;
+		else
+			rpt->rz = 0x7F + y_raw;
 	}
 	else
 	{
 		u16 y_raw = (jc_cal_ctx.cry_min - jc_pad->rstick_y) / 7;
 		if (y_raw > 0x7F)
 			y_raw = 0x7F;
-		rpt->rz = 0x7F + y_raw;
+		// Hoag has inverted Y axis.
+		if (!jc_pad->sio_mode)
+			rpt->rz = 0x7F + y_raw;
+		else
+			rpt->rz = 0x7F - y_raw;
 	}
 
 	// Set D-pad.
@@ -361,7 +377,7 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 
 	if (usbs->type == USB_HID_GAMEPAD)
 	{
-		polling_time = 8000;
+		polling_time = 15000;
 		gadget_type = USB_GADGET_HID_GAMEPAD;
 	}
 	else
