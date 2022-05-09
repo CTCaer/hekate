@@ -586,9 +586,8 @@ static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8* data, u32 size)
 	}
 }
 
-static void jc_uart_pkt_parse(joycon_ctxt_t *jc, const u8* packet, size_t size)
+static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, size_t size)
 {
-	jc_wired_hdr_t *pkt = (jc_wired_hdr_t *)packet;
 	switch (pkt->cmd)
 	{
 	case JC_HORI_INPUT_RPT_CMD:
@@ -613,20 +612,14 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	if (!jc->detected)
 		return;
 
-	// Check if device stopped sending data.
-	u32 uart_irq = uart_get_IIR(jc->uart);
-	if (uart_irq != UART_IIR_REDI)
+	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, 0x100);
+	if (len < 8)
 		return;
 
-	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, 0x100);
-
 	// Check valid size and uart reply magic.
-	if (len > 7 && !memcmp(jc->buf, "\x19\x81\x03", 3))
-	{
-		jc_wired_hdr_t *pkt = (jc_wired_hdr_t *)(jc->buf);
-
-		jc_uart_pkt_parse(jc, jc->buf, pkt->uart_hdr.total_size_lsb + sizeof(jc_uart_hdr_t));
-	}
+	jc_wired_hdr_t *jc_pkt = (jc_wired_hdr_t *)jc->buf;
+	if (!memcmp(jc_pkt->uart_hdr.magic, "\x19\x81\x03", 3))
+		_jc_uart_pkt_parse(jc, jc_pkt, jc_pkt->uart_hdr.total_size_lsb + sizeof(jc_uart_hdr_t));
 }
 
 static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
@@ -728,6 +721,10 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	bool jc_r_found = jc_r.connected ? false : true;
 	bool jc_l_found = jc_l.connected ? false : true;
 
+	// Set mode to HW controlled RTS.
+	uart_set_mode(jc_l.uart, UART_AO_TX_HW_RX);
+	uart_set_mode(jc_r.uart, UART_AO_TX_HW_RX);
+
 	u32 total_retries = 10;
 retry:
 	retries = 10;
@@ -750,6 +747,9 @@ retry:
 
 			retries--;
 		}
+
+		// Wait for the first 36 bytes to arrive.
+		msleep(5);
 
 		if (!jc_l_found)
 		{
@@ -818,9 +818,9 @@ retry:
 		}
 	}
 
-	// Turn Joy-Con detect on.
-	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
+	// Restore mode to manual RTS.
+	uart_set_mode(jc_l.uart, UART_AO_TX_MN_RX);
+	uart_set_mode(jc_r.uart, UART_AO_TX_MN_RX);
 
 	return &jc_gamepad;
 }
@@ -850,8 +850,8 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 		uart_init(jc->uart, 1000000, UART_AO_TX_MN_RX);
 		jc->state = JC_STATE_START;
 
-		uart_invert(jc->uart, true, UART_INVERT_TXD);
-		uart_set_IIR(jc->uart);
+		// Set TX and RTS inversion for Joycon.
+		uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
 
 		// Wake up the controller.
 		_joycon_send_raw(jc->uart, init_wake, sizeof(init_wake));
