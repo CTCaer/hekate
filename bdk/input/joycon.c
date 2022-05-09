@@ -64,6 +64,21 @@
 #define JC_HID_SUBCMD_RUMBLE_CTL 0x48
 #define JC_HID_SUBCMD_SND_RUMBLE 0xFF
 
+#define JC_SIO_OUTPUT_RPT        0x91
+#define JC_SIO_INPUT_RPT         0x92
+#define  JC_SIO_CMD_ACK          0x80
+
+#define JC_SIO_CMD_INIT          0x01
+#define JC_SIO_CMD_UNK02         0x02
+#define JC_SIO_CMD_VER_RPT       0x03
+#define JC_SIO_CMD_UNK20         0x20 // JC_WIRED_CMD_SET_BRATE
+#define JC_SIO_CMD_UNK21         0x21
+#define JC_SIO_CMD_UNK22         0x22
+#define JC_SIO_CMD_UNK40         0x40
+#define JC_SIO_CMD_STATUS        0x41
+#define JC_SIO_CMD_IAP_VER       0x42
+
+
 #define JC_BTN_MASK_L 0xFF2900 // 0xFFE900: with charge status.
 #define JC_BTN_MASK_R 0x0056FF
 
@@ -89,6 +104,24 @@ enum
 	JC_BATT_LOW   = 4,
 	JC_BATT_MID   = 6,
 	JC_BATT_FULL  = 8
+};
+
+static const u8 sio_init[] = {
+	JC_SIO_OUTPUT_RPT, JC_SIO_CMD_INIT,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x95
+};
+
+static const u8 sio_set_rpt_version[] = {
+	JC_SIO_OUTPUT_RPT, JC_SIO_CMD_VER_RPT,
+	// old fw:   0x00, 0x0D (0.13). New 3.4.
+	// force_update_en:      0x01
+	0x00, 0x00, 0x03, 0x04, 0x00, 0xDA
+};
+
+// Every 8ms.
+static const u8 sio_pad_status[] = {
+	JC_SIO_OUTPUT_RPT, JC_SIO_CMD_STATUS,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0xB0
 };
 
 static const u8 init_wake[] = {
@@ -234,7 +267,60 @@ typedef struct _joycon_ctxt_t
 	u8  rumble_sent;
 	u8  connected;
 	u8  detected;
+	u8  sio_mode;
 } joycon_ctxt_t;
+
+typedef struct _jc_sio_out_rpt_t
+{
+	u8  cmd;
+	u8  subcmd;
+	u16 len;
+	u8  unk[2];
+	u8  crc_payload;
+	u8  crc_hdr;
+	u8  payload[];
+} jc_sio_out_rpt_t;
+
+typedef struct _jc_sio_in_rpt_t
+{
+	u8  cmd;
+	u8  ack;
+	u16 payload_size;
+	u8  status;
+	u8  unk;
+	u8  payload_crc;
+	u8  hdr_crc;
+	u8  payload[];
+} jc_sio_in_rpt_t;
+
+typedef struct _jc_hid_in_sixaxis_rpt_t
+{
+	s16 acc_x;
+	s16 acc_y;
+	s16 acc_z;
+	s16 gyr_x;
+	s16 gyr_y;
+	s16 gyr_z;
+} __attribute__((packed)) jc_hid_in_sixaxis_rpt_t;
+
+typedef struct _jc_sio_hid_in_rpt_t
+{
+	u8 cmd;
+	u8 pkt_id;
+	u8 unk;
+	u8 btn_right;
+	u8 btn_shared;
+	u8 btn_left;
+	u8 stick_h_left;
+	u8 stick_m_left;
+	u8 stick_v_left;
+	u8 stick_h_right;
+	u8 stick_m_right;
+	u8 stick_v_right;
+	u8 siaxis_rpt_num; // Max 15.
+	// Each report is 800 us?
+	jc_hid_in_sixaxis_rpt_t sixaxis[15];
+} jc_sio_hid_in_rpt_t;
 
 static joycon_ctxt_t jc_l = {0};
 static joycon_ctxt_t jc_r = {0};
@@ -270,6 +356,9 @@ static void _jc_power_supply(u8 uart, bool enable)
 
 		regulator_5v_enable(1 << uart);
 
+		if (jc_gamepad.sio_mode)
+			return;
+
 		if (jc_init_done)
 		{
 			if (uart == UART_C)
@@ -303,6 +392,9 @@ static void _jc_power_supply(u8 uart, bool enable)
 
 		regulator_5v_disable(1 << uart);
 
+		if (jc_gamepad.sio_mode)
+			return;
+
 		if (uart == UART_C)
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_3, GPIO_LOW);
 		else
@@ -312,24 +404,35 @@ static void _jc_power_supply(u8 uart, bool enable)
 
 static void _jc_detect()
 {
-	// Turn on Joy-Con detect. (UARTB/C TX).
-	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
-	usleep(20);
+	if (!jc_gamepad.sio_mode)
+	{
+		// Turn on Joy-Con detect. (UARTB/C TX).
+		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
+		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
+		usleep(20);
 
-	// Read H6/E6 which are shared with UART TX pins.
-	jc_r.detected = !gpio_read(GPIO_PORT_H, GPIO_PIN_6);
-	jc_l.detected = !gpio_read(GPIO_PORT_E, GPIO_PIN_6);
+		// Read H6/E6 which are shared with UART TX pins.
+		jc_r.detected = !gpio_read(GPIO_PORT_H, GPIO_PIN_6);
+		jc_l.detected = !gpio_read(GPIO_PORT_E, GPIO_PIN_6);
 
-	// Turn off Joy-Con detect. (UARTB/C TX).
-	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-	usleep(20);
+		// Turn off Joy-Con detect. (UARTB/C TX).
+		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
+		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
+		usleep(20);
+	}
+	else
+	{
+		//! TODO: Is there a way to detect a broken Sio?
+		jc_l.detected = true;
+	}
 }
 
 static void _jc_conn_check()
 {
 	_jc_detect();
+
+	if (jc_gamepad.sio_mode)
+		return;
 
 	// Check if a Joy-Con was disconnected.
 	if (!jc_l.detected)
@@ -607,6 +710,61 @@ static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, siz
 	jc->last_received_time = get_tmr_ms();
 }
 
+static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8* payload, u32 size)
+{
+	switch (cmd)
+	{
+	case JC_SIO_CMD_STATUS:
+		jc_sio_hid_in_rpt_t *hid_pkt = (jc_sio_hid_in_rpt_t *)payload;
+		jc_gamepad.buttons = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
+		jc_gamepad.home = !gpio_read(GPIO_PORT_V, GPIO_PIN_3);
+
+		jc_gamepad.lstick_x = hid_pkt->stick_h_left | ((hid_pkt->stick_m_left & 0xF) << 8);
+		jc_gamepad.lstick_y = (hid_pkt->stick_m_left >> 4) | (hid_pkt->stick_v_left << 4);
+		jc_gamepad.rstick_x = hid_pkt->stick_h_right | ((hid_pkt->stick_m_right & 0xF) << 8);
+		jc_gamepad.rstick_y = (hid_pkt->stick_m_right >> 4) | (hid_pkt->stick_v_right << 4);
+
+		jc_gamepad.batt_info_l = jc_l.connected;
+		jc_gamepad.batt_info_r = gpio_read(GPIO_PORT_E, GPIO_PIN_7); // Set IRQ status.
+		jc_gamepad.conn_l = jc_l.connected;
+		jc_gamepad.conn_r = jc_l.connected;
+		break;
+	default:
+		break;
+	}
+}
+
+static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt, u32 size)
+{
+	if (pkt->hdr_crc != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1, 0))
+		return;
+
+	u8 cmd = pkt->ack & (~JC_SIO_CMD_ACK);
+	switch (cmd)
+	{
+	case JC_SIO_CMD_INIT:
+		jc->connected = pkt->status == 0;
+		break;
+	case JC_SIO_CMD_VER_RPT:
+		if (jc->connected)
+			jc->connected = pkt->status == 0;
+		break;
+	case JC_SIO_CMD_IAP_VER:
+	case JC_SIO_CMD_STATUS:
+		_jc_sio_parse_payload(jc, cmd, pkt->payload, pkt->payload_size);
+		break;
+	case JC_SIO_CMD_UNK02:
+	case JC_SIO_CMD_UNK20:
+	case JC_SIO_CMD_UNK21:
+	case JC_SIO_CMD_UNK22:
+	case JC_SIO_CMD_UNK40:
+	default:
+		break;
+	}
+
+	jc->last_received_time = get_tmr_ms();
+}
+
 static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 {
 	if (!jc->detected)
@@ -616,10 +774,23 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	if (len < 8)
 		return;
 
-	// Check valid size and uart reply magic.
+	// For Joycon, check uart reply magic.
 	jc_wired_hdr_t *jc_pkt = (jc_wired_hdr_t *)jc->buf;
-	if (!memcmp(jc_pkt->uart_hdr.magic, "\x19\x81\x03", 3))
+	if (!jc->sio_mode && !memcmp(jc_pkt->uart_hdr.magic, "\x19\x81\x03", 3))
+	{
 		_jc_uart_pkt_parse(jc, jc_pkt, jc_pkt->uart_hdr.total_size_lsb + sizeof(jc_uart_hdr_t));
+
+		return;
+	}
+
+	// For Sio, check uart output report and command ack.
+	jc_sio_in_rpt_t *sio_pkt = (jc_sio_in_rpt_t *)(jc->buf);
+	if (jc->sio_mode && sio_pkt->cmd == 0x92 && (sio_pkt->ack & JC_SIO_CMD_ACK) == JC_SIO_CMD_ACK)
+	{
+		_jc_sio_uart_pkt_parse(jc, sio_pkt, sio_pkt->payload_size + sizeof(jc_sio_in_rpt_t));
+
+		return;
+	}
 }
 
 static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
@@ -645,7 +816,7 @@ static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 	if (!jc->detected)
 		return;
 
-	bool is_nxpad = !(jc->type & JC_ID_HORI);
+	bool is_nxpad = !(jc->type & JC_ID_HORI) && !jc->sio_mode;
 
 	if (jc->last_status_req_time > get_tmr_ms() || !jc->connected)
 		return;
@@ -660,6 +831,8 @@ static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 
 	if (is_nxpad)
 		_joycon_send_raw(jc->uart, nx_pad_status, sizeof(nx_pad_status));
+	else if (jc->sio_mode)
+		_joycon_send_raw(jc->uart, sio_pad_status, sizeof(sio_pad_status));
 	else
 		_joycon_send_raw(jc->uart, hori_pad_status, sizeof(hori_pad_status));
 
@@ -691,7 +864,7 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	u8 retries;
 	jc_bt_conn_t *bt_conn;
 
-	if (!jc_init_done)
+	if (!jc_init_done || jc_gamepad.sio_mode)
 		return NULL;
 
 	bt_conn = &jc_gamepad.bt_conn_l;
@@ -848,69 +1021,103 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 
 		// Initialize uart to 1 megabaud and manual RTS.
 		uart_init(jc->uart, 1000000, UART_AO_TX_MN_RX);
-		jc->state = JC_STATE_START;
 
-		// Set TX and RTS inversion for Joycon.
-		uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
-
-		// Wake up the controller.
-		_joycon_send_raw(jc->uart, init_wake, sizeof(init_wake));
-		_jc_rcv_pkt(jc); // Clear RX FIFO.
-
-		// Do a handshake.
-		u32 retries = 10;
-		while (retries && jc->state != JC_STATE_HANDSHAKED)
+		if (!jc->sio_mode)
 		{
-			_joycon_send_raw(jc->uart, init_handshake, sizeof(init_handshake));
+			jc->state = JC_STATE_START;
 
-			msleep(5);
-			_jc_rcv_pkt(jc);
-			retries--;
-		}
+			// Set TX and RTS inversion for Joycon.
+			uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
 
-		if (jc->state != JC_STATE_HANDSHAKED)
-			goto out;
+			// Wake up the controller.
+			_joycon_send_raw(jc->uart, init_wake, sizeof(init_wake));
+			_jc_rcv_pkt(jc); // Clear RX FIFO.
 
-		// Get info about the controller.
-		_joycon_send_raw(jc->uart, init_get_info, sizeof(init_get_info));
-		msleep(2);
-		_jc_rcv_pkt(jc);
-
-		if (!(jc->type & JC_ID_HORI))
-		{
-			// Request 3 megabaud change.
-			_joycon_send_raw(jc->uart, init_switch_brate, sizeof(init_switch_brate));
-			msleep(2);
-			_jc_rcv_pkt(jc);
-
-			if (jc->state == JC_STATE_BRATE_CHANGED)
+			// Do a handshake.
+			u32 retries = 10;
+			while (retries && jc->state != JC_STATE_HANDSHAKED)
 			{
-				// Reinitialize uart to 3 megabaud and manual RTS.
-				uart_init(jc->uart, 3000000, UART_AO_TX_MN_RX);
-				uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
-
-				// Handshake with the new speed.
-				retries = 10;
-				while (retries && jc->state != JC_STATE_BRATE_OK)
-				{
-					_joycon_send_raw(jc->uart, init_switched_brate, sizeof(init_switched_brate));
-					msleep(5);
-					_jc_rcv_pkt(jc);
-					retries--;
-				}
-
-				if (jc->state != JC_STATE_BRATE_OK)
-					goto out;
+				_joycon_send_raw(jc->uart, init_handshake, sizeof(init_handshake));
+				msleep(5);
+				_jc_rcv_pkt(jc);
+				retries--;
 			}
 
-			// Finalize initialization.
-			_joycon_send_raw(jc->uart, init_finalize, sizeof(init_finalize));
+			if (jc->state != JC_STATE_HANDSHAKED)
+				goto out;
+
+			// Get info about the controller.
+			_joycon_send_raw(jc->uart, init_get_info, sizeof(init_get_info));
 			msleep(2);
 			_jc_rcv_pkt(jc);
 
-			// Set packet rate.
-			_joycon_send_raw(jc->uart, init_set_rpt_rate, sizeof(init_set_rpt_rate));
-			msleep(2);
+			if (!(jc->type & JC_ID_HORI))
+			{
+				// Request 3 megabaud change.
+				_joycon_send_raw(jc->uart, init_switch_brate, sizeof(init_switch_brate));
+				msleep(2);
+				_jc_rcv_pkt(jc);
+
+				if (jc->state == JC_STATE_BRATE_CHANGED)
+				{
+					// Reinitialize uart to 3 megabaud and manual RTS.
+					uart_init(jc->uart, 3000000, UART_AO_TX_MN_RX);
+					uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
+
+					// Handshake with the new speed.
+					retries = 10;
+					while (retries && jc->state != JC_STATE_BRATE_OK)
+					{
+						_joycon_send_raw(jc->uart, init_switched_brate, sizeof(init_switched_brate));
+						msleep(5);
+						_jc_rcv_pkt(jc);
+						retries--;
+					}
+
+					if (jc->state != JC_STATE_BRATE_OK)
+						goto out;
+				}
+
+				// Finalize initialization.
+				_joycon_send_raw(jc->uart, init_finalize, sizeof(init_finalize));
+				msleep(2);
+				_jc_rcv_pkt(jc);
+
+				// Set packet rate.
+				_joycon_send_raw(jc->uart, init_set_rpt_rate, sizeof(init_set_rpt_rate));
+				msleep(2);
+				_jc_rcv_pkt(jc);
+			}
+		}
+		else
+		{
+			// Set Sio POR low to configure BOOT0 mode.
+			gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
+			usleep(300);
+			gpio_write(GPIO_PORT_T, GPIO_PIN_0, GPIO_LOW);
+			gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
+			gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_HIGH);
+			msleep(100);
+
+			// Clear RX FIFO.
+			_jc_rcv_pkt(jc);
+
+			// Initialize the controller.
+			u32 retries = 10;
+			while (!jc->connected)
+			{
+				_joycon_send_raw(jc->uart, sio_init, sizeof(sio_init));
+				msleep(5);
+				_jc_rcv_pkt(jc);
+				retries--;
+			}
+
+			if (!jc->connected)
+				goto out;
+
+			// Set output report version.
+			_joycon_send_raw(jc->uart, sio_set_rpt_version, sizeof(sio_set_rpt_version));
+			msleep(5);
 			_jc_rcv_pkt(jc);
 		}
 
@@ -920,7 +1127,7 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 out:
 		jc->last_received_time = get_tmr_ms();
 
-		if (jc->connected)
+		if (!jc->sio_mode && jc->connected)
 			_jc_power_supply(jc->uart, false);
 	}
 }
@@ -930,12 +1137,41 @@ void jc_init_hw()
 	jc_l.uart = UART_C;
 	jc_r.uart = UART_B;
 
-#if !defined(DEBUG_UART_PORT) || !(DEBUG_UART_PORT)
-	if (fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG)
-		return;
+	jc_l.sio_mode = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
+	jc_gamepad.sio_mode = jc_l.sio_mode;
 
+#if !defined(DEBUG_UART_PORT) || !(DEBUG_UART_PORT)
 	_jc_power_supply(UART_C, true);
 	_jc_power_supply(UART_B, true);
+
+	// Sio Initialization.
+	if (jc_gamepad.sio_mode)
+	{
+		// Enable 4 MHz clock to Sio.
+		clock_enable_extperiph2();
+		PINMUX_AUX(PINMUX_AUX_TOUCH_CLK) = PINMUX_PULL_DOWN;
+
+		// Configure Sio HOME BUTTON.
+		PINMUX_AUX(PINMUX_AUX_LCD_GPIO1) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP | 1;
+		gpio_config(GPIO_PORT_V, GPIO_PIN_3, GPIO_MODE_GPIO);
+
+		// Configure Sio IRQ
+		PINMUX_AUX(PINMUX_AUX_GPIO_PE7) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP;
+		gpio_config(GPIO_PORT_E, GPIO_PIN_7, GPIO_MODE_GPIO);
+
+		// Configure Sio RST and BOOT0.
+		PINMUX_AUX(PINMUX_AUX_CAM1_STROBE) = PINMUX_PULL_DOWN | 1;
+		PINMUX_AUX(PINMUX_AUX_CAM2_PWDN) = PINMUX_PULL_DOWN | 1;
+		gpio_config(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_MODE_GPIO);
+		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_OUTPUT_ENABLE);
+		gpio_write(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_LOW);
+
+		// Configure Sio POR.
+		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN1) = PINMUX_IO_HV | PINMUX_LPDR | 1;
+		gpio_config(GPIO_PORT_CC, GPIO_PIN_5, GPIO_MODE_GPIO);
+		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
+		gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
+	}
 
 	// Joy-Con (R) IsAttached. Shared with UARTB TX.
 	PINMUX_AUX(PINMUX_AUX_GPIO_PH6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
@@ -946,14 +1182,16 @@ void jc_init_hw()
 	gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_GPIO);
 
 	// Configure pinmuxing for UART B and C.
-	pinmux_config_uart(UART_B);
+	if (!jc_gamepad.sio_mode)
+		pinmux_config_uart(UART_B);
 	pinmux_config_uart(UART_C);
 
 	// Ease the stress to APB.
 	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	// Enable UART B and C clocks.
-	clock_enable_uart(UART_B);
+	if (!jc_gamepad.sio_mode)
+		clock_enable_uart(UART_B);
 	clock_enable_uart(UART_C);
 
 	// Restore OC.
@@ -972,22 +1210,33 @@ void jc_deinit()
 	_jc_power_supply(UART_B, false);
 	_jc_power_supply(UART_C, false);
 
-	// Send sleep command.
-	u8 data = HCI_STATE_SLEEP;
-
-	if (jc_r.connected && !(jc_r.type & JC_ID_HORI))
+	if (!jc_gamepad.sio_mode)
 	{
-		_jc_send_hid_cmd(UART_B, JC_HID_SUBCMD_HCI_STATE, &data, 1);
-		_jc_rcv_pkt(&jc_r);
+		// Send sleep command.
+		u8 data = HCI_STATE_SLEEP;
+		if (jc_r.connected && !(jc_r.type & JC_ID_HORI))
+		{
+			_jc_send_hid_cmd(UART_B, JC_HID_SUBCMD_HCI_STATE, &data, 1);
+			_jc_rcv_pkt(&jc_r);
+		}
+		if (jc_l.connected && !(jc_l.type & JC_ID_HORI))
+		{
+			_jc_send_hid_cmd(UART_C, JC_HID_SUBCMD_HCI_STATE, &data, 1);
+			_jc_rcv_pkt(&jc_l);
+		}
 	}
-	if (jc_l.connected && !(jc_l.type & JC_ID_HORI))
+	else
 	{
-		_jc_send_hid_cmd(UART_C, JC_HID_SUBCMD_HCI_STATE, &data, 1);
-		_jc_rcv_pkt(&jc_l);
+		// Disable Sio POR.
+		gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
+
+		// Disable 4 MHz clock to Sio.
+		clock_disable_extperiph2();
 	}
 
 	// Disable UART B and C clocks.
-	clock_disable_uart(UART_B);
+	if (!jc_gamepad.sio_mode)
+		clock_disable_uart(UART_B);
 	clock_disable_uart(UART_C);
 }
 

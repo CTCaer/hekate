@@ -83,8 +83,9 @@ typedef struct _jc_gamepad_rpt_t
 	bool center_stick_r;
 	bool conn_l;
 	bool conn_r;
-	u8 batt_info_l;
-	u8 batt_info_r;
+	bool sio_mode;
+	u8 batt_info_l; // Also Sio Connected status.
+	u8 batt_info_r; // Also Sio IRQ.
 	jc_bt_conn_t bt_conn_l;
 	jc_bt_conn_t bt_conn_r;
 } jc_gamepad_rpt_t;
