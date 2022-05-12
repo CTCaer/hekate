@@ -2176,7 +2176,7 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 
 	lv_color_t tmp_color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
 	text_color = malloc(32);
-	s_printf(text_color, "#%06X", tmp_color.full & 0xFFFFFF);
+	s_printf(text_color, "#%06X", (u32)(tmp_color.full & 0xFFFFFF));
 }
 
 lv_task_t *task_bpmp_clock;

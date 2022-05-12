@@ -149,7 +149,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	u32 sdPathLen = strlen(sd_path);
 
 	s_printf(gui->txt_buf, "#96FF00 SD Card free space:# %d MiB\n#96FF00 Total backup size:# %d MiB\n\n",
-		sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF,
+		(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF),
 		totalSectors >> SECTORS_TO_MIB_COEFF);
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
 	manual_system_maintenance(true);
@@ -358,7 +358,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	gui->txt_buf = txt_buf;
 
-	s_printf(txt_buf, "");
+	txt_buf[0] = 0;
 	lv_label_set_text(gui->label_log, txt_buf);
 
 	manual_system_maintenance(true);
@@ -841,7 +841,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
 	gui->txt_buf = txt_buf;
 
-	s_printf(txt_buf, "");
+	txt_buf[0] = 0;
 	lv_label_set_text(gui->label_log, txt_buf);
 
 	manual_system_maintenance(true);

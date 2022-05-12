@@ -2070,7 +2070,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			sd_fs.fs_type == FS_EXFAT ? ("exFAT  "SYMBOL_SHRK) : ("FAT32"),
 			(sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512,
 			(sd_fs.csize > 1) ? "KiB" : "B",
-			sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF);
+			(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF));
 
 		lv_label_set_text(lb_val3, txt_buf);
 
@@ -2159,7 +2159,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	max17050_get_property(MAX17050_RepSOC, &cap_pct);
 	max17050_get_property(MAX17050_RepCap, &value);
-	s_printf(txt_buf, "\n%d mAh [%d %]\n", value, cap_pct >> 8);
+	s_printf(txt_buf, "\n%d mAh [%d %%]\n", value, cap_pct >> 8);
 
 	max17050_get_property(MAX17050_FullCAP, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
