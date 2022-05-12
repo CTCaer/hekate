@@ -21,7 +21,7 @@
 
 #include <utils/types.h>
 
-void s_printf(char *out_buf, const char *fmt, ...);
+void s_printf(char *out_buf, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void s_vprintf(char *out_buf, const char *fmt, va_list ap);
 
 #endif
