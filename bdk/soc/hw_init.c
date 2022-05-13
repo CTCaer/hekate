@@ -99,27 +99,22 @@ static void _config_gpios(bool nx_hoag)
 
 	if (!nx_hoag)
 	{
+		// Turn Joy-Con detect on. (GPIO mode for UARTB/C TX pins.)
 		PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
 		PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
-
-		// Turn Joy-Con detect on. (GPIO mode for UARTB/C TX pins.)
-#if !defined (DEBUG_UART_PORT) || DEBUG_UART_PORT != UART_B
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-#endif
-#if !defined (DEBUG_UART_PORT) || DEBUG_UART_PORT != UART_C
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
-#endif
 
 		// Enable input logic for UARTB/C TX pins.
 		gpio_output_enable(GPIO_PORT_G, GPIO_PIN_0, GPIO_OUTPUT_DISABLE);
 		gpio_output_enable(GPIO_PORT_D, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
 	}
 
-	// Set Joy-Con IsAttached direction.
+	// Set Joy-Con IsAttached pinmux. Shared with UARTB/UARTC TX.
 	PINMUX_AUX(PINMUX_AUX_GPIO_PE6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_GPIO_PH6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
 
-	// Set Joy-Con IsAttached mode.
+	// Set Joy-Con IsAttached mode. Shared with UARTB/UARTC TX.
 	gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_GPIO);
 	gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_GPIO);
 
@@ -137,7 +132,7 @@ static void _config_gpios(bool nx_hoag)
 	gpio_output_enable(GPIO_PORT_X, GPIO_PIN_6, GPIO_OUTPUT_DISABLE);
 	gpio_output_enable(GPIO_PORT_X, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
 
-	// Configure HOME as inputs.
+	// Configure HOME as inputs. (Shared with UARTB RTS).
 	PINMUX_AUX(PINMUX_AUX_BUTTON_HOME) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
 	gpio_config(GPIO_PORT_Y, GPIO_PIN_1, GPIO_MODE_GPIO);
 }
@@ -360,6 +355,12 @@ void hw_init()
 	_config_gpios(nx_hoag);
 
 #ifdef DEBUG_UART_PORT
+	#if   (DEBUG_UART_PORT == UART_B)
+		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
+	#elif (DEBUG_UART_PORT == UART_C)
+		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
+	#endif
+	pinmux_config_uart(DEBUG_UART_PORT);
 	clock_enable_uart(DEBUG_UART_PORT);
 	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE, UART_AO_TX_AO_RX);
 	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);

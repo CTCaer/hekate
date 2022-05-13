@@ -1173,13 +1173,15 @@ void jc_init_hw()
 		gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
 	}
 
-	// Joy-Con (R) IsAttached. Shared with UARTB TX.
-	PINMUX_AUX(PINMUX_AUX_GPIO_PH6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
-	gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_GPIO);
-
-	// Joy-Con (L) IsAttached. Shared with UARTC TX.
+#if 0 // Already set by hw init.
+	// Set Joy-Con IsAttached pinmux. Shared with UARTB/UARTC TX.
 	PINMUX_AUX(PINMUX_AUX_GPIO_PE6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
+	PINMUX_AUX(PINMUX_AUX_GPIO_PH6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
+
+	// Set Joy-Con IsAttached mode. Shared with UARTB/UARTC TX.
 	gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_GPIO);
+	gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_GPIO);
+#endif
 
 	// Configure pinmuxing for UART B and C.
 	if (!jc_gamepad.sio_mode)
