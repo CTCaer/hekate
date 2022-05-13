@@ -62,16 +62,6 @@ lv_style_t mbox_darken;
 
 char *text_color;
 
-typedef struct _gui_status_bar_ctx
-{
-	lv_obj_t *mid;
-	lv_obj_t *time_temp;
-	lv_obj_t *temp_symbol;
-	lv_obj_t *temp_degrees;
-	lv_obj_t *battery;
-	lv_obj_t *battery_more;
-} gui_status_bar_ctx;
-
 typedef struct _jc_lv_driver_t
 {
 	lv_indev_t *indev;
@@ -92,7 +82,7 @@ typedef struct _jc_lv_driver_t
 
 static jc_lv_driver_t jc_drv_ctx;
 
-static gui_status_bar_ctx status_bar;
+gui_status_bar_ctx status_bar;
 
 static void _nyx_disp_init()
 {
@@ -1411,8 +1401,8 @@ out_end:
 }
 typedef struct _launch_menu_entries_t
 {
-	lv_obj_t *btn[16];
-	lv_obj_t *label[16];
+	lv_obj_t *btn[20];
+	lv_obj_t *label[20];
 } launch_menu_entries_t;
 
 static launch_menu_entries_t launch_ctxt;
@@ -1543,23 +1533,48 @@ typedef struct _launch_button_pos_t
 	u16 btn_y;
 	u16 lbl_x;
 	u16 lbl_y;
-
 } launch_button_pos_t;
 
-static const launch_button_pos_t launch_button_pos[8] = {
+static const launch_button_pos_t launch_button_pos8[8] = {
+	// First row.
 	{  19,  36,   0, 245 },
 	{ 340,  36, 321, 245 },
 	{ 661,  36, 642, 245 },
 	{ 982,  36, 963, 245 },
+	// Second row.
 	{  19, 313,   0, 522 },
 	{ 340, 313, 321, 522 },
 	{ 661, 313, 642, 522 },
 	{ 982, 313, 963, 522 }
 };
 
+static const launch_button_pos_t launch_button_pos10[10] = {
+	// First row.
+	{ 19, 36,  0,  245},
+	{260, 36, 241, 245},
+	{501, 36, 482, 245},
+	{742, 36, 723, 245},
+	{983, 36, 964, 245},
+	// Second row.
+	{ 19, 313,   0, 522},
+	{260, 313, 241, 522},
+	{501, 313, 482, 522},
+	{742, 313, 723, 522},
+	{983, 313, 964, 522}
+};
+
 static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 {
+	const u32 max_entries = n_cfg.entries_5_columns ? 10 : 8;
+	const launch_button_pos_t *launch_button_pos = n_cfg.entries_5_columns ? launch_button_pos10 : launch_button_pos8;
+
 	char *icon_path;
+
+	static lv_style_t btn_home_noborder_rel;
+	lv_style_copy(&btn_home_noborder_rel, lv_theme_get_current()->btn.rel);
+	btn_home_noborder_rel.body.opa = LV_OPA_0;
+	btn_home_noborder_rel.body.border.width = 4;
+	btn_home_noborder_rel.body.border.opa = LV_OPA_0;
 
 	static lv_style_t btn_home_transp_rel;
 	lv_style_copy(&btn_home_transp_rel, lv_theme_get_current()->btn.rel);
@@ -1611,13 +1626,11 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_cont_set_fit(lv_page_get_scrl(lv_win_get_content(win)), false, false);
 	lv_page_set_scrl_height(lv_win_get_content(win), 572);
 
+	lv_btn_ext_t * ext;
 	lv_obj_t *btn_boot_entry;
 	lv_obj_t *boot_entry_lbl_cont;
 	lv_obj_t *boot_entry_label;
 	bool no_boot_entries = false;
-
-	u32 max_entries = 8;
-	lv_btn_ext_t * ext;
 
 	// Create CFW buttons.
 	// Buttons are 200 x 200 with 4 pixel borders.
@@ -1644,7 +1657,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_obj_set_style(boot_entry_lbl_cont, &btn_label_home_transp);
 
 	// Create the rest of the buttons.
-	for (u32 btn_idx = 1; btn_idx < 8; btn_idx++)
+	for (u32 btn_idx = 1; btn_idx < (n_cfg.entries_5_columns ? 10 : 8); btn_idx++)
 	{
 		btn_boot_entry = lv_btn_create(win, btn_boot_entry);
 		launch_ctxt.btn[btn_idx] = btn_boot_entry;
@@ -1659,7 +1672,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	// Create colorized icon style based on its parrent style.
 	static lv_style_t img_style;
 	lv_style_copy(&img_style, &lv_style_plain);
-	img_style.image.color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
+	img_style.image.color = lv_color_hsv_to_rgb(n_cfg.theme_color, 100, 100);
 	img_style.image.intense = LV_OPA_COVER;
 
 	// Parse ini boot entries and set buttons/icons.
@@ -1704,6 +1717,7 @@ ini_parsing:
 		icon_path = NULL;
 		bool payload = false;
 		bool img_colorize = false;
+		bool img_noborder = false;
 		lv_img_dsc_t *bmp = NULL;
 		lv_obj_t *img = NULL;
 
@@ -1728,6 +1742,10 @@ ini_parsing:
 				bmp = bmp_to_lvimg_obj(tmp_path);
 				if (bmp)
 					img_colorize = true;
+				s_printf(tmp_path, "bootloader/res/%s_nobox.bmp", ini_sec->name);
+				bmp = bmp_to_lvimg_obj(tmp_path);
+				if (bmp)
+					img_noborder = true;
 			}
 
 			if (!bmp && payload)
@@ -1745,6 +1763,10 @@ ini_parsing:
 			// Check if colorization is enabled.
 			if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 8, "_hue", 4))
 				img_colorize = true;
+
+			// Check if no border is enabled.
+			if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 10, "_nobox", 4))
+				img_noborder = true;
 		}
 
 		// Enable button.
@@ -1772,11 +1794,28 @@ ini_parsing:
 
 		// Add button mask/radius and align icon.
 		lv_obj_t *btn = lv_btn_create(launch_ctxt.btn[curr_btn_idx], NULL);
-		lv_obj_set_size(btn, 200, 200);
-		lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_home_transp_rel);
+		u32 btn_width = 200;
+		u32 btn_height = 200;
+		if (img_noborder)
+		{
+			btn_width = bmp->header.w + 4;
+			btn_height = bmp->header.h + 4;
+
+			if (btn_width > 200)
+				btn_width = 200;
+			if (btn_height > 200)
+				btn_height = 200;
+
+			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_REL, &btn_home_noborder_rel);
+			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_PR, &btn_home_noborder_rel);
+		}
+		lv_obj_set_size(btn, btn_width, btn_height);
+		lv_btn_set_style(btn, LV_BTN_STYLE_REL, img_noborder ? &btn_home_noborder_rel : &btn_home_transp_rel);
 		lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
 		if (img)
 			lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
+		if (img_noborder)
+			lv_obj_align(btn, NULL, LV_ALIGN_CENTER, 0, 0);
 
 		// Set autoboot index.
 		ext = lv_obj_get_ext_attr(btn);
@@ -1808,7 +1847,7 @@ ini_parsing:
 
 ini_parse_failed:
 	// Reiterate the loop with more cfgs if combined.
-	if (combined_cfg && (curr_btn_idx < 8) && !more_cfg)
+	if (combined_cfg && (curr_btn_idx < (n_cfg.entries_5_columns ? 10 : 8)) && !more_cfg)
 		goto ini_parsing;
 
 failed_sd_mount:
@@ -2094,6 +2133,7 @@ static lv_res_t _show_hide_save_button(lv_obj_t *tv, uint16_t tab_idx)
 {
 	if (tab_idx == 4) // Options.
 	{
+		lv_btn_set_action(status_bar.mid, LV_BTN_ACTION_CLICK, _save_options_action);
 		lv_obj_set_opa_scale(status_bar.mid, LV_OPA_COVER);
 		lv_obj_set_click(status_bar.mid, true);
 	}
@@ -2174,7 +2214,7 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	tabview_btn_tgl_pr.body.grad_color = tabview_btn_tgl_pr.body.main_color;
 	tabview_btn_tgl_pr.body.opa = 35;
 
-	lv_color_t tmp_color = lv_color_hsv_to_rgb(n_cfg.themecolor, 100, 100);
+	lv_color_t tmp_color = lv_color_hsv_to_rgb(n_cfg.theme_color, 100, 100);
 	text_color = malloc(32);
 	s_printf(text_color, "#%06X", (u32)(tmp_color.full & 0xFFFFFF));
 }
@@ -2351,7 +2391,7 @@ void nyx_load_and_run()
 	tmp451_init();
 
 	// Set hekate theme based on chosen hue.
-	lv_theme_t *th = lv_theme_hekate_init(n_cfg.themecolor, NULL);
+	lv_theme_t *th = lv_theme_hekate_init(n_cfg.theme_color, NULL);
 	lv_theme_set_current(th);
 
 	// Create main menu

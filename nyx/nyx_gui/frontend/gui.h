@@ -34,6 +34,17 @@ typedef struct _emmc_tool_gui_t
 	bool raw_emummc;
 } emmc_tool_gui_t;
 
+typedef struct _gui_status_bar_ctx
+{
+    lv_obj_t *mid;
+    lv_obj_t *time_temp;
+    lv_obj_t *temp_symbol;
+    lv_obj_t *temp_degrees;
+    lv_obj_t *battery;
+    lv_obj_t *battery_more;
+    lv_obj_t *monitor;
+} gui_status_bar_ctx;
+
 extern lv_style_t hint_small_style;
 extern lv_style_t hint_small_style_white;
 extern lv_style_t monospace_text;
@@ -55,6 +66,8 @@ extern lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 extern lv_style_t mbox_darken;
 
 extern char *text_color;
+
+extern gui_status_bar_ctx status_bar;
 
 void reload_nyx();
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);

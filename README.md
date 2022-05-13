@@ -167,9 +167,11 @@ If the main .ini is not found, it is created on the first hekate boot and only h
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
 | themecolor=167     | Sets Nyx color of text highlights.                         |
+| entries5col=0      | 1: Sets Launch entry columns from 4 to 5 per line. For a total of 10 entries. |
 | timeoff=100        | Sets time offset in HEX. Must be in HOS epoch format       |
 | homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
+| ------------------ | ------- The following options can only be edited in nyx.ini ------- |
 | umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
 | jcforceright=0     | 1: Forces right joycon to be used as main mouse control.   |

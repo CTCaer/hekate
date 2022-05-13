@@ -260,7 +260,9 @@ skip_main_cfg_parse:
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
 				if (!strcmp("themecolor", kv->key))
-					n_cfg.themecolor = atoi(kv->val);
+					n_cfg.theme_color = atoi(kv->val);
+				else if (!strcmp("entries5col", kv->key))
+					n_cfg.entries_5_columns = atoi(kv->val) == 1;
 				else if (!strcmp("timeoff", kv->key))
 					n_cfg.timeoff = strtol(kv->val, NULL, 16);
 				else if (!strcmp("homescreen", kv->key))

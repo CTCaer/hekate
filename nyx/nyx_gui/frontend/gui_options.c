@@ -328,6 +328,21 @@ static lv_res_t _data_verification_action(lv_obj_t *ddlist)
 	return LV_RES_OK;
 }
 
+static lv_res_t _entries_columns_action(lv_obj_t *btn)
+{
+	n_cfg.entries_5_columns = !n_cfg.entries_5_columns;
+	nyx_changes_made = true;
+
+	if (!n_cfg.entries_5_columns)
+		lv_btn_set_state(btn, LV_BTN_STATE_REL);
+	else
+		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
+
+	nyx_generic_onoff_toggle(btn);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
 {
 	static const char * mbox_btn_map[] = {"\211", "\222OK!", "\211", ""};
@@ -395,7 +410,7 @@ color_test_ctxt color_test;
 
 static lv_res_t _save_theme_color_action(lv_obj_t *btn)
 {
-	n_cfg.themecolor = color_test.hue;
+	n_cfg.theme_color = color_test.hue;
 
 	// Save nyx config.
 	create_nyx_config_entry(true);
@@ -472,7 +487,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	lv_win_add_btn(win, NULL, SYMBOL_SAVE" Save & Reload", _save_theme_color_action);
 
 	// Set current color.
-	color_test.hue = n_cfg.themecolor;
+	color_test.hue = n_cfg.theme_color;
 
 	lv_obj_t *sep = lv_label_create(win, NULL);
 	lv_label_set_static_text(sep, "");
@@ -940,6 +955,10 @@ static void _check_nyx_changes()
 
 static lv_res_t _action_win_nyx_options_close(lv_obj_t *btn)
 {
+	// Hide status bar options save button.
+	lv_obj_set_opa_scale(status_bar.mid, LV_OPA_0);
+	lv_obj_set_click(status_bar.mid, false);
+
 	lv_win_close_action(btn);
 
 	close_btn = NULL;
@@ -987,6 +1006,7 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	lv_obj_t *label_sep = lv_label_create(sw_h2, NULL);
 	lv_label_set_static_text(label_sep, "");
 
+	// Create theme button.
 	lv_obj_t *btn = lv_btn_create(sw_h2, NULL);
 	lv_obj_t *label_btn = lv_label_create(btn, NULL);
 	lv_btn_set_fit(btn, true, true);
@@ -1000,6 +1020,7 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 - 8);
 
+	// Create home screen settings list.
 	lv_obj_t *line_sep = lv_line_create(sw_h2, NULL);
 	static const lv_point_t line_pp[] = { {0, 0}, { LV_HOR_RES - (LV_DPI - (LV_DPI / 4)) * 2, 0} };
 	lv_line_set_points(line_sep, line_pp, 2);
@@ -1035,22 +1056,24 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	line_sep = lv_line_create(sw_h2, line_sep);
 	lv_obj_align(line_sep, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 4);
 
+	// Create entries per line button.
 	lv_obj_t *btn2 = lv_btn_create(sw_h2, NULL);
-	lv_obj_t *label_btn2 = lv_label_create(btn2, NULL);
-	lv_btn_set_fit(btn2, true, true);
-	lv_label_set_static_text(label_btn2, SYMBOL_CLOCK" Clock (Offset)");
-	lv_obj_align(btn2, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
-	lv_btn_set_action(btn2, LV_BTN_ACTION_CLICK, _create_mbox_clock_edit);
+	nyx_create_onoff_button(th, sw_h2, btn2, SYMBOL_GPS" Extended Boot Entries", _entries_columns_action, true);
+	lv_obj_align(btn2, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 10);
+	if (n_cfg.entries_5_columns)
+		lv_btn_set_state(btn2, LV_BTN_STATE_TGL_REL);
+	nyx_generic_onoff_toggle(btn2);
 
 	label_txt2 = lv_label_create(sw_h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Change clock offset manually.\n"
-		"#C7EA46 The entered Date and Time will be converted to an offset#\n"
-		"#C7EA46 automatically. This will be also used for FatFS operations.#");
+		"Sets the boot entries per line to 5. (Default is 4)\n"
+		"#C7EA46 This allows a total of 10 boot entries to be shown in Launch#\n"
+		"#C7EA46 and More Configs sections.#\n\n\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
-	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 12);
 
+	// Create the second column.
 	label_sep = lv_label_create(sw_h3, NULL);
 	lv_label_set_static_text(label_sep, "");
 
@@ -1100,12 +1123,27 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	line_sep = lv_line_create(sw_h3, line_sep);
 	lv_obj_align(line_sep, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 4);
 
+	// Create clock edit button.
 	lv_obj_t *btn5 = lv_btn_create(sw_h3, NULL);
 	lv_obj_t *label_btn5 = lv_label_create(btn5, NULL);
 	lv_btn_set_fit(btn5, true, true);
-	lv_label_set_static_text(label_btn5, SYMBOL_EDIT" Save Options");
-	lv_obj_align(btn5, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 31 / 21, LV_DPI * 6 / 8);
-	lv_btn_set_action(btn5, LV_BTN_ACTION_CLICK, _save_nyx_options_action);
+	lv_label_set_static_text(label_btn5, SYMBOL_CLOCK" Clock (Offset)");
+	lv_obj_align(btn5, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 4);
+	lv_btn_set_action(btn5, LV_BTN_ACTION_CLICK, _create_mbox_clock_edit);
+
+	label_txt2 = lv_label_create(sw_h3, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"Change clock offset manually.\n"
+		"#C7EA46 The entered Date and Time will be converted to an offset#\n"
+		"#C7EA46 automatically. This will be also used for FatFS operations.#");
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn5, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+
+	// Enable save options button in status bar and set action.
+	lv_btn_set_action(status_bar.mid, LV_BTN_ACTION_CLICK, _save_nyx_options_action);
+	lv_obj_set_opa_scale(status_bar.mid, LV_OPA_COVER);
+	lv_obj_set_click(status_bar.mid, true);
 
 	lv_obj_set_top(l_cont, true); // Set the ddlist container at top.
 	lv_obj_set_parent(ddlist, l_cont); // Reorder ddlist.
