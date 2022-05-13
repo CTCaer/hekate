@@ -419,22 +419,15 @@ void nyx_init_load_res()
 
 void ipl_main()
 {
-	//Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
+	// Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
 	heap_init((void *)IPL_HEAP_START);
-
 
 	b_cfg = (boot_cfg_t *)(nyx_str->hekate + 0x94);
 
-	// Important: Preserve version header!
-	__asm__ ("" : : "" (ipl_ver));
-
 #ifdef DEBUG_UART_PORT
-	#if DEBUG_UART_PORT == UART_B
+	#if   (DEBUG_UART_PORT == UART_B)
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
-	#endif
-	#if DEBUG_UART_PORT == UART_C
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
+	#elif (DEBUG_UART_PORT == UART_C)
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 	#endif
 	pinmux_config_uart(DEBUG_UART_PORT);
