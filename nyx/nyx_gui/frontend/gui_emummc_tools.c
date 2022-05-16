@@ -513,20 +513,24 @@ static void _migrate_sd_backup_file_based()
 	f_mkdir(emu_path);
 
 	FIL fp;
+	// Create file based flag.
 	strcpy(emu_path + base_len, "/file_based");
 	f_open(&fp, "emuMMC/BK00/file_based", FA_CREATE_ALWAYS | FA_WRITE);
 	f_close(&fp);
 
 	emmcsn_path_impl(backup_path, "", "", NULL);
 
+	// Move BOOT0.
 	s_printf(backup_file_path, "%s/BOOT0", backup_path);
 	strcpy(emu_path + base_len, "/eMMC/BOOT0");
 	f_rename(backup_file_path, emu_path);
 
+	// Move BOOT1.
 	s_printf(backup_file_path, "%s/BOOT1", backup_path);
 	strcpy(emu_path + base_len, "/eMMC/BOOT1");
 	f_rename(backup_file_path, emu_path);
 
+	// Move raw GPP.
 	bool multipart = false;
 	s_printf(backup_file_path, "%s/rawnand.bin", backup_path);
 
@@ -779,6 +783,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	mbr_ctx.sector_start = 0;
 	mbr_ctx.part_idx = 0;
 
+	// Try to find a partition based emuMMC.
 	for (int i = 1; i < 4; i++)
 	{
 		mbr_ctx.sector_start = mbr->partitions[i].start_sct;

@@ -687,7 +687,7 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
 	lv_obj_align(line_sep, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
 
-	// Create UMS buttons.
+	// Create SD UMS button.
 	lv_obj_t *btn1 = lv_btn_create(h1, NULL);
 	lv_obj_t *label_btn = lv_label_create(btn1, NULL);
 	lv_btn_set_fit(btn1, true, true);
@@ -712,30 +712,35 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	lv_obj_align(btn_gpp, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
 	lv_btn_set_action(btn_gpp, LV_BTN_ACTION_CLICK, _action_ums_emmc_gpp);
 
+	// Create BOOT0 button.
 	lv_obj_t *btn_boot0 = lv_btn_create(h1, btn1);
 	label_btn = lv_label_create(btn_boot0, NULL);
 	lv_label_set_static_text(label_btn, "BOOT0");
 	lv_obj_align(btn_boot0, btn_gpp, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 10, 0);
 	lv_btn_set_action(btn_boot0, LV_BTN_ACTION_CLICK, _action_ums_emmc_boot0);
 
+	// Create BOOT1 button.
 	lv_obj_t *btn_boot1 = lv_btn_create(h1, btn1);
 	label_btn = lv_label_create(btn_boot1, NULL);
 	lv_label_set_static_text(label_btn, "BOOT1");
 	lv_obj_align(btn_boot1, btn_boot0, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 10, 0);
 	lv_btn_set_action(btn_boot1, LV_BTN_ACTION_CLICK, _action_ums_emmc_boot1);
 
+	// Create emuMMC RAW GPP button.
 	lv_obj_t *btn_emu_gpp = lv_btn_create(h1, btn1);
 	label_btn = lv_label_create(btn_emu_gpp, NULL);
 	lv_label_set_static_text(label_btn, SYMBOL_MODULES_ALT"  emu RAW GPP");
 	lv_obj_align(btn_emu_gpp, btn_gpp, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
 	lv_btn_set_action(btn_emu_gpp, LV_BTN_ACTION_CLICK, _action_ums_emuemmc_gpp);
 
+	// Create emuMMC BOOT0 button.
 	lv_obj_t *btn_emu_boot0 = lv_btn_create(h1, btn1);
 	label_btn = lv_label_create(btn_emu_boot0, NULL);
 	lv_label_set_static_text(label_btn, "BOOT0");
 	lv_obj_align(btn_emu_boot0, btn_boot0, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
 	lv_btn_set_action(btn_emu_boot0, LV_BTN_ACTION_CLICK, _action_ums_emuemmc_boot0);
 
+	// Create emuMMC BOOT1 button.
 	lv_obj_t *btn_emu_boot1 = lv_btn_create(h1, btn1);
 	label_btn = lv_label_create(btn_emu_boot1, NULL);
 	lv_label_set_static_text(label_btn, "BOOT1");
@@ -758,6 +763,7 @@ static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 	lv_cont_set_layout(h_write, LV_LAYOUT_OFF);
 	lv_obj_align(h_write, label_txt2, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 10, 0);
 
+	// Create read/write access button.
 	lv_obj_t *btn_write_access = lv_btn_create(h_write, NULL);
 	nyx_create_onoff_button(lv_theme_get_current(), h_write,
 		btn_write_access, SYMBOL_EDIT" Read-Only", _emmc_read_only_toggle, false);
@@ -1552,7 +1558,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_line_set_style(line_sep, th->line.decor);
 	lv_obj_align(line_sep, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 8);
 
-	// Create Unset archive bit button.
+	// Create fix archive bit button.
 	lv_obj_t *btn = lv_btn_create(h1, NULL);
 	if (hekate_bg)
 	{

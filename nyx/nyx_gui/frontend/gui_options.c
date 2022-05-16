@@ -226,6 +226,7 @@ static void _create_autoboot_window()
 
 	sd_mount();
 
+	// Parse hekate main configuration.
 	LIST_INIT(ini_sections);
 	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 	{
@@ -267,6 +268,7 @@ static void _create_autoboot_window()
 	lv_obj_set_size(list_more_cfg, LV_HOR_RES * 4 / 10, LV_VER_RES * 4 / 7);
 	lv_list_set_single_mode(list_more_cfg, true);
 
+	// Parse all .ini files in ini folder.
 	LIST_INIT(ini_list_sections);
 	if (ini_parse(&ini_list_sections, "bootloader/ini", true))
 	{
@@ -605,11 +607,11 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 		max77620_rtc_get_time(&time);
 		u32 epoch = max77620_rtc_date_to_epoch(&time);
 
-		u32 year = lv_roller_get_selected(clock_ctxt.year);
+		u32 year  = lv_roller_get_selected(clock_ctxt.year);
 		u32 month = lv_roller_get_selected(clock_ctxt.month) + 1;
-		u32 day = lv_roller_get_selected(clock_ctxt.day) + 1;
-		u32 hour = lv_roller_get_selected(clock_ctxt.hour);
-		u32 min = lv_roller_get_selected(clock_ctxt.min);
+		u32 day   = lv_roller_get_selected(clock_ctxt.day) + 1;
+		u32 hour  = lv_roller_get_selected(clock_ctxt.hour);
+		u32 min   = lv_roller_get_selected(clock_ctxt.min);
 
 		switch (month)
 		{
@@ -628,11 +630,11 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 			break;
 		}
 
-		time.year = year + CLOCK_MIN_YEAR;
+		time.year  = year + CLOCK_MIN_YEAR;
 		time.month = month;
-		time.day = day;
-		time.hour = hour;
-		time.min = min;
+		time.day   = day;
+		time.hour  = hour;
+		time.min   = min;
 
 		u32 new_epoch = max77620_rtc_date_to_epoch(&time);
 
@@ -672,6 +674,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 
 	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time# for Nyx\nThis will not alter the actual HW clock!");
 
+	// Get current time.
 	rtc_time_t time;
 	max77620_rtc_get_time(&time);
 	if (n_cfg.timeoff)
@@ -679,6 +682,8 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
 		max77620_rtc_epoch_to_date(epoch, &time);
 	}
+
+	// Normalize year if out of range.
 	if (time.year < CLOCK_MIN_YEAR)
 		time.year = CLOCK_MIN_YEAR;
 	else if (time.year > CLOCK_MAX_YEAR)
@@ -689,6 +694,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_obj_t *h1 = lv_cont_create(mbox, NULL);
 	lv_cont_set_fit(h1, true, true);
 
+	// Create year roller.
 	lv_obj_t *roller_year = lv_roller_create(h1, NULL);
 	lv_roller_set_options(roller_year,
 		"2022\n"
@@ -706,6 +712,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_roller_set_visible_row_count(roller_year, 3);
 	clock_ctxt.year = roller_year;
 
+	// Create month roller.
 	lv_obj_t *roller_month = lv_roller_create(h1, roller_year);
 	lv_roller_set_options(roller_month,
 		"January\n"
@@ -724,6 +731,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_obj_align(roller_month, roller_year, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	clock_ctxt.month = roller_month;
 
+	// Create day roller.
 	static char days[256];
 	days[0] = 0;
 	for (u32 i = 1; i < 32; i++)
@@ -735,6 +743,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_obj_align(roller_day, roller_month, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	clock_ctxt.day = roller_day;
 
+	// Create hours roller.
 	static char hours[256];
 	hours[0] = 0;
 	for (u32 i = 0; i < 24; i++)
@@ -746,6 +755,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_obj_align(roller_hour, roller_day, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
 	clock_ctxt.hour = roller_hour;
 
+	// Create minutes roller.
 	static char minutes[512];
 	minutes[0] = 0;
 	for (u32 i = 0; i < 60; i++)

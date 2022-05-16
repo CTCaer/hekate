@@ -318,6 +318,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5],
 		cal0->battery_lot, cal0->battery_ver);
 
+	// Prepare display info.
 	u8  display_rev = (cal0->lcd_vendor >> 8) & 0xFF;
 	u32 display_id = (cal0->lcd_vendor & 0xFF) << 8 | (cal0->lcd_vendor & 0xFF0000) >> 16;
 	switch (display_id)
@@ -489,6 +490,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	}
 
+	// Prepare dram id info.
 	if (!h_cfg.t210b01)
 	{
 		switch (dram_id)
@@ -688,7 +690,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc2, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc2, true);
 
-	// DRAM info.
+	// Prepare DRAM info.
 	emc_mr_data_t ram_vendor = sdram_read_mrx(MR5_MAN_ID);
 	emc_mr_data_t ram_rev0 = sdram_read_mrx(MR6_REV_ID1);
 	emc_mr_data_t ram_rev1 = sdram_read_mrx(MR7_REV_ID2);
@@ -803,7 +805,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	}
 	strcat(txt_buf, "\n\n");
 
-	// Display info.
+	// Prepare display info.
 	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;
 	u32 display_id = ((nyx_str->info.disp_id >> 8) & 0xFF00) | (nyx_str->info.disp_id & 0xFF);
 
@@ -892,6 +894,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	touch_panel_info_t *touch_panel;
 	bool panel_ic_paired = false;
 
+	// Prepare touch panel/ic info.
 	if (!touch_get_fw_info(&touch_fw))
 	{
 		strcat(txt_buf, "\n\n#00DDFF Touch Panel:#\n#FF8000 Model:# ");
@@ -913,6 +916,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %08X (", touch_fw.fw_id);
 
+		// Check panel pair info.
 		switch (touch_fw.fw_id)
 		{
 		case 0x00100100:
@@ -2160,6 +2164,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	int value = 0;
 	int cap_pct = 0;
 
+	// Fuel gauge IC info.
 	max17050_get_property(MAX17050_RepSOC, &cap_pct);
 	max17050_get_property(MAX17050_RepCap, &value);
 	s_printf(txt_buf, "\n%d mAh [%d %%]\n", value, cap_pct >> 8);
@@ -2196,6 +2201,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	max17050_get_property(MAX17050_TEMP, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, (value >= 0 ? value : (~value + 1)) % 10);
 
+	// Main Pmic IC info.
 	value = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID4);
 	u32 main_pmic_version = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID3) & 0xF;
 
@@ -2206,6 +2212,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	else
 		s_printf(txt_buf + strlen(txt_buf), "max77620 v%d\n#FF8000 Unknown OTP# (%02X)\n", main_pmic_version, value);
 
+	// CPU/GPU/DRAM Pmic IC info.
 	u32 cpu_gpu_pmic_type = h_cfg.t210b01 ? (FUSE(FUSE_RESERVED_ODM28_T210B01) & 1) + 1 : 0;
 	switch (cpu_gpu_pmic_type)
 	{
@@ -2255,6 +2262,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
 
+	// Charger IC info.
 	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
 	s_printf(txt_buf, "\n%d mV\n", value);
 
@@ -2314,6 +2322,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		break;
 	}
 
+	// USB-PD IC info.
 	bool inserted;
 	u32 wattage = 0;
 	usb_pd_objects_t usb_pd;

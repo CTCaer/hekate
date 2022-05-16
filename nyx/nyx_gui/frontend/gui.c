@@ -322,6 +322,7 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 
 	if (console_enabled)
 	{
+		// Print input debugging in console.
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
 		gfx_con_setpos(32, 638);
 		gfx_con.fntsz = 8;
@@ -460,6 +461,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 
 	if (console_enabled)
 	{
+		// Print input debugging in console.
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
 		gfx_con_setpos(32, 630);
 		gfx_con.fntsz = 8;
@@ -477,6 +479,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	// Calculate new cursor position.
 	if (!n_cfg.jc_force_right)
 	{
+		// Left stick X.
 		if (jc_pad->lstick_x <= jc_drv_ctx.cx_max && jc_pad->lstick_x >= jc_drv_ctx.cx_min)
 			jc_drv_ctx.pos_x += 0;
 		else if (jc_pad->lstick_x > jc_drv_ctx.cx_max)
@@ -484,6 +487,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		else
 			jc_drv_ctx.pos_x -= ((jc_drv_ctx.cx_min - jc_pad->lstick_x) / 30);
 
+		// Left stick Y.
 		if (jc_pad->lstick_y <= jc_drv_ctx.cy_max && jc_pad->lstick_y >= jc_drv_ctx.cy_min)
 			jc_drv_ctx.pos_y += 0;
 		else if (jc_pad->lstick_y > jc_drv_ctx.cy_max)
@@ -505,6 +509,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	}
 	else
 	{
+		// Right stick X.
 		if (jc_pad->rstick_x <= jc_drv_ctx.cx_max && jc_pad->rstick_x >= jc_drv_ctx.cx_min)
 			jc_drv_ctx.pos_x += 0;
 		else if (jc_pad->rstick_x > jc_drv_ctx.cx_max)
@@ -512,6 +517,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		else
 			jc_drv_ctx.pos_x -= ((jc_drv_ctx.cx_min - jc_pad->rstick_x) / 30);
 
+		// Right stick Y.
 		if (jc_pad->rstick_y <= jc_drv_ctx.cy_max && jc_pad->rstick_y >= jc_drv_ctx.cy_min)
 			jc_drv_ctx.pos_y += 0;
 		else if (jc_pad->rstick_y > jc_drv_ctx.cy_max)
