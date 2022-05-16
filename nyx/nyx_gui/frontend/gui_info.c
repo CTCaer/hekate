@@ -173,7 +173,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	const u32 fuse_array_size = (h_cfg.t210b01 ? 256 : 192) * sizeof(u32);
+	const u32 fuse_array_size = (h_cfg.t210b01 ? FUSE_ARRAY_WORDS_NUM_T210B01 : FUSE_ARRAY_WORDS_NUM) * sizeof(u32);
 
 	int error = !sd_mount();
 	if (!error)
@@ -193,7 +193,7 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 				error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
 		}
 
-		u32 words[256];
+		u32 words[FUSE_ARRAY_WORDS_NUM_T210B01];
 		fuse_read_array(words);
 		if (!h_cfg.t210b01)
 			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
@@ -1001,6 +1001,9 @@ static void _ipatch_process(u32 offset, u32 value)
 	{
 	case 0x20:
 		s_printf(ipatches_txt + strlen(ipatches_txt), "MOVS R0, ##0x%02X", lo);
+		break;
+	case 0x21:
+		s_printf(ipatches_txt + strlen(ipatches_txt), "MOVS R1, ##0x%02X", lo);
 		break;
 	case 0xDF:
 		s_printf(ipatches_txt + strlen(ipatches_txt), "SVC ##0x%02X", lo);
