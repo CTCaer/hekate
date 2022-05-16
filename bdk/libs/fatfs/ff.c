@@ -5879,7 +5879,7 @@ FRESULT f_mkfs (
 	stat = disk_initialize(pdrv);
 	if (stat & STA_NOINIT) return FR_NOT_READY;
 	if (stat & STA_PROTECT) return FR_WRITE_PROTECTED;
-	if (disk_ioctl(pdrv, GET_BLOCK_SIZE, &sz_blk) != RES_OK || !sz_blk || sz_blk > 32768 || (sz_blk & (sz_blk - 1))) sz_blk = 1;	/* Erase block to align data area */
+	if (disk_ioctl(pdrv, GET_BLOCK_SIZE, &sz_blk) != RES_OK || !sz_blk || sz_blk > 131072 || (sz_blk & (sz_blk - 1))) sz_blk = 2048;	/* Erase block to align data area. 1MB minimum */
 #if FF_MAX_SS != FF_MIN_SS		/* Get sector size of the medium if variable sector size cfg. */
 	if (disk_ioctl(pdrv, GET_SECTOR_SIZE, &ss) != RES_OK) return FR_DISK_ERR;
 	if (ss > FF_MAX_SS || ss < FF_MIN_SS || (ss & (ss - 1))) return FR_DISK_ERR;
@@ -5915,7 +5915,7 @@ FRESULT f_mkfs (
 	} else {
 		/* Create a single-partition in this function */
 		if (disk_ioctl(pdrv, GET_SECTOR_COUNT, &sz_vol) != RES_OK) LEAVE_MKFS(FR_DISK_ERR);
-		b_vol = (opt & FM_SFD) ? 0 : 32768;		/* Volume start sector. Align to 16MB */
+		b_vol = (opt & FM_SFD) ? 0 : sz_blk;		/* Volume start sector */
 		if (sz_vol < b_vol) LEAVE_MKFS(FR_MKFS_ABORTED);
 		sz_vol -= b_vol;						/* Volume size */
 	}
