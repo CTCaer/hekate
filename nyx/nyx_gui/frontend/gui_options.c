@@ -777,12 +777,13 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	int error;
 	bool is_l_hos = false;
 	bool is_r_hos = false;
+	bool nx_hoag = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
 	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info(&is_l_hos, &is_r_hos);
 
 	char *data = (char *)malloc(SZ_16K);
 	char *txt_buf = (char *)malloc(SZ_4K);
 
-	if (!jc_pad)
+	if (!jc_pad || nx_hoag)
 	{
 		error = 255;
 		goto disabled;
@@ -891,7 +892,12 @@ disabled:;
 				"#FFDD00 and that you paired them in HOS!#");
 	}
 	else
-		s_printf(txt_buf, "#FFDD00 Failed to dump Joy-Con pairing info!#\n#FFDD00 Error: %d#", error);
+	{
+		if (!nx_hoag)
+			s_printf(txt_buf, "#FFDD00 Failed to dump Joy-Con pairing info!#\n#FFDD00 Error: %d#", error);
+		else
+			s_printf(txt_buf, "#FFDD00 Not supported on Switch Lite!#\n");
+	}
 
 	lv_mbox_set_text(mbox, txt_buf);
 
