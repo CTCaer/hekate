@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -21,6 +21,9 @@
 #include "gui.h"
 #include "../config.h"
 #include <libs/lvgl/lvgl.h>
+
+#define CLOCK_MIN_YEAR 2022
+#define CLOCK_MAX_YEAR 2032
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
@@ -625,7 +628,7 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 			break;
 		}
 
-		time.year = year + 2020;
+		time.year = year + CLOCK_MIN_YEAR;
 		time.month = month;
 		time.day = day;
 		time.hour = hour;
@@ -676,20 +679,18 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
 		max77620_rtc_epoch_to_date(epoch, &time);
 	}
-	if (time.year < 2020)
-		time.year = 2020;
-	else if (time.year > 2030)
-		time.year = 2030;
+	if (time.year < CLOCK_MIN_YEAR)
+		time.year = CLOCK_MIN_YEAR;
+	else if (time.year > CLOCK_MAX_YEAR)
+		time.year = CLOCK_MAX_YEAR;
 
-	time.year -= 2020;
+	time.year -= CLOCK_MIN_YEAR;
 
 	lv_obj_t *h1 = lv_cont_create(mbox, NULL);
 	lv_cont_set_fit(h1, true, true);
 
 	lv_obj_t *roller_year = lv_roller_create(h1, NULL);
 	lv_roller_set_options(roller_year,
-		"2020\n"
-		"2021\n"
 		"2022\n"
 		"2023\n"
 		"2024\n"
@@ -698,7 +699,9 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 		"2027\n"
 		"2028\n"
 		"2029\n"
-		"2030");
+		"2030\n"
+		"2031\n"
+		"2032");
 	lv_roller_set_selected(roller_year, time.year, false);
 	lv_roller_set_visible_row_count(roller_year, 3);
 	clock_ctxt.year = roller_year;
