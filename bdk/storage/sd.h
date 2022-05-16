@@ -22,6 +22,8 @@
 #include <storage/sdmmc_driver.h>
 #include <libs/fatfs/ff.h>
 
+#define SD_BLOCKSIZE 512
+
 enum
 {
 	SD_INIT_FAIL  = 0,
