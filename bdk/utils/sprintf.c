@@ -36,13 +36,14 @@ static void _s_puts(char *s)
 
 static void _s_putn(u32 v, int base, char fill, int fcnt)
 {
-	char buf[65];
-	static const char digits[] = "0123456789ABCDEFghijklmnopqrstuvwxyz";
+	static const char digits[] = "0123456789ABCDEF";
+
 	char *p;
+	char buf[65];
 	int c = fcnt;
 	bool negative = false;
 
-	if (base > 36)
+	if (base != 10 && base != 16)
 		return;
 
 	// Account for negative numbers.
@@ -85,9 +86,9 @@ void s_printf(char *out_buf, const char *fmt, ...)
 	sout_buf = &out_buf;
 
 	va_start(ap, fmt);
-	while(*fmt)
+	while (*fmt)
 	{
-		if(*fmt == '%')
+		if (*fmt == '%')
 		{
 			fmt++;
 			fill = 0;
@@ -108,7 +109,7 @@ void s_printf(char *out_buf, const char *fmt, ...)
 					fcnt -= '0';
 				}
 			}
-			switch(*fmt)
+			switch (*fmt)
 			{
 			case 'c':
 				_s_putc(va_arg(ap, u32));
@@ -152,9 +153,9 @@ void s_vprintf(char *out_buf, const char *fmt, va_list ap)
 
 	sout_buf = &out_buf;
 
-	while(*fmt)
+	while (*fmt)
 	{
-		if(*fmt == '%')
+		if (*fmt == '%')
 		{
 			fmt++;
 			fill = 0;
