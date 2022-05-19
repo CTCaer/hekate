@@ -62,7 +62,7 @@ void gfx_con_getpos(u32 *x, u32 *y);
 void gfx_con_setpos(u32 x, u32 y);
 void gfx_putc(char c);
 void gfx_puts(char *s);
-void gfx_printf(const char *fmt, ...);
+void gfx_printf(const char *fmt, ...) /* __attribute__((format(printf, 1, 2))) */;
 void gfx_hexdump(u32 base, const void *buf, u32 len);
 
 void gfx_set_pixel(u32 x, u32 y, u32 color);

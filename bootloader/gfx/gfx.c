@@ -276,13 +276,14 @@ void gfx_puts(char *s)
 
 static void _gfx_putn(u32 v, int base, char fill, int fcnt)
 {
-	char buf[65];
-	static const char digits[] = "0123456789ABCDEFghijklmnopqrstuvwxyz";
+	static const char digits[] = "0123456789ABCDEF";
+
 	char *p;
+	char buf[65];
 	int c = fcnt;
 	bool negative = false;
 
-	if (base > 36)
+	if (base != 10 && base != 16)
 		return;
 
 	// Account for negative numbers.
@@ -342,9 +343,9 @@ void gfx_printf(const char *fmt, ...)
 	int fill, fcnt;
 
 	va_start(ap, fmt);
-	while(*fmt)
+	while (*fmt)
 	{
-		if(*fmt == '%')
+		if (*fmt == '%')
 		{
 			fmt++;
 			fill = 0;
