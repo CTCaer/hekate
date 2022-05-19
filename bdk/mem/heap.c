@@ -172,7 +172,10 @@ void heap_monitor(heap_monitor_t *mon, bool print_node_stats)
 	while (true)
 	{
 		if (node->used)
+		{
+			mon->nodes_used++;
 			mon->used += node->size + sizeof(hnode_t);
+		}
 		else
 			mon->total += node->size + sizeof(hnode_t);
 
@@ -188,4 +191,5 @@ void heap_monitor(heap_monitor_t *mon, bool print_node_stats)
 			break;
 	}
 	mon->total += mon->used;
+	mon->nodes_total = count;
 }

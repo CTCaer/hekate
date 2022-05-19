@@ -40,6 +40,8 @@ typedef struct
 {
     u32 total;
     u32 used;
+    u32 nodes_total;
+    u32 nodes_used;
 } heap_monitor_t;
 
 void heap_init(void *base);
