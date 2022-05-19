@@ -47,6 +47,9 @@ ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type
 	csec->name = strcpy_ns(buf + sizeof(ini_sec_t), name);
 	csec->type = type;
 
+	// Initialize list.
+	list_init(&csec->kvs);
+
 	return csec;
 }
 
@@ -118,7 +121,6 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				_find_section_name(lbuf, lblen, ']');
 
 				csec = _ini_create_section(dst, csec, &lbuf[1], INI_CHOICE);
-				list_init(&csec->kvs);
 			}
 			else if (lblen > 1 && lbuf[0] == '{') // Create new caption. Support empty caption '{}'.
 			{
@@ -153,6 +155,8 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 			}
 		} while (!f_eof(&fp));
 
+		free(lbuf);
+
 		f_close(&fp);
 
 		if (csec)
@@ -163,7 +167,6 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 		}
 	} while (is_dir);
 
-	free(lbuf);
 	free(filename);
 	free(filelist);
 
@@ -182,4 +185,43 @@ char *ini_check_payload_section(ini_sec_t *cfg)
 	}
 
 	return NULL;
+}
+
+void ini_free(link_t *src)
+{
+	ini_kv_t  *prec_kv  = NULL;
+	ini_sec_t *prev_sec = NULL;
+
+	// Parse and free all ini sections.
+	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, src, link)
+	{
+		// Free all ini key allocations if they exist.
+		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+		{
+			// Free previous key.
+			if (prec_kv)
+				free(prec_kv);
+
+			// Set next key to free.
+			prec_kv = kv;
+		}
+
+		// Free last key.
+		if (prec_kv)
+		{
+			free(prec_kv);
+			prec_kv = NULL;
+		}
+
+		// Free previous section.
+		if (prev_sec)
+			free(prev_sec);
+
+		// Set next section to free.
+		prev_sec = ini_sec;
+	}
+
+	// Free last section.
+	if (prev_sec)
+		free(prev_sec);
 }
