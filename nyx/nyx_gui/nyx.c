@@ -247,6 +247,8 @@ void load_saved_configuration()
 		}
 	}
 
+	ini_free(&ini_sections);
+
 skip_main_cfg_parse:
 	if (!ini_parse(&ini_nyx_sections, "bootloader/nyx.ini", false))
 		return;
@@ -282,6 +284,8 @@ skip_main_cfg_parse:
 			break;
 		}
 	}
+
+	ini_free(&ini_nyx_sections);
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC

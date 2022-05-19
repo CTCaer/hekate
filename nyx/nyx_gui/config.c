@@ -169,6 +169,8 @@ int create_config_entry()
 				break;
 			}
 		}
+
+		ini_free(&ini_sections);
 	}
 
 	f_close(&fp);

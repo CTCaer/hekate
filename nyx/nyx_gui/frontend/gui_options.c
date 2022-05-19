@@ -237,6 +237,8 @@ static void _create_autoboot_window()
 
 			lv_list_add(list_main, NULL, ini_sec->name, _autoboot_enable_main_action);
 		}
+
+		ini_free(&ini_sections);
 	}
 
 	// More configuration container.
@@ -279,6 +281,8 @@ static void _create_autoboot_window()
 
 			lv_list_add(list_more_cfg, NULL, ini_sec->name, _autoboot_enable_more_action);
 		}
+
+		ini_free(&ini_list_sections);
 	}
 
 	sd_unmount();

@@ -1114,6 +1114,7 @@ out0:;
 		lv_label_set_text(lv_desc, txt_buf);
 		lv_obj_align(lv_desc, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 	}
+	free(txt_buf);
 
 	// Create SD File Based container.
 	lv_obj_t *h2 = lv_cont_create(win, NULL);

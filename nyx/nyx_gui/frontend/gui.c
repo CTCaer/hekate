@@ -1378,14 +1378,10 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 		goto out_end;
 	}
 
-	char *dir = (char *)malloc(256);
-	strcpy(dir, "bootloader/payloads");
-
-	char *filelist = dirlist(dir, NULL, false, false);
+	char *filelist = dirlist("bootloader/payloads", NULL, false, false);
 	sd_unmount();
 
 	u32 i = 0;
-
 	if (filelist)
 	{
 		while (true)
@@ -1395,6 +1391,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 			lv_list_add(list, NULL, &filelist[i * 256], launch_payload);
 			i++;
 		}
+		free(filelist);
 	}
 
 out_end:
@@ -1703,9 +1700,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	if (combined_cfg && !ini_parse_success)
 	{
 ini_parsing:
-		// Reinit list.
-		ini_sections.prev = &ini_sections;
-		ini_sections.next = &ini_sections;
+		list_init(&ini_sections);
 		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
 		more_cfg = true;
 	}
@@ -1850,6 +1845,8 @@ ini_parsing:
 		if (curr_btn_idx >= max_entries)
 			break;
 	}
+
+	ini_free(&ini_sections);
 
 ini_parse_failed:
 	// Reiterate the loop with more cfgs if combined.

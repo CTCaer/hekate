@@ -66,6 +66,8 @@ void load_emummc_cfg(emummc_cfg_t *emu_info)
 			break;
 		}
 	}
+
+	ini_free(&ini_sections);
 }
 
 void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
