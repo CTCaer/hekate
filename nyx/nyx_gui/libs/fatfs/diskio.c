@@ -138,6 +138,18 @@ DRESULT disk_ioctl (
 			break;
 		}
 	}
+	else // Catch all for unknown devices.
+	{
+		switch (cmd)
+		{
+		case CTRL_SYNC:
+			break;
+		case GET_SECTOR_COUNT:
+		case GET_BLOCK_SIZE:
+			*buf = 0; // Zero value to force default or abort.
+			break;
+		}
+	}
 
 	return RES_OK;
 }
