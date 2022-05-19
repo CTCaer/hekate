@@ -779,6 +779,8 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	// Create Restore folders, if they do not exist.
 	emmcsn_path_impl(sdPath, "/restore", "", &emmc_storage);
 	emmcsn_path_impl(sdPath, "/restore/partitions", "", &emmc_storage);
+
+	// Set folder to backup/{emmc_sn}.
 	emmcsn_path_impl(sdPath, "", "", &emmc_storage);
 	gui->base_path = (char *)malloc(strlen(sdPath) + 1);
 	strcpy(gui->base_path, sdPath);
@@ -807,7 +809,12 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 			sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
 
-			emmcsn_path_impl(sdPath, "", bootPart.name, &emmc_storage);
+			// Set filename to backup/{emmc_sn}/BOOT0/1 or backup/{emmc_sn}/emummc/BOOT0/1.
+			if (!gui->raw_emummc)
+				emmcsn_path_impl(sdPath, "",        bootPart.name, &emmc_storage);
+			else
+				emmcsn_path_impl(sdPath, "/emummc", bootPart.name, &emmc_storage);
+
 			res = _dump_emmc_part(gui, sdPath, i, &emmc_storage, &bootPart);
 
 			if (!res)
@@ -885,7 +892,12 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 				i++;
 
-				emmcsn_path_impl(sdPath, "", rawPart.name, &emmc_storage);
+				// Set filename to backup/{emmc_sn}/rawnand.bin or backup/{emmc_sn}/emummc/rawnand.bin.
+				if (!gui->raw_emummc)
+					emmcsn_path_impl(sdPath, "",        rawPart.name, &emmc_storage);
+				else
+					emmcsn_path_impl(sdPath, "/emummc", rawPart.name, &emmc_storage);
+
 				res = _dump_emmc_part(gui, sdPath, 2, &emmc_storage, &rawPart);
 
 				if (!res)
