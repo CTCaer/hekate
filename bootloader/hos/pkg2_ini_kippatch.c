@@ -89,6 +89,9 @@ static ini_kip_sec_t *_ini_create_kip_section(link_t *dst, ini_kip_sec_t *ksec, 
 	// Get hash section.
 	_htoa(ksec->hash, &name[i], 8, NULL);
 
+	// Initialize list.
+	list_init(&ksec->pts);
+
 	return ksec;
 }
 
@@ -122,7 +125,6 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 
 			// Set patchset kip name and hash.
 			ksec = _ini_create_kip_section(dst, ksec, &lbuf[1]);
-			list_init(&ksec->pts);
 		}
 		else if (ksec && lbuf[0] == '.') // Extract key/value.
 		{
