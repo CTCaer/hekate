@@ -844,7 +844,10 @@ static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 
 	// Hard limit path to 1024 characters. Do not result to error.
 	if (dirLength > 1024)
+	{
+		total[2]++;
 		goto out;
+	}
 
 	for (;;)
 	{
@@ -875,14 +878,18 @@ static int _fix_attributes(lv_obj_t *lb_val, char *path, u32 *total)
 			{
 				if (!(fno.fattrib & AM_ARC))
 				{
-					total[0]++;
-					f_chmod(path, AM_ARC, AM_ARC);
+					if (!f_chmod(path, AM_ARC, AM_ARC))
+						total[0]++;
+					else
+						total[3]++;
 				}
 			}
 			else if (fno.fattrib & AM_ARC) // If not, clear the archive bit.
 			{
-				total[1]++;
-				f_chmod(path, 0, AM_ARC);
+				if (!f_chmod(path, 0, AM_ARC))
+					total[1]++;
+				else
+					total[3]++;
 			}
 
 			lv_label_set_text(lb_val, path);
@@ -937,7 +944,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		lv_obj_set_width(lb_val, lv_obj_get_width(val));
 		lv_obj_align(val, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
 
-		u32 total[2] = { 0 };
+		u32 total[4] = { 0 };
 		_fix_attributes(lb_val, path, total);
 
 		sd_unmount();
@@ -951,7 +958,15 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		if (!total[0] && !total[1])
 			s_printf(txt_buf, "#96FF00 Done! No change was needed.#");
 		else
-			s_printf(txt_buf, "#96FF00 Done! Archive bits fixed:# #FF8000 %d unset, %d set!#", total[1], total[0]);
+			s_printf(txt_buf, "#96FF00 Done! Archive bits fixed:# #FF8000 %d unset and %d set!#", total[1], total[0]);
+
+		// Check errors.
+		if (total[2] || total[3])
+		{
+			s_printf(txt_buf, "\n\n#FFDD00 Errors: folder accesses: %d, arc bit fixes: %d!#\n"
+					          "#FFDD00 Filesystem should be checked for errors.#",
+					          total[2], total[3]);
+		}
 
 		lv_label_set_text(lb_desc2, txt_buf);
 		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
