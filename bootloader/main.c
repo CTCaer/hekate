@@ -190,9 +190,6 @@ int launch_payload(char *path, bool update, bool clear_screen)
 		gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
-		goto out;
-
 	FIL fp;
 	if (f_open(&fp, path, FA_READ))
 	{
@@ -274,9 +271,6 @@ int launch_payload(char *path, bool update, bool clear_screen)
 	}
 
 out:
-	if (!update)
-		sd_end();
-
 	return 1;
 }
 
