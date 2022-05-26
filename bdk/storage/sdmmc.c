@@ -566,21 +566,21 @@ static int _mmc_storage_switch_buswidth(sdmmc_storage_t *storage, u32 bus_width)
 	return 0;
 }
 
-static int _mmc_storage_enable_HS(sdmmc_storage_t *storage, int check)
+static int _mmc_storage_enable_HS(sdmmc_storage_t *storage, bool check_sts_before_clk_setup)
 {
 	if (!_mmc_storage_switch(storage, SDMMC_SWITCH(MMC_SWITCH_MODE_WRITE_BYTE, EXT_CSD_HS_TIMING, EXT_CSD_TIMING_HS)))
 		return 0;
 
-	if (check && !_sdmmc_storage_check_status(storage))
+	if (check_sts_before_clk_setup && !_sdmmc_storage_check_status(storage))
 		return 0;
 
 	if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_MMC_HS52))
 		return 0;
 
-DPRINTF("[MMC] switched to HS\n");
+DPRINTF("[MMC] switched to HS52\n");
 	storage->csd.busspeed = 52;
 
-	if (check || _sdmmc_storage_check_status(storage))
+	if (check_sts_before_clk_setup || _sdmmc_storage_check_status(storage))
 		return 1;
 
 	return 0;
@@ -610,7 +610,7 @@ static int _mmc_storage_enable_HS400(sdmmc_storage_t *storage)
 
 	sdmmc_save_tap_value(storage->sdmmc);
 
-	if (!_mmc_storage_enable_HS(storage, 0))
+	if (!_mmc_storage_enable_HS(storage, false))
 		return 0;
 
 	if (!_mmc_storage_switch(storage, SDMMC_SWITCH(MMC_SWITCH_MODE_WRITE_BYTE, EXT_CSD_BUS_WIDTH, EXT_CSD_DDR_BUS_WIDTH_8)))
@@ -631,27 +631,29 @@ DPRINTF("[MMC] switched to HS400\n");
 static int _mmc_storage_enable_highspeed(sdmmc_storage_t *storage, u32 card_type, u32 type)
 {
 	if (sdmmc_get_io_power(storage->sdmmc) != SDMMC_POWER_1_8)
-		goto out;
+		goto hs52_mode;
 
+	// HS400 needs 8-bit bus width mode.
 	if (sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 &&
 		card_type & EXT_CSD_CARD_TYPE_HS400_1_8V && type == SDHCI_TIMING_MMC_HS400)
 		return _mmc_storage_enable_HS400(storage);
 
-	if (sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 ||
-		(sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_4
-		&& card_type & EXT_CSD_CARD_TYPE_HS200_1_8V
-		&& (type == SDHCI_TIMING_MMC_HS400 || type == SDHCI_TIMING_MMC_HS200)))
+	// Try HS200 if HS400 and 4-bit width bus or just HS200.
+	if ((sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_8 ||
+		 sdmmc_get_bus_width(storage->sdmmc) == SDMMC_BUS_WIDTH_4) &&
+		card_type & EXT_CSD_CARD_TYPE_HS200_1_8V &&
+		(type == SDHCI_TIMING_MMC_HS400 || type == SDHCI_TIMING_MMC_HS200))
 		return _mmc_storage_enable_HS200(storage);
 
-out:
+hs52_mode:
 	if (card_type & EXT_CSD_CARD_TYPE_HS_52)
-		return _mmc_storage_enable_HS(storage, 1);
+		return _mmc_storage_enable_HS(storage, true);
 
 	return 1;
 }
 
 /*
-static int _mmc_storage_enable_bkops(sdmmc_storage_t *storage)
+static int _mmc_storage_enable_auto_bkops(sdmmc_storage_t *storage)
 {
 	if (!_mmc_storage_switch(storage, SDMMC_SWITCH(MMC_SWITCH_MODE_SET_BITS, EXT_CSD_BKOPS_EN, EXT_CSD_AUTO_BKOPS_MASK)))
 		return 0;
@@ -723,7 +725,7 @@ DPRINTF("[MMC] got ext_csd\n");
 /*
 	if (storage->ext_csd.bkops & 0x1 && !(storage->ext_csd.bkops_en & EXT_CSD_AUTO_BKOPS_MASK))
 	{
-		_mmc_storage_enable_bkops(storage);
+		_mmc_storage_enable_auto_bkops(storage);
 DPRINTF("[MMC] BKOPS enabled\n");
 	}
 */
