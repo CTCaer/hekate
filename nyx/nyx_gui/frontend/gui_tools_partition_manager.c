@@ -2074,16 +2074,20 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
 	lv_label_set_recolor(lbl_status, true);
 
+	mbr_t mbr[2] = { 0 };
+	gpt_t *gpt = calloc(1, sizeof(gpt_t));
+	gpt_header_t gpt_hdr_backup = { 0 };
+
+	bool has_mbr_attributes = false;
+	bool hybrid_mbr_changed = false;
+	bool gpt_partition_exists = false;
+
 	// Try to init sd card. No need for valid MBR.
 	if (!sd_mount() && !sd_get_card_initialized())
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
-
-	mbr_t mbr[2] = { 0 };
-	gpt_t *gpt = calloc(1, sizeof(gpt_t));
-	gpt_header_t gpt_hdr_backup = { 0 };
 
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr[0]);
 	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
@@ -2092,11 +2096,28 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 
 	sd_unmount();
 
-	if (memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
+	// Check for secret MBR attributes.
+	if (gpt->entries[0].part_guid[7])
+		has_mbr_attributes = true;
+
+	// Check if there's a GPT Protective partition.
+	for (u32 i = 0; i < 4; i++)
+	{
+		if (mbr[0].partitions[i].type == 0xEE)
+			gpt_partition_exists = true;
+	}
+
+	// Check if GPT is valid.
+	if (!gpt_partition_exists || memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Warning:# No valid GPT was found!");
-		free(gpt);
-		goto out;
+
+		gpt_partition_exists = false;
+
+		if (has_mbr_attributes)
+			goto check_changes;
+		else
+			goto out;
 	}
 
 	sdmmc_storage_read(&sd_storage, gpt->header.alt_lba, 1, &gpt_hdr_backup);
@@ -2166,7 +2187,6 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	mbr[1].partitions[mbr_idx].size_sct = sd_storage.sec_cnt - 1;
 
 	// Check for differences.
-	bool hybrid_mbr_changed = false;
 	for (u32 i = 1; i < 4; i++)
 	{
 		if ((mbr[0].partitions[i].type      != mbr[1].partitions[i].type)      ||
@@ -2178,15 +2198,10 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 		}
 	}
 
-	// Check for secret MBR attributes.
-	bool has_mbr_attributes = false;
-	if (gpt->entries[0].part_guid[7])
-		has_mbr_attributes = true;
-
+check_changes:
 	if (!hybrid_mbr_changed && !has_mbr_attributes)
 	{
 		lv_label_set_text(lbl_status, "#96FF00 Warning:# The Hybrid MBR needs no change!#");
-		free(gpt);
 		goto out;
 	}
 
@@ -2248,25 +2263,33 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 			// Clear secret attributes.
 			gpt->entries[0].part_guid[7] = 0;
 
-			// Fix CRC32s.
-			u32 entries_size = sizeof(gpt_entry_t) * gpt->header.num_part_ents;
-			gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, entries_size);
-			gpt->header.crc32 = 0; // Set to 0 for calculation.
-			gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
+			if (gpt_partition_exists)
+			{
+				// Fix CRC32s.
+				u32 entries_size = sizeof(gpt_entry_t) * gpt->header.num_part_ents;
+				gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, entries_size);
+				gpt->header.crc32 = 0; // Set to 0 for calculation.
+				gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
 
-			gpt_hdr_backup.part_ents_crc32 = gpt->header.part_ents_crc32;
-			gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
-			gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
+				gpt_hdr_backup.part_ents_crc32 = gpt->header.part_ents_crc32;
+				gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
+				gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
-			// Write main GPT.
-			u32 aligned_entries_size = ALIGN(entries_size, 512);
-			sdmmc_storage_write(&sd_storage, gpt->header.my_lba, (sizeof(gpt_header_t) + aligned_entries_size) >> 9, gpt);
+				// Write main GPT.
+				u32 aligned_entries_size = ALIGN(entries_size, 512);
+				sdmmc_storage_write(&sd_storage, gpt->header.my_lba, (sizeof(gpt_header_t) + aligned_entries_size) >> 9, gpt);
 
-			// Write backup GPT partition table.
-			sdmmc_storage_write(&sd_storage, gpt_hdr_backup.part_ent_lba, aligned_entries_size >> 9, gpt->entries);
+				// Write backup GPT partition table.
+				sdmmc_storage_write(&sd_storage, gpt_hdr_backup.part_ent_lba, aligned_entries_size >> 9, gpt->entries);
 
-			// Write backup GPT header.
-			sdmmc_storage_write(&sd_storage, gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
+				// Write backup GPT header.
+				sdmmc_storage_write(&sd_storage, gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
+			}
+			else
+			{
+				// Only write the relevant sector if the only change is MBR attributes.
+				sdmmc_storage_write(&sd_storage, 2, 1, &gpt->entries[0]);
+			}
 		}
 
 		sd_unmount();
@@ -2275,9 +2298,10 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	}
 	else
 		lv_label_set_text(lbl_status, "#FFDD00 Warning: The Hybrid MBR Fix was canceled!#");
-	free(gpt);
 
 out:
+	free(gpt);
+
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
