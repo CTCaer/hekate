@@ -1211,6 +1211,7 @@ static void _check_low_battery()
 
 	enough_battery = charge_status ? 3250 : 3000;
 
+	// If battery voltage is enough, exit.
 	if (batt_volt > enough_battery || !batt_volt)
 		goto out;
 
@@ -1243,6 +1244,7 @@ static void _check_low_battery()
 		max17050_get_property(MAX17050_AvgVCELL, &batt_volt);
 		enough_battery = current_charge_status ? 3250 : 3000;
 
+		// If battery voltage is enough, exit.
 		if (batt_volt > enough_battery)
 			break;
 
@@ -1258,17 +1260,21 @@ static void _check_low_battery()
 		// Check if it's time to turn off display.
 		if (screen_on && timer < get_tmr_ms())
 		{
+			// If battery is not charging, power off.
 			if (!current_charge_status)
 			{
 				max77620_low_battery_monitor_config(true);
+
+				// Handle full hw deinit and power off.
 				power_set_state(POWER_OFF_RESET);
 			}
 
+			// If charging, just disable display.
 			display_end();
 			screen_on = false;
 		}
 
-		// Check if charging status changed or Power button was pressed.
+		// Check if charging status changed or Power button was pressed and enable display.
 		if ((charge_status != current_charge_status) || (btn_wait_timeout_single(0, BTN_POWER) & BTN_POWER))
 		{
 			if (!screen_on)
@@ -1299,7 +1305,8 @@ static void _check_low_battery()
 		charge_status = current_charge_status;
 	}
 
-	display_end();
+	if (screen_on)
+		display_end();
 
 	free(battery_icon);
 	free(charging_icon);
