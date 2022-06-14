@@ -752,6 +752,51 @@ static int _xusbd_ep_initialize(u32 ep_idx)
 	}
 }
 
+static void _xusbd_ep1_disable(u32 ep_idx)
+{
+	volatile xusb_ep_ctx_t *ep_ctxt = &xusb_evtq->xusb_ep_ctxt[ep_idx];
+	u32 ep_mask = BIT(ep_idx);
+
+	switch (ep_idx)
+	{
+	case USB_EP_BULK_OUT:
+	case USB_EP_BULK_IN:
+		// Skip if already disabled.
+		if (!ep_ctxt->ep_state)
+			return;
+
+		XUSB_DEV_XHCI(XUSB_DEV_XHCI_EP_HALT) |= ep_mask;
+
+		// Set EP state to disabled.
+		ep_ctxt->ep_state = EP_DISABLED;
+
+		// Clear EP context.
+		memset((void *)ep_ctxt, 0, sizeof(xusb_ep_ctx_t));
+
+		// Wait for EP status to change.
+		_xusb_xhci_mask_wait(XUSB_DEV_XHCI_EP_STCHG, ep_mask, ep_mask, 1000);
+
+		// Clear status change.
+		XUSB_DEV_XHCI(XUSB_DEV_XHCI_EP_STCHG) = ep_mask;
+		break;
+	}
+}
+
+static void _xusb_disable_ep1()
+{
+	_xusbd_ep1_disable(USB_EP_BULK_OUT);
+	_xusbd_ep1_disable(USB_EP_BULK_IN);
+
+	// Device mode stop.
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL) &= ~XHCI_CTRL_RUN;
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_ST)   |=  XHCI_ST_RC;
+
+	usbd_xotg->config_num = 0;
+	usbd_xotg->interface_num = 0;
+	usbd_xotg->max_lun_set = false;
+	usbd_xotg->device_state = XUSB_DEFAULT;
+}
+
 static void _xusb_init_phy()
 {
 	// Configure and enable PLLU.
@@ -841,11 +886,9 @@ static void _xusbd_init_device_clocks()
 
 int xusb_device_init()
 {
-	/////////////////////////////////////////////////
+	// Disable USB2 device controller clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_USBD);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = BIT(CLK_L_USBD);
-	/////////////////////////////////////////////////
-
 
 	// Enable XUSB clock and clear Reset to XUSB Pad Control.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = BIT(CLK_W_XUSB);
@@ -925,6 +968,32 @@ int xusb_device_init()
 	// XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTHALT) |= DEV_XHCI_PORTHALT_STCHG_INTR_EN;
 
 	return USB_RES_OK;
+}
+
+//! TODO: Power down more stuff.
+static void _xusb_device_power_down()
+{
+	// Force UTMIP_PLL power down.
+	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) |= BIT(4) | BIT(0); // UTMIP_FORCE_PD_SAMP_A/C_POWERDOWN.
+
+	// Force enable UTMIPLL IDDQ.
+	CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) |= 3;
+
+	// Disable clocks for XUSB device and Super-Speed logic.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_SET) = BIT(CLK_U_XUSB_DEV);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_U_CLR) = BIT(CLK_U_XUSB_DEV);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_SS);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB_SS);
+
+	// Set XUSB_PADCTL clock reset.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_PADCTL);
+
+	// Disable XUSB clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB);
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB);
+
+	// Disable PLLU.
+	clock_disable_pllu();
 }
 
 static int _xusb_queue_trb(u32 ep_idx, void *trb, bool ring_doorbell)
@@ -1903,16 +1972,16 @@ int xusb_device_enumerate(usb_gadget_type gadget)
 	return USB_RES_OK;
 }
 
-//! TODO: Do a full deinit.
 void xusb_end(bool reset_ep, bool only_controller)
 {
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_SS);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB_SS);
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_SET) = BIT(CLK_U_XUSB_DEV);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_U_CLR) = BIT(CLK_U_XUSB_DEV);
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_PADCTL);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB);
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB);
+	// Disable endpoints and stop device mode operation.
+	_xusb_disable_ep1();
+
+	// Disable device mode.
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL) &= ~XHCI_CTRL_ENABLE;
+
+	//! TODO: Add only controller support?
+	_xusb_device_power_down();
 }
 
 int xusb_handle_ep0_ctrl_setup()

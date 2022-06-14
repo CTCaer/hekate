@@ -443,6 +443,11 @@ static void _usb_device_power_down()
 	usb_init_done = false;
 }
 
+static void _usbd_disable_ep1()
+{
+	usbd_otg->regs->endptctrl[1] = 0;
+}
+
 static void _usbd_stall_reset_ep1(usb_dir_t direction, usb_ep_cfg_t stall)
 {
 	stall &= 1;
@@ -628,19 +633,23 @@ int usbd_flush_endpoint(u32 endpoint)
 	return USB_RES_OK;
 }
 
+static void _usb_reset_disable_ep1()
+{
+	usbd_flush_endpoint(USB_EP_ALL);
+	_usbd_stall_reset_ep1(USB_DIR_OUT, USB_EP_CFG_RESET); // EP1 Bulk OUT.
+	_usbd_stall_reset_ep1(USB_DIR_IN, USB_EP_CFG_RESET);  // EP1 Bulk IN.
+	_usbd_disable_ep1();
+
+	usbd_otg->config_num = 0;
+	usbd_otg->interface_num = 0;
+	usbd_otg->configuration_set = false;
+	usbd_otg->max_lun_set = false;
+}
+
 void usbd_end(bool reset_ep, bool only_controller)
 {
 	if (reset_ep)
-	{
-		usbd_flush_endpoint(USB_EP_ALL);
-		_usbd_stall_reset_ep1(USB_DIR_OUT, USB_EP_CFG_RESET); // EP1 Bulk OUT.
-		_usbd_stall_reset_ep1(USB_DIR_IN, USB_EP_CFG_RESET);  // EP1 Bulk IN.
-
-		usbd_otg->config_num = 0;
-		usbd_otg->interface_num = 0;
-		usbd_otg->configuration_set = false;
-		usbd_otg->max_lun_set = false;
-	}
+		_usb_reset_disable_ep1();
 
 	// Stop device controller.
 	usbd_otg->regs->usbcmd &= ~USB2D_USBCMD_RUN;
@@ -762,7 +771,7 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, u32 sync_time
 		// Set buffers addresses to all page pointers.
 		u32 dt_buffer_offset = dtd_idx * USB_TD_BUFFER_MAX_SIZE;
 		for (u32 i = 0; i < 4; i++)
-			usbdaemon->dtds[dtd_ep_idx + dtd_idx].pages[i] =
+			usbdaemon->dtds[dtd_ep_idx + dtd_idx].pages[i] = !buf ? 0 :
 				(u32)&buf[dt_buffer_offset + (USB_TD_BUFFER_PAGE_SIZE * i)];
 
 		//usbdaemon->dtds[dtd_ep_idx + dtd_idx].pages[5] =
@@ -825,6 +834,7 @@ out:
 		else if (_usbd_get_ep_status(endpoint) != USB_EP_STATUS_IDLE)
 			res = USB_ERROR_XFER_ERROR;
 
+		// Invalidate data after OP is done.
 		if (direction == USB_DIR_OUT)
 			bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 	}
