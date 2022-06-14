@@ -785,12 +785,12 @@ static int _usbd_ep_operation(usb_ep_t endpoint, u8 *buf, u32 len, u32 sync_time
 	AHB_GIZMO(AHB_AHB_MEM_PREFETCH_CFG1) |=  MEM_PREFETCH_ENABLE;
 
 	if (direction == USB_DIR_IN)
-	{
 		prime_bit = USB2D_ENDPT_STATUS_TX_OFFSET << actual_ep;
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
-	}
 	else
 		prime_bit = USB2D_ENDPT_STATUS_RX_OFFSET << actual_ep;
+
+	// Flush data before priming EP.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
 
 	// Prime endpoint.
 	usbd_otg->regs->endptprime |= prime_bit; // USB2_CONTROLLER_USB2D_ENDPTPRIME.
