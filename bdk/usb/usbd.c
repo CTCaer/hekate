@@ -1056,6 +1056,16 @@ static int _usbd_handle_set_request(bool *ep_stall)
 		if (!res)
 		{
 			usbd_otg->config_num = usbd_otg->control_setup.wValue;
+
+			// Remove configuration.
+			if (!usbd_otg->config_num)
+			{
+				//! TODO: Signal that to userspace.
+				_usb_reset_disable_ep1();
+				return res;
+			}
+
+			// Initialize configuration.
 			_usbd_initialize_ep_ctrl(USB_EP_BULK_OUT);
 			_usbd_initialize_ep_ctrl(USB_EP_BULK_IN);
 			usbd_otg->configuration_set = true;

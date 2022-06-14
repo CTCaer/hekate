@@ -1608,9 +1608,18 @@ static void _xusb_handle_set_request_dev_address(usb_ctrl_setup_t *ctrl_setup)
 
 static void _xusb_handle_set_request_configuration(usb_ctrl_setup_t *ctrl_setup)
 {
-	u32 config_num = ctrl_setup->wValue;
-	if (!config_num) //TODO! we can change device_state here.
+	usbd_xotg->config_num = ctrl_setup->wValue;
+
+	// Remove configuration.
+	if (!usbd_xotg->config_num)
+	{
+		//! TODO: Signal that to userspace.
+		_xusb_disable_ep1();
+
+		_xusb_issue_status_trb(USB_DIR_IN);
+
 		return;
+	}
 
 	// Initialize BULK EPs.
 	_xusbd_ep_initialize(USB_EP_BULK_OUT);
@@ -1621,8 +1630,6 @@ static void _xusb_handle_set_request_configuration(usb_ctrl_setup_t *ctrl_setup)
 	XUSB_DEV_XHCI(XUSB_DEV_XHCI_ST)   |= XHCI_ST_RC;
 
 	_xusb_issue_status_trb(USB_DIR_IN);
-
-	usbd_xotg->config_num = config_num;
 	usbd_xotg->device_state = XUSB_CONFIGURED_STS_WAIT;
 }
 
