@@ -2063,7 +2063,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 			"#00DDFF Found FAT volume:#\n"
 			"Filesystem:\n"
 			"Cluster:\n"
-			"Free:"
+			"Size free/total:"
 		);
 		lv_obj_set_size(desc3, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 		lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
@@ -2074,11 +2074,12 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 		lv_obj_t * lb_val3 = lv_label_create(val3, lb_desc);
 
-		s_printf(txt_buf, "\n%s\n%d %s\n%d MiB",
+		s_printf(txt_buf, "\n%s\n%d %s\n%d/%d MiB",
 			sd_fs.fs_type == FS_EXFAT ? ("exFAT  "SYMBOL_SHRK) : ("FAT32"),
 			(sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512,
 			(sd_fs.csize > 1) ? "KiB" : "B",
-			(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF));
+			(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF),
+			(u32)(sd_fs.n_fatent  * sd_fs.csize >> SECTORS_TO_MIB_COEFF));
 
 		lv_label_set_text(lb_val3, txt_buf);
 
