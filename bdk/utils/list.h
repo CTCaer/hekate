@@ -30,6 +30,10 @@
 #define LIST_FOREACH(iter, list) \
 	for(link_t *iter = (list)->next; iter != (list); iter = iter->next)
 
+/*! Iterate over all list links backwards. */
+#define LIST_FOREACH_INVERSE(iter, list) \
+	for(link_t *iter = (list)->prev; iter != (list); iter = iter->prev)
+
 /*! Safely iterate over all list links. */
 #define LIST_FOREACH_SAFE(iter, list) \
 	for(link_t *iter = (list)->next, *safe = iter->next; iter != (list); iter = safe, safe = iter->next)
@@ -38,6 +42,11 @@
 #define LIST_FOREACH_ENTRY(etype, iter, list, mn) \
 	if ((list)->next != (list)) \
 		for(etype *iter = CONTAINER_OF((list)->next, etype, mn); &iter->mn != (list); iter = CONTAINER_OF(iter->mn.next, etype, mn))
+
+/* Iterate over all list members backwards and make sure that the list has at least one entry. */
+#define LIST_FOREACH_ENTRY_INVERSE(type, iter, list, mn) \
+	if ((list)->prev != (list)) \
+		for(type *iter = CONTAINER_OF((list)->prev, type, mn); &iter->mn != (list); iter = CONTAINER_OF(iter->mn.prev, type, mn))
 
 typedef struct _link_t
 {
