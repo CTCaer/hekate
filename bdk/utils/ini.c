@@ -189,29 +189,27 @@ char *ini_check_payload_section(ini_sec_t *cfg)
 
 void ini_free(link_t *src)
 {
-	ini_kv_t  *prec_kv  = NULL;
 	ini_sec_t *prev_sec = NULL;
 
 	// Parse and free all ini sections.
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, src, link)
 	{
+		ini_kv_t *prev_kv  = NULL;
+
 		// Free all ini key allocations if they exist.
 		LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 		{
 			// Free previous key.
-			if (prec_kv)
-				free(prec_kv);
+			if (prev_kv)
+				free(prev_kv);
 
 			// Set next key to free.
-			prec_kv = kv;
+			prev_kv = kv;
 		}
 
 		// Free last key.
-		if (prec_kv)
-		{
-			free(prec_kv);
-			prec_kv = NULL;
-		}
+		if (prev_kv)
+			free(prev_kv);
 
 		// Free previous section.
 		if (prev_sec)
