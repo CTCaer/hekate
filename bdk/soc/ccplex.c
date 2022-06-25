@@ -51,7 +51,7 @@ void _ccplex_enable_power_t210b01()
 void ccplex_boot_cpu0(u32 entry)
 {
 	// Set ACTIVE_CLUSER to FAST.
-	FLOW_CTLR(FLOW_CTLR_BPMP_CLUSTER_CONTROL) &= 0xFFFFFFFE;
+	FLOW_CTLR(FLOW_CTLR_BPMP_CLUSTER_CONTROL) &= ~CLUSTER_CTRL_ACTIVE_SLOW;
 
 	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
 		_ccplex_enable_power_t210();
@@ -81,9 +81,9 @@ void ccplex_boot_cpu0(u32 entry)
 	// Enable CPU0 rail.
 	pmc_enable_partition(POWER_RAIL_CE0,   ENABLE);
 
-	// Request and wait for RAM repair.
-	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = 1;
-	while (!(FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) & 2))
+	// Request and wait for RAM repair. Needed for the Fast cluster.
+	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = RAM_REPAIR_REQ;
+	while (!(FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) & RAM_REPAIR_STS))
 		;
 
 	EXCP_VEC(EVP_CPU_RESET_VECTOR) = 0;

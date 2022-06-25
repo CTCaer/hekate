@@ -309,6 +309,9 @@
 #define FLOW_CTLR_CPU2_CSR 0x20
 #define FLOW_CTLR_CPU3_CSR 0x28
 #define FLOW_CTLR_RAM_REPAIR 0x40
+#define  RAM_REPAIR_REQ          BIT(0)
+#define  RAM_REPAIR_STS          BIT(1)
 #define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
+#define  CLUSTER_CTRL_ACTIVE_SLOW BIT(0)
 
 #endif
