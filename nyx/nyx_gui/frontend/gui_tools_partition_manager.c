@@ -83,7 +83,7 @@ l4t_flasher_ctxt_t l4t_flash_ctxt;
 lv_obj_t *btn_flash_l4t;
 lv_obj_t *btn_flash_android;
 
-static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_size, const char *dst, const char *src, lv_obj_t **labels)
+static int _stat_and_copy_files(const char *src, const char *dst, char *path, u32 *total_files, u32 *total_size, lv_obj_t **labels)
 {
 	FRESULT res;
 	FIL fp_src;
@@ -92,8 +92,7 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 	u32 dirLength = 0;
 	static FILINFO fno;
 
-	if (src)
-		f_chdrive(src);
+	f_chdrive(src);
 
 	// Open directory.
 	res = f_opendir(&dir, path);
@@ -148,7 +147,7 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 			*total_size += file_size;
 			*total_files += 1;
 
-			if (src && dst)
+			if (dst)
 			{
 				u32 file_size = fno.fsize;
 
@@ -204,8 +203,9 @@ static int _backup_and_restore_files(char *path, u32 *total_files, u32 *total_si
 				f_mkdir(path);
 				f_chmod(path, fno.fattrib, 0xFF);
 			}
+
 			// Enter the directory.
-			res = _backup_and_restore_files(path, total_files, total_size, dst, src, labels);
+			res = _stat_and_copy_files(src, dst, path, total_files, total_size, labels);
 			if (res != FR_OK)
 				break;
 
@@ -1279,6 +1279,48 @@ static lv_res_t _action_part_manager_flash_options2(lv_obj_t *btns, const char *
 	return LV_RES_OK;
 }
 
+static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
+{
+	const char *src_drv = backup ? "sd:"  : "ram:";
+	const char *dst_drv = backup ? "ram:" : "sd:";
+
+	int res = 0;
+	u32 total_size = 0;
+	u32 total_files = 0;
+	char *path = malloc(0x1000);
+	path[0] = 0; // Set default as root folder.
+
+	// Check if Mariko Warmboot Storage exists in source drive.
+	f_chdrive(src_drv);
+	bool backup_mws = !part_info.backup_possible && !f_stat("warmboot_mariko", NULL);
+
+	if (!part_info.backup_possible)
+	{
+		// Change path to hekate/Nyx.
+		strcpy(path, "bootloader");
+
+		// Create hekate/Nyx/MWS folders in destination drive.
+		f_chdrive(dst_drv);
+		f_mkdir("bootloader");
+		if (backup_mws)
+			f_mkdir("warmboot_mariko");
+	}
+
+	// Copy all or hekate/Nyx files.
+	res = _stat_and_copy_files(src_drv, dst_drv, path, &total_files, &total_size, labels);
+
+	// If incomplete backup mode, copy MWS also.
+	if (!res && backup_mws)
+	{
+		strcpy(path, "warmboot_mariko");
+		res = _stat_and_copy_files(src_drv, dst_drv, path, &total_files, &total_size, labels);
+	}
+
+	free(path);
+
+	return res;
+}
+
 static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -1300,36 +1342,34 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	bool buttons_set = false;
 
 	// Use safety wait if backup is not possible.
-	if (!part_info.backup_possible)
+	char *txt_buf = malloc(SZ_4K);
+	strcpy(txt_buf, "#FF8000 Partition Manager#\n\nSafety wait ends in ");
+	lv_mbox_set_text(mbox, txt_buf);
+
+	u32 seconds = 5;
+	u32 text_idx = strlen(txt_buf);
+	while (seconds)
 	{
-		char *txt_buf = malloc(SZ_4K);
-		strcpy(txt_buf, "#FF8000 Partition Manager#\n\nSafety wait ends in ");
+		s_printf(txt_buf + text_idx, "%d seconds...", seconds);
 		lv_mbox_set_text(mbox, txt_buf);
-
-		u32 seconds = 5;
-		u32 text_idx = strlen(txt_buf);
-		while (seconds)
-		{
-			s_printf(txt_buf + text_idx, "%d seconds...", seconds);
-			lv_mbox_set_text(mbox, txt_buf);
-			manual_system_maintenance(true);
-			msleep(1000);
-			seconds--;
-		}
-
-		lv_mbox_set_text(mbox,
-			"#FF8000 Partition Manager#\n\n"
-			"#FFDD00 Warning: Do you really want to continue?!#\n\n"
-			"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.");
-		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		manual_system_maintenance(true);
-
-		free(txt_buf);
-
-		if (!(btn_wait() & BTN_POWER))
-			goto exit;
+		msleep(1000);
+		seconds--;
 	}
 
+	lv_mbox_set_text(mbox,
+		"#FF8000 Partition Manager#\n\n"
+		"#FFDD00 Warning: Do you really want to continue?!#\n\n"
+		"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.");
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	manual_system_maintenance(true);
+
+	free(txt_buf);
+
+	if (!(btn_wait() & BTN_POWER))
+		goto exit;
+
+	// Start partitioning.
 	lv_mbox_set_text(mbox, "#FF8000 Partition Manager#");
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	manual_system_maintenance(true);
@@ -1356,9 +1396,6 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	sd_mount();
 
 	FATFS ram_fs;
-	char *path = malloc(0x1000);
-	u32 total_files = 0;
-	u32 total_size = 0;
 
 	// Read current MBR.
 	sdmmc_storage_read(&sd_storage, 0, 1, &part_info.mbr_old);
@@ -1375,31 +1412,15 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 		goto error;
 	}
 
-	if (!part_info.backup_possible)
-	{
-		strcpy(path, "bootloader");
-		f_chdrive("ram:");
-		f_mkdir(path);
-	}
-	else
-		path[0] = 0;
-
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Backing up files...");
 	manual_system_maintenance(true);
 
 	// Do full or hekate/Nyx backup.
-	if (_backup_and_restore_files(path, &total_files, &total_size, "ram:", "sd:", lbl_paths))
+	if (_backup_and_restore_files(true, lbl_paths))
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to back up files!");
 		goto error;
 	}
-	total_files = 0;
-	total_size = 0;
-
-	if (!part_info.backup_possible)
-		strcpy(path, "bootloader");
-	else
-		path[0] = 0;
 
 	f_mount(NULL, "sd:", 1); // Unmount SD card.
 
@@ -1447,19 +1468,19 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 
 		sd_mount();
 
-		if (!part_info.backup_possible)
-		{
-			f_chdrive("sd:");
-			f_mkdir(path);
-		}
-
 		lv_label_set_text(lbl_status, "#00DDFF Status:# Restoring files...");
 		manual_system_maintenance(true);
-		if (_backup_and_restore_files(path, &total_files, &total_size, "sd:", "ram:", NULL))
+
+		// Restore backed up files back to SD.
+		if (_backup_and_restore_files(false, lbl_paths))
 		{
-			lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to restore files!");
-			free(buf);
-			goto error;
+			// Failed to restore files. Try again once more.
+			if (_backup_and_restore_files(false, lbl_paths))
+			{
+				lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to restore files!");
+				free(buf);
+				goto error;
+			}
 		}
 
 		lv_label_set_text(lbl_status, "#00DDFF Status:# Restored files but the operation failed!");
@@ -1474,33 +1495,14 @@ mkfs_no_error:
 	// Remount sd card as it was unmounted from formatting it.
 	f_mount(&sd_fs, "sd:", 1); // Mount SD card.
 
-	if (!part_info.backup_possible)
-	{
-		f_chdrive("sd:");
-		f_mkdir(path);
-	}
-
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Restoring files...");
 	manual_system_maintenance(true);
 
 	// Restore backed up files back to SD.
-	if (_backup_and_restore_files(path, &total_files, &total_size, "sd:", "ram:", lbl_paths))
+	if (_backup_and_restore_files(false, lbl_paths))
 	{
-		// Failed to restore files.
-		total_files = 0;
-		total_size = 0;
-
-		if (!part_info.backup_possible)
-		{
-			strcpy(path, "bootloader");
-			f_chdrive("sd:");
-			f_mkdir(path);
-		}
-		else
-			path[0] = 0;
-
-		// Try again once more.
-		if (_backup_and_restore_files(path, &total_files, &total_size, "sd:", "ram:", NULL))
+		// Failed to restore files. Try again once more.
+		if (_backup_and_restore_files(false, lbl_paths))
 		{
 			lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to restore files!");
 			goto error;
@@ -1564,7 +1566,6 @@ mkfs_no_error:
 
 error:
 	f_chdrive("sd:");
-	free(path);
 
 out:
 	lv_obj_del(lbl_paths[0]);
@@ -1950,7 +1951,7 @@ static void _create_mbox_check_files_total_size()
 	path[0] = 0;
 
 	// Check total size of files.
-	int res = _backup_and_restore_files(path, &total_files, &total_size, NULL, NULL, NULL);
+	int res = _stat_and_copy_files("sd:", NULL, path, &total_files, &total_size, NULL);
 
 	// Not more than 1.0GB.
 	part_info.backup_possible = !res && !(total_size > (RAM_DISK_SZ - SZ_16M));
