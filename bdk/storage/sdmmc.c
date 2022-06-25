@@ -988,16 +988,16 @@ static int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int
 	return _sdmmc_storage_check_card_status(tmp);
 }
 
-void _sd_storage_set_current_limit(sdmmc_storage_t *storage, u16 current_limit, u8 *buf)
+static void _sd_storage_set_power_limit(sdmmc_storage_t *storage, u16 power_limit, u8 *buf)
 {
-	u32 pwr = SD_SET_CURRENT_LIMIT_200;
+	u32 pwr = SD_SET_POWER_LIMIT_0_72;
 
-	if (current_limit & SD_MAX_CURRENT_800)
-		pwr = SD_SET_CURRENT_LIMIT_800;
-	else if (current_limit & SD_MAX_CURRENT_600)
-		pwr = SD_SET_CURRENT_LIMIT_600;
-	else if (current_limit & SD_MAX_CURRENT_400)
-		pwr = SD_SET_CURRENT_LIMIT_400;
+	if (power_limit & SD_MAX_POWER_2_88)
+		pwr = SD_SET_POWER_LIMIT_2_88;
+	else if (power_limit & SD_MAX_POWER_2_16)
+		pwr = SD_SET_POWER_LIMIT_2_16;
+	else if (power_limit & SD_MAX_POWER_1_44)
+		pwr = SD_SET_POWER_LIMIT_1_44;
 
 	_sd_storage_switch(storage, buf, SD_SWITCH_SET, 3, pwr);
 
@@ -1005,21 +1005,21 @@ void _sd_storage_set_current_limit(sdmmc_storage_t *storage, u16 current_limit, 
 	{
 		switch (pwr)
 		{
-		case SD_SET_CURRENT_LIMIT_800:
-DPRINTF("[SD] power limit raised to 800mA\n");
+		case SD_SET_POWER_LIMIT_2_88:
+DPRINTF("[SD] power limit raised to 2880 mW\n");
 			break;
 
-		case SD_SET_CURRENT_LIMIT_600:
-DPRINTF("[SD] power limit raised to 600mA\n");
+		case SD_SET_POWER_LIMIT_2_16:
+DPRINTF("[SD] power limit raised to 2160 mW\n");
 			break;
 
-		case SD_SET_CURRENT_LIMIT_400:
-DPRINTF("[SD] power limit raised to 400mA\n");
+		case SD_SET_POWER_LIMIT_1_44:
+DPRINTF("[SD] power limit raised to 1440 mW\n");
 			break;
 
 		default:
-		case SD_SET_CURRENT_LIMIT_200:
-DPRINTF("[SD] power limit defaulted to 200mA\n");
+		case SD_SET_POWER_LIMIT_0_72:
+DPRINTF("[SD] power limit defaulted to 720 mW\n");
 			break;
 		}
 	}
@@ -1037,7 +1037,7 @@ DPRINTF("[SD] supports (U)HS mode: %d\n", buf[16] & 0xF);
 DPRINTF("[SD] supports selected (U)HS mode\n");
 
 	u16 total_pwr_consumption = ((u16)buf[0] << 8) | buf[1];
-DPRINTF("[SD] total max current: %d\n", total_pwr_consumption);
+DPRINTF("[SD] total max power: %d mW\n", total_pwr_consumption * 3600 / 1000);
 
 	if (total_pwr_consumption <= 800)
 	{
@@ -1049,8 +1049,8 @@ DPRINTF("[SD] total max current: %d\n", total_pwr_consumption);
 
 		return 1;
 	}
-DPRINTF("[SD] card max current over limit\n");
 
+DPRINTF("[SD] card max power over limit\n");
 	return 0;
 }
 
@@ -1061,14 +1061,13 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
-	//gfx_hexdump(0, (u8 *)buf, 64);
 
 	u8  access_mode = buf[13];
-	u16 current_limit = buf[7] | buf[6] << 8;
-DPRINTF("[SD] access: %02X, current: %02X\n", access_mode, current_limit);
+	u16 power_limit = buf[7] | buf[6] << 8;
+DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
 
-	// Try to raise the current limit to let the card perform better.
-	_sd_storage_set_current_limit(storage, current_limit, buf);
+	// Try to raise the power limit to let the card perform better.
+	_sd_storage_set_power_limit(storage, power_limit, buf);
 
 	u32 hs_type = 0;
 	switch (type)
@@ -1141,10 +1140,11 @@ static int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 		return 0;
 
 	u8  access_mode = buf[13];
-	u16 current_limit = buf[7] | buf[6] << 8;
+	u16 power_limit = buf[7] | buf[6] << 8;
+DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
 
-	// Try to raise the current limit to let the card perform better.
-	_sd_storage_set_current_limit(storage, current_limit, buf);
+	// Try to raise the power limit to let the card perform better.
+	_sd_storage_set_power_limit(storage, power_limit, buf);
 
 	if (!(access_mode & SD_MODE_HIGH_SPEED))
 		return 1;
