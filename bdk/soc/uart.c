@@ -199,9 +199,11 @@ void uart_empty_fifo(u32 idx, u32 which)
 
 #include <utils/sprintf.h>
 
-void uart_print(const char *fmt, ...)
+void uart_printf(const char *fmt, ...)
 {
 	va_list ap;
+
+	//! NOTE: Anything more and it will hang. Heap usage is out of the question.
 	char text[256];
 
 	va_start(ap, fmt);

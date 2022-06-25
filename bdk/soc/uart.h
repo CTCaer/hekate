@@ -110,7 +110,7 @@ u32  uart_get_IIR(u32 idx);
 void uart_set_IIR(u32 idx);
 void uart_empty_fifo(u32 idx, u32 which);
 #ifdef DEBUG_UART_PORT
-void uart_print(const char *fmt, ...);
+void uart_printf(const char *fmt, ...);
 #endif
 
 #endif
