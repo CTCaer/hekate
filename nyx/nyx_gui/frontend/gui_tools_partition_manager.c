@@ -1878,7 +1878,18 @@ out:
 	return LV_RES_OK;
 }
 
-static void create_mbox_check_files_total_size()
+static lv_res_t _mbox_check_files_total_size_option(lv_obj_t *btns, const char *txt)
+{
+	// If "don't backup" button was pressed, disable backup/restore of files.
+	if (!lv_btnm_get_pressed(btns))
+		part_info.backup_possible = false;
+
+	mbox_action(btns, txt);
+
+	return LV_RES_INV;
+}
+
+static void _create_mbox_check_files_total_size()
 {
 	static lv_style_t bar_hos_ind, bar_emu_ind, bar_l4t_ind, bar_and_ind;
 	static lv_style_t sep_emu_bg, sep_l4t_bg, sep_and_bg;
@@ -1922,6 +1933,7 @@ static void create_mbox_check_files_total_size()
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map2[] = { "\222Don't Backup", "\222OK", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
@@ -1941,7 +1953,7 @@ static void create_mbox_check_files_total_size()
 	int res = _backup_and_restore_files(path, &total_files, &total_size, NULL, NULL, NULL);
 
 	// Not more than 1.0GB.
-	part_info.backup_possible = !res && !(total_size > (RAM_DISK_SZ - SZ_16M)); // 0x2400000
+	part_info.backup_possible = !res && !(total_size > (RAM_DISK_SZ - SZ_16M));
 
 	if (part_info.backup_possible)
 	{
@@ -2050,7 +2062,10 @@ static void create_mbox_check_files_total_size()
 	lv_label_set_text(lbl_table, txt_buf);
 	lv_obj_align(lbl_table, h1, LV_ALIGN_IN_TOP_MID, 0, LV_DPI);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	if (!part_info.backup_possible)
+		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	else
+		lv_mbox_add_btns(mbox, mbox_btn_map2, _mbox_check_files_total_size_option);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
@@ -2391,7 +2406,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	}
 
 	memset(&part_info, 0, sizeof(partition_ctxt_t));
-	create_mbox_check_files_total_size();
+	_create_mbox_check_files_total_size();
 
 	char *txt_buf = malloc(SZ_8K);
 
