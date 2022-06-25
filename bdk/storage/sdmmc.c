@@ -510,7 +510,7 @@ static void _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage, u8 *buf)
 	storage->sec_cnt = *(u32 *)&buf[EXT_CSD_SEC_CNT];
 }
 
-static int _mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf)
+int mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf)
 {
 	sdmmc_cmd_t cmdbuf;
 	sdmmc_init_cmd(&cmdbuf, MMC_SEND_EXT_CSD, 0, SDMMC_RSP_TYPE_1, 0);
@@ -715,12 +715,11 @@ DPRINTF("[MMC] set blocklen to 512\n");
 		return 0;
 DPRINTF("[MMC] switched buswidth\n");
 
-	if (!_mmc_storage_get_ext_csd(storage, (u8 *)SDMMC_UPPER_BUFFER))
+	if (!mmc_storage_get_ext_csd(storage, (u8 *)SDMMC_UPPER_BUFFER))
 		return 0;
 DPRINTF("[MMC] got ext_csd\n");
 
 	_mmc_storage_parse_cid(storage); // This needs to be after csd and ext_csd.
-	//gfx_hexdump(0, ext_csd, 512);
 
 /*
 	if (storage->ext_csd.bkops & 0x1 && !(storage->ext_csd.bkops_en & EXT_CSD_AUTO_BKOPS_MASK))
@@ -911,7 +910,7 @@ static void _sd_storage_parse_scr(sdmmc_storage_t *storage)
 		storage->scr.cmds = unstuff_bits(resp, 32, 2);
 }
 
-int _sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
+int sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
 {
 	sdmmc_cmd_t cmdbuf;
 	sdmmc_init_cmd(&cmdbuf, SD_APP_SEND_SCR, 0, SDMMC_RSP_TYPE_1, 0);
@@ -938,12 +937,11 @@ int _sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
 		storage->raw_scr[i]     = buf[i + 3];
 	}
 	_sd_storage_parse_scr(storage);
-	//gfx_hexdump(0, storage->raw_scr, 8);
 
 	return _sdmmc_storage_check_card_status(tmp);
 }
 
-int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
+static int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
 {
 	sdmmc_cmd_t cmdbuf;
 	sdmmc_init_cmd(&cmdbuf, SD_SWITCH, 0xFFFFFF, SDMMC_RSP_TYPE_1, 0);
@@ -959,12 +957,14 @@ int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))
 		return 0;
 
+	//gfx_hexdump(0, (u8 *)buf, 64);
+
 	u32 tmp = 0;
 	sdmmc_get_rsp(storage->sdmmc, &tmp, 4, SDMMC_RSP_TYPE_1);
 	return _sdmmc_storage_check_card_status(tmp);
 }
 
-int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int group, u32 arg)
+static int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int group, u32 arg)
 {
 	sdmmc_cmd_t cmdbuf;
 	u32 switchcmd = mode << 31 | 0x00FFFFFF;
@@ -1025,7 +1025,7 @@ DPRINTF("[SD] power limit defaulted to 200mA\n");
 	}
 }
 
-int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
+static int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
 	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, 0, hs_type))
 		return 0;
@@ -1054,7 +1054,7 @@ DPRINTF("[SD] card max current over limit\n");
 	return 0;
 }
 
-int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
+static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
 {
 	if (sdmmc_get_bus_width(storage->sdmmc) != SDMMC_BUS_WIDTH_4)
 		return 0;
@@ -1135,11 +1135,10 @@ DPRINTF("[SD] after tuning\n");
 	return _sdmmc_storage_check_status(storage);
 }
 
-int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
+static int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 {
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
-	//gfx_hexdump(0, (u8 *)buf, 64);
 
 	u8  access_mode = buf[13];
 	u16 current_limit = buf[7] | buf[6] << 8;
@@ -1200,8 +1199,8 @@ u32 sd_storage_get_ssr_au(sdmmc_storage_t *storage)
 static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 {
 	// unstuff_bits supports only 4 u32 so break into 2 x u32x4 groups.
-	u32 raw_ssr1[4];
-	u32 raw_ssr2[4];
+	u32 raw_ssr1[4]; // 511:384.
+	u32 raw_ssr2[4]; // 383:256.
 
 	memcpy(raw_ssr1, &storage->raw_ssr[0],  16);
 	memcpy(raw_ssr2, &storage->raw_ssr[16], 16);
@@ -1270,7 +1269,6 @@ DPRINTF("[SD] ssr: Not supported\n");
 	}
 
 	_sd_storage_parse_ssr(storage);
-	//gfx_hexdump(0, storage->raw_ssr, 64);
 
 	return _sdmmc_storage_check_card_status(tmp);
 }
@@ -1414,7 +1412,7 @@ DPRINTF("[SD] set blocklen to 512\n");
 		return 0;
 DPRINTF("[SD] cleared card detect\n");
 
-	if (!_sd_storage_get_scr(storage, buf))
+	if (!sd_storage_get_scr(storage, buf))
 		return 0;
 DPRINTF("[SD] got scr\n");
 

@@ -209,6 +209,9 @@ int  sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
 int  sdmmc_storage_execute_vendor_cmd(sdmmc_storage_t *storage, u32 arg);
 int  sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf);
 
+int  mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf);
+
+int  sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf);
 int  sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf);
 u32  sd_storage_get_ssr_au(sdmmc_storage_t *storage);
 
