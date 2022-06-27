@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -17,9 +17,9 @@
 
 #include <memory_map.h>
 #include <mem/mc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <soc/clock.h>
-#include <utils/util.h>
 
 void mc_config_tsec_carveout(u32 bom, u32 size1mb, bool lock)
 {

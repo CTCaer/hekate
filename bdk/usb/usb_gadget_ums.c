@@ -24,13 +24,13 @@
 #include <usb/usbd.h>
 #include <gfx_utils.h>
 #include <soc/hw_init.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
 #include <storage/sdmmc_driver.h>
 #include <utils/btn.h>
 #include <utils/sprintf.h>
-#include <utils/util.h>
 
 #include <memory_map.h>
 

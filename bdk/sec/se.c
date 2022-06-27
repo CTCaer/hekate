@@ -23,8 +23,8 @@
 #include <soc/bpmp.h>
 #include <soc/hw_init.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 typedef struct _se_ll_t
 {

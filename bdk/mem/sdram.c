@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -31,8 +31,8 @@
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 #define CONFIG_SDRAM_KEEP_ALIVE
 

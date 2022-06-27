@@ -31,6 +31,7 @@
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
 #include <soc/uart.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <mem/mc.h>
 #include <mem/minerva.h>

@@ -17,7 +17,7 @@
 #ifndef LV_CONF_H
 #define LV_CONF_H
 
-#include <utils/types.h>
+#include <soc/timer.h>
 #include <memory_map.h>
 /*===================
    Dynamic memory

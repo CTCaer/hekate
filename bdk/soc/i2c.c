@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include <soc/i2c.h>
-#include <utils/util.h>
+#include <soc/timer.h>
 
 #define I2C_PACKET_PROT_I2C  BIT(4)
 #define I2C_HEADER_CONT_XFER BIT(15)

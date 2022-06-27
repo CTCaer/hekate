@@ -20,8 +20,8 @@
 #include <power/max77812.h>
 #include <soc/fuse.h>
 #include <soc/i2c.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 #define REGULATOR_SD  0
 #define REGULATOR_LDO 1

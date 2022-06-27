@@ -1,7 +1,7 @@
 /*
  * Enhanced USB Device (EDCI) driver for Tegra X1
  *
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,9 +30,9 @@
 #include <soc/gpio.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <utils/btn.h>
-#include <utils/util.h>
 
 #include <memory_map.h>
 

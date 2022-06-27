@@ -27,8 +27,8 @@
 #include <soc/hw_init.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 //#define ERROR_EXTRA_PRINTING

@@ -1,7 +1,7 @@
 /*
  * Fan driver for Nintendo Switch
  *
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -24,8 +24,8 @@
 #include <soc/gpio.h>
 #include <soc/hw_init.h>
 #include <soc/pinmux.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 void set_fan_duty(u32 duty)
 {

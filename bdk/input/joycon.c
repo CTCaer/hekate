@@ -1,7 +1,7 @@
 /*
  * Joy-Con UART driver for Nintendo Switch
  *
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -27,9 +27,9 @@
 #include <soc/fuse.h>
 #include <soc/gpio.h>
 #include <soc/pinmux.h>
+#include <soc/timer.h>
 #include <soc/uart.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 // For disabling driver when logging is enabled.
 #include <libs/lv_conf.h>
@@ -82,9 +82,9 @@
 #define JC_BTN_MASK_L 0xFF2900 // 0xFFE900: with charge status.
 #define JC_BTN_MASK_R 0x0056FF
 
-#define JC_ID_L     0x01
-#define JC_ID_R     0x02
-#define JC_ID_HORI  0x20
+#define JC_ID_L     0x01 // Joycon (L). Mask for Hori (L).
+#define JC_ID_R     0x02 // Joycon (R). Mask for Hori (R).
+#define JC_ID_HORI  0x20 // Mask for Hori. Actual ids: 0x21, 0x22.
 
 #define JC_CRC8_POLY 0x8D
 

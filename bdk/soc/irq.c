@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "irq.h"
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <gfx_utils.h>
 #include <mem/heap.h>

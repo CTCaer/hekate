@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2020-2021 CTCaer
+ * Copyright (c) 2020-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -541,8 +541,12 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.mc_video_protect_bom                            = 0xFFF00000,
 	.mc_video_protect_bom_adr_hi                     = 0x00000000,
 	.mc_video_protect_size_mb                        = 0x00000000,
+
+	// AFI, BPMP, HC, ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1, SDMMC1A, SDMMC2A, SDMMC3A.
 	.mc_video_protect_vpr_override                   = 0xE4BAC343,
+	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR.
 	.mc_video_protect_vpr_override1                  = 0x00001ED3,
+
 	.mc_video_protect_gpu_override0                  = 0x00000000,
 	.mc_video_protect_gpu_override1                  = 0x00000000,
 	.mc_sec_carveout_bom                             = 0xFFF00000,

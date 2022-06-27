@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 balika011
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,10 +19,10 @@
 #include <string.h>
 
 #include <soc/ccplex.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <mem/mc_t210.h>
 #include <mem/smmu.h>
-#include <utils/util.h>
 #include <utils/aarch64_util.h>
 
 bool smmu_used = false;

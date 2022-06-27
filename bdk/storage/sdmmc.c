@@ -16,6 +16,9 @@
  */
 
 #include <string.h>
+
+#include <mem/heap.h>
+#include <soc/timer.h>
 #include <storage/emmc.h>
 #include <storage/sdmmc.h>
 #include <storage/mmc.h>
@@ -23,8 +26,6 @@
 #include <storage/sd_def.h>
 #include <memory_map.h>
 #include <gfx_utils.h>
-#include <mem/heap.h>
-#include <utils/util.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)

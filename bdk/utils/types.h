@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2021 CTCaer
+* Copyright (c) 2018-2022 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -100,7 +100,7 @@ typedef unsigned long uptr;
 
 #define byte_swap_16(num) ((((num) >> 8) & 0xff) | (((num) << 8) & 0xff00))
 #define byte_swap_32(num) ((((num) >> 24) & 0xff) | (((num) << 8) & 0xff0000) | \
-						(((num) >> 8 )& 0xff00) | (((num) << 24) & 0xff000000))
+						(((num) >> 8 ) & 0xff00) | (((num) << 24) & 0xff000000))
 
 
 /* Bootloader/Nyx */

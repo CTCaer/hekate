@@ -18,8 +18,8 @@
 #include "btn.h"
 #include <soc/i2c.h>
 #include <soc/gpio.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 #include <power/max77620.h>
 
 u8 btn_read()

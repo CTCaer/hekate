@@ -1,7 +1,7 @@
 /*
  * BPMP-Lite Cache/MMU and Frequency driver for Tegra X1
  *
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,9 +18,9 @@
 
 #include <soc/bpmp.h>
 #include <soc/clock.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <memory_map.h>
-#include <utils/util.h>
 
 #define BPMP_MMU_CACHE_LINE_SIZE        0x20
 

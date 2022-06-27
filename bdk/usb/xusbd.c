@@ -1,7 +1,7 @@
 /*
  * eXtensible USB Device driver (XDCI) for Tegra X1
  *
- * Copyright (c) 2020-2021 CTCaer
+ * Copyright (c) 2020-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -28,9 +28,9 @@
 #include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <utils/btn.h>
-#include <utils/util.h>
 
 #include <memory_map.h>
 

@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
+* Copyright (c) 2018-2022 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -243,28 +244,6 @@
 #define SYSCTR0_COUNTERID9    0xFF4
 #define SYSCTR0_COUNTERID10   0xFF8
 #define SYSCTR0_COUNTERID11   0xFFC
-
-/*! TMR registers. */
-#define TIMERUS_CNTR_1US          (0x10 + 0x0)
-#define TIMERUS_USEC_CFG          (0x10 + 0x4)
-#define TIMER_TMR8_TMR_PTV        0x78
-#define TIMER_TMR9_TMR_PTV        0x80
-#define  TIMER_PER_EN      BIT(30)
-#define  TIMER_EN          BIT(31)
-#define TIMER_TMR8_TMR_PCR        0x7C
-#define TIMER_TMR9_TMR_PCR        0x8C
-#define  TIMER_INTR_CLR    BIT(30)
-
-#define TIMER_WDT4_CONFIG         (0x100 + 0x80)
-#define  TIMER_SRC(TMR) ((TMR) & 0xF)
-#define  TIMER_PER(PER) (((PER) & 0xFF) << 4)
-#define  TIMER_SYSRESET_EN BIT(14)
-#define  TIMER_PMCRESET_EN BIT(15)
-#define TIMER_WDT4_COMMAND        (0x108 + 0x80)
-#define  TIMER_START_CNT   BIT(0)
-#define  TIMER_CNT_DISABLE BIT(1)
-#define TIMER_WDT4_UNLOCK_PATTERN (0x10C + 0x80)
-#define  TIMER_MAGIC_PTRN 0xC45A
 
 /*! I2S registers. */
 #define I2S1_CG   0x88

@@ -18,9 +18,9 @@
 #include <soc/clock.h>
 #include <soc/hw_init.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <storage/sdmmc.h>
-#include <utils/util.h>
 
 typedef struct _clock_osc_t
 {
@@ -351,7 +351,7 @@ void clock_disable_actmon()
 void clock_enable_extperiph1()
 {
 	clock_enable(&_clock_extperiph1);
-	
+
 	PMC(APBDEV_PMC_CLK_OUT_CNTRL) |= PMC_CLK_OUT_CNTRL_CLK1_SRC_SEL(OSC_CAR) | PMC_CLK_OUT_CNTRL_CLK1_FORCE_EN;
 	usleep(5);
 }
@@ -528,9 +528,9 @@ void clock_enable_pllu()
 	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg | PLLCX_BASE_ENABLE; // Enable.
 
 	// Wait for PLL to stabilize.
-	u32 timeout = (u32)TMR(TIMERUS_CNTR_1US) + 1300;
+	u32 timeout = get_tmr_us() + 1300;
 	while (!(CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) & PLLCX_BASE_LOCK)) // PLL_LOCK.
-		if ((u32)TMR(TIMERUS_CNTR_1US) > timeout)
+		if (get_tmr_us() > timeout)
 			break;
 	usleep(10);
 

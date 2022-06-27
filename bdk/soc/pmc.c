@@ -16,8 +16,8 @@
 
 #include <soc/hw_init.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 {

@@ -24,7 +24,7 @@
 
 #include "max17050.h"
 #include <soc/i2c.h>
-#include <utils/util.h>
+#include <soc/timer.h>
 
 #define BASE_SNS_UOHM 5000
 

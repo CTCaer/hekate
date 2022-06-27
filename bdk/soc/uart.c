@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2019-2020 CTCaer
+* Copyright (c) 2019-2022 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -17,8 +17,8 @@
 
 #include <soc/uart.h>
 #include <soc/clock.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
-#include <utils/util.h>
 
 /* UART A, B, C, D and E. */
 static const u32 uart_baseoff[5] = { 0, 0x40, 0x200, 0x300, 0x400 };
