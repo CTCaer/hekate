@@ -24,13 +24,12 @@
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
 #include <soc/pmc.h>
+#include <soc/timer.h>
 #include <soc/t210.h>
 #include <storage/sd.h>
 #include <utils/util.h>
 
 #define USE_RTC_TIMER
-
-extern volatile nyx_storage_t *nyx_str;
 
 u8 bit_count(u32 val)
 {
@@ -103,51 +102,6 @@ u64 sqrt64(u64 num)
 	return square_root;
 }
 
-u32 get_tmr_s()
-{
-	return RTC(APBDEV_RTC_SECONDS);
-}
-
-u32 get_tmr_ms()
-{
-	// The registers must be read with the following order:
-	// RTC_MILLI_SECONDS (0x10) -> RTC_SHADOW_SECONDS (0xC)
-	return (RTC(APBDEV_RTC_MILLI_SECONDS) + (RTC(APBDEV_RTC_SHADOW_SECONDS) * 1000));
-}
-
-u32 get_tmr_us()
-{
-	return TMR(TIMERUS_CNTR_1US);
-}
-
-void msleep(u32 ms)
-{
-#ifdef USE_RTC_TIMER
-	u32 start = RTC(APBDEV_RTC_MILLI_SECONDS) + (RTC(APBDEV_RTC_SHADOW_SECONDS) * 1000);
-	// Casting to u32 is important!
-	while (((u32)(RTC(APBDEV_RTC_MILLI_SECONDS) + (RTC(APBDEV_RTC_SHADOW_SECONDS) * 1000)) - start) <= ms)
-		;
-#else
-	bpmp_msleep(ms);
-#endif
-}
-
-void usleep(u32 us)
-{
-#ifdef USE_RTC_TIMER
-	u32 start = TMR(TIMERUS_CNTR_1US);
-
-	// Check if timer is at upper limits and use BPMP sleep so it doesn't wake up immediately.
-	if ((start + us) < start)
-		bpmp_usleep(us);
-	else
-		while ((u32)(TMR(TIMERUS_CNTR_1US) - start) <= us) // Casting to u32 is important!
-			;
-#else
-	bpmp_usleep(us);
-#endif
-}
-
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops)
 {
 	for(u32 i = 0; i < num_ops; i++)
@@ -195,14 +149,14 @@ void panic(u32 val)
 {
 	// Set panic code.
 	PMC(APBDEV_PMC_SCRATCH200) = val;
-	//PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_DISABLE;
-	TMR(TIMER_WDT4_UNLOCK_PATTERN) = TIMER_MAGIC_PTRN;
-	TMR(TIMER_TMR9_TMR_PTV) = TIMER_EN | TIMER_PER_EN;
-	TMR(TIMER_WDT4_CONFIG)  = TIMER_SRC(9) | TIMER_PER(1) | TIMER_PMCRESET_EN;
-	TMR(TIMER_WDT4_COMMAND) = TIMER_START_CNT;
 
-	while (true)
-		usleep(1);
+	// Disable SE.
+	//PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_DISABLE;
+
+	// Immediately cause a full system reset.
+	watchdog_start(0, TIMER_PMCRESET_EN);
+
+	while (true);
 }
 
 void power_set_state(power_state_t state)
@@ -231,7 +185,7 @@ void power_set_state(power_state_t state)
 		break;
 
 	case POWER_OFF:
-		// Initiate power down sequence and do not generate a reset (regulators retain state).
+		// Initiate power down sequence and do not generate a reset (regulators retain state after POR).
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_PWR_OFF);
 		break;
 
@@ -246,7 +200,7 @@ void power_set_state(power_state_t state)
 			reg |= MAX77620_ONOFFCNFG2_SFT_RST_WK;
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG2, reg);
 
-		// Initiate power down sequence and generate a reset (regulators' state resets).
+		// Initiate power down sequence and generate a reset (regulators' state resets after POR).
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_SFT_RST);
 		break;
 	}

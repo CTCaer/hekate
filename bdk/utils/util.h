@@ -89,12 +89,6 @@ u64  sqrt64(u64 num);
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops);
 u32  crc32_calc(u32 crc, const u8 *buf, u32 len);
 
-u32  get_tmr_us();
-u32  get_tmr_ms();
-u32  get_tmr_s();
-void usleep(u32 us);
-void msleep(u32 ms);
-
 void panic(u32 val);
 void power_set_state(power_state_t state);
 void power_set_state_ex(void *param);
