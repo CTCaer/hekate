@@ -714,7 +714,7 @@
 #define DCS_SM_COLOR_MODE_POR_RESET 0x20 // Reset value on power on.
 #define DCS_SM_COLOR_MODE_NATURAL   0x23
 #define DCS_SM_COLOR_MODE_VIVID     0x65
-#define DCS_SM_COLOR_MODE_NIGHT     0x23 // Basic with Night mode.
+#define DCS_SM_COLOR_MODE_NIGHT     0x43 // Basic with Night mode.
 
 #define DCS_SM_COLOR_MODE_ENABLE     BIT(0)
 #define DCS_SM_COLOR_MODE_COLOR_MASK (7 << 1)

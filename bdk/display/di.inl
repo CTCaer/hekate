@@ -489,10 +489,10 @@ static const cfg_op_t _di_win_framebuffer_pitch[] = {
 	{DC_WIN_POSITION, 0}, //(0,0)
 	{DC_WIN_H_INITIAL_DDA, 0},
 	{DC_WIN_V_INITIAL_DDA, 0},
-	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(720 * 4)},
-	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)}, // 1.0x.
-	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(720)},
-	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280)  | H_PRESCALED_SIZE(720 * 4)},
+	{DC_WIN_DDA_INC,        V_DDA_INC(0x1000)       | H_DDA_INC(0x1000)}, // 1.0x.
+	{DC_WIN_SIZE,           V_SIZE(1280)            | H_SIZE(720)},
+	{DC_WIN_LINE_STRIDE,    UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
 	{DC_WINBUF_SURFACE_KIND, PITCH},
 	{DC_WINBUF_START_ADDR, IPL_FB_ADDRESS}, // Framebuffer address.
@@ -515,10 +515,10 @@ static const cfg_op_t _di_win_framebuffer_pitch_inv[] = {
 	{DC_WIN_POSITION, 0}, //(0,0)
 	{DC_WIN_H_INITIAL_DDA, 0},
 	{DC_WIN_V_INITIAL_DDA, 0},
-	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(720 * 4)},
-	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)}, // 1.0x.
-	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(720)},
-	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280)  | H_PRESCALED_SIZE(720 * 4)},
+	{DC_WIN_DDA_INC,        V_DDA_INC(0x1000)       | H_DDA_INC(0x1000)}, // 1.0x.
+	{DC_WIN_SIZE,           V_SIZE(1280)            | H_SIZE(720)},
+	{DC_WIN_LINE_STRIDE,    UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
 	{DC_WINBUF_SURFACE_KIND, PITCH},
 	{DC_WINBUF_START_ADDR, NYX_FB_ADDRESS}, // Framebuffer address.
@@ -541,10 +541,10 @@ static const cfg_op_t _di_win_framebuffer_block[] = {
 	{DC_WIN_POSITION, 0}, //(0,0)
 	{DC_WIN_H_INITIAL_DDA, 0},
 	{DC_WIN_V_INITIAL_DDA, 0},
-	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(720 * 4)},
-	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)}, // 1.0x.
-	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(720)},
-	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(1280 * 2) | LINE_STRIDE(1280 * 4)}, //720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280)   | H_PRESCALED_SIZE(720 * 4)},
+	{DC_WIN_DDA_INC,        V_DDA_INC(0x1000)        | H_DDA_INC(0x1000)}, // 1.0x.
+	{DC_WIN_SIZE,           V_SIZE(1280)             | H_SIZE(720)},
+	{DC_WIN_LINE_STRIDE,    UV_LINE_STRIDE(1280 * 2) | LINE_STRIDE(1280 * 4)}, //720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
 	{DC_WINBUF_SURFACE_KIND, BLOCK_HEIGHT(4) | BLOCK},
 	{DC_WINBUF_START_ADDR, NYX_FB_ADDRESS}, // Framebuffer address.
@@ -564,10 +564,10 @@ static const cfg_op_t _di_win_framebuffer_log[] = {
 	{DC_WIN_POSITION, 0}, //(0,0)
 	{DC_WIN_H_INITIAL_DDA, 0},
 	{DC_WIN_V_INITIAL_DDA, 0},
-	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280) | H_PRESCALED_SIZE(656 * 4)},
-	{DC_WIN_DDA_INC, V_DDA_INC(0x1000) | H_DDA_INC(0x1000)}, // 1.0x.
-	{DC_WIN_SIZE, V_SIZE(1280) | H_SIZE(656)},
-	{DC_WIN_LINE_STRIDE, UV_LINE_STRIDE(656 * 2) | LINE_STRIDE(656 * 4)}, //656*2x656*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280)  | H_PRESCALED_SIZE(656 * 4)},
+	{DC_WIN_DDA_INC,        V_DDA_INC(0x1000)       | H_DDA_INC(0x1000)}, // 1.0x.
+	{DC_WIN_SIZE,           V_SIZE(1280)            | H_SIZE(656)},
+	{DC_WIN_LINE_STRIDE,    UV_LINE_STRIDE(656 * 2) | LINE_STRIDE(656 * 4)}, //656*2x656*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
 	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
 	{DC_WINBUF_SURFACE_KIND, PITCH},
 	{DC_WINBUF_START_ADDR, LOG_FB_ADDRESS}, // Framebuffer address.
