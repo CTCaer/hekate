@@ -33,7 +33,8 @@ typedef struct _se_ll_t
 	vu32 size;
 } se_ll_t;
 
-se_ll_t *ll_dst, *ll_src;
+se_ll_t ll_src, ll_dst;
+se_ll_t *ll_src_ptr, *ll_dst_ptr; // Must be u32 aligned.
 
 static void _gf256_mul_x(void *block)
 {
@@ -74,7 +75,7 @@ static void _se_ll_init(se_ll_t *ll, u32 addr, u32 size)
 	ll->size = size;
 }
 
-static void _se_ll_set(se_ll_t *dst, se_ll_t *src)
+static void _se_ll_set(se_ll_t *src, se_ll_t *dst)
 {
 	SE(SE_IN_LL_ADDR_REG)  = (u32)src;
 	SE(SE_OUT_LL_ADDR_REG) = (u32)dst;
@@ -92,10 +93,12 @@ static int _se_wait()
 	if ((SE(SE_INT_STATUS_REG) & SE_INT_ERR_STAT) ||
 		(SE(SE_STATUS_REG) & SE_STATUS_STATE_MASK) != SE_STATUS_STATE_IDLE ||
 		 SE(SE_ERR_STATUS_REG) != 0)
+	{
 		return 0;
+	}
 
 	// T210B01: IRAM/TZRAM/DRAM AHB coherency WAR.
-	if (!tegra_t210 && ll_dst)
+	if (!tegra_t210 && ll_dst_ptr)
 	{
 		u32 timeout = get_tmr_us() + 1000000;
 		// Ensure data is out from SE.
@@ -107,7 +110,7 @@ static int _se_wait()
 		}
 
 		// Ensure data is out from AHB.
-		if(ll_dst->addr >= DRAM_START)
+		if(ll_dst_ptr->addr >= DRAM_START)
 		{
 			timeout = get_tmr_us() + 200000;
 			while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
@@ -122,24 +125,37 @@ static int _se_wait()
 	return 1;
 }
 
+static int _se_execute_finalize()
+{
+	int res = _se_wait();
+
+	// Invalidate data after OP is done.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
+
+	ll_src_ptr = NULL;
+	ll_dst_ptr = NULL;
+
+	return res;
+}
+
 static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size, bool is_oneshot)
 {
-	ll_dst = NULL;
-	ll_src = NULL;
-
-	if (dst)
-	{
-		ll_dst = (se_ll_t *)malloc(sizeof(se_ll_t));
-		_se_ll_init(ll_dst, (u32)dst, dst_size);
-	}
+	ll_src_ptr = NULL;
+	ll_dst_ptr = NULL;
 
 	if (src)
 	{
-		ll_src = (se_ll_t *)malloc(sizeof(se_ll_t));
-		_se_ll_init(ll_src, (u32)src, src_size);
+		ll_src_ptr = &ll_src;
+		_se_ll_init(ll_src_ptr, (u32)src, src_size);
 	}
 
-	_se_ll_set(ll_dst, ll_src);
+	if (dst)
+	{
+		ll_dst_ptr = &ll_dst;
+		_se_ll_init(ll_dst_ptr, (u32)dst, dst_size);
+	}
+
+	_se_ll_set(ll_src_ptr, ll_dst_ptr);
 
 	SE(SE_ERR_STATUS_REG) = SE(SE_ERR_STATUS_REG);
 	SE(SE_INT_STATUS_REG) = SE(SE_INT_STATUS_REG);
@@ -150,48 +166,9 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 	SE(SE_OPERATION_REG) = op;
 
 	if (is_oneshot)
-	{
-		int res = _se_wait();
-
-		// Invalidate data after OP is done.
-		bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
-
-		if (src)
-		{
-			free(ll_src);
-			ll_src = NULL;
-		}
-		if (dst)
-		{
-			free(ll_dst);
-			ll_dst = NULL;
-		}
-
-		return res;
-	}
+		return _se_execute_finalize();
 
 	return 1;
-}
-
-static int _se_execute_finalize()
-{
-	int res = _se_wait();
-
-	// Invalidate data after OP is done.
-	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
-
-	if (ll_src)
-	{
-		free(ll_src);
-		ll_src = NULL;
-	}
-	if (ll_dst)
-	{
-		free(ll_dst);
-		ll_dst = NULL;
-	}
-
-	return res;
 }
 
 static int _se_execute_oneshot(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
@@ -204,8 +181,7 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	if (!src || !dst)
 		return 0;
 
-	u8 *block = (u8 *)malloc(SE_AES_BLOCK_SIZE);
-	memset(block, 0, SE_AES_BLOCK_SIZE);
+	u8 *block = (u8 *)calloc(1, SE_AES_BLOCK_SIZE);
 
 	SE(SE_CRYPTO_BLOCK_COUNT_REG) = 1 - 1;
 
