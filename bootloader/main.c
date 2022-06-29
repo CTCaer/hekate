@@ -123,7 +123,7 @@ void check_power_off_from_hos()
 #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
 #define COREBOOT_END_ADDR   0xD0000000
 #define COREBOOT_VER_OFF    0x41
-#define CBFS_DRAM_EN_ADDR   0x4003e000
+#define CBFS_DRAM_EN_ADDR   0x4003E000
 #define  CBFS_DRAM_MAGIC    0x4452414D // "DRAM"
 
 static void *coreboot_addr;
@@ -1070,16 +1070,17 @@ out:
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC
-#define  EXCP_MAGIC 0x30505645      // EVP0
+#define  EXCP_MAGIC 0x30505645      // "EVP0".
 #define EXCP_TYPE_ADDR 0x4003FFF8
-#define  EXCP_TYPE_RESET 0x545352   // RST
-#define  EXCP_TYPE_UNDEF 0x464455   // UDF
-#define  EXCP_TYPE_PABRT 0x54424150 // PABT
-#define  EXCP_TYPE_DABRT 0x54424144 // DABT
+#define  EXCP_TYPE_RESET 0x545352   // "RST".
+#define  EXCP_TYPE_UNDEF 0x464455   // "UDF".
+#define  EXCP_TYPE_PABRT 0x54424150 // "PABT".
+#define  EXCP_TYPE_DABRT 0x54424144 // "DABT".
+#define  EXCP_TYPE_WDT   0x544457   // "WDT".
 #define EXCP_LR_ADDR   0x4003FFF4
 
 #define PSTORE_LOG_OFFSET 0x180000
-#define PSTORE_RAM_SIG    0x43474244 // DBGC.
+#define PSTORE_RAM_SIG    0x43474244 // "DBGC".
 
 typedef struct _pstore_buf {
 	u32 sig;
@@ -1138,6 +1139,9 @@ static void _show_errors()
 			WPRINTFARGS("hekate exception occurred (LR %08X):\n", *excp_lr);
 			switch (*excp_type)
 			{
+			case EXCP_TYPE_WDT:
+				WPRINTF("Hang detected in LP0/Minerva!");
+				break;
 			case EXCP_TYPE_RESET:
 				WPRINTF("RESET");
 				break;
@@ -1155,6 +1159,7 @@ static void _show_errors()
 
 			// Clear the exception.
 			*excp_enabled = 0;
+			*excp_type = 0;
 		}
 
 		if (h_cfg.errors & ERR_L4T_KERNEL)
@@ -1495,6 +1500,13 @@ void ipl_main()
 	// Mount SD Card.
 	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
 
+	// Check if watchdog was fired previously.
+	if (watchdog_fired())
+		goto skip_lp0_minerva_config;
+
+	// Enable watchdog protection to avoid SD corruption based hanging in LP0/Minerva config.
+	watchdog_start(5000000 / 2, TIMER_FIQENABL_EN); // 5 seconds.
+
 	// Save sdram lp0 config.
 	void *sdram_params = h_cfg.t210b01 ? sdram_get_params_t210b01() : sdram_get_params_patched();
 	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
@@ -1504,6 +1516,10 @@ void ipl_main()
 	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
+	// Disable watchdog protection.
+	watchdog_end();
+
+skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
 	u32 *fb = display_init_framebuffer_pitch();
 	gfx_init_ctxt(fb, 720, 1280, 720);
