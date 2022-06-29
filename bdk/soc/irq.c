@@ -27,6 +27,7 @@
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
+extern void excp_reset();
 extern void irq_disable();
 extern void irq_enable_cpu_irq_exceptions();
 extern void irq_disable_cpu_irq_exceptions();
@@ -271,4 +272,14 @@ void  __attribute__ ((target("arm"), interrupt ("FIQ"))) fiq_handler()
 		len--;
 	}
 */
+#ifdef BDK_WATCHDOG_FIQ_ENABLE
+	// Set watchdog timeout status and disable WDT and its FIQ signal.
+	watchdog_handle();
+
+#ifdef BDK_RESTART_BL_ON_WDT
+	// Restart bootloader.
+	excp_reset();
+#endif
+
+#endif
 }
