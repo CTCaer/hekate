@@ -633,7 +633,8 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
 		jc_gamepad.conn_l = jc_l.connected;
 		jc_gamepad.conn_r = jc_r.connected;
 
-		_jc_charging_decider(hid_pkt->batt_info, jc->uart);
+		if (hid_pkt->cmd == JC_HID_INPUT_RPT)
+			_jc_charging_decider(hid_pkt->batt_info, jc->uart);
 		break;
 	case JC_HID_SUBMCD_RPT:
 		if (hid_pkt->subcmd == JC_HID_SUBCMD_SPI_READ)
@@ -1088,6 +1089,8 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 				msleep(2);
 				_jc_rcv_pkt(jc);
 			}
+			else // Hori. Unset RTS inversion.
+				uart_invert(jc->uart, false, UART_INVERT_RTS);
 		}
 		else
 		{
@@ -1127,7 +1130,7 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 out:
 		jc->last_received_time = get_tmr_ms();
 
-		if (!jc->sio_mode && jc->connected)
+		if (!jc->sio_mode && jc->connected && !(jc->type & JC_ID_HORI))
 			_jc_power_supply(jc->uart, false);
 	}
 }
