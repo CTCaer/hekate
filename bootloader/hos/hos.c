@@ -997,7 +997,7 @@ int hos_launch(ini_sec_t *cfg)
 			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
 			if (kernel_patchset != NULL)
 			{
-				gfx_printf("%kPatching kernel%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+				gfx_printf("%kPatching kernel%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
 				u32 *temp;
 				for (u32 i = 0; kernel_patchset[i].id != 0xFFFFFFFF; i++)
 				{
@@ -1038,7 +1038,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Patch kip1s in memory if needed.
 	if (ctxt.kip1_patches)
-		gfx_printf("%kPatching kips%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kPatching kips%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
 	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
 	if (unappliedPatch != NULL)
 	{
@@ -1069,7 +1069,7 @@ int hos_launch(ini_sec_t *cfg)
 	sd_end();
 	sdmmc_storage_end(&emmc_storage);
 
-	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", 0xFF96FF00, 0xFFCCCCCC);
+	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 
 	// Clear pkg1/pkg2 keys.
 	se_aes_key_clear(8);

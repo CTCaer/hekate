@@ -42,7 +42,6 @@ typedef struct _gui_status_bar_ctx
     lv_obj_t *temp_degrees;
     lv_obj_t *battery;
     lv_obj_t *battery_more;
-    lv_obj_t *monitor;
 } gui_status_bar_ctx;
 
 extern lv_style_t hint_small_style;
