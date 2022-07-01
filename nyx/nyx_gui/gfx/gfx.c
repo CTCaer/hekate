@@ -152,9 +152,9 @@ void gfx_con_init()
 	gfx_con.y = 0;
 	gfx_con.savedx = 0;
 	gfx_con.savedy = 0;
-	gfx_con.fgcol = 0xFFFFFFFF;
+	gfx_con.fgcol = TXT_CLR_DEFAULT;
 	gfx_con.fillbg = 1;
-	gfx_con.bgcol = 0xFF000000;
+	gfx_con.bgcol = TXT_CLR_BG;
 	gfx_con.mute = 0;
 
 	gfx_con_init_done = true;
@@ -230,7 +230,7 @@ void gfx_putc(char c)
 		else if (c == '\n')
 		{
 			gfx_con.x = gfx_column;
-			gfx_con.y +=16;
+			gfx_con.y += 16;
 			if (gfx_con.y > gfx_ctxt.height - 33)
 			{
 				gfx_con.y = 0;
@@ -297,7 +297,7 @@ void gfx_putc(char c)
 	}
 }
 
-void gfx_puts(char *s)
+void gfx_puts(const char *s)
 {
 	if (!s || !gfx_con_init_done || gfx_con.mute)
 		return;
@@ -359,9 +359,9 @@ void gfx_printf(const char *fmt, ...)
 	int fill, fcnt;
 
 	va_start(ap, fmt);
-	while(*fmt)
+	while (*fmt)
 	{
-		if(*fmt == '%')
+		if (*fmt == '%')
 		{
 			fmt++;
 			fill = 0;
@@ -425,6 +425,17 @@ void gfx_printf(const char *fmt, ...)
 	out:
 	va_end(ap);
 }
+
+static void _gfx_cputs(u32 color, const char *s)
+{
+	gfx_con.fgcol = color;
+	gfx_puts(s);
+	gfx_putc('\n');
+	gfx_con.fgcol = TXT_CLR_DEFAULT;
+}
+
+void gfx_wputs(const char *s) { _gfx_cputs(TXT_CLR_WARNING, s); }
+void gfx_eputs(const char *s) { _gfx_cputs(TXT_CLR_ERROR,   s); }
 
 void gfx_hexdump(u32 base, const void *buf, u32 len)
 {

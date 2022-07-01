@@ -35,7 +35,7 @@ extern hekate_config h_cfg;
 
 #define EHPRINTFARGS(text, args...) \
 	({  gfx_con.mute = false; \
-		gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC); })
+		gfx_printf("%k"text"%k\n", TXT_CLR_ERROR, args, TXT_CLR_DEFAULT); })
 
 #define PKG2_LOAD_ADDR 0xA9800000
 
@@ -145,7 +145,7 @@ const u8 package2_keyseed[SE_KEY_128_SIZE] =
 static void _hos_crit_error(const char *text)
 {
 	gfx_con.mute = false;
-	gfx_printf("%k%s%k\n", 0xFFFF0000, text, 0xFFCCCCCC);
+	gfx_printf("%k%s%k\n", TXT_CLR_ERROR, text, TXT_CLR_DEFAULT);
 }
 
 static void _se_lock(bool lock_se)

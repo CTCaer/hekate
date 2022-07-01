@@ -553,7 +553,7 @@ void launch_firmware()
 	{
 		ments[i].type = MENT_CAPTION;
 		ments[i].caption = "No main configs found...";
-		ments[i].color = 0xFFFFDD00;
+		ments[i].color = TXT_CLR_WARNING;
 		i++;
 	}
 
@@ -1191,7 +1191,7 @@ static void _show_errors()
 			u32 color = r | g | b;
 
 			WPRINTF("HOS panic occurred!\n");
-			gfx_printf("Color: %k####%k, Code: %02X\n\n", color, 0xFFCCCCCC, panic_status);
+			gfx_printf("Color: %k####%k, Code: %02X\n\n", color, TXT_CLR_DEFAULT, panic_status);
 		}
 
 		WPRINTF("Press any key...");
@@ -1377,9 +1377,9 @@ static void _about()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	gfx_printf(credits, 0xFF00CCFF, 0xFFCCCCCC);
+	gfx_printf(credits, TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 	gfx_con.fntsz = 8;
-	gfx_printf(octopus, 0xFF00CCFF, 0xFF00FFCC, 0xFF00CCFF, 0xFFCCCCCC);
+	gfx_printf(octopus, TXT_CLR_CYAN_L, TXT_CLR_TURQUOISE, TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
 	btn_wait();
 }
@@ -1387,16 +1387,16 @@ static void _about()
 ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("---- SoC Info ----", 0xFF0AB9E6),
+	MDEF_CAPTION("---- SoC Info ----", TXT_CLR_CYAN_L),
 	//MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
 	MDEF_HANDLER("Fuses", print_fuseinfo),
 	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- Storage Info --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- Storage Info --", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("eMMC", print_mmc_info),
 	MDEF_HANDLER("SD Card", print_sdcard_info),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Misc ------", 0xFF0AB9E6),
+	MDEF_CAPTION("------ Misc ------", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("Battery", print_battery_info),
 	MDEF_END()
 };
@@ -1406,11 +1406,11 @@ menu_t menu_cinfo = { ment_cinfo, "Console Info", 0, 0 };
 ment_t ment_restore[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
+	MDEF_CAPTION("------ Full --------", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("Restore eMMC BOOT0/1", restore_emmc_boot),
 	MDEF_HANDLER("Restore eMMC RAW GPP", restore_emmc_rawnand),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- GPP Partitions --", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("Restore GPP partitions", restore_emmc_gpp_parts),
 	MDEF_END()
 };
@@ -1420,11 +1420,11 @@ menu_t menu_restore = { ment_restore, "Restore Options", 0, 0 };
 ment_t ment_backup[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", 0xFF0AB9E6),
+	MDEF_CAPTION("------ Full --------", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
 	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
 	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", 0xFF0AB9E6),
+	MDEF_CAPTION("-- GPP Partitions --", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
 	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
 	MDEF_END()
@@ -1435,14 +1435,14 @@ menu_t menu_backup = { ment_backup, "Backup Options", 0, 0 };
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	//MDEF_CAPTION("-- Backup & Restore --", 0xFF0AB9E6),
+	//MDEF_CAPTION("-- Backup & Restore --", TXT_CLR_CYAN_L),
 	//MDEF_MENU("Backup", &menu_backup),
 	//MDEF_MENU("Restore", &menu_restore),
 	//MDEF_CHGLINE(),
-	//MDEF_CAPTION("-------- Misc --------", 0xFF0AB9E6),
+	//MDEF_CAPTION("-------- Misc --------", TXT_CLR_CYAN_L),
 	//MDEF_HANDLER("Dump package1/2", dump_packages12),
 	//MDEF_CHGLINE(),
-	MDEF_CAPTION("-------- Other -------", 0xFFFFDD00),
+	MDEF_CAPTION("-------- Other -------", TXT_CLR_WARNING),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()
 };
@@ -1455,15 +1455,15 @@ power_state_t STATE_REBOOT_BYPASS_FUSES = REBOOT_BYPASS_FUSES;
 
 ment_t ment_top[] = {
 	MDEF_HANDLER("Launch", launch_firmware),
-	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_CAPTION("---------------", TXT_CLR_GREY_DM),
 	MDEF_MENU("Tools",        &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
-	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_CAPTION("---------------", TXT_CLR_GREY_DM),
 	MDEF_HANDLER("Reload", ipl_reload),
 	MDEF_HANDLER_EX("Reboot (OFW)", &STATE_REBOOT_BYPASS_FUSES, power_set_state_ex),
 	MDEF_HANDLER_EX("Reboot (RCM)", &STATE_REBOOT_RCM,          power_set_state_ex),
 	MDEF_HANDLER_EX("Power off",    &STATE_POWER_OFF,           power_set_state_ex),
-	MDEF_CAPTION("---------------", 0xFF444444),
+	MDEF_CAPTION("---------------", TXT_CLR_GREY_DM),
 	MDEF_HANDLER("About", _about),
 	MDEF_END()
 };

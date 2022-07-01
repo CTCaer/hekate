@@ -57,7 +57,7 @@ void print_fuseinfo()
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)));
 
-	gfx_printf("%kFuse cache:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%kFuse cache:\n\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 	gfx_hexdump(fuse_address, (u8 *)fuse_address, fuse_size);
 
 	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
@@ -90,7 +90,7 @@ void print_kfuseinfo()
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	gfx_printf("%kKFuse contents:\n\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%kKFuse contents:\n\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 	u32 buf[KFUSE_NUM_WORDS];
 	if (!kfuse_read(buf))
 		EPRINTF("CRC fail.");
@@ -132,7 +132,7 @@ void print_mmc_info()
 		u16 card_type;
 		u32 speed = 0;
 
-		gfx_printf("%kCID:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
+		gfx_printf("%kCID:%k\n", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 		switch (emmc_storage.csd.mmca_vsn)
 		{
 		case 2: /* MMC v2.0 - v2.2 */
@@ -159,7 +159,7 @@ void print_mmc_info()
 		else
 		{
 			gfx_printf("%kExtended CSD V1.%d:%k\n",
-				0xFF00DDFF, emmc_storage.ext_csd.ext_struct, 0xFFCCCCCC);
+				TXT_CLR_CYAN_L, emmc_storage.ext_csd.ext_struct, TXT_CLR_DEFAULT);
 			card_type = emmc_storage.ext_csd.card_type;
 			char card_type_support[96];
 			card_type_support[0] = 0;
@@ -208,20 +208,20 @@ void print_mmc_info()
 
 			u32 boot_size = emmc_storage.ext_csd.boot_mult << 17;
 			u32 rpmb_size = emmc_storage.ext_csd.rpmb_mult << 17;
-			gfx_printf("%keMMC Partitions:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
-			gfx_printf(" 1: %kBOOT0      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
+			gfx_printf("%keMMC Partitions:%k\n", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
+			gfx_printf(" 1: %kBOOT0      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
 				boot_size / 1024, boot_size / 512);
 			gfx_put_small_sep();
-			gfx_printf(" 2: %kBOOT1      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
+			gfx_printf(" 2: %kBOOT1      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
 				boot_size / 1024, boot_size / 512);
 			gfx_put_small_sep();
-			gfx_printf(" 3: %kRPMB       %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", 0xFF96FF00, 0xFFCCCCCC,
+			gfx_printf(" 3: %kRPMB       %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
 				rpmb_size / 1024, rpmb_size / 512);
 			gfx_put_small_sep();
-			gfx_printf(" 0: %kGPP (USER) %k\n    Size: %5d MiB (LBA Sectors: 0x%07X)\n\n", 0xFF96FF00, 0xFFCCCCCC,
+			gfx_printf(" 0: %kGPP (USER) %k\n    Size: %5d MiB (LBA Sectors: 0x%07X)\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
 				emmc_storage.sec_cnt >> SECTORS_TO_MIB_COEFF, emmc_storage.sec_cnt);
 			gfx_put_small_sep();
-			gfx_printf("%kGPP (eMMC USER) partition table:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
+			gfx_printf("%kGPP (eMMC USER) partition table:%k\n", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
 			sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
 			LIST_INIT(gpt);
@@ -230,7 +230,7 @@ void print_mmc_info()
 			LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 			{
 				gfx_printf(" %02d: %k%s%k\n     Size: % 5d MiB (LBA Sectors 0x%07X)\n     LBA Range: %08X-%08X\n",
-					gpp_idx++, 0xFFAEFD14, part->name, 0xFFCCCCCC, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
+					gpp_idx++, TXT_CLR_GREENISH, part->name, TXT_CLR_DEFAULT, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
 					part->lba_end - part->lba_start + 1, part->lba_start, part->lba_end);
 				gfx_put_small_sep();
 			}
@@ -253,7 +253,7 @@ void print_sdcard_info()
 
 	if (sd_initialize(false))
 	{
-		gfx_printf("%kCard IDentification:%k\n", 0xFF00DDFF, 0xFFCCCCCC);
+		gfx_printf("%kCard IDentification:%k\n", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 		gfx_printf(
 			" Vendor ID:  %02x\n"
 			" OEM ID:     %c%c\n"
@@ -269,7 +269,7 @@ void print_sdcard_info()
 			sd_storage.cid.month, sd_storage.cid.year);
 
 		u16 *sd_errors = sd_get_error_count();
-		gfx_printf("%kCard-Specific Data V%d.0:%k\n", 0xFF00DDFF, sd_storage.csd.structure + 1, 0xFFCCCCCC);
+		gfx_printf("%kCard-Specific Data V%d.0:%k\n", TXT_CLR_CYAN_L, sd_storage.csd.structure + 1, TXT_CLR_DEFAULT);
 		gfx_printf(
 			" Cmd Classes:    %02X\n"
 			" Capacity:       %d MiB\n"
@@ -293,7 +293,7 @@ void print_sdcard_info()
 			gfx_puts("Acquiring FAT volume info...\n\n");
 			f_getfree("", &sd_fs.free_clst, NULL);
 			gfx_printf("%kFound %s volume:%k\n Free:    %d MiB\n Cluster: %d KiB\n",
-					0xFF00DDFF, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", 0xFFCCCCCC,
+					TXT_CLR_CYAN_L, sd_fs.fs_type == FS_EXFAT ? "exFAT" : "FAT32", TXT_CLR_DEFAULT,
 					sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF, (sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512);
 			f_mount(NULL, "", 1);
 		}
@@ -322,7 +322,7 @@ void print_fuel_gauge_info()
 {
 	int value = 0;
 
-	gfx_printf("%kFuel Gauge Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%kFuel Gauge Info:\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
 	max17050_get_property(MAX17050_RepSOC, &value);
 	gfx_printf("Capacity now:           %3d%\n", value >> 8);
@@ -366,7 +366,7 @@ void print_battery_charger_info()
 {
 	int value = 0;
 
-	gfx_printf("%k\n\nBattery Charger Info:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%k\n\nBattery Charger Info:\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
 	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
 	gfx_printf("Input voltage limit:       %4d mV\n", value);
@@ -439,7 +439,7 @@ void print_battery_info()
 
 	u8 *buf = (u8 *)malloc(0x100 * 2);
 
-	gfx_printf("%k\n\nBattery Fuel Gauge Registers:\n%k", 0xFF00DDFF, 0xFFCCCCCC);
+	gfx_printf("%k\n\nBattery Fuel Gauge Registers:\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
 	for (int i = 0; i < 0x200; i += 2)
 	{

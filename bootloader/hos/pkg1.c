@@ -301,7 +301,7 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 		return;
 
 	// Patch Secmon.
-	gfx_printf("%kPatching Secure Monitor%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	gfx_printf("%kPatching Secure Monitor%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
 	for (u32 i = 0; secmon_patchset[i].off != 0xFFFFFFFF; i++)
 		*(vu32 *)(secmon_base + secmon_patchset[i].off) = secmon_patchset[i].val;
 }
@@ -324,7 +324,7 @@ void pkg1_warmboot_patch(void *hos_ctxt)
 		warmboot_patchset = _warmboot_4_patchset;
 		break;
 	}
-	gfx_printf("%kPatching Warmboot%k\n", 0xFFFFBA00, 0xFFCCCCCC);
+	gfx_printf("%kPatching Warmboot%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
 	for (u32 i = 0; warmboot_patchset[i].off != 0xFFFFFFFF; i++)
 		*(vu32 *)(ctxt->pkg1_id->warmboot_base + warmboot_patchset[i].off) = warmboot_patchset[i].val;
 }

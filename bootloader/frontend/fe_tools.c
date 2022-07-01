@@ -115,13 +115,13 @@ void dump_packages12()
 		}
 
 		// Display info.
-		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->ldr_size);
+		gfx_printf("%kNX Bootloader size:  %k0x%05X\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT, hdr_pk11->ldr_size);
 
-		gfx_printf("%kSecure monitor addr: %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->secmon_base);
-		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->sm_size);
+		gfx_printf("%kSecure monitor addr: %k0x%05X\n",   TXT_CLR_GREENISH, TXT_CLR_DEFAULT, pkg1_id->secmon_base);
+		gfx_printf("%kSecure monitor size: %k0x%05X\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT, hdr_pk11->sm_size);
 
-		gfx_printf("%kWarmboot addr:       %k0x%05X\n", 0xFFC7EA46, 0xFFCCCCCC, pkg1_id->warmboot_base);
-		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, hdr_pk11->wb_size);
+		gfx_printf("%kWarmboot addr:       %k0x%05X\n",   TXT_CLR_GREENISH, TXT_CLR_DEFAULT, pkg1_id->warmboot_base);
+		gfx_printf("%kWarmboot size:       %k0x%05X\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT, hdr_pk11->wb_size);
 
 		// Dump package1.1.
 		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &emmc_storage);
@@ -186,8 +186,8 @@ void dump_packages12()
 	}
 
 	// Display info.
-	gfx_printf("%kKernel size:   %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
-	gfx_printf("%kINI1 size:     %k0x%05X\n\n", 0xFFC7EA46, 0xFFCCCCCC, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
+	gfx_printf("%kKernel size:   %k0x%05X\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT, pkg2_hdr->sec_size[PKG2_SEC_KERNEL]);
+	gfx_printf("%kINI1 size:     %k0x%05X\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT, pkg2_hdr->sec_size[PKG2_SEC_INI1]);
 
 	// Dump pkg2.1.
 	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &emmc_storage);
@@ -283,9 +283,9 @@ void _toggle_autorcm(bool enable)
 	sdmmc_storage_end(&emmc_storage);
 
 	if (enable)
-		gfx_printf("%kAutoRCM mode enabled!%k", 0xFFFFBA00, 0xFFCCCCCC);
+		gfx_printf("%kAutoRCM mode enabled!%k",  TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
 	else
-		gfx_printf("%kAutoRCM mode disabled!%k", 0xFF96FF00, 0xFFCCCCCC);
+		gfx_printf("%kAutoRCM mode disabled!%k", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 	gfx_printf("\n\nPress any key...\n");
 
 out:
@@ -348,14 +348,14 @@ void menu_autorcm()
 	if (disabled)
 	{
 		ments[2].caption = "Status: Disabled!";
-		ments[2].color = 0xFF96FF00;
+		ments[2].color   = TXT_CLR_GREENISH;
 		ments[4].caption = "Enable AutoRCM";
 		ments[4].handler = _enable_autorcm;
 	}
 	else
 	{
 		ments[2].caption = "Status: Enabled!";
-		ments[2].color = 0xFFFFBA00;
+		ments[2].color   = TXT_CLR_ORANGE;
 		ments[4].caption = "Disable AutoRCM";
 		ments[4].handler = _disable_autorcm;
 	}

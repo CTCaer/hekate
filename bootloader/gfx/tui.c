@@ -40,19 +40,19 @@ void tui_sbar(bool force_update)
 	int battVoltCurr = 0;
 
 	gfx_con_getpos(&cx, &cy);
-	gfx_con_setpos(0,  1260);
+	gfx_con_setpos(0, 1260);
 
 	max17050_get_property(MAX17050_RepSOC, (int *)&battPercent);
 	max17050_get_property(MAX17050_VCELL, &battVoltCurr);
 
 	gfx_clear_partial_grey(0x30, 1256, 24);
-	gfx_printf("%K%k Battery: %d.%d%% (%d mV) - Charge:", 0xFF303030, 0xFF888888,
+	gfx_printf("%K%k Battery: %d.%d%% (%d mV) - Charge:", TXT_CLR_GREY_D, TXT_CLR_GREY,
 		(battPercent >> 8) & 0xFF, (battPercent & 0xFF) / 26, battVoltCurr);
 
 	max17050_get_property(MAX17050_Current, &battVoltCurr);
 
-	gfx_printf(" %k%d mA%k%K\n", battVoltCurr >= 0 ? 0xFF008800 : 0xFF880000,
-			   battVoltCurr / 1000, 0xFFCCCCCC, 0xFF1B1B1B);
+	gfx_printf(" %k%d mA%k%K\n", battVoltCurr >= 0 ? TXT_CLR_GREEN_D : TXT_CLR_RED_D,
+			   battVoltCurr / 1000, TXT_CLR_DEFAULT, TXT_CLR_BG);
 
 	gfx_con.fntsz = prevFontSize;
 	gfx_con_setpos(cx, cy);
@@ -68,7 +68,7 @@ void tui_pbar(int x, int y, u32 val, u32 fgcol, u32 bgcol)
 
 	gfx_con_setpos(x, y);
 
-	gfx_printf("%k[%3d%%]%k", fgcol, val, 0xFFCCCCCC);
+	gfx_printf("%k[%3d%%]%k", fgcol, val, TXT_CLR_DEFAULT);
 
 	x += 7 * gfx_con.fntsz;
 
@@ -93,7 +93,7 @@ void *tui_do_menu(menu_t *menu)
 
 	while (true)
 	{
-		gfx_con_setcol(0xFFCCCCCC, 1, 0xFF1B1B1B);
+		gfx_con_setcol(TXT_CLR_DEFAULT, 1, TXT_CLR_BG);
 		gfx_con_setpos(menu->x, menu->y);
 		gfx_printf("[%s]\n\n", menu->caption);
 
@@ -126,25 +126,25 @@ void *tui_do_menu(menu_t *menu)
 		for (cnt = 0; menu->ents[cnt].type != MENT_END; cnt++)
 		{
 			if (cnt == idx)
-				gfx_con_setcol(0xFF1B1B1B, 1, 0xFFCCCCCC);
+				gfx_con_setcol(TXT_CLR_BG, 1, TXT_CLR_DEFAULT);
 			else
-				gfx_con_setcol(0xFFCCCCCC, 1, 0xFF1B1B1B);
+				gfx_con_setcol(TXT_CLR_DEFAULT, 1, TXT_CLR_BG);
 			if (menu->ents[cnt].type == MENT_CAPTION)
 				gfx_printf("%k %s", menu->ents[cnt].color, menu->ents[cnt].caption);
 			else if (menu->ents[cnt].type != MENT_CHGLINE)
 				gfx_printf(" %s", menu->ents[cnt].caption);
 			if(menu->ents[cnt].type == MENT_MENU)
-				gfx_printf("%k...", 0xFF0099EE);
+				gfx_printf("%k...", TXT_CLR_CYAN_L);
 			gfx_printf(" \n");
 		}
-		gfx_con_setcol(0xFFCCCCCC, 1, 0xFF1B1B1B);
+		gfx_con_setcol(TXT_CLR_DEFAULT, 1, TXT_CLR_BG);
 		gfx_putc('\n');
 
 		// Print errors, help and battery status.
 		gfx_con_setpos(0,  1127);
-		gfx_printf("%k Warning: %k Nyx is missing!", 0xFF800000, 0xFF555555);
+		gfx_printf("%k Warning: %kNyx is missing!", TXT_CLR_RED_D, TXT_CLR_GREY_M);
 		gfx_con_setpos(0,  1191);
-		gfx_printf("%k VOL: Move up/down\n PWR: Select option%k", 0xFF555555, 0xFFCCCCCC);
+		gfx_printf("%k VOL: Move up/down\n PWR: Select option%k", TXT_CLR_GREY_M, TXT_CLR_DEFAULT);
 
 		display_backlight_brightness(h_cfg.backlight, 1000);
 

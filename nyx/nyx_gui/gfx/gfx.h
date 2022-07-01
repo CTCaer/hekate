@@ -21,10 +21,25 @@
 
 #include <bdk.h>
 
-#define EPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFF0000, 0xFFCCCCCC)
-#define EPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFF0000, args, 0xFFCCCCCC)
-#define WPRINTF(text) gfx_printf("%k"text"%k\n", 0xFFFFDD00, 0xFFCCCCCC)
-#define WPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", 0xFFFFDD00, args, 0xFFCCCCCC)
+#define TXT_CLR_BG        0xFF000000 // Black.
+#define TXT_CLR_DEFAULT   0xFFFFFFFF // White.
+#define TXT_CLR_WARNING   0xFFFFDD00 // Yellow.
+#define TXT_CLR_ERROR     0xFFFF0000 // Red.
+#define TXT_CLR_CYAN_L    0xFF00CCFF // Light Cyan.  0xFF0099EE 0xFF00DDFF FF0AB9E6
+#define TXT_CLR_TURQUOISE 0xFF00FFCC // Turquoise.
+#define TXT_CLR_ORANGE    0xFFFFBA00 // Orange.
+#define TXT_CLR_GREENISH  0xFF96FF00 // Toxic Green. 0xFFAEFD14 0xFFC7EA46
+#define TXT_CLR_GREEN_D   0xFF008800 // Dark Green.
+#define TXT_CLR_RED_D     0xFF880000 // Dark Red.    0xFF800000
+#define TXT_CLR_GREY_D    0xFF303030 // Darkest Grey.
+#define TXT_CLR_GREY_DM   0xFF444444 // Darker Grey.
+#define TXT_CLR_GREY_M    0xFF555555 // Dark Grey.
+#define TXT_CLR_GREY      0xFF888888 // Grey.
+
+#define EPRINTF(text) gfx_eputs(text)
+#define EPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", TXT_CLR_ERROR,   args, TXT_CLR_DEFAULT)
+#define WPRINTF(text) gfx_wputs(text)
+#define WPRINTFARGS(text, args...) gfx_printf("%k"text"%k\n", TXT_CLR_WARNING, args, TXT_CLR_DEFAULT)
 
 typedef struct _gfx_ctxt_t
 {
@@ -60,7 +75,9 @@ void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol);
 void gfx_con_getpos(u32 *x, u32 *y);
 void gfx_con_setpos(u32 x, u32 y);
 void gfx_putc(char c);
-void gfx_puts(char *s);
+void gfx_puts(const char *s);
+void gfx_wputs(const char *s);
+void gfx_eputs(const char *s);
 void gfx_printf(const char *fmt, ...) /* __attribute__((format(printf, 1, 2))) */;
 void gfx_hexdump(u32 base, const void *buf, u32 len);
 
