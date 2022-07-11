@@ -96,6 +96,7 @@ void watchdog_end()
 	TMR(TIMER_WDT4_UNLOCK_PATTERN) = TIMER_MAGIC_PTRN;
 	TMR(TIMER_WDT4_COMMAND) = TIMER_START_CNT; // Re-arm to clear any interrupts.
 	TMR(TIMER_WDT4_COMMAND) = TIMER_CNT_DISABLE;
+	TMR(TIMER_TMR9_TMR_PCR) = TIMER_INTR_CLR;
 }
 
 void watchdog_handle()
