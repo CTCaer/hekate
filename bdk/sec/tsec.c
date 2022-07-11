@@ -86,6 +86,9 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	clock_enable_kfuse();
 	kfuse_wait_ready();
 
+	// Disable AHB aperture.
+	mc_disable_ahb_redirect();
+
 	if (type == TSEC_FW_TYPE_NEW)
 	{
 		// Disable all CCPLEX core rails.
@@ -205,8 +208,8 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 
 	if (type == TSEC_FW_TYPE_EMU)
 	{
-		u32 start = get_tmr_us();
 		u32 k = se[SE_CRYPTO_KEYTABLE_DATA_REG / 4];
+		u32 timeout = get_tmr_us() + 125000;
 		u32 key[16] = {0};
 		u32 kidx = 0;
 
@@ -221,7 +224,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 			}
 
 			// Failsafe.
-			if ((u32)get_tmr_us() - start > 125000)
+			if ((u32)get_tmr_us() > timeout)
 				break;
 		}
 
@@ -300,6 +303,11 @@ out:
 	clock_disable_tsec();
 	bpmp_mmu_enable();
 	bpmp_clk_rate_set(prev_fid);
+
+#ifdef BDK_MC_ENABLE_AHB_REDIRECT
+	// Re-enable AHB aperture.
+	mc_enable_ahb_redirect();
+#endif
 
 	return res;
 }
