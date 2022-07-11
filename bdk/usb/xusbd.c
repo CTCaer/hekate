@@ -1996,7 +1996,7 @@ void xusb_end(bool reset_ep, bool only_controller)
 	_xusb_disable_ep1();
 
 	// Disable device mode.
-	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL) &= ~XHCI_CTRL_ENABLE;
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL) = 0;
 
 	//! TODO: Add only controller support?
 	_xusb_device_power_down();
