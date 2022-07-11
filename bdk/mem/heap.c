@@ -44,6 +44,7 @@ static void *_heap_alloc(u32 size)
 		node->size = size;
 		node->prev = NULL;
 		node->next = NULL;
+
 		_heap.first = node;
 		_heap.last = node;
 
@@ -103,6 +104,7 @@ static void *_heap_alloc(u32 size)
 	new_node->size = size;
 	new_node->prev = node;
 	new_node->next = NULL;
+
 	node->next = new_node;
 	_heap.last = new_node;
 

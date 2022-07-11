@@ -180,11 +180,11 @@ int sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf)
 
 	sdmmc_init_cmd(&cmdbuf, MMC_VENDOR_63_CMD, 0, SDMMC_RSP_TYPE_1, 0); // similar to CMD17 with arg 0x0.
 
-	reqbuf.buf = buf;
-	reqbuf.num_sectors = 1;
-	reqbuf.blksize = 512;
-	reqbuf.is_write = 0;
-	reqbuf.is_multi_block = 0;
+	reqbuf.buf              = buf;
+	reqbuf.num_sectors      = 1;
+	reqbuf.blksize          = 512;
+	reqbuf.is_write         = 0;
+	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
 
 	u32 blkcnt_out;
@@ -211,11 +211,11 @@ static int _sdmmc_storage_readwrite_ex(sdmmc_storage_t *storage, u32 *blkcnt_out
 
 	sdmmc_init_cmd(&cmdbuf, is_write ? MMC_WRITE_MULTIPLE_BLOCK : MMC_READ_MULTIPLE_BLOCK, sector, SDMMC_RSP_TYPE_1, 0);
 
-	reqbuf.buf = buf;
-	reqbuf.num_sectors = num_sectors;
-	reqbuf.blksize = 512;
-	reqbuf.is_write = is_write;
-	reqbuf.is_multi_block = 1;
+	reqbuf.buf              = buf;
+	reqbuf.num_sectors      = num_sectors;
+	reqbuf.blksize          = 512;
+	reqbuf.is_write         = is_write;
+	reqbuf.is_multi_block   = 1;
 	reqbuf.is_auto_stop_trn = 1;
 
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, blkcnt_out))
@@ -434,19 +434,19 @@ static void _mmc_storage_parse_cid(sdmmc_storage_t *storage)
 	case 0: /* MMC v1.0 - v1.2 */
 	case 1: /* MMC v1.4 */
 		storage->cid.prod_name[6] = unstuff_bits(raw_cid, 48, 8);
-		storage->cid.manfid = unstuff_bits(raw_cid, 104, 24);
-		storage->cid.hwrev  = unstuff_bits(raw_cid, 44, 4);
-		storage->cid.fwrev  = unstuff_bits(raw_cid, 40, 4);
-		storage->cid.serial = unstuff_bits(raw_cid, 16, 24);
+		storage->cid.manfid       = unstuff_bits(raw_cid, 104, 24);
+		storage->cid.hwrev        = unstuff_bits(raw_cid, 44, 4);
+		storage->cid.fwrev        = unstuff_bits(raw_cid, 40, 4);
+		storage->cid.serial       = unstuff_bits(raw_cid, 16, 24);
 		break;
 
 	case 2: /* MMC v2.0 - v2.2 */
 	case 3: /* MMC v3.1 - v3.3 */
 	case 4: /* MMC v4 */
-		storage->cid.manfid   = unstuff_bits(raw_cid, 120, 8);
-		storage->cid.oemid    = unstuff_bits(raw_cid, 104, 8);
-		storage->cid.prv      = unstuff_bits(raw_cid, 48, 8);
-		storage->cid.serial   = unstuff_bits(raw_cid, 16, 32);
+		storage->cid.manfid = unstuff_bits(raw_cid, 120, 8);
+		storage->cid.oemid  = unstuff_bits(raw_cid, 104, 8);
+		storage->cid.prv    = unstuff_bits(raw_cid, 48, 8);
+		storage->cid.serial = unstuff_bits(raw_cid, 16, 32);
 		break;
 
 	default:
@@ -483,30 +483,29 @@ static void _mmc_storage_parse_csd(sdmmc_storage_t *storage)
 
 static void _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage, u8 *buf)
 {
-	storage->ext_csd.rev = buf[EXT_CSD_REV];
-	storage->ext_csd.ext_struct = buf[EXT_CSD_STRUCTURE];
-	storage->ext_csd.card_type = buf[EXT_CSD_CARD_TYPE];
-	storage->ext_csd.dev_version = *(u16 *)&buf[EXT_CSD_DEVICE_VERSION];
-	storage->ext_csd.boot_mult = buf[EXT_CSD_BOOT_MULT];
-	storage->ext_csd.rpmb_mult = buf[EXT_CSD_RPMB_MULT];
-	//storage->ext_csd.bkops = buf[EXT_CSD_BKOPS_SUPPORT];
-	//storage->ext_csd.bkops_en = buf[EXT_CSD_BKOPS_EN];
+	storage->ext_csd.rev          = buf[EXT_CSD_REV];
+	storage->ext_csd.ext_struct   = buf[EXT_CSD_STRUCTURE];
+	storage->ext_csd.card_type    = buf[EXT_CSD_CARD_TYPE];
+	storage->ext_csd.dev_version  = *(u16 *)&buf[EXT_CSD_DEVICE_VERSION];
+	storage->ext_csd.boot_mult    = buf[EXT_CSD_BOOT_MULT];
+	storage->ext_csd.rpmb_mult    = buf[EXT_CSD_RPMB_MULT];
+	//storage->ext_csd.bkops        = buf[EXT_CSD_BKOPS_SUPPORT];
+	//storage->ext_csd.bkops_en     = buf[EXT_CSD_BKOPS_EN];
 	//storage->ext_csd.bkops_status = buf[EXT_CSD_BKOPS_STATUS];
 
-	storage->ext_csd.pre_eol_info = buf[EXT_CSD_PRE_EOL_INFO];
+	storage->ext_csd.pre_eol_info   = buf[EXT_CSD_PRE_EOL_INFO];
 	storage->ext_csd.dev_life_est_a = buf[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A];
 	storage->ext_csd.dev_life_est_b = buf[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B];
 
-	storage->ext_csd.cache_size =
-		 buf[EXT_CSD_CACHE_SIZE]            |
-		(buf[EXT_CSD_CACHE_SIZE + 1] << 8)  |
-		(buf[EXT_CSD_CACHE_SIZE + 2] << 16) |
-		(buf[EXT_CSD_CACHE_SIZE + 3] << 24);
-	storage->ext_csd.max_enh_mult =
-		(buf[EXT_CSD_MAX_ENH_SIZE_MULT]             |
-		(buf[EXT_CSD_MAX_ENH_SIZE_MULT + 1] << 8)   |
-		(buf[EXT_CSD_MAX_ENH_SIZE_MULT + 2] << 16)) *
-		buf[EXT_CSD_HC_WP_GRP_SIZE] * buf[EXT_CSD_HC_ERASE_GRP_SIZE];
+	storage->ext_csd.cache_size   =  buf[EXT_CSD_CACHE_SIZE]            |
+									(buf[EXT_CSD_CACHE_SIZE + 1] << 8)  |
+									(buf[EXT_CSD_CACHE_SIZE + 2] << 16) |
+									(buf[EXT_CSD_CACHE_SIZE + 3] << 24);
+
+	storage->ext_csd.max_enh_mult = (buf[EXT_CSD_MAX_ENH_SIZE_MULT]             |
+									(buf[EXT_CSD_MAX_ENH_SIZE_MULT + 1] << 8)   |
+									(buf[EXT_CSD_MAX_ENH_SIZE_MULT + 2] << 16)) *
+									 buf[EXT_CSD_HC_WP_GRP_SIZE] * buf[EXT_CSD_HC_ERASE_GRP_SIZE];
 
 	storage->sec_cnt = *(u32 *)&buf[EXT_CSD_SEC_CNT];
 }
@@ -917,11 +916,11 @@ int sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
 	sdmmc_init_cmd(&cmdbuf, SD_APP_SEND_SCR, 0, SDMMC_RSP_TYPE_1, 0);
 
 	sdmmc_req_t reqbuf;
-	reqbuf.buf = buf;
-	reqbuf.blksize = 8;
-	reqbuf.num_sectors = 1;
-	reqbuf.is_write = 0;
-	reqbuf.is_multi_block = 0;
+	reqbuf.buf              = buf;
+	reqbuf.blksize          = 8;
+	reqbuf.num_sectors      = 1;
+	reqbuf.is_write         = 0;
+	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
 
 	if (!_sd_storage_execute_app_cmd(storage, R1_STATE_TRAN, 0, &cmdbuf, &reqbuf, NULL))
@@ -948,11 +947,11 @@ static int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
 	sdmmc_init_cmd(&cmdbuf, SD_SWITCH, 0xFFFFFF, SDMMC_RSP_TYPE_1, 0);
 
 	sdmmc_req_t reqbuf;
-	reqbuf.buf = buf;
-	reqbuf.blksize = 64;
-	reqbuf.num_sectors = 1;
-	reqbuf.is_write = 0;
-	reqbuf.is_multi_block = 0;
+	reqbuf.buf              = buf;
+	reqbuf.blksize          = 64;
+	reqbuf.num_sectors      = 1;
+	reqbuf.is_write         = 0;
+	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
 
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))
@@ -974,11 +973,11 @@ static int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int
 	sdmmc_init_cmd(&cmdbuf, SD_SWITCH, switchcmd, SDMMC_RSP_TYPE_1, 0);
 
 	sdmmc_req_t reqbuf;
-	reqbuf.buf = buf;
-	reqbuf.blksize = 64;
-	reqbuf.num_sectors = 1;
-	reqbuf.is_write = 0;
-	reqbuf.is_multi_block = 0;
+	reqbuf.buf              = buf;
+	reqbuf.blksize          = 64;
+	reqbuf.num_sectors      = 1;
+	reqbuf.is_write         = 0;
+	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
 
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))
@@ -1227,11 +1226,11 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 		storage->ssr.speed_class = speed_class;
 		break;
 	}
-	storage->ssr.uhs_grade =   unstuff_bits(raw_ssr1, 396 - 384, 4);
+	storage->ssr.uhs_grade   = unstuff_bits(raw_ssr1, 396 - 384, 4);
 	storage->ssr.video_class = unstuff_bits(raw_ssr1, 384 - 384, 8);
-	storage->ssr.app_class =   unstuff_bits(raw_ssr2, 336 - 256, 4);
+	storage->ssr.app_class   = unstuff_bits(raw_ssr2, 336 - 256, 4);
 
-	storage->ssr.au_size =     unstuff_bits(raw_ssr1, 428 - 384, 4);
+	storage->ssr.au_size     = unstuff_bits(raw_ssr1, 428 - 384, 4);
 	storage->ssr.uhs_au_size = unstuff_bits(raw_ssr1, 392 - 384, 4);
 }
 
@@ -1241,11 +1240,11 @@ int sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
 	sdmmc_init_cmd(&cmdbuf, SD_APP_SD_STATUS, 0, SDMMC_RSP_TYPE_1, 0);
 
 	sdmmc_req_t reqbuf;
-	reqbuf.buf = buf;
-	reqbuf.blksize = 64;
-	reqbuf.num_sectors = 1;
-	reqbuf.is_write = 0;
-	reqbuf.is_multi_block = 0;
+	reqbuf.buf              = buf;
+	reqbuf.blksize          = 64;
+	reqbuf.num_sectors      = 1;
+	reqbuf.is_write         = 0;
+	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
 
 	if (!(storage->csd.cmdclass & CCC_APP_SPEC))
@@ -1278,26 +1277,26 @@ static void _sd_storage_parse_cid(sdmmc_storage_t *storage)
 {
 	u32 *raw_cid = (u32 *)&(storage->raw_cid);
 
-	storage->cid.manfid =       unstuff_bits(raw_cid, 120, 8);
-	storage->cid.oemid  =       unstuff_bits(raw_cid, 104, 16);
+	storage->cid.manfid       = unstuff_bits(raw_cid, 120, 8);
+	storage->cid.oemid        = unstuff_bits(raw_cid, 104, 16);
 	storage->cid.prod_name[0] = unstuff_bits(raw_cid, 96,  8);
 	storage->cid.prod_name[1] = unstuff_bits(raw_cid, 88,  8);
 	storage->cid.prod_name[2] = unstuff_bits(raw_cid, 80,  8);
 	storage->cid.prod_name[3] = unstuff_bits(raw_cid, 72,  8);
 	storage->cid.prod_name[4] = unstuff_bits(raw_cid, 64,  8);
-	storage->cid.hwrev  =       unstuff_bits(raw_cid, 60,  4);
-	storage->cid.fwrev  =       unstuff_bits(raw_cid, 56,  4);
-	storage->cid.serial =       unstuff_bits(raw_cid, 24,  32);
-	storage->cid.year   =       unstuff_bits(raw_cid, 12,  8) + 2000;
-	storage->cid.month  =       unstuff_bits(raw_cid, 8,   4);
+	storage->cid.hwrev        = unstuff_bits(raw_cid, 60,  4);
+	storage->cid.fwrev        = unstuff_bits(raw_cid, 56,  4);
+	storage->cid.serial       = unstuff_bits(raw_cid, 24,  32);
+	storage->cid.year         = unstuff_bits(raw_cid, 12,  8) + 2000;
+	storage->cid.month        = unstuff_bits(raw_cid, 8,   4);
 }
 
 static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 {
 	u32 *raw_csd = (u32 *)&(storage->raw_csd);
 
-	storage->csd.structure = unstuff_bits(raw_csd, 126, 2);
-	storage->csd.cmdclass  = unstuff_bits(raw_csd, 84, 12);
+	storage->csd.structure     = unstuff_bits(raw_csd, 126, 2);
+	storage->csd.cmdclass      = unstuff_bits(raw_csd, 84, 12);
 	storage->csd.read_blkbits  = unstuff_bits(raw_csd, 80, 4);
 	storage->csd.write_protect = unstuff_bits(raw_csd, 12, 2);
 	switch(storage->csd.structure)
@@ -1308,8 +1307,8 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 		break;
 
 	case 1:
-		storage->csd.c_size = (1 + unstuff_bits(raw_csd, 48, 22));
-		storage->csd.capacity = storage->csd.c_size << 10;
+		storage->csd.c_size       = (1 + unstuff_bits(raw_csd, 48, 22));
+		storage->csd.capacity     = storage->csd.c_size << 10;
 		storage->csd.read_blkbits = 9;
 		break;
 
@@ -1480,11 +1479,11 @@ int _gc_storage_custom_cmd(sdmmc_storage_t *storage, void *buf)
 	sdmmc_init_cmd(&cmdbuf, MMC_VENDOR_60_CMD, 0, SDMMC_RSP_TYPE_1, 1);
 
 	sdmmc_req_t reqbuf;
-	reqbuf.buf = buf;
-	reqbuf.blksize = 64;
-	reqbuf.num_sectors = 1;
-	reqbuf.is_write = 1;
-	reqbuf.is_multi_block = 0;
+	reqbuf.buf              = buf;
+	reqbuf.blksize          = 64;
+	reqbuf.num_sectors      = 1;
+	reqbuf.is_write         = 1;
+	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
 
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))

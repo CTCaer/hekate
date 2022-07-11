@@ -87,19 +87,19 @@ static int touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 
 static void _touch_compensate_limits(touch_event *event, bool touching)
 {
-	event->x = MAX(event->x, EDGE_OFFSET);
-	event->x = MIN(event->x, X_REAL_MAX);
+	event->x  = MAX(event->x, EDGE_OFFSET);
+	event->x  = MIN(event->x, X_REAL_MAX);
 	event->x -= EDGE_OFFSET;
 	u32 x_adj = (1280 * 1000) / (X_REAL_MAX - EDGE_OFFSET);
-	event->x = ((u32)event->x * x_adj) / 1000;
+	event->x  = ((u32)event->x * x_adj) / 1000;
 
 	if (touching)
 	{
-		event->y = MAX(event->y, EDGE_OFFSET);
-		event->y = MIN(event->y, Y_REAL_MAX);
+		event->y  = MAX(event->y, EDGE_OFFSET);
+		event->y  = MIN(event->y, Y_REAL_MAX);
 		event->y -= EDGE_OFFSET;
 		u32 y_adj = (720 * 1000) / (Y_REAL_MAX - EDGE_OFFSET);
-		event->y = ((u32)event->y * y_adj) / 1000;
+		event->y  = ((u32)event->y * y_adj) / 1000;
 	}
 }
 
@@ -115,6 +115,7 @@ static void _touch_process_contact_event(touch_event *event, bool touching)
 
 		event->z = event->raw[5] | (event->raw[6] << 8);
 		event->z = event->z << 6;
+
 		u16 tmp = 0x40;
 		if ((event->raw[7] & 0x3F) != 1 && (event->raw[7] & 0x3F) != 0x3F)
 			tmp = event->raw[7] & 0x3F;
@@ -245,7 +246,7 @@ int touch_get_fw_info(touch_fw_info_t *fw)
 		res = touch_read_reg(cmd, 3, buf, 8);
 		if (!res)
 		{
-			fw->fw_id = (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8) | buf[4];
+			fw->fw_id   = (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8) | buf[4];
 			fw->ftb_ver = (buf[6] << 8) | buf[5];
 		}
 

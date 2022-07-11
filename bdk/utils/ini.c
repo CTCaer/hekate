@@ -57,11 +57,11 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 {
 	FIL fp;
 	u32 lblen;
-	u32 pathlen = strlen(ini_path);
 	u32 k = 0;
+	u32 pathlen = strlen(ini_path);
 	ini_sec_t *csec = NULL;
 
-	char *lbuf = NULL;
+	char *lbuf     = NULL;
 	char *filelist = NULL;
 	char *filename = (char *)malloc(256);
 
@@ -142,8 +142,8 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				u32 i = _find_section_name(lbuf, lblen, '=');
 
 				// Calculate total allocation size.
-				u32 klen = strlen(&lbuf[0]) + 1;
-				u32 vlen = strlen(&lbuf[i + 1]) + 1;
+				u32 klen  = strlen(&lbuf[0]) + 1;
+				u32 vlen  = strlen(&lbuf[i + 1]) + 1;
 				char *buf = calloc(sizeof(ini_kv_t) + klen + vlen, 1);
 
 				ini_kv_t *kv = (ini_kv_t *)buf;

@@ -444,12 +444,12 @@ void display_init()
 	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, CFG_SIZE(_di_dc_setup_win_config));
 
 	// Setup dsi init sequence packets.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config0, CFG_SIZE(_di_dsi_init_irq_pkt_config0));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config0,  CFG_SIZE(_di_dsi_init_irq_pkt_config0));
 	if (tegra_t210)
 		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15)) = 0;
 	else
 		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15_B01)) = 0;
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config1, CFG_SIZE(_di_dsi_init_irq_pkt_config1));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config1,  CFG_SIZE(_di_dsi_init_irq_pkt_config1));
 
 	// Reset pad trimmers for T210B01.
 	if (!tegra_t210)
@@ -499,7 +499,8 @@ void display_init()
 	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 		// Set color mode to natural. Stock is Default (0x00) which is VIVID (0x65). (Reset value is 0x20).
-		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_NATURAL << 8), 0);
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
+							  MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_NATURAL << 8), 0);
 		// Enable backlight and smooth PWM.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 							  MIPI_DCS_SET_CONTROL_DISPLAY | ((DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL | DCS_CONTROL_DISPLAY_DIMMING_CTRL) << 8), 0);
@@ -512,7 +513,7 @@ void display_init()
 
 		// Set registers offset and set PWM transition to 6 frames (100ms).
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_REG_OFFSET | (7 << 8), 0);
-		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_ELVSS | (6 << 8), 0);
+		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_ELVSS      | (6 << 8), 0);
 
 		// Relock Level 2 registers.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
@@ -593,12 +594,12 @@ void display_init()
 		// Set pad trimmers and set MIPI DSI cal offsets.
 		if (tegra_t210)
 		{
-			exec_cfg((u32 *)DSI_BASE, _di_dsi_pad_cal_config_t210, CFG_SIZE(_di_dsi_pad_cal_config_t210));
+			exec_cfg((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          CFG_SIZE(_di_dsi_pad_cal_config_t210));
 			exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210, CFG_SIZE(_di_mipi_dsi_cal_offsets_config_t210));
 		}
 		else
 		{
-			exec_cfg((u32 *)DSI_BASE, _di_dsi_pad_cal_config_t210b01, CFG_SIZE(_di_dsi_pad_cal_config_t210b01));
+			exec_cfg((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,          CFG_SIZE(_di_dsi_pad_cal_config_t210b01));
 			exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210b01, CFG_SIZE(_di_mipi_dsi_cal_offsets_config_t210b01));
 		}
 
@@ -618,7 +619,8 @@ void display_backlight_pwm_init()
 
 	clock_enable_pwm();
 
-	PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN; // Enable PWM and set it to 25KHz PFM. 29.5KHz is stock.
+	// Enable PWM and set it to 25KHz PFM. 29.5KHz is stock.
+	PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN;
 
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight power mode.
@@ -626,7 +628,8 @@ void display_backlight_pwm_init()
 
 void display_backlight(bool enable)
 {
-	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW); // Backlight PWM GPIO.
+	// Backlight PWM GPIO.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW);
 }
 
 static void _display_dsi_backlight_brightness(u32 duty)
@@ -798,7 +801,8 @@ skip_panel_deinit:
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = BIT(CLK_L_HOST1X)   | BIT(CLK_L_DISP1);
 
 	// Power down pads.
-	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) | DSI_PAD_CONTROL_VS1_PDIO_CLK | DSI_PAD_CONTROL_VS1_PDIO(0xF);
+	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) |
+									  DSI_PAD_CONTROL_VS1_PDIO_CLK   | DSI_PAD_CONTROL_VS1_PDIO(0xF);
 	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
 
 	// Switch LCD PWM backlight pin to special function mode and enable PWM0 mode.
@@ -890,64 +894,91 @@ u32 *display_init_framebuffer_log()
 
 void display_activate_console()
 {
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window D.
-	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = WIN_ENABLE; // Enable window DD.
-	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0xFF80;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	// Select window D.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT;
+
+	// Enable and setup window D.
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS))   = WIN_ENABLE;
+	DISPLAY_A(_DIREG(DC_WIN_POSITION))      = 0xFF80; // X: -128.
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 
+	// Pull-down effect.
 	for (u32 i = 0xFF80; i < 0x10000; i++)
 	{
+		// Set window position.
 		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
-		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+
+		// Arm and activate changes.
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 		usleep(1000);
 	}
 
 	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT; // Select window A.
+
+	// Re-select window A.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT;
 }
 
 void display_deactivate_console()
 {
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT; // Select window D.
+	// Select window D.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT;
 
+	// Pull-up effect.
 	for (u32 i = 0xFFFF; i > 0xFF7F; i--)
 	{
+		// Set window position.
 		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
-		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+
+		// Arm and activate changes.
+		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 		usleep(500);
 	}
 
+	// Disable window D.
 	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
-	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0; // Disable window DD.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT; // Select window A.
+
+	// Re-select window A.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT;
 }
 
 void display_init_cursor(void *crs_fb, u32 size)
 {
 	// Setup cursor.
-	DISPLAY_A(_DIREG(DC_DISP_CURSOR_START_ADDR)) = CURSOR_CLIPPING(CURSOR_CLIP_WIN_A) | size | ((u32)crs_fb >> 10);
-	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) =
-		CURSOR_BLEND_R8G8B8A8 | CURSOR_BLEND_DST_FACTOR(CURSOR_BLEND_K1) | CURSOR_BLEND_SRC_FACTOR(CURSOR_BLEND_K1) | 0xFF;
+	DISPLAY_A(_DIREG(DC_DISP_CURSOR_START_ADDR))    = CURSOR_CLIPPING(CURSOR_CLIP_WIN_A) | size | ((u32)crs_fb >> 10);
+	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) = CURSOR_BLEND_R8G8B8A8                    |
+													  CURSOR_BLEND_DST_FACTOR(CURSOR_BLEND_K1) |
+													  CURSOR_BLEND_SRC_FACTOR(CURSOR_BLEND_K1) | 0xFF;
 
+	// Enable cursor window.
 	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) |= CURSOR_ENABLE;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | CURSOR_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | CURSOR_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
 void display_set_pos_cursor(u32 x, u32 y)
 {
+	// Set cursor position.
 	DISPLAY_A(_DIREG(DC_DISP_CURSOR_POSITION)) = x | (y << 16);
 
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | CURSOR_UPDATE;
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | CURSOR_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
@@ -955,6 +986,7 @@ void display_deinit_cursor()
 {
 	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) = 0;
 	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) &= ~CURSOR_ENABLE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE | CURSOR_UPDATE;
+
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | CURSOR_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }

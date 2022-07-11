@@ -150,8 +150,8 @@ void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply)
 	if (entry->enable)
 	{
 		mmu_entry->start_addr = ALIGN(entry->start_addr, BPMP_MMU_CACHE_LINE_SIZE);
-		mmu_entry->end_addr = ALIGN_DOWN(entry->end_addr, BPMP_MMU_CACHE_LINE_SIZE);
-		mmu_entry->attr = entry->attr;
+		mmu_entry->end_addr   = ALIGN_DOWN(entry->end_addr, BPMP_MMU_CACHE_LINE_SIZE);
+		mmu_entry->attr       = entry->attr;
 
 		BPMP_CACHE_CTRL(BPMP_CACHE_MMU_SHADOW_COPY_MASK) |= BIT(idx);
 
@@ -166,9 +166,9 @@ void bpmp_mmu_enable()
 		return;
 
 	// Init BPMP MMU.
-	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CMD) = MMU_CMD_INIT;
+	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CMD)            = MMU_CMD_INIT;
 	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_FALLBACK_ENTRY) = MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC; // RWX for non-defined regions.
-	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CFG) = MMU_CFG_SEQ_EN | MMU_CFG_TLB_EN | MMU_CFG_ABORT_STORE_LAST;
+	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_CFG)            = MMU_CFG_SEQ_EN | MMU_CFG_TLB_EN | MMU_CFG_ABORT_STORE_LAST;
 
 	// Init BPMP MMU entries.
 	BPMP_CACHE_CTRL(BPMP_CACHE_MMU_SHADOW_COPY_MASK) = 0;

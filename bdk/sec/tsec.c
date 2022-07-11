@@ -20,16 +20,17 @@
 
 #include "tsec.h"
 #include "tsec_t210.h"
+#include <memory_map.h>
+#include <mem/heap.h>
+#include <mem/mc.h>
+#include <mem/smmu.h>
 #include <sec/se_t210.h>
 #include <soc/bpmp.h>
 #include <soc/clock.h>
 #include <soc/kfuse.h>
 #include <soc/pmc.h>
-#include <soc/timer.h>
 #include <soc/t210.h>
-#include <mem/heap.h>
-#include <mem/mc.h>
-#include <mem/smmu.h>
+#include <soc/timer.h>
 
 // #include <gfx_utils.h>
 
@@ -57,9 +58,9 @@ static int _tsec_dma_pa_to_internal_100(int not_imem, int i_offset, int pa_offse
 	else
 		cmd = TSEC_DMATRFCMD_IMEM;      // DMA IMEM (Instruction memmory)
 
-	TSEC(TSEC_DMATRFMOFFS) = i_offset;
+	TSEC(TSEC_DMATRFMOFFS)  = i_offset;
 	TSEC(TSEC_DMATRFFBOFFS) = pa_offset;
-	TSEC(TSEC_DMATRFCMD) = cmd;
+	TSEC(TSEC_DMATRFCMD)    = cmd;
 
 	return _tsec_dma_wait_idle();
 }
@@ -83,7 +84,6 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	clock_enable_sor0();
 	clock_enable_sor1();
 	clock_enable_kfuse();
-
 	kfuse_wait_ready();
 
 	if (type == TSEC_FW_TYPE_NEW)
@@ -102,16 +102,16 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	TSEC(TSEC_DMACTL) = 0;
 	TSEC(TSEC_IRQMSET) =
 		TSEC_IRQMSET_EXT(0xFF) |
-		TSEC_IRQMSET_WDTMR |
-		TSEC_IRQMSET_HALT |
-		TSEC_IRQMSET_EXTERR |
-		TSEC_IRQMSET_SWGEN0 |
+		TSEC_IRQMSET_WDTMR     |
+		TSEC_IRQMSET_HALT      |
+		TSEC_IRQMSET_EXTERR    |
+		TSEC_IRQMSET_SWGEN0    |
 		TSEC_IRQMSET_SWGEN1;
 	TSEC(TSEC_IRQDEST) =
 		TSEC_IRQDEST_EXT(0xFF) |
-		TSEC_IRQDEST_HALT |
-		TSEC_IRQDEST_EXTERR |
-		TSEC_IRQDEST_SWGEN0 |
+		TSEC_IRQDEST_HALT      |
+		TSEC_IRQDEST_EXTERR    |
+		TSEC_IRQDEST_SWGEN0    |
 		TSEC_IRQDEST_SWGEN1;
 	TSEC(TSEC_ITFEN) = TSEC_ITFEN_CTXEN | TSEC_ITFEN_MTHDEN;
 	if (!_tsec_dma_wait_idle())
@@ -128,6 +128,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		fwbuf = (u8 *)malloc(SZ_16K);
 		u8 *fwbuf_aligned = (u8 *)ALIGN((u32)fwbuf, 0x100);
 		memcpy(fwbuf_aligned, tsec_ctxt->fw, tsec_ctxt->size);
+
 		TSEC(TSEC_DMATRFBASE) = (u32)fwbuf_aligned >> 8;
 	}
 
@@ -180,7 +181,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		mc = page_alloc(1);
 		memcpy(mc, (void *)MC_BASE, SZ_PAGE);
 		mc[MC_IRAM_BOM / 4] = 0;
-		mc[MC_IRAM_TOM / 4] = 0x80000000;
+		mc[MC_IRAM_TOM / 4] = DRAM_START;
 		smmu_map(pdir, MC_BASE, (u32)mc, 1, _READABLE | _NONSECURE);
 
 		// IRAM
@@ -197,10 +198,10 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 
 	// Execute firmware.
 	HOST1X(HOST1X_CH0_SYNC_SYNCPT_160) = 0x34C2E1DA;
-	TSEC(TSEC_STATUS) = 0;
+	TSEC(TSEC_STATUS)     = 0;
 	TSEC(TSEC_BOOTKEYVER) = 1; // HOS uses key version 1.
-	TSEC(TSEC_BOOTVEC) = 0;
-	TSEC(TSEC_CPUCTL) = TSEC_CPUCTL_STARTCPU;
+	TSEC(TSEC_BOOTVEC)    = 0;
+	TSEC(TSEC_CPUCTL)     = TSEC_CPUCTL_STARTCPU;
 
 	if (type == TSEC_FW_TYPE_EMU)
 	{
@@ -279,10 +280,10 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		buf[1] = SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_BKSV_LSB);
 		buf[2] = SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB);
 		buf[3] = SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB);
-		SOR1(SOR_NV_PDISP_SOR_DP_HDCP_BKSV_LSB) = 0;
+		SOR1(SOR_NV_PDISP_SOR_DP_HDCP_BKSV_LSB)   = 0;
 		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_BKSV_LSB) = 0;
-		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB) = 0;
-		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB) = 0;
+		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB)   = 0;
+		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB)   = 0;
 
 		memcpy(tsec_keys, &buf, SE_KEY_128_SIZE);
 	}

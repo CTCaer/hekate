@@ -71,18 +71,19 @@ void smmu_flush_all()
 {
 	MC(MC_SMMU_PTC_FLUSH) = 0;
 	smmu_flush_regs();
+
 	MC(MC_SMMU_TLB_FLUSH) = 0;
 	smmu_flush_regs();
 }
 
 void smmu_init(u32 secmon_base)
 {
-	MC(MC_SMMU_PTB_ASID) = 0;
-	MC(MC_SMMU_PTB_DATA) = 0;
+	MC(MC_SMMU_PTB_ASID)   = 0;
+	MC(MC_SMMU_PTB_DATA)   = 0;
 	MC(MC_SMMU_TLB_CONFIG) = 0x30000030;
 	MC(MC_SMMU_PTC_CONFIG) = 0x28000F3F;
-	MC(MC_SMMU_PTC_FLUSH) = 0;
-	MC(MC_SMMU_TLB_FLUSH) = 0;
+	MC(MC_SMMU_PTC_FLUSH)  = 0;
+	MC(MC_SMMU_TLB_FLUSH)  = 0;
 
 	// Set the secmon address
 	*(u32 *)(smmu_payload + 0x30) = secmon_base;
@@ -164,8 +165,8 @@ u32 *smmu_init_for_tsec()
 
 void smmu_deinit_for_tsec()
 {
-	MC(MC_SMMU_PTB_ASID) = 1;
-	MC(MC_SMMU_PTB_DATA) = 0;
+	MC(MC_SMMU_PTB_ASID)  = 1;
+	MC(MC_SMMU_PTB_DATA)  = 0;
 	MC(MC_SMMU_TSEC_ASID) = 0;
 	smmu_flush_regs();
 }

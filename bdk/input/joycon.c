@@ -442,14 +442,14 @@ static void _jc_conn_check()
 
 		hid_pkt_inc = 0;
 
-		jc_l.connected = false;
+		jc_l.connected   = false;
 		jc_l.rumble_sent = false;
 
-		jc_gamepad.buttons &= ~JC_BTN_MASK_L;
 		jc_gamepad.conn_l = false;
 
-		jc_gamepad.batt_info_l = 0;
+		jc_gamepad.batt_info_l    = 0;
 		jc_gamepad.bt_conn_l.type = 0;
+		jc_gamepad.buttons &= ~JC_BTN_MASK_L;
 	}
 
 	if (!jc_r.detected)
@@ -459,14 +459,14 @@ static void _jc_conn_check()
 
 		hid_pkt_inc = 0;
 
-		jc_r.connected = false;
+		jc_r.connected   = false;
 		jc_r.rumble_sent = false;
 
-		jc_gamepad.buttons &= ~JC_BTN_MASK_R;
 		jc_gamepad.conn_r = false;
 
-		jc_gamepad.batt_info_r = 0;
+		jc_gamepad.batt_info_r    = 0;
 		jc_gamepad.bt_conn_r.type = 0;
+		jc_gamepad.buttons &= ~JC_BTN_MASK_R;
 	}
 }
 
@@ -542,7 +542,7 @@ static void _jc_send_hid_cmd(u8 uart, u8 subcmd, u8 *data, u16 size)
 		bool send_l_rumble = jc_l.connected && !jc_l.rumble_sent;
 
 		// Enable rumble.
-		hid_pkt->cmd = JC_HID_OUTPUT_RPT;
+		hid_pkt->cmd    = JC_HID_OUTPUT_RPT;
 		hid_pkt->pkt_id = _jc_hid_pkt_id_incr();
 		hid_pkt->subcmd = JC_HID_SUBCMD_RUMBLE_CTL;
 		hid_pkt->subcmd_data[0] = 1;
@@ -552,7 +552,7 @@ static void _jc_send_hid_cmd(u8 uart, u8 subcmd, u8 *data, u16 size)
 			_jc_send_hid_output_rpt(UART_C, (u8 *)hid_pkt, 0x10, false);
 
 		// Send rumble.
-		hid_pkt->cmd = JC_HID_RUMBLE_RPT;
+		hid_pkt->cmd    = JC_HID_RUMBLE_RPT;
 		hid_pkt->pkt_id = _jc_hid_pkt_id_incr();
 		memcpy(hid_pkt->rumble, rumble_init, sizeof(rumble_init));
 		if (send_r_rumble)
@@ -563,7 +563,7 @@ static void _jc_send_hid_cmd(u8 uart, u8 subcmd, u8 *data, u16 size)
 		msleep(15);
 
 		// Disable rumble.
-		hid_pkt->cmd = JC_HID_OUTPUT_RPT;
+		hid_pkt->cmd    = JC_HID_OUTPUT_RPT;
 		hid_pkt->pkt_id = _jc_hid_pkt_id_incr();
 		hid_pkt->subcmd = JC_HID_SUBCMD_RUMBLE_CTL;
 		hid_pkt->subcmd_data[0] = 0;
@@ -577,7 +577,7 @@ static void _jc_send_hid_cmd(u8 uart, u8 subcmd, u8 *data, u16 size)
 	{
 		bool crc_needed = (jc_l.uart == uart) ? (jc_l.type & JC_ID_HORI) : (jc_r.type & JC_ID_HORI);
 
-		hid_pkt->cmd = JC_HID_OUTPUT_RPT;
+		hid_pkt->cmd    = JC_HID_OUTPUT_RPT;
 		hid_pkt->pkt_id = _jc_hid_pkt_id_incr();
 		hid_pkt->subcmd = subcmd;
 		if (data)
@@ -646,7 +646,7 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
 			else
 				bt_conn = &jc_gamepad.bt_conn_r;
 
-			jc_hid_in_spi_read_t  *spi_info = (jc_hid_in_spi_read_t *)hid_pkt->subcmd_data;
+			jc_hid_in_spi_read_t  *spi_info  = (jc_hid_in_spi_read_t *)hid_pkt->subcmd_data;
 			jc_hid_in_pair_data_t *pair_data = (jc_hid_in_pair_data_t *)spi_info->data;
 
 			// Check if the reply is pairing info.
@@ -718,7 +718,7 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8* payload, 
 	case JC_SIO_CMD_STATUS:
 		jc_sio_hid_in_rpt_t *hid_pkt = (jc_sio_hid_in_rpt_t *)payload;
 		jc_gamepad.buttons = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
-		jc_gamepad.home = !gpio_read(GPIO_PORT_V, GPIO_PIN_3);
+		jc_gamepad.home    = !gpio_read(GPIO_PORT_V, GPIO_PIN_3);
 
 		jc_gamepad.lstick_x = hid_pkt->stick_h_left | ((hid_pkt->stick_m_left & 0xF) << 8);
 		jc_gamepad.lstick_y = (hid_pkt->stick_m_left >> 4) | (hid_pkt->stick_v_left << 4);
@@ -727,6 +727,7 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8* payload, 
 
 		jc_gamepad.batt_info_l = jc_l.connected;
 		jc_gamepad.batt_info_r = gpio_read(GPIO_PORT_E, GPIO_PIN_7); // Set IRQ status.
+
 		jc_gamepad.conn_l = jc_l.connected;
 		jc_gamepad.conn_r = jc_l.connected;
 		break;
@@ -831,9 +832,9 @@ static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 	}
 
 	if (is_nxpad)
-		_joycon_send_raw(jc->uart, nx_pad_status, sizeof(nx_pad_status));
+		_joycon_send_raw(jc->uart, nx_pad_status,   sizeof(nx_pad_status));
 	else if (jc->sio_mode)
-		_joycon_send_raw(jc->uart, sio_pad_status, sizeof(sio_pad_status));
+		_joycon_send_raw(jc->uart, sio_pad_status,  sizeof(sio_pad_status));
 	else
 		_joycon_send_raw(jc->uart, hori_pad_status, sizeof(hori_pad_status));
 
@@ -870,11 +871,11 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 
 	bt_conn = &jc_gamepad.bt_conn_l;
 	memset(bt_conn->host_mac, 0, 6);
-	memset(bt_conn->ltk, 0, 16);
+	memset(bt_conn->ltk,      0, 16);
 
 	bt_conn = &jc_gamepad.bt_conn_r;
 	memset(bt_conn->host_mac, 0, 6);
-	memset(bt_conn->ltk, 0, 16);
+	memset(bt_conn->ltk,      0, 16);
 
 	_jc_conn_check();
 
@@ -981,14 +982,14 @@ retry:
 		{
 			bt_conn = &jc_gamepad.bt_conn_l;
 			memset(bt_conn->host_mac, 0, 6);
-			memset(bt_conn->ltk, 0, 16);
+			memset(bt_conn->ltk,      0, 16);
 		}
 
 		if (!jc_r_found)
 		{
 			bt_conn = &jc_gamepad.bt_conn_r;
 			memset(bt_conn->host_mac, 0, 6);
-			memset(bt_conn->ltk, 0, 16);
+			memset(bt_conn->ltk,      0, 16);
 		}
 	}
 
@@ -1159,12 +1160,12 @@ void jc_init_hw()
 		gpio_config(GPIO_PORT_V, GPIO_PIN_3, GPIO_MODE_GPIO);
 
 		// Configure Sio IRQ
-		PINMUX_AUX(PINMUX_AUX_GPIO_PE7) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP;
+		PINMUX_AUX(PINMUX_AUX_GPIO_PE7)  = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP;
 		gpio_config(GPIO_PORT_E, GPIO_PIN_7, GPIO_MODE_GPIO);
 
 		// Configure Sio RST and BOOT0.
 		PINMUX_AUX(PINMUX_AUX_CAM1_STROBE) = PINMUX_PULL_DOWN | 1;
-		PINMUX_AUX(PINMUX_AUX_CAM2_PWDN) = PINMUX_PULL_DOWN | 1;
+		PINMUX_AUX(PINMUX_AUX_CAM2_PWDN)   = PINMUX_PULL_DOWN | 1;
 		gpio_config(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_OUTPUT_ENABLE);
 		gpio_write(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_LOW);

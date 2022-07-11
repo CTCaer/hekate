@@ -173,8 +173,8 @@ static void _sdmmc_pad_config_fallback(sdmmc_t *sdmmc, u32 power)
 		break;
 
 	case SDMMC_4: // 50 Ohm 2X Driver. PU:16, PD:16, B01: PU:10, PD:10.
-		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) =
-			(APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) & 0xFFFFC003) | (sdmmc->t210b01 ? 0xA28 : 0x1040);
+		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) = (APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) & 0xFFFFC003) |
+													 (sdmmc->t210b01 ? 0xA28 : 0x1040);
 		(void)APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL); // Commit write.
 		break;
 	}

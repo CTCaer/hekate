@@ -35,7 +35,7 @@ void max77620_rtc_get_time(rtc_time_t *time)
 	// Get time.
 	time->sec  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_SEC_REG) & 0x7F;
 	time->min  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_MIN_REG) & 0x7F;
-	u8 hour = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_HOUR_REG);
+	u8 hour    = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_HOUR_REG);
 	time->hour = hour & 0x1F;
 
 	if (!(val & MAX77620_RTC_24H) && (hour & MAX77620_RTC_HOUR_PM_MASK))
@@ -53,7 +53,7 @@ void max77620_rtc_get_time(rtc_time_t *time)
 	}
 
 	// Get date.
-	time->day  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_DATE_REG) & 0x1f;
+	time->day   = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_DATE_REG) & 0x1f;
 	time->month = (i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_MONTH_REG) & 0xF) - 1;
 	time->year  = (i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_YEAR_REG) & 0x7F) + 2000;
 }
@@ -82,9 +82,9 @@ void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time)
 	u32 tmp, edays, year, month, day;
 
 	// Set time.
-	time->sec = epoch % 60;
+	time->sec  = epoch % 60;
 	epoch /= 60;
-	time->min = epoch % 60;
+	time->min  = epoch % 60;
 	epoch /= 60;
 	time->hour = epoch % 24;
 	epoch /= 24;
@@ -106,7 +106,7 @@ void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time)
 	}
 	else
 	{
-		year -= 4715;
+		year  -= 4715;
 		month -= 13;
 	}
 
@@ -135,7 +135,7 @@ u32 max77620_rtc_date_to_epoch(const rtc_time_t *time)
 		year--;
 	}
 
-	epoch = (365 * year) + (year >> 2) - (year / 100) + (year / 400); // Years to days.
+	epoch  = (365 * year) + (year >> 2) - (year / 100) + (year / 400); // Years to days.
 
 	epoch += (30 * month) + (3 * (month + 1) / 5) + time->day; // Months to days.
 	epoch -= 719561; // Epoch time is 1/1/1970.

@@ -78,8 +78,8 @@ void set_fan_duty(u32 duty)
 		regulator_5v_disable(REGULATOR_5V_FAN);
 
 		// Disable fan.
-		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) =
-				PINMUX_INPUT_ENABLE | PINMUX_PARKED |  PINMUX_TRISTATE | PINMUX_PULL_DOWN; // Set source to PWM1.
+		PINMUX_AUX(PINMUX_AUX_LCD_GPIO2) = PINMUX_INPUT_ENABLE | PINMUX_PARKED    |
+										   PINMUX_TRISTATE     | PINMUX_PULL_DOWN; // Set source to PWM1.
 	}
 	else // Set PWM duty.
 	{

@@ -73,7 +73,7 @@ void set_als_cfg(als_ctxt_t *als_ctxt, u8 gain, u8 cycle)
 	else if (cycle > 255)
 		cycle = 255;
 
-	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_GAIN_REG), gain);
+	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_GAIN_REG),   gain);
 	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_TIMING_REG), (256 - cycle));
 
 	als_ctxt->gain = gain;
@@ -83,25 +83,25 @@ void set_als_cfg(als_ctxt_t *als_ctxt, u8 gain, u8 cycle)
 void get_als_lux(als_ctxt_t *als_ctxt)
 {
 	u32 data[2];
-	u32 visible_light;
+	u32 vi_light;
 	u32 ir_light;
 	u64 lux = 0;
 	u32 itime_us = BH1730_ITIME_CYCLE_TO_US * als_ctxt->cycle;
 
 	// Get visible and ir light raw data. Mode is continuous so waiting for new values doesn't matter.
 	data[0] = i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA0LOW_REG)) +
-		(i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA0HIGH_REG)) << 8);
+		     (i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA0HIGH_REG)) << 8);
 	data[1] = i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA1LOW_REG)) +
-		(i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA1HIGH_REG)) << 8);
+		     (i2c_recv_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_DATA1HIGH_REG)) << 8);
 
-	visible_light = data[0];
+	vi_light = data[0];
 	ir_light = data[1];
 
-	als_ctxt->over_limit = visible_light > 65534 || ir_light > 65534;
-	als_ctxt->vi_light = visible_light;
+	als_ctxt->vi_light = vi_light;
 	als_ctxt->ir_light = ir_light;
+	als_ctxt->over_limit = vi_light > 65534 || ir_light > 65534;
 
-	if (!visible_light)
+	if (!vi_light)
 	{
 		als_ctxt->lux = 0;
 
@@ -116,7 +116,7 @@ void get_als_lux(als_ctxt_t *als_ctxt)
 	// Apply optical window calibration coefficients.
 	for (u32 i = 0; i < opt_win_cal_count; i++)
 	{
-		if (1000 * ir_light / visible_light < opt_win_cal[i].rc)
+		if (1000 * ir_light / vi_light < opt_win_cal[i].rc)
 		{
 			lux = ((u64)opt_win_cal[i].cv * data[0]) - (opt_win_cal[i].ci * data[1]);
 			break;

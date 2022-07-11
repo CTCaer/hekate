@@ -150,10 +150,10 @@ void emmc_gpt_parse(link_t *gpt)
 		if (gpt_buf->entries[i].lba_start < gpt_buf->header.first_use_lba)
 			continue;
 
-		part->index = i;
+		part->index     = i;
 		part->lba_start = gpt_buf->entries[i].lba_start;
-		part->lba_end = gpt_buf->entries[i].lba_end;
-		part->attrs = gpt_buf->entries[i].attrs;
+		part->lba_end   = gpt_buf->entries[i].lba_end;
+		part->attrs     = gpt_buf->entries[i].attrs;
 
 		// ASCII conversion. Copy only the LSByte of the UTF-16LE name.
 		for (u32 j = 0; j < 36; j++)
