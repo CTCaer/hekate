@@ -1031,18 +1031,23 @@ boot_img_not_found:
 	lv_label_set_text(lbl_status, txt_buf);
 	manual_system_maintenance(true);
 
-	// Check if TWRP should be flashed.
-	strcpy(path, "switchroot/install/twrp.img");
+	// Check if Recovery image should be flashed.
+	strcpy(path, "switchroot/install/recovery.img");
 	if (f_stat(path, NULL))
 	{
-		strcat(txt_buf, "#FF8000 Warning:# TWRP image not found!\n");
-		goto twrp_not_found;
+		// Check old/improper name
+		strcpy(path, "switchroot/install/twrp.img");
+		if (f_stat(path, NULL))
+		{
+			strcat(txt_buf, "#FF8000 Warning:# Recovery image not found!\n");
+			goto twrp_not_found;
+		}
 	}
 
 	offset_sct = 0;
 	size_sct = 0;
 
-	// Find TWRP partition.
+	// Find Recovery/SOS partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
 		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
@@ -1056,7 +1061,7 @@ boot_img_not_found:
 			break;
 	}
 
-	// Flash TWRP.
+	// Flash Recovery.
 	if (offset_sct && size_sct)
 	{
 		u32 file_size = 0;
@@ -1072,18 +1077,18 @@ boot_img_not_found:
 		}
 
 		if ((file_size >> 9) > size_sct)
-			strcat(txt_buf, "#FF8000 Warning:# TWRP image too big!\n");
+			strcat(txt_buf, "#FF8000 Warning:# Recovery image too big!\n");
 		else
 		{
 			sdmmc_storage_write(&sd_storage, offset_sct, file_size >> 9, buf);
-			strcat(txt_buf, "#C7EA46 Success:# TWRP image flashed!\n");
+			strcat(txt_buf, "#C7EA46 Success:# Recovery image flashed!\n");
 			f_unlink(path);
 		}
 
 		free(buf);
 	}
 	else
-		strcat(txt_buf, "#FF8000 Warning:# TWRP partition not found!\n");
+		strcat(txt_buf, "#FF8000 Warning:# Recovery partition not found!\n");
 
 twrp_not_found:
 	lv_label_set_text(lbl_status, txt_buf);
@@ -1147,7 +1152,7 @@ twrp_not_found:
 dtb_not_found:
 	lv_label_set_text(lbl_status, txt_buf);
 
-	// Check if TWRP is flashed unconditionally.
+	// Check if Recovery is flashed unconditionally.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
 		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
@@ -1168,7 +1173,7 @@ error:
 	if (boot_twrp)
 	{
 		// If a TWRP partition was found, ask user if rebooting into it is wanted.
-		strcat(txt_buf,"\n\nDo you want to reboot into TWRP\nto finish Android installation?");
+		strcat(txt_buf,"\n\nDo you want to reboot into Recovery\nto finish Android installation?");
 		lv_label_set_text(lbl_status, txt_buf);
 		lv_mbox_add_btns(mbox, mbox_btn_map2, _action_reboot_twrp);
 	}
@@ -1201,7 +1206,7 @@ static lv_res_t _action_flash_android(lv_obj_t *btn)
 	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
 	lv_label_set_recolor(lbl_status, true);
 	lv_label_set_text(lbl_status,
-		"This will flash #C7EA46 Kernel#, #C7EA46 DTB# and #C7EA46 TWRP# if found.\n"
+		"This will flash #C7EA46 Kernel#, #C7EA46 DTB# and #C7EA46 Recovery# if found.\n"
 		"Do you want to continue?");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map,  _action_flash_android_data);
@@ -2585,7 +2590,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 		"Note 1: Only up to #C7EA46 1GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
 		"Note 2: Resized emuMMC formats the USER partition. A save data manager can be used to move them over.\n"
 		"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n"
-		"Note 4: The installation folder is #C7EA46 switchroot/install#. Linux uses #C7EA46 l4t.XX# and Android uses #C7EA46 twrp.img# and #C7EA46 tegra210-icosa.dtb#.");
+		"Note 4: The installation folder is #C7EA46 switchroot/install#. Linux uses #C7EA46 l4t.XX# and Android uses #C7EA46 recovery.img# or #C7EA46 twrp.img# and #C7EA46 tegra210-icosa.dtb#.");
 	lv_label_set_style(lbl_notes, &hint_small_style);
 	lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 
