@@ -147,10 +147,10 @@
 #define LV_COMPILER_VLA_SUPPORTED            1  /* 1: Variable length array is supported*/
 
 /*HAL settings*/
-#define LV_TICK_CUSTOM               1                       /*1: use a custom tick source (removing the need to manually update the tick with `lv_tick_inc`) */
+#define LV_TICK_CUSTOM               1                      /*1: use a custom tick source (removing the need to manually update the tick with `lv_tick_inc`) */
 #if LV_TICK_CUSTOM == 1
-#define LV_TICK_CUSTOM_INCLUDE       <utils/util.h>          /*Header for the sys time function*/
-#define LV_TICK_CUSTOM_SYS_TIME_EXPR (get_tmr_ms())          /*Expression evaluating to current systime in ms*/
+#define LV_TICK_CUSTOM_INCLUDE       <soc/timer.h>          /*Header for the sys time function*/
+#define LV_TICK_CUSTOM_SYS_TIME_EXPR ((u32)get_tmr_ms())         /*Expression evaluating to current systime in ms*/
 #endif     /*LV_TICK_CUSTOM*/
 
 
@@ -296,6 +296,9 @@
 
 /*Message box (dependencies: lv_rect, lv_btnm, lv_label)*/
 #define USE_LV_MBOX     1
+#if USE_LV_MBOX != 0
+#  define LV_MBOX_CLOSE_ANIM_TIME 200     /*ms*/
+#endif
 
 /*Text area (dependencies: lv_label, lv_page)*/
 #define USE_LV_TA       1
