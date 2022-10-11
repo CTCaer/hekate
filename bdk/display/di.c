@@ -557,7 +557,7 @@ void display_init()
 
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
-	case PANEL_V40_55_UNK:
+	case PANEL_SHP_LQ055T1SW10:
 	default: // Allow spare part displays to work.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 120000);
 		break;
@@ -739,7 +739,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
-	case PANEL_V40_55_UNK:
+	case PANEL_SHP_LQ055T1SW10:
 		// Unlock extension cmds.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
@@ -752,7 +752,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
 		else if (_display_id == PANEL_AUO_A055TAN01)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
-		else // PANEL_V40_55_UNK.
+		else // PANEL_SHP_LQ055T1SW10.
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x731348B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT3 / XDK, VRH gamma volt adj 51 / x40).
 		if (_display_id == PANEL_INL_2J055IA_27A || _display_id == PANEL_AUO_A055TAN01)
 		{
@@ -760,7 +760,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31;   // (Unknown).
 		}
-		else // PANEL_V40_55_UNK.
+		else // PANEL_SHP_LQ055T1SW10.
 		{
 			// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/48, Enter standby / PON / VCOMG).
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x71243209;
@@ -771,6 +771,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 		break;
 
 	case PANEL_INL_P062CCA_AZ1:
+	case PANEL_SAM_AMS699VC01:
 	default:
 		break;
 	}

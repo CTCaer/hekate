@@ -76,6 +76,7 @@
 #define DC_CMD_INT_MASK 0x38
 #define DC_CMD_INT_ENABLE 0x39
 #define  DC_CMD_INT_FRAME_END_INT BIT(1)
+#define  DC_CMD_INT_V_BLANK_INT   BIT(2)
 
 #define DC_CMD_STATE_ACCESS 0x40
 #define  READ_MUX  BIT(0)
@@ -714,7 +715,7 @@
 #define DCS_SM_COLOR_MODE_POR_RESET 0x20 // Reset value on power on.
 #define DCS_SM_COLOR_MODE_NATURAL   0x23
 #define DCS_SM_COLOR_MODE_VIVID     0x65
-#define DCS_SM_COLOR_MODE_NIGHT     0x43 // Basic with Night mode.
+#define DCS_SM_COLOR_MODE_NIGHT     0x43 // Natural with Night mode.
 
 #define DCS_SM_COLOR_MODE_ENABLE     BIT(0)
 #define DCS_SM_COLOR_MODE_COLOR_MASK (7 << 1)
@@ -729,22 +730,28 @@
  * [10] 96 [09]: JDI LAM062M109A
  * [20] 93 [0F]: InnoLux P062CCA-AZ1 (Rev A1)
  * [20] 95 [0F]: InnoLux P062CCA-AZ2 (Rev B1)
- * [20] 96 [0F]: InnoLux P062CCA-AZ3 [UNCONFIRMED MODEL REV]
- * [20] 97 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
- * [20] 98 [0F]: InnoLux P062CCA-??? [UNCONFIRMED MODEL REV]
+ * [20] 96 [0F]: InnoLux P062CCA-AZ3 (Rev XX) [UNCONFIRMED MODEL+REV]
+ * [20] 97 [0F]: InnoLux P062CCA-??? (Rev XX) [UNCONFIRMED MODEL+REV]
+ * [20] 98 [0F]: InnoLux P062CCA-??? (Rev XX) [UNCONFIRMED MODEL+REV]
  * [30] 93 [0F]: AUO A062TAN00 (59.06A33.000)
  * [30] 94 [0F]: AUO A062TAN01 (59.06A33.001)
  * [30] 95 [0F]: AUO A062TAN02 (59.06A33.002)
+ * [30] 97 [0F]: AUO A062TAN02 (59.06A33.002) [From photo of assumed same panel]
+ * [30] 98 [0F]: AUO A062TAN0? [UNCONFIRMED MODEL]
  * [30] XX [0F]: AUO A062TAN03 (59.06A33.003) [UNCONFIRMED ID]
  *
- * 5.5" panels for Hoag SKUs:
- * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1)
- * [20] 95 [10]: InnoLux 2J055IA-27A (Rev B1) [UNCONFIRMED MODEL REV]
- * [20] 96 [10]: InnoLux 2J055IA-27A (Rev B1) [UNCONFIRMED MODEL REV]
- * [30] 93 [10]: AUO A055TAN01 (59.05A30.001)
- * [40] XX [10]: Vendor 40 [UNCONFIRMED ID]
  *
- * 7.0" OLED panels for Aula SKUs:
+ * 5.5" panels for Hoag SKU:
+ * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1) (6203B001P4000)
+ * [20] 95 [10]: InnoLux 2J055IA-27A (Rev XX) [UNCONFIRMED MODEL+REV]
+ * [20] 96 [10]: InnoLux 2J055IA-27A (Rev XX) [UNCONFIRMED MODEL+REV]
+ * [30] 93 [10]: AUO A055TAN01 (59.05A30.001)
+ * [30] 94 [10]: AUO A055TAN02 (59.05A30.002)
+ * [30] 95 [10]: AUO A055TAN03 (59.05A30.003)
+ * [40] 94 [10]: Sharp LQ055T1SW10 (Rev P)
+ *
+ *
+ * 7.0" OLED panels for Aula SKU:
  * [50] 9B [20]: Samsung AMS699VC01-0 (Rev 2.5)
  */
 
@@ -758,7 +765,7 @@
  * 10h: Japan Display Inc.
  * 20h: InnoLux Corporation
  * 30h: AU Optronics
- * 40h: Unknown0
+ * 40h: Sharp
  * 50h: Samsung
  *
  * Boards, Panel Size:
@@ -776,7 +783,7 @@ enum
 	PANEL_AUO_A062TAN01   = 0x0F30,
 	PANEL_INL_2J055IA_27A = 0x1020,
 	PANEL_AUO_A055TAN01   = 0x1030,
-	PANEL_V40_55_UNK      = 0x1040,
+	PANEL_SHP_LQ055T1SW10 = 0x1040,
 	PANEL_SAM_AMS699VC01  = 0x2050
 };
 
