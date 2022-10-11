@@ -1001,7 +1001,7 @@ static void _check_sd_card_removed(void *params)
 		lv_mbox_set_recolor_text(mbox, true);
 		lv_obj_set_width(mbox, LV_HOR_RES * 6 / 9);
 
-		lv_mbox_set_text(mbox, "\n#FF8000 SD card was removed!#\n\n#96FF00 Nyx will reload after inserting it.#\n");
+		lv_mbox_set_text(mbox, "\n#FF8000 SD card was removed!#\n\n#96FF00 Nyx will reload after inserting it.#\n\nReminder that you can use UMS instead of removing it.\n");
 		lv_mbox_add_btns(mbox, h_cfg.rcm_patched ? mbox_btn_map_rcm_patched : mbox_btn_map, _removed_sd_action);
 
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -1155,7 +1155,7 @@ void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, co
 		btn_onoff_pr_hos_style.body.opa = 35;
 	}
 	else
-		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(0x3D3D3D);
+		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D);
 	btn_onoff_pr_hos_style.body.grad_color = btn_onoff_pr_hos_style.body.main_color;
 	btn_onoff_pr_hos_style.text.color = th->btn.pr->text.color;
 	btn_onoff_pr_hos_style.body.empty = 0;
@@ -1205,7 +1205,7 @@ static void _create_text_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn,
 		btn_onoff_pr_hos_style.body.opa = 35;
 	}
 	else
-		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(0x3D3D3D);
+		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D);
 	btn_onoff_pr_hos_style.body.grad_color = btn_onoff_pr_hos_style.body.main_color;
 	btn_onoff_pr_hos_style.text.color = th->btn.pr->text.color;
 	btn_onoff_pr_hos_style.body.empty = 0;
@@ -2423,7 +2423,7 @@ void nyx_load_and_run()
 	tmp451_init();
 
 	// Set hekate theme based on chosen hue.
-	lv_theme_t *th = lv_theme_hekate_init(n_cfg.theme_color, NULL);
+	lv_theme_t *th = lv_theme_hekate_init(n_cfg.theme_bg, n_cfg.theme_color, NULL);
 	lv_theme_set_current(th);
 
 	// Create main menu

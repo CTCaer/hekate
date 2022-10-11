@@ -263,7 +263,9 @@ skip_main_cfg_parse:
 		{
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
-				if      (!strcmp("themecolor",   kv->key))
+				if      (!strcmp("themebg",      kv->key))
+					n_cfg.theme_bg       = strtol(kv->val, NULL, 16);
+				else if (!strcmp("themecolor",   kv->key))
 					n_cfg.theme_color    = atoi(kv->val);
 				else if (!strcmp("entries5col",  kv->key))
 					n_cfg.entries_5_col  = atoi(kv->val) == 1;

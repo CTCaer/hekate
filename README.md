@@ -167,6 +167,7 @@ If the main .ini is not found, it is created on the first hekate boot and only h
 
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
+| themebg=2d2d2d     | Sets Nyx background color in HEX. EXPERIMENTAL.            |
 | themecolor=167     | Sets Nyx color of text highlights.                         |
 | entries5col=0      | 1: Sets Launch entry columns from 4 to 5 per line. For a total of 10 entries. |
 | timeoff=100        | Sets time offset in HEX. Must be in HOS epoch format       |

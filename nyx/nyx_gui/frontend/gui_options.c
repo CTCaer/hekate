@@ -20,6 +20,7 @@
 
 #include "gui.h"
 #include "../config.h"
+#include <libs/lvgl/lv_themes/lv_theme_hekate.h>
 #include <libs/lvgl/lvgl.h>
 
 #define CLOCK_MIN_YEAR 2022
@@ -112,7 +113,7 @@ lv_obj_t *create_window_autoboot(const char *win_title)
 	static lv_style_t win_bg_style;
 
 	lv_style_copy(&win_bg_style, &lv_style_plain);
-	win_bg_style.body.main_color = LV_COLOR_HEX(0x2D2D2D);// TODO: COLOR_HOS_BG
+	win_bg_style.body.main_color = LV_COLOR_HEX(theme_bg_color);
 	win_bg_style.body.grad_color = win_bg_style.body.main_color;
 
 	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
@@ -406,7 +407,11 @@ void create_flat_button(lv_obj_t *parent, lv_obj_t *btn, lv_color_t color, lv_ac
 
 typedef struct _color_test_ctxt
 {
+	u32 bg;
 	u16 hue;
+	lv_obj_t *window;
+	lv_obj_t *header1;
+	lv_obj_t *header2;
 	lv_obj_t *label;
 	lv_obj_t *icons;
 	lv_obj_t *slider;
@@ -419,6 +424,7 @@ color_test_ctxt color_test;
 
 static lv_res_t _save_theme_color_action(lv_obj_t *btn)
 {
+	n_cfg.theme_bg    = color_test.bg;
 	n_cfg.theme_color = color_test.hue;
 
 	// Save nyx config.
@@ -429,28 +435,67 @@ static lv_res_t _save_theme_color_action(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-static void _test_nyx_color(u16 hue)
+static void _show_new_nyx_color(u32 bg, u16 hue, bool update_bg)
 {
-	lv_color_t color = lv_color_hsv_to_rgb(hue, 100, 100);
-	static lv_style_t btn_tgl_test;
-	lv_style_copy(&btn_tgl_test, lv_btn_get_style(color_test.button, LV_BTN_STATE_TGL_PR));
-	btn_tgl_test.body.border.color = color;
-	btn_tgl_test.text.color = color;
-	lv_btn_set_style(color_test.button, LV_BTN_STATE_TGL_PR, &btn_tgl_test);
+	lv_color_t bgc        = LV_COLOR_HEX(bg);
+	lv_color_t bgc_light  = LV_COLOR_HEX(bg ? (bg + 0x101010) : 0x2D2D2D);
+	lv_color_t bg_border  = LV_COLOR_HEX(bg ? (bg + 0x202020) : 0x3D3D3D);
+	lv_color_t color      = lv_color_hsv_to_rgb(hue, 100, 100);
 
-	static lv_style_t txt_test;
-	lv_style_copy(&txt_test, lv_label_get_style(color_test.label));
-	txt_test.text.color = color;
-	lv_obj_set_style(color_test.label, &txt_test);
-	lv_obj_set_style(color_test.icons, &txt_test);
+	if (update_bg)
+	{
+		static lv_style_t win_bg_test;
+		lv_style_copy(&win_bg_test, lv_win_get_style(color_test.window, LV_WIN_STYLE_BG));
+		win_bg_test.body.main_color = bgc;
+		win_bg_test.body.grad_color = win_bg_test.body.main_color;
+		lv_win_set_style(color_test.window, LV_WIN_STYLE_BG, &win_bg_test);
 
-	static lv_style_t slider_test, slider_ind;
+		static lv_style_t win_hdr_test;
+		lv_style_copy(&win_hdr_test, lv_win_get_style(color_test.window, LV_WIN_STYLE_HEADER));
+		win_hdr_test.body.main_color = bgc;
+		win_hdr_test.body.grad_color = win_hdr_test.body.main_color;
+		lv_win_set_style(color_test.window, LV_WIN_STYLE_HEADER, &win_hdr_test);
+
+		static lv_style_t hdr1_bg_test;
+		lv_style_copy(&hdr1_bg_test, lv_cont_get_style(color_test.header1));
+		hdr1_bg_test.body.main_color = bgc;
+		hdr1_bg_test.body.grad_color = hdr1_bg_test.body.main_color;
+		lv_cont_set_style(color_test.header1, &hdr1_bg_test);
+
+		static lv_style_t hdr2_bg_test;
+		lv_style_copy(&hdr2_bg_test, lv_cont_get_style(color_test.header2));
+		hdr2_bg_test.body.main_color = bgc;
+		hdr2_bg_test.body.grad_color = hdr2_bg_test.body.main_color;
+		lv_cont_set_style(color_test.header2, &hdr2_bg_test);
+	}
+	else
+	{
+		static lv_style_t txt_test;
+		lv_style_copy(&txt_test, lv_label_get_style(color_test.label));
+		txt_test.text.color = color;
+		lv_obj_set_style(color_test.label, &txt_test);
+		lv_obj_set_style(color_test.icons, &txt_test);
+	}
+
+	static lv_style_t btn_tgl_pr_test;
+	lv_style_copy(&btn_tgl_pr_test, lv_btn_get_style(color_test.button, LV_BTN_STATE_TGL_PR));
+	btn_tgl_pr_test.body.main_color = bgc_light;
+	btn_tgl_pr_test.body.grad_color = btn_tgl_pr_test.body.main_color;
+	btn_tgl_pr_test.body.border.color = color;
+	btn_tgl_pr_test.text.color = color;
+	lv_btn_set_style(color_test.button, LV_BTN_STATE_TGL_PR, &btn_tgl_pr_test);
+
+	static lv_style_t slider_bg, slider_test, slider_ind;
+	lv_style_copy(&slider_bg, lv_slider_get_style(color_test.slider, LV_SLIDER_STYLE_BG));
 	lv_style_copy(&slider_test, lv_slider_get_style(color_test.slider, LV_SLIDER_STYLE_KNOB));
 	lv_style_copy(&slider_ind, lv_slider_get_style(color_test.slider, LV_SLIDER_STYLE_INDIC));
+	slider_bg.body.main_color = bg_border;
+	slider_bg.body.grad_color = slider_bg.body.main_color;
 	slider_test.body.main_color = color;
 	slider_test.body.grad_color = slider_test.body.main_color;
 	slider_ind.body.main_color = lv_color_hsv_to_rgb(hue, 100, 72);
 	slider_ind.body.grad_color = slider_ind.body.main_color;
+	lv_slider_set_style(color_test.slider, LV_SLIDER_STYLE_BG, &slider_bg);
 	lv_slider_set_style(color_test.slider, LV_SLIDER_STYLE_KNOB, &slider_test);
 	lv_slider_set_style(color_test.slider, LV_SLIDER_STYLE_INDIC, &slider_ind);
 }
@@ -460,11 +505,23 @@ static lv_res_t _slider_hue_action(lv_obj_t *slider)
 	if (color_test.hue != lv_slider_get_value(slider))
 	{
 		color_test.hue = lv_slider_get_value(slider);
-		_test_nyx_color(color_test.hue);
+		_show_new_nyx_color(color_test.bg, color_test.hue, false);
 		char hue[8];
 		s_printf(hue, "%03d", color_test.hue);
 		lv_label_set_text(color_test.hue_label, hue);
 	}
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _preset_bg_action(lv_obj_t *btn)
+{
+	//! TODO: Support a range?
+	if (color_test.bg)
+		color_test.bg = 0;
+	else
+		color_test.bg = COLOR_HOS_BG;
+	_show_new_nyx_color(color_test.bg, color_test.hue, true);
 
 	return LV_RES_OK;
 }
@@ -476,7 +533,7 @@ static lv_res_t _preset_hue_action(lv_obj_t *btn)
 	if (color_test.hue != ext->idx)
 	{
 		color_test.hue = ext->idx;
-		_test_nyx_color(color_test.hue);
+		_show_new_nyx_color(color_test.bg, color_test.hue, false);
 		char hue[8];
 		s_printf(hue, "%03d", color_test.hue);
 		lv_label_set_text(color_test.hue_label, hue);
@@ -492,10 +549,13 @@ const u16 theme_colors[17] = {
 
 static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Choose a Nyx Color Theme");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Nyx Color Theme");
+	lv_win_add_btn(win, NULL, SYMBOL_HINT" Toggle Background", _preset_bg_action);
 	lv_win_add_btn(win, NULL, SYMBOL_SAVE" Save & Reload", _save_theme_color_action);
+	color_test.window = win;
 
-	// Set current color.
+	// Set current theme colors.
+	color_test.bg  = n_cfg.theme_bg;
 	color_test.hue = n_cfg.theme_color;
 
 	lv_obj_t *sep = lv_label_create(win, NULL);
@@ -505,6 +565,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	// Create container to keep content inside.
 	lv_obj_t *h1 = lv_cont_create(win, NULL);
 	lv_obj_set_size(h1, LV_HOR_RES - (LV_DPI * 8 / 10), LV_VER_RES / 7);
+	color_test.header1 = h1;
 
 	// Create color preset buttons.
 	lv_obj_t *color_btn = lv_btn_create(h1, NULL);
@@ -547,6 +608,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	lv_obj_t *h2 = lv_cont_create(win, NULL);
 	lv_obj_set_size(h2, LV_HOR_RES - (LV_DPI * 8 / 10), LV_VER_RES / 3);
 	lv_obj_align(h2, slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI);
+	color_test.header2 = h2;
 
 	lv_obj_t *lbl_sample = lv_label_create(h2, NULL);
 	lv_label_set_static_text(lbl_sample, "Sample:");
@@ -585,7 +647,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	lv_obj_set_click(btn_test, false);
 	color_test.button = btn_test;
 
-	_test_nyx_color(color_test.hue);
+	_show_new_nyx_color(color_test.bg, color_test.hue, false);
 
 	return LV_RES_OK;
 }
