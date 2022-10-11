@@ -156,7 +156,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	char *outFilename = sd_path;
 	u32 sdPathLen = strlen(sd_path);
 
-	s_printf(gui->txt_buf, "#96FF00 SD Card free space:# %d MiB\n#96FF00 Total backup size:# %d MiB\n\n",
+	s_printf(gui->txt_buf, "#96FF00 SD Card free space:# %d MiB\n#96FF00 Total size:# %d MiB\n\n",
 		(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF),
 		totalSectors >> SECTORS_TO_MIB_COEFF);
 	lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -169,20 +169,20 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	// Check if the USER partition or the RAW eMMC fits the sd card free space.
 	if (totalSectors > (sd_fs.free_clst * sd_fs.csize))
 	{
-		s_printf(gui->txt_buf, "\n#FFDD00 Not enough free space for Partial Backup!#\n");
+		s_printf(gui->txt_buf, "\n#FFDD00 Not enough free space for file based emuMMC!#\n");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 		manual_system_maintenance(true);
 
 		return 0;
 	}
 
-	// Check if filesystem is FAT32 or the free space is smaller and backup in parts.
+	// Check if filesystem is FAT32 or the free space is smaller and dump in parts.
 	if (totalSectors > (FAT32_FILESIZE_LIMIT / EMMC_BLOCKSIZE))
 	{
 		u32 multipartSplitSectors = multipartSplitSize / EMMC_BLOCKSIZE;
 		numSplitParts = (totalSectors + multipartSplitSectors - 1) / multipartSplitSectors;
 
-		// Continue from where we left, if Partial Backup in progress.
+		// Get first part filename.
 		update_emummc_base_folder(outFilename, sdPathLen, 0);
 	}
 
@@ -349,7 +349,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	lv_label_set_text(gui->label_pct, " "SYMBOL_DOT" 100%");
 	manual_system_maintenance(true);
 
-	// Backup operation ended successfully.
+	// Operation ended successfully.
 	f_close(&fp);
 	free(clmt);
 
@@ -380,7 +380,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	lv_label_set_text(gui->label_info, "Checking for available free space...");
 	manual_system_maintenance(true);
 
-	// Get SD Card free space for Partial Backup.
+	// Get SD Card free space for file based emuMMC.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
 	if (!emmc_initialize(false))
