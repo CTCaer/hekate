@@ -30,6 +30,7 @@ void set_default_configuration()
 	h_cfg.autoboot      = 0;
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait      = 3;
+	h_cfg.noticker      = 0;
 	h_cfg.backlight     = 100;
 	h_cfg.autohosoff    = 0;
 	h_cfg.autonogc      = 1;
@@ -115,6 +116,10 @@ int create_config_entry()
 	itoa(h_cfg.backlight, lbuf, 10);
 	f_puts(lbuf, &fp);
 
+	f_puts("\nnoticker=", &fp);
+	itoa(h_cfg.noticker, lbuf, 10);
+	f_puts(lbuf, &fp);
+
 	f_puts("\nautohosoff=", &fp);
 	itoa(h_cfg.autohosoff, lbuf, 10);
 	f_puts(lbuf, &fp);
@@ -130,6 +135,7 @@ int create_config_entry()
 	f_puts("\nbootprotect=", &fp);
 	itoa(h_cfg.bootprotect, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\n", &fp);
 
 	if (mainIniFound)
@@ -200,30 +206,39 @@ int create_nyx_config_entry(bool force_unmount)
 	f_puts("[config]\nthemecolor=", &fp);
 	itoa(n_cfg.theme_color, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nentries5col=", &fp);
 	itoa(n_cfg.entries_5_col, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\ntimeoff=", &fp);
 	itoa(n_cfg.timeoff, lbuf, 16);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nhomescreen=", &fp);
 	itoa(n_cfg.home_screen, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nverification=", &fp);
 	itoa(n_cfg.verification, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\numsemmcrw=", &fp);
 	itoa(n_cfg.ums_emmc_rw, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\njcdisable=", &fp);
 	itoa(n_cfg.jc_disable, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\njcforceright=", &fp);
 	itoa(n_cfg.jc_force_right, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\nbpmpclock=", &fp);
 	itoa(n_cfg.bpmp_clock, lbuf, 10);
 	f_puts(lbuf, &fp);
+
 	f_puts("\n", &fp);
 
 	f_close(&fp);

@@ -83,15 +83,6 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	strcat(path, filename); // Can be a null-terminator.
 }
 
-void render_default_bootlogo()
-{
-	gfx_clear_grey(0x1B);
-	u8 *logo_buf = (void *)malloc(SZ_16K);
-	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, logo_buf, SZ_BOOTLOGO);
-	gfx_set_rect_grey(logo_buf, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
-	free(logo_buf);
-}
-
 void check_power_off_from_hos()
 {
 	// Power off on AutoRCM wakeup from HOS shutdown. For modchips/dongles.
@@ -100,7 +91,7 @@ void check_power_off_from_hos()
 	{
 		if (h_cfg.autohosoff == 1)
 		{
-			render_default_bootlogo();
+			render_static_bootlogo();
 
 			display_backlight_brightness(10,  5000);
 			display_backlight_brightness(100, 25000);
@@ -612,7 +603,7 @@ void nyx_load_run()
 
 	sd_end();
 
-	render_default_bootlogo();
+	render_static_bootlogo();
 	display_backlight_brightness(h_cfg.backlight, 1000);
 
 	// Check if Nyx version is old.
@@ -801,6 +792,8 @@ static void _auto_launch_firmware()
 					}
 					else if (!strcmp("backlight",   kv->key))
 						h_cfg.backlight   = atoi(kv->val);
+					else if (!strcmp("noticker",    kv->key))
+						h_cfg.noticker    = atoi(kv->val);
 					else if (!strcmp("autohosoff",  kv->key))
 						h_cfg.autohosoff  = atoi(kv->val);
 					else if (!strcmp("autonogc",    kv->key))
@@ -959,24 +952,23 @@ skip_list:
 			gfx_render_bmp_argb((u32 *)logo_buf, bmpData.size_x, bmpData.size_y,
 				bmpData.pos_x, bmpData.pos_y);
 			free(logo_buf);
+
+			// Do animated waiting before booting. If VOL- is pressed go into bootloader menu.
+			if (render_ticker(h_cfg.bootwait, h_cfg.backlight, h_cfg.noticker))
+				goto out;
 		}
 		else
-			render_default_bootlogo();
+		{
+			// Do animated waiting before booting. If VOL- is pressed go into bootloader menu.
+			if (render_ticker_logo(h_cfg.bootwait, h_cfg.backlight))
+				goto out;
+		}
 	}
 
 	if (b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH)
 		display_backlight_brightness(h_cfg.backlight, 0);
-	else if (h_cfg.bootwait)
-		display_backlight_brightness(h_cfg.backlight, 1000);
-
-	// Wait before booting. If VOL- is pressed go into bootloader menu.
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH))
-	{
-		u32 btn = btn_wait_timeout_single(h_cfg.bootwait * 1000, BTN_VOL_DOWN | BTN_SINGLE);
-
-		if (btn & BTN_VOL_DOWN)
-			goto out;
-	}
+	else if (btn_read_vol() == BTN_VOL_DOWN) // 0s bootwait VOL- check.
+		goto out;
 
 	char *payload_path = ini_check_payload_section(cfg_sec);
 

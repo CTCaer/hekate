@@ -233,6 +233,8 @@ static void _load_saved_configuration()
 					if (h_cfg.backlight <= 20)
 						h_cfg.backlight = 30;
 				}
+				else if (!strcmp("noticker",    kv->key))
+					h_cfg.noticker    = atoi(kv->val);
 				else if (!strcmp("autohosoff",  kv->key))
 					h_cfg.autohosoff  = atoi(kv->val);
 				else if (!strcmp("autonogc",    kv->key))

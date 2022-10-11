@@ -27,6 +27,7 @@ typedef struct _hekate_config
 	u32 autoboot;
 	u32 autoboot_list;
 	u32 bootwait;
+	u32 noticker;
 	u32 backlight;
 	u32 autohosoff;
 	u32 autonogc;

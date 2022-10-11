@@ -27,14 +27,16 @@ extern hekate_config h_cfg;
 
 void set_default_configuration()
 {
-	h_cfg.autoboot = 0;
+	h_cfg.autoboot      = 0;
 	h_cfg.autoboot_list = 0;
-	h_cfg.bootwait = 3;
-	h_cfg.backlight = 100;
-	h_cfg.autohosoff = 0;
-	h_cfg.autonogc = 1;
-	h_cfg.updater2p = 0;
-	h_cfg.bootprotect = 0;
+	h_cfg.bootwait      = 3;
+	h_cfg.noticker      = 0; //! TODO: Add GUI option.
+	h_cfg.backlight     = 100;
+	h_cfg.autohosoff    = 0;
+	h_cfg.autonogc      = 1;
+	h_cfg.updater2p     = 0;
+	h_cfg.bootprotect   = 0;
+
 	h_cfg.errors = 0;
 	h_cfg.eks = NULL;
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
@@ -88,6 +90,10 @@ int create_config_entry()
 
 	f_puts("\nbacklight=", &fp);
 	itoa(h_cfg.backlight, lbuf, 10);
+	f_puts(lbuf, &fp);
+
+	f_puts("\nnoticker=", &fp);
+	itoa(h_cfg.noticker, lbuf, 10);
 	f_puts(lbuf, &fp);
 
 	f_puts("\nautohosoff=", &fp);
