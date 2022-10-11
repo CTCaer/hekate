@@ -30,18 +30,18 @@
 
 enum
 {
-    EMMC_INIT_FAIL = 0,
-    EMMC_1BIT_HS52 = 1,
-    EMMC_8BIT_HS52 = 2,
-    EMMC_MMC_HS200 = 3,
-    EMMC_MMC_HS400 = 4,
+	EMMC_INIT_FAIL = 0,
+	EMMC_1BIT_HS52 = 1,
+	EMMC_8BIT_HS52 = 2,
+	EMMC_MMC_HS200 = 3,
+	EMMC_MMC_HS400 = 4,
 };
 
 enum
 {
-    EMMC_ERROR_INIT_FAIL = 0,
-    EMMC_ERROR_RW_FAIL   = 1,
-    EMMC_ERROR_RW_RETRY  = 2
+	EMMC_ERROR_INIT_FAIL = 0,
+	EMMC_ERROR_RW_FAIL   = 1,
+	EMMC_ERROR_RW_RETRY  = 2
 };
 
 typedef struct _emmc_part_t
@@ -63,6 +63,7 @@ u16 *emmc_get_error_count();
 u32  emmc_get_mode();
 int  emmc_init_retry(bool power_cycle);
 bool emmc_initialize(bool power_cycle);
+void emmc_end();
 
 void emmc_gpt_parse(link_t *gpt);
 void emmc_gpt_free(link_t *gpt);

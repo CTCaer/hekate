@@ -61,6 +61,8 @@ u32 emmc_get_mode()
 	return emmc_mode;
 }
 
+void emmc_end() { sdmmc_storage_end(&emmc_storage); }
+
 int emmc_init_retry(bool power_cycle)
 {
 	u32 bus_width = SDMMC_BUS_WIDTH_8;
@@ -70,7 +72,7 @@ int emmc_init_retry(bool power_cycle)
 	if (power_cycle)
 	{
 		emmc_mode--;
-		sdmmc_storage_end(&emmc_storage);
+		emmc_end();
 	}
 
 	// Get init parameters.
@@ -105,7 +107,7 @@ bool emmc_initialize(bool power_cycle)
 		emmc_mode = EMMC_MMC_HS400;
 
 	if (power_cycle)
-		sdmmc_storage_end(&emmc_storage);
+		emmc_end();
 
 	int res = !emmc_init_retry(false);
 
@@ -124,7 +126,7 @@ bool emmc_initialize(bool power_cycle)
 		}
 	}
 
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	return false;
 }
