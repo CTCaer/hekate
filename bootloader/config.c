@@ -27,12 +27,14 @@ extern hekate_config h_cfg;
 
 void set_default_configuration()
 {
+	h_cfg.t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;
+
 	h_cfg.autoboot      = 0;
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait      = 3;
 	h_cfg.noticker      = 0; //! TODO: Add GUI option.
 	h_cfg.backlight     = 100;
-	h_cfg.autohosoff    = 0;
+	h_cfg.autohosoff    = h_cfg.t210b01 ? 1 : 0;
 	h_cfg.autonogc      = 1;
 	h_cfg.updater2p     = 0;
 	h_cfg.bootprotect   = 0;
@@ -41,7 +43,6 @@ void set_default_configuration()
 	h_cfg.eks = NULL;
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
 	h_cfg.emummc_force_disable = false;
-	h_cfg.t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;
 }
 
 int create_config_entry()
