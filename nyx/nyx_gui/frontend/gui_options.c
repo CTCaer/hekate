@@ -23,7 +23,7 @@
 #include <libs/lvgl/lvgl.h>
 
 #define CLOCK_MIN_YEAR 2022
-#define CLOCK_MAX_YEAR 2032
+#define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
@@ -339,10 +339,10 @@ static lv_res_t _data_verification_action(lv_obj_t *ddlist)
 
 static lv_res_t _entries_columns_action(lv_obj_t *btn)
 {
-	n_cfg.entries_5_columns = !n_cfg.entries_5_columns;
+	n_cfg.entries_5_col = !n_cfg.entries_5_col;
 	nyx_changes_made = true;
 
-	if (!n_cfg.entries_5_columns)
+	if (!n_cfg.entries_5_col)
 		lv_btn_set_state(btn, LV_BTN_STATE_REL);
 	else
 		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
@@ -1083,7 +1083,7 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	lv_obj_t *btn2 = lv_btn_create(sw_h2, NULL);
 	nyx_create_onoff_button(th, sw_h2, btn2, SYMBOL_GPS" Extended Boot Entries", _entries_columns_action, true);
 	lv_obj_align(btn2, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 10);
-	if (n_cfg.entries_5_columns)
+	if (n_cfg.entries_5_col)
 		lv_btn_set_state(btn2, LV_BTN_STATE_TGL_REL);
 	nyx_generic_onoff_toggle(btn2);
 

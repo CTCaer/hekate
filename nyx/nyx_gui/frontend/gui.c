@@ -1568,8 +1568,8 @@ static const launch_button_pos_t launch_button_pos10[10] = {
 
 static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 {
-	const u32 max_entries = n_cfg.entries_5_columns ? 10 : 8;
-	const launch_button_pos_t *launch_button_pos = n_cfg.entries_5_columns ? launch_button_pos10 : launch_button_pos8;
+	const u32 max_entries = n_cfg.entries_5_col ? 10 : 8;
+	const launch_button_pos_t *launch_button_pos = n_cfg.entries_5_col ? launch_button_pos10 : launch_button_pos8;
 
 	char *icon_path;
 
@@ -1660,7 +1660,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_obj_set_style(boot_entry_lbl_cont, &btn_label_home_transp);
 
 	// Create the rest of the buttons.
-	for (u32 btn_idx = 1; btn_idx < (n_cfg.entries_5_columns ? 10 : 8); btn_idx++)
+	for (u32 btn_idx = 1; btn_idx < (n_cfg.entries_5_col ? 10 : 8); btn_idx++)
 	{
 		btn_boot_entry = lv_btn_create(win, btn_boot_entry);
 		launch_ctxt.btn[btn_idx] = btn_boot_entry;
@@ -1672,7 +1672,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 		launch_ctxt.label[btn_idx] = boot_entry_label;
 	}
 
-	// Create colorized icon style based on its parrent style.
+	// Create colorized icon style based on its parent style.
 	static lv_style_t img_style;
 	lv_style_copy(&img_style, &lv_style_plain);
 	img_style.image.color = lv_color_hsv_to_rgb(n_cfg.theme_color, 100, 100);
@@ -1850,7 +1850,7 @@ ini_parsing:
 
 ini_parse_failed:
 	// Reiterate the loop with more cfgs if combined.
-	if (combined_cfg && (curr_btn_idx < (n_cfg.entries_5_columns ? 10 : 8)) && !more_cfg)
+	if (combined_cfg && (curr_btn_idx < (n_cfg.entries_5_col ? 10 : 8)) && !more_cfg)
 		goto ini_parsing;
 
 failed_sd_mount:

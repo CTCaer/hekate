@@ -27,14 +27,15 @@ extern nyx_config n_cfg;
 
 void set_default_configuration()
 {
-	h_cfg.autoboot = 0;
+	h_cfg.autoboot      = 0;
 	h_cfg.autoboot_list = 0;
-	h_cfg.bootwait = 3;
-	h_cfg.backlight = 100;
-	h_cfg.autohosoff = 0;
-	h_cfg.autonogc = 1;
-	h_cfg.updater2p = 0;
-	h_cfg.bootprotect = 0;
+	h_cfg.bootwait      = 3;
+	h_cfg.backlight     = 100;
+	h_cfg.autohosoff    = 0;
+	h_cfg.autonogc      = 1;
+	h_cfg.updater2p     = 0;
+	h_cfg.bootprotect   = 0;
+
 	h_cfg.errors = 0;
 	h_cfg.eks = NULL;
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
@@ -46,15 +47,15 @@ void set_default_configuration()
 
 void set_nyx_default_configuration()
 {
-	n_cfg.theme_color = 167;
-	n_cfg.entries_5_columns = 0;
-	n_cfg.timeoff = 0;
-	n_cfg.home_screen = 0;
-	n_cfg.verification = 1;
-	n_cfg.ums_emmc_rw = 0;
-	n_cfg.jc_disable = 0;
+	n_cfg.theme_color    = 167;
+	n_cfg.entries_5_col  = 0;
+	n_cfg.timeoff        = 0;
+	n_cfg.home_screen    = 0;
+	n_cfg.verification   = 1;
+	n_cfg.ums_emmc_rw    = 0;
+	n_cfg.jc_disable     = 0;
 	n_cfg.jc_force_right = 0;
-	n_cfg.bpmp_clock = 0;
+	n_cfg.bpmp_clock     = 0;
 }
 
 int create_config_entry()
@@ -200,7 +201,7 @@ int create_nyx_config_entry(bool force_unmount)
 	itoa(n_cfg.theme_color, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\nentries5col=", &fp);
-	itoa(n_cfg.entries_5_columns, lbuf, 10);
+	itoa(n_cfg.entries_5_col, lbuf, 10);
 	f_puts(lbuf, &fp);
 	f_puts("\ntimeoff=", &fp);
 	itoa(n_cfg.timeoff, lbuf, 16);

@@ -205,7 +205,7 @@ out:
 	return LV_RES_OK;
 }
 
-void load_saved_configuration()
+static void _load_saved_configuration()
 {
 	LIST_INIT(ini_sections);
 	LIST_INIT(ini_nyx_sections);
@@ -221,24 +221,24 @@ void load_saved_configuration()
 		{
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
-				if (!strcmp("autoboot", kv->key))
-					h_cfg.autoboot = atoi(kv->val);
+				if      (!strcmp("autoboot",      kv->key))
+					h_cfg.autoboot      = atoi(kv->val);
 				else if (!strcmp("autoboot_list", kv->key))
 					h_cfg.autoboot_list = atoi(kv->val);
-				else if (!strcmp("bootwait", kv->key))
-					h_cfg.bootwait = atoi(kv->val);
-				else if (!strcmp("backlight", kv->key))
+				else if (!strcmp("bootwait",      kv->key))
+					h_cfg.bootwait      = atoi(kv->val);
+				else if (!strcmp("backlight",     kv->key))
 				{
 					h_cfg.backlight = atoi(kv->val);
 					if (h_cfg.backlight <= 20)
 						h_cfg.backlight = 30;
 				}
-				else if (!strcmp("autohosoff", kv->key))
-					h_cfg.autohosoff = atoi(kv->val);
-				else if (!strcmp("autonogc", kv->key))
-					h_cfg.autonogc = atoi(kv->val);
-				else if (!strcmp("updater2p", kv->key))
-					h_cfg.updater2p = atoi(kv->val);
+				else if (!strcmp("autohosoff",  kv->key))
+					h_cfg.autohosoff  = atoi(kv->val);
+				else if (!strcmp("autonogc",    kv->key))
+					h_cfg.autonogc    = atoi(kv->val);
+				else if (!strcmp("updater2p",   kv->key))
+					h_cfg.updater2p   = atoi(kv->val);
 				else if (!strcmp("bootprotect", kv->key))
 					h_cfg.bootprotect = atoi(kv->val);
 			}
@@ -261,24 +261,24 @@ skip_main_cfg_parse:
 		{
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
-				if (!strcmp("themecolor", kv->key))
-					n_cfg.theme_color = atoi(kv->val);
-				else if (!strcmp("entries5col", kv->key))
-					n_cfg.entries_5_columns = atoi(kv->val) == 1;
-				else if (!strcmp("timeoff", kv->key))
-					n_cfg.timeoff = strtol(kv->val, NULL, 16);
-				else if (!strcmp("homescreen", kv->key))
-					n_cfg.home_screen = atoi(kv->val);
+				if      (!strcmp("themecolor",   kv->key))
+					n_cfg.theme_color    = atoi(kv->val);
+				else if (!strcmp("entries5col",  kv->key))
+					n_cfg.entries_5_col  = atoi(kv->val) == 1;
+				else if (!strcmp("timeoff",      kv->key))
+					n_cfg.timeoff        = strtol(kv->val, NULL, 16);
+				else if (!strcmp("homescreen",   kv->key))
+					n_cfg.home_screen    = atoi(kv->val);
 				else if (!strcmp("verification", kv->key))
-					n_cfg.verification = atoi(kv->val);
-				else if (!strcmp("umsemmcrw", kv->key))
-					n_cfg.ums_emmc_rw = atoi(kv->val) == 1;
-				else if (!strcmp("jcdisable", kv->key))
-					n_cfg.jc_disable = atoi(kv->val) == 1;
+					n_cfg.verification   = atoi(kv->val);
+				else if (!strcmp("umsemmcrw",    kv->key))
+					n_cfg.ums_emmc_rw    = atoi(kv->val) == 1;
+				else if (!strcmp("jcdisable",    kv->key))
+					n_cfg.jc_disable     = atoi(kv->val) == 1;
 				else if (!strcmp("jcforceright", kv->key))
 					n_cfg.jc_force_right = atoi(kv->val) == 1;
-				else if (!strcmp("bpmpclock", kv->key))
-					n_cfg.bpmp_clock = strtol(kv->val, NULL, 10);
+				else if (!strcmp("bpmpclock",    kv->key))
+					n_cfg.bpmp_clock     = atoi(kv->val);
 			}
 
 			break;
@@ -381,7 +381,8 @@ void nyx_init_load_res()
 	// Train DRAM and switch to max frequency.
 	minerva_init();
 
-	load_saved_configuration();
+	// Load hekate/Nyx configuration.
+	_load_saved_configuration();
 
 	// Initialize nyx cfg to lower clock for T210.
 	// In case of lower binned SoC, this can help with hangs.
@@ -396,6 +397,7 @@ void nyx_init_load_res()
 	if (n_cfg.bpmp_clock < 2)
 		bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
 
+	// Load Nyx resources.
 	FIL fp;
 	if (!f_open(&fp, "bootloader/sys/res.pak", FA_READ))
 	{
@@ -418,6 +420,7 @@ void nyx_init_load_res()
 	// Load background resource if any.
 	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
 
+	// Unmount FAT partition.
 	sd_unmount();
 }
 

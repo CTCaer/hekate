@@ -43,7 +43,7 @@ typedef struct _hekate_config
 typedef struct _nyx_config
 {
 	u32 theme_color;
-	u32 entries_5_columns;
+	u32 entries_5_col;
 	u32 timeoff;
 	u32 home_screen;
 	u32 verification;
