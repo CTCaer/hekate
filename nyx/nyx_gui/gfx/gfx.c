@@ -173,13 +173,16 @@ void gfx_con_getpos(u32 *x, u32 *y)
 	*y = gfx_con.y;
 }
 
+static int gfx_column = 0;
 void gfx_con_setpos(u32 x, u32 y)
 {
 	gfx_con.x = x;
 	gfx_con.y = y;
+
+	if (!x)
+		gfx_column = 0;
 }
 
-static int gfx_column = 0;
 void gfx_putc(char c)
 {
 	// Duplicate code for performance reasons.
@@ -497,7 +500,19 @@ void gfx_set_pixel(u32 x, u32 y, u32 color)
 	gfx_ctxt.fb[y + (gfx_ctxt.width - x) * gfx_ctxt.stride] = color;
 }
 
-void __attribute__((optimize("unroll-loops"))) gfx_set_rect_land_pitch(u32 *fb, const u32 *buf, u32 stride, u32 pos_x, u32 pos_y, u32 pos_x2, u32 pos_y2)
+void gfx_set_rect_pitch(u32 *fb, const u32 *buf, u32 stride, u32 pos_x, u32 pos_y, u32 pos_x2, u32 pos_y2)
+{
+	u32 *ptr = (u32 *)buf;
+	u32 line_size = pos_x2 - pos_x + 1;
+	//ptr = gfx_debug_rect(buf, pos_x, pos_y, pos_x2, pos_y2);
+	for (u32 y = pos_y; y <= pos_y2; y++)
+	{
+		memcpy(&fb[pos_x + y * stride], ptr, line_size * sizeof(u32));
+		ptr += line_size;
+	}
+}
+
+void gfx_set_rect_land_pitch(u32 *fb, const u32 *buf, u32 stride, u32 pos_x, u32 pos_y, u32 pos_x2, u32 pos_y2)
 {
 	u32 *ptr = (u32 *)buf;
 
@@ -505,8 +520,8 @@ void __attribute__((optimize("unroll-loops"))) gfx_set_rect_land_pitch(u32 *fb, 
 
 	if (!(pixels_w % 8))
 	{
-		for (u32 y = pos_y; y < (pos_y2 + 1); y++)
-			for (u32 x = pos_x; x < (pos_x2 + 1); x+=8)
+		for (u32 y = pos_y; y <= pos_y2; y++)
+			for (u32 x = pos_x; x <= pos_x2; x += 8)
 			{
 				u32 *fbx = &fb[x * stride + y];
 
@@ -528,7 +543,7 @@ void __attribute__((optimize("unroll-loops"))) gfx_set_rect_land_pitch(u32 *fb, 
 	}
 }
 
-void __attribute__((optimize("unroll-loops"))) gfx_set_rect_land_block(u32 *fb, const u32 *buf, u32 pos_x, u32 pos_y, u32 pos_x2, u32 pos_y2)
+void gfx_set_rect_land_block(u32 *fb, const u32 *buf, u32 pos_x, u32 pos_y, u32 pos_x2, u32 pos_y2)
 {
 	u32 *ptr = (u32 *)buf;
 	u32 GOB_address = 0;
@@ -537,9 +552,9 @@ void __attribute__((optimize("unroll-loops"))) gfx_set_rect_land_block(u32 *fb, 
 
 	// Optimized
 	u32 image_width_in_gobs = 655360; //1280
-	for (u32 y = pos_y; y < (pos_y2 + 1); y++)
+	for (u32 y = pos_y; y <= pos_y2; y++)
 	{
-		for (u32 x = pos_x; x < (pos_x2 + 1); x++)
+		for (u32 x = pos_x; x <= pos_x2; x++)
 		{
 			GOB_address = (y >> 7) * image_width_in_gobs + ((x >> 4) << 13) + (((y % 128) >> 3) << 9);
 

@@ -86,9 +86,30 @@ gui_status_bar_ctx status_bar;
 
 static void _nyx_disp_init()
 {
+	vic_surface_t vic_sfc;
+	vic_sfc.src_buf  = NYX_FB2_ADDRESS;
+	vic_sfc.dst_buf  = NYX_FB_ADDRESS;
+	vic_sfc.width    = 1280;
+	vic_sfc.height   = 720;
+	vic_sfc.pix_fmt  = VIC_PIX_FORMAT_X8R8G8B8;
+	vic_sfc.rotation = VIC_ROTATION_270;
+
+	// Set hardware rotation via VIC.
+	vic_init();
+	vic_set_surface(&vic_sfc);
+
+	// Turn off backlight to hide the transition.
 	display_backlight_brightness(0, 1000);
-	display_init_framebuffer_pitch_inv();
+
+	// Rotate and copy the first frame.
+	vic_compose();
+
+	// Switch to new window configuration.
+	display_init_framebuffer_pitch_vic();
+
+	// Enable logging on window D.
 	display_init_framebuffer_log();
+	// Switch back the backlight.
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }
 
@@ -110,11 +131,11 @@ static void _save_log_to_bmp(char *fname)
 	if (!log_changed)
 		return;
 
-	const u32 file_size = 0x334000 + 0x36;
+	const u32 file_size = LOG_FB_SZ + 0x36;
 	u8 *bitmap = malloc(file_size);
 
-	// Reconstruct FB for bottom-top, landscape bmp.
-	u32 *fb = malloc(0x334000);
+	// Reconstruct FB for bottom-top, landscape bmp. Rotation: 656x1280 -> 1280x656.
+	u32 *fb = malloc(LOG_FB_SZ);
 	for (int x = 1279; x > - 1; x--)
 	{
 		for (int y = 655; y > -1; y--)
@@ -123,7 +144,7 @@ static void _save_log_to_bmp(char *fname)
 
 	manual_system_maintenance(true);
 
-	memcpy(bitmap + 0x36, fb, 0x334000);
+	memcpy(bitmap + 0x36, fb, LOG_FB_SZ);
 
 	typedef struct _bmp_t
 	{
@@ -155,7 +176,7 @@ static void _save_log_to_bmp(char *fname)
 	bmp->planes   = 1;
 	bmp->pxl_bits = 32;
 	bmp->comp     = 0;
-	bmp->img_size = 0x334000;
+	bmp->img_size = LOG_FB_SZ;
 	bmp->res_h    = 2834;
 	bmp->res_v    = 2834;
 	bmp->rsvd2    = 0;
@@ -179,16 +200,20 @@ static void _save_fb_to_bmp()
 	if (do_reload)
 		return;
 
-	const u32 file_size = 0x384000 + 0x36;
-	u8 *bitmap = malloc(file_size);
-	u32 *fb = malloc(0x384000);
-	u32 *fb_ptr = (u32 *)NYX_FB_ADDRESS;
+	// Invalidate data.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
 
-	// Reconstruct FB for bottom-top, landscape bmp.
-	for (u32 x = 0; x < 1280; x++)
+	const u32 file_size = NYX_FB_SZ + 0x36;
+	u8 *bitmap = malloc(file_size);
+	u32 *fb = malloc(NYX_FB_SZ);
+	u32 *fb_ptr = (u32 *)NYX_FB2_ADDRESS;
+	u32 line_bytes = 1280 * sizeof(u32);
+
+	// Reconstruct FB for bottom-top, landscape bmp. No rotation.
+	for (int y = 719; y > -1; y--)
 	{
-		for (int y = 719; y > -1; y--)
-			fb[y * 1280 + x] = *fb_ptr++;
+		memcpy(&fb[y * 1280], fb_ptr, line_bytes);
+		fb_ptr += line_bytes / sizeof(u32);
 	}
 
 	// Create notification box.
@@ -206,7 +231,7 @@ static void _save_fb_to_bmp()
 
 	manual_system_maintenance(true);
 
-	memcpy(bitmap + 0x36, fb, 0x384000);
+	memcpy(bitmap + 0x36, fb, NYX_FB_SZ);
 
 	typedef struct _bmp_t
 	{
@@ -238,7 +263,7 @@ static void _save_fb_to_bmp()
 	bmp->planes   = 1;
 	bmp->pxl_bits = 32;
 	bmp->comp     = 0;
-	bmp->img_size = 0x384000;
+	bmp->img_size = NYX_FB_SZ;
 	bmp->res_h    = 2834;
 	bmp->res_v    = 2834;
 	bmp->rsvd2    = 0;
@@ -287,8 +312,12 @@ static void _save_fb_to_bmp()
 
 static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const lv_color_t *color_p)
 {
-	// Draw to framebuffer.
-	gfx_set_rect_land_pitch((u32 *)NYX_FB_ADDRESS, (u32 *)color_p, 720, x1, y1, x2, y2); //pitch
+	// Draw to intermediate non-rotated framebuffer.
+	gfx_set_rect_pitch((u32 *)NYX_FB2_ADDRESS, (u32 *)color_p, 1280, x1, y1, x2, y2);
+
+	// Rotate and copy to visible framebuffer.
+	if (disp_init_done)
+		vic_compose();
 
 	// Check if display init was done. If it's the first big draw, init.
 	if (!disp_init_done && ((x2 - x1 + 1) > 600))
@@ -844,9 +873,9 @@ void nyx_window_toggle_buttons(lv_obj_t *win, bool disable)
 
 lv_res_t lv_win_close_action_custom(lv_obj_t * btn)
 {
-    close_btn = NULL;
+	close_btn = NULL;
 
-    return lv_win_close_action(btn);
+	return lv_win_close_action(btn);
 }
 
 lv_obj_t *nyx_create_standard_window(const char *win_title)
