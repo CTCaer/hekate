@@ -88,19 +88,26 @@ u32 fuse_read_odm_keygen_rev()
 
 u32 fuse_read_dramid(bool raw_id)
 {
-	u32 dramid = (fuse_read_odm(4) & 0xF8) >> 3;
+	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
+	u32  odm4       = fuse_read_odm(4);
+
+	u32 dramid = (odm4 & 0xF8) >> 3;
+
+	// Get extended dram id info.
+	if (!tegra_t210)
+		dramid |= (odm4 & 0x7000) >> 7;
 
 	if (raw_id)
 		return dramid;
 
-	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
+	if (tegra_t210)
 	{
 		if (dramid > 6)
 			dramid = 0;
 	}
 	else
 	{
-		if (dramid > 28)
+		if (dramid > 34)
 			dramid = 8;
 	}
 
