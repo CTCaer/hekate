@@ -48,39 +48,39 @@ volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
 
 void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
 {
-	char emmcSN[9];
-	bool init_done = false;
+	static char emmc_sn[9] = {0};
 
-	memcpy(path, "backup", 7);
-	f_mkdir(path);
-
-	if (!storage)
+	// Check if not valid S/N and get actual eMMC S/N.
+	if (!storage && !emmc_sn[0])
 	{
 		if (!emmc_initialize(false))
-			memcpy(emmcSN, "00000000", 9);
+			strcpy(emmc_sn, "00000000");
 		else
 		{
-			init_done = true;
-			itoa(emmc_storage.cid.serial, emmcSN, 16);
+			itoa(emmc_storage.cid.serial, emmc_sn, 16);
+			emmc_end();
 		}
 	}
 	else
-		itoa(storage->cid.serial, emmcSN, 16);
+		itoa(storage->cid.serial, emmc_sn, 16);
 
-	u32 sub_dir_len = strlen(sub_dir);   // Can be a null-terminator.
-	u32 filename_len = strlen(filename); // Can be a null-terminator.
-
-	memcpy(path + strlen(path), "/", 2);
-	memcpy(path + strlen(path), emmcSN, 9);
+	// Create main folder.
+	strcpy(path, "backup");
 	f_mkdir(path);
-	memcpy(path + strlen(path), sub_dir, sub_dir_len + 1);
-	if (sub_dir_len)
-		f_mkdir(path);
-	memcpy(path + strlen(path), "/", 2);
-	memcpy(path + strlen(path), filename, filename_len + 1);
 
-	if (init_done)
-		emmc_end();
+	// Create eMMC S/N folder.
+	strcat(path, "/");
+	strcat(path, emmc_sn);
+	f_mkdir(path);
+
+	// Create sub folder if defined. Dir slash must be included.
+	strcat(path, sub_dir);  // Can be a null-terminator.
+	if (strlen(sub_dir))
+		f_mkdir(path);
+
+	// Add filename.
+	strcat(path, "/");
+	strcat(path, filename); // Can be a null-terminator.
 }
 
 void render_default_bootlogo()
