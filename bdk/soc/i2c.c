@@ -205,8 +205,8 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 		ARB_LOST | TX_FIFO_OVER | RX_FIFO_UNDER | TX_FIFO_DATA_REQ;
 	base[I2C_INT_STATUS] = base[I2C_INT_STATUS];
 
-	// Set device address and recv mode.
-	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_READ;
+	// Set device address and send mode.
+	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_WRITE;
 
 	// Set recv mode.
 	base[I2C_CNFG] = DEBOUNCE_CNT_4T | NEW_MASTER_FSM | CMD1_WRITE;
