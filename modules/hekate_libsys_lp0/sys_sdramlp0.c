@@ -1115,7 +1115,7 @@ static void _sdram_lp0_save_params_t210(const void *params)
 
 	c32(0, scratch3);
 	s(PllMInputDivider, 7:0, scratch3, 7:0);
-	c(0x3e, scratch3, 15:8);
+	c(0x3E, scratch3, 15:8);
 	c(0, scratch3, 20:16);
 	s(PllMKVCO, 0:0, scratch3, 21:21);
 	s(PllMKCP, 1:0, scratch3, 23:22);
@@ -1125,6 +1125,7 @@ static void _sdram_lp0_save_params_t210(const void *params)
 
 	c32(0, scratch4);
 	s(PllMStableTime, 9:0, scratch4, 9:0);
+	s(PllMStableTime, 9:0, scratch4, 19:10);
 }
 
 #pragma GCC diagnostic ignored "-Wparentheses"

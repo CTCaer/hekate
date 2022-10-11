@@ -33,7 +33,7 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 
 # Hardware.
 OBJS += $(addprefix $(BUILDDIR)/$(TARGET)/, \
-	bpmp.o ccplex.o clock.o di.o i2c.o irq.o timer.o \
+	bpmp.o ccplex.o clock.o di.o vic.o i2c.o irq.o timer.o \
 	gpio.o  pinmux.o pmc.o se.o smmu.o tsec.o uart.o \
 	fuse.o kfuse.o \
 	mc.o sdram.o minerva.o ramdisk.o \
@@ -93,7 +93,9 @@ CUSTOMDEFINES += -DGFX_INC=$(GFX_INC) -DFFCFG_INC=$(FFCFG_INC)
 #CUSTOMDEFINES += -DDEBUG_UART_LV_LOG
 
 #TODO: Considering reinstating some of these when pointer warnings have been fixed.
-WARNINGS := -Wall -Wno-array-bounds -Wno-stringop-overread -Wno-stringop-overflow
+WARNINGS := -Wall -Wsign-compare -Wno-array-bounds -Wno-stringop-overread -Wno-stringop-overflow
+#-fno-delete-null-pointer-checks
+#-Wstack-usage=byte-size -fstack-usage
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
 CFLAGS = $(ARCH) -O2 -g -gdwarf-4 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 $(WARNINGS) $(CUSTOMDEFINES)
