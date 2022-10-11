@@ -181,7 +181,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 	return true;
 }
 
-int launch_payload(char *path, bool update, bool clear_screen)
+void launch_payload(char *path, bool update, bool clear_screen)
 {
 	if (clear_screen)
 		gfx_clear_grey(0x1B);
@@ -254,8 +254,8 @@ int launch_payload(char *path, bool update, bool clear_screen)
 	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
 	sdmmc_storage_init_wait_sd();
 
+	void (*update_ptr)()      = (void *)RCM_PAYLOAD_ADDR;
 	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
-	void (*update_ptr)() = (void *)RCM_PAYLOAD_ADDR;
 
 	// Launch our payload.
 	if (!update)
@@ -268,7 +268,11 @@ int launch_payload(char *path, bool update, bool clear_screen)
 	}
 
 out:
-	return 1;
+	if (!update)
+	{
+		gfx_con.mute = false;
+		EPRINTF("Failed to launch payload!");
+	}
 }
 
 void launch_tools()
@@ -299,17 +303,17 @@ void launch_tools()
 	if (filelist)
 	{
 		// Build configuration menu.
-		ments[0].type = MENT_BACK;
+		ments[0].type    = MENT_BACK;
 		ments[0].caption = "Back";
-		ments[1].type = MENT_CHGLINE;
+		ments[1].type    = MENT_CHGLINE;
 
 		while (true)
 		{
 			if (i > max_entries || !filelist[i * 256])
 				break;
-			ments[i + 2].type = INI_CHOICE;
+			ments[i + 2].type    = INI_CHOICE;
 			ments[i + 2].caption = &filelist[i * 256];
-			ments[i + 2].data = &filelist[i * 256];
+			ments[i + 2].data    = &filelist[i * 256];
 
 			i++;
 		}
@@ -318,7 +322,7 @@ void launch_tools()
 	if (i > 0)
 	{
 		memset(&ments[i + 2], 0, sizeof(ment_t));
-		menu_t menu = { ments, "Choose a file to launch", 0, 0 };
+		menu_t menu = { ments, "Choose a payload", 0, 0 };
 
 		file_sec = (char *)tui_do_menu(&menu);
 
@@ -333,7 +337,7 @@ void launch_tools()
 		}
 	}
 	else
-		EPRINTF("No payloads or modules found.");
+		EPRINTF("No payloads found.");
 
 	free(ments);
 	free(filelist);
@@ -344,7 +348,6 @@ void launch_tools()
 		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
 
 		launch_payload(dir, false, true);
-		EPRINTF("Failed to launch payload.");
 	}
 
 failed_sd_mount:
@@ -358,9 +361,9 @@ void ini_list_launcher()
 {
 	u8 max_entries = 61;
 	char *payload_path = NULL;
-	char *emummc_path = NULL;
-
+	char *emummc_path  = NULL;
 	ini_sec_t *cfg_sec = NULL;
+
 	LIST_INIT(ini_list_sections);
 
 	gfx_clear_grey(0x1B);
@@ -372,17 +375,17 @@ void ini_list_launcher()
 	// Check that ini files exist and parse them.
 	if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
 	{
-		EPRINTF("Could not find any ini\nin bootloader/ini!");
+		EPRINTF("No .ini files in bootloader/ini!");
 		goto parse_failed;
 	}
 
 	// Build configuration menu.
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
-	ments[0].type = MENT_BACK;
+	ments[0].type    = MENT_BACK;
 	ments[0].caption = "Back";
-	ments[1].type = MENT_CHGLINE;
+	ments[1].type    = MENT_CHGLINE;
 
-	u32 i = 2;
+	u32 sec_idx = 2;
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_list_sections, link)
 	{
 		if (!strcmp(ini_sec->name, "config") ||
@@ -390,49 +393,30 @@ void ini_list_launcher()
 			ini_sec->type == INI_NEWLINE)
 			continue;
 
-		ments[i].type = ini_sec->type;
-		ments[i].caption = ini_sec->name;
-		ments[i].data = ini_sec;
+		ments[sec_idx].type    = ini_sec->type;
+		ments[sec_idx].caption = ini_sec->name;
+		ments[sec_idx].data    = ini_sec;
 
 		if (ini_sec->type == MENT_CAPTION)
-			ments[i].color = ini_sec->color;
-		i++;
+			ments[sec_idx].color = ini_sec->color;
+		sec_idx++;
 
-		if ((i - 1) > max_entries)
+		if ((sec_idx - 1) > max_entries)
 			break;
 	}
 
-	if (i > 2)
+	if (sec_idx > 2)
 	{
-		memset(&ments[i], 0, sizeof(ment_t));
+		memset(&ments[sec_idx], 0, sizeof(ment_t));
 		menu_t menu = {
-			ments, "Launch ini configurations", 0, 0
+			ments, "Launch ini entries", 0, 0
 		};
 
 		cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
 
-		if (cfg_sec)
-		{
-			u32 non_cfg = 1;
-			for (u32 j = 2; j < i; j++)
-			{
-				if (ments[j].type != INI_CHOICE)
-					non_cfg++;
-
-				if (ments[j].data == cfg_sec)
-				{
-					b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
-					b_cfg.autoboot = j - non_cfg;
-					b_cfg.autoboot_list = 1;
-
-					break;
-				}
-			}
-		}
-
 		payload_path = ini_check_payload_section(cfg_sec);
 
-		if (cfg_sec)
+		if (cfg_sec && !payload_path)
 		{
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 			{
@@ -441,12 +425,12 @@ void ini_list_launcher()
 				else if (!strcmp("emupath", kv->key))
 					emummc_path = kv->val;
 			}
-		}
 
-		if (emummc_path && !emummc_set_path(emummc_path))
-		{
-			EPRINTF("emupath is wrong!");
-			goto wrong_emupath;
+			if (emummc_path && !emummc_set_path(emummc_path))
+			{
+				EPRINTF("emupath is wrong!");
+				goto wrong_emupath;
+			}
 		}
 
 		if (!cfg_sec)
@@ -466,14 +450,12 @@ parse_failed:
 
 	if (payload_path)
 	{
+		// Try to launch Payload.
 		launch_payload(payload_path, false, true);
-		EPRINTF("Failed to launch payload.");
-		free(payload_path);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
 wrong_emupath:
-		EPRINTF("Failed to launch HOS.");
 		if (emummc_path)
 		{
 			sd_mount();
@@ -513,20 +495,21 @@ void launch_firmware()
 
 	// Build configuration menu.
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
-	ments[0].type = MENT_BACK;
+	ments[0].type    = MENT_BACK;
 	ments[0].caption = "Back";
-	ments[1].type = MENT_CHGLINE;
+	ments[1].type    = MENT_CHGLINE;
 
-	ments[2].type = MENT_HANDLER;
+	ments[2].type    = MENT_HANDLER;
 	ments[2].caption = "Payloads...";
 	ments[2].handler = launch_tools;
-	ments[3].type = MENT_HANDLER;
+
+	ments[3].type    = MENT_HANDLER;
 	ments[3].caption = "More configs...";
 	ments[3].handler = ini_list_launcher;
 
-	ments[4].type = MENT_CHGLINE;
+	ments[4].type    = MENT_CHGLINE;
 
-	u32 i = 5;
+	u32 sec_idx = 5;
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 	{
 		if (!strcmp(ini_sec->name, "config") ||
@@ -534,54 +517,36 @@ void launch_firmware()
 			ini_sec->type == INI_NEWLINE)
 			continue;
 
-		ments[i].type = ini_sec->type;
-		ments[i].caption = ini_sec->name;
-		ments[i].data = ini_sec;
+		ments[sec_idx].type    = ini_sec->type;
+		ments[sec_idx].caption = ini_sec->name;
+		ments[sec_idx].data    = ini_sec;
 
 		if (ini_sec->type == MENT_CAPTION)
-			ments[i].color = ini_sec->color;
-		i++;
+			ments[sec_idx].color = ini_sec->color;
+		sec_idx++;
 
-		if ((i - 4) > max_entries)
+		if ((sec_idx - 4) > max_entries)
 			break;
 	}
 
-	if (i < 6)
+	if (sec_idx < 6)
 	{
-		ments[i].type = MENT_CAPTION;
-		ments[i].caption = "No main configs found...";
-		ments[i].color = TXT_CLR_WARNING;
-		i++;
+		ments[sec_idx].type    = MENT_CAPTION;
+		ments[sec_idx].caption = "No main configs found...";
+		ments[sec_idx].color   = TXT_CLR_WARNING;
+		sec_idx++;
 	}
 
-	memset(&ments[i], 0, sizeof(ment_t));
+	memset(&ments[sec_idx], 0, sizeof(ment_t));
 	menu_t menu = {
 		ments, "Launch configurations", 0, 0
 	};
 
 	cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
 
-	if (cfg_sec)
-	{
-		u8 non_cfg = 4;
-		for (u32 j = 5; j < i; j++)
-		{
-			if (ments[j].type != INI_CHOICE)
-				non_cfg++;
-			if (ments[j].data == cfg_sec)
-			{
-				b_cfg.boot_cfg = BOOT_CFG_FROM_LAUNCH;
-				b_cfg.autoboot = j - non_cfg;
-				b_cfg.autoboot_list = 0;
-
-				break;
-			}
-		}
-	}
-
 	payload_path = ini_check_payload_section(cfg_sec);
 
-	if (cfg_sec)
+	if (cfg_sec && !payload_path)
 	{
 		LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 		{
@@ -590,12 +555,12 @@ void launch_firmware()
 			if (!strcmp("emupath", kv->key))
 				emummc_path = kv->val;
 		}
-	}
 
-	if (emummc_path && !emummc_set_path(emummc_path))
-	{
-		EPRINTF("emupath is wrong!");
-		goto wrong_emupath;
+		if (emummc_path && !emummc_set_path(emummc_path))
+		{
+			EPRINTF("emupath is wrong!");
+			goto wrong_emupath;
+		}
 	}
 
 	if (!cfg_sec)
@@ -616,14 +581,12 @@ parse_failed:
 
 	if (payload_path)
 	{
+		// Try to launch Payload.
 		launch_payload(payload_path, false, true);
-		EPRINTF("Failed to launch payload.");
-		free(payload_path);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
 wrong_emupath:
-		EPRINTF("Failed to launch HOS.");
 		if (emummc_path)
 		{
 			sd_mount();
@@ -673,28 +636,27 @@ void nyx_load_run()
 
 	// Set Nyx mode.
 	nyx_str->cfg = 0;
-	if (b_cfg.extra_cfg)
+	if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
 	{
-		if (b_cfg.extra_cfg & EXTRA_CFG_NYX_UMS)
-		{
-			b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_UMS);
-			nyx_str->cfg |= NYX_CFG_UMS;
-			nyx_str->cfg |= b_cfg.ums << 24;
-		}
+		b_cfg.extra_cfg &= ~(EXTRA_CFG_NYX_UMS);
+
+		nyx_str->cfg |= NYX_CFG_UMS;
+		nyx_str->cfg |= b_cfg.ums << 24;
 	}
 
 	// Set hekate version used to boot Nyx.
 	nyx_str->version = ipl_ver.version - 0x303030; // Convert ASCII to numbers.
 
 	// Set SD card initialization info.
-	nyx_str->info.magic = NYX_NEW_INFO;
+	nyx_str->info.magic   = NYX_NEW_INFO;
 	nyx_str->info.sd_init = sd_get_mode();
+
+	// Set SD card error info.
 	u16 *sd_errors = sd_get_error_count();
 	for (u32 i = 0; i < 3; i++)
 		nyx_str->info.sd_errors[i] = sd_errors[i];
 
-	//memcpy((u8 *)nyx_str->irama, (void *)IRAM_BASE, 0x8000);
-	volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
+	reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
 	memcpy((u8 *)nyx_str->hekate, (u8 *)reloc->start, reloc->end - reloc->start);
 
 	void (*nyx_ptr)() = (void *)nyx;
@@ -722,17 +684,17 @@ static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomE
 			else
 				break;
 		}
-		if (!strcmp("logopath", kv->key))
-			*bootlogoCustomEntry = kv->val;
-		if (!strcmp("emummc_force_disable", kv->key))
-			h_cfg.emummc_force_disable = atoi(kv->val);
 		if (!strcmp("emupath", kv->key))
 			*emummc_path = kv->val;
+		else if (!strcmp("logopath", kv->key))
+			*bootlogoCustomEntry = kv->val;
+		else if (!strcmp("emummc_force_disable", kv->key))
+			h_cfg.emummc_force_disable = atoi(kv->val);
 	}
 	if (!cfg_sec)
 	{
-		*bootlogoCustomEntry = NULL;
-		*emummc_path = NULL;
+		*emummc_path               = NULL;
+		*bootlogoCustomEntry       = NULL;
 		h_cfg.emummc_force_disable = false;
 	}
 
@@ -745,7 +707,7 @@ static void _bootloader_corruption_protect()
 	if (!f_stat("bootloader", &fno))
 	{
 		if (!h_cfg.bootprotect && (fno.fattrib & AM_ARC))
-			f_chmod("bootloader", 0, AM_ARC);
+			f_chmod("bootloader", 0,      AM_ARC);
 		else if (h_cfg.bootprotect && !(fno.fattrib & AM_ARC))
 			f_chmod("bootloader", AM_ARC, AM_ARC);
 	}
@@ -782,11 +744,11 @@ static void _auto_launch_firmware()
 		u32 pos_y;
 	};
 
-	char *emummc_path = NULL;
+	u32 boot_entry_id         = 0;
+	ini_sec_t *cfg_sec        = NULL;
+	char *emummc_path         = NULL;
 	char *bootlogoCustomEntry = NULL;
-	ini_sec_t *cfg_sec = NULL;
-	u32 boot_entry_id = 0;
-	bool config_entry_found = false;
+	bool  config_entry_found  = false;
 
 	auto_launch_update();
 
@@ -821,11 +783,11 @@ static void _auto_launch_firmware()
 				config_entry_found = true;
 				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 				{
-					if (!strcmp("autoboot", kv->key))
+					if      (!strcmp("autoboot",      kv->key))
 						h_cfg.autoboot = atoi(kv->val);
 					else if (!strcmp("autoboot_list", kv->key))
 						h_cfg.autoboot_list = atoi(kv->val);
-					else if (!strcmp("bootwait", kv->key))
+					else if (!strcmp("bootwait",      kv->key))
 					{
 						h_cfg.bootwait = atoi(kv->val);
 
@@ -837,14 +799,14 @@ static void _auto_launch_firmware()
 						if (h_cfg.bootwait > 20)
 							h_cfg.bootwait = 3;
 					}
-					else if (!strcmp("backlight", kv->key))
-						h_cfg.backlight = atoi(kv->val);
-					else if (!strcmp("autohosoff", kv->key))
-						h_cfg.autohosoff = atoi(kv->val);
-					else if (!strcmp("autonogc", kv->key))
-						h_cfg.autonogc = atoi(kv->val);
-					else if (!strcmp("updater2p", kv->key))
-						h_cfg.updater2p = atoi(kv->val);
+					else if (!strcmp("backlight",   kv->key))
+						h_cfg.backlight   = atoi(kv->val);
+					else if (!strcmp("autohosoff",  kv->key))
+						h_cfg.autohosoff  = atoi(kv->val);
+					else if (!strcmp("autonogc",    kv->key))
+						h_cfg.autonogc    = atoi(kv->val);
+					else if (!strcmp("updater2p",   kv->key))
+						h_cfg.updater2p   = atoi(kv->val);
 					else if (!strcmp("bootprotect", kv->key))
 						h_cfg.bootprotect = atoi(kv->val);
 				}
@@ -872,10 +834,10 @@ static void _auto_launch_firmware()
 				{
 					if (!strcmp("logopath", kv->key))
 						bootlogoCustomEntry = kv->val;
-					else if (!strcmp("emummc_force_disable", kv->key))
-						h_cfg.emummc_force_disable = atoi(kv->val);
 					else if (!strcmp("emupath", kv->key))
 						emummc_path = kv->val;
+					else if (!strcmp("emummc_force_disable", kv->key))
+						h_cfg.emummc_force_disable = atoi(kv->val);
 				}
 			}
 			if (cfg_sec)
@@ -917,10 +879,10 @@ static void _auto_launch_firmware()
 				{
 					if (!strcmp("logopath", kv->key))
 						bootlogoCustomEntry = kv->val;
-					else if (!strcmp("emummc_force_disable", kv->key))
-						h_cfg.emummc_force_disable = atoi(kv->val);
 					else if (!strcmp("emupath", kv->key))
 						emummc_path = kv->val;
+					else if (!strcmp("emummc_force_disable", kv->key))
+						h_cfg.emummc_force_disable = atoi(kv->val);
 				}
 			}
 			if (cfg_sec)
@@ -937,18 +899,20 @@ skip_list:
 	if (!cfg_sec)
 		goto out; // No configurations or auto boot is disabled.
 
-	u8 *bitmap = NULL;
-	struct _bmp_data bmpData;
-	bool bootlogoFound = false;
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
 	{
 		u32 fsize;
 		u8 *logo_buf = NULL;
+		u8 *bitmap = NULL;
+		struct _bmp_data bmpData;
+		bool bootlogoFound = false;
 
-		if (bootlogoCustomEntry) // Check if user set custom logo path at the boot entry.
+		// Check if user set custom logo path at the boot entry.
+		if (bootlogoCustomEntry)
 			bitmap = (u8 *)sd_file_read(bootlogoCustomEntry, &fsize);
 
-		if (!bitmap) // Custom entry bootlogo not found, trying default custom one.
+		// Custom entry bootlogo not found, trying default custom one.
+		if (!bitmap)
 			bitmap = (u8 *)sd_file_read("bootloader/bootlogo.bmp", &fsize);
 
 		if (bitmap)
@@ -1018,9 +982,9 @@ skip_list:
 
 	if (payload_path)
 	{
+		// Try to launch Payload.
 		launch_payload(payload_path, false, false);
-		free(payload_path);
-		goto payload_error;
+		goto error;
 	}
 	else
 	{
@@ -1036,15 +1000,13 @@ skip_list:
 		hos_launch(cfg_sec);
 
 wrong_emupath:
-		EPRINTF("\nFailed to launch HOS!");
-
 		if (emummc_path || b_cfg.boot_cfg & BOOT_CFG_TO_EMUMMC)
 		{
 			sd_mount();
 			emummc_load_cfg(); // Reload emuMMC config in case of emupath.
 		}
 
-payload_error:
+error:
 		gfx_con.mute = false;
 		gfx_printf("\nPress any key...\n");
 		display_backlight_brightness(h_cfg.backlight, 1000);
@@ -1067,13 +1029,13 @@ out:
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC
-#define  EXCP_MAGIC 0x30505645      // "EVP0".
+#define  EXCP_MAGIC       0x30505645 // "EVP0".
 #define EXCP_TYPE_ADDR 0x4003FFF8
-#define  EXCP_TYPE_RESET 0x545352   // "RST".
-#define  EXCP_TYPE_UNDEF 0x464455   // "UDF".
-#define  EXCP_TYPE_PABRT 0x54424150 // "PABT".
-#define  EXCP_TYPE_DABRT 0x54424144 // "DABT".
-#define  EXCP_TYPE_WDT   0x544457   // "WDT".
+#define  EXCP_TYPE_RESET  0x545352   // "RST".
+#define  EXCP_TYPE_UNDEF  0x464455   // "UDF".
+#define  EXCP_TYPE_PABRT  0x54424150 // "PABT".
+#define  EXCP_TYPE_DABRT  0x54424144 // "DABT".
+#define  EXCP_TYPE_WDT    0x544457   // "WDT".
 #define EXCP_LR_ADDR   0x4003FFF4
 
 #define PSTORE_LOG_OFFSET 0x180000
@@ -1087,14 +1049,17 @@ typedef struct _pstore_buf {
 
 static void _show_errors()
 {
-	u32 *excp_enabled = (u32 *)EXCP_EN_ADDR;
-	u32 *excp_type = (u32 *)EXCP_TYPE_ADDR;
 	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
+	u32 *excp_type = (u32 *)EXCP_TYPE_ADDR;
+	u32 *excp_enabled = (u32 *)EXCP_EN_ADDR;
+
 	u32 panic_status = hw_rst_status & 0xFFFFF;
 
+	// Check for exception error.
 	if (*excp_enabled == EXCP_MAGIC)
 		h_cfg.errors |= ERR_EXCEPTION;
 
+	// Check for L4T kernel panic.
 	if (PMC(APBDEV_PMC_SCRATCH37) == PMC_SCRATCH37_KERNEL_PANIC_MAGIC)
 	{
 		// Set error and clear flag.
@@ -1102,13 +1067,17 @@ static void _show_errors()
 		PMC(APBDEV_PMC_SCRATCH37) = 0;
 	}
 
+	// Check for watchdog panic.
 	if (hw_rst_reason == PMC_RST_STATUS_WATCHDOG && panic_status &&
 		panic_status <= 0xFF && panic_status != 0x20 && panic_status != 0x21)
+	{
 		h_cfg.errors |= ERR_PANIC_CODE;
+	}
 
 	// Check if we had a panic while in CFW.
 	secmon_exo_check_panic();
 
+	// Handle errors.
 	if (h_cfg.errors)
 	{
 		gfx_clear_grey(0x1B);
@@ -1183,8 +1152,8 @@ static void _show_errors()
 			u32 g = (hw_rst_status >> 24) & 0xF;
 			u32 b = (hw_rst_status >> 28) & 0xF;
 			r = (r << 16) | (r << 20);
-			g = (g << 8) | (g << 12);
-			b = (b << 0) | (b << 4);
+			g = (g << 8)  | (g << 12);
+			b = (b << 0)  | (b << 4);
 			u32 color = r | g | b;
 
 			WPRINTF("HOS panic occurred!\n");
@@ -1209,7 +1178,7 @@ static void _check_low_battery()
 	int charge_status = 0;
 
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
-	max17050_get_property(MAX17050_AvgVCELL, &batt_volt);
+	max17050_get_property(MAX17050_AvgVCELL,   &batt_volt);
 
 	enough_battery = charge_status ? 3250 : 3000;
 
@@ -1221,14 +1190,14 @@ static void _check_low_battery()
 	u8 *battery_res = malloc(ALIGN(SZ_BATTERY_EMPTY, SZ_4K));
 	blz_uncompress_srcdest(BATTERY_EMPTY_BLZ, SZ_BATTERY_EMPTY_BLZ, battery_res, SZ_BATTERY_EMPTY);
 
-	u8 *battery_icon = malloc(0x95A);  // 21x38x3
-	u8 *charging_icon = malloc(0x2F4); // 21x12x3
+	u8 *battery_icon     = malloc(0x95A); // 21x38x3
+	u8 *charging_icon    = malloc(0x2F4); // 21x12x3
 	u8 *no_charging_icon = calloc(0x2F4, 1);
 
 	memcpy(charging_icon, battery_res, 0x2F4);
 	memcpy(battery_icon, battery_res + 0x2F4, 0x95A);
 
-	u32 battery_icon_y_pos = 1280 - 16 - Y_BATTERY_EMPTY_BATT;
+	u32 battery_icon_y_pos  = 1280 - 16 - Y_BATTERY_EMPTY_BATT;
 	u32 charging_icon_y_pos = 1280 - 16 - Y_BATTERY_EMPTY_BATT - 12 - Y_BATTERY_EMPTY_CHRG;
 	free(battery_res);
 
@@ -1254,7 +1223,7 @@ static void _check_low_battery()
 		if (screen_on && (charge_status != current_charge_status))
 		{
 			if (current_charge_status)
-				gfx_set_rect_rgb(charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+				gfx_set_rect_rgb(charging_icon,    X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
 			else
 				gfx_set_rect_rgb(no_charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
 		}
@@ -1285,9 +1254,9 @@ static void _check_low_battery()
 				u32 *fb = display_init_framebuffer_pitch();
 				gfx_init_ctxt(fb, 720, 1280, 720);
 
-				gfx_set_rect_rgb(battery_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_BATT, 16, battery_icon_y_pos);
+				gfx_set_rect_rgb(battery_icon,         X_BATTERY_EMPTY, Y_BATTERY_EMPTY_BATT, 16, battery_icon_y_pos);
 				if (current_charge_status)
-					gfx_set_rect_rgb(charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+					gfx_set_rect_rgb(charging_icon,    X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
 				else
 					gfx_set_rect_rgb(no_charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
 
@@ -1390,7 +1359,7 @@ ment_t ment_cinfo[] = {
 	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Storage Info --", TXT_CLR_CYAN_L),
-	MDEF_HANDLER("eMMC", print_mmc_info),
+	MDEF_HANDLER("eMMC",    print_mmc_info),
 	MDEF_HANDLER("SD Card", print_sdcard_info),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("------ Misc ------", TXT_CLR_CYAN_L),
@@ -1422,7 +1391,7 @@ ment_t ment_backup[] = {
 	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- GPP Partitions --", TXT_CLR_CYAN_L),
-	MDEF_HANDLER("Backup eMMC SYS", dump_emmc_system),
+	MDEF_HANDLER("Backup eMMC SYS",  dump_emmc_system),
 	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
 	MDEF_END()
 };

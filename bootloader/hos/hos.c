@@ -1178,5 +1178,7 @@ int hos_launch(ini_sec_t *cfg)
 error:
 	emmc_end();
 
+	EPRINTF("\nFailed to launch HOS!");
+
 	return 0;
 }
