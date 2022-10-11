@@ -43,9 +43,11 @@
 #define JC_HORI_INPUT_RPT        0x00
 
 #define JC_WIRED_CMD_GET_INFO    0x01
-#define JC_WIRED_CMD_INIT_DONE   0x10
-#define JC_WIRED_CMD_BRATE_DONE  0x11
-#define JC_WIRED_CMD_SET_RATE    0x12 // Output report rate.
+#define JC_WIRED_CMD_CHRG_CFG    0x02
+#define JC_WIRED_CMD_WAKE_REASON 0x07
+#define JC_WIRED_CMD_HID_CONN    0x10
+#define JC_WIRED_CMD_HID_DISC    0x11
+#define JC_WIRED_CMD_SET_HIDRATE 0x12 // Output report rate.
 #define JC_WIRED_CMD_SET_BRATE   0x20
 
 #define JC_HID_OUTPUT_RPT        0x01
@@ -148,16 +150,16 @@ static const u8 init_switch_brate[]  = {
 	0xC0, 0xC6, 0x2D, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static const u8 init_switched_brate[]  = {
-	0x19, 0x01, 0x03, 0x07, 0x00,          // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_BRATE_DONE, // Wired cmd and subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x0E           // Wired subcmd data and crc.
+static const u8 init_hid_disconnect[]  = {
+	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_HID_DISC, // Wired cmd and subcmd.
+	0x00, 0x00, 0x00, 0x00, 0x0E         // Wired subcmd data and crc.
 };
 
-static const u8 init_set_rpt_rate[]  = {
-	0x19, 0x01, 0x03, 0x0B, 0x00,        // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_SET_RATE, // Wired cmd and subcmd.
-	0x04, 0x00, 0x00, 0x12, 0xA6,        // Wired subcmd data, data crc and crc.
+static const u8 init_set_hid_rate[]  = {
+	0x19, 0x01, 0x03, 0x0B, 0x00,           // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_SET_HIDRATE, // Wired cmd and subcmd.
+	0x04, 0x00, 0x00, 0x12, 0xA6,           // Wired subcmd data, data crc and crc.
 	// Output report rate 15 ms.
 	0x0F, 0x00, 0x00, 0x00
 
@@ -166,10 +168,10 @@ static const u8 init_set_rpt_rate[]  = {
 	// 0x05, 0x00, 0x00, 0x00
 };
 
-static const u8 init_finalize[]  = {
-	0x19, 0x01, 0x03, 0x07, 0x00,         // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_INIT_DONE, // Wired cmd and subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x3D          // Wired subcmd data and crc.
+static const u8 init_hid_connect[]  = {
+	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_HID_CONN, // Wired cmd and subcmd.
+	0x00, 0x00, 0x00, 0x00, 0x3D         // Wired subcmd data and crc.
 };
 
 static const u8 nx_pad_status[]  = {
@@ -230,7 +232,7 @@ typedef struct _jc_hid_in_rpt_t
 	u8 stick_h_right;
 	u8 stick_m_right;
 	u8 stick_v_right;
-	u8 vib_decider;
+	u8 vib_decider; // right:8, left:8. (bit3 en, bit2-0 buffer avail).
 	u8 submcd_ack;
 	u8 subcmd;
 	u8 subcmd_data[];
@@ -255,27 +257,12 @@ typedef struct _jc_hid_in_pair_data_t
 	u8  pad1;
 } jc_hid_in_pair_data_t;
 
-typedef struct _joycon_ctxt_t
-{
-	u8  buf[0x100]; //FIXME: If heap is used, dumping breaks.
-	u8  uart;
-	u8  type;
-	u8  state;
-	u8  mac[6];
-	u32 last_received_time;
-	u32 last_status_req_time;
-	u8  rumble_sent;
-	u8  connected;
-	u8  detected;
-	u8  sio_mode;
-} joycon_ctxt_t;
-
 typedef struct _jc_sio_out_rpt_t
 {
 	u8  cmd;
 	u8  subcmd;
-	u16 len;
-	u8  unk[2];
+	u16 payload_size;
+	u8  data[2];
 	u8  crc_payload;
 	u8  crc_hdr;
 	u8  payload[];
@@ -288,8 +275,8 @@ typedef struct _jc_sio_in_rpt_t
 	u16 payload_size;
 	u8  status;
 	u8  unk;
-	u8  payload_crc;
-	u8  hdr_crc;
+	u8  crc_payload;
+	u8  crc_hdr;
 	u8  payload[];
 } jc_sio_in_rpt_t;
 
@@ -305,7 +292,7 @@ typedef struct _jc_hid_in_sixaxis_rpt_t
 
 typedef struct _jc_sio_hid_in_rpt_t
 {
-	u8 cmd;
+	u8 type;
 	u8 pkt_id;
 	u8 unk;
 	u8 btn_right;
@@ -321,6 +308,21 @@ typedef struct _jc_sio_hid_in_rpt_t
 	// Each report is 800 us?
 	jc_hid_in_sixaxis_rpt_t sixaxis[15];
 } jc_sio_hid_in_rpt_t;
+
+typedef struct _joycon_ctxt_t
+{
+	u8  buf[0x100]; //FIXME: If heap is used, dumping breaks.
+	u8  uart;
+	u8  type;
+	u8  state;
+	u8  mac[6];
+	u32 last_received_time;
+	u32 last_status_req_time;
+	u8  rumble_sent;
+	u8  connected;
+	u8  detected;
+	u8  sio_mode;
+} joycon_ctxt_t;
 
 static joycon_ctxt_t jc_l = {0};
 static joycon_ctxt_t jc_r = {0};
@@ -679,11 +681,11 @@ static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8* data, u32 size)
 	case JC_WIRED_CMD_SET_BRATE:
 		jc->state = JC_STATE_BRATE_CHANGED;
 		break;
-	case JC_WIRED_CMD_BRATE_DONE:
+	case JC_WIRED_CMD_HID_DISC:
 		jc->state = JC_STATE_BRATE_OK;
 		break;
-	case JC_WIRED_CMD_INIT_DONE:
-	case JC_WIRED_CMD_SET_RATE:
+	case JC_WIRED_CMD_HID_CONN:
+	case JC_WIRED_CMD_SET_HIDRATE:
 		// done.
 	default:
 		break;
@@ -738,7 +740,7 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8* payload, 
 
 static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt, u32 size)
 {
-	if (pkt->hdr_crc != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1, 0))
+	if (pkt->crc_hdr != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1, 0))
 		return;
 
 	u8 cmd = pkt->ack & (~JC_SIO_CMD_ACK);
@@ -787,7 +789,7 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 
 	// For Sio, check uart output report and command ack.
 	jc_sio_in_rpt_t *sio_pkt = (jc_sio_in_rpt_t *)(jc->buf);
-	if (jc->sio_mode && sio_pkt->cmd == 0x92 && (sio_pkt->ack & JC_SIO_CMD_ACK) == JC_SIO_CMD_ACK)
+	if (jc->sio_mode && sio_pkt->cmd == JC_SIO_INPUT_RPT && (sio_pkt->ack & JC_SIO_CMD_ACK) == JC_SIO_CMD_ACK)
 	{
 		_jc_sio_uart_pkt_parse(jc, sio_pkt, sio_pkt->payload_size + sizeof(jc_sio_in_rpt_t));
 
@@ -1066,11 +1068,11 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 					uart_init(jc->uart, 3000000, UART_AO_TX_MN_RX);
 					uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
 
-					// Handshake with the new speed.
+					// Disconnect HID.
 					retries = 10;
 					while (retries && jc->state != JC_STATE_BRATE_OK)
 					{
-						_joycon_send_raw(jc->uart, init_switched_brate, sizeof(init_switched_brate));
+						_joycon_send_raw(jc->uart, init_hid_disconnect, sizeof(init_hid_disconnect));
 						msleep(5);
 						_jc_rcv_pkt(jc);
 						retries--;
@@ -1080,13 +1082,13 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 						goto out;
 				}
 
-				// Finalize initialization.
-				_joycon_send_raw(jc->uart, init_finalize, sizeof(init_finalize));
+				// Create HID connection with the new rate.
+				_joycon_send_raw(jc->uart, init_hid_connect, sizeof(init_hid_connect));
 				msleep(2);
 				_jc_rcv_pkt(jc);
 
-				// Set packet rate.
-				_joycon_send_raw(jc->uart, init_set_rpt_rate, sizeof(init_set_rpt_rate));
+				// Set hid packet rate.
+				_joycon_send_raw(jc->uart, init_set_hid_rate, sizeof(init_set_hid_rate));
 				msleep(2);
 				_jc_rcv_pkt(jc);
 			}
@@ -1095,11 +1097,10 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 		}
 		else
 		{
-			// Set Sio POR low to configure BOOT0 mode.
+			// Set Sio NPOR low to configure BOOT0 mode.
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
 			usleep(300);
 			gpio_write(GPIO_PORT_T, GPIO_PIN_0, GPIO_LOW);
-			gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_HIGH);
 			msleep(100);
 
@@ -1163,14 +1164,19 @@ void jc_init_hw()
 		PINMUX_AUX(PINMUX_AUX_GPIO_PE7)  = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP;
 		gpio_config(GPIO_PORT_E, GPIO_PIN_7, GPIO_MODE_GPIO);
 
-		// Configure Sio RST and BOOT0.
+		// Configure Sio NRST and BOOT0.
 		PINMUX_AUX(PINMUX_AUX_CAM1_STROBE) = PINMUX_PULL_DOWN | 1;
 		PINMUX_AUX(PINMUX_AUX_CAM2_PWDN)   = PINMUX_PULL_DOWN | 1;
 		gpio_config(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_LOW);
 
-		// Configure Sio POR.
+		// Set BOOT0 to flash mode. (output high is sram mode).
+		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_0, GPIO_OUTPUT_ENABLE);
+		gpio_write(GPIO_PORT_T, GPIO_PIN_0, GPIO_LOW);
+
+		// NRST to pull down.
+		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
+
+		// Configure Sio NPOR.
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN1) = PINMUX_IO_HV | PINMUX_LPDR | 1;
 		gpio_config(GPIO_PORT_CC, GPIO_PIN_5, GPIO_MODE_GPIO);
 		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
@@ -1233,7 +1239,7 @@ void jc_deinit()
 	}
 	else
 	{
-		// Disable Sio POR.
+		// Disable Sio NPOR.
 		gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
 
 		// Disable 4 MHz clock to Sio.
