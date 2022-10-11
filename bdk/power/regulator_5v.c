@@ -27,6 +27,8 @@ static bool usb_src = false;
 
 void regulator_5v_enable(u8 dev)
 {
+	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
+
 	// The power supply selection from battery or USB is automatic.
 	if (!reg_5v_dev)
 	{
@@ -36,10 +38,8 @@ void regulator_5v_enable(u8 dev)
 		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
 
-		// Only Icosa and Iowa have USB 5V VBUS rails. Skip on Hoag/Aula.
-		u32 hw_type = fuse_read_hw_type();
-		if (hw_type == FUSE_NX_HW_TYPE_ICOSA ||
-			hw_type == FUSE_NX_HW_TYPE_IOWA)
+		// Only Icosa has USB 5V VBUS rails.
+		if (tegra_t210)
 		{
 			// Fan and Rail power from USB 5V VBUS.
 			PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = PINMUX_LPDR | 1;
@@ -58,9 +58,8 @@ void regulator_5v_enable(u8 dev)
 
 		usb_src = false;
 
-		// Fan regulator 5V for Hoag/Aula.
-		if (hw_type == FUSE_NX_HW_TYPE_HOAG ||
-			hw_type == FUSE_NX_HW_TYPE_AULA)
+		// VBUS/Fan regulator 5V for Iowa/Hoag/Aula.
+		if (!tegra_t210)
 		{
 			PINMUX_AUX(PINMUX_AUX_ALS_PROX_INT) = PINMUX_PULL_DOWN;
 			gpio_config(GPIO_PORT_X, GPIO_PIN_3, GPIO_MODE_GPIO);
@@ -73,6 +72,8 @@ void regulator_5v_enable(u8 dev)
 
 void regulator_5v_disable(u8 dev)
 {
+	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
+
 	reg_5v_dev &= ~dev;
 
 	if (!reg_5v_dev)
@@ -80,10 +81,8 @@ void regulator_5v_disable(u8 dev)
 		// Rail power from battery 5V regulator.
 		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_LOW);
 
-		// Only Icosa and Iowa have USB 5V VBUS rails. Skip on Hoag/Aula.
-		u32 hw_type = fuse_read_hw_type();
-		if (hw_type == FUSE_NX_HW_TYPE_ICOSA ||
-			hw_type == FUSE_NX_HW_TYPE_IOWA)
+		// Only Icosa has USB 5V VBUS rails.
+		if (tegra_t210)
 		{
 			// Rail power from USB 5V VBUS.
 			gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
@@ -91,9 +90,8 @@ void regulator_5v_disable(u8 dev)
 
 		}
 
-		// Fan regulator 5V for Hoag/Aula.
-		if (hw_type == FUSE_NX_HW_TYPE_HOAG ||
-			hw_type == FUSE_NX_HW_TYPE_AULA)
+		// VBUS/Fan regulator 5V for Hoag/Aula.
+		if (!tegra_t210)
 			gpio_write(GPIO_PORT_X, GPIO_PIN_3, GPIO_LOW);
 	}
 }
@@ -105,10 +103,8 @@ bool regulator_5v_get_dev_enabled(u8 dev)
 
 void regulator_5v_usb_src_enable(bool enable)
 {
-	// Only for Icosa/Iowa. Skip on Hoag/Aula.
-	u32 hw_type = fuse_read_hw_type();
-	if (hw_type != FUSE_NX_HW_TYPE_ICOSA &&
-		hw_type != FUSE_NX_HW_TYPE_IOWA)
+	// Only for Icosa.
+	if (hw_get_chip_id() != GP_HIDREV_MAJOR_T210)
 		return;
 
 	if (enable && !usb_src)
