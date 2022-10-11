@@ -39,7 +39,7 @@ static const u8 sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTIO
 static const u8 sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
 static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
 
-    // ID (Timestamp),  KB, TSEC,   PK11,   SECMON,     Warmboot.
+	// ID (Timestamp),  KB, TSEC,   PK11,   SECMON,     Warmboot.
 static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121183008",  0, 0x1900, 0x3FE0, 0x40014020, 0x8000D000 }, //  1.0.0.
 	{ "20170210155124",  0, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000 }, //  2.0.0 - 2.3.0.
@@ -62,7 +62,8 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20210607122020", 11, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 12.1.0.
 	{ "20210805123730", 12, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 13.0.0 - 13.2.0
 	{ "20220105094454", 12, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 13.2.1.
-	{ "20220209100018", 13, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 14.0.0+
+	{ "20220209100018", 13, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 14.0.0 - 14.1.2.
+	{ "20220801142548", 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 15.0.0+
 };
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)

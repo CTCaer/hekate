@@ -139,7 +139,7 @@ typedef struct _atm_fatal_error_ctx
 #define  EXO_FLAG_CAL0_WRITES_SYS BIT(6)
 #define  EXO_FLAG_ENABLE_USB3     BIT(7)
 
-#define EXO_FW_VER(mj, mn, rv) (((mj) << 24) | ((mn) << 16) | ((rv) << 8))
+#define EXO_FW_VER(mj, mn) (((mj) << 24) | ((mn) << 16))
 
 void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 {
@@ -166,7 +166,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8) || //  8.0.x, same fuses with  7.0.1.
 		!memcmp(ctxt->pkg1_id->id, "20210129111626", 8) || // 12.0.0, same fuses with 11.0.0.
 		!memcmp(ctxt->pkg1_id->id, "20210805123730", 8) || // 13.0.0, same fuses with 12.1.0.
-		!memcmp(ctxt->pkg1_id->id, "20220209100018", 8)    // 14.0.0, same fuses with 13.2.1.
+		!memcmp(ctxt->pkg1_id->id, "20220209100018", 8) || // 14.0.0, same fuses with 13.2.1.
+		!memcmp(ctxt->pkg1_id->id, "20220801142548", 8)    // 15.0.0, no intermediate 14.X.X that burns fuses.
 	   )
 		exo_fw_no++;
 
@@ -175,28 +176,28 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	{
 	case 1 ... 4:
 	case 6:
-		exo_fw_no = EXO_FW_VER(exo_fw_no, 0, 0);
+		exo_fw_no = EXO_FW_VER(exo_fw_no, 0);
 		break;
 	case 5:
-		exo_fw_no = EXO_FW_VER(5, ctxt->exo_ctx.hos_revision, 0);
+		exo_fw_no = EXO_FW_VER(5, ctxt->exo_ctx.hos_revision);
 		break;
 	case 7:
-		exo_fw_no = EXO_FW_VER(6, 2, 0);
+		exo_fw_no = EXO_FW_VER(6, 2);
 		break;
 	case 8 ... 9:
-		exo_fw_no = EXO_FW_VER(exo_fw_no - 1, 0, 0);
+		exo_fw_no = EXO_FW_VER(exo_fw_no - 1, 0);
 		break;
 	case 10:
-		exo_fw_no = EXO_FW_VER(8, 1, 0);
+		exo_fw_no = EXO_FW_VER(8, 1);
 		break;
 	case 11:
-		exo_fw_no = EXO_FW_VER(9, 0, 0);
+		exo_fw_no = EXO_FW_VER(9, 0);
 		break;
 	case 12:
-		exo_fw_no = EXO_FW_VER(9, 1, 0);
+		exo_fw_no = EXO_FW_VER(9, 1);
 		break;
-	case 13 ... 17: //!TODO: Update on API changes. 17: 14.0.0.
-		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision, 0);
+	case 13 ... 18: //!TODO: Update on API changes. 18: 15.0.0.
+		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision);
 		break;
 	}
 
@@ -327,12 +328,10 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		else
 			strcpy((char *)exo_cfg->emummc_cfg.file_cfg.path, emu_cfg.path);
 
-		if (emu_cfg.nintendo_path && !ctxt->stock)
+		if (!ctxt->stock && emu_cfg.nintendo_path && emu_cfg.nintendo_path[0])
 			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, emu_cfg.nintendo_path);
-		else if (ctxt->stock)
-			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, "Nintendo");
 		else
-			exo_cfg->emummc_cfg.nintendo_path[0] = 0;
+			strcpy((char *)exo_cfg->emummc_cfg.nintendo_path, "Nintendo");
 	}
 
 	// Copy over exosphere fatal for Mariko.
