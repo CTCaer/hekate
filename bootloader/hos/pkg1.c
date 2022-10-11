@@ -143,7 +143,7 @@ static const u8 sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTIO
 static const u8 sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
 static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
 
-    // ID (Timestamp), KB, Fuses, TSEC, PK11,   SECMON,     Warmboot.
+	// ID (Timestamp), KB, Fuses, TSEC, PK11,   SECMON,     Warmboot.
 static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121183008",  0,  1, 0x1900, 0x3FE0, SM_100_ADR, 0x8000D000, _secmon_1_patchset }, // 1.0.0 (Patched relocator).
 	{ "20170210155124",  0,  2, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_2_patchset }, // 2.0.0 - 2.3.0.
@@ -341,32 +341,30 @@ static void _warmboot_filename(char *out, u32 fuses)
 	strcat(out, ".bin");
 }
 
-int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
+int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 kb)
 {
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
-	u32 kb = ctxt->pkg1_id->kb;
 	int res = 1;
-
-	// Set warmboot address in PMC if required.
-	if (kb <= KB_FIRMWARE_VERSION_301)
-		PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
 	if (h_cfg.t210b01)
 	{
 		u32 pa_id;
 		u32 fuses_max = 32; // Current ODM7 max.
-		u32 fuses_fw = ctxt->pkg1_id->fuses;
 		u8  burnt_fuses = bit_count(fuse_read_odm(7));
 
 		// Save current warmboot in storage cache (MWS) and check if another one is needed.
 		if (!ctxt->warmboot)
 		{
 			char path[128];
-			f_mkdir("warmboot_mariko");
 			strcpy(path, "warmboot_mariko/wb_");
 			_warmboot_filename(path, fuses_fw);
-			if (f_stat(path, NULL))
+
+			// Check if warmboot fw exists and save it.
+			if (ctxt->warmboot_size && f_stat(path, NULL))
+			{
+				f_mkdir("warmboot_mariko");
 				sd_save_to_file((void *)warmboot_base, ctxt->warmboot_size, path);
+			}
 
 			// Load warmboot fw from storage (MWS) if not matched.
 			if (burnt_fuses > fuses_fw)
@@ -386,7 +384,7 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 					tmp_fuses++;
 				}
 
-				// Check if proper warmboot firmware was found.
+				// Check if proper warmboot firmware was not found.
 				if (!ctxt->warmboot)
 					res = 0;
 			}
@@ -397,15 +395,11 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 		// Configure Warmboot parameters. Anything lower is not supported.
 		switch (burnt_fuses)
 		{
-		case 7:
-			pa_id = 0x87;
+		case 7 ... 8:
+			pa_id = 0x21 * (burnt_fuses - 3) + 3;
 			break;
-		case 8: // 0x21 raise.
-			pa_id = 0xA8;
-			break;
-		default: // From 7.0.0 and up PA id raises by 0x21 with a static base.
-			pa_id = 0x108;
-			pa_id += 0x21 * (burnt_fuses - 8);
+		default: // From 7.0.0 and up PA id is 0x21 multiplied with fuses.
+			pa_id = 0x21 * burnt_fuses;
 			break;
 		}
 
@@ -415,6 +409,10 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base)
 	}
 	else
 	{
+		// Set warmboot address in PMC if required.
+		if (kb <= KB_FIRMWARE_VERSION_301)
+			PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
+
 		// Set Warmboot Physical Address ID for 3.0.0 - 3.0.2.
 		if (kb == KB_FIRMWARE_VERSION_300)
 			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.

@@ -904,7 +904,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Configure and manage Warmboot binary.
-	if (!pkg1_warmboot_config(&ctxt, warmboot_base))
+	if (!pkg1_warmboot_config(&ctxt, warmboot_base, ctxt.pkg1_id->fuses, kb))
 	{
 		// Can only happen on T210B01.
 		_hos_crit_error("Failed to match warmboot with fuses!\nIf you continue, sleep wont work!");
