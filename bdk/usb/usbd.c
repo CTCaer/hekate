@@ -38,8 +38,8 @@
 
 typedef enum
 {
-    USB_HW_EP0 = 0,
-    USB_HW_EP1 = 1
+	USB_HW_EP0 = 0,
+	USB_HW_EP1 = 1
 } usb_hw_ep_t;
 
 typedef enum

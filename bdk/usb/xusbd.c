@@ -770,9 +770,6 @@ static void _xusbd_ep1_disable(u32 ep_idx)
 		// Set EP state to disabled.
 		ep_ctxt->ep_state = EP_DISABLED;
 
-		// Clear EP context.
-		memset((void *)ep_ctxt, 0, sizeof(xusb_ep_ctx_t));
-
 		// Wait for EP status to change.
 		_xusb_xhci_mask_wait(XUSB_DEV_XHCI_EP_STCHG, ep_mask, ep_mask, 1000);
 
@@ -973,27 +970,39 @@ int xusb_device_init()
 //! TODO: Power down more stuff.
 static void _xusb_device_power_down()
 {
+	// Disable clock for XUSB Super-Speed and set source to CLK_M.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_SS);
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_XUSB_SS) &= 0x1FFFFF00;
+	usleep(2);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB_SS);
+
+	// Put XUSB device into reset.
+	CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_SET) = BIT(CLK_U_XUSB_DEV);
+	usleep(2);
+
+	// Reset Full-Speed clock source to CLK_M and div1.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_XUSB_FS) = 0;
+	usleep(2);
+
+	// Disable XUSB device clock.
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_U_CLR) = BIT(CLK_U_XUSB_DEV);
+
 	// Force UTMIP_PLL power down.
+	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG1) &= (~BIT(15));
 	CLOCK(CLK_RST_CONTROLLER_UTMIP_PLL_CFG2) |= BIT(4) | BIT(0); // UTMIP_FORCE_PD_SAMP_A/C_POWERDOWN.
 
 	// Force enable UTMIPLL IDDQ.
 	CLOCK(CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0) |= 3;
 
-	// Disable clocks for XUSB device and Super-Speed logic.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_SET) = BIT(CLK_U_XUSB_DEV);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_U_CLR) = BIT(CLK_U_XUSB_DEV);
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_SS);
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB_SS);
+	// Disable PLLU.
+	clock_disable_pllu();
 
 	// Set XUSB_PADCTL clock reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_PADCTL);
 
 	// Disable XUSB clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB);
-
-	// Disable PLLU.
-	clock_disable_pllu();
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_XUSB);
 }
 
 static int _xusb_queue_trb(u32 ep_idx, void *trb, bool ring_doorbell)
