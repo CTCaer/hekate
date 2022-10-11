@@ -318,7 +318,7 @@
 #define MAX77620_REG_CID2           0x5A
 #define MAX77620_REG_CID3           0x5B
 #define MAX77620_REG_CID4           0x5C // OTP version.
-#define MAX77620_REG_CID5           0x5D
+#define MAX77620_REG_CID5           0x5D // ES version.
 #define  MAX77620_CID_DIDO_MASK               0xF
 #define  MAX77620_CID_DIDO_SHIFT              0
 #define  MAX77620_CID_DIDM_MASK               0xF0

@@ -66,22 +66,22 @@
 #define REGULATOR_LDO6 10
 #define REGULATOR_LDO7 11
 #define REGULATOR_LDO8 12
-#define REGULATOR_CPU0 13
-#define REGULATOR_GPU0 14
-#define REGULATOR_CPU1 15
-//#define REGULATOR_GPU1 16
-//#define REGULATOR_GPU1 17
-#define REGULATOR_MAX  15
+#define REGULATOR_CPU0 13 // T210 CPU.
+#define REGULATOR_GPU0 14 // T210 CPU.
+#define REGULATOR_CPU1 15 // T210B01 CPU.
+#define REGULATOR_RAM1 16 // T210B01 RAM for PHASE211.
+//#define REGULATOR_GPU1 17 // T210B01 CPU.
+#define REGULATOR_MAX  REGULATOR_RAM1
 
 #define MAX77621_CPU_I2C_ADDR 0x1B
 #define MAX77621_GPU_I2C_ADDR 0x1C
 
-#define MAX77621_VOUT_REG     0x00
-#define MAX77621_VOUT_DVS_REG 0x01
-#define MAX77621_CONTROL1_REG 0x02
-#define MAX77621_CONTROL2_REG 0x03
-#define MAX77621_CHIPID1_REG  0x04
-#define MAX77621_CHIPID2_REG  0x05
+#define MAX77621_REG_VOUT     0x00
+#define MAX77621_REG_VOUT_DVS 0x01
+#define MAX77621_REG_CONTROL1 0x02
+#define MAX77621_REG_CONTROL2 0x03
+#define MAX77621_REG_CHIPID1  0x04
+#define MAX77621_REG_CHIPID2  0x05
 
 /* MAX77621_VOUT_DVC_DVS */
 #define MAX77621_DVC_DVS_VOLT_MASK    0x7F
@@ -145,7 +145,7 @@
 
 int  max77620_regulator_get_status(u32 id);
 int  max77620_regulator_config_fps(u32 id);
-int  max7762x_regulator_set_voltage(u32 id, u32 mv);
+int  max7762x_regulator_set_voltage(u32 id, u32 uv);
 int  max7762x_regulator_enable(u32 id, bool enable);
 void max77620_config_gpio(u32 id, bool enable);
 void max77620_config_default();
