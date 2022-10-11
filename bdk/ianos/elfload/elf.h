@@ -445,7 +445,7 @@ typedef struct
 /* Dynamic structure */
 typedef struct
 {
-    Elf32_Sword d_tag; /* controls meaning of d_val */
+    Elf32_Word d_tag; /* controls meaning of d_val */
     union {
         Elf32_Word d_val; /* Multiple meanings - see d_tag */
         Elf32_Addr d_ptr; /* program virtual address */

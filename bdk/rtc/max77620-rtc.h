@@ -1,7 +1,7 @@
 /*
  * PMIC Real Time Clock driver for Nintendo Switch's MAX77620-RTC
  *
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -25,6 +25,8 @@
 
 #define MAX77620_RTC_NR_TIME_REGS   7
 
+#define MAX77620_RTC_RTCINT_REG     0x00
+#define MAX77620_RTC_RTCINTM_REG    0x01
 #define MAX77620_RTC_CONTROLM_REG   0x02
 #define MAX77620_RTC_CONTROL_REG    0x03
 #define  MAX77620_RTC_BIN_FORMAT    BIT(0)
@@ -33,6 +35,9 @@
 #define MAX77620_RTC_UPDATE0_REG    0x04
 #define  MAX77620_RTC_WRITE_UPDATE  BIT(0)
 #define  MAX77620_RTC_READ_UPDATE   BIT(4)
+
+#define MAX77620_RTC_UPDATE1_REG    0x05
+#define MAX77620_RTC_RTCSMPL_REG    0x06
 
 #define MAX77620_RTC_SEC_REG        0x07
 #define MAX77620_RTC_MIN_REG        0x08
@@ -69,9 +74,10 @@ typedef struct _rtc_time_t {
 	u16 year;
 } rtc_time_t;
 
+void max77620_rtc_prep_read();
 void max77620_rtc_get_time(rtc_time_t *time);
 void max77620_rtc_stop_alarm();
 void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time);
-u32 max77620_rtc_date_to_epoch(const rtc_time_t *time);
+u32  max77620_rtc_date_to_epoch(const rtc_time_t *time);
 
 #endif /* _MFD_MAX77620_RTC_H_ */

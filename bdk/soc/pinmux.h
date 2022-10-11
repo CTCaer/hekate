@@ -126,6 +126,8 @@
 #define PINMUX_DRIVE_3X     (2 << 13)
 #define PINMUX_DRIVE_4X     (3 << 13)
 
+#define PINMUX_PREEMP       BIT(15)
+
 void pinmux_config_uart(u32 idx);
 void pinmux_config_i2c(u32 idx);
 

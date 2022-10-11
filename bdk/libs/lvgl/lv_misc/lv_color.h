@@ -412,17 +412,17 @@ static inline uint8_t lv_color_brightness(lv_color_t color)
 #endif
 
 #if LV_COLOR_DEPTH == 32 // Concatenate into one 32-bit set. 
-#define LV_COLOR_HEX(c) ((lv_color_t){.full = (c | 0xFF000000)})
+#define LV_COLOR_HEX(c) ((lv_color_t){.full = ((c) | 0xFF000000)})
 #else
-#define LV_COLOR_HEX(c) LV_COLOR_MAKE(((uint32_t)((uint32_t)c >> 16) & 0xFF), \
-                                ((uint32_t)((uint32_t)c >> 8) & 0xFF), \
-                                ((uint32_t) c & 0xFF))
+#define LV_COLOR_HEX(c) LV_COLOR_MAKE(((uint32_t)((uint32_t)(c) >> 16) & 0xFF), \
+                                ((uint32_t)((uint32_t)(c) >> 8) & 0xFF), \
+                                ((uint32_t) (c) & 0xFF))
 #endif
 
 /*Usage LV_COLOR_HEX3(0x16C) which means LV_COLOR_HEX(0x1166CC)*/
-#define LV_COLOR_HEX3(c) LV_COLOR_MAKE((((c >> 4) & 0xF0) | ((c >> 8) & 0xF)),   \
-                                ((uint32_t)(c & 0xF0)       | ((c & 0xF0) >> 4)), \
-                                ((uint32_t)(c & 0xF)         | ((c & 0xF) << 4)))
+#define LV_COLOR_HEX3(c) LV_COLOR_MAKE(((((c) >> 4) & 0xF0) | (((c) >> 8) & 0xF)),   \
+                                ((uint32_t)((c) & 0xF0)       | (((c) & 0xF0) >> 4)), \
+                                ((uint32_t)((c) & 0xF)         | (((c) & 0xF) << 4)))
 
 
 /**

@@ -27,8 +27,10 @@
 #define DISPLAY_A_BASE 0x54200000
 #define DSI_BASE 0x54300000
 #define VIC_BASE 0x54340000
+#define NVDEC_BASE 0x54480000
 #define TSEC_BASE 0x54500000
 #define SOR1_BASE 0x54580000
+#define MSELECT_BASE 0x50060000
 #define ICTLR_BASE 0x60004000
 #define TMR_BASE 0x60005000
 #define CLOCK_BASE 0x60006000
@@ -71,6 +73,8 @@
 #define I2S_BASE 0x702D1000
 #define ADMA_BASE 0x702E2000
 #define TZRAM_BASE 0x7C010000
+#define  TZRAM_SIZE         0x10000
+#define  TZRAM_T210B01_SIZE 0x3C000
 #define USB_BASE 0x7D000000
 #define USB_OTG_BASE USB_BASE
 #define USB1_BASE 0x7D004000
@@ -82,8 +86,10 @@
 #define DISPLAY_A(off) _REG(DISPLAY_A_BASE, off)
 #define DSI(off) _REG(DSI_BASE, off)
 #define VIC(off) _REG(VIC_BASE, off)
+#define NVDEC(off) _REG(NVDEC_BASE, off)
 #define TSEC(off) _REG(TSEC_BASE, off)
 #define SOR1(off) _REG(SOR1_BASE, off)
+#define MSELECT(off) _REG(MSELECT_BASE, off)
 #define ICTLR(cidx, off) _REG(ICTLR_BASE + (0x100 * (cidx)), off)
 #define TMR(off) _REG(TMR_BASE, off)
 #define CLOCK(off) _REG(CLOCK_BASE, off)
@@ -130,91 +136,91 @@
 #define TEST_REG(off) _REG(0x0, off)
 
 /* HOST1X registers. */
-#define HOST1X_CH0_SYNC_BASE 0x2100
+#define HOST1X_CH0_SYNC_BASE       0x2100
 #define HOST1X_CH0_SYNC_SYNCPT_9   (HOST1X_CH0_SYNC_BASE + 0xFA4)
 #define HOST1X_CH0_SYNC_SYNCPT_160 (HOST1X_CH0_SYNC_BASE + 0x1200)
 
 /*! EVP registers. */
-#define EVP_CPU_RESET_VECTOR 0x100
-#define EVP_COP_RESET_VECTOR 0x200
-#define EVP_COP_UNDEF_VECTOR 0x204
-#define EVP_COP_SWI_VECTOR 0x208
+#define EVP_CPU_RESET_VECTOR          0x100
+#define EVP_COP_RESET_VECTOR          0x200
+#define EVP_COP_UNDEF_VECTOR          0x204
+#define EVP_COP_SWI_VECTOR            0x208
 #define EVP_COP_PREFETCH_ABORT_VECTOR 0x20C
-#define EVP_COP_DATA_ABORT_VECTOR 0x210
-#define EVP_COP_RSVD_VECTOR 0x214
-#define EVP_COP_IRQ_VECTOR 0x218
-#define EVP_COP_FIQ_VECTOR 0x21C
-#define EVP_COP_IRQ_STS 0x220
+#define EVP_COP_DATA_ABORT_VECTOR     0x210
+#define EVP_COP_RSVD_VECTOR           0x214
+#define EVP_COP_IRQ_VECTOR            0x218
+#define EVP_COP_FIQ_VECTOR            0x21C
+#define EVP_COP_IRQ_STS               0x220
 
 /*! Primary Interrupt Controller registers. */
-#define PRI_ICTLR_FIR 0x14
-#define PRI_ICTLR_FIR_SET 0x18
-#define PRI_ICTLR_FIR_CLR 0x1C
-#define PRI_ICTLR_CPU_IER 0x20
-#define PRI_ICTLR_CPU_IER_SET 0x24
-#define PRI_ICTLR_CPU_IER_CLR 0x28
+#define PRI_ICTLR_FIR           0x14
+#define PRI_ICTLR_FIR_SET       0x18
+#define PRI_ICTLR_FIR_CLR       0x1C
+#define PRI_ICTLR_CPU_IER       0x20
+#define PRI_ICTLR_CPU_IER_SET   0x24
+#define PRI_ICTLR_CPU_IER_CLR   0x28
 #define PRI_ICTLR_CPU_IEP_CLASS 0x2C
-#define PRI_ICTLR_COP_IER 0x30
-#define PRI_ICTLR_COP_IER_SET 0x34
-#define PRI_ICTLR_COP_IER_CLR 0x38
+#define PRI_ICTLR_COP_IER       0x30
+#define PRI_ICTLR_COP_IER_SET   0x34
+#define PRI_ICTLR_COP_IER_CLR   0x38
 #define PRI_ICTLR_COP_IEP_CLASS 0x3C
 
 /*! AHB Gizmo registers. */
-#define AHB_ARBITRATION_PRIORITY_CTRL 0x8
-#define  PRIORITY_CTRL_WEIGHT(x) (((x) & 7) << 29)
-#define  PRIORITY_SELECT_USB BIT(6)   // USB-OTG.
-#define  PRIORITY_SELECT_USB2 BIT(18) // USB-HSIC.
-#define  PRIORITY_SELECT_USB3 BIT(17) // XUSB.
-#define AHB_GIZMO_AHB_MEM 0x10
-#define  AHB_MEM_ENB_FAST_REARBITRATE BIT(2)
-#define  AHB_MEM_DONT_SPLIT_AHB_WR    BIT(7)
-#define  AHB_MEM_IMMEDIATE            BIT(18)
-#define AHB_GIZMO_APB_DMA 0x14
-#define AHB_GIZMO_USB 0x20
-#define AHB_GIZMO_SDMMC4 0x48
-#define AHB_GIZMO_USB2 0x7C
-#define AHB_GIZMO_USB3 0x80
-#define  AHB_GIZMO_IMMEDIATE BIT(18)
-#define AHB_ARBITRATION_XBAR_CTRL 0xE0
-#define AHB_AHB_MEM_PREFETCH_CFG3 0xE4
-#define AHB_AHB_MEM_PREFETCH_CFG4 0xE8
-#define AHB_AHB_MEM_PREFETCH_CFG1 0xF0
-#define AHB_AHB_MEM_PREFETCH_CFG2 0xF4
-#define  MST_ID(x) (((x) & 0x1F) << 26)
-#define  MEM_PREFETCH_AHBDMA_MST_ID MST_ID(5)
-#define  MEM_PREFETCH_USB_MST_ID MST_ID(6)   // USB-OTG.
-#define  MEM_PREFETCH_USB2_MST_ID MST_ID(18) // USB-HSIC.
-#define  MEM_PREFETCH_USB3_MST_ID MST_ID(17) // XUSB.
-#define  MEM_PREFETCH_ADDR_BNDRY(x) (((x) & 0xF) << 21)
-#define  MEM_PREFETCH_ENABLE BIT(31)
+#define AHB_ARBITRATION_PRIORITY_CTRL        0x8
+#define  PRIORITY_CTRL_WEIGHT(x)              (((x) & 7) << 29)
+#define  PRIORITY_SELECT_USB                  BIT(6)   // USB-OTG.
+#define  PRIORITY_SELECT_USB2                 BIT(18) // USB-HSIC.
+#define  PRIORITY_SELECT_USB3                 BIT(17) // XUSB.
+#define AHB_GIZMO_AHB_MEM                    0x10
+#define  AHB_MEM_ENB_FAST_REARBITRATE         BIT(2)
+#define  AHB_MEM_DONT_SPLIT_AHB_WR            BIT(7)
+#define  AHB_MEM_IMMEDIATE                    BIT(18)
+#define AHB_GIZMO_APB_DMA                    0x14
+#define AHB_GIZMO_USB                        0x20
+#define AHB_GIZMO_SDMMC4                     0x48
+#define AHB_GIZMO_USB2                       0x7C
+#define AHB_GIZMO_USB3                       0x80
+#define  AHB_GIZMO_IMMEDIATE                  BIT(18)
+#define AHB_ARBITRATION_XBAR_CTRL            0xE0
+#define AHB_AHB_MEM_PREFETCH_CFG3            0xE4
+#define AHB_AHB_MEM_PREFETCH_CFG4            0xE8
+#define AHB_AHB_MEM_PREFETCH_CFG1            0xF0
+#define AHB_AHB_MEM_PREFETCH_CFG2            0xF4
+#define  MST_ID(x)                            (((x) & 0x1F) << 26)
+#define  MEM_PREFETCH_AHBDMA_MST_ID           MST_ID(5)
+#define  MEM_PREFETCH_USB_MST_ID              MST_ID(6)  // USB-OTG.
+#define  MEM_PREFETCH_USB2_MST_ID             MST_ID(18) // USB-HSIC.
+#define  MEM_PREFETCH_USB3_MST_ID             MST_ID(17) // XUSB.
+#define  MEM_PREFETCH_ADDR_BNDRY(x)           (((x) & 0xF) << 21)
+#define  MEM_PREFETCH_ENABLE                  BIT(31)
 #define AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID 0xFC
-#define  MEM_WRQUE_SE_MST_ID BIT(14)
-#define AHB_AHB_SPARE_REG 0x110
+#define  MEM_WRQUE_SE_MST_ID                  BIT(14)
+#define AHB_AHB_SPARE_REG                    0x110
 
 /*! Misc registers. */
-#define APB_MISC_PP_STRAPPING_OPT_A 0x08
-#define APB_MISC_PP_PINMUX_GLOBAL 0x40
-#define APB_MISC_GP_HIDREV 0x804
-#define  GP_HIDREV_MAJOR_T210    0x1
-#define  GP_HIDREV_MAJOR_T210B01 0x2
-#define APB_MISC_GP_ASDBGREG 0x810
-#define APB_MISC_GP_AUD_MCLK_CFGPADCTRL 0x8F4
-#define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL 0xA34
-#define APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL 0xA98
-#define APB_MISC_GP_EMMC2_PAD_CFGPADCTRL 0xA9C
-#define APB_MISC_GP_EMMC4_PAD_CFGPADCTRL 0xAB4
+#define APB_MISC_PP_STRAPPING_OPT_A           0x8
+#define APB_MISC_PP_PINMUX_GLOBAL             0x40
+#define APB_MISC_GP_HIDREV                    0x804
+#define  GP_HIDREV_MAJOR_T210                  0x1
+#define  GP_HIDREV_MAJOR_T210B01               0x2
+#define APB_MISC_GP_ASDBGREG                  0x810
+#define APB_MISC_GP_AUD_MCLK_CFGPADCTRL       0x8F4
+#define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL     0xA34
+#define APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL     0xA98
+#define APB_MISC_GP_EMMC2_PAD_CFGPADCTRL      0xA9C
+#define APB_MISC_GP_EMMC4_PAD_CFGPADCTRL      0xAB4
 #define APB_MISC_GP_EMMC4_PAD_PUPD_CFGPADCTRL 0xABC
-#define APB_MISC_GP_DSI_PAD_CONTROL 0xAC0
-#define APB_MISC_GP_WIFI_EN_CFGPADCTRL 0xB64
-#define APB_MISC_GP_WIFI_RST_CFGPADCTRL 0xB68
+#define APB_MISC_GP_DSI_PAD_CONTROL           0xAC0
+#define APB_MISC_GP_WIFI_EN_CFGPADCTRL        0xB64
+#define APB_MISC_GP_WIFI_RST_CFGPADCTRL       0xB68
 
 /*! Secure boot registers. */
-#define SB_CSR 0x0
-#define  SB_CSR_NS_RST_VEC_WR_DIS    BIT(1)
-#define  SB_CSR_PIROM_DISABLE        BIT(4)
-#define SB_AA64_RESET_LOW  0x30
-#define  SB_AA64_RST_AARCH64_MODE_EN BIT(0)
-#define SB_AA64_RESET_HIGH 0x34
+#define SB_CSR                       0x0
+#define  SB_CSR_NS_RST_VEC_WR_DIS     BIT(1)
+#define  SB_CSR_PIROM_DISABLE         BIT(4)
+#define SB_AA64_RESET_LOW            0x30
+#define  SB_AA64_RST_AARCH64_MODE_EN  BIT(0)
+#define SB_AA64_RESET_HIGH           0x34
 
 /*! SOR registers. */
 #define SOR_NV_PDISP_SOR_DP_HDCP_BKSV_LSB   0x1E8
@@ -231,7 +237,7 @@
 #define SYSCTR0_CNTCR         0x00
 #define SYSCTR0_CNTFID0       0x20
 #define SYSCTR0_COUNTERS_BASE 0xFD0
-#define  SYSCTR0_COUNTERS     12
+#define  SYSCTR0_COUNTERS      12
 #define SYSCTR0_COUNTERID0    0xFE0
 #define SYSCTR0_COUNTERID1    0xFE4
 #define SYSCTR0_COUNTERID2    0xFE8
@@ -269,28 +275,42 @@
 #define  EMC_HEKA_UPD BIT(30)
 
 /*! Flow controller registers. */
-#define FLOW_CTLR_HALT_COP_EVENTS  0x4
-#define  HALT_COP_GIC_IRQ        BIT(9)
-#define  HALT_COP_LIC_IRQ        BIT(11)
-#define  HALT_COP_SEC            BIT(23)
-#define  HALT_COP_MSEC           BIT(24)
-#define  HALT_COP_USEC           BIT(25)
-#define  HALT_COP_JTAG           BIT(28)
-#define  HALT_COP_WAIT_EVENT     BIT(30)
-#define  HALT_COP_STOP_UNTIL_IRQ BIT(31)
-#define  HALT_COP_MAX_CNT        0xFF
-#define FLOW_CTLR_HALT_CPU0_EVENTS 0x0
-#define FLOW_CTLR_HALT_CPU1_EVENTS 0x14
-#define FLOW_CTLR_HALT_CPU2_EVENTS 0x1C
-#define FLOW_CTLR_HALT_CPU3_EVENTS 0x24
-#define FLOW_CTLR_CPU0_CSR 0x8
-#define FLOW_CTLR_CPU1_CSR 0x18
-#define FLOW_CTLR_CPU2_CSR 0x20
-#define FLOW_CTLR_CPU3_CSR 0x28
-#define FLOW_CTLR_RAM_REPAIR 0x40
-#define  RAM_REPAIR_REQ          BIT(0)
-#define  RAM_REPAIR_STS          BIT(1)
+#define FLOW_CTLR_HALT_COP_EVENTS      0x4
+#define  HALT_COP_GIC_IRQ               BIT(9)
+#define  HALT_COP_LIC_IRQ               BIT(11)
+#define  HALT_COP_SEC                   BIT(23)
+#define  HALT_COP_MSEC                  BIT(24)
+#define  HALT_COP_USEC                  BIT(25)
+#define  HALT_COP_JTAG                  BIT(28)
+#define  HALT_COP_WAIT_EVENT            BIT(30)
+#define  HALT_COP_STOP_UNTIL_IRQ        BIT(31)
+#define  HALT_COP_MAX_CNT               0xFF
+#define FLOW_CTLR_HALT_CPU0_EVENTS     0x0
+#define FLOW_CTLR_HALT_CPU1_EVENTS     0x14
+#define FLOW_CTLR_HALT_CPU2_EVENTS     0x1C
+#define FLOW_CTLR_HALT_CPU3_EVENTS     0x24
+#define FLOW_CTLR_CPU0_CSR             0x8
+#define FLOW_CTLR_CPU1_CSR             0x18
+#define FLOW_CTLR_CPU2_CSR             0x20
+#define FLOW_CTLR_CPU3_CSR             0x28
+#define FLOW_CTLR_RAM_REPAIR           0x40
+#define  RAM_REPAIR_REQ                 BIT(0)
+#define  RAM_REPAIR_STS                 BIT(1)
 #define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
-#define  CLUSTER_CTRL_ACTIVE_SLOW BIT(0)
+#define  CLUSTER_CTRL_ACTIVE_SLOW       BIT(0)
 
+/* MSelect registers */
+#define MSELECT_CONFIG 0x00
+#define  MSELECT_CFG_ERR_RESP_EN_PCIE  BIT(24)
+#define  MSELECT_CFG_ERR_RESP_EN_GPU   BIT(25)
+#define  MSELECT_CFG_WRAP_TO_INCR_BPMP BIT(27)
+#define  MSELECT_CFG_WRAP_TO_INCR_PCIE BIT(28)
+#define  MSELECT_CFG_WRAP_TO_INCR_GPU  BIT(29)
+
+/* NVDEC registers */
+#define NVDEC_SA_KEYSLOT_FALCON    0x2100
+#define NVDEC_SA_KEYSLOT_TZ        0x2104
+#define NVDEC_SA_KEYSLOT_OTF       0x210C
+#define NVDEC_SA_KEYSLOT_GLOBAL_RW 0x2118
+#define NVDEC_VPR_ALL_OTF_GOTO_VPR 0x211C
 #endif

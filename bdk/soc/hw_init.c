@@ -141,7 +141,7 @@ static void _config_gpios(bool nx_hoag)
 static void _config_pmc_scratch()
 {
 	PMC(APBDEV_PMC_SCRATCH20)  &= 0xFFF3FFFF; // Unset Debug console from Customer Option.
-	PMC(APBDEV_PMC_SCRATCH190) &= 0xFFFFFFFE; // Unset DATA_DQ_E_IVREF EMC_PMACRO_DATA_PAD_TX_CTRL
+	PMC(APBDEV_PMC_SCRATCH190) &= 0xFFFFFFFE; // Unset WDT_DURING_BR.
 	PMC(APBDEV_PMC_SECURE_SCRATCH21) |= PMC_FUSE_PRIVATEKEYDISABLE_TZ_STICKY_BIT;
 }
 
@@ -259,7 +259,7 @@ static void _config_se_brom()
 	// se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEYREAD_FLAG);
 
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
-	memset((void *)TZRAM_BASE, 0, SZ_64K);
+	memset((void *)TZRAM_BASE, 0, TZRAM_SIZE);
 	PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_ENABLE;
 	SE(SE_INT_STATUS_REG) = 0x1F; // Clear all SE interrupts.
 

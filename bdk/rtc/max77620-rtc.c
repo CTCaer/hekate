@@ -1,7 +1,7 @@
 /*
  * PMIC Real Time Clock driver for Nintendo Switch's MAX77620-RTC
  *
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2022 CTCaer
  * Copyright (c) 2019 shchmue
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -19,7 +19,14 @@
 
 #include <rtc/max77620-rtc.h>
 #include <soc/i2c.h>
-#include <utils/util.h>
+#include <soc/pmc.h>
+#include <soc/timer.h>
+#include <soc/t210.h>
+
+void max77620_rtc_prep_read()
+{
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_UPDATE0_REG, MAX77620_RTC_READ_UPDATE);
+}
 
 void max77620_rtc_get_time(rtc_time_t *time)
 {
@@ -64,6 +71,7 @@ void max77620_rtc_stop_alarm()
 
 	// Update RTC regs from RTC clock.
 	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_UPDATE0_REG, MAX77620_RTC_READ_UPDATE);
+	msleep(16);
 
 	// Stop alarm for both ALARM1 and ALARM2. Horizon uses ALARM2.
 	for (int i = 0; i < (MAX77620_RTC_NR_TIME_REGS * 2); i++)
