@@ -320,7 +320,6 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		cal0->battery_lot, cal0->battery_ver);
 
 	// Prepare display info.
-	u8  display_rev = (cal0->lcd_vendor >> 8) & 0xFF;
 	u32 display_id = (cal0->lcd_vendor & 0xFF) << 8 | (cal0->lcd_vendor & 0xFF0000) >> 16;
 	switch (display_id)
 	{
@@ -331,46 +330,19 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		strcat(txt_buf, "JDI LPM062M326A");
 		break;
 	case PANEL_INL_P062CCA_AZ1:
-		strcat(txt_buf, "InnoLux P062CCA-AZ");
-		switch (display_rev)
-		{
-		case 0x93:
-			strcat(txt_buf, "1");
-			break;
-		case 0x95:
-			strcat(txt_buf, "2");
-			break;
-		case 0x96:
-			strcat(txt_buf, "3");
-			break;
-		default:
-			strcat(txt_buf, "X");
-			break;
-		}
+		strcat(txt_buf, "InnoLux P062CCA-AZX");
 		break;
 	case PANEL_AUO_A062TAN01:
-		strcat(txt_buf, "AUO A062TAN0");
-		switch (display_rev)
-		{
-		case 0x93:
-			strcat(txt_buf, "0");
-			break;
-		case 0x94:
-			strcat(txt_buf, "1");
-			break;
-		case 0x95:
-			strcat(txt_buf, "2");
-			break;
-		default:
-			strcat(txt_buf, "X");
-			break;
-		}
+		strcat(txt_buf, "AUO A062TAN0X");
 		break;
 	case PANEL_INL_2J055IA_27A:
 		strcat(txt_buf, "InnoLux 2J055IA-27A");
 		break;
 	case PANEL_AUO_A055TAN01:
-		strcat(txt_buf, "AUO A055TAN01");
+		strcat(txt_buf, "AUO A055TAN0X");
+		break;
+	case PANEL_SHP_LQ055T1SW10:
+		strcat(txt_buf, "Sharp LQ055T1SW10");
 		break;
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
@@ -833,6 +805,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x96:
 			strcat(txt_buf, "-AZ3");
 			break;
+		case 0x97:
+			strcat(txt_buf, "-???");
+			break;
 		case 0x98:
 			strcat(txt_buf, "-???");
 			break;
@@ -842,17 +817,26 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		}
 		break;
 	case PANEL_AUO_A062TAN01:
-		strcat(txt_buf, "AUO A062");
+		strcat(txt_buf, "AUO A062TAN");
 		switch (display_rev)
 		{
 		case 0x93:
-			strcat(txt_buf, "TAN00");
+			strcat(txt_buf, "00");
 			break;
 		case 0x94:
-			strcat(txt_buf, "TAN01");
+			strcat(txt_buf, "01");
 			break;
 		case 0x95:
-			strcat(txt_buf, "TAN02");
+			strcat(txt_buf, "02");
+			break;
+		case 0x96:
+			strcat(txt_buf, "XX");
+			break;
+		case 0x97:
+			strcat(txt_buf, "XX");
+			break;
+		case 0x98:
+			strcat(txt_buf, "XX");
 			break;
 		default:
 			strcat(txt_buf, " #FFDD00 Contact me!#");
@@ -863,7 +847,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "InnoLux 2J055IA-27A");
 		break;
 	case PANEL_AUO_A055TAN01:
-		strcat(txt_buf, "AUO A055TAN01");
+		strcat(txt_buf, "AUO A055TAN");
+		s_printf(txt_buf + strlen(txt_buf), "%02d", display_rev - 0x92);
+		break;
+	case PANEL_SHP_LQ055T1SW10:
+		strcat(txt_buf, "Sharp LQ055T1SW10");
 		break;
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
