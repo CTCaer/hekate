@@ -22,25 +22,22 @@
 void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 {
 	// Lock Private key disable, Fuse write enable, MC carveout, Warmboot PA id and Warmboot address.
+
+	// Happens on T210B01 LP0 always.
 	if (lock_mask & PMC_SEC_LOCK_MISC)
 	{
 		PMC(APBDEV_PMC_SEC_DISABLE)  |= 0x700FF0;   // RW lock: 0-3.
 		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0xFC000000; // RW lock: 21-23.
 		PMC(APBDEV_PMC_SEC_DISABLE3) |= 0x3F0FFF00; // RW lock: 28-33, 36-38.
 		PMC(APBDEV_PMC_SEC_DISABLE6) |= 0xC000000;  // RW lock: 85.
-		PMC(APBDEV_PMC_SEC_DISABLE8) |= 0xFF00FF00; // RW lock: 108-111, 116-119.
-
-		// SE2 context.
-		if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01)
-		{
-			PMC(APBDEV_PMC_SEC_DISABLE9) |= 0x3FF;      // RW lock: 120-124. (0xB38)
-			PMC(APBDEV_PMC_SEC_DISABLE10) = 0xFFFFFFFF; // RW lock: 135-150.
-		}
+		// Default: 0xFF00FF00: RW lock: 108-111, 116-119. Gets locked in LP0.
+		PMC(APBDEV_PMC_SEC_DISABLE8) |= 0xFF005500; // W lock: 108-111, RW lock: 116-119.
  	}
 
+ 	// Happens on T210B01 LP0 always.
 	if (lock_mask & PMC_SEC_LOCK_LP0_PARAMS)
 	{
-		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x3FCFFFF;  // RW lock: 8-15, 17-20.
+		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x3FCFFFF;  // RW lock: 8-15, 17-20. L4T expects 8-15 as write locked only.
 		PMC(APBDEV_PMC_SEC_DISABLE4) |= 0x3F3FFFFF; // RW lock: 40-50, 52-54.
 		PMC(APBDEV_PMC_SEC_DISABLE5)  = 0xFFFFFFFF; // RW lock: 56-71.
 		PMC(APBDEV_PMC_SEC_DISABLE6) |= 0xF3FFC00F; // RW lock: 72-73, 79-84, 86-87.
@@ -60,6 +57,7 @@ void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 		PMC(APBDEV_PMC_SEC_DISABLE7) |= 0xFFC00000; // RW lock: 99-103.
 	}
 
+	// HOS specific.
 	if (lock_mask & PMC_SEC_LOCK_TZ_CMAC_W)
 		PMC(APBDEV_PMC_SEC_DISABLE8) |= 0x550000;   // W lock: 112-115.
 
@@ -71,9 +69,34 @@ void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 
 	if (lock_mask & PMC_SEC_LOCK_TZ_KEK_R)
 		PMC(APBDEV_PMC_SEC_DISABLE3) |= 0xAA;       // R lock: 24-27.
+	// End of HOS specific.
 
 	if (lock_mask & PMC_SEC_LOCK_SE_SRK)
 		PMC(APBDEV_PMC_SEC_DISABLE)  |= 0xFF000;    // RW lock: 4-7
+
+	if (lock_mask & PMC_SEC_LOCK_SE2_SRK_B01)
+		PMC(APBDEV_PMC_SEC_DISABLE9)  |= 0x3FC;     // RW lock: 120-123 (T210B01). LP0 also sets global bits (b0-1).
+
+	if (lock_mask & PMC_SEC_LOCK_MISC_B01)
+		PMC(APBDEV_PMC_SEC_DISABLE10) = 0xFFFFFFFF; // RW lock: 135-150. Happens on T210B01 LP0 always.
+
+	if (lock_mask & PMC_SEC_LOCK_CARVEOUTS_L4T)
+		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x5555;     // W: 8-15 LP0 and Carveouts. Superseded by LP0 lock.
+
+	// NVTBOOT misses APBDEV_PMC_SCRATCH_WRITE_LOCK_DISABLE_STICKY. bit0: SCRATCH_WR_DIS_ON.
+	// They could also use the NS write disable registers instead.
+	if (lock_mask & PMC_SEC_LOCK_LP0_PARAMS_B01)
+	{
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE0) |= 0xCBCFE0;   // W lock: 5-11, 14-17, 19, 22-23.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1) |= 0x583FF;    // W lock: 24-33, 39-40, 42.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE2) |= 0x1BE;      // W lock: 44-48, 50-51.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE3)  = 0xFFFFFFFF; // W lock: 56-87.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE4) |= 0xFFFFFFF;  // W lock: 88-115.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE5) |= 0xFFFFFFF8; // W lock: 123-151.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE6)  = 0xFFFFFFFF; // W lock: 152-183.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE7) |= 0xFC00FFFF; // W lock: 184-199, 210-215.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE8) |= 0xF;        // W lock: 216-219.
+	}
 }
 
 int pmc_enable_partition(pmc_power_rail_t part, u32 enable)
