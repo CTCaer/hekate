@@ -83,6 +83,45 @@ l4t_flasher_ctxt_t l4t_flash_ctxt;
 lv_obj_t *btn_flash_l4t;
 lv_obj_t *btn_flash_android;
 
+int _copy_file(const char *src, const char *dst, char *path)
+{
+	FIL fp_src;
+	FIL fp_dst;
+	int res;
+
+	// Open file for reading.
+	f_chdrive(src);
+	res = f_open(&fp_src, path, FA_READ);
+	if (res != FR_OK)
+		return res;
+
+	u32 file_bytes_left = f_size(&fp_src);
+
+	// Open file for writing.
+	f_chdrive(dst);
+	f_open(&fp_dst, path, FA_CREATE_ALWAYS | FA_WRITE);
+	f_lseek(&fp_dst, f_size(&fp_src));
+	f_lseek(&fp_dst, 0);
+
+	while (file_bytes_left)
+	{
+		u32 chunk_size = MIN(file_bytes_left, SZ_4M); // 4MB chunks.
+		file_bytes_left -= chunk_size;
+
+		// Copy file to buffer.
+		f_read(&fp_src, (void *)SDXC_BUF_ALIGNED, chunk_size, NULL);
+
+		// Write file to disk.
+		f_write(&fp_dst, (void *)SDXC_BUF_ALIGNED, chunk_size, NULL);
+	}
+
+	f_close(&fp_dst);
+	f_chdrive(src);
+	f_close(&fp_src);
+
+	return FR_OK;
+}
+
 static int _stat_and_copy_files(const char *src, const char *dst, char *path, u32 *total_files, u32 *total_size, lv_obj_t **labels)
 {
 	FRESULT res;
@@ -149,7 +188,7 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 
 			if (dst)
 			{
-				u32 file_size = fno.fsize;
+				u32 file_bytes_left = fno.fsize;
 
 				// Open file for writing.
 				f_chdrive(dst);
@@ -161,10 +200,10 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 				f_chdrive(src);
 				f_open(&fp_src, path, FA_READ);
 
-				while (file_size)
+				while (file_bytes_left)
 				{
-					u32 chunk_size = MIN(file_size, SZ_4M); // 4MB chunks.
-					file_size -= chunk_size;
+					u32 chunk_size = MIN(file_bytes_left, SZ_4M); // 4MB chunks.
+					file_bytes_left -= chunk_size;
 
 					// Copy file to buffer.
 					f_read(&fp_src, (void *)SDXC_BUF_ALIGNED, chunk_size, NULL);
@@ -173,7 +212,6 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 					// Write file to disk.
 					f_write(&fp_dst, (void *)SDXC_BUF_ALIGNED, chunk_size, NULL);
 				}
-				f_close(&fp_src);
 
 				// Finalize copied file.
 				f_close(&fp_dst);
@@ -181,6 +219,7 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 				f_chmod(path, fno.fattrib, 0xFF);
 
 				f_chdrive(src);
+				f_close(&fp_src);
 			}
 
 			// If total is > 1GB exit.
@@ -1299,6 +1338,7 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 	// Check if Mariko Warmboot Storage exists in source drive.
 	f_chdrive(src_drv);
 	bool backup_mws = !part_info.backup_possible && !f_stat("warmboot_mariko", NULL);
+	bool backup_pld = !part_info.backup_possible && !f_stat("payload.bin", NULL);
 
 	if (!part_info.backup_possible)
 	{
@@ -1315,11 +1355,20 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 	// Copy all or hekate/Nyx files.
 	res = _stat_and_copy_files(src_drv, dst_drv, path, &total_files, &total_size, labels);
 
-	// If incomplete backup mode, copy MWS also.
-	if (!res && backup_mws)
+	// If incomplete backup mode, copy MWS and payload.bin also.
+	if (!res)
 	{
-		strcpy(path, "warmboot_mariko");
-		res = _stat_and_copy_files(src_drv, dst_drv, path, &total_files, &total_size, labels);
+		if (backup_mws)
+		{
+			strcpy(path, "warmboot_mariko");
+			res = _stat_and_copy_files(src_drv, dst_drv, path, &total_files, &total_size, labels);
+		}
+
+		if (!res && backup_pld)
+		{
+			strcpy(path, "payload.bin");
+			res = _copy_file(src_drv, dst_drv, path);
+		}
 	}
 
 	free(path);
@@ -1973,7 +2022,7 @@ static void _create_mbox_check_files_total_size()
 	else
 	{
 		lv_mbox_set_text(mbox,
-			"#FFDD00 The SD Card cannot be backed up!#\n"
+			"#FFDD00 The SD Card cannot be backed up automatically!#\n"
 			"#FFDD00 Any other partition will be also wiped!#\n\n"
 			"You will be asked to back up your files later via UMS.");
 	}
