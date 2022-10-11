@@ -2163,7 +2163,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
 
 	max17050_get_property(MAX17050_DesignCap, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
+	bool design_cap_init = value == 1000;
+	s_printf(txt_buf + strlen(txt_buf), "%s%d mAh%s\n",
+		design_cap_init ? "#FF8000 " : "", value,  design_cap_init ? " - Init "SYMBOL_WARNING"#" : "");
 
 	max17050_get_property(MAX17050_Current, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
@@ -2174,7 +2176,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	max17050_get_property(MAX17050_VCELL, &value);
 	bool voltage_empty = value < 3200;
 	s_printf(txt_buf + strlen(txt_buf), "%s%d mV%s\n",
-		voltage_empty ? "#FF8000 " : "", value,  voltage_empty ? " "SYMBOL_WARNING"#" : "");
+		voltage_empty ? "#FF8000 " : "", value,  voltage_empty ? " - Low "SYMBOL_WARNING"#" : "");
 
 	max17050_get_property(MAX17050_OCVInternal, &value);
 	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
@@ -2208,7 +2210,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	{
 	case 0:
 		s_printf(txt_buf + strlen(txt_buf), "max77621 v%d",
-			i2c_recv_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_CHIPID1_REG));
+			i2c_recv_byte(I2C_5, MAX77621_CPU_I2C_ADDR, MAX77621_REG_CHIPID1));
 		break;
 	case 1:
 		s_printf(txt_buf + strlen(txt_buf), "max77812-2 v%d",   // High power GPU. 2 Outputs, phases 3 1.
