@@ -33,15 +33,15 @@ typedef struct _heap
 {
 	void *start;
 	hnode_t *first;
-    hnode_t *last;
+	hnode_t *last;
 } heap_t;
 
 typedef struct
 {
-    u32 total;
-    u32 used;
-    u32 nodes_total;
-    u32 nodes_used;
+	u32 total;
+	u32 used;
+	u32 nodes_total;
+	u32 nodes_used;
 } heap_monitor_t;
 
 void heap_init(void *base);
