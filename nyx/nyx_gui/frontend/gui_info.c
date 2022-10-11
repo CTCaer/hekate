@@ -470,15 +470,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		{
 		// LPDDR4 3200Mbps.
 		case LPDDR4_ICOSA_4GB_SAMSUNG_K4F6E304HB_MGCH:
-		case LPDDR4_COPPER_4GB_SAMSUNG_K4F6E304HB_MGCH:
 			strcpy(dram_man, "Samsung K4F6E304HB-MGCH 4GB");
 			break;
 		case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
-		case LPDDR4_COPPER_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
 			strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
 			break;
 		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
-		case LPDDR4_COPPER_4GB_MICRON_MT53B512M32D2NP_062_WT:
 			strcpy(dram_man, "Micron MT53B512M32D2NP-062 WT:C");
 			break;
 		case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
@@ -494,9 +491,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		switch (dram_id)
 		{
 		// LPDDR4X 3733Mbps.
-		case LPDDR4X_IOWA_4GB_SAMSUNG_X1X2:
-			strcpy(dram_man, "Samsung X1X2 4GB");
-			break;
 		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
 		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AM_MGCJ:
 			strcpy(dram_man, "Samsung K4U6E3S4AM-MGCJ 4GB");
@@ -515,9 +509,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 
 		// LPDDR4X 4266Mbps
-		case LPDDR4X_IOWA_4GB_SAMSUNG_Y:
-			strcpy(dram_man, "Samsung Y 4GB");
-			break;
 		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AA_MGCL:
 		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AA_MGCL:
 		case LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL:
@@ -544,7 +535,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEE 4GB");
 			break;
 		default:
-			strcpy(dram_man, "#FF8000 Unknown#");
+			strcpy(dram_man, "#FF8000 Contact me!#");
 			break;
 		}
 	}
