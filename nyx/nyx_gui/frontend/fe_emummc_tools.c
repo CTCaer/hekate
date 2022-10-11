@@ -51,16 +51,22 @@ void load_emummc_cfg(emummc_cfg_t *emu_info)
 		{
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
-				if (!strcmp("enabled", kv->key))
+				if (!strcmp("enabled",     kv->key))
 					emu_info->enabled = atoi(kv->val);
 				else if (!strcmp("sector", kv->key))
 					emu_info->sector = strtol(kv->val, NULL, 16);
-				else if (!strcmp("id", kv->key))
-					emu_info->id = strtol(kv->val, NULL, 16);
-				else if (!strcmp("path", kv->key))
-					emu_info->path = kv->val;
+				else if (!strcmp("id",     kv->key))
+					emu_info->id     = strtol(kv->val, NULL, 16);
+				else if (!strcmp("path",   kv->key))
+				{
+					emu_info->path = (char *)malloc(strlen(kv->val) + 1);
+					strcpy(emu_info->path, kv->val);
+				}
 				else if (!strcmp("nintendo_path", kv->key))
-					emu_info->nintendo_path = kv->val;
+				{
+					emu_info->nintendo_path = (char *)malloc(strlen(kv->val) + 1);
+					strcpy(emu_info->nintendo_path, kv->val);
+				}
 			}
 
 			break;

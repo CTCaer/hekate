@@ -34,6 +34,8 @@ extern volatile boot_cfg_t *b_cfg;
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
 
+lv_obj_t *ums_mbox;
+
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 static lv_obj_t *_create_container(lv_obj_t *parent)
@@ -498,6 +500,11 @@ static lv_res_t _action_ums_emuemmc_boot0(lv_obj_t *btn)
 				usbs.offset = emu_info.sector;
 			}
 		}
+
+		if (emu_info.path)
+			free(emu_info.path);
+		if (emu_info.nintendo_path)
+			free(emu_info.nintendo_path);
 	}
 	sd_unmount();
 
@@ -540,6 +547,11 @@ static lv_res_t _action_ums_emuemmc_boot1(lv_obj_t *btn)
 				usbs.offset = emu_info.sector + 0x2000;
 			}
 		}
+
+		if (emu_info.path)
+			free(emu_info.path);
+		if (emu_info.nintendo_path)
+			free(emu_info.nintendo_path);
 	}
 	sd_unmount();
 
@@ -592,6 +604,11 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 				}
 			}
 		}
+
+		if (emu_info.path)
+			free(emu_info.path);
+		if (emu_info.nintendo_path)
+			free(emu_info.nintendo_path);
 	}
 	sd_unmount();
 

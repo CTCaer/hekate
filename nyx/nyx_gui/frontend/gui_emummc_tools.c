@@ -1234,6 +1234,10 @@ lv_res_t create_win_emummc_tools(lv_obj_t *btn)
 		lv_label_set_static_text(label_txt2, "emuMMC is disabled and eMMC will be used for boot.\n\n");
 	}
 
+	if (emu_info.path)
+		free(emu_info.path);
+	if (emu_info.nintendo_path)
+		free(emu_info.nintendo_path);
 	free(txt_buf);
 
 	lv_obj_set_style(label_txt2, &hint_small_style);
