@@ -20,6 +20,7 @@
 #include <memory_map.h>
 
 #include <display/di.h>
+#include <display/vic.h>
 #include <input/als.h>
 #include <input/joycon.h>
 #include <input/touch.h>

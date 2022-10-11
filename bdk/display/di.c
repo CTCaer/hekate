@@ -867,6 +867,15 @@ u32 *display_init_framebuffer_pitch()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
+u32 *display_init_framebuffer_pitch_vic()
+{
+	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_vic, CFG_SIZE(_di_win_framebuffer_pitch_vic));
+	usleep(35000); // Wait 2 frames. No need on Aula.
+
+	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+}
+
 u32 *display_init_framebuffer_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).

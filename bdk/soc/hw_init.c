@@ -19,6 +19,7 @@
 
 #include <soc/hw_init.h>
 #include <display/di.h>
+#include <display/vic.h>
 #include <input/joycon.h>
 #include <input/touch.h>
 #include <sec/se.h>
@@ -174,8 +175,9 @@ static void _mbist_workaround()
 	I2S(I2S5_CTRL) |= I2S_CTRL_MASTER_EN;
 	I2S(I2S5_CG)   &= ~I2S_CG_SLCG_ENABLE;
 
+	// Set SLCG overrides.
 	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= 4; // DSC_SLCG_OVERRIDE.
-	VIC(0x8C) = 0xFFFFFFFF; // NV_PVIC_THI_CONFIG0.
+	VIC(VIC_THI_SLCG_OVERRIDE_LOW_A) = 0xFFFFFFFF;
 	usleep(2);
 
 	// Set per-clock reset for APE/VIC/HOST1X/DISP1.
@@ -421,7 +423,8 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 #ifdef BDK_HW_EXTRA_DEINIT
-	// Disable temperature sensor, touchscreen, 5V regulators and Joy-Con.
+	// Disable temperature sensor, touchscreen, 5V regulators, Joy-Con and VIC.
+	vic_end();
 	tmp451_end();
 	set_fan_duty(0);
 	touch_power_off();

@@ -77,6 +77,9 @@ static clock_t _clock_nvdec = {
 static clock_t _clock_nvjpg = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_NVJPG,       CLK_Y_NVJPG,       4, 0 // 408 MHz. Max: 627.2/652.8MHz.
 };
+static clock_t _clock_vic = {
+	CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_VIC,         CLK_X_VIC,         2, 0 // 408 MHz. Max: 627.2/652.8MHz.
+};
 static clock_t _clock_sor_safe = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_NO_SOURCE,                             CLK_Y_SOR_SAFE,    0, 0
 };
@@ -240,6 +243,16 @@ void clock_enable_nvjpg()
 void clock_disable_nvjpg()
 {
 	clock_disable(&_clock_nvjpg);
+}
+
+void clock_enable_vic()
+{
+	clock_enable(&_clock_vic);
+}
+
+void clock_disable_vic()
+{
+	clock_disable(&_clock_vic);
 }
 
 void clock_enable_sor_safe()

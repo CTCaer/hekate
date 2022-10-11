@@ -805,6 +805,7 @@ u32  display_get_backlight_brightness();
 
 /*! Init display in full 720x1280 resolution (B8G8R8A8, line stride 720, framebuffer size = 720*1280*4 bytes). */
 u32 *display_init_framebuffer_pitch();
+u32 *display_init_framebuffer_pitch_vic();
 u32 *display_init_framebuffer_pitch_inv();
 u32 *display_init_framebuffer_block();
 u32 *display_init_framebuffer_log();

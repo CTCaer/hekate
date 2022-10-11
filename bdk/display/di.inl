@@ -504,6 +504,32 @@ static const cfg_op_t _di_win_framebuffer_pitch[] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
 };
 
+// Display A Window A linear pitch + Win D support config.
+static const cfg_op_t _di_win_framebuffer_pitch_vic[] = {
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT | WINDOW_C_SELECT | WINDOW_B_SELECT},
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
+	{DC_WIN_WIN_OPTIONS, 0},
+	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
+	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8}, // NX Default: T_A8B8G8R8, WIN_COLOR_DEPTH_R8G8B8A8.
+	{DC_WIN_POSITION, 0}, //(0,0)
+	{DC_WIN_H_INITIAL_DDA, 0},
+	{DC_WIN_V_INITIAL_DDA, 0},
+	{DC_WIN_PRESCALED_SIZE, V_PRESCALED_SIZE(1280)  | H_PRESCALED_SIZE(720 * 4)},
+	{DC_WIN_DDA_INC,        V_DDA_INC(0x1000)       | H_DDA_INC(0x1000)}, // 1.0x.
+	{DC_WIN_SIZE,           V_SIZE(1280)            | H_SIZE(720)},
+	{DC_WIN_LINE_STRIDE,    UV_LINE_STRIDE(720 * 2) | LINE_STRIDE(720 * 4)}, // 720*2x720*4 (= 0x600 x 0xC00) bytes, see TRM for alignment requirements.
+	{DC_WIN_BUFFER_CONTROL, BUFFER_CONTROL_HOST},
+	{DC_WINBUF_SURFACE_KIND, PITCH},
+	{DC_WINBUF_START_ADDR, NYX_FB_ADDRESS}, // Framebuffer address.
+	{DC_WINBUF_ADDR_H_OFFSET, 0},
+	{DC_WINBUF_ADDR_V_OFFSET, 0},
+	{DC_WIN_WIN_OPTIONS, WIN_ENABLE}, // Enable window AD.
+	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY}, // Continuous display.
+	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE | WIN_A_UPDATE},
+	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ}
+};
+
 // Display A Window A linear pitch inverse + Win D support config.
 static const cfg_op_t _di_win_framebuffer_pitch_inv[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT | WINDOW_C_SELECT | WINDOW_B_SELECT},

@@ -156,6 +156,7 @@
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C6 0x65C
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL 0x664
 #define CLK_RST_CONTROLLER_CLK_SOURCE_UART_FST_MIPI_CAL 0x66C
+#define CLK_RST_CONTROLLER_CLK_SOURCE_VIC 0x678
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC_LEGACY_TM 0x694
 #define CLK_RST_CONTROLLER_CLK_SOURCE_NVDEC 0x698
 #define CLK_RST_CONTROLLER_CLK_SOURCE_NVJPG 0x69C
@@ -655,6 +656,8 @@ void clock_enable_nvdec();
 void clock_disable_nvdec();
 void clock_enable_nvjpg();
 void clock_disable_nvjpg();
+void clock_enable_vic();
+void clock_disable_vic();
 void clock_enable_sor_safe();
 void clock_disable_sor_safe();
 void clock_enable_sor0();
