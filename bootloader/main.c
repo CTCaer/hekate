@@ -129,7 +129,7 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
 	memcpy((u8 *)payload_src, (u8 *)IPL_LOAD_ADDR, PATCHED_RELOC_SZ);
 
-	volatile reloc_meta_t *relocator = (reloc_meta_t *)(payload_src + RELOC_META_OFF);
+	reloc_meta_t *relocator = (reloc_meta_t *)(payload_src + RELOC_META_OFF);
 
 	relocator->start = payload_dst - ALIGN(PATCHED_RELOC_SZ, 0x10);
 	relocator->stack = PATCHED_RELOC_STACK;
@@ -147,7 +147,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 {
 	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));
 
-	bool magic_valid = update_ft->magic == ipl_ver.magic;
+	bool magic_valid  = update_ft->magic == ipl_ver.magic;
 	bool force_update = force && !magic_valid;
 	bool is_valid_old = magic_valid && (byte_swap_32(update_ft->version) < byte_swap_32(ipl_ver.version));
 
@@ -160,7 +160,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 	if (force_update || is_valid_old)
 	{
 		FIL fp;
-		volatile reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
+		reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
 		boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
 		memset(tmp_cfg, 0, sizeof(boot_cfg_t));
 
