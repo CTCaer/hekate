@@ -85,6 +85,8 @@ u8   bit_count(u32 val);
 u32  bit_count_mask(u8 bits);
 char *strcpy_ns(char *dst, char *src);
 u64  sqrt64(u64 num);
+long strtol(const char *nptr, char **endptr, register int base);
+int  atoi(const char *nptr);
 
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops);
 u32  crc32_calc(u32 crc, const u8 *buf, u32 len);

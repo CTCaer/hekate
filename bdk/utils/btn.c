@@ -29,6 +29,7 @@ u8 btn_read()
 		res |= BTN_VOL_DOWN;
 	if (!gpio_read(GPIO_PORT_X, GPIO_PIN_6))
 		res |= BTN_VOL_UP;
+	// HOAG can use the GPIO. Icosa/Iowa/AULA cannot. Traces are there but they miss a resistor.
 	if (i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFSTAT) & MAX77620_ONOFFSTAT_EN0)
 		res |= BTN_POWER;
 	return res;
