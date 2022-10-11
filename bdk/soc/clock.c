@@ -60,22 +60,22 @@ static const clock_t _clock_i2c[] = {
 };
 
 static clock_t _clock_se = {
-	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,          CLK_V_SE,          0, 0 // 408MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,          CLK_V_SE,          0, 0 // 408MHz. Default: 408MHz. Max: 627.2 MHz.
 };
 static clock_t _clock_tzram = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_NO_SOURCE,                             CLK_V_TZRAM,       0, 0
 };
 static clock_t _clock_host1x = {
-	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X,      CLK_L_HOST1X,      4, 3 // 163.2MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X,      CLK_L_HOST1X,      4, 3 // 163.2MHz. Max: 408MHz.
 };
 static clock_t _clock_tsec = {
-	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC,        CLK_U_TSEC,        0, 2 // 204MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_U, CLK_RST_CONTROLLER_CLK_OUT_ENB_U, CLK_RST_CONTROLLER_CLK_SOURCE_TSEC,        CLK_U_TSEC,        0, 2 // 204MHz. Max: 408MHz.
 };
 static clock_t _clock_nvdec = {
-	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_NVDEC,       CLK_Y_NVDEC,       4, 0 // 408 MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_NVDEC,       CLK_Y_NVDEC,       4, 0 // 408 MHz. Max: 716.8/979.2MHz.
 };
 static clock_t _clock_nvjpg = {
-	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_NVJPG,       CLK_Y_NVJPG,       4, 0 // 408 MHz.
+	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_NVJPG,       CLK_Y_NVJPG,       4, 0 // 408 MHz. Max: 627.2/652.8MHz.
 };
 static clock_t _clock_sor_safe = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_NO_SOURCE,                             CLK_Y_SOR_SAFE,    0, 0
@@ -102,7 +102,7 @@ static clock_t _clock_sdmmc_legacy_tm = {
 	CLK_RST_CONTROLLER_RST_DEVICES_Y, CLK_RST_CONTROLLER_CLK_OUT_ENB_Y, CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC_LEGACY_TM, CLK_Y_SDMMC_LEGACY_TM, 4, 66
 };
 static clock_t _clock_apbdma = {
-	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                             CLK_H_APBDMA,      0, 0
+	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                             CLK_H_APBDMA,      0, 0 // Max: 204MHz.
 };
 static clock_t _clock_ahbdma = {
 	CLK_RST_CONTROLLER_RST_DEVICES_H, CLK_RST_CONTROLLER_CLK_OUT_ENB_H, CLK_NO_SOURCE,                             CLK_H_AHBDMA,      0, 0
@@ -434,7 +434,7 @@ void clock_enable_pllc(u32 divn)
 
 	// Take PLLC out of reset and set basic misc parameters.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) =
-		((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x80000 << 4); // PLLC_EXT_FRU.
+		((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x8000 << 4); // PLLC_EXT_FRU.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
 
 	// Disable PLL and IDDQ in case they are on.
@@ -540,9 +540,9 @@ void clock_enable_pllu()
 
 void clock_disable_pllu()
 {
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x2E00000;  // Disable PLLU USB/HSIC/ICUSB/48M.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x40000000; // Disable PLLU.
-	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) &= ~0x20000000; // Enable reference clock.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~0x2E00000; // Disable PLLU USB/HSIC/ICUSB/48M.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) &= ~BIT(30);   // Disable PLLU.
+	CLOCK(CLK_RST_CONTROLLER_PLLU_MISC) &= ~BIT(29);   // Enable reference clock.
 }
 
 void clock_enable_utmipll()
@@ -707,10 +707,6 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 val)
 		*pclock = 25500;
 		divisor = 30; // 16 div.
 		break;
-	case 40800:
-		*pclock = 40800;
-		divisor = 18; // 10 div.
-		break;
 	case 50000:
 		*pclock = 48000;
 		divisor = 15; // 8.5 div.
@@ -718,6 +714,10 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 val)
 	case 52000:
 		*pclock = 51000;
 		divisor = 14; // 8 div.
+		break;
+	case 81600: // Originally MMC_HS50 for GC FPGA at 40800 KHz, div 18 (real 10).
+		*pclock = 81600;
+		divisor = 8; // 5 div.
 		break;
 	case 100000:
 		source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
@@ -846,10 +846,10 @@ void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type)
 		*pdivisor = 1;
 		break;
 	case SDHCI_TIMING_UHS_DDR50:
-		*pclock = 40800;
-		*pdivisor = 1;
+		*pclock = 81600; // Originally MMC_HS50 for GC FPGA at 40800 KHz, div 1.
+		*pdivisor = 2;
 		break;
-	case SDHCI_TIMING_MMC_HS102: // Actual IO Freq: 99.84 MHz.
+	case SDHCI_TIMING_MMC_DDR100: // Actual IO Freq: 99.84 MHz.
 		*pclock = 200000;
 		*pdivisor = 2;
 		break;

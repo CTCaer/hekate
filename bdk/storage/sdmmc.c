@@ -1099,6 +1099,7 @@ DPRINTF("[SD] bus speed set to SDR50\n");
 			storage->csd.busspeed = 50;
 			break;
 		}
+/*
 	case SDHCI_TIMING_UHS_SDR25:
 		if (access_mode & SD_MODE_UHS_SDR25)
 		{
@@ -1108,6 +1109,7 @@ DPRINTF("[SD] bus speed set to SDR25\n");
 			storage->csd.busspeed = 25;
 			break;
 		}
+*/
 	case SDHCI_TIMING_UHS_SDR12:
 		if (!(access_mode & SD_MODE_UHS_SDR12))
 			return 0;
@@ -1504,13 +1506,13 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS102, SDMMC_POWER_SAVE_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_DDR100, SDMMC_POWER_SAVE_DISABLE))
 		return 0;
 DPRINTF("[gc] after init\n");
 
 	usleep(1000 + (10000 + sdmmc->divisor - 1) / sdmmc->divisor);
 
-	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_HS102, MMC_SEND_TUNING_BLOCK_HS200))
+	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_DDR100, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
 DPRINTF("[gc] after tuning\n");
 

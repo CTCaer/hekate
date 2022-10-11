@@ -116,7 +116,7 @@ void sdmmc_save_tap_value(sdmmc_t *sdmmc)
 static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 {
 	const u32 dqs_trim_val = 0x28;
-	const u32 tap_values_t210[] = { 4, 0, 3, 0 };
+	const u8  tap_values_t210[4] = { 4, 0, 3, 0 };
 
 	u32 tap_val = 0;
 
@@ -339,7 +339,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 	case SDHCI_TIMING_UHS_DDR50:
-	case SDHCI_TIMING_MMC_HS102:
+	case SDHCI_TIMING_MMC_DDR100:
 		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR104_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
@@ -687,7 +687,7 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 
 	case SDHCI_TIMING_UHS_SDR50:
 	case SDHCI_TIMING_UHS_DDR50:
-	case SDHCI_TIMING_MMC_HS102:
+	case SDHCI_TIMING_MMC_DDR100:
 		max = 256;
 		flag = (4 << 13); // 256 iterations.
 		break;
@@ -1253,9 +1253,9 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	u16 divisor;
 	u8 vref_sel = 7;
 
-	const u32 trim_values_t210[] = { 2, 8, 3, 8 };
-	const u32 trim_values_t210b01[] = { 14, 13, 15, 13 };
-	const u32 *trim_values;
+	const u8 trim_values_t210[4] = { 2, 8, 3, 8 };
+	const u8 trim_values_t210b01[4] = { 14, 13, 15, 13 };
+	const u8 *trim_values;
 
 	if (id > SDMMC_4 || id == SDMMC_3)
 		return 0;
@@ -1306,7 +1306,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 	// Set default pad IO trimming configuration.
 	sdmmc->regs->iospare |= 0x80000; // Enable muxing.
 	sdmmc->regs->veniotrimctl &= 0xFFFFFFFB; // Set Band Gap VREG to supply DLL.
-	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xE0FFFFFB) | (trim_values[sdmmc->id] << 24);
+	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xE0FFFFFB) | ((u32)trim_values[sdmmc->id] << 24);
 	sdmmc->regs->sdmemcmppadctl =
 		(sdmmc->regs->sdmemcmppadctl & TEGRA_MMC_SDMEMCOMPPADCTRL_COMP_VREF_SEL_MASK) | vref_sel;
 
