@@ -474,7 +474,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 out_failed:
 	timer = get_tmr_s() - timer;
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	if (res)
 	{
@@ -864,7 +864,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 	{
 		s_printf(gui->txt_buf, "#FFDD00 For formatting USER partition,#\n#FFDD00 BIS keys are needed!#\n");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
-		sdmmc_storage_end(&emmc_storage);
+		emmc_end();
 		goto out;
 	}
 
@@ -952,7 +952,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 
 out_failed:
 	timer = get_tmr_s() - timer;
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	if (res)
 	{

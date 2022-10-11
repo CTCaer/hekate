@@ -55,14 +55,14 @@ void emummc_load_cfg()
 
 				LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 				{
-					if (!strcmp("enabled", kv->key))
+					if (!strcmp("enabled",            kv->key))
 						emu_cfg.enabled = atoi(kv->val);
-					else if (!strcmp("sector", kv->key))
-						emu_cfg.sector = strtol(kv->val, NULL, 16);
-					else if (!strcmp("id", kv->key))
-						emu_cfg.id = strtol(kv->val, NULL, 16);
-					else if (!strcmp("path", kv->key))
-						emu_cfg.path = kv->val;
+					else if (!strcmp("sector",        kv->key))
+						emu_cfg.sector  = strtol(kv->val, NULL, 16);
+					else if (!strcmp("id",            kv->key))
+						emu_cfg.id      = strtol(kv->val, NULL, 16);
+					else if (!strcmp("path",          kv->key))
+						emu_cfg.path   = kv->val;
 					else if (!strcmp("nintendo_path", kv->key))
 						strcpy(emu_cfg.nintendo_path, kv->val);
 				}
@@ -177,7 +177,7 @@ out:
 int emummc_storage_end()
 {
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
-		sdmmc_storage_end(&emmc_storage);
+		emmc_end();
 	else
 		sd_end();
 

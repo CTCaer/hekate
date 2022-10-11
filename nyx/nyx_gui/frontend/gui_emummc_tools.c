@@ -221,7 +221,7 @@ static void _create_mbox_emummc_raw()
 
 	u32 emmc_size_safe = emmc_storage.sec_cnt + 0xC000; // eMMC GPP size + BOOT0/1.
 
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	for (int i = 1; i < 4; i++)
 	{
@@ -838,7 +838,7 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	backup = backup && rawnand_backup;
 
 	sd_unmount();
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	// Check available types and enable the corresponding buttons.
 	if (backup)

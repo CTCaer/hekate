@@ -557,7 +557,7 @@ static void _dump_emmc_selected(emmcPartType_t dumpType)
 	gfx_putc('\n');
 	timer = get_tmr_s() - timer;
 	gfx_printf("Time taken: %dm %ds.\n", timer / 60, timer % 60);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 	if (res)
 		gfx_printf("\n%kFinished and verified!%k\nPress any key...\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 
@@ -892,7 +892,7 @@ static void _restore_emmc_selected(emmcPartType_t restoreType)
 	gfx_putc('\n');
 	timer = get_tmr_s() - timer;
 	gfx_printf("Time taken: %dm %ds.\n", timer / 60, timer % 60);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 	if (res)
 		gfx_printf("\n%kFinished and verified!%k\nPress any key...\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 

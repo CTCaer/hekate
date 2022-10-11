@@ -239,7 +239,7 @@ void print_mmc_info()
 	}
 
 out:
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	btn_wait();
 }

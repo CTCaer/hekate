@@ -376,7 +376,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 out:
 	free(txt_buf);
 	sd_unmount();
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, _cal0_dump_window_action);
 
@@ -1132,7 +1132,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	}
 
 	int res = sdmmc_storage_vendor_sandisk_report(&emmc_storage, buf);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	if (!res)
 	{
@@ -1516,7 +1516,7 @@ error:
 	if (sd_bench)
 		sd_unmount();
 	else
-		sdmmc_storage_end(&emmc_storage);
+		emmc_end();
 
 out:
 	free(txt_buf);
@@ -1789,7 +1789,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	}
 
 out:
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 	free(txt_buf);
 
 	return LV_RES_OK;

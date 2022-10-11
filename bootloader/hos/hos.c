@@ -1067,7 +1067,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Unmount SD card and eMMC.
 	sd_end();
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 
@@ -1176,7 +1176,7 @@ int hos_launch(ini_sec_t *cfg)
 		bpmp_halt();
 
 error:
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	return 0;
 }

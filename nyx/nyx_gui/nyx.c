@@ -63,7 +63,7 @@ char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_
 		else
 		{
 			itoa(emmc_storage.cid.serial, emmc_sn, 16);
-			sdmmc_storage_end(&emmc_storage);
+			emmc_end();
 		}
 	}
 	else

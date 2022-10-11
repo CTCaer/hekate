@@ -124,7 +124,7 @@ bool get_autorcm_status(bool toggle)
 
 out:
 	free(tempbuf);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	return enabled;
 }
@@ -1422,7 +1422,7 @@ out_free:
 	free(loader);
 	free(pkg2);
 	free(txt_buf);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 	sd_unmount();
 
 	if (kb >= KB_FIRMWARE_VERSION_620)

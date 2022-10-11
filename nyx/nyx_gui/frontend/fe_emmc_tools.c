@@ -912,7 +912,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	}
 
 	timer = get_tmr_s() - timer;
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	if (res && n_cfg.verification && !gui->raw_emummc)
 		s_printf(txt_buf, "Time taken: %dm %ds.\n#96FF00 Finished and verified!#", timer / 60, timer % 60);
@@ -1536,7 +1536,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	}
 
 	timer = get_tmr_s() - timer;
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	if (res && n_cfg.verification && !gui->raw_emummc)
 		s_printf(txt_buf, "Time taken: %dm %ds.\n#96FF00 Finished and verified!#", timer / 60, timer % 60);

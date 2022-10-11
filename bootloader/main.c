@@ -80,7 +80,7 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 	memcpy(path + strlen(path), filename, filename_len + 1);
 
 	if (init_done)
-		sdmmc_storage_end(&emmc_storage);
+		emmc_end();
 }
 
 void render_default_bootlogo()

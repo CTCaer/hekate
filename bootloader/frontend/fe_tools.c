@@ -233,7 +233,7 @@ out_free:
 	free(warmboot);
 	free(loader);
 	free(pkg2);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 	sd_end();
 
 	if (kb >= KB_FIRMWARE_VERSION_620)
@@ -280,7 +280,7 @@ void _toggle_autorcm(bool enable)
 	}
 
 	free(tempbuf);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	if (enable)
 		gfx_printf("%kAutoRCM mode enabled!%k",  TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
@@ -333,7 +333,7 @@ void menu_autorcm()
 			disabled = false;
 
 	free(tempbuf);
-	sdmmc_storage_end(&emmc_storage);
+	emmc_end();
 
 	// Create AutoRCM menu.
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
