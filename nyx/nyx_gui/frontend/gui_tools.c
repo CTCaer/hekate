@@ -135,7 +135,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char * mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -175,8 +175,8 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\262Close", "\211", "" };
-	static const char *mbox_btn_map2[] = { "\211", "\222Close", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\262Close", "\251", "" };
+	static const char *mbox_btn_map2[] = { "\251", "\222Close", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -220,8 +220,8 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\262Close", "\211", "" };
-	static const char *mbox_btn_map2[] = { "\211", "\222Close", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\262Close", "\251", "" };
+	static const char *mbox_btn_map2[] = { "\251", "\222Close", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -322,7 +322,7 @@ static lv_res_t _create_mbox_ums_error(int error)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -988,7 +988,7 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 

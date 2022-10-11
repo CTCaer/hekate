@@ -770,7 +770,7 @@ bool nyx_emmc_check_battery_enough()
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-		static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+		static const char * mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 		lv_mbox_set_recolor_text(mbox, true);
 
@@ -797,7 +797,7 @@ static void _nyx_sd_card_issues(void *param)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char * mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -998,7 +998,7 @@ static void _nyx_emmc_issues(void *params)
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-		static const char * mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+		static const char * mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 		lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 		lv_mbox_set_recolor_text(mbox, true);
 
@@ -1357,7 +1357,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char * mbox_btn_map[] = { "\211", "\222Cancel", "\211", "" };
+	static const char * mbox_btn_map[] = { "\251", "\222Cancel", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES * 5 / 9);
@@ -2014,7 +2014,7 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 
 static lv_res_t _save_options_action(lv_obj_t *btn)
 {
-	static const char * mbox_btn_map[] = {"\211", "\222OK!", "\211", ""};
+	static const char * mbox_btn_map[] = {"\251", "\222OK!", "\251", ""};
 	lv_obj_t * mbox = lv_mbox_create(lv_scr_act(), NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 

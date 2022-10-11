@@ -388,7 +388,7 @@ static void _create_emummc_migrated_mbox()
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 4);
@@ -680,7 +680,7 @@ static lv_res_t _create_emummc_migrate_action(lv_obj_t * btns, const char * txt)
 
 	static const char *mbox_btn_map[] = { "\222Continue", "\222Cancel", "" };
 	static const char *mbox_btn_map1[] = { "\222SD File", "\222SD Partition", "\222Cancel", "" };
-	static const char *mbox_btn_map3[] = { "\211", "OK", "\211", "" };
+	static const char *mbox_btn_map3[] = { "\251", "OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
@@ -889,7 +889,7 @@ static void _create_emummc_saved_mbox()
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 4);

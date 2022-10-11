@@ -515,7 +515,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	static const char *mbox_btn_map2[] = { "\223Delete Installation Files", "\221OK", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
@@ -783,7 +783,7 @@ static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	static const char *mbox_btn_map2[] = { "\222Continue", "\222Cancel", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
@@ -943,7 +943,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	static const char *mbox_btn_map2[] = { "\222Continue", "\222No", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
@@ -1327,7 +1327,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] =  { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] =  { "\251", "\222OK", "\251", "" };
 	static const char *mbox_btn_map1[] = { "\222SD UMS", "\222Flash Linux", "\222Flash Android", "\221OK", "" };
 	static const char *mbox_btn_map2[] = { "\222SD UMS", "\222Flash Linux", "\221OK", "" };
 	static const char *mbox_btn_map3[] = { "\222SD UMS", "\222Flash Android", "\221OK", "" };
@@ -1933,7 +1933,7 @@ static void _create_mbox_check_files_total_size()
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	static const char *mbox_btn_map2[] = { "\222Don't Backup", "\222OK", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
@@ -2080,7 +2080,7 @@ static lv_res_t _action_fix_mbr(lv_obj_t *btn)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\211", "\222OK", "\211", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 

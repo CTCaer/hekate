@@ -30,18 +30,18 @@ typedef struct _emmc_tool_gui_t
 	lv_style_t *bar_teal_ind;
 	lv_style_t *bar_white_ind;
 	char *txt_buf;
- 	char *base_path;
+	char *base_path;
 	bool raw_emummc;
 } emmc_tool_gui_t;
 
 typedef struct _gui_status_bar_ctx
 {
-    lv_obj_t *mid;
-    lv_obj_t *time_temp;
-    lv_obj_t *temp_symbol;
-    lv_obj_t *temp_degrees;
-    lv_obj_t *battery;
-    lv_obj_t *battery_more;
+	lv_obj_t *mid;
+	lv_obj_t *time_temp;
+	lv_obj_t *temp_symbol;
+	lv_obj_t *temp_degrees;
+	lv_obj_t *battery;
+	lv_obj_t *battery_more;
 } gui_status_bar_ctx;
 
 extern lv_style_t hint_small_style;
