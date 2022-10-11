@@ -98,17 +98,14 @@ void check_power_off_from_hos()
 	u8 hosWakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
 	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
-		// Stop the alarm, in case we injected too fast.
-		max77620_rtc_stop_alarm();
-
 		if (h_cfg.autohosoff == 1)
 		{
 			render_default_bootlogo();
 
-			display_backlight_brightness(10, 5000);
+			display_backlight_brightness(10,  5000);
 			display_backlight_brightness(100, 25000);
 			msleep(600);
-			display_backlight_brightness(0, 20000);
+			display_backlight_brightness(0,   20000);
 		}
 		power_set_state(POWER_OFF_RESET);
 	}
