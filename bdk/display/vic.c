@@ -536,8 +536,14 @@ int vic_compose()
 
 int vic_init()
 {
+	// Ease the stress to APB.
+	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+
 	clock_enable_host1x();
 	clock_enable_vic();
+
+	// Restore sys clock.
+	bpmp_clk_rate_set(prev_fid);
 
 	// Load Fetch Control Engine microcode.
 	for (u32 i = 0; i < sizeof(vic_fce_ucode) / sizeof(u32); i++)
