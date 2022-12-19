@@ -350,7 +350,7 @@ failed_sd_mount:
 static void _launch_ini_list()
 {
 	u8 max_entries = 61;
-	char *payload_path = NULL;
+	char *special_path = NULL;
 	char *emummc_path  = NULL;
 	ini_sec_t *cfg_sec = NULL;
 
@@ -404,9 +404,9 @@ static void _launch_ini_list()
 
 		cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
 
-		payload_path = ini_check_payload_section(cfg_sec);
+		special_path = ini_check_special_section(cfg_sec);
 
-		if (cfg_sec && !payload_path)
+		if (cfg_sec && !special_path)
 		{
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 			{
@@ -438,10 +438,11 @@ parse_failed:
 	if (!cfg_sec)
 		goto out;
 
-	if (payload_path)
+	if (special_path)
 	{
-		// Try to launch Payload.
-		_launch_payload(payload_path, false, true);
+		// Try to launch Payload or L4T.
+		if (special_path != (char *)-1)
+			_launch_payload(special_path, false, true);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -461,7 +462,7 @@ out:
 static void _launch_config()
 {
 	u8 max_entries = 61;
-	char *payload_path = NULL;
+	char *special_path = NULL;
 	char *emummc_path = NULL;
 
 	ini_sec_t *cfg_sec = NULL;
@@ -534,9 +535,9 @@ static void _launch_config()
 
 	cfg_sec = (ini_sec_t *)tui_do_menu(&menu);
 
-	payload_path = ini_check_payload_section(cfg_sec);
+	special_path = ini_check_special_section(cfg_sec);
 
-	if (cfg_sec && !payload_path)
+	if (cfg_sec && !special_path)
 	{
 		LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
 		{
@@ -569,10 +570,11 @@ parse_failed:
 		goto out;
 	}
 
-	if (payload_path)
+	if (special_path)
 	{
-		// Try to launch Payload.
-		_launch_payload(payload_path, false, true);
+		// Try to launch Payload or L4T.
+		if (special_path != (char *)-1)
+			_launch_payload(special_path, false, true);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -884,6 +886,9 @@ skip_list:
 	if (!cfg_sec)
 		goto out; // No configurations or auto boot is disabled.
 
+	// Check if entry is payload or l4t special case.
+	char *special_path = ini_check_special_section(cfg_sec);
+
 	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
 	{
 		u32 fsize;
@@ -962,12 +967,11 @@ skip_list:
 	else if (btn_read_vol() == BTN_VOL_DOWN) // 0s bootwait VOL- check.
 		goto out;
 
-	char *payload_path = ini_check_payload_section(cfg_sec);
-
-	if (payload_path)
+	if (special_path)
 	{
-		// Try to launch Payload.
-		_launch_payload(payload_path, false, false);
+		// Try to launch Payload or L4T.
+		if (special_path != (char *)-1)
+			_launch_payload(special_path, false, false);
 		goto error;
 	}
 	else
