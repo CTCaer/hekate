@@ -710,16 +710,18 @@
 #define DCS_CONTROL_DISPLAY_DIMMING_CTRL    BIT(3)
 #define DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL BIT(5)
 
-#define DCS_SM_COLOR_MODE_DEFAULT   0x00 // Same with vivid.
+#define DCS_SM_COLOR_MODE_DEFAULT   0x00 // Similar to vivid.
+#define DCS_SM_COLOR_MODE_WASHED    0x45
 #define DCS_SM_COLOR_MODE_BASIC     0x03
 #define DCS_SM_COLOR_MODE_POR_RESET 0x20 // Reset value on power on.
-#define DCS_SM_COLOR_MODE_NATURAL   0x23
+#define DCS_SM_COLOR_MODE_NATURAL   0x23 // Not actually natural..
 #define DCS_SM_COLOR_MODE_VIVID     0x65
-#define DCS_SM_COLOR_MODE_NIGHT     0x43 // Natural with Night mode.
+#define DCS_SM_COLOR_MODE_NIGHT0    0x43 // Based on washed out.
+#define DCS_SM_COLOR_MODE_NIGHT1    0x15
+#define DCS_SM_COLOR_MODE_NIGHT2    0x35
+#define DCS_SM_COLOR_MODE_NIGHT3    0x75
 
-#define DCS_SM_COLOR_MODE_ENABLE     BIT(0)
-#define DCS_SM_COLOR_MODE_COLOR_MASK (7 << 1)
-//#define DCS_SM_COLOR_MODE_NIGHT      BIT(6)
+#define DCS_SM_COLOR_MODE_ENABLE    BIT(0)
 
 #define PANEL_SM_BL_CANDELA_MAX 2047
 

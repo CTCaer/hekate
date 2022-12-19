@@ -812,6 +812,9 @@ skip_panel_deinit:
 		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
 		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = PINMUX_TRISTATE | PINMUX_PULL_DOWN | 1; // Set PWM0 mode.
 	}
+
+	// Disable LCD DVDD.
+	max7762x_regulator_enable(REGULATOR_LDO0, false);
 }
 
 void display_end() { _display_panel_and_hw_end(false); };
