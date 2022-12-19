@@ -410,12 +410,12 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	strcpy(gui->base_path, sdPath);
 
 	timer = get_tmr_s();
-	const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
+	const u32 BOOT_PART_SECTORS = 0x2000; // Force 4 MiB.
 
 	emmc_part_t bootPart;
 	memset(&bootPart, 0, sizeof(bootPart));
 	bootPart.lba_start = 0;
-	bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+	bootPart.lba_end = BOOT_PART_SECTORS - 1;
 
 	for (i = 0; i < 2; i++)
 	{
@@ -884,12 +884,12 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 	strcpy(gui->base_path, sdPath);
 
 	timer = get_tmr_s();
-	const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
+	const u32 BOOT_PART_SECTORS = 0x2000; // Force 4 MiB.
 
 	emmc_part_t bootPart;
 	memset(&bootPart, 0, sizeof(bootPart));
 	bootPart.lba_start = 0;
-	bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+	bootPart.lba_end = BOOT_PART_SECTORS - 1;
 
 	// Clear partition start.
 	memset((u8 *)MIXD_BUF_ALIGNED, 0, SZ_16M);

@@ -789,11 +789,15 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	if (dumpType & PART_BOOT)
 	{
 		const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
+		const u32 BOOT_PART_SECTORS = 0x2000; // Force 4 MiB for emuMMC.
 
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
-		bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+		if (!gui->raw_emummc)
+			bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+		else
+			bootPart.lba_end = BOOT_PART_SECTORS - 1;
 		for (i = 0; i < 2; i++)
 		{
 			strcpy(bootPart.name, "BOOT");
@@ -1436,11 +1440,15 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	if (restoreType & PART_BOOT)
 	{
 		const u32 BOOT_PART_SIZE = emmc_storage.ext_csd.boot_mult << 17;
+		const u32 BOOT_PART_SECTORS = 0x2000; // Force 4 MiB for emuMMC.
 
 		emmc_part_t bootPart;
 		memset(&bootPart, 0, sizeof(bootPart));
 		bootPart.lba_start = 0;
-		bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+		if (!gui->raw_emummc)
+			bootPart.lba_end = (BOOT_PART_SIZE / EMMC_BLOCKSIZE) - 1;
+		else
+			bootPart.lba_end = BOOT_PART_SECTORS - 1;
 		for (i = 0; i < 2; i++)
 		{
 			strcpy(bootPart.name, "BOOT");
