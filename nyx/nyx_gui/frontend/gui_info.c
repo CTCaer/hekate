@@ -534,6 +534,19 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEE 4GB");
 			break;
+
+		case LPDDR4X_UNK0_4GB_HYNIX_1A:
+		case LPDDR4X_UNK1_4GB_HYNIX_1A:
+		case LPDDR4X_UNK2_4GB_HYNIX_1A:
+			strcpy(dram_man, "Hynix 1a 4GB #FF8000 Contact me!#");
+			break;
+
+		case LPDDR4X_UNK0_4GB_MICRON_1A:
+		case LPDDR4X_UNK1_4GB_MICRON_1A:
+		case LPDDR4X_UNK2_4GB_MICRON_1A:
+			strcpy(dram_man, "Micron 1a 4GB #FF8000 Contact me!#");
+			break;
+
 		default:
 			strcpy(dram_man, "#FF8000 Contact me!#");
 			break;
