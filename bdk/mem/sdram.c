@@ -76,12 +76,12 @@ static const u8 dram_encoding_t210b01[] = {
 /* 26 */	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF,
 /* 27 */	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF,
 /* 28 */	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL,
-/* 29 */	LPDDR4X_4GB_NEW0,
-/* 30 */	LPDDR4X_4GB_NEW0,
-/* 31 */	LPDDR4X_4GB_NEW0,
-/* 32 */	LPDDR4X_4GB_NEW1,
-/* 33 */	LPDDR4X_4GB_NEW1,
-/* 34 */	LPDDR4X_4GB_NEW1,
+/* 29 */	LPDDR4X_4GB_HYNIX_1A,
+/* 30 */	LPDDR4X_4GB_HYNIX_1A,
+/* 31 */	LPDDR4X_4GB_HYNIX_1A,
+/* 32 */	LPDDR4X_4GB_MICRON_1A,
+/* 33 */	LPDDR4X_4GB_MICRON_1A,
+/* 34 */	LPDDR4X_4GB_MICRON_1A,
 };
 
 #include "sdram_config.inl"
@@ -1482,7 +1482,7 @@ static void _sdram_init_t210()
 	const sdram_params_t210_t *params = (const sdram_params_t210_t *)_sdram_get_params_t210();
 
 	// Set DRAM voltage.
-	max7762x_regulator_set_voltage(REGULATOR_SD1, 1100000); // HOS uses 1.125V
+	max7762x_regulator_set_voltage(REGULATOR_SD1, 1125000); // HOS: 1.125V. Normal: 1.1V.
 
 	// VDDP Select.
 	PMC(APBDEV_PMC_VDDP_SEL) = params->pmc_vddp_sel;

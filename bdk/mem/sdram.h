@@ -78,9 +78,9 @@ enum sdram_ids_mariko
 	LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 18, // Die-A. (1y-X03).
 	LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 19, // Die-A. (1y-X03).
 
-	LPDDR4X_IOWA_4GB_SAMSUNG_1Z                     = 20, // 1z nm. 40% lower power usage. (1z-B01).
-	LPDDR4X_HOAG_4GB_SAMSUNG_1Z                     = 21, // 1z nm. 40% lower power usage. (1z-B01).
-	LPDDR4X_AULA_4GB_SAMSUNG_1Z                     = 22, // 1z nm. 40% lower power usage. (1z-B01).
+	LPDDR4X_IOWA_4GB_SAMSUNG_1Z                     = 20, // 1z nm. 40% lower power usage. (1z-01).
+	LPDDR4X_HOAG_4GB_SAMSUNG_1Z                     = 21, // 1z nm. 40% lower power usage. (1z-01).
+	LPDDR4X_AULA_4GB_SAMSUNG_1Z                     = 22, // 1z nm. 40% lower power usage. (1z-01).
 
 	LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 23, // Die-A. (1y-X03).
 	LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 24, // Die-A. (1y-X03).
@@ -91,13 +91,13 @@ enum sdram_ids_mariko
 
 	LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 28, // Die-A.
 
-	LPDDR4X_UNK0_4GB_NEW0                            = 29,
-	LPDDR4X_UNK1_4GB_NEW0                            = 30,
-	LPDDR4X_UNK2_4GB_NEW0                            = 31,
+	LPDDR4X_UNK0_4GB_HYNIX_1A                       = 29, // 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK1_4GB_HYNIX_1A                       = 30, // 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK2_4GB_HYNIX_1A                       = 31, // 1a nm. 61% lower power usage. (1a-01).
 
-	LPDDR4X_UNK0_4GB_NEW1                            = 32,
-	LPDDR4X_UNK1_4GB_NEW1                            = 33,
-	LPDDR4X_UNK2_4GB_NEW1                            = 34,
+	LPDDR4X_UNK0_4GB_MICRON_1A                      = 32, // 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK1_4GB_MICRON_1A                      = 33, // 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK2_4GB_MICRON_1A                      = 34, // 1a nm. 61% lower power usage. (1a-01).
 };
 
 enum sdram_codes_mariko
@@ -116,8 +116,8 @@ enum sdram_codes_mariko
 	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF = 6, // DRAM IDs: 25, 26, 27.
 	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 7, // DRAM IDs: 03, 05, 06.
 
-	LPDDR4X_4GB_NEW0                           = 8, // DRAM IDs: 29, 30, 31.
-	LPDDR4X_4GB_NEW1                           = 9, // DRAM IDs: 32, 33, 34.
+	LPDDR4X_4GB_HYNIX_1A                       = 8, // DRAM IDs: 29, 30, 31.
+	LPDDR4X_4GB_MICRON_1A                      = 9, // DRAM IDs: 32, 33, 34.
 };
 
 void sdram_init();
