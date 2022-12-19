@@ -1272,6 +1272,44 @@ out:
 	max77620_low_battery_monitor_config(true);
 }
 
+static void _r2p_get_config_t210b01()
+{
+	rtc_reboot_reason_t rr;
+	if (!max77620_rtc_get_reboot_reason(&rr))
+		return;
+
+	// Check if reason is actually set.
+	if (rr.dec.reason != REBOOT_REASON_NOP)
+	{
+		// Clear boot storage.
+		memset(&b_cfg, 0, sizeof(boot_cfg_t));
+
+		// Enable boot storage.
+		b_cfg.boot_cfg |= BOOT_CFG_AUTOBOOT_EN;
+	}
+
+	switch (rr.dec.reason)
+	{
+	case REBOOT_REASON_NOP:
+		break;
+	case REBOOT_REASON_REC:
+		PMC(APBDEV_PMC_SCRATCH0) |= PMC_SCRATCH0_MODE_RECOVERY;
+	case REBOOT_REASON_SELF:
+		b_cfg.autoboot      = rr.dec.autoboot_idx;
+		b_cfg.autoboot_list = rr.dec.autoboot_list;
+		break;
+	case REBOOT_REASON_MENU:
+		break;
+	case REBOOT_REASON_UMS:
+		b_cfg.extra_cfg |= EXTRA_CFG_NYX_UMS;
+		b_cfg.ums = rr.dec.ums_idx;
+		break;
+	case REBOOT_REASON_PANIC:
+		PMC(APBDEV_PMC_SCRATCH37) = PMC_SCRATCH37_KERNEL_PANIC_MAGIC;
+		break;
+	}
+}
+
 static void _ipl_reload()
 {
 	hw_reinit_workaround(false, 0);
@@ -1406,6 +1444,9 @@ void ipl_main()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
+	// Prep RTC regs for read. Needed for T210B01 R2P.
+	max77620_rtc_prep_read();
+
 	// Initialize display.
 	display_init();
 
@@ -1442,6 +1483,10 @@ skip_lp0_minerva_config:
 
 	// Overclock BPMP.
 	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
+
+	// Get R2P config from RTC.
+	if (h_cfg.t210b01)
+		_r2p_get_config_t210b01();
 
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	_show_errors();
