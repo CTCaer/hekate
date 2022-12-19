@@ -173,14 +173,16 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 	return 1;
 }
 
-char *ini_check_payload_section(ini_sec_t *cfg)
+char *ini_check_special_section(ini_sec_t *cfg)
 {
 	if (cfg == NULL)
 		return NULL;
 
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
 	{
-		if (!strcmp("payload", kv->key))
+		if (!strcmp("l4t",          kv->key))
+			return ((kv->val[0] == '1') ? (char *)-1 : NULL);
+		else if (!strcmp("payload", kv->key))
 			return kv->val;
 	}
 

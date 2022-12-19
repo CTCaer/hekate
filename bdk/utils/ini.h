@@ -44,7 +44,7 @@ typedef struct _ini_sec_t
 } ini_sec_t;
 
 int   ini_parse(link_t *dst, char *ini_path, bool is_dir);
-char *ini_check_payload_section(ini_sec_t *cfg);
+char *ini_check_special_section(ini_sec_t *cfg);
 void  ini_free(link_t *src);
 
 #endif
