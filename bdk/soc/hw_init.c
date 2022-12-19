@@ -415,6 +415,9 @@ void hw_init()
 	sdram_init();
 
 	bpmp_mmu_enable();
+
+	// Enable HOST1X used by every display module (DC, VIC, NVDEC, NVENC, TSEC, etc).
+	clock_enable_host1x();
 }
 
 void hw_reinit_workaround(bool coreboot, u32 bl_magic)
@@ -470,6 +473,7 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 		break;
 	default:
 		display_end();
+		clock_disable_host1x();
 	}
 
 	// Enable clock to USBD and init SDMMC1 to avoid hangs with bad hw inits.

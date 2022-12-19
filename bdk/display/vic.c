@@ -539,7 +539,6 @@ int vic_init()
 	// Ease the stress to APB.
 	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
-	clock_enable_host1x();
 	clock_enable_vic();
 
 	// Restore sys clock.

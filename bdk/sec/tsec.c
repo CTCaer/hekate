@@ -77,8 +77,6 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	// Enable clocks.
-	clock_enable_host1x();
-	usleep(2);
 	clock_enable_tsec();
 	clock_enable_sor_safe();
 	clock_enable_sor0();
