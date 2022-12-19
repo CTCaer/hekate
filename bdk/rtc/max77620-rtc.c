@@ -153,3 +153,45 @@ u32 max77620_rtc_date_to_epoch(const rtc_time_t *time)
 
 	return epoch;
 }
+
+void max77620_rtc_set_reboot_reason(rtc_reboot_reason_t *rr)
+{
+	max77620_rtc_stop_alarm();
+
+	// Set reboot reason.
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM1_YEAR_REG, rr->enc.val1);
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM2_YEAR_REG, rr->enc.val2);
+
+	// Set reboot reason magic.
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM1_WEEKDAY_REG, RTC_REBOOT_REASON_MAGIC);
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM2_WEEKDAY_REG, RTC_REBOOT_REASON_MAGIC);
+
+	// Update RTC clock from RTC regs.
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_UPDATE0_REG, MAX77620_RTC_WRITE_UPDATE);
+	msleep(16);
+}
+
+bool max77620_rtc_get_reboot_reason(rtc_reboot_reason_t *rr)
+{
+	u8 magic[2];
+
+	// Get reboot reason magic.
+	magic[0] = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM1_WEEKDAY_REG);
+	magic[1] = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM2_WEEKDAY_REG);
+
+	// Magic must be correct and match on both registers.
+	if (magic[0] != RTC_REBOOT_REASON_MAGIC || magic[0] != magic[1])
+		return false;
+
+	// Reboot reason setter is expected to have updated the actual regs already.
+	rr->enc.val1 = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM1_YEAR_REG);
+	rr->enc.val2 = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM2_YEAR_REG);
+
+	// Clear magic and update actual regs.
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM1_WEEKDAY_REG, 0);
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_ALARM2_WEEKDAY_REG, 0);
+	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_UPDATE0_REG, MAX77620_RTC_WRITE_UPDATE);
+
+	// Return reboot reason. False if [config] was selected.
+	return true;
+}
