@@ -560,6 +560,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	// Check if overburnt.
 	u8 burnt_fuses_hos = (fuse_read_odm(7) & ~bit_count_mask(burnt_fuses_7)) ? 255 : burnt_fuses_7;
 
+	//! TODO: Update on anti-downgrade fuses change.
 	switch (burnt_fuses_hos)
 	{
 	case 0:
@@ -611,7 +612,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "12.0.2 - 13.2.0");
 		break;
 	case 16:
-		strcpy(fuses_hos_version, "13.2.1+");
+		strcpy(fuses_hos_version, "13.2.1 - 14.1.2");
+		break;
+	case 17:
+		strcpy(fuses_hos_version, "15.0.0+");
 		break;
 	case 255:
 		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
