@@ -1768,14 +1768,27 @@ ini_parsing:
 			bmp = bmp_to_lvimg_obj(tmp_path);
 			if (!bmp)
 			{
-				s_printf(tmp_path, "bootloader/res/%s_hue.bmp", ini_sec->name);
+				s_printf(tmp_path, "bootloader/res/%s_hue_nobox.bmp", ini_sec->name);
 				bmp = bmp_to_lvimg_obj(tmp_path);
 				if (bmp)
-					img_colorize = true;
-				s_printf(tmp_path, "bootloader/res/%s_nobox.bmp", ini_sec->name);
-				bmp = bmp_to_lvimg_obj(tmp_path);
-				if (bmp)
+				{
 					img_noborder = true;
+					img_colorize = true;
+				}
+				if (!bmp)
+				{
+					s_printf(tmp_path, "bootloader/res/%s_hue.bmp", ini_sec->name);
+					bmp = bmp_to_lvimg_obj(tmp_path);
+					if (bmp)
+						img_colorize = true;
+				}
+				if (!bmp)
+				{
+					s_printf(tmp_path, "bootloader/res/%s_nobox.bmp", ini_sec->name);
+					bmp = bmp_to_lvimg_obj(tmp_path);
+					if (bmp)
+						img_noborder = true;
+				}
 			}
 
 			if (!bmp && payload)
@@ -1790,13 +1803,22 @@ ini_parsing:
 		{
 			bmp = bmp_to_lvimg_obj(icon_path);
 
-			// Check if colorization is enabled.
-			if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 8, "_hue", 4))
+			// Check if both colorization and border are enabled.
+			if (bmp && strlen(icon_path) > 14 && !memcmp(icon_path + strlen(icon_path) - 14, "_hue_nobox", 10))
+			{
 				img_colorize = true;
-
-			// Check if no border is enabled.
-			if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 10, "_nobox", 4))
 				img_noborder = true;
+			}
+			else
+			{
+				// Check if colorization is enabled.
+				if (bmp && strlen(icon_path) > 8 && !memcmp(icon_path + strlen(icon_path) - 8, "_hue", 4))
+					img_colorize = true;
+
+				// Check if no border is enabled.
+				if (bmp && strlen(icon_path) > 10 && !memcmp(icon_path + strlen(icon_path) - 10, "_nobox", 6))
+					img_noborder = true;
+			}
 		}
 
 		// Enable button.
