@@ -115,7 +115,7 @@ void check_power_off_from_hos()
 
 static void *coreboot_addr;
 
-void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
+static void _reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
 	memcpy((u8 *)payload_src, (u8 *)IPL_LOAD_ADDR, PATCHED_RELOC_SZ);
 
@@ -171,7 +171,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 	return true;
 }
 
-void launch_payload(char *path, bool update, bool clear_screen)
+static void _launch_payload(char *path, bool update, bool clear_screen)
 {
 	if (clear_screen)
 		gfx_clear_grey(0x1B);
@@ -226,13 +226,13 @@ void launch_payload(char *path, bool update, bool clear_screen)
 		if (update)
 			memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
 		else
-			reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
+			_reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
 		hw_reinit_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 	}
 	else
 	{
-		reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
+		_reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
 
 		// Get coreboot seamless display magic.
 		u32 magic = 0;
@@ -265,7 +265,7 @@ out:
 	}
 }
 
-void launch_tools()
+static void _launch_payloads()
 {
 	u8 max_entries = 61;
 	char *filelist = NULL;
@@ -337,7 +337,7 @@ void launch_tools()
 		memcpy(dir + strlen(dir), "/", 2);
 		memcpy(dir + strlen(dir), file_sec, strlen(file_sec) + 1);
 
-		launch_payload(dir, false, true);
+		_launch_payload(dir, false, true);
 	}
 
 failed_sd_mount:
@@ -347,7 +347,7 @@ failed_sd_mount:
 	btn_wait();
 }
 
-void ini_list_launcher()
+static void _launch_ini_list()
 {
 	u8 max_entries = 61;
 	char *payload_path = NULL;
@@ -441,7 +441,7 @@ parse_failed:
 	if (payload_path)
 	{
 		// Try to launch Payload.
-		launch_payload(payload_path, false, true);
+		_launch_payload(payload_path, false, true);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -458,7 +458,7 @@ out:
 	btn_wait();
 }
 
-void launch_firmware()
+static void _launch_config()
 {
 	u8 max_entries = 61;
 	char *payload_path = NULL;
@@ -491,11 +491,11 @@ void launch_firmware()
 
 	ments[2].type    = MENT_HANDLER;
 	ments[2].caption = "Payloads...";
-	ments[2].handler = launch_tools;
+	ments[2].handler = _launch_payloads;
 
 	ments[3].type    = MENT_HANDLER;
 	ments[3].caption = "More configs...";
-	ments[3].handler = ini_list_launcher;
+	ments[3].handler = _launch_ini_list;
 
 	ments[4].type    = MENT_CHGLINE;
 
@@ -572,7 +572,7 @@ parse_failed:
 	if (payload_path)
 	{
 		// Try to launch Payload.
-		launch_payload(payload_path, false, true);
+		_launch_payload(payload_path, false, true);
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -594,7 +594,7 @@ out:
 
 #define NYX_VER_OFF 0x9C
 
-void nyx_load_run()
+static void _nyx_load_run()
 {
 	u8 *nyx = sd_file_read("bootloader/sys/nyx.bin", NULL);
 	if (!nyx)
@@ -661,7 +661,7 @@ void nyx_load_run()
 	(*nyx_ptr)();
 }
 
-static ini_sec_t *get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry, char **emummc_path)
+static ini_sec_t *_get_ini_sec_from_id(ini_sec_t *ini_sec, char **bootlogoCustomEntry, char **emummc_path)
 {
 	ini_sec_t *cfg_sec = NULL;
 
@@ -703,7 +703,7 @@ static void _bootloader_corruption_protect()
 	}
 }
 
-void auto_launch_update()
+static void _check_for_updated_bootloader()
 {
 	// Check if already chainloaded update and clear flag. Otherwise check for updates.
 	if (EMC(EMC_SCRATCH0) & EMC_HEKA_UPD)
@@ -712,7 +712,7 @@ void auto_launch_update()
 	{
 		// Check if update.bin exists and is newer and launch it. Otherwise create it.
 		if (!f_stat("bootloader/update.bin", NULL))
-			launch_payload("bootloader/update.bin", true, false);
+			_launch_payload("bootloader/update.bin", true, false);
 		else
 		{
 			u8 *buf = calloc(0x200, 1);
@@ -722,7 +722,7 @@ void auto_launch_update()
 	}
 }
 
-static void _auto_launch_firmware()
+static void _auto_launch()
 {
 	struct _bmp_data
 	{
@@ -740,7 +740,7 @@ static void _auto_launch_firmware()
 	char *bootlogoCustomEntry = NULL;
 	bool  config_entry_found  = false;
 
-	auto_launch_update();
+	_check_for_updated_bootloader();
 
 	bool boot_from_id = (b_cfg.boot_cfg & BOOT_CFG_FROM_ID) && (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN);
 	if (boot_from_id)
@@ -815,7 +815,7 @@ static void _auto_launch_firmware()
 			}
 
 			if (boot_from_id)
-				cfg_sec = get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
+				cfg_sec = _get_ini_sec_from_id(ini_sec, &bootlogoCustomEntry, &emummc_path);
 			else if (h_cfg.autoboot == boot_entry_id && config_entry_found)
 			{
 				cfg_sec = ini_sec;
@@ -859,7 +859,7 @@ static void _auto_launch_firmware()
 				continue;
 
 			if (boot_from_id)
-				cfg_sec = get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
+				cfg_sec = _get_ini_sec_from_id(ini_sec_list, &bootlogoCustomEntry, &emummc_path);
 			else if (h_cfg.autoboot == boot_entry_id)
 			{
 				h_cfg.emummc_force_disable = false;
@@ -967,7 +967,7 @@ skip_list:
 	if (payload_path)
 	{
 		// Try to launch Payload.
-		launch_payload(payload_path, false, false);
+		_launch_payload(payload_path, false, false);
 		goto error;
 	}
 	else
@@ -1009,7 +1009,7 @@ out:
 	// L4T: Clear custom boot mode flags from PMC_SCRATCH0.
 	PMC(APBDEV_PMC_SCRATCH0) &= ~PMC_SCRATCH0_MODE_CUSTOM_ALL;
 
-	nyx_load_run();
+	_nyx_load_run();
 }
 
 #define EXCP_EN_ADDR   0x4003FFFC
@@ -1171,8 +1171,8 @@ static void _check_low_battery()
 		goto out;
 
 	// Prepare battery icon resources.
-	u8 *battery_res = malloc(ALIGN(SZ_BATTERY_EMPTY, SZ_4K));
-	blz_uncompress_srcdest(BATTERY_EMPTY_BLZ, SZ_BATTERY_EMPTY_BLZ, battery_res, SZ_BATTERY_EMPTY);
+	u8 *battery_res = malloc(ALIGN(BATTERY_EMPTY_SIZE, SZ_4K));
+	blz_uncompress_srcdest(battery_icons_blz, BATTERY_EMPTY_BLZ_SIZE, battery_res, BATTERY_EMPTY_SIZE);
 
 	u8 *battery_icon     = malloc(0x95A); // 21x38x3
 	u8 *charging_icon    = malloc(0x2F4); // 21x12x3
@@ -1181,8 +1181,8 @@ static void _check_low_battery()
 	memcpy(charging_icon, battery_res, 0x2F4);
 	memcpy(battery_icon, battery_res + 0x2F4, 0x95A);
 
-	u32 battery_icon_y_pos  = 1280 - 16 - Y_BATTERY_EMPTY_BATT;
-	u32 charging_icon_y_pos = 1280 - 16 - Y_BATTERY_EMPTY_BATT - 12 - Y_BATTERY_EMPTY_CHRG;
+	u32 battery_icon_y_pos  = 1280 - 16 - BATTERY_EMPTY_BATT_HEIGHT;
+	u32 charging_icon_y_pos = 1280 - 16 - BATTERY_EMPTY_BATT_HEIGHT - 12 - BATTERY_EMPTY_CHRG_HEIGHT;
 	free(battery_res);
 
 	charge_status = !charge_status;
@@ -1207,9 +1207,9 @@ static void _check_low_battery()
 		if (screen_on && (charge_status != current_charge_status))
 		{
 			if (current_charge_status)
-				gfx_set_rect_rgb(charging_icon,    X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+				gfx_set_rect_rgb(charging_icon,    BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_CHRG_HEIGHT, 16, charging_icon_y_pos);
 			else
-				gfx_set_rect_rgb(no_charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+				gfx_set_rect_rgb(no_charging_icon, BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_CHRG_HEIGHT, 16, charging_icon_y_pos);
 		}
 
 		// Check if it's time to turn off display.
@@ -1238,11 +1238,11 @@ static void _check_low_battery()
 				u32 *fb = display_init_framebuffer_pitch();
 				gfx_init_ctxt(fb, 720, 1280, 720);
 
-				gfx_set_rect_rgb(battery_icon,         X_BATTERY_EMPTY, Y_BATTERY_EMPTY_BATT, 16, battery_icon_y_pos);
+				gfx_set_rect_rgb(battery_icon,         BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_BATT_HEIGHT, 16, battery_icon_y_pos);
 				if (current_charge_status)
-					gfx_set_rect_rgb(charging_icon,    X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+					gfx_set_rect_rgb(charging_icon,    BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_CHRG_HEIGHT, 16, charging_icon_y_pos);
 				else
-					gfx_set_rect_rgb(no_charging_icon, X_BATTERY_EMPTY, Y_BATTERY_EMPTY_CHRG, 16, charging_icon_y_pos);
+					gfx_set_rect_rgb(no_charging_icon, BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_CHRG_HEIGHT, 16, charging_icon_y_pos);
 
 				display_backlight_pwm_init();
 				display_backlight_brightness(100, 1000);
@@ -1272,7 +1272,7 @@ out:
 	max77620_low_battery_monitor_config(true);
 }
 
-void ipl_reload()
+static void _ipl_reload()
 {
 	hw_reinit_workaround(false, 0);
 
@@ -1366,12 +1366,12 @@ power_state_t STATE_REBOOT_RCM          = REBOOT_RCM;
 power_state_t STATE_REBOOT_BYPASS_FUSES = REBOOT_BYPASS_FUSES;
 
 ment_t ment_top[] = {
-	MDEF_HANDLER("Launch", launch_firmware),
+	MDEF_HANDLER("Launch", _launch_config),
 	MDEF_CAPTION("---------------", TXT_CLR_GREY_DM),
 	MDEF_MENU("Tools",        &menu_tools),
 	MDEF_MENU("Console info", &menu_cinfo),
 	MDEF_CAPTION("---------------", TXT_CLR_GREY_DM),
-	MDEF_HANDLER("Reload", ipl_reload),
+	MDEF_HANDLER("Reload", _ipl_reload),
 	MDEF_HANDLER_EX("Reboot (OFW)", &STATE_REBOOT_BYPASS_FUSES, power_set_state_ex),
 	MDEF_HANDLER_EX("Reboot (RCM)", &STATE_REBOOT_RCM,          power_set_state_ex),
 	MDEF_HANDLER_EX("Power off",    &STATE_POWER_OFF,           power_set_state_ex),
@@ -1448,7 +1448,7 @@ skip_lp0_minerva_config:
 
 	// Load saved configuration and auto boot if enabled.
 	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
-		_auto_launch_firmware();
+		_auto_launch();
 
 	// Failed to launch Nyx, unmount SD Card.
 	sd_end();

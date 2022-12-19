@@ -44,7 +44,7 @@ void _toggle_autorcm(bool enable)
 	}
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	emmc_set_partition(EMMC_BOOT0);
 
 	int i, sect = 0;
 	u8 corr_mod0, mod1;
@@ -114,7 +114,7 @@ void menu_autorcm()
 	nx_emmc_get_autorcm_masks(&mod0, &mod1);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	emmc_set_partition(EMMC_BOOT0);
 	sdmmc_storage_read(&emmc_storage, 0x200 / EMMC_BLOCKSIZE, 1, tempbuf);
 
 	// Check if 2nd byte of modulus is correct.

@@ -273,7 +273,7 @@ int emummc_storage_write(u32 sector, u32 num_sectors, void *buf)
 int emummc_storage_set_mmc_partition(u32 partition)
 {
 	emu_cfg.active_part = partition;
-	sdmmc_storage_set_mmc_partition(&emmc_storage, partition);
+	emmc_set_partition(partition);
 
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable || emu_cfg.sector)
 		return 1;

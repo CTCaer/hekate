@@ -673,7 +673,6 @@ DPRINTF("Parsed GPT\n");
 DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 
 	// Read in Boot Config.
-	memset(bctBuf, 0, BCT_SIZE);
 	emmc_part_read(pkg2_part, 0, BCT_SIZE / EMMC_BLOCKSIZE, bctBuf);
 
 	// Read in package2.
@@ -909,7 +908,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!pkg1_warmboot_config(&ctxt, warmboot_base, ctxt.pkg1_id->fuses, kb))
 	{
 		// Can only happen on T210B01.
-		_hos_crit_error("Failed to match warmboot with fuses!\nIf you continue, sleep wont work!");
+		_hos_crit_error("\nFailed to match warmboot with fuses!\nIf you continue, sleep wont work!");
 
 		gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
 		display_backlight_brightness(h_cfg.backlight, 1000);

@@ -276,7 +276,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		cal0_buf = malloc(SZ_64K);
 
 	// Read and decrypt CAL0.
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emmc_set_partition(EMMC_GPP);
 	LIST_INIT(gpt);
 	emmc_gpt_parse(&gpt);
 	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
@@ -388,7 +388,7 @@ out:
 
 static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" HW & Cached Fuses Info");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" HW & Fuses Info");
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump fuses", _fuse_dump_window_action);
 	lv_win_add_btn(win, NULL, SYMBOL_INFO" CAL0 Info", _create_mbox_cal0);
 
@@ -1315,7 +1315,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		storage = &emmc_storage;
 		res = !emmc_initialize(false);
 		if (!res)
-			sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+			emmc_set_partition(EMMC_GPP);
 	}
 
 	if (res)
@@ -1705,7 +1705,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#   Size: %6d MiB (Sect: 0x%08X)\n", emmc_storage.sec_cnt >> SECTORS_TO_MIB_COEFF, emmc_storage.sec_cnt);
 	strcat(txt_buf, "\n#00DDFF GPP (eMMC USER) Partition Table:#\n");
 
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emmc_set_partition(EMMC_GPP);
 	LIST_INIT(gpt);
 	emmc_gpt_parse(&gpt);
 
@@ -1807,299 +1807,301 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	manual_system_maintenance(true);
 
 	if (!sd_mount())
-		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
-	else
 	{
-		lv_label_set_text(lb_desc,
-			"#00DDFF Card IDentification:#\n"
-			"Vendor ID:\n"
-			"Model:\n"
-			"OEM ID:\n"
-			"HW rev:\n"
-			"FW rev:\n"
-			"S/N:\n"
-			"Month/Year:\n\n"
-			"Bootloader bus:"
-		);
-
-		lv_obj_t *val = lv_cont_create(win, NULL);
-		lv_obj_set_size(val, LV_HOR_RES / 9 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
-
-		lv_obj_t * lb_val = lv_label_create(val, lb_desc);
-
-		char *txt_buf = (char *)malloc(SZ_16K);
-		txt_buf[0] = '\n';
-		txt_buf[1] = 0;
-
-		// Identify manufacturer.
-		switch (sd_storage.cid.manfid)
-		{
-		case 0x00:
-			strcat(txt_buf, "Fake ");
-			break;
-		case 0x01:
-			strcat(txt_buf, "Panasonic ");
-			break;
-		case 0x02:
-			strcat(txt_buf, "Toshiba ");
-			break;
-		case 0x03:
-			strcat(txt_buf, "SanDisk ");
-			break;
-		case 0x06:
-			strcat(txt_buf, "Ritek ");
-			break;
-		case 0x09:
-			strcat(txt_buf, "ATP ");
-			break;
-		case 0x13:
-			strcat(txt_buf, "Kingmax ");
-			break;
-		case 0x19:
-			strcat(txt_buf, "Dynacard ");
-			break;
-		case 0x1A:
-			strcat(txt_buf, "Power Quotient ");
-			break;
-		case 0x1B:
-			strcat(txt_buf, "Samsung ");
-			break;
-		case 0x1D:
-			strcat(txt_buf, "AData ");
-			break;
-		case 0x27:
-			strcat(txt_buf, "Phison ");
-			break;
-		case 0x28:
-			strcat(txt_buf, "Barun Electronics ");
-			break;
-		case 0x31:
-			strcat(txt_buf, "Silicon Power ");
-			break;
-		case 0x41:
-			strcat(txt_buf, "Kingston ");
-			break;
-		case 0x51:
-			strcat(txt_buf, "STEC ");
-			break;
-		case 0x5D:
-			strcat(txt_buf, "SwissBit ");
-			break;
-		case 0x61:
-			strcat(txt_buf, "Netlist ");
-			break;
-		case 0x63:
-			strcat(txt_buf, "Cactus ");
-			break;
-		case 0x73:
-			strcat(txt_buf, "Bongiovi ");
-			break;
-		case 0x74:
-			strcat(txt_buf, "Jiaelec ");
-			break;
-		case 0x76:
-			strcat(txt_buf, "Patriot ");
-			break;
-		case 0x82:
-			strcat(txt_buf, "Jiang Tay ");
-			break;
-		case 0x83:
-			strcat(txt_buf, "Netcom ");
-			break;
-		case 0x84:
-			strcat(txt_buf, "Strontium ");
-			break;
-		//TODO: Investigate which OEM/ODM makes these.
-		case 0x9C: // BE, Angelbird | Barun Electronics? What about 0x28?
-				   // LX512 SO, Lexar, Angelbird, Hoodman, Sony | Solidgear?
-			strcat(txt_buf, "Solidgear ");
-			break;
-		case 0x9F:
-			strcat(txt_buf, "Taishin ");
-			break;
-		case 0xAD: // Lexar LX512 LS. Longsys?
-			strcat(txt_buf, "Longsys ");
-			break;
-		default:
-			strcat(txt_buf, "Unknown ");
-			break;
-		}
-
-		s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c\n%c%c (%04X)\n%X\n%X\n%08x\n%02d/%04d\n\n",
-			sd_storage.cid.manfid,
-			sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
-			sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
-			(sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF, sd_storage.cid.oemid,
-			sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
-			sd_storage.cid.month, sd_storage.cid.year);
-
-		switch (nyx_str->info.sd_init)
-		{
-		case SD_1BIT_HS25:
-			strcat(txt_buf, "HS25 1bit");
-			break;
-		case SD_4BIT_HS25:
-			strcat(txt_buf, "HS25");
-			break;
-		case SD_UHS_SDR82: // Report as SDR104.
-		case SD_UHS_SDR104:
-			strcat(txt_buf, "SDR104");
-			break;
-		case 0:
-		default:
-			strcat(txt_buf, "Undefined");
-			break;
-		}
-
-		lv_label_set_text(lb_val, txt_buf);
-
-		lv_obj_set_width(lb_val, lv_obj_get_width(val));
-		lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-
-		lv_obj_t *desc2 = lv_cont_create(win, NULL);
-		lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
-
-		lv_obj_t * lb_desc2 = lv_label_create(desc2, lb_desc);
-
-		lv_label_set_static_text(lb_desc2,
-			"#00DDFF Card-Specific Data#\n"
-			"Cmd Classes:\n"
-			"Capacity:\n"
-			"Capacity (LBA):\n"
-			"Bus Width:\n"
-			"Current Rate:\n"
-			"Speed Class:\n"
-			"UHS Grade:\n"
-			"Video Class:\n"
-			"App perf class:\n"
-			"Write Protect:"
-		);
-		lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
-		lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
-
-		lv_obj_t *val2 = lv_cont_create(win, NULL);
-		lv_obj_set_size(val2, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
-
-		lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
-
-		char *wp_info;
-		switch (sd_storage.csd.write_protect)
-		{
-		case 1:
-			wp_info = "Temporary";
-			break;
-		case 2:
-		case 3:
-			wp_info = "Permanent";
-			break;
-		default:
-			wp_info = "None";
-			break;
-		}
-
-		bool uhs_au_mb = false;
-		u32 uhs_au_size = sd_storage_get_ssr_au(&sd_storage);
-		if (uhs_au_size >= 1024)
-		{
-			uhs_au_mb = true;
-			uhs_au_size /= 1024;
-		}
-
-		s_printf(txt_buf,
-			"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d\nV%d\nA%d\n%s",
-			sd_storage.csd.structure + 1, sd_storage.csd.cmdclass,
-			sd_storage.sec_cnt >> 11, sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
-			sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
-			(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
-			sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)", sd_storage.ssr.uhs_grade,
-			sd_storage.ssr.video_class, sd_storage.ssr.app_class, wp_info);
-
-		lv_label_set_text(lb_val2, txt_buf);
-
-		lv_obj_set_width(lb_val2, lv_obj_get_width(val2));
-		lv_obj_align(val2, desc2, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-
-		lv_obj_t *line_sep = lv_line_create(win, NULL);
-		static const lv_point_t line_pp[] = { {0, 0}, { LV_HOR_RES - (LV_DPI - (LV_DPI / 4)) * 12, 0} };
-		lv_line_set_points(line_sep, line_pp, 2);
-		lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
-		lv_obj_align(line_sep, desc, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 410 / 100, LV_DPI / 7);
-
-		lv_obj_t *desc3 = lv_cont_create(win, NULL);
-		lv_obj_set_size(desc3, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
-
-		lv_obj_t * lb_desc3 = lv_label_create(desc3, lb_desc);
-		lv_label_set_text(lb_desc3, "#D4FF00 Acquiring FAT volume info...#");
-		lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
-
-		lv_obj_align(desc3, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
-
-		manual_system_maintenance(true);
-
-		f_getfree("", &sd_fs.free_clst, NULL);
-
-		lv_label_set_text(lb_desc3,
-			"#00DDFF Found FAT volume:#\n"
-			"Filesystem:\n"
-			"Cluster:\n"
-			"Size free/total:"
-		);
-		lv_obj_set_size(desc3, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
-		lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
-		lv_obj_align(desc3, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
-
-		lv_obj_t *val3 = lv_cont_create(win, NULL);
-		lv_obj_set_size(val3, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
-
-		lv_obj_t * lb_val3 = lv_label_create(val3, lb_desc);
-
-		s_printf(txt_buf, "\n%s\n%d %s\n%d/%d MiB",
-			sd_fs.fs_type == FS_EXFAT ? ("exFAT  "SYMBOL_SHRK) : ("FAT32"),
-			(sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512,
-			(sd_fs.csize > 1) ? "KiB" : "B",
-			(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF),
-			(u32)(sd_fs.n_fatent  * sd_fs.csize >> SECTORS_TO_MIB_COEFF));
-
-		lv_label_set_text(lb_val3, txt_buf);
-
-		lv_obj_set_width(lb_val3, lv_obj_get_width(val3));
-		lv_obj_align(val3, desc3, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-
-		lv_obj_t *desc4 = lv_cont_create(win, NULL);
-		lv_obj_set_size(desc4, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
-
-		lv_obj_t * lb_desc4 = lv_label_create(desc4, lb_desc);
-		lv_label_set_text(lb_desc4, "#D4FF00 Acquiring FAT volume info...#");
-		lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
-
-		lv_label_set_text(lb_desc4,
-			"#00DDFF SDMMC1 Errors:#\n"
-			"Init fails:\n"
-			"Read/Write fails:\n"
-			"Read/Write errors:"
-		);
-		lv_obj_set_size(desc4, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
-		lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
-		lv_obj_align(desc4, val3, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
-
-		lv_obj_t *val4 = lv_cont_create(win, NULL);
-		lv_obj_set_size(val4, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
-
-		lv_obj_t * lb_val4 = lv_label_create(val4, lb_desc);
-
-		u16 *sd_errors = sd_get_error_count();
-		s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
-			sd_errors[0], nyx_str->info.sd_errors[0], sd_errors[1], nyx_str->info.sd_errors[1], sd_errors[2], nyx_str->info.sd_errors[2]);
-
-		lv_label_set_text(lb_val4, txt_buf);
-
-		lv_obj_set_width(lb_val4, lv_obj_get_width(val4));
-		lv_obj_align(val4, desc4, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
-
-		free(txt_buf);
-		sd_unmount();
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
+		goto failed;
 	}
 
+	lv_label_set_text(lb_desc,
+		"#00DDFF Card IDentification:#\n"
+		"Vendor ID:\n"
+		"Model:\n"
+		"OEM ID:\n"
+		"HW rev:\n"
+		"FW rev:\n"
+		"S/N:\n"
+		"Month/Year:\n\n"
+		"Bootloader bus:"
+	);
+
+	lv_obj_t *val = lv_cont_create(win, NULL);
+	lv_obj_set_size(val, LV_HOR_RES / 9 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+
+	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
+
+	char *txt_buf = (char *)malloc(SZ_16K);
+	txt_buf[0] = '\n';
+	txt_buf[1] = 0;
+
+	// Identify manufacturer.
+	switch (sd_storage.cid.manfid)
+	{
+	case 0x00:
+		strcat(txt_buf, "Fake ");
+		break;
+	case 0x01:
+		strcat(txt_buf, "Panasonic ");
+		break;
+	case 0x02:
+		strcat(txt_buf, "Toshiba ");
+		break;
+	case 0x03:
+		strcat(txt_buf, "SanDisk ");
+		break;
+	case 0x06:
+		strcat(txt_buf, "Ritek ");
+		break;
+	case 0x09:
+		strcat(txt_buf, "ATP ");
+		break;
+	case 0x13:
+		strcat(txt_buf, "Kingmax ");
+		break;
+	case 0x19:
+		strcat(txt_buf, "Dynacard ");
+		break;
+	case 0x1A:
+		strcat(txt_buf, "Power Quotient ");
+		break;
+	case 0x1B:
+		strcat(txt_buf, "Samsung ");
+		break;
+	case 0x1D:
+		strcat(txt_buf, "AData ");
+		break;
+	case 0x27:
+		strcat(txt_buf, "Phison ");
+		break;
+	case 0x28:
+		strcat(txt_buf, "Barun Electronics ");
+		break;
+	case 0x31:
+		strcat(txt_buf, "Silicon Power ");
+		break;
+	case 0x41:
+		strcat(txt_buf, "Kingston ");
+		break;
+	case 0x51:
+		strcat(txt_buf, "STEC ");
+		break;
+	case 0x5D:
+		strcat(txt_buf, "SwissBit ");
+		break;
+	case 0x61:
+		strcat(txt_buf, "Netlist ");
+		break;
+	case 0x63:
+		strcat(txt_buf, "Cactus ");
+		break;
+	case 0x73:
+		strcat(txt_buf, "Bongiovi ");
+		break;
+	case 0x74:
+		strcat(txt_buf, "Jiaelec ");
+		break;
+	case 0x76:
+		strcat(txt_buf, "Patriot ");
+		break;
+	case 0x82:
+		strcat(txt_buf, "Jiang Tay ");
+		break;
+	case 0x83:
+		strcat(txt_buf, "Netcom ");
+		break;
+	case 0x84:
+		strcat(txt_buf, "Strontium ");
+		break;
+	//TODO: Investigate which OEM/ODM makes these.
+	case 0x9C: // BE, Angelbird | Barun Electronics? What about 0x28?
+			   // LX512 SO, Lexar, Angelbird, Hoodman, Sony | Solidgear?
+		strcat(txt_buf, "Solidgear ");
+		break;
+	case 0x9F:
+		strcat(txt_buf, "Taishin ");
+		break;
+	case 0xAD:
+		strcat(txt_buf, "Longsys ");
+		break;
+	default:
+		strcat(txt_buf, "Unknown ");
+		break;
+	}
+
+	s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c\n%c%c (%04X)\n%X\n%X\n%08x\n%02d/%04d\n\n",
+		sd_storage.cid.manfid,
+		sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
+		sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
+		(sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF, sd_storage.cid.oemid,
+		sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
+		sd_storage.cid.month, sd_storage.cid.year);
+
+	switch (nyx_str->info.sd_init)
+	{
+	case SD_1BIT_HS25:
+		strcat(txt_buf, "HS25 1bit");
+		break;
+	case SD_4BIT_HS25:
+		strcat(txt_buf, "HS25");
+		break;
+	case SD_UHS_SDR82: // Report as SDR104.
+	case SD_UHS_SDR104:
+		strcat(txt_buf, "SDR104");
+		break;
+	case 0:
+	default:
+		strcat(txt_buf, "Undefined");
+		break;
+	}
+
+	lv_label_set_text(lb_val, txt_buf);
+
+	lv_obj_set_width(lb_val, lv_obj_get_width(val));
+	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+	lv_obj_t *desc2 = lv_cont_create(win, NULL);
+	lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+
+	lv_obj_t * lb_desc2 = lv_label_create(desc2, lb_desc);
+
+	lv_label_set_static_text(lb_desc2,
+		"#00DDFF Card-Specific Data#\n"
+		"Cmd Classes:\n"
+		"Capacity:\n"
+		"Capacity (LBA):\n"
+		"Bus Width:\n"
+		"Current Rate:\n"
+		"Speed Class:\n"
+		"UHS Grade:\n"
+		"Video Class:\n"
+		"App perf class:\n"
+		"Write Protect:"
+	);
+	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
+	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+
+	lv_obj_t *val2 = lv_cont_create(win, NULL);
+	lv_obj_set_size(val2, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+
+	lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
+
+	char *wp_info;
+	switch (sd_storage.csd.write_protect)
+	{
+	case 1:
+		wp_info = "Temporary";
+		break;
+	case 2:
+	case 3:
+		wp_info = "Permanent";
+		break;
+	default:
+		wp_info = "None";
+		break;
+	}
+
+	bool uhs_au_mb = false;
+	u32 uhs_au_size = sd_storage_get_ssr_au(&sd_storage);
+	if (uhs_au_size >= 1024)
+	{
+		uhs_au_mb = true;
+		uhs_au_size /= 1024;
+	}
+
+	s_printf(txt_buf,
+		"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d\nV%d\nA%d\n%s",
+		sd_storage.csd.structure + 1, sd_storage.csd.cmdclass,
+		sd_storage.sec_cnt >> 11, sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
+		sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
+		(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
+		sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)", sd_storage.ssr.uhs_grade,
+		sd_storage.ssr.video_class, sd_storage.ssr.app_class, wp_info);
+
+	lv_label_set_text(lb_val2, txt_buf);
+
+	lv_obj_set_width(lb_val2, lv_obj_get_width(val2));
+	lv_obj_align(val2, desc2, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+	lv_obj_t *line_sep = lv_line_create(win, NULL);
+	static const lv_point_t line_pp[] = { {0, 0}, { LV_HOR_RES - (LV_DPI - (LV_DPI / 4)) * 12, 0} };
+	lv_line_set_points(line_sep, line_pp, 2);
+	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
+	lv_obj_align(line_sep, desc, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 410 / 100, LV_DPI / 7);
+
+	lv_obj_t *desc3 = lv_cont_create(win, NULL);
+	lv_obj_set_size(desc3, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+
+	lv_obj_t * lb_desc3 = lv_label_create(desc3, lb_desc);
+	lv_label_set_text(lb_desc3, "#D4FF00 Acquiring FAT volume info...#");
+	lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
+
+	lv_obj_align(desc3, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+
+	manual_system_maintenance(true);
+
+	f_getfree("", &sd_fs.free_clst, NULL);
+
+	lv_label_set_text(lb_desc3,
+		"#00DDFF Found FAT volume:#\n"
+		"Filesystem:\n"
+		"Cluster:\n"
+		"Size free/total:"
+	);
+	lv_obj_set_size(desc3, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+	lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
+	lv_obj_align(desc3, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
+
+	lv_obj_t *val3 = lv_cont_create(win, NULL);
+	lv_obj_set_size(val3, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+
+	lv_obj_t * lb_val3 = lv_label_create(val3, lb_desc);
+
+	s_printf(txt_buf, "\n%s\n%d %s\n%d/%d MiB",
+		sd_fs.fs_type == FS_EXFAT ? ("exFAT  "SYMBOL_SHRK) : ("FAT32"),
+		(sd_fs.csize > 1) ? (sd_fs.csize >> 1) : 512,
+		(sd_fs.csize > 1) ? "KiB" : "B",
+		(u32)(sd_fs.free_clst * sd_fs.csize >> SECTORS_TO_MIB_COEFF),
+		(u32)(sd_fs.n_fatent  * sd_fs.csize >> SECTORS_TO_MIB_COEFF));
+
+	lv_label_set_text(lb_val3, txt_buf);
+
+	lv_obj_set_width(lb_val3, lv_obj_get_width(val3));
+	lv_obj_align(val3, desc3, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+
+	lv_obj_t *desc4 = lv_cont_create(win, NULL);
+	lv_obj_set_size(desc4, LV_HOR_RES / 2 / 2 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+
+	lv_obj_t * lb_desc4 = lv_label_create(desc4, lb_desc);
+	lv_label_set_text(lb_desc4, "#D4FF00 Acquiring FAT volume info...#");
+	lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
+
+	lv_label_set_text(lb_desc4,
+		"#00DDFF SDMMC1 Errors:#\n"
+		"Init fails:\n"
+		"Read/Write fails:\n"
+		"Read/Write errors:"
+	);
+	lv_obj_set_size(desc4, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+	lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
+	lv_obj_align(desc4, val3, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+
+	lv_obj_t *val4 = lv_cont_create(win, NULL);
+	lv_obj_set_size(val4, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+
+	lv_obj_t * lb_val4 = lv_label_create(val4, lb_desc);
+
+	u16 *sd_errors = sd_get_error_count();
+	s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
+		sd_errors[0], nyx_str->info.sd_errors[0], sd_errors[1], nyx_str->info.sd_errors[1], sd_errors[2], nyx_str->info.sd_errors[2]);
+
+	lv_label_set_text(lb_val4, txt_buf);
+
+	lv_obj_set_width(lb_val4, lv_obj_get_width(val4));
+	lv_obj_align(val4, desc4, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+
+	free(txt_buf);
+	sd_unmount();
+
+failed:
 	nyx_window_toggle_buttons(win, false);
 
 	return LV_RES_OK;

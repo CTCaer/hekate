@@ -68,7 +68,7 @@ bool get_autorcm_status(bool toggle)
 	emmc_initialize(false);
 
 	u8 *tempbuf = (u8 *)malloc(0x200);
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	emmc_set_partition(EMMC_BOOT0);
 	sdmmc_storage_read(&emmc_storage, 0x200 / EMMC_BLOCKSIZE, 1, tempbuf);
 
 	// Get the correct RSA modulus byte masks.
@@ -1158,7 +1158,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		goto out_free;
 	}
 
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	emmc_set_partition(EMMC_BOOT0);
 
 	// Read package1.
 	static const u32 BOOTLOADER_SIZE          = SZ_256K;
@@ -1300,7 +1300,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	}
 
 	// Dump package2.1.
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emmc_set_partition(EMMC_GPP);
 	// Parse eMMC GPT.
 	LIST_INIT(gpt);
 	emmc_gpt_parse(&gpt);

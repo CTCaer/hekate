@@ -169,7 +169,7 @@ void print_mmc_info()
 			gfx_put_small_sep();
 			gfx_printf("%kGPP (eMMC USER) partition table:%k\n", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
-			sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+			emmc_set_partition(EMMC_GPP);
 			LIST_INIT(gpt);
 			emmc_gpt_parse(&gpt);
 			int gpp_idx = 0;

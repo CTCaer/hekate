@@ -429,7 +429,7 @@ void pkg1_warmboot_rsa_mod(u32 warmboot_base)
 	// Set warmboot binary rsa modulus.
 	u8 *rsa_mod = (u8 *)malloc(512);
 
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_BOOT0);
+	emmc_set_partition(EMMC_BOOT0);
 
 	u32 sector;
 	u8  mod0, mod1;

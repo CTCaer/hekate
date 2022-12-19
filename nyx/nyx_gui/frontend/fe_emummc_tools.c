@@ -430,7 +430,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
 
-		sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
+		emmc_set_partition(i + 1);
 
 		strcat(sdPath, bootPart.name);
 		res = _dump_emummc_file_part(gui, sdPath, &emmc_storage, &bootPart);
@@ -450,7 +450,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	}
 
 	// Get GP partition size dynamically.
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emmc_set_partition(EMMC_GPP);
 
 	// Get GP partition size dynamically.
 	const u32 RAW_AREA_NUM_SECTORS = emmc_storage.sec_cnt;
@@ -782,7 +782,7 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 	u8 *cal0_buf = malloc(SZ_64K);
 
 	// Read and decrypt CAL0 for validation of working BIS keys.
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emmc_set_partition(EMMC_GPP);
 	LIST_INIT(gpt);
 	emmc_gpt_parse(&gpt);
 	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
@@ -908,7 +908,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 		manual_system_maintenance(true);
 
-		sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
+		emmc_set_partition(i + 1);
 
 		strcat(sdPath, bootPart.name);
 		res = _dump_emummc_raw_part(gui, i, part_idx, sector_start, &bootPart, 0);
@@ -927,7 +927,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		strcpy(sdPath, gui->base_path);
 	}
 
-	sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+	emmc_set_partition(EMMC_GPP);
 
 	// Get GP partition size dynamically.
 	const u32 RAW_AREA_NUM_SECTORS = emmc_storage.sec_cnt;

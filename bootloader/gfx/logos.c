@@ -20,7 +20,15 @@
 #include <libs/compr/blz.h>
 #include "logos.h"
 
-u8 BOOTLOGO_BLZ[SZ_BOOTLOGO_BLZ] = {
+// 68 x 192 @8bpp Grayscale RAW.
+#define BOOTLOGO_WIDTH    68
+#define BOOTLOGO_HEIGHT   192
+#define BOOTLOGO_X        ((720  - BOOTLOGO_WIDTH)  / 2)
+#define BOOTLOGO_Y        ((1280 - BOOTLOGO_HEIGHT) / 2)
+#define BOOTLOGO_SIZE     13056
+#define BOOTLOGO_BLZ_SIZE 3988
+
+u8 bootlogo_blz[] = {
 	0x0F, 0xF0, 0x80, 0x1B, 0x1B, 0x40, 0xF0, 0x1E, 0x1F, 0x48, 0x5A, 0x0F, 0xF0, 0x0F, 0xF0, 0xE4,
 	0x17, 0xF0, 0x91, 0x13, 0x26, 0x28, 0x23, 0x1E, 0x0A, 0xA0, 0x0F, 0xF0, 0xC3, 0x22, 0xF0, 0xC3,
 	0xA4, 0x1E, 0x29, 0x33, 0xDB, 0x2C, 0xEA, 0x53, 0x83, 0x0F, 0xF0, 0x38, 0xF0, 0xBC, 0x39, 0x21,
@@ -273,7 +281,7 @@ u8 BOOTLOGO_BLZ[SZ_BOOTLOGO_BLZ] = {
 	0x6C, 0x23, 0x00, 0x00
 };
 
-u8 BATTERY_EMPTY_BLZ[SZ_BATTERY_EMPTY_BLZ] = {
+u8 battery_icons_blz[] = {
 	0x17, 0xC0, 0x5D, 0x51, 0x79, 0x12, 0x79, 0x48, 0x69, 0x00, 0x0D, 0x46, 0xE3, 0x0F, 0xF0, 0x20,
 	0xF0, 0x35, 0x2E, 0x38, 0x3F, 0x40, 0xEF, 0xCF, 0x00, 0x89, 0x77, 0x00, 0x17, 0x01, 0x14, 0x09,
 	0x90, 0x36, 0xF0, 0xA4, 0xF1, 0x62, 0x01, 0x38, 0xA1, 0x99, 0x84, 0x3E, 0x00, 0x23, 0x1F, 0x04,
@@ -330,8 +338,8 @@ u8 *render_static_bootlogo()
 
 	// Set default logo.
 	u8 *logo_buf = (void *)malloc(SZ_16K);
-	blz_uncompress_srcdest(BOOTLOGO_BLZ, SZ_BOOTLOGO_BLZ, logo_buf, SZ_BOOTLOGO);
-	gfx_set_rect_grey(logo_buf, X_BOOTLOGO, Y_BOOTLOGO, 326, 544);
+	blz_uncompress_srcdest(bootlogo_blz, sizeof(bootlogo_blz), logo_buf, BOOTLOGO_SIZE);
+	gfx_set_rect_grey(logo_buf, BOOTLOGO_WIDTH, BOOTLOGO_HEIGHT, BOOTLOGO_X, BOOTLOGO_Y);
 
 	return logo_buf;
 }
@@ -341,22 +349,22 @@ bool render_ticker_logo(u32 boot_wait, u32 backlight)
 	u32 btn = 0;
 
 	u32 ticker_step_us = boot_wait * 1000000;
-	ticker_step_us /= Y_BOOTLOGO;
+	ticker_step_us /= BOOTLOGO_HEIGHT;
 
 	// Set default logo.
 	u8 *logo_buf = render_static_bootlogo();
 
 	// Clear line.
-	u8 *grey = malloc(6 * Y_BOOTLOGO);
-	memset(grey, 0x1B, 6 * Y_BOOTLOGO);
-	gfx_set_rect_grey(grey, 6, Y_BOOTLOGO, 362, 544);
+	u8 *grey = malloc(6 * BOOTLOGO_HEIGHT);
+	memset(grey, 0x1B, 6 * BOOTLOGO_HEIGHT);
+	gfx_set_rect_grey(grey, 6, BOOTLOGO_HEIGHT, 362, BOOTLOGO_Y);
 	free(grey);
 
 	// Enable backlight to show first frame.
 	display_backlight_brightness(backlight, 1000);
 
 	// Animated line as ticker.
-	for (u32 i = 1; i <= Y_BOOTLOGO; i++)
+	for (u32 i = 1; i <= BOOTLOGO_HEIGHT; i++)
 	{
 		// If only VOL- was pressed, exit.
 		btn = btn_read_vol();
@@ -367,7 +375,7 @@ bool render_ticker_logo(u32 boot_wait, u32 backlight)
 		usleep(ticker_step_us);
 
 		// Set next ticker progress.
-		gfx_set_rect_grey(logo_buf + X_BOOTLOGO * (Y_BOOTLOGO - i) + 36, 6, 1, 362, 544 + Y_BOOTLOGO - i);
+		gfx_set_rect_grey(logo_buf + BOOTLOGO_WIDTH * (BOOTLOGO_HEIGHT - i) + 36, 6, 1, 362, BOOTLOGO_Y + BOOTLOGO_HEIGHT - i);
 	}
 	free(logo_buf);
 

@@ -807,7 +807,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 			manual_system_maintenance(true);
 
-			sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
+			emmc_set_partition(i + 1);
 
 			// Set filename to backup/{emmc_sn}/BOOT0/1 or backup/{emmc_sn}/emummc/BOOT0/1.
 			if (!gui->raw_emummc)
@@ -829,7 +829,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 
 	if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER) || (dumpType & PART_RAW))
 	{
-		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+		emmc_set_partition(EMMC_GPP);
 
 		if ((dumpType & PART_SYSTEM) || (dumpType & PART_USER))
 		{
@@ -1454,7 +1454,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 			manual_system_maintenance(true);
 
-			sdmmc_storage_set_mmc_partition(&emmc_storage, i + 1);
+			emmc_set_partition(i + 1);
 
 			emmcsn_path_impl(sdPath, "/restore", bootPart.name, &emmc_storage);
 			res = _restore_emmc_part(gui, sdPath, i, &emmc_storage, &bootPart, false);
@@ -1475,7 +1475,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 		gui->base_path = (char *)malloc(strlen(sdPath) + 1);
 		strcpy(gui->base_path, sdPath);
 
-		sdmmc_storage_set_mmc_partition(&emmc_storage, EMMC_GPP);
+		emmc_set_partition(EMMC_GPP);
 
 		LIST_INIT(gpt);
 		emmc_gpt_parse(&gpt);

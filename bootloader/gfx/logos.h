@@ -17,20 +17,13 @@
 #ifndef _GFX_LOGOS_H_
 #define _GFX_LOGOS_H_
 
-// 68 x 192 @8bpp Grayscale RAW.
-#define X_BOOTLOGO         68
-#define Y_BOOTLOGO        192
-#define SZ_BOOTLOGO     13056
-#define SZ_BOOTLOGO_BLZ  3988
-extern u8 BOOTLOGO_BLZ[SZ_BOOTLOGO_BLZ];
-
 // 21 x 50 @8bpp RGB.
-#define X_BATTERY_EMPTY      21
-#define Y_BATTERY_EMPTY_BATT 38
-#define Y_BATTERY_EMPTY_CHRG 12
-#define SZ_BATTERY_EMPTY     3150
-#define SZ_BATTERY_EMPTY_BLZ 740
-extern u8 BATTERY_EMPTY_BLZ[SZ_BATTERY_EMPTY_BLZ];
+#define BATTERY_EMPTY_WIDTH       21
+#define BATTERY_EMPTY_BATT_HEIGHT 38
+#define BATTERY_EMPTY_CHRG_HEIGHT 12
+#define BATTERY_EMPTY_SIZE        3150
+#define BATTERY_EMPTY_BLZ_SIZE    740
+extern u8 battery_icons_blz[];
 
 u8  *render_static_bootlogo();
 bool render_ticker_logo(u32 boot_wait, u32 backlight);
