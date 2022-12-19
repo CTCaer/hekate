@@ -1172,7 +1172,7 @@ u32 sd_storage_get_ssr_au(sdmmc_storage_t *storage)
 	{
 		u32 shift = au_size;
 		au_size = shift ? 8 : 0;
-    	au_size <<= shift;
+		au_size <<= shift;
 	}
 	else
 	{

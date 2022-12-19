@@ -21,7 +21,7 @@
 #include <utils/types.h>
 
 #define BL_MAGIC_CRBOOT_SLD 0x30444C53 // SLD0, seamless display type 0.
-#define BL_MAGIC_HEKATF_SLD 0x31444C53 // SLD1, seamless display type 1.
+#define BL_MAGIC_L4TLDR_SLD 0x31444C53 // SLD1, seamless display type 1.
 #define BL_MAGIC_BROKEN_HWI 0xBAADF00D // Broken hwinit.
 
 extern u32 hw_rst_status;

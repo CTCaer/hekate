@@ -1239,7 +1239,7 @@ static void _sdmmc_config_emmc(u32 id, bool t210b01)
 		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) &= 0xF8003FFF;
 		// Set default pad cfg.
 		if (t210b01)
-			APB_MISC(APB_MISC_GP_EMMC4_PAD_PUPD_CFGPADCTRL) &= 0xFFBFFFF9; // Unset CMD/CLK/DQS powedown.
+			APB_MISC(APB_MISC_GP_EMMC4_PAD_PUPD_CFGPADCTRL) &= 0xFFBFFFF9; // Unset CMD/CLK/DQS weak pull up/down.
 		// Enable schmitt trigger.
 		APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL) |= 1;
 		(void)APB_MISC(APB_MISC_GP_EMMC4_PAD_CFGPADCTRL); // Commit write.

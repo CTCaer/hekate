@@ -289,6 +289,9 @@ static void _config_regulators(bool tegra_t210)
 	max7762x_regulator_enable(REGULATOR_LDO2, false);
 	sd_power_cycle_time_start = get_tmr_ms();
 
+	// Disable LCD DVDD.
+	max7762x_regulator_enable(REGULATOR_LDO0, false);
+
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGBBC, MAX77620_CNFGBBC_RESISTOR_1K);
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1,
 		MAX77620_ONOFFCNFG1_RSVD | (3 << MAX77620_ONOFFCNFG1_MRT_SHIFT)); // PWR delay for forced shutdown off.
@@ -470,6 +473,9 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 		display_backlight_brightness(0, 1000);
 		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_GPIO);
 		display_backlight_brightness(brightness, 0);
+		break;
+	case BL_MAGIC_L4TLDR_SLD:
+		// Do not disable backlight at all.
 		break;
 	default:
 		display_end();

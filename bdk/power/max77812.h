@@ -70,8 +70,8 @@
 #define MAX77812_REG_M2_CFG			0x30 // HOS: M2_ILIM - 7.2A/4.8A.
 #define MAX77812_REG_M3_CFG			0x31 // HOS: M3_ILIM - 7.2A/4.8A.
 #define MAX77812_REG_M4_CFG			0x32 // HOS: M4_ILIM - 7.2A/4.8A.
-#define MAX77812_REG_GLB_CFG1		0x33 // HOS: B_SD_SR/B_SS_SR - 5mV/ìs.
-#define MAX77812_REG_GLB_CFG2		0x34 // HOS: B_RD_SR/B_RU_SR - 5mV/ìs
+#define MAX77812_REG_GLB_CFG1		0x33 // HOS: B_SD_SR/B_SS_SR - 5mV/us.
+#define MAX77812_REG_GLB_CFG2		0x34 // HOS: B_RD_SR/B_RU_SR - 5mV/us
 #define MAX77812_REG_GLB_CFG3		0x35
 
 /*! Protected area and settings only for MAX77812_ES2_VERSION */

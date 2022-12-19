@@ -1869,7 +1869,7 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	else
 	{
 		emmc_initialize(false);
-		sdmmc_storage_set_mmc_partition(ums.lun.storage, ums.lun.partition - 1);
+		emmc_set_partition(ums.lun.partition - 1);
 
 		ums.lun.sdmmc   = &emmc_sdmmc;
 		ums.lun.storage = &emmc_storage;
