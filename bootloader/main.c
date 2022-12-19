@@ -1164,7 +1164,7 @@ static void _check_low_battery()
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
 	max17050_get_property(MAX17050_AvgVCELL,   &batt_volt);
 
-	enough_battery = charge_status ? 3250 : 3000;
+	enough_battery = charge_status ? 3300 : 3100;
 
 	// If battery voltage is enough, exit.
 	if (batt_volt > enough_battery || !batt_volt)
@@ -1197,7 +1197,7 @@ static void _check_low_battery()
 		int current_charge_status = 0;
 		bq24193_get_property(BQ24193_ChargeStatus, &current_charge_status);
 		max17050_get_property(MAX17050_AvgVCELL, &batt_volt);
-		enough_battery = current_charge_status ? 3250 : 3000;
+		enough_battery = current_charge_status ? 3300 : 3100;
 
 		// If battery voltage is enough, exit.
 		if (batt_volt > enough_battery)
