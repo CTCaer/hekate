@@ -31,7 +31,6 @@
 #include <libs/fatfs/ff.h>
 #include "storage/emummc.h"
 
-#include "frontend/fe_emmc_tools.h"
 #include "frontend/fe_tools.h"
 #include "frontend/fe_info.h"
 
@@ -1346,9 +1345,7 @@ ment_t ment_cinfo[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("---- SoC Info ----", TXT_CLR_CYAN_L),
-	//MDEF_HANDLER("Ipatches & bootrom", bootrom_ipatches_info),
 	MDEF_HANDLER("Fuses", print_fuseinfo),
-	//MDEF_HANDLER("Print kfuse info", print_kfuseinfo),
 	MDEF_CHGLINE(),
 	MDEF_CAPTION("-- Storage Info --", TXT_CLR_CYAN_L),
 	MDEF_HANDLER("eMMC",    print_mmc_info),
@@ -1361,45 +1358,9 @@ ment_t ment_cinfo[] = {
 
 menu_t menu_cinfo = { ment_cinfo, "Console Info", 0, 0 };
 
-ment_t ment_restore[] = {
-	MDEF_BACK(),
-	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", TXT_CLR_CYAN_L),
-	MDEF_HANDLER("Restore eMMC BOOT0/1", restore_emmc_boot),
-	MDEF_HANDLER("Restore eMMC RAW GPP", restore_emmc_rawnand),
-	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", TXT_CLR_CYAN_L),
-	MDEF_HANDLER("Restore GPP partitions", restore_emmc_gpp_parts),
-	MDEF_END()
-};
-
-menu_t menu_restore = { ment_restore, "Restore Options", 0, 0 };
-
-ment_t ment_backup[] = {
-	MDEF_BACK(),
-	MDEF_CHGLINE(),
-	MDEF_CAPTION("------ Full --------", TXT_CLR_CYAN_L),
-	MDEF_HANDLER("Backup eMMC BOOT0/1", dump_emmc_boot),
-	MDEF_HANDLER("Backup eMMC RAW GPP", dump_emmc_rawnand),
-	MDEF_CHGLINE(),
-	MDEF_CAPTION("-- GPP Partitions --", TXT_CLR_CYAN_L),
-	MDEF_HANDLER("Backup eMMC SYS",  dump_emmc_system),
-	MDEF_HANDLER("Backup eMMC USER", dump_emmc_user),
-	MDEF_END()
-};
-
-menu_t menu_backup = { ment_backup, "Backup Options", 0, 0 };
-
 ment_t ment_tools[] = {
 	MDEF_BACK(),
 	MDEF_CHGLINE(),
-	//MDEF_CAPTION("-- Backup & Restore --", TXT_CLR_CYAN_L),
-	//MDEF_MENU("Backup", &menu_backup),
-	//MDEF_MENU("Restore", &menu_restore),
-	//MDEF_CHGLINE(),
-	//MDEF_CAPTION("-------- Misc --------", TXT_CLR_CYAN_L),
-	//MDEF_HANDLER("Dump package1/2", dump_packages12),
-	//MDEF_CHGLINE(),
 	MDEF_CAPTION("-------- Other -------", TXT_CLR_WARNING),
 	MDEF_HANDLER("AutoRCM", menu_autorcm),
 	MDEF_END()

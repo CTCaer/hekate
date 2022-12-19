@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018-2022 CTCaer
- * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -36,7 +35,6 @@ void print_fuseinfo()
 {
 	u32 fuse_size = h_cfg.t210b01 ? 0x368 : 0x300;
 	u32 fuse_address = h_cfg.t210b01 ? 0x7000F898 : 0x7000F900;
-	u32 fuse_array_size = (h_cfg.t210b01 ? 256 : 192) * sizeof(u32);
 
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
@@ -60,59 +58,7 @@ void print_fuseinfo()
 	gfx_printf("%kFuse cache:\n\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 	gfx_hexdump(fuse_address, (u8 *)fuse_address, fuse_size);
 
-	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
-
-	u32 btn = btn_wait();
-	if (btn & BTN_POWER)
-	{
-		if (sd_mount())
-		{
-			char path[64];
-			emmcsn_path_impl(path, "/dumps", "fuse_cached.bin", NULL);
-			if (!sd_save_to_file((u8 *)fuse_address, fuse_size, path))
-				gfx_puts("\nfuse_cached.bin saved!\n");
-
-			u32 words[256];
-			fuse_read_array(words);
-			emmcsn_path_impl(path, "/dumps", "fuse_array_raw.bin", NULL);
-			if (!sd_save_to_file((u8 *)words, fuse_array_size, path))
-				gfx_puts("\nfuse_array_raw.bin saved!\n");
-
-			sd_end();
-		}
-
-		btn_wait();
-	}
-}
-
-void print_kfuseinfo()
-{
-	gfx_clear_partial_grey(0x1B, 0, 1256);
-	gfx_con_setpos(0, 0);
-
-	gfx_printf("%kKFuse contents:\n\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
-	u32 buf[KFUSE_NUM_WORDS];
-	if (!kfuse_read(buf))
-		EPRINTF("CRC fail.");
-	else
-		gfx_hexdump(0, (u8 *)buf, KFUSE_NUM_WORDS * 4);
-
-	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
-
-	u32 btn = btn_wait();
-	if (btn & BTN_POWER)
-	{
-		if (sd_mount())
-		{
-			char path[64];
-			emmcsn_path_impl(path, "/dumps", "kfuses.bin", NULL);
-			if (!sd_save_to_file((u8 *)buf, KFUSE_NUM_WORDS * 4, path))
-				gfx_puts("\nDone!\n");
-			sd_end();
-		}
-
-		btn_wait();
-	}
+	btn_wait();
 }
 
 void print_mmc_info()
@@ -449,94 +395,7 @@ void print_battery_info()
 
 	gfx_hexdump(0, (u8 *)buf, 0x200);
 
-	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
-
-	u32 btn = btn_wait();
-
-	if (btn & BTN_POWER)
-	{
-		if (sd_mount())
-		{
-			char path[64];
-			emmcsn_path_impl(path, "/dumps", "fuel_gauge.bin", NULL);
-			if (sd_save_to_file((u8 *)buf, 0x200, path))
-				EPRINTF("\nError creating fuel.bin file.");
-			else
-				gfx_puts("\nDone!\n");
-			sd_end();
-		}
-
-		btn_wait();
-	}
-	free(buf);
-}
-
-void _ipatch_process(u32 offset, u32 value)
-{
-	gfx_printf("%8x %8x", BOOTROM_BASE + offset, value);
-	u8 lo = value & 0xff;
-	switch (value >> 8)
-	{
-	case 0x20:
-		gfx_printf("    MOVS R0, #0x%02X", lo);
-		break;
-	case 0xDF:
-		gfx_printf("    SVC #0x%02X", lo);
-		break;
-	}
-	gfx_puts("\n");
-}
-
-void bootrom_ipatches_info()
-{
-	gfx_clear_partial_grey(0x1B, 0, 1256);
-	gfx_con_setpos(0, 0);
-
-	static const u32 BOOTROM_SIZE = 0x18000;
-
-	u32 res = fuse_read_ipatch(_ipatch_process);
-	if (res != 0)
-		EPRINTFARGS("Failed to read ipatches. Error: %d", res);
-
-	gfx_puts("\nPress POWER to dump them to SD Card.\nPress VOL to go to the menu.\n");
-
-	u32 btn = btn_wait();
-	if (btn & BTN_POWER)
-	{
-		if (sd_mount())
-		{
-			char path[64];
-			u32 iram_evp_thunks[0x200];
-			u32 iram_evp_thunks_len = sizeof(iram_evp_thunks);
-			res = fuse_read_evp_thunk(iram_evp_thunks, &iram_evp_thunks_len);
-			if (res == 0)
-			{
-				emmcsn_path_impl(path, "/dumps", "evp_thunks.bin", NULL);
-				if (!sd_save_to_file((u8 *)iram_evp_thunks, iram_evp_thunks_len, path))
-					gfx_puts("\nevp_thunks.bin saved!\n");
-			}
-			else
-				EPRINTFARGS("Failed to read evp_thunks. Error: %d", res);
-
-			emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
-			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
-				gfx_puts("\nbootrom_patched.bin saved!\n");
-
-			u32 ipatch_backup[14];
-			memcpy(ipatch_backup, (void *)IPATCH_BASE, sizeof(ipatch_backup));
-			memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
-
-			emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
-			if (!sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path))
-				gfx_puts("\nbootrom_unpatched.bin saved!\n");
-
-			memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
-
-			sd_end();
-		}
-
-		btn_wait();
-	}
+	btn_wait();
 }
 
 #pragma GCC pop_options
