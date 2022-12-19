@@ -121,7 +121,12 @@ static u8 _max7762x_get_i2c_address(u32 id)
 	case REGULATOR_BC0:
 		return (id == REGULATOR_CPU0 ? MAX77621_CPU_I2C_ADDR : MAX77621_GPU_I2C_ADDR);
 	case REGULATOR_BC1:
-		return _max77812_get_address();
+		{
+		u8 reg_addr = _max77812_get_address();
+		if (id == REGULATOR_RAM1 && reg_addr == MAX77812_PHASE31_CPU_I2C_ADDR)
+			reg_addr = 0;
+		return reg_addr;
+		}
 	default:
 		return 0;
 	}
@@ -186,6 +191,8 @@ int max7762x_regulator_set_voltage(u32 id, u32 uv)
 		return 0;
 
 	u8 addr = _max7762x_get_i2c_address(id);
+	if (!addr)
+		return 0;
 
 	// Calculate voltage multiplier.
 	u32 mult = (uv + reg->uv_step - 1 - reg->uv_min) / reg->uv_step;
@@ -249,6 +256,8 @@ int max7762x_regulator_enable(u32 id, bool enable)
 	}
 
 	u8 addr = _max7762x_get_i2c_address(id);
+	if (!addr)
+		return 0;
 
 	// Read and enable/disable.
 	u8 val = i2c_recv_byte(I2C_5, addr, reg_addr);
@@ -291,6 +300,8 @@ void max77621_config_default(u32 id, bool por)
 		return;
 
 	u8 addr = _max7762x_get_i2c_address(id);
+	if (!addr)
+		return;
 
 	if (por)
 	{
