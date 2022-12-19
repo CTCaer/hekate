@@ -398,9 +398,6 @@ void hw_init()
 	// Initialize various regulators based on Erista/Mariko platform.
 	_config_regulators(tegra_t210);
 
-	// Enable charger in case it's disabled.
-	bq24193_enable_charger();
-
 	_config_pmc_scratch(); // Missing from 4.x+
 
 	// Set BPMP/SCLK to PLLP_OUT (408MHz).
