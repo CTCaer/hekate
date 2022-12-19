@@ -63,6 +63,7 @@ u16 *emmc_get_error_count();
 u32  emmc_get_mode();
 int  emmc_init_retry(bool power_cycle);
 bool emmc_initialize(bool power_cycle);
+int  emmc_set_partition(u32 partition);
 void emmc_end();
 
 void emmc_gpt_parse(link_t *gpt);

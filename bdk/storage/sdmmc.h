@@ -129,10 +129,7 @@ typedef struct _mmc_csd
 	u16 cmdclass;
 	u32 c_size;
 	u32 r2w_factor;
-	u32 max_dtr;
-	u32 erase_size;		/* In sectors */
 	u32 read_blkbits;
-	u32 write_blkbits;
 	u32 capacity;
 	u8  write_protect;
 	u16 busspeed;
@@ -186,6 +183,7 @@ typedef struct _sdmmc_storage_t
 	int is_low_voltage;
 	u32 partition;
 	int initialized;
+	u32 card_power_limit;
 	u8  raw_cid[0x10];
 	u8  raw_csd[0x10];
 	u8  raw_scr[8];

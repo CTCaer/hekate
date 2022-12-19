@@ -1038,6 +1038,7 @@ DPRINTF("[SD] supports selected (U)HS mode\n");
 
 	u16 total_pwr_consumption = ((u16)buf[0] << 8) | buf[1];
 DPRINTF("[SD] total max power: %d mW\n", total_pwr_consumption * 3600 / 1000);
+	storage->card_power_limit = total_pwr_consumption;
 
 	if (total_pwr_consumption <= 800)
 	{

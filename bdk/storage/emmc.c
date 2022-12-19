@@ -131,6 +131,8 @@ bool emmc_initialize(bool power_cycle)
 	return false;
 }
 
+int emmc_set_partition(u32 partition) { return sdmmc_storage_set_mmc_partition(&emmc_storage, partition); }
+
 void emmc_gpt_parse(link_t *gpt)
 {
 	gpt_t *gpt_buf = (gpt_t *)calloc(GPT_NUM_BLOCKS, EMMC_BLOCKSIZE);
