@@ -1838,6 +1838,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"FW rev:\n"
 		"S/N:\n"
 		"Month/Year:\n\n"
+		"Card Power:\n"
 		"Bootloader bus:"
 	);
 
@@ -1863,7 +1864,10 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Toshiba ");
 		break;
 	case 0x03:
-		strcat(txt_buf, "SanDisk ");
+		if (!memcmp(&sd_storage.cid.oemid, "DW", 2))
+			strcat(txt_buf, "Western Digital "); // WD.
+		else
+			strcat(txt_buf, "SanDisk ");
 		break;
 	case 0x06:
 		strcat(txt_buf, "Ritek ");
@@ -1928,10 +1932,11 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	case 0x84:
 		strcat(txt_buf, "Strontium ");
 		break;
-	//TODO: Investigate which OEM/ODM makes these.
-	case 0x9C: // BE, Angelbird | Barun Electronics? What about 0x28?
-			   // LX512 SO, Lexar, Angelbird, Hoodman, Sony | Solidgear?
-		strcat(txt_buf, "Solidgear ");
+	case 0x9C:
+		if (!memcmp(&sd_storage.cid.oemid, "OS", 2))
+			strcat(txt_buf, "Sony "); // SO.
+		else
+			strcat(txt_buf, "Barun Electronics "); // BE.
 		break;
 	case 0x9F:
 		strcat(txt_buf, "Taishin ");
@@ -1944,13 +1949,14 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		break;
 	}
 
-	s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c\n%c%c (%04X)\n%X\n%X\n%08x\n%02d/%04d\n\n",
+	s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c\n%c%c (%04X)\n%X\n%X\n%08x\n%02d/%04d\n\n%d mW\n",
 		sd_storage.cid.manfid,
 		sd_storage.cid.prod_name[0], sd_storage.cid.prod_name[1], sd_storage.cid.prod_name[2],
 		sd_storage.cid.prod_name[3], sd_storage.cid.prod_name[4],
 		(sd_storage.cid.oemid >> 8) & 0xFF, sd_storage.cid.oemid & 0xFF, sd_storage.cid.oemid,
 		sd_storage.cid.hwrev, sd_storage.cid.fwrev, sd_storage.cid.serial,
-		sd_storage.cid.month, sd_storage.cid.year);
+		sd_storage.cid.month, sd_storage.cid.year,
+		sd_storage.card_power_limit * 3600 / 1000);
 
 	switch (nyx_str->info.sd_init)
 	{
