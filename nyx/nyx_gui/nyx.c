@@ -211,7 +211,10 @@ static void _load_saved_configuration()
 	LIST_INIT(ini_nyx_sections);
 
 	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	{
+		create_config_entry();
 		goto skip_main_cfg_parse;
+	}
 
 	// Load hekate configuration.
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)

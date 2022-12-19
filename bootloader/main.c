@@ -755,9 +755,6 @@ static void _auto_launch_firmware()
 	// Load emuMMC configuration.
 	emummc_load_cfg();
 
-	if (f_stat("bootloader/hekate_ipl.ini", NULL))
-		create_config_entry();
-
 	// Parse hekate main configuration.
 	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		goto out; // Can't load hekate_ipl.ini.
@@ -884,10 +881,6 @@ static void _auto_launch_firmware()
 	}
 
 skip_list:
-	// Add missing configuration entry.
-	if (!config_entry_found)
-		create_config_entry();
-
 	if (!cfg_sec)
 		goto out; // No configurations or auto boot is disabled.
 
