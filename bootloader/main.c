@@ -92,10 +92,25 @@ void check_power_off_from_hos()
 		{
 			render_static_bootlogo();
 
-			display_backlight_brightness(10,  5000);
-			display_backlight_brightness(100, 25000);
-			msleep(600);
-			display_backlight_brightness(0,   20000);
+			if (display_get_decoded_panel_id() != PANEL_SAM_AMS699VC01)
+			{
+				// Slow fading for LCD panels.
+				display_backlight_brightness(10,  5000);
+				display_backlight_brightness(100, 25000);
+				msleep(600);
+				display_backlight_brightness(0,   20000);
+			}
+			else
+			{
+				// Blink 3 times for OLED panel.
+				for (u32 i = 0; i < 3; i++)
+				{
+					msleep(150);
+					display_backlight_brightness(100, 0);
+					msleep(150);
+					display_backlight_brightness(0,   0);
+				}
+			}
 		}
 		power_set_state(POWER_OFF_RESET);
 	}
