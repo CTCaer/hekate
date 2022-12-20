@@ -1135,12 +1135,15 @@ recovery_not_found:
 	manual_system_maintenance(true);
 
 	// Check if Device Tree should be flashed.
-	strcpy(path, "switchroot/install/tegra210-icosa.dtb");
+	strcpy(path, "switchroot/install/nx-plat.dtimg");
 	if (f_stat(path, NULL))
 	{
-		strcat(txt_buf, "#FF8000 Warning:# DTB image not found!");
-
-		goto dtb_not_found;
+		strcpy(path, "switchroot/install/tegra210-icosa.dtb");
+		if (f_stat(path, NULL))
+		{
+			strcat(txt_buf, "#FF8000 Warning:# DTB image not found!");
+			goto dtb_not_found;
+		}
 	}
 
 	offset_sct = 0;
@@ -1247,6 +1250,7 @@ static lv_res_t _action_flash_android(lv_obj_t *btn)
 	lv_label_set_recolor(lbl_status, true);
 	lv_label_set_text(lbl_status,
 		"This will flash #C7EA46 Kernel#, #C7EA46 DTB# and #C7EA46 Recovery# if found.\n"
+		"These will be deleted after a successful flash.\n"
 		"Do you want to continue?");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map,  _action_flash_android_data);
@@ -2457,6 +2461,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	if (!sd_mount())
 	{
 		lv_obj_t *lbl = lv_label_create(h1, NULL);
+		lv_label_set_recolor(lbl, true);
 		lv_label_set_text(lbl, "#FFDD00 Failed to init SD!#");
 		return LV_RES_OK;
 	}
@@ -2639,8 +2644,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_label_set_static_text(lbl_notes,
 		"Note 1: Only up to #C7EA46 1GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
 		"Note 2: Resized emuMMC formats the USER partition. A save data manager can be used to move them over.\n"
-		"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n"
-		"Note 4: The installation folder is #C7EA46 switchroot/install#. Linux uses #C7EA46 l4t.XX# and Android uses #C7EA46 recovery/twrp.img# and #C7EA46 tegra210-icosa.dtb#.");
+		"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n");
 	lv_label_set_style(lbl_notes, &hint_small_style);
 	lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 
