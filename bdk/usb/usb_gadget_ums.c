@@ -1944,7 +1944,7 @@ error:
 
 exit:
 	if (ums.lun.type == MMC_EMMC)
-		sdmmc_storage_end(ums.lun.storage);
+		emmc_end();
 
 	usb_ops.usbd_end(true, false);
 
