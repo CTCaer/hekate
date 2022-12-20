@@ -26,6 +26,7 @@
 #include "gfx/tui.h"
 #include "hos/hos.h"
 #include "hos/secmon_exo.h"
+#include "l4t/l4t.h"
 #include <ianos/ianos.h>
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
@@ -458,6 +459,19 @@ parse_failed:
 		// Try to launch Payload or L4T.
 		if (special_path != (char *)-1)
 			_launch_payload(special_path, false, true);
+		else
+		{
+			u32 entry_idx = 0;
+			for (u32 i = 0; i < sec_idx; i++)
+			{
+				if (ments[i].data == cfg_sec)
+				{
+					entry_idx = i;
+					break;
+				}
+			}
+			launch_l4t(cfg_sec, entry_idx, 1, h_cfg.t210b01);
+		}
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -590,6 +604,19 @@ parse_failed:
 		// Try to launch Payload or L4T.
 		if (special_path != (char *)-1)
 			_launch_payload(special_path, false, true);
+		else
+		{
+			u32 entry_idx = 0;
+			for (u32 i = 0; i < sec_idx; i++)
+			{
+				if (ments[i].data == cfg_sec)
+				{
+					entry_idx = i;
+					break;
+				}
+			}
+			launch_l4t(cfg_sec, entry_idx, 0, h_cfg.t210b01);
+		}
 	}
 	else if (!hos_launch(cfg_sec))
 	{
@@ -904,7 +931,8 @@ skip_list:
 	// Check if entry is payload or l4t special case.
 	char *special_path = ini_check_special_section(cfg_sec);
 
-	if (!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait)
+	if ((!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait) || // Conditional for HOS/Payload.
+		(special_path && special_path == (char *)-1))                   // Always show for L4T.
 	{
 		u32 fsize;
 		u8 *logo_buf = NULL;
@@ -987,6 +1015,8 @@ skip_list:
 		// Try to launch Payload or L4T.
 		if (special_path != (char *)-1)
 			_launch_payload(special_path, false, false);
+		else
+			launch_l4t(cfg_sec, h_cfg.autoboot, h_cfg.autoboot_list, h_cfg.t210b01);
 		goto error;
 	}
 	else

@@ -113,6 +113,12 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | ---------------------- | ---------------------------------------------------------- |
 | payload={FILE path}    | Payload launching. Tools, Android/Linux, CFW bootloaders, etc. Any key above when used with that, doesn't get into account. |
 | ---------------------- | ---------------------------------------------------------- |
+| l4t=1                  | L4T Linux/Android native launching.                        |
+| boot_prefixes={FOLDER path} | L4T bootstack directory.                              |
+| ram_oc=0               | L4T RAM Overclocking. Check README_CONFIG.txt for more info. |
+| uart_port=0            | Enables logging on serial port for L4T uboot/kernel.       |
+| Additional keys        | Each distro supports more keys. Check README_CONFIG.txt  for more info. |
+| ---------------------- | ---------------------------------------------------------- |
 | id=IDNAME              | Identifies boot entry for forced boot via id. Max 7 chars. |
 | logopath={FILE path}   | If it exists, it will load the specified bitmap. Otherwise `bootloader/bootlogo.bmp` will be used if exists |
 | icon={FILE path}       | Force Nyx to use the icon defined here. If this is not found, it will check for a bmp named as the boot entry ([Test 2] -> `bootloader/res/Test 2.bmp`). Otherwise defaults will be used. |
@@ -158,9 +164,6 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | '0x98' ums[1]           | When `Run UMS` is set, it will launch the selected UMS. 0: SD, 1: eMMC BOOT0, 2: eMMC BOOT1, 3: eMMC GPP, 4: emuMMC BOOT0, 5: emuMMC BOOT1, 6: emuMMC GPP,  |
 | '0x98' id[8]            | When `Boot from ID` is set, it will search all inis automatically and find the boot entry with that id and boot it. Must be NULL terminated. |
 | '0xA0' emummc_path[120] | When `Boot to emuMMC` is set, it will override the current emuMMC (boot entry or emummc.ini). Must be NULL terminated. |
-
-
-If the main .ini is not found, it is created on the first hekate boot and only has the `[config]` entry.
 
 
 ### Nyx Configuration keys/values (nyx.ini):
