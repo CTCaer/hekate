@@ -548,6 +548,9 @@ static void _l4t_mc_config_carveout(bool t210b01)
 
 #elif CARVEOUT_SECFW_ENABLE
 
+	// Flush data to ram.
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
+
 	// Set SC7-Entry/SC7-Exit/R2P/MTC Table or SC7-Exit/BPMP-FW carveout. Only BPMP, CCPLEX and AHB have R/W access.
 	MC(MC_SECURITY_CARVEOUT1_BOM)        = carveout_base;
 	MC(MC_SECURITY_CARVEOUT1_BOM_HI)     = 0;
@@ -823,7 +826,7 @@ static void _l4t_bpmpfw_config(l4t_ctxt_t *ctxt)
 
 		pll_spread_spectrum_t210b01_t *ssc = BPMPFW_DTB_EMC_TBL_SCC_OFFSET(tbl_idx);
 
-		if (ram_oc_divn < DRAM_T210B01_SSC_PARAMS)
+		if (ram_oc_divn <= DRAM_T210B01_SSC_PARAMS)
 		{
 			// Standard frequency.
 			const pll_ssc_t210b01_t *ssc_cfg = &pll_jd_ssc_t210b01[ram_oc_divn - 1];
@@ -910,14 +913,14 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 	{
 		if (!strcmp("boot_prefixes",  kv->key))
-			ctxt->path         = kv->val;
+			ctxt->path        = kv->val;
 		else if (!strcmp("ram_oc",    kv->key))
 		{
-			ctxt->ram_oc_txt = kv->val;
-			ctxt->ram_oc_freq  = atoi(kv->val);
+			ctxt->ram_oc_txt  = kv->val;
+			ctxt->ram_oc_freq = atoi(kv->val);
 		}
 		else if (!strcmp("uart_port", kv->key))
-			ctxt->serial_port  = atoi(kv->val);
+			ctxt->serial_port = atoi(kv->val);
 
 		// Set key/val to BL33 env.
 		_l4t_bl33_cfg_set_key(bl33_env, kv->key, kv->val);
@@ -1133,8 +1136,6 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	// Prepare EMC table.
 	if (ctxt.mtc_table)
 	{
-		int table_entries = minerva_get_mtc_table_entries();
-
 		// Set DRAM voltage.
 		if (ctxt.ram_oc_freq > DRAM_T210_OC_THRESHOLD_FREQ)
 			max7762x_regulator_set_voltage(REGULATOR_SD1, DRAM_T210_OC_VOLTAGE);
@@ -1143,6 +1144,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 		minerva_prep_boot_l4t(ctxt.ram_oc_freq);
 
 		// Set emc table parameters and copy it.
+		int table_entries = minerva_get_mtc_table_entries();
 		plat_params.emc_table_base = MTCTABLE_BASE;
 		plat_params.emc_table_size = sizeof(emc_table_t) * table_entries;
 		memcpy((u32 *)MTCTABLE_BASE, ctxt.mtc_table, sizeof(emc_table_t) * table_entries);
