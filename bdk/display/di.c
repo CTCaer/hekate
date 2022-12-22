@@ -873,8 +873,11 @@ u32 *display_init_framebuffer_pitch()
 u32 *display_init_framebuffer_pitch_vic()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
+	if (_display_id != PANEL_SAM_AMS699VC01)
+		usleep(8000); // Wait half frame for PWM to apply.
 	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_vic, CFG_SIZE(_di_win_framebuffer_pitch_vic));
-	usleep(35000); // Wait 2 frames. No need on Aula.
+	if (_display_id != PANEL_SAM_AMS699VC01)
+		usleep(35000); // Wait 2 frames.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
