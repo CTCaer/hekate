@@ -374,7 +374,7 @@ static void _vic_write_priv(u32 addr, u32 data)
 		VIC(PVIC_FALCON_ADDR) = 0;
 }
 
-int _vic_wait_idle()
+static int _vic_wait_idle()
 {
 	u32 timeout_count = 15000; // 150ms.
 

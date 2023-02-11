@@ -669,7 +669,7 @@
 #define MIPI_DCS_PRIV_UNK_D6            0xD6
 #define MIPI_DCS_PRIV_UNK_D8            0xD8
 #define MIPI_DCS_PRIV_UNK_D9            0xD9
-                                             //                          LVL1 LVL2 LVL3 UNK0 UNK1
+											 //                          LVL1 LVL2 LVL3 UNK0 UNK1
 #define MIPI_DCS_PRIV_SM_SET_REGS_LOCK  0xE2 // Samsung: Lock (default): 5A5A A5A5 A5A5 A500 A500. Unlock: A5A5 5A5A 5A5A UNK UNK.
 #define MIPI_DCS_PRIV_READ_EXTC_CMD_SPI 0xFE // Read EXTC Command In SPI. 1 byte. 0-6: EXT_SPI_CNT, 7:EXT_SP.
 #define MIPI_DCS_PRIV_SET_EXTC_CMD_REG  0xFF // EXTC Command Set enable register. 5 bytes. Pass: FF 98 06 04, PAGE.
@@ -710,16 +710,16 @@
 #define DCS_CONTROL_DISPLAY_DIMMING_CTRL    BIT(3)
 #define DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL BIT(5)
 
-#define DCS_SM_COLOR_MODE_DEFAULT   0x00 // Similar to vivid.
+#define DCS_SM_COLOR_MODE_SATURATED 0x00 // Disabled. Similar to vivid but over-saturated. Wide gamut?
 #define DCS_SM_COLOR_MODE_WASHED    0x45
 #define DCS_SM_COLOR_MODE_BASIC     0x03
 #define DCS_SM_COLOR_MODE_POR_RESET 0x20 // Reset value on power on.
 #define DCS_SM_COLOR_MODE_NATURAL   0x23 // Not actually natural..
 #define DCS_SM_COLOR_MODE_VIVID     0x65
 #define DCS_SM_COLOR_MODE_NIGHT0    0x43 // Based on washed out.
-#define DCS_SM_COLOR_MODE_NIGHT1    0x15
-#define DCS_SM_COLOR_MODE_NIGHT2    0x35
-#define DCS_SM_COLOR_MODE_NIGHT3    0x75
+#define DCS_SM_COLOR_MODE_NIGHT1    0x15 // Based on basic.
+#define DCS_SM_COLOR_MODE_NIGHT2    0x35 // Based on natural.
+#define DCS_SM_COLOR_MODE_NIGHT3    0x75 // Based on vivid.
 
 #define DCS_SM_COLOR_MODE_ENABLE    BIT(0)
 
