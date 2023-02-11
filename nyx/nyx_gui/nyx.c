@@ -291,6 +291,39 @@ skip_main_cfg_parse:
 	ini_free(&ini_nyx_sections);
 }
 
+static int nyx_load_resources()
+{
+	FIL fp;
+	int res;
+
+	res = f_open(&fp, "bootloader/sys/res.pak", FA_READ);
+	if (res)
+		return res;
+
+	res = f_read(&fp, (void *)NYX_RES_ADDR, f_size(&fp), NULL);
+	f_close(&fp);
+
+	return res;
+}
+
+static void nyx_load_bg_icons()
+{
+	// If no custom switch icon exists, load normal.
+	if (!f_stat("bootloader/res/icon_switch_custom.bmp", NULL))
+		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch_custom.bmp");
+	else
+		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch.bmp");
+
+	// If no custom payload icon exists, load normal.
+	if (!f_stat("bootloader/res/icon_payload_custom.bmp", NULL))
+		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload_custom.bmp");
+	else
+		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload.bmp");
+
+	// Load background resource if any.
+	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
+}
+
 #define EXCP_EN_ADDR   0x4003FFFC
 #define  EXCP_MAGIC 0x30505645      // EVP0
 #define EXCP_TYPE_ADDR 0x4003FFF8
@@ -300,20 +333,42 @@ skip_main_cfg_parse:
 #define  EXCP_TYPE_DABRT 0x54424144 // DABT
 #define EXCP_LR_ADDR   0x4003FFF4
 
-static void _show_errors()
+enum {
+	SD_NO_ERROR    = 0,
+	SD_MOUNT_ERROR = 1,
+	SD_FILE_ERROR  = 2
+};
+
+static void _show_errors(int sd_error)
 {
 	u32 *excp_enabled = (u32 *)EXCP_EN_ADDR;
 	u32 *excp_type = (u32 *)EXCP_TYPE_ADDR;
 	u32 *excp_lr = (u32 *)EXCP_LR_ADDR;
 
-	if (*excp_enabled == EXCP_MAGIC)
+	if (*excp_enabled == EXCP_MAGIC || sd_error)
 	{
 		gfx_clear_grey(0);
 		gfx_con_setpos(0, 0);
 		display_backlight_brightness(150, 1000);
-
+		display_init_framebuffer_log();
 		display_activate_console();
+	}
 
+	switch (sd_error)
+	{
+	case SD_MOUNT_ERROR:
+		WPRINTF("Failed to init or mount SD!\n");
+		goto error_occured;
+	case SD_FILE_ERROR:
+		WPRINTF("Failed to load GUI resources!\nres.pak not found or corrupted.\n");
+		goto error_occured;
+	case SD_NO_ERROR:
+	default:
+		break;
+	}
+
+	if (*excp_enabled == EXCP_MAGIC)
+	{
 		WPRINTFARGS("Nyx exception occurred (LR %08X):\n", *excp_lr);
 		switch (*excp_type)
 		{
@@ -337,9 +392,10 @@ static void _show_errors()
 		*excp_type = 0;
 		*excp_enabled = 0;
 
-		WPRINTF("Press any key...");
+error_occured:
+		WPRINTF("Press any key to reload Nyx...");
 
-		msleep(1500);
+		msleep(1000);
 		btn_wait();
 
 		reload_nyx();
@@ -377,15 +433,28 @@ void nyx_init_load_res()
 	gfx_con_init();
 
 	// Show exception errors if any.
-	_show_errors();
+	_show_errors(SD_NO_ERROR);
 
-	sd_mount();
+	// Try 2 times to mount SD card.
+	if (!sd_mount())
+	{
+		if (!sd_mount())
+			_show_errors(SD_MOUNT_ERROR); // Fatal.
+	}
 
 	// Train DRAM and switch to max frequency.
 	minerva_init();
 
 	// Load hekate/Nyx configuration.
 	_load_saved_configuration();
+
+	// Load Nyx resources.
+	if (nyx_load_resources())
+	{
+		// Try again.
+		if (nyx_load_resources())
+			_show_errors(SD_FILE_ERROR); // Fatal since resources are mandatory.
+	}
 
 	// Initialize nyx cfg to lower clock on first boot.
 	// In case of lower binned SoC, this can help with hangs.
@@ -415,28 +484,8 @@ void nyx_init_load_res()
 		break;
 	}
 
-	// Load Nyx resources.
-	FIL fp;
-	if (!f_open(&fp, "bootloader/sys/res.pak", FA_READ))
-	{
-		f_read(&fp, (void *)NYX_RES_ADDR, f_size(&fp), NULL);
-		f_close(&fp);
-	}
-
-	// If no custom switch icon exists, load normal.
-	if (f_stat("bootloader/res/icon_switch_custom.bmp", NULL))
-		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch.bmp");
-	else
-		icon_switch = bmp_to_lvimg_obj("bootloader/res/icon_switch_custom.bmp");
-
-	// If no custom payload icon exists, load normal.
-	if (f_stat("bootloader/res/icon_payload_custom.bmp", NULL))
-		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload.bmp");
-	else
-		icon_payload = bmp_to_lvimg_obj("bootloader/res/icon_payload_custom.bmp");
-
-	// Load background resource if any.
-	hekate_bg = bmp_to_lvimg_obj("bootloader/res/background.bmp");
+	// Load default launch icons and background if it exists.
+	nyx_load_bg_icons();
 
 	// Unmount FAT partition.
 	sd_unmount();
