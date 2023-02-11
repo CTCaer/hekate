@@ -140,6 +140,9 @@
  * SD_SWITCH function groups
  */
 #define SD_SWITCH_GRP_ACCESS	0
+#define SD_SWITCH_GRP_CMDSYS    1
+#define SD_SWITCH_GRP_DRVSTR    2
+#define SD_SWITCH_GRP_PWRLIM    3
 
 /*
  * SD_SWITCH access modes

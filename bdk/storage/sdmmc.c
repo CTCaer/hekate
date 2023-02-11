@@ -992,19 +992,26 @@ static void _sd_storage_set_power_limit(sdmmc_storage_t *storage, u16 power_limi
 {
 	u32 pwr = SD_SET_POWER_LIMIT_0_72;
 
+// If UHS-I only, anything above 1.44W defaults to 1.44W.
+#if SDMMC_UHS2_SUPPORT
 	if (power_limit & SD_MAX_POWER_2_88)
 		pwr = SD_SET_POWER_LIMIT_2_88;
 	else if (power_limit & SD_MAX_POWER_2_16)
 		pwr = SD_SET_POWER_LIMIT_2_16;
 	else if (power_limit & SD_MAX_POWER_1_44)
 		pwr = SD_SET_POWER_LIMIT_1_44;
+#else
+	if (power_limit & SD_MAX_POWER_1_44)
+		pwr = SD_SET_POWER_LIMIT_1_44;
+#endif
 
-	_sd_storage_switch(storage, buf, SD_SWITCH_SET, 3, pwr);
+	_sd_storage_switch(storage, buf, SD_SWITCH_SET, SD_SWITCH_GRP_PWRLIM, pwr);
 
 	if (((buf[15] >> 4) & 0x0F) == pwr)
 	{
 		switch (pwr)
 		{
+#if SDMMC_UHS2_SUPPORT
 		case SD_SET_POWER_LIMIT_2_88:
 DPRINTF("[SD] power limit raised to 2880 mW\n");
 			break;
@@ -1012,7 +1019,7 @@ DPRINTF("[SD] power limit raised to 2880 mW\n");
 		case SD_SET_POWER_LIMIT_2_16:
 DPRINTF("[SD] power limit raised to 2160 mW\n");
 			break;
-
+#endif
 		case SD_SET_POWER_LIMIT_1_44:
 DPRINTF("[SD] power limit raised to 1440 mW\n");
 			break;
@@ -1027,7 +1034,7 @@ DPRINTF("[SD] power limit defaulted to 720 mW\n");
 
 static int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
-	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, 0, hs_type))
+	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, SD_SWITCH_GRP_ACCESS, hs_type))
 		return 0;
 DPRINTF("[SD] supports (U)HS mode: %d\n", buf[16] & 0xF);
 
@@ -1037,12 +1044,12 @@ DPRINTF("[SD] supports (U)HS mode: %d\n", buf[16] & 0xF);
 DPRINTF("[SD] supports selected (U)HS mode\n");
 
 	u16 total_pwr_consumption = ((u16)buf[0] << 8) | buf[1];
-DPRINTF("[SD] total max power: %d mW\n", total_pwr_consumption * 3600 / 1000);
+DPRINTF("[SD] max power: %d mW\n", total_pwr_consumption * 3600 / 1000);
 	storage->card_power_limit = total_pwr_consumption;
 
 	if (total_pwr_consumption <= 800)
 	{
-		if (!_sd_storage_switch(storage, buf, SD_SWITCH_SET, 0, hs_type))
+		if (!_sd_storage_switch(storage, buf, SD_SWITCH_SET, SD_SWITCH_GRP_ACCESS, hs_type))
 			return 0;
 
 		if (type_out != (buf[16] & 0xF))
