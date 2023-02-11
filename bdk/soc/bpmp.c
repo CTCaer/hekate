@@ -206,6 +206,7 @@ void bpmp_mmu_disable()
 const u8 pll_divn[] = {
 	0,   // BPMP_CLK_NORMAL:      408MHz  0% - 136MHz APB.
 	85,  // BPMP_CLK_HIGH_BOOST:  544MHz 33% - 136MHz APB.
+	88,  // BPMP_CLK_HIGH2_BOOST: 563MHz 38% - 141MHz APB.
 	90,  // BPMP_CLK_SUPER_BOOST: 576MHz 41% - 144MHz APB.
 	92   // BPMP_CLK_HYPER_BOOST: 589MHz 44% - 147MHz APB.
 	// Do not use for public releases!
