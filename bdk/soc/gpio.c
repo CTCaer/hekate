@@ -86,6 +86,19 @@ void gpio_write(u32 port, u32 pins, int high)
 	(void)GPIO(port_offset); // Commit the write.
 }
 
+void gpio_direction_input(u32 port, u32 pins)
+{
+	gpio_config(port, pins, GPIO_MODE_GPIO);
+	gpio_output_enable(port, pins, GPIO_OUTPUT_DISABLE);
+}
+
+void gpio_direction_output(u32 port, u32 pins, int high)
+{
+	gpio_config(port, pins, GPIO_MODE_GPIO);
+	gpio_output_enable(port, pins, GPIO_OUTPUT_ENABLE);
+	gpio_write(port, pins, high);
+}
+
 int gpio_read(u32 port, u32 pins)
 {
 	u32 port_offset = GPIO_IN_OFFSET(port);

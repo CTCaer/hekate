@@ -85,6 +85,8 @@
 
 void gpio_config(u32 port, u32 pins, int mode);
 void gpio_output_enable(u32 port, u32 pins, int enable);
+void gpio_direction_input(u32 port, u32 pins);
+void gpio_direction_output(u32 port, u32 pins, int high);
 void gpio_write(u32 port, u32 pins, int high);
 int  gpio_read(u32 port, u32 pins);
 int  gpio_interrupt_status(u32 port, u32 pins);
