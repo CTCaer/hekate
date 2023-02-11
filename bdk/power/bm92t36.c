@@ -73,17 +73,22 @@ void bm92t36_get_sink_info(bool *inserted, usb_pd_objects_t *usb_pd)
 
 	if (inserted)
 	{
+		memset(buf, 0, sizeof(buf));
 		_bm92t36_read_reg(buf, 2, STATUS1_REG);
 		*inserted = buf[0] & STATUS1_INSERT ? true : false;
 	}
 
 	if (usb_pd)
 	{
+		memset(buf, 0, sizeof(buf));
 		_bm92t36_read_reg(buf, 29, READ_PDOS_SRC_REG);
 		memcpy(pdos, &buf[1], 28);
 
 		memset(usb_pd, 0, sizeof(usb_pd_objects_t));
 		usb_pd->pdo_no = buf[0] / sizeof(pd_object_t);
+
+		if (usb_pd->pdo_no > 7)
+			usb_pd->pdo_no = 7;
 
 		for (u32 i = 0; i < usb_pd->pdo_no; i++)
 		{
