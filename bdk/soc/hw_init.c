@@ -413,8 +413,7 @@ void hw_init()
 
 void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 {
-	// Disable BPMP max clock.
-	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 
 #ifdef BDK_HW_EXTRA_DEINIT
 	// Disable temperature sensor, touchscreen, 5V regulators, Joy-Con and VIC.
@@ -426,14 +425,20 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 	regulator_5v_disable(REGULATOR_5V_ALL);
 #endif
 
-	// Flush/disable MMU cache and set DRAM clock to 204MHz.
-	bpmp_mmu_disable();
+	// set DRAM clock to 204MHz.
 	minerva_change_freq(FREQ_204);
 	nyx_str->mtc_cfg.init_done = 0;
 
+	// Flush/disable MMU cache and scale down BPMP clock also.
+	bpmp_mmu_disable();
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
+	if (tegra_t210)
+	{
+		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
+		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
+	}
 
 	// Do coreboot mitigations.
 	if (coreboot)
@@ -461,7 +466,7 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 		display_backlight_brightness(brightness, 0);
 		break;
 	case BL_MAGIC_L4TLDR_SLD:
-		// Do not disable backlight at all.
+		// Do not disable display or backlight at all.
 		break;
 	default:
 		display_end();
