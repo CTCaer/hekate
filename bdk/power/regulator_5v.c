@@ -53,15 +53,6 @@ void regulator_5v_enable(u8 dev)
 		(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 		usb_src = false;
-
-		// VBUS/Fan regulator 5V for Iowa/Hoag/Aula.
-		if (!tegra_t210)
-		{
-			PINMUX_AUX(PINMUX_AUX_ALS_PROX_INT) = PINMUX_PULL_DOWN;
-			gpio_config(GPIO_PORT_X, GPIO_PIN_3, GPIO_MODE_GPIO);
-			gpio_output_enable(GPIO_PORT_X, GPIO_PIN_3, GPIO_OUTPUT_ENABLE);
-			gpio_write(GPIO_PORT_X, GPIO_PIN_3, GPIO_HIGH);
-		}
 	}
 	reg_5v_dev |= dev;
 }
@@ -85,10 +76,6 @@ void regulator_5v_disable(u8 dev)
 			usb_src = false;
 
 		}
-
-		// VBUS/Fan regulator 5V for Hoag/Aula.
-		if (!tegra_t210)
-			gpio_write(GPIO_PORT_X, GPIO_PIN_3, GPIO_LOW);
 	}
 }
 
