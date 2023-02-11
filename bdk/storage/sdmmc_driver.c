@@ -1151,8 +1151,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	// Configure SD card detect.
 	PINMUX_AUX(PINMUX_AUX_GPIO_PZ1) = PINMUX_INPUT_ENABLE | PINMUX_PULL_UP | 2; // GPIO control, pull up.
 	APB_MISC(APB_MISC_GP_VGPIO_GPIO_MUX_SEL) = 0;
-	gpio_config(GPIO_PORT_Z, GPIO_PIN_1, GPIO_MODE_GPIO);
-	gpio_output_enable(GPIO_PORT_Z, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
+	gpio_direction_input(GPIO_PORT_Z, GPIO_PIN_1);
 	usleep(100);
 
 	// Check if SD card is inserted.
@@ -1192,16 +1191,14 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
 	(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
 
+	// Set enable SD card power.
+	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2;
+	gpio_direction_output(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
+	usleep(10000);
+
 	// Inform IO pads that voltage is gonna be 3.3V.
 	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
 	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
-
-	// Set enable SD card power.
-	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2;
-	gpio_config(GPIO_PORT_E, GPIO_PIN_4, GPIO_MODE_GPIO);
-	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
-	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
-	usleep(10000);
 
 	// Enable SD card IO power.
 	max7762x_regulator_set_voltage(REGULATOR_LDO2, 3300000);

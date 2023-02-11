@@ -221,7 +221,7 @@ static void _usb_charger_detect()
 		usbd_otg->charger_detect |= 1;
 		// Configure detect pin.
 		PINMUX_AUX(PINMUX_AUX_LCD_GPIO1) &= ~(PINMUX_PARKED | PINMUX_TRISTATE | PINMUX_PULL_MASK);
-		gpio_config(GPIO_PORT_V, GPIO_PIN_3, GPIO_MODE_GPIO);
+		gpio_direction_input(GPIO_PORT_V, GPIO_PIN_3);
 
 		// Configure charger pin.
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN1) &= ~(PINMUX_INPUT_ENABLE | PINMUX_PARKED | PINMUX_TRISTATE | PINMUX_PULL_MASK);

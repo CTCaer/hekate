@@ -403,19 +403,12 @@ void display_init()
 		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = PINMUX_PULL_DOWN;
 		PINMUX_AUX(PINMUX_AUX_LCD_BL_EN)  = PINMUX_PULL_DOWN;
 
-		// Set LCD AVDD pins mode and direction
-		gpio_config(GPIO_PORT_I,        GPIO_PIN_0 | GPIO_PIN_1, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_OUTPUT_ENABLE);
-
 		// Enable LCD AVDD.
-		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_HIGH); // LCD AVDD +5.4V enable.
-		usleep(10000); // Wait minimum 4.2ms to stabilize.
-		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_HIGH); // LCD AVDD -5.4V enable.
+		gpio_direction_output(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_HIGH);
 		usleep(10000); // Wait minimum 4.2ms to stabilize.
 
-		// Configure Backlight PWM/EN and LCD RST pins (BL PWM, BL EN, LCD RST).
-		gpio_config(GPIO_PORT_V,        GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
+		// Configure Backlight PWM/EN pins (BL PWM, BL EN).
+		gpio_direction_output(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1, GPIO_LOW);
 
 		 // Enable Backlight power.
 		gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH);
@@ -423,8 +416,7 @@ void display_init()
 
 	// Configure LCD RST pin.
 	PINMUX_AUX(PINMUX_AUX_LCD_RST) = PINMUX_PULL_DOWN;
-	gpio_config(GPIO_PORT_V,        GPIO_PIN_2, GPIO_MODE_GPIO);
-	gpio_output_enable(GPIO_PORT_V, GPIO_PIN_2, GPIO_OUTPUT_ENABLE);
+	gpio_direction_output(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);
 
 	// Power up supply regulator for display interface.
 	MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0;
@@ -498,7 +490,7 @@ void display_init()
 	{
 	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
-		// Set color mode to natural. Stock is Default (0x00) which is VIVID (0x65). (Reset value is 0x20).
+		// Set color mode to natural. Stock is Saturated (0x00). (Reset value is 0x20).
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 							  MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_NATURAL << 8), 0);
 		// Enable backlight and smooth PWM.
@@ -783,17 +775,14 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 skip_panel_deinit:
 	// Disable LCD power pins.
 	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);     // LCD Reset disable.
+	usleep(10000);
 
 	if (!_nx_aula) // HOS uses panel id.
 	{
-		usleep(10000);
 		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD AVDD -5.4V disable.
-		usleep(10000);
 		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD AVDD +5.4V disable.
-		usleep(10000);
 	}
-	else
-		usleep(30000); // Aula Panel.
+	usleep(10000);
 
 	// Disable Display Interface specific clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = BIT(CLK_H_MIPI_CAL) | BIT(CLK_H_DSI);

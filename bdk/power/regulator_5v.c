@@ -34,18 +34,14 @@ void regulator_5v_enable(u8 dev)
 	{
 		// Fan and Rail power from battery 5V regulator.
 		PINMUX_AUX(PINMUX_AUX_SATA_LED_ACTIVE) = 1;
-		gpio_config(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
+		gpio_direction_output(GPIO_PORT_A, GPIO_PIN_5, GPIO_HIGH);
 
 		// Only Icosa has USB 5V VBUS rails.
 		if (tegra_t210)
 		{
 			// Fan and Rail power from USB 5V VBUS.
 			PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN0) = PINMUX_LPDR | 1;
-			gpio_config(GPIO_PORT_CC, GPIO_PIN_4, GPIO_MODE_GPIO);
-			gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_4, GPIO_OUTPUT_ENABLE);
-			gpio_write(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
+			gpio_direction_output(GPIO_PORT_CC, GPIO_PIN_4, GPIO_LOW);
 		}
 
 		// Make sure GPIO IO power is enabled.

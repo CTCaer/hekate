@@ -374,17 +374,13 @@ static void _jc_power_supply(u8 uart, bool enable)
 		{
 			// Joy-Con(L) Charge Enable.
 			PINMUX_AUX(PINMUX_AUX_SPDIF_IN) = PINMUX_PULL_DOWN | 1;
-			gpio_config(GPIO_PORT_CC, GPIO_PIN_3, GPIO_MODE_GPIO);
-			gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_3, GPIO_OUTPUT_ENABLE);
-			gpio_write(GPIO_PORT_CC, GPIO_PIN_3, GPIO_HIGH);
+			gpio_direction_output(GPIO_PORT_CC, GPIO_PIN_3, GPIO_HIGH);
 		}
 		else
 		{
 			// Joy-Con(R) Charge Enable.
 			PINMUX_AUX(PINMUX_AUX_GPIO_PK3) = PINMUX_DRIVE_4X | PINMUX_PULL_DOWN | 2;
-			gpio_config(GPIO_PORT_K, GPIO_PIN_3, GPIO_MODE_GPIO);
-			gpio_output_enable(GPIO_PORT_K, GPIO_PIN_3, GPIO_OUTPUT_ENABLE);
-			gpio_write(GPIO_PORT_K, GPIO_PIN_3, GPIO_HIGH);
+			gpio_direction_output(GPIO_PORT_K, GPIO_PIN_3, GPIO_HIGH);
 		}
 	}
 	else
@@ -408,9 +404,11 @@ static void _jc_detect()
 {
 	if (!jc_gamepad.sio_mode)
 	{
-		// Turn on Joy-Con detect. (UARTB/C TX).
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
+		// Turn on Joy-Con detect. (UARTB/C TX). UART CTS also if HW flow control and irq is enabled.
+		PINMUX_AUX(PINMUX_AUX_UART2_TX) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
+		PINMUX_AUX(PINMUX_AUX_UART3_TX) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
+		gpio_direction_input(GPIO_PORT_G, GPIO_PIN_0);
+		gpio_direction_input(GPIO_PORT_D, GPIO_PIN_1);
 		usleep(20);
 
 		// Read H6/E6 which are shared with UART TX pins.
@@ -418,6 +416,8 @@ static void _jc_detect()
 		jc_l.detected = !gpio_read(GPIO_PORT_E, GPIO_PIN_6);
 
 		// Turn off Joy-Con detect. (UARTB/C TX).
+		PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
+		PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 		usleep(20);
@@ -1158,29 +1158,25 @@ void jc_init_hw()
 
 		// Configure Sio HOME BUTTON.
 		PINMUX_AUX(PINMUX_AUX_LCD_GPIO1) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP | 1;
-		gpio_config(GPIO_PORT_V, GPIO_PIN_3, GPIO_MODE_GPIO);
+		gpio_direction_input(GPIO_PORT_V, GPIO_PIN_3);
 
 		// Configure Sio IRQ
 		PINMUX_AUX(PINMUX_AUX_GPIO_PE7)  = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP;
-		gpio_config(GPIO_PORT_E, GPIO_PIN_7, GPIO_MODE_GPIO);
+		gpio_direction_input(GPIO_PORT_E, GPIO_PIN_7);
 
 		// Configure Sio NRST and BOOT0.
 		PINMUX_AUX(PINMUX_AUX_CAM1_STROBE) = PINMUX_PULL_DOWN | 1;
 		PINMUX_AUX(PINMUX_AUX_CAM2_PWDN)   = PINMUX_PULL_DOWN | 1;
-		gpio_config(GPIO_PORT_T, GPIO_PIN_1 | GPIO_PIN_0, GPIO_MODE_GPIO);
 
 		// Set BOOT0 to flash mode. (output high is sram mode).
-		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_0, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_T, GPIO_PIN_0, GPIO_LOW);
+		gpio_direction_output(GPIO_PORT_T, GPIO_PIN_0, GPIO_LOW);
 
 		// NRST to pull down.
-		gpio_output_enable(GPIO_PORT_T, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
+		gpio_direction_input(GPIO_PORT_T, GPIO_PIN_1);
 
 		// Configure Sio NPOR.
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN1) = PINMUX_IO_HV | PINMUX_LPDR | 1;
-		gpio_config(GPIO_PORT_CC, GPIO_PIN_5, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_CC, GPIO_PIN_5, GPIO_OUTPUT_ENABLE);
-		gpio_write(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
+		gpio_direction_output(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
 	}
 
 #if 0 // Already set by hw init.

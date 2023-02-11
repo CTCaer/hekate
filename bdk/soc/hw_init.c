@@ -101,42 +101,33 @@ static void _config_gpios(bool nx_hoag)
 
 	if (!nx_hoag)
 	{
-		// Turn Joy-Con detect on. (GPIO mode for UARTB/C TX pins.)
+		// Turn Joy-Con detect on. (GPIO mode and input logic for UARTB/C TX pins.)
 		PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
 		PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_GPIO);
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_GPIO);
-
-		// Enable input logic for UARTB/C TX pins.
-		gpio_output_enable(GPIO_PORT_G, GPIO_PIN_0, GPIO_OUTPUT_DISABLE);
-		gpio_output_enable(GPIO_PORT_D, GPIO_PIN_1, GPIO_OUTPUT_DISABLE);
+		gpio_direction_input(GPIO_PORT_G, GPIO_PIN_0);
+		gpio_direction_input(GPIO_PORT_D, GPIO_PIN_1);
 	}
 
 	// Set Joy-Con IsAttached pinmux. Shared with UARTB/UARTC TX.
 	PINMUX_AUX(PINMUX_AUX_GPIO_PE6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
 	PINMUX_AUX(PINMUX_AUX_GPIO_PH6) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
 
-	// Set Joy-Con IsAttached mode. Shared with UARTB/UARTC TX.
-	gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_GPIO);
-	gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_GPIO);
-
-	// Enable input logic for Joy-Con IsAttached pins.
-	gpio_output_enable(GPIO_PORT_E, GPIO_PIN_6, GPIO_OUTPUT_DISABLE);
-	gpio_output_enable(GPIO_PORT_H, GPIO_PIN_6, GPIO_OUTPUT_DISABLE);
+	// Configure Joy-Con IsAttached pins. Shared with UARTB/UARTC TX.
+	gpio_direction_input(GPIO_PORT_E, GPIO_PIN_6);
+	gpio_direction_input(GPIO_PORT_H, GPIO_PIN_6);
 
 	pinmux_config_i2c(I2C_1);
 	pinmux_config_i2c(I2C_5);
 	pinmux_config_uart(UART_A);
 
 	// Configure volume up/down as inputs.
-	gpio_config(GPIO_PORT_X, GPIO_PIN_6, GPIO_MODE_GPIO);
-	gpio_config(GPIO_PORT_X, GPIO_PIN_7, GPIO_MODE_GPIO);
-	gpio_output_enable(GPIO_PORT_X, GPIO_PIN_6, GPIO_OUTPUT_DISABLE);
-	gpio_output_enable(GPIO_PORT_X, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
+	gpio_direction_input(GPIO_PORT_X, GPIO_PIN_6 | GPIO_PIN_7);
 
-	// Configure HOME as inputs. (Shared with UARTB RTS).
+	// Configure HOME as input. (Shared with UARTB RTS).
 	PINMUX_AUX(PINMUX_AUX_BUTTON_HOME) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
-	gpio_config(GPIO_PORT_Y, GPIO_PIN_1, GPIO_MODE_GPIO);
+	gpio_direction_input(GPIO_PORT_Y, GPIO_PIN_1);
+
+	// Power button can be configured for hoag here. Only SKU where it's connected.
 }
 
 static void _config_pmc_scratch()
@@ -328,7 +319,7 @@ static void _config_regulators(bool tegra_t210)
 
 void hw_init()
 {
-	// Get Chip ID.
+	// Get Chip ID and SKU.
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 	bool nx_hoag = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
 
@@ -451,11 +442,9 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 
 		clock_disable_cl_dvfs();
 
-		// Disable Joy-con GPIOs.
+		// Disable Joy-con detect in order to restore UART TX.
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_E, GPIO_PIN_6, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_H, GPIO_PIN_6, GPIO_MODE_SPIO);
 
 		// Reinstate SD controller power.
 		PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);

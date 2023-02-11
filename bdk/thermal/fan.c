@@ -45,8 +45,7 @@ void set_fan_duty(u32 duty)
 		// Fan tachometer.
 		u32 pull_resistor = hw_get_chip_id() == GP_HIDREV_MAJOR_T210 ? PINMUX_PULL_UP : 0;
 		PINMUX_AUX(PINMUX_AUX_CAM1_PWDN) = PINMUX_TRISTATE | PINMUX_INPUT_ENABLE | pull_resistor | 1;
-		gpio_config(GPIO_PORT_S, GPIO_PIN_7, GPIO_MODE_GPIO);
-		gpio_output_enable(GPIO_PORT_S, GPIO_PIN_7, GPIO_OUTPUT_DISABLE);
+		gpio_direction_input(GPIO_PORT_S, GPIO_PIN_7);
 
 		// Enable PWM if disabled.
 		if (fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA)
