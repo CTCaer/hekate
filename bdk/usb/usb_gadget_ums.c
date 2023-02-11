@@ -1860,7 +1860,12 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	if (usbs->type == MMC_SD)
 	{
 		sd_end();
-		sd_mount();
+		if (!sd_mount())
+		{
+			ums.set_text(ums.label, "#FFDD00 Failed to init SD!#");
+			res = 1;
+			goto init_fail;
+		}
 		sd_unmount();
 
 		ums.lun.sdmmc   = &sd_sdmmc;
@@ -1868,7 +1873,12 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	}
 	else
 	{
-		emmc_initialize(false);
+		if (!emmc_initialize(false))
+		{
+			ums.set_text(ums.label, "#FFDD00 Failed to init eMMC!#");
+			res = 1;
+			goto init_fail;
+		}
 		emmc_set_partition(ums.lun.partition - 1);
 
 		ums.lun.sdmmc   = &emmc_sdmmc;
@@ -1879,12 +1889,12 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 
 	// Initialize Control Endpoint.
 	if (usb_ops.usb_device_enumerate(USB_GADGET_UMS))
-		goto error;
+		goto usb_enum_error;
 
 	ums.set_text(ums.label, "#C7EA46 Status:# Waiting for LUN");
 
 	if (usb_ops.usb_device_class_send_max_lun(0)) // One device for now.
-		goto error;
+		goto usb_enum_error;
 
 	ums.set_text(ums.label, "#C7EA46 Status:# Started UMS");
 
@@ -1938,7 +1948,7 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 		ums.set_text(ums.label, "#C7EA46 Status:# Disk ejected");
 	goto exit;
 
-error:
+usb_enum_error:
 	ums.set_text(ums.label, "#FFDD00 Error:# Timed out or canceled!");
 	res = 1;
 
@@ -1946,6 +1956,7 @@ exit:
 	if (ums.lun.type == MMC_EMMC)
 		emmc_end();
 
+init_fail:
 	usb_ops.usbd_end(true, false);
 
 	return res;
