@@ -1070,6 +1070,9 @@ int hos_launch(ini_sec_t *cfg)
 	sd_end();
 	emmc_end();
 
+	// Close AHB aperture. Important when stock old secmon is used.
+	mc_disable_ahb_redirect();
+
 	gfx_printf("Rebuilt & loaded pkg2\n\n%kBooting...%k\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 
 	// Clear pkg1/pkg2 keys.
@@ -1172,7 +1175,7 @@ int hos_launch(ini_sec_t *cfg)
 	else
 		ccplex_boot_cpu0(secmon_base);
 
-	// Halt ourselves in waitevent state and resume if there's JTAG activity.
+	// Halt ourselves in wait-event state.
 	while (true)
 		bpmp_halt();
 
