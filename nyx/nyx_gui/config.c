@@ -42,6 +42,7 @@ void set_default_configuration()
 	h_cfg.errors = 0;
 	h_cfg.eks = NULL;
 	h_cfg.rcm_patched = fuse_check_patched_rcm();
+	h_cfg.autorcm_enabled = false;
 	h_cfg.emummc_force_disable = false;
 
 	sd_power_cycle_time_start = 0;

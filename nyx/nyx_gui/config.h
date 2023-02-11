@@ -37,6 +37,7 @@ typedef struct _hekate_config
 	bool t210b01;
 	bool emummc_force_disable;
 	bool rcm_patched;
+	bool autorcm_enabled;
 	u32  errors;
 	hos_eks_mbr_t *eks;
 } hekate_config;

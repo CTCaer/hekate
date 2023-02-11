@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1101,6 +1101,7 @@ static lv_res_t _create_mbox_reboot(lv_obj_t *btn)
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char * mbox_btn_map[] = { "\221OFW", "\221RCM", "\221Cancel", "" };
+	static const char * mbox_btn_map_autorcm[] = { "\261OFW", "\221RCM", "\221Cancel", "" };
 	static const char * mbox_btn_map_patched[] = { "\221OFW", "\221Normal", "\221Cancel", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
@@ -1108,7 +1109,10 @@ static lv_res_t _create_mbox_reboot(lv_obj_t *btn)
 
 	lv_mbox_set_text(mbox, "#FF8000 Choose where to reboot:#");
 
-	lv_mbox_add_btns(mbox, h_cfg.rcm_patched ? mbox_btn_map_patched : mbox_btn_map, _reboot_action);
+	if (h_cfg.rcm_patched)
+		lv_mbox_add_btns(mbox, mbox_btn_map_patched, _reboot_action);
+	else
+		lv_mbox_add_btns(mbox, !h_cfg.autorcm_enabled ? mbox_btn_map : mbox_btn_map_autorcm, _reboot_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);

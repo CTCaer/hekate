@@ -56,7 +56,7 @@ static lv_obj_t *_create_container(lv_obj_t *parent)
 	return h1;
 }
 
-bool get_autorcm_status(bool toggle)
+bool get_set_autorcm_status(bool toggle)
 {
 	u32 sector;
 	u8 corr_mod0, mod1;
@@ -128,6 +128,8 @@ out:
 	free(tempbuf);
 	emmc_end();
 
+	h_cfg.autorcm_enabled = enabled;
+
 	return enabled;
 }
 
@@ -141,7 +143,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	bool enabled = get_autorcm_status(true);
+	bool enabled = get_set_autorcm_status(true);
 
 	if (enabled)
 	{
@@ -1660,7 +1662,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_mbox_autorcm_status);
 
 	// Set default state for AutoRCM and lock it out if patched unit.
-	if (get_autorcm_status(false))
+	if (get_set_autorcm_status(false))
 		lv_btn_set_state(btn3, LV_BTN_STATE_TGL_REL);
 	else
 		lv_btn_set_state(btn3, LV_BTN_STATE_REL);

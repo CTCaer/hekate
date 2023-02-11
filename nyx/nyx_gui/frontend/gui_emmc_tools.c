@@ -155,7 +155,7 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 	// Refresh AutoRCM button.
 	if (emmc_btn_ctxt.restore && (type == PART_BOOT) && !emmc_btn_ctxt.raw_emummc)
 	{
-		if (get_autorcm_status(false))
+		if (get_set_autorcm_status(false))
 			lv_btn_set_state(autorcm_btn, LV_BTN_STATE_TGL_REL);
 		else
 			lv_btn_set_state(autorcm_btn, LV_BTN_STATE_REL);

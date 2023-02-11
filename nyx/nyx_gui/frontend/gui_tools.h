@@ -23,7 +23,7 @@ extern lv_obj_t *ums_mbox;
 
 void create_tab_tools(lv_theme_t *th, lv_obj_t *parent);
 void nyx_run_ums(void *param);
-bool get_autorcm_status(bool change);
+bool get_set_autorcm_status(bool change);
 lv_res_t action_ums_sd(lv_obj_t *btn);
 
 #endif
