@@ -326,9 +326,9 @@ void gfx_printf(const char *fmt, ...)
 	int fill, fcnt;
 
 	va_start(ap, fmt);
-	while(*fmt)
+	while (*fmt)
 	{
-		if(*fmt == '%')
+		if (*fmt == '%')
 		{
 			fmt++;
 			fill = 0;
@@ -400,17 +400,17 @@ void gfx_hexdump(u32 base, const u8 *buf, u32 len)
 
 	u8 prevFontSize = gfx_con.fntsz;
 	gfx_con.fntsz = 8;
-	for(u32 i = 0; i < len; i++)
+	for (u32 i = 0; i < len; i++)
 	{
-		if(i % 0x10 == 0)
+		if (i % 0x10 == 0)
 		{
-			if(i != 0)
+			if (i != 0)
 			{
 				gfx_puts("| ");
-				for(u32 j = 0; j < 0x10; j++)
+				for (u32 j = 0; j < 0x10; j++)
 				{
 					u8 c = buf[i - 0x10 + j];
-					if(c >= 32 && c <= 126)
+					if (c >= 32 && c <= 126)
 						gfx_putc(c);
 					else
 						gfx_putc('.');
@@ -431,10 +431,10 @@ void gfx_hexdump(u32 base, const u8 *buf, u32 len)
 					gfx_puts("   ");
 			}
 			gfx_puts("| ");
-			for(u32 j = 0; j < (ln ? k : k + 1); j++)
+			for (u32 j = 0; j < (ln ? k : k + 1); j++)
 			{
 				u8 c = buf[i - k + j];
-				if(c >= 32 && c <= 126)
+				if (c >= 32 && c <= 126)
 					gfx_putc(c);
 				else
 					gfx_putc('.');

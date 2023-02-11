@@ -117,7 +117,7 @@ static void parse_external_kip_patches()
 			kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 16); // Max 16 patchsets per kip.
 
 			u32 curr_patchset_idx;
-			for(curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
+			for (curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
 			{
 				patchsets[curr_patchset_idx].name = curr_kip->patchset[curr_patchset_idx].name;
 				patchsets[curr_patchset_idx].patches = curr_kip->patchset[curr_patchset_idx].patches;
@@ -254,7 +254,7 @@ DPRINTF(" kip1 %d:%s @ %08X (%08X)\n", i, kip1->name, (u32)kip1, ki->size);
 int pkg2_has_kip(link_t *info, u64 tid)
 {
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
-		if(ki->kip1->tid == tid)
+		if (ki->kip1->tid == tid)
 			return 1;
 	return 0;
 }
@@ -388,7 +388,7 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 
 		for (u32 currSectIdx = 0; currSectIdx < KIP1_NUM_SECTIONS - 2; currSectIdx++)
 		{
-			if(!currSectIdx) // .text.
+			if (!currSectIdx) // .text.
 			{
 				memcpy(ki->kip1->data + inject_size, fs_kip->data, fs_kip->sections[0].size_comp);
 				ki->kip1->sections[0].size_decomp += inject_size;

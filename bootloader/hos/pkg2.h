@@ -26,6 +26,8 @@
 #define PKG2_SEC_INI1 1
 
 #define INI1_MAGIC 0x31494E49
+
+//! TODO: Update on kernel change if needed.
 #define PKG2_NEWKERN_GET_INI1_HEURISTIC 0xD2800015 // Offset of OP + 12 is the INI1 offset.
 #define PKG2_NEWKERN_START 0x800
 

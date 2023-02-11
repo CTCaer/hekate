@@ -643,7 +643,7 @@ void manual_system_maintenance(bool refresh)
 	for (u32 task_idx = 0; task_idx < (sizeof(system_maintenance_tasks_t) / sizeof(lv_task_t *)); task_idx++)
 	{
 		lv_task_t *task = system_tasks.tasks[task_idx];
-		if(task && (lv_tick_elaps(task->last_run) >= task->period))
+		if (task && (lv_tick_elaps(task->last_run) >= task->period))
 		{
 			task->last_run = lv_tick_get();
 			task->task(task->param);

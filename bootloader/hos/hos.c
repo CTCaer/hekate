@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -176,10 +176,10 @@ static void _se_lock(bool lock_se)
 	gfx_printf("SE(0x4) = %08X\n", SE(0x4));
 	gfx_printf("SE(SE_CRYPTO_SECURITY_PERKEY_REG) = %08X\n", SE(SE_CRYPTO_SECURITY_PERKEY_REG));
 	gfx_printf("SE(SE_RSA_SECURITY_PERKEY_REG) = %08X\n", SE(SE_RSA_SECURITY_PERKEY_REG));
-	for(u32 i = 0; i < 16; i++)
+	for (u32 i = 0; i < 16; i++)
 		gfx_printf("%02X ", SE(SE_CRYPTO_KEYTABLE_ACCESS_REG + i * 4) & 0xFF);
 	gfx_putc('\n');
-	for(u32 i = 0; i < 2; i++)
+	for (u32 i = 0; i < 2; i++)
 		gfx_printf("%02X ", SE(SE_RSA_KEYTABLE_ACCESS_REG + i * 4) & 0xFF);
 	gfx_putc('\n');
 	gfx_hexdump(SE_BASE, (void *)SE_BASE, 0x400);*/

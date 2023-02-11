@@ -30,10 +30,6 @@
 #include "frontend/fe_emmc_tools.h"
 #include "frontend/gui.h"
 
-#ifdef MENU_LOGO_ENABLE
-u8 *Kc_MENU_LOGO;
-#endif //MENU_LOGO_ENABLE
-
 nyx_config n_cfg;
 hekate_config h_cfg;
 
@@ -121,7 +117,7 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 
 	if (payload_size == 0x7000)
 	{
-		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), coreboot_addr, 0x7000); //Bootblock
+		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), coreboot_addr, 0x7000); // Bootblock.
 		*(vu32 *)CBFS_DRAM_EN_ADDR = CBFS_DRAM_MAGIC;
 	}
 }
@@ -433,12 +429,13 @@ void nyx_init_load_res()
 
 void ipl_main()
 {
-	// Tegra/Horizon configuration goes to 0x80000000+, package2 goes to 0xA9800000, we place our heap in between.
+	// Set heap address.
 	heap_init((void *)IPL_HEAP_START);
 
 	b_cfg = (boot_cfg_t *)(nyx_str->hekate + 0x94);
 
 #ifdef DEBUG_UART_PORT
+	// Enable the selected uart debug port.
 	#if   (DEBUG_UART_PORT == UART_B)
 		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
 	#elif (DEBUG_UART_PORT == UART_C)
@@ -453,9 +450,10 @@ void ipl_main()
 	uart_wait_xfer(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 
-	// Initialize the rest of hw and load nyx's resources.
+	// Initialize the rest of hw and load Nyx resources.
 	nyx_init_load_res();
 
+	// Initialize Nyx GUI and show it.
 	nyx_load_and_run();
 
 	// Halt BPMP if we managed to get out of execution.

@@ -503,7 +503,7 @@ static void _migrate_sd_backup_file_based()
 	for (int j = 0; j < 100; j++)
 	{
 		update_emummc_base_folder(emu_path, base_len, j);
-		if(f_stat(emu_path, NULL) == FR_NO_FILE)
+		if (f_stat(emu_path, NULL) == FR_NO_FILE)
 			break;
 	}
 	base_len = strlen(emu_path);
@@ -534,7 +534,7 @@ static void _migrate_sd_backup_file_based()
 	bool multipart = false;
 	s_printf(backup_file_path, "%s/rawnand.bin", backup_path);
 
-	if(f_stat(backup_file_path, NULL))
+	if (f_stat(backup_file_path, NULL))
 		multipart = true;
 
 	if (!multipart)
@@ -820,19 +820,19 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 
 	s_printf(path_buf, "%c%c%c%c%s", 's', 'x', 'o','s', "/emunand/boot0.bin");
 
-	if(!f_stat(path_buf, NULL))
+	if (!f_stat(path_buf, NULL))
 		em_file = true;
 
 	emmcsn_path_impl(path_buf, "", "BOOT0", &emmc_storage);
-	if(!f_stat(path_buf, NULL))
+	if (!f_stat(path_buf, NULL))
 		backup = true;
 
 	emmcsn_path_impl(path_buf, "", "rawnand.bin", &emmc_storage);
-	if(!f_stat(path_buf, NULL))
+	if (!f_stat(path_buf, NULL))
 		rawnand_backup = true;
 
 	emmcsn_path_impl(path_buf, "", "rawnand.bin.00", &emmc_storage);
-	if(!f_stat(path_buf, NULL))
+	if (!f_stat(path_buf, NULL))
 		rawnand_backup = true;
 
 	backup = backup && rawnand_backup;
@@ -983,7 +983,7 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	{
 		s_printf(path, "emuMMC/%s/raw_based", &emummc_img->dirlist[emummc_idx * 256]);
 
-		if(!f_stat(path, NULL))
+		if (!f_stat(path, NULL))
 		{
 			f_open(&fp, path, FA_READ);
 			u32 curr_list_sector = 0;
@@ -1024,7 +1024,7 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	{
 		s_printf(path, "emuMMC/%s/file_based", &emummc_img->dirlist[emummc_idx * 256]);
 
-		if(!f_stat(path, NULL))
+		if (!f_stat(path, NULL))
 		{
 			char *tmp = &emummc_img->dirlist[emummc_idx * 256];
 			memcpy(&emummc_img->dirlist[file_based_idx * 256], tmp, strlen(tmp) + 1);

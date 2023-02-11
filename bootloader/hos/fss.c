@@ -89,7 +89,7 @@ static void _set_fss_path_and_update_r2p(launch_ctxt_t *ctxt, const char *path)
 
 	strcpy(r2p_path, path);
 
-	while(path_len)
+	while (path_len)
 	{
 		if ((r2p_path[path_len - 1] == '/') || (r2p_path[path_len - 1] == '\\'))
 		{
