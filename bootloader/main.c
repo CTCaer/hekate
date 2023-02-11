@@ -508,12 +508,8 @@ static void _launch_config()
 	// Load emuMMC configuration.
 	emummc_load_cfg();
 
-	// Check that main configuration exists and parse it.
-	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
-	{
-		EPRINTF("Could not open 'bootloader/hekate_ipl.ini'!");
-		goto parse_failed;
-	}
+	// Parse main configuration.
+	ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
 
 	// Build configuration menu.
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
@@ -696,9 +692,11 @@ static void _nyx_load_run()
 	reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
 	memcpy((u8 *)nyx_str->hekate, (u8 *)reloc->start, reloc->end - reloc->start);
 
+	// Do one last training.
+	minerva_periodic_training();
+
 	bpmp_mmu_disable();
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-	minerva_periodic_training();
 
 	// Some cards (Sandisk U1), do not like a fast power cycle.
 	sdmmc_storage_init_wait_sd();
