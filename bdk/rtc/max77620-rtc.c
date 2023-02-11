@@ -107,7 +107,7 @@ void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time)
 	day = edays - month * 30 - month * 601 / 1000;
 
 	// Month/Year offset.
-	if(month < 14)
+	if (month < 14)
 	{
 		year -= 4716;
 		month--;
@@ -137,7 +137,7 @@ u32 max77620_rtc_date_to_epoch(const rtc_time_t *time)
 	month = time->month;
 
 	// Month/Year offset.
-	if(month < 3)
+	if (month < 3)
 	{
 		month += 12;
 		year--;

@@ -198,7 +198,7 @@ int atoi(const char *nptr)
 
 void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops)
 {
-	for(u32 i = 0; i < num_ops; i++)
+	for (u32 i = 0; i < num_ops; i++)
 		base[ops[i].off] = ops[i].val;
 }
 

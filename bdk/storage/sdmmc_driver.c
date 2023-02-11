@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -233,7 +233,7 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 	// Disable E_INPUT to conserve power.
 	sdmmc->regs->sdmemcmppadctl &= ~TEGRA_MMC_SDMEMCOMPPADCTRL_PAD_E_INPUT_PWRD;
 
-	if(should_enable_sd_clock)
+	if (should_enable_sd_clock)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 }
 
@@ -521,7 +521,7 @@ static int _sdmmc_wait_cmd_data_inhibit(sdmmc_t *sdmmc, bool wait_dat)
 	_sdmmc_commit_changes(sdmmc);
 
 	u32 timeout = get_tmr_ms() + 2000;
-	while(sdmmc->regs->prnsts & SDHCI_CMD_INHIBIT)
+	while (sdmmc->regs->prnsts & SDHCI_CMD_INHIBIT)
 		if (get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset(sdmmc);
@@ -1155,7 +1155,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	usleep(100);
 
 	// Check if SD card is inserted.
-	if(!sdmmc_get_sd_inserted())
+	if (!sdmmc_get_sd_inserted())
 		return 0;
 
 	/*
@@ -1422,7 +1422,7 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 
 int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 {
-	if(sdmmc->id != SDMMC_1)
+	if (sdmmc->id != SDMMC_1)
 		return 0;
 
 	if (!sdmmc_setup_clock(sdmmc, SDHCI_TIMING_UHS_SDR12))

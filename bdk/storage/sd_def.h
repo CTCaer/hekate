@@ -1,6 +1,6 @@
 /*
  *  Copyright (c) 2005-2007 Pierre Ossman, All Rights Reserved.
- *  Copyright (c) 2018-2021 CTCaer
+ *  Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

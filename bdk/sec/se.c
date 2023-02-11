@@ -111,7 +111,7 @@ static int _se_wait()
 		}
 
 		// Ensure data is out from AHB.
-		if(ll_dst_ptr->addr >= DRAM_START)
+		if (ll_dst_ptr->addr >= DRAM_START)
 		{
 			timeout = get_tmr_us() + 200000;
 			while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
