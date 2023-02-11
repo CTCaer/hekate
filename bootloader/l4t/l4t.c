@@ -719,9 +719,6 @@ static void _l4t_mc_config_carveout(bool t210b01)
 
 static void _l4t_late_hw_config(bool t210b01)
 {
-	// Turn on PLLC to default OUT0 frequency to mitigate kernel broken init.
-	clock_enable_pllc(53); // VCO/OUT0: 508.8 MHz. (VCO is half.)
-
 	// Reset System Counters.
 	for (u32 i = 0; i < SYSCTR0_COUNTERS; i += sizeof(u32))
 		SYSCTR0(SYSCTR0_COUNTERS_BASE + i) = 0;
@@ -1045,6 +1042,9 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	// Done loading bootloaders/firmware.
 	sd_end();
 
+	// We don't need AHB aperture open.
+	mc_disable_ahb_redirect();
+
 	// Enable debug port.
 	if (ctxt.serial_port)
 	{
@@ -1205,11 +1205,3 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	while (true)
 		bpmp_halt();
 }
-
-//     t210     t210b01  hoag/aula
-// pp1 b0000001 b0000001 b0000001      pcie_port1_lane_map
-// pp0 b0010000 b0001000 b0000000 --   pcie_port0_lane_map
-// pci b0011111 b0001101 b0001101 -    pcie_lane_map
-// usb b1100000 b0110010 b0110010 -    usb_lane_map
-// rpd b0000011 b0000011 b0000011      root_port_mask_dev
-// rpp b0000010 b0000010 b0000010      root_port_mask_prod
