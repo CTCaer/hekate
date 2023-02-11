@@ -78,7 +78,7 @@ typedef struct _nyx_storage_t
 	u8  rsvd[SZ_8M - sizeof(nyx_info_t)];
 	nyx_info_t info;
 	mtc_config_t mtc_cfg;
-	emc_table_t mtc_table[10];
+	emc_table_t mtc_table[11]; // 10 + 1.
 } nyx_storage_t;
 
 u8   bit_count(u32 val);
