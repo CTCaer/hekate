@@ -628,13 +628,8 @@ break_nosleep:
 	// ZQ CAL setup (not actually issuing ZQ CAL now).
 	if (params->emc_zcal_warm_cold_boot_enables & 1)
 	{
-		if (params->memory_type == MEMORY_TYPE_DDR3L)
-			EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt << 3;
-		if (params->memory_type == MEMORY_TYPE_LPDDR4)
-		{
-			EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
-			EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
-		}
+		EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
+		EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
 	}
 
 	EMC(EMC_TIMING_CONTROL) = 1; // Trigger timing update so above writes take place.
@@ -646,68 +641,51 @@ break_nosleep:
 
 	// Set clock enable signal.
 	u32 pin_gpio_cfg = (params->emc_pin_gpio_enable << 16) | (params->emc_pin_gpio << 12);
-	if (params->memory_type == MEMORY_TYPE_DDR3L || params->memory_type == MEMORY_TYPE_LPDDR4)
-	{
-		EMC(EMC_PIN) = pin_gpio_cfg;
-		(void)EMC(EMC_PIN);
-		usleep(params->emc_pin_extra_wait + 200);
-		EMC(EMC_PIN) = pin_gpio_cfg | 0x100;
-		(void)EMC(EMC_PIN);
-	}
+	EMC(EMC_PIN) = pin_gpio_cfg;
+	(void)EMC(EMC_PIN);
+	usleep(params->emc_pin_extra_wait + 200);
+	EMC(EMC_PIN) = pin_gpio_cfg | 0x100;
+	(void)EMC(EMC_PIN);
 
-	if (params->memory_type == MEMORY_TYPE_LPDDR4)
-		usleep(params->emc_pin_extra_wait + 2000);
-	else if (params->memory_type == MEMORY_TYPE_DDR3L)
-		usleep(params->emc_pin_extra_wait + 500);
+	usleep(params->emc_pin_extra_wait + 2000);
 
 	// Enable clock enable signal.
 	EMC(EMC_PIN) = pin_gpio_cfg | 0x101;
 	(void)EMC(EMC_PIN);
 	usleep(params->emc_pin_program_wait);
 
-	// Send NOP (trigger just needs to be non-zero).
-	if (params->memory_type != MEMORY_TYPE_LPDDR4)
-		EMC(EMC_NOP) = (params->emc_dev_select << 30) + 1;
-
-	// On coldboot w/LPDDR2/3, wait 200 uSec after asserting CKE high.
-	if (params->memory_type == MEMORY_TYPE_LPDDR2)
-		usleep(params->emc_pin_extra_wait + 200);
-
 	// Init zq calibration,
-	if (params->memory_type == MEMORY_TYPE_LPDDR4)
+	// Patch 6 using BCT spare variables.
+	if (params->emc_bct_spare10)
+		*(vu32 *)params->emc_bct_spare10 = params->emc_bct_spare11;
+
+	// Write mode registers.
+	EMC(EMC_MRW2)  = params->emc_mrw2;
+	EMC(EMC_MRW)   = params->emc_mrw1;
+	EMC(EMC_MRW3)  = params->emc_mrw3;
+	EMC(EMC_MRW4)  = params->emc_mrw4;
+	EMC(EMC_MRW6)  = params->emc_mrw6;
+	EMC(EMC_MRW14) = params->emc_mrw14;
+
+	EMC(EMC_MRW8)  = params->emc_mrw8;
+	EMC(EMC_MRW12) = params->emc_mrw12;
+	EMC(EMC_MRW9)  = params->emc_mrw9;
+	EMC(EMC_MRW13) = params->emc_mrw13;
+
+	if (params->emc_zcal_warm_cold_boot_enables & 1)
 	{
-		// Patch 6 using BCT spare variables.
-		if (params->emc_bct_spare10)
-			*(vu32 *)params->emc_bct_spare10 = params->emc_bct_spare11;
+		// Issue ZQCAL start, device 0.
+		EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0;
+		usleep(params->emc_zcal_init_wait);
 
-		// Write mode registers.
-		EMC(EMC_MRW2)  = params->emc_mrw2;
-		EMC(EMC_MRW)   = params->emc_mrw1;
-		EMC(EMC_MRW3)  = params->emc_mrw3;
-		EMC(EMC_MRW4)  = params->emc_mrw4;
-		EMC(EMC_MRW6)  = params->emc_mrw6;
-		EMC(EMC_MRW14) = params->emc_mrw14;
-
-		EMC(EMC_MRW8)  = params->emc_mrw8;
-		EMC(EMC_MRW12) = params->emc_mrw12;
-		EMC(EMC_MRW9)  = params->emc_mrw9;
-		EMC(EMC_MRW13) = params->emc_mrw13;
-
-		if (params->emc_zcal_warm_cold_boot_enables & 1)
+		// Issue ZQCAL latch.
+		EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0 ^ 3;
+		// Same for device 1.
+		if (!(params->emc_dev_select & 2))
 		{
-			// Issue ZQCAL start, device 0.
-			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0;
+			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1;
 			usleep(params->emc_zcal_init_wait);
-
-			// Issue ZQCAL latch.
-			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0 ^ 3;
-			// Same for device 1.
-			if (!(params->emc_dev_select & 2))
-			{
-				EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1;
-				usleep(params->emc_zcal_init_wait);
-				EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1 ^ 3;
-			}
+			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1 ^ 3;
 		}
 	}
 
@@ -715,12 +693,9 @@ break_nosleep:
 	PMC(APBDEV_PMC_DDR_CFG) = params->pmc_ddr_cfg;
 
 	// Start periodic ZQ calibration (LPDDRx only).
-	if (params->memory_type && params->memory_type <= MEMORY_TYPE_LPDDR4)
-	{
-		EMC(EMC_ZCAL_INTERVAL) = params->emc_zcal_interval;
-		EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
-		EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
-	}
+	EMC(EMC_ZCAL_INTERVAL) = params->emc_zcal_interval;
+	EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
+	EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
 
 	// Patch 7 using BCT spare variables.
 	if (params->emc_bct_spare12)
@@ -1253,13 +1228,8 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	// ZQ CAL setup (not actually issuing ZQ CAL now).
 	if (params->emc_zcal_warm_cold_boot_enables & 1)
 	{
-		if (params->memory_type == MEMORY_TYPE_DDR3L)
-			EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt << 3;
-		if (params->memory_type == MEMORY_TYPE_LPDDR4)
-		{
-			EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
-			EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
-		}
+		EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
+		EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
 	}
 
 	EMC(EMC_TIMING_CONTROL) = 1; // Trigger timing update so above writes take place.
@@ -1271,68 +1241,51 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 
 	// Set clock enable signal.
 	u32 pin_gpio_cfg = (params->emc_pin_gpio_enable << 16) | (params->emc_pin_gpio << 12);
-	if (params->memory_type == MEMORY_TYPE_DDR3L || params->memory_type == MEMORY_TYPE_LPDDR4)
-	{
-		EMC(EMC_PIN) = pin_gpio_cfg;
-		(void)EMC(EMC_PIN);
-		usleep(params->emc_pin_extra_wait + 200);
-		EMC(EMC_PIN) = pin_gpio_cfg | 0x100;
-		(void)EMC(EMC_PIN);
-	}
+	EMC(EMC_PIN) = pin_gpio_cfg;
+	(void)EMC(EMC_PIN);
+	usleep(params->emc_pin_extra_wait + 200);
+	EMC(EMC_PIN) = pin_gpio_cfg | 0x100;
+	(void)EMC(EMC_PIN);
 
-	if (params->memory_type == MEMORY_TYPE_LPDDR4)
-		usleep(params->emc_pin_extra_wait + 2000);
-	else if (params->memory_type == MEMORY_TYPE_DDR3L)
-		usleep(params->emc_pin_extra_wait + 500);
+	usleep(params->emc_pin_extra_wait + 2000);
 
 	// Enable clock enable signal.
 	EMC(EMC_PIN) = pin_gpio_cfg | 0x101;
 	(void)EMC(EMC_PIN);
 	usleep(params->emc_pin_program_wait);
 
-	// Send NOP (trigger just needs to be non-zero).
-	if (params->memory_type != MEMORY_TYPE_LPDDR4)
-		EMC(EMC_NOP) = (params->emc_dev_select << 30) + 1;
-
-	// On coldboot w/LPDDR2/3, wait 200 uSec after asserting CKE high.
-	if (params->memory_type == MEMORY_TYPE_LPDDR2)
-		usleep(params->emc_pin_extra_wait + 200);
-
 	// Init zq calibration,
-	if (params->memory_type == MEMORY_TYPE_LPDDR4)
+	// Patch 6 using BCT spare variables.
+	if (params->emc_bct_spare10)
+		*(vu32 *)params->emc_bct_spare10 = params->emc_bct_spare11;
+
+	// Write mode registers.
+	EMC(EMC_MRW2)  = params->emc_mrw2;
+	EMC(EMC_MRW)   = params->emc_mrw1;
+	EMC(EMC_MRW3)  = params->emc_mrw3;
+	EMC(EMC_MRW4)  = params->emc_mrw4;
+	EMC(EMC_MRW6)  = params->emc_mrw6;
+	EMC(EMC_MRW14) = params->emc_mrw14;
+
+	EMC(EMC_MRW8)  = params->emc_mrw8;
+	EMC(EMC_MRW12) = params->emc_mrw12;
+	EMC(EMC_MRW9)  = params->emc_mrw9;
+	EMC(EMC_MRW13) = params->emc_mrw13;
+
+	if (params->emc_zcal_warm_cold_boot_enables & 1)
 	{
-		// Patch 6 using BCT spare variables.
-		if (params->emc_bct_spare10)
-			*(vu32 *)params->emc_bct_spare10 = params->emc_bct_spare11;
+		// Issue ZQCAL start, device 0.
+		EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0;
+		usleep(params->emc_zcal_init_wait);
 
-		// Write mode registers.
-		EMC(EMC_MRW2)  = params->emc_mrw2;
-		EMC(EMC_MRW)   = params->emc_mrw1;
-		EMC(EMC_MRW3)  = params->emc_mrw3;
-		EMC(EMC_MRW4)  = params->emc_mrw4;
-		EMC(EMC_MRW6)  = params->emc_mrw6;
-		EMC(EMC_MRW14) = params->emc_mrw14;
-
-		EMC(EMC_MRW8)  = params->emc_mrw8;
-		EMC(EMC_MRW12) = params->emc_mrw12;
-		EMC(EMC_MRW9)  = params->emc_mrw9;
-		EMC(EMC_MRW13) = params->emc_mrw13;
-
-		if (params->emc_zcal_warm_cold_boot_enables & 1)
+		// Issue ZQCAL latch.
+		EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0 ^ 3;
+		// Same for device 1.
+		if (!(params->emc_dev_select & 2))
 		{
-			// Issue ZQCAL start, device 0.
-			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0;
+			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1;
 			usleep(params->emc_zcal_init_wait);
-
-			// Issue ZQCAL latch.
-			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev0 ^ 3;
-			// Same for device 1.
-			if (!(params->emc_dev_select & 2))
-			{
-				EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1;
-				usleep(params->emc_zcal_init_wait);
-				EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1 ^ 3;
-			}
+			EMC(EMC_ZQ_CAL) = params->emc_zcal_init_dev1 ^ 3;
 		}
 	}
 
@@ -1348,12 +1301,9 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	PMC(APBDEV_PMC_DDR_CFG) = params->pmc_ddr_cfg;
 
 	// Start periodic ZQ calibration (LPDDRx only).
-	if (params->memory_type == MEMORY_TYPE_LPDDR2 || params->memory_type == MEMORY_TYPE_DDR3L || params->memory_type == MEMORY_TYPE_LPDDR4)
-	{
-		EMC(EMC_ZCAL_INTERVAL) = params->emc_zcal_interval;
-		EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
-		EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
-	}
+	EMC(EMC_ZCAL_INTERVAL) = params->emc_zcal_interval;
+	EMC(EMC_ZCAL_WAIT_CNT) = params->emc_zcal_wait_cnt;
+	EMC(EMC_ZCAL_MRW_CMD)  = params->emc_zcal_mrw_cmd;
 
 	// Patch 7 using BCT spare variables.
 	if (params->emc_bct_spare12)
@@ -1480,16 +1430,18 @@ void *sdram_get_params_patched()
 static void _sdram_init_t210()
 {
 	const sdram_params_t210_t *params = (const sdram_params_t210_t *)_sdram_get_params_t210();
+	if (params->memory_type != MEMORY_TYPE_LPDDR4)
+		return;
 
 	// Set DRAM voltage.
-	max7762x_regulator_set_voltage(REGULATOR_SD1, 1125000); // HOS: 1.125V. Normal: 1.1V.
+	max7762x_regulator_set_voltage(REGULATOR_SD1, 1125000); // HOS: 1.125V. Bootloader: 1.1V.
 
 	// VDDP Select.
 	PMC(APBDEV_PMC_VDDP_SEL) = params->pmc_vddp_sel;
 	usleep(params->pmc_vddp_sel_wait);
 
 	// Set DDR pad voltage.
-	PMC(APBDEV_PMC_DDR_PWR) = PMC(APBDEV_PMC_DDR_PWR);
+	PMC(APBDEV_PMC_DDR_PWR) = PMC(APBDEV_PMC_DDR_PWR); // Normally params->pmc_ddr_pwr.
 
 	// Turn on MEM IO Power.
 	PMC(APBDEV_PMC_NO_IOPOWER) = params->pmc_no_io_power;
@@ -1507,6 +1459,8 @@ static void _sdram_init_t210()
 static void _sdram_init_t210b01()
 {
 	const sdram_params_t210b01_t *params = (const sdram_params_t210b01_t *)sdram_get_params_t210b01();
+	if (params->memory_type != MEMORY_TYPE_LPDDR4)
+		return;
 
 	// VDDP Select.
 	PMC(APBDEV_PMC_VDDP_SEL) = params->pmc_vddp_sel;
