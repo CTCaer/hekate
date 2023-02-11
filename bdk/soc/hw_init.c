@@ -472,14 +472,4 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 		display_end();
 		clock_disable_host1x();
 	}
-
-	// Enable clock to USBD and init SDMMC1 to avoid hangs with bad hw inits.
-	if (bl_magic == BL_MAGIC_BROKEN_HWI)
-	{
-		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_USBD);
-		sdmmc_init(&sd_sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, 0);
-		clock_disable_cl_dvfs();
-
-		msleep(200);
-	}
 }
