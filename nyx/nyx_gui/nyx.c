@@ -387,18 +387,33 @@ void nyx_init_load_res()
 	// Load hekate/Nyx configuration.
 	_load_saved_configuration();
 
-	// Initialize nyx cfg to lower clock for T210.
+	// Initialize nyx cfg to lower clock on first boot.
 	// In case of lower binned SoC, this can help with hangs.
 	if (!n_cfg.bpmp_clock)
 	{
-		n_cfg.bpmp_clock = h_cfg.t210b01 ? 1 : 2; // Set lower clock for T210.
+		// Set lower clock and save it.
+		n_cfg.bpmp_clock = 2;
 		create_nyx_config_entry(false);
-		n_cfg.bpmp_clock = h_cfg.t210b01 ? 1 : 0; // Restore for T210 and keep for T210B01.
+
+		// Start at max clock and test it.
+		n_cfg.bpmp_clock = 0;
 	}
 
-	// Restore clock to max.
-	if (n_cfg.bpmp_clock < 2)
+	// Set selected clock.
+	switch (n_cfg.bpmp_clock)
+	{
+	case 0:
+	case 1:
 		bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
+		break;
+	case 2:
+		bpmp_clk_rate_set(BPMP_CLK_LOWER_BOOST);
+		break;
+	case 3:
+	default:
+		bpmp_clk_rate_set(BPMP_CLK_LOWEST_BOOST);
+		break;
+	}
 
 	// Load Nyx resources.
 	FIL fp;

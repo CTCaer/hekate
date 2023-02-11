@@ -2402,7 +2402,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	}
 
 	if (!n_cfg.bpmp_clock)
-		task_bpmp_clock = lv_task_create(first_time_bpmp_clock, 5000, LV_TASK_PRIO_LOWEST, NULL);
+		task_bpmp_clock = lv_task_create(first_time_bpmp_clock, 10000, LV_TASK_PRIO_LOWEST, NULL);
 }
 
 void nyx_load_and_run()
