@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -63,7 +63,8 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20210805123730", 12, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 13.0.0 - 13.2.0
 	{ "20220105094454", 12, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 13.2.1.
 	{ "20220209100018", 13, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 14.0.0 - 14.1.2.
-	{ "20220801142548", 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 15.0.0+
+	{ "20220801142548", 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 15.0.0 - 15.0.1.
+	{ "20230111100014", 15, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 16.0.0+
 };
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
@@ -114,7 +115,6 @@ const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + id->pkg11_off + 0x20);
 
 	u32 sec_size[3] = { hdr->wb_size, hdr->ldr_size, hdr->sm_size };
-	//u32 sec_off[3] = { hdr->wb_off, hdr->ldr_off, hdr->sm_off };
 
 	// Get correct header mapping.
 	if (id->kb == KB_FIRMWARE_VERSION_100 && !strcmp(id->id, "20161121183008"))
@@ -128,13 +128,23 @@ const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t
 	u8 *pdata = (u8 *)hdr + sizeof(pk11_hdr_t);
 	for (u32 i = 0; i < 3; i++)
 	{
-		if (sec_map[i] == PK11_SECTION_WB && wm_dst)
-			memcpy(wm_dst, pdata, sec_size[sec_map[i]]);
-		else if (sec_map[i] == PK11_SECTION_LD && ldr_dst)
-			memcpy(ldr_dst, pdata, sec_size[sec_map[i]]);
-		else if (sec_map[i] == PK11_SECTION_SM && sm_dst)
-			memcpy(sm_dst, pdata, sec_size[sec_map[i]]);
-		pdata += sec_size[sec_map[i]];
+		u32 ssize = sec_size[sec_map[i]];
+		switch (sec_map[i])
+		{
+		case PK11_SECTION_WB:
+			if (wm_dst)
+				memcpy(wm_dst,  pdata, ssize);
+			break;
+		case PK11_SECTION_LD:
+			if (ldr_dst)
+				memcpy(ldr_dst, pdata, ssize);
+			break;
+		case PK11_SECTION_SM:
+			if (sm_dst)
+				memcpy(sm_dst,  pdata, ssize);
+			break;
+		}
+		pdata += ssize;
 	}
 
 	return sec_map;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -40,7 +40,8 @@
 #define KB_FIRMWARE_VERSION_1300 12
 #define KB_FIRMWARE_VERSION_1400 13
 #define KB_FIRMWARE_VERSION_1500 14
-#define KB_FIRMWARE_VERSION_MAX  KB_FIRMWARE_VERSION_1500 //!TODO: Update on mkey changes.
+#define KB_FIRMWARE_VERSION_1600 15
+#define KB_FIRMWARE_VERSION_MAX  KB_FIRMWARE_VERSION_1600 //!TODO: Update on mkey changes.
 
 #define HOS_TSEC_VERSION 4 //! TODO: Update on TSEC Root Key changes.
 

@@ -2283,6 +2283,7 @@ void first_time_bpmp_clock(void *param)
 	// Remove task.
 	lv_task_del(task_bpmp_clock);
 
+	// Max clock seems fine. Save it.
 	n_cfg.bpmp_clock = 1;
 	create_nyx_config_entry(false);
 }

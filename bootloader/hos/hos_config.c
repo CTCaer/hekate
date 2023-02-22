@@ -302,7 +302,7 @@ int parse_boot_config(launch_ctxt_t *ctxt)
 {
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
 	{
-		for(u32 i = 0; _config_handlers[i].key; i++)
+		for (u32 i = 0; _config_handlers[i].key; i++)
 		{
 			if (!strcmp(_config_handlers[i].key, kv->key))
 			{

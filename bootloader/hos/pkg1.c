@@ -167,7 +167,8 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20210805123730", 12, 15, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 13.0.0 - 13.2.0.
 	{ "20220105094454", 12, 16, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 13.2.1.
 	{ "20220209100018", 13, 16, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 14.0.0 - 14.1.2.
-	{ "20220801142548", 14, 17, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 15.0.0+
+	{ "20220801142548", 14, 17, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 15.0.0 - 15.0.1.
+	{ "20230111100014", 15, 18, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000, NULL }, // 16.0.0+
 };
 
 const pkg1_id_t *pkg1_get_latest()
@@ -225,7 +226,6 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 	const pk11_hdr_t *hdr = (pk11_hdr_t *)(pkg1 + id->pkg11_off + 0x20);
 
 	u32 sec_size[3] = { hdr->wb_size, hdr->ldr_size, hdr->sm_size };
-	//u32 sec_off[3] = { hdr->wb_off, hdr->ldr_off, hdr->sm_off };
 
 	// Get correct header mapping.
 	if (id->fuses == 1)                        // 1.0.0.
@@ -239,17 +239,25 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 	u8 *pdata = (u8 *)hdr + sizeof(pk11_hdr_t);
 	for (u32 i = 0; i < 3; i++)
 	{
-		if (sec_map[i] == PK11_SECTION_WB && wm_dst)
+		u32 ssize = sec_size[sec_map[i]];
+		switch (sec_map[i])
 		{
-			memcpy(wm_dst, pdata, sec_size[sec_map[i]]);
+		case PK11_SECTION_WB:
+			if (wm_dst)
+				memcpy(wm_dst,  pdata, ssize);
 			if (wb_sz)
-				*wb_sz = sec_size[sec_map[i]];
+				*wb_sz = ssize;
+			break;
+		case PK11_SECTION_LD:
+			if (ldr_dst)
+				memcpy(ldr_dst, pdata, ssize);
+			break;
+		case PK11_SECTION_SM:
+			if (sm_dst)
+				memcpy(sm_dst,  pdata, ssize);
+			break;
 		}
-		else if (sec_map[i] == PK11_SECTION_LD && ldr_dst)
-			memcpy(ldr_dst, pdata, sec_size[sec_map[i]]);
-		else if (sec_map[i] == PK11_SECTION_SM && sm_dst)
-			memcpy(sm_dst, pdata, sec_size[sec_map[i]]);
-		pdata += sec_size[sec_map[i]];
+		pdata += ssize;
 	}
 
 	return sec_map;

@@ -615,7 +615,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "13.2.1 - 14.1.2");
 		break;
 	case 17:
-		strcpy(fuses_hos_version, "15.0.0+");
+		strcpy(fuses_hos_version, "15.0.0 - 15.0.1");
+		break;
+	case 18:
+		strcpy(fuses_hos_version, "16.0.0+");
 		break;
 	case 255:
 		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
