@@ -1229,21 +1229,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	if (h_cfg.t210b01 || kb <= KB_FIRMWARE_VERSION_620)
 	{
-		const u8 *sec_map = pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
-
+		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
 		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pk1_offset + pkg1_id->pkg11_off + 0x20);
-
-		// Use correct sizes.
-		u32 sec_size[3] = { hdr_pk11->wb_size, hdr_pk11->ldr_size, hdr_pk11->sm_size };
-		for (u32 i = 0; i < 3; i++)
-		{
-			if (sec_map[i] == PK11_SECTION_WB)
-				hdr_pk11->wb_size = sec_size[i];
-			else if (sec_map[i] == PK11_SECTION_LD)
-				hdr_pk11->ldr_size = sec_size[i];
-			else if (sec_map[i] == PK11_SECTION_SM)
-				hdr_pk11->sm_size = sec_size[i];
-		}
 
 		// Display info.
 		s_printf(txt_buf + strlen(txt_buf),
