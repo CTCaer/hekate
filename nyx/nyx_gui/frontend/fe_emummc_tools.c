@@ -93,7 +93,7 @@ void save_emummc_cfg(u32 part_idx, u32 sector_start, const char *path)
 		itoa(part_idx, lbuf, 10);
 		f_puts(lbuf, &fp);
 	}
-	else if(path)
+	else if (path)
 		f_puts("1", &fp);
 	else
 		f_puts("0", &fp);
@@ -399,7 +399,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	for (int j = 0; j < 100; j++)
 	{
 		update_emummc_base_folder(sdPath, base_len, j);
-		if(f_stat(sdPath, NULL) == FR_NO_FILE)
+		if (f_stat(sdPath, NULL) == FR_NO_FILE)
 			break;
 	}
 

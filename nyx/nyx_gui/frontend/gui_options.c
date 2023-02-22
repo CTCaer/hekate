@@ -23,7 +23,7 @@
 #include <libs/lvgl/lv_themes/lv_theme_hekate.h>
 #include <libs/lvgl/lvgl.h>
 
-#define CLOCK_MIN_YEAR 2022
+#define CLOCK_MIN_YEAR 2023
 #define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
 
 extern hekate_config h_cfg;
