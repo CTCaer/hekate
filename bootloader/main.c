@@ -85,9 +85,9 @@ void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t
 
 void check_power_off_from_hos()
 {
-	// Power off on AutoRCM wakeup from HOS shutdown. For modchips/dongles.
-	u8 hosWakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
-	if (hosWakeup & MAX77620_IRQ_TOP_RTC_MASK)
+	// Power off on alarm wakeup from HOS shutdown. For modchips/dongles.
+	u8 hos_wakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
+	if (hos_wakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
 		if (h_cfg.autohosoff == 1)
 		{
@@ -1467,7 +1467,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate v6.0.1", 0, 0 };
+menu_t menu_top = { ment_top, "hekate v6.0.2", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 

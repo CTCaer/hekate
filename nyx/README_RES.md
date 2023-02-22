@@ -8,6 +8,8 @@ Additionally, using the `icon={sd path}`, the icon will get colorized if the nam
 
 If `_nobox.bmp` is used then the button background is removed. Useful for icon themes that aim for a specific style.
 
+A combo of both can be enabled via `_hue_nobox.bmp` suffix.
+
 The default system icons (`icon_switch.bmp` and `icon_payload.bmp`) can be replaced with white layouts that have transparency. They can also be replaced with normal icons if the following exist: `icon_switch_custom.bmp` or/and `icon_payload_custom.bmp`
 
 
