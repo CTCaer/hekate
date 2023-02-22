@@ -24,7 +24,7 @@
 
 static bool sd_mounted = false;
 static bool sd_init_done = false;
-static bool inserted = false;
+static bool insertion_event = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
 static u32  sd_mode = SD_UHS_SDR104;
 
@@ -55,11 +55,8 @@ u16 *sd_get_error_count()
 
 bool sd_get_card_removed()
 {
-	if (inserted && !sdmmc_get_sd_inserted())
-	{
-		inserted = false;
+	if (insertion_event && !sdmmc_get_sd_inserted())
 		return true;
-	}
 
 	return false;
 }
@@ -116,8 +113,8 @@ int sd_init_retry(bool power_cycle)
 	int res = sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
 	if (res)
 	{
-		inserted = true;
-		sd_init_done = true;
+		sd_init_done    = true;
+		insertion_event = true;
 	}
 	else
 		sd_init_done = false;
@@ -208,7 +205,8 @@ static void _sd_deinit(bool deinit)
 		if (deinit)
 		{
 			sdmmc_storage_end(&sd_storage);
-			sd_init_done = false;
+			sd_init_done    = false;
+			insertion_event = false;
 		}
 	}
 	sd_mounted = false;
