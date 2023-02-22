@@ -376,7 +376,7 @@ void hw_init()
 	// Initialize I2C5, mandatory for PMIC.
 	i2c_init(I2C_5);
 
-	// Power up Joycon MCU (Sio) on Hoag as it's required for I2C1 communication.
+	// Enable LDO8 on HOAG as it also powers I2C1 IO pads.
 	if (nx_hoag)
 	{
 		max7762x_regulator_set_voltage(REGULATOR_LDO8, 2800000);
@@ -415,6 +415,9 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 {
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 
+	// Scale down BPMP clock.
+	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+
 #ifdef BDK_HW_EXTRA_DEINIT
 	// Disable temperature sensor, touchscreen, 5V regulators, Joy-Con and VIC.
 	vic_end();
@@ -429,9 +432,8 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 	minerva_change_freq(FREQ_204);
 	nyx_str->mtc_cfg.init_done = 0;
 
-	// Flush/disable MMU cache and scale down BPMP clock also.
+	// Flush/disable MMU cache.
 	bpmp_mmu_disable();
-	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	if (tegra_t210)
