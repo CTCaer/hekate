@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -24,6 +24,7 @@
 
 static bool sd_mounted = false;
 static bool sd_init_done = false;
+static bool inserted = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
 static u32  sd_mode = SD_UHS_SDR104;
 
@@ -54,8 +55,11 @@ u16 *sd_get_error_count()
 
 bool sd_get_card_removed()
 {
-	if (sd_init_done && !sdmmc_get_sd_inserted())
+	if (inserted && !sdmmc_get_sd_inserted())
+	{
+		inserted = false;
 		return true;
+	}
 
 	return false;
 }
@@ -109,7 +113,16 @@ int sd_init_retry(bool power_cycle)
 		sd_mode = SD_UHS_SDR104;
 	}
 
-	return sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
+	int res = sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
+	if (res)
+	{
+		inserted = true;
+		sd_init_done = true;
+	}
+	else
+		sd_init_done = false;
+
+	return res;
 }
 
 bool sd_initialize(bool power_cycle)
@@ -146,7 +159,7 @@ bool sd_initialize(bool power_cycle)
 
 bool sd_mount()
 {
-	if (sd_mounted)
+	if (sd_init_done && sd_mounted)
 		return true;
 
 	int res = 0;
@@ -165,8 +178,8 @@ bool sd_mount()
 	}
 	else
 	{
-		sd_init_done = true;
-		res = f_mount(&sd_fs, "0:", 1); // Volume 0 is SD.
+		if (!sd_mounted)
+			res = f_mount(&sd_fs, "0:", 1); // Volume 0 is SD.
 		if (res == FR_OK)
 		{
 			sd_mounted = true;
@@ -187,16 +200,18 @@ static void _sd_deinit(bool deinit)
 	if (deinit && sd_mode == SD_INIT_FAIL)
 		sd_mode = SD_UHS_SDR104;
 
-	if (sd_init_done && sd_mounted)
+	if (sd_init_done)
 	{
-		f_mount(NULL, "0:", 1); // Volume 0 is SD.
-		sd_mounted = false;
+		if (sd_mounted)
+			f_mount(NULL, "0:", 1); // Volume 0 is SD.
+
+		if (deinit)
+		{
+			sdmmc_storage_end(&sd_storage);
+			sd_init_done = false;
+		}
 	}
-	if (sd_init_done && deinit)
-	{
-		sdmmc_storage_end(&sd_storage);
-		sd_init_done = false;
-	}
+	sd_mounted = false;
 }
 
 void sd_unmount() { _sd_deinit(false); }
