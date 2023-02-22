@@ -438,6 +438,10 @@ void nyx_init_load_res()
 	// Try 2 times to mount SD card.
 	if (!sd_mount())
 	{
+		// Restore speed to SDR104.
+		sd_end();
+
+		// Retry.
 		if (!sd_mount())
 			_show_errors(SD_MOUNT_ERROR); // Fatal.
 	}
