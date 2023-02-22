@@ -114,11 +114,10 @@
 #define MAX77621_INDUCTOR_PLUS_60_PER 3
 #define MAX77621_INDUCTOR_MASK        3
 
-#define MAX77621_CKKADV_TRIP_75mV_PER_US          0x0
-#define MAX77621_CKKADV_TRIP_150mV_PER_US         BIT(2)
-#define MAX77621_CKKADV_TRIP_75mV_PER_US_HIST_DIS BIT(3)
-#define MAX77621_CKKADV_TRIP_DISABLE              (BIT(2) | BIT(3))
-#define MAX77621_CKKADV_TRIP_MASK                 (BIT(2) | BIT(3))
+#define MAX77621_CKKADV_TRIP_75mV_PER_US          (0  << 2)
+#define MAX77621_CKKADV_TRIP_150mV_PER_US         (1u << 2)
+#define MAX77621_CKKADV_TRIP_DISABLE              (3u << 2)
+#define MAX77621_CKKADV_TRIP_MASK                 (3u << 2)
 
 #define MAX77621_FT_ENABLE       BIT(4)
 #define MAX77621_DISCH_ENABLE    BIT(5)
@@ -126,18 +125,17 @@
 #define MAX77621_T_JUNCTION_120  BIT(7)
 
 #define MAX77621_CPU_CTRL1_POR_DEFAULT  (MAX77621_RAMP_50mV_PER_US)
-#define MAX77621_CPU_CTRL1_HOS_DEFAULT  (MAX77621_AD_ENABLE                        | \
-										 MAX77621_NFSR_ENABLE                      | \
-										 MAX77621_SNS_ENABLE                       | \
+#define MAX77621_CPU_CTRL1_HOS_DEFAULT  (MAX77621_AD_ENABLE               | \
+										 MAX77621_NFSR_ENABLE             | \
+										 MAX77621_SNS_ENABLE              | \
 										 MAX77621_RAMP_12mV_PER_US)
-#define MAX77621_CPU_CTRL2_POR_DEFAULT  (MAX77621_T_JUNCTION_120                   | \
-										 MAX77621_FT_ENABLE                        | \
-										 MAX77621_CKKADV_TRIP_75mV_PER_US_HIST_DIS | \
-										 MAX77621_CKKADV_TRIP_150mV_PER_US         | \
+#define MAX77621_CPU_CTRL2_POR_DEFAULT  (MAX77621_T_JUNCTION_120          | \
+										 MAX77621_FT_ENABLE               | \
+										 MAX77621_CKKADV_TRIP_DISABLE     | \
 										 MAX77621_INDUCTOR_NOMINAL)
-#define MAX77621_CPU_CTRL2_HOS_DEFAULT  (MAX77621_T_JUNCTION_120                   | \
-										 MAX77621_WDTMR_ENABLE                     | \
-										 MAX77621_CKKADV_TRIP_75mV_PER_US          | \
+#define MAX77621_CPU_CTRL2_HOS_DEFAULT  (MAX77621_T_JUNCTION_120          | \
+										 MAX77621_WDTMR_ENABLE            | \
+										 MAX77621_CKKADV_TRIP_75mV_PER_US | \
 										 MAX77621_INDUCTOR_NOMINAL)
 
 #define MAX77621_CTRL_HOS_CFG 0
