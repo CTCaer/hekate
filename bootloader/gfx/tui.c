@@ -133,7 +133,7 @@ void *tui_do_menu(menu_t *menu)
 				gfx_printf("%k %s", menu->ents[cnt].color, menu->ents[cnt].caption);
 			else if (menu->ents[cnt].type != MENT_CHGLINE)
 				gfx_printf(" %s", menu->ents[cnt].caption);
-			if(menu->ents[cnt].type == MENT_MENU)
+			if (menu->ents[cnt].type == MENT_MENU)
 				gfx_printf("%k...", TXT_CLR_CYAN_L);
 			gfx_printf(" \n");
 		}
