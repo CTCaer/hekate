@@ -935,6 +935,13 @@ exit:
 static lv_res_t _action_reboot_recovery(lv_obj_t * btns, const char * txt)
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
+	char id[8];
+
+	// Check if using new L4T-Loader Android
+	if (f_stat("bootloader/ini/android.ini", NULL))
+		id = "SWANDR";
+	else
+		id = "SWR-AND";
 
 	// Delete parent mbox.
 	mbox_action(btns, txt);
@@ -948,7 +955,7 @@ static lv_res_t _action_reboot_recovery(lv_obj_t * btns, const char * txt)
 		b_cfg->boot_cfg = BOOT_CFG_FROM_ID | BOOT_CFG_AUTOBOOT_EN;
 
 		// Set id to Android.
-		strcpy((char *)b_cfg->id, "SWANDR");
+		strcpy((char *)b_cfg->id, id);
 
 		void (*main_ptr)() = (void *)nyx_str->hekate;
 
