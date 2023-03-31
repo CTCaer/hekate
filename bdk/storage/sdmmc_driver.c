@@ -34,9 +34,8 @@
 //#define ERROR_EXTRA_PRINTING
 #define DPRINTF(...)
 
-#ifdef BDK_SDMMC_OC_AND_EXTRA_PRINT
+#ifdef BDK_SDMMC_EXTRA_PRINT
 #define ERROR_EXTRA_PRINTING
-#define SDMMC_EMMC_OC
 #endif
 
 /*! SCMMC controller base addresses. */
@@ -237,11 +236,7 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 }
 
-#ifdef SDMMC_EMMC_OC
-static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc, bool overclock)
-#else
 static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
-#endif
 {
 	int result = 1, should_disable_sd_clock = 0;
 
@@ -251,11 +246,9 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 	}
 
-#ifdef SDMMC_EMMC_OC
-	 // Add -4 TX_DLY_CODE_OFFSET if HS533.
-	if (sdmmc->id == SDMMC_4 && overclock)
-		sdmmc->regs->vendllcalcfg = sdmmc->regs->vendllcalcfg &= 0xFFFFC07F | (0x7C << 7);
-#endif
+	 // Add -4 TX_DLY_CODE_OFFSET if HS533/HS667.
+	 // if (sdmmc->id == SDMMC_4 && sdmmc->card_clock > 208000)
+	 //	sdmmc->regs->vendllctl0 = sdmmc->regs->vendllctl0 &= 0xFFFFC07F | (0x7C << 7);
 
 	sdmmc->regs->vendllcalcfg |= TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE;
 	_sdmmc_commit_changes(sdmmc);
@@ -384,14 +377,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 
 	if (type == SDHCI_TIMING_MMC_HS400)
-	{
-#ifdef SDMMC_EMMC_OC
-		bool overclock_en = clock > 208000;
-		return _sdmmc_dll_cal_execute(sdmmc, overclock_en);
-#else
 		return _sdmmc_dll_cal_execute(sdmmc);
-#endif
-	}
 
 	return 1;
 }
