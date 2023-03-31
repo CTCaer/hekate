@@ -625,7 +625,7 @@ enum CLK_Y_DEV
 };
 
 /*! Generic clock descriptor. */
-typedef struct _clock_t
+typedef struct _clk_rst_t
 {
 	u16 reset;
 	u16 enable;
@@ -633,11 +633,11 @@ typedef struct _clock_t
 	u8 index;
 	u8 clk_src;
 	u8 clk_div;
-} clock_t;
+} clk_rst_t;
 
 /*! Generic clock enable/disable. */
-void clock_enable(const clock_t *clk);
-void clock_disable(const clock_t *clk);
+void clock_enable(const clk_rst_t *clk);
+void clock_disable(const clk_rst_t *clk);
 
 /*! Clock control for specific hardware portions. */
 void clock_enable_fuse(bool enable);
