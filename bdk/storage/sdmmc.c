@@ -846,6 +846,9 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, bool is_sdsc, int b
 				// Switch to 1.8V signaling.
 				if (_sdmmc_storage_execute_cmd_type1(storage, SD_SWITCH_VOLTAGE, 0, 0, R1_STATE_READY))
 				{
+					if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_UHS_SDR12))
+						return 0;
+
 					if (!sdmmc_enable_low_voltage(storage->sdmmc))
 						return 0;
 

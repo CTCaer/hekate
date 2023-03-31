@@ -1418,9 +1418,6 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 	if (sdmmc->id != SDMMC_1)
 		return 0;
 
-	if (!sdmmc_setup_clock(sdmmc, SDHCI_TIMING_UHS_SDR12))
-		return 0;
-
 	_sdmmc_commit_changes(sdmmc);
 
 	// Switch to 1.8V and wait for regulator to stabilize. Assume max possible wait needed.
