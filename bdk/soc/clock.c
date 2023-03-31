@@ -699,6 +699,7 @@ static clock_sdmmc_t _clock_sdmmc_table[4] = { 0 };
 
 #define SDMMC_CLOCK_SRC_PLLP_OUT0      0x0
 #define SDMMC_CLOCK_SRC_PLLC4_OUT2     0x3
+#define SDMMC_CLOCK_SRC_PLLC4_OUT0     0x7
 #define SDMMC4_CLOCK_SRC_PLLC4_OUT2_LJ 0x1
 
 static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 val)
@@ -716,79 +717,80 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 val)
 		*pclock = 24728;
 		divisor = 31; // 16.5 div.
 		break;
+
 	case 26000:
 		*pclock = 25500;
 		divisor = 30; // 16 div.
 		break;
+
 	case 50000:
 		*pclock = 48000;
 		divisor = 15; // 8.5 div.
 		break;
+
 	case 52000:
 		*pclock = 51000;
 		divisor = 14; // 8 div.
 		break;
-	case 81600: // Originally MMC_HS50 for GC FPGA at 40800 KHz, div 18 (real 10).
+
+	case 82000:
 		*pclock = 81600;
-		divisor = 8; // 5 div.
+		divisor = 8;  // 5 div.
 		break;
+
 	case 100000:
 		source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
 		*pclock = 99840;
 		divisor = 2;  // 2 div.
 		break;
+
 	case 164000:
 		*pclock = 163200;
 		divisor = 3;  // 2.5 div.
 		break;
-	case 200000: // 240MHz evo+.
+
+	case 200000:
 		switch (id)
 		{
 		case SDMMC_1:
-			source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
-			break;
-		case SDMMC_2:
-			source = SDMMC4_CLOCK_SRC_PLLC4_OUT2_LJ;
-			break;
 		case SDMMC_3:
 			source = SDMMC_CLOCK_SRC_PLLC4_OUT2;
 			break;
+		case SDMMC_2:
 		case SDMMC_4:
-			source = SDMMC4_CLOCK_SRC_PLLC4_OUT2_LJ;
+			source = SDMMC4_CLOCK_SRC_PLLC4_OUT2_LJ; // div is ignored.
 			break;
 		}
 		*pclock = 199680;
 		divisor = 0;  // 1 div.
 		break;
-	default:
-		*pclock = 24728;
-		divisor = 31; // 16.5 div.
 	}
 
 	_clock_sdmmc_table[id].clock = val;
 	_clock_sdmmc_table[id].real_clock = *pclock;
 
 	// Enable PLLC4 if in use by any SDMMC.
-	if (source)
+	if (source != SDMMC_CLOCK_SRC_PLLP_OUT0)
 		_clock_enable_pllc4(BIT(id));
 
 	// Set SDMMC legacy timeout clock.
 	_clock_sdmmc_config_legacy_tm();
 
 	// Set SDMMC clock.
+	u32 src_div = (source << 29) | divisor;
 	switch (id)
 	{
 	case SDMMC_1:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC1) = (source << 29) | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC1) = src_div;
 		break;
 	case SDMMC_2:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2) = (source << 29) | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2) = src_div;
 		break;
 	case SDMMC_3:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3) = (source << 29) | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3) = src_div;
 		break;
 	case SDMMC_4:
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4) = (source << 29) | divisor;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4) = src_div;
 		break;
 	}
 
@@ -818,51 +820,61 @@ void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type)
 	// Get Card clock divisor.
 	switch (type)
 	{
-	case SDHCI_TIMING_MMC_ID: // Actual IO Freq: 380.59 KHz.
+	case SDHCI_TIMING_MMC_ID: // Actual card clock: 386.36 KHz.
 		*pclock = 26000;
 		*pdivisor = 66;
 		break;
+
 	case SDHCI_TIMING_MMC_LS26:
 		*pclock = 26000;
 		*pdivisor = 1;
 		break;
+
 	case SDHCI_TIMING_MMC_HS52:
 		*pclock = 52000;
 		*pdivisor = 1;
 		break;
+
 	case SDHCI_TIMING_MMC_HS200:
 	case SDHCI_TIMING_MMC_HS400:
 	case SDHCI_TIMING_UHS_SDR104:
 		*pclock = 200000;
 		*pdivisor = 1;
 		break;
-	case SDHCI_TIMING_SD_ID: // Actual IO Freq: 380.43 KHz.
+
+	case SDHCI_TIMING_SD_ID:      // Actual card clock: 386.38 KHz.
 		*pclock = 25000;
 		*pdivisor = 64;
 		break;
+
 	case SDHCI_TIMING_SD_DS12:
 	case SDHCI_TIMING_UHS_SDR12:
 		*pclock = 25000;
 		*pdivisor = 1;
 		break;
+
 	case SDHCI_TIMING_SD_HS25:
 	case SDHCI_TIMING_UHS_SDR25:
 		*pclock = 50000;
 		*pdivisor = 1;
 		break;
+
 	case SDHCI_TIMING_UHS_SDR50:
 		*pclock = 100000;
 		*pdivisor = 1;
 		break;
+
 	case SDHCI_TIMING_UHS_SDR82:
 		*pclock = 164000;
 		*pdivisor = 1;
 		break;
-	case SDHCI_TIMING_UHS_DDR50:
-		*pclock = 81600; // Originally MMC_HS50 for GC FPGA at 40800 KHz, div 1.
+
+	case SDHCI_TIMING_UHS_DDR50: // Actual card clock: 40.80 MHz.
+		*pclock = 82000;
 		*pdivisor = 2;
 		break;
-	case SDHCI_TIMING_MMC_DDR100: // Actual IO Freq: 99.84 MHz.
+
+	case SDHCI_TIMING_MMC_HS100: // Actual card clock: 99.84 MHz.
 		*pclock = 200000;
 		*pdivisor = 2;
 		break;
@@ -884,7 +896,8 @@ void clock_sdmmc_enable(u32 id, u32 val)
 	_clock_sdmmc_config_clock_host(&clock, id, val);
 	_clock_sdmmc_set_enable(id);
 	_clock_sdmmc_is_reset(id);
-	usleep((100000 + clock - 1) / clock);
+	// Wait 100 cycles for reset and for clocks to stabilize.
+	usleep((100 * 1000 + clock - 1) / clock);
 	_clock_sdmmc_clear_reset(id);
 	_clock_sdmmc_is_reset(id);
 }

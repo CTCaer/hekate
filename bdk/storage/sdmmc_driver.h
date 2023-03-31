@@ -261,7 +261,7 @@
 #define SDHCI_TIMING_UHS_DDR50  12
 // SDR104 with a 163.2MHz -> 81.6MHz clock.
 #define SDHCI_TIMING_UHS_SDR82  13 // GC FPGA. Obsolete and Repurposed. MMC_HS50 -> SDR82.
-#define SDHCI_TIMING_MMC_DDR100 14 // GC ASIC.
+#define SDHCI_TIMING_MMC_HS100  14 // GC ASIC.
 
 /*! SDMMC Low power features. */
 #define SDMMC_POWER_SAVE_DISABLE 0

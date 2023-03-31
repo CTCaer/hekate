@@ -332,7 +332,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 	case SDHCI_TIMING_UHS_DDR50:
-	case SDHCI_TIMING_MMC_DDR100:
+	case SDHCI_TIMING_MMC_HS100:
 		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR104_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
@@ -673,7 +673,7 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 
 	case SDHCI_TIMING_UHS_SDR50:
 	case SDHCI_TIMING_UHS_DDR50:
-	case SDHCI_TIMING_MMC_DDR100:
+	case SDHCI_TIMING_MMC_HS100:
 		num_iter = 256;
 		flag = (4 << 13); // 256 iterations.
 		break;

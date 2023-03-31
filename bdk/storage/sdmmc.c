@@ -1525,14 +1525,14 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_DDR100))
+	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_HS100))
 		return 0;
 	DPRINTF("[GC] after init\n");
 
 	// Wait 1ms + 10 clock cycles.
 	usleep(1000 + (10 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock);
 
-	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_DDR100, MMC_SEND_TUNING_BLOCK_HS200))
+	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_HS100, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
 	DPRINTF("[GC] after tuning\n");
 
