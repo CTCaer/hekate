@@ -263,9 +263,6 @@ void power_set_state(power_state_t state)
 	// De-initialize and power down various hardware.
 	hw_reinit_workaround(false, 0);
 
-	// Stop the alarm, in case we injected and powered off too fast.
-	max77620_rtc_stop_alarm();
-
 	// Set power state.
 	switch (state)
 	{
