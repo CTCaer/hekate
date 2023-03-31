@@ -254,15 +254,17 @@ static void _config_se_brom()
 	// This memset needs to happen here, else TZRAM will behave weirdly later on.
 	memset((void *)TZRAM_BASE, 0, TZRAM_SIZE);
 	PMC(APBDEV_PMC_CRYPTO_OP) = PMC_CRYPTO_OP_SE_ENABLE;
-	SE(SE_INT_STATUS_REG) = 0x1F; // Clear all SE interrupts.
+
+	// Clear SE interrupts.
+	SE(SE_INT_STATUS_REG) = SE_INT_OP_DONE | SE_INT_OUT_DONE | SE_INT_OUT_LL_BUF_WR | SE_INT_IN_DONE | SE_INT_IN_LL_BUF_RD;
 
 	// Save reset reason.
 	hw_rst_status = PMC(APBDEV_PMC_SCRATCH200);
 	hw_rst_reason = PMC(APBDEV_PMC_RST_STATUS) & PMC_RST_STATUS_MASK;
 
 	// Clear the boot reason to avoid problems later.
-	PMC(APBDEV_PMC_SCRATCH200) = 0x0;
-	PMC(APBDEV_PMC_RST_STATUS) = 0x0;
+	PMC(APBDEV_PMC_SCRATCH200) = 0;
+	PMC(APBDEV_PMC_RST_STATUS) = PMC_RST_STATUS_POR;
 	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) = (APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) & 0xF0) | (7 << 10);
 }
 

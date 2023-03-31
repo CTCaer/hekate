@@ -76,7 +76,7 @@ static void _display_dsi_wait_vblank(bool enable)
 	}
 	else
 	{
-		// Wait for vblank before reseting sync points.
+		// Wait for vblank before resetting sync points.
 		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
 		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
 			;

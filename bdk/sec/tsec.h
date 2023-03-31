@@ -24,7 +24,7 @@ enum tsec_fw_type
 {
 	// Retail Hovi Keygen.
 	TSEC_FW_TYPE_OLD = 0, // 1.0.0 - 6.1.0.
-	TSEC_FW_TYPE_EMU = 1, // 6.2.0 emulated enviroment.
+	TSEC_FW_TYPE_EMU = 1, // 6.2.0 emulated environment.
 	TSEC_FW_TYPE_NEW = 2, // 7.0.0+.
 };
 
