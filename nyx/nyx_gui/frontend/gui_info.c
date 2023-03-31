@@ -1365,6 +1365,8 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 
 		s_printf(txt_buf + strlen(txt_buf), "#C7EA46 %d/3# - Sector Offset #C7EA46 %08X#:\n", iter_curr + 1, sector);
 
+		u32 render_min_ms = 66;
+		u32 render_timer  = get_tmr_ms() + render_min_ms;
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
@@ -1377,10 +1379,11 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			lba_curr += sector_num;
 
 			pct = (lba_curr * 100) / 0x200000;
-			if (pct != prevPct)
+			if (pct != prevPct && render_timer < get_tmr_ms())
 			{
 				lv_bar_set_value(bar, pct);
 				manual_system_maintenance(true);
+				render_timer = get_tmr_ms() + render_min_ms;
 
 				prevPct = pct;
 
@@ -1409,6 +1412,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		sector_num = 8;            // 4KB chunks.
 		data_remaining = 0x100000; // 512MB.
 
+		render_timer = get_tmr_ms() + render_min_ms;
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
@@ -1421,10 +1425,11 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			lba_curr += sector_num;
 
 			pct = (lba_curr * 100) / 0x100000;
-			if (pct != prevPct)
+			if (pct != prevPct && render_timer < get_tmr_ms())
 			{
 				lv_bar_set_value(bar, pct);
 				manual_system_maintenance(true);
+				render_timer = get_tmr_ms() + render_min_ms;
 
 				prevPct = pct;
 
@@ -1467,6 +1472,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		timer = 0;
 		data_remaining = 0x100000; // 512MB.
 
+		render_timer = get_tmr_ms() + render_min_ms;
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
@@ -1479,10 +1485,11 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			lba_idx++;
 
 			pct = (lba_idx * 100) / 0x20000;
-			if (pct != prevPct)
+			if (pct != prevPct && render_timer < get_tmr_ms())
 			{
 				lv_bar_set_value(bar, pct);
 				manual_system_maintenance(true);
+				render_timer = get_tmr_ms() + render_min_ms;
 
 				prevPct = pct;
 
@@ -1527,8 +1534,15 @@ error:
 
 	lv_obj_del(bar);
 
+	if (sd_bench && error && error != -1)
+		sd_end();
 	if (sd_bench)
-		sd_unmount();
+	{
+		if (error && error != -1)
+			sd_end();
+		else
+			sd_unmount();
+	}
 	else
 		emmc_end();
 
