@@ -87,6 +87,14 @@ void check_power_off_from_hos()
 {
 	// Power off on alarm wakeup from HOS shutdown. For modchips/dongles.
 	u8 hos_wakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
+
+	// Clear RTC interrupts.
+	(void)i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_RTCINT_REG);
+
+	// Stop the alarm, in case we injected and powered off too fast.
+	max77620_rtc_stop_alarm();
+
+	// Handle RTC wake up.
 	if (hos_wakeup & MAX77620_IRQ_TOP_RTC_MASK)
 	{
 		if (h_cfg.autohosoff == 1)
