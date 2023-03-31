@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -21,14 +21,15 @@
 #include <assert.h>
 #include <utils/types.h>
 
-#define TEGRA_MMC_VNDR_TUN_CTRL0_TAP_VAL_UPDATED_BY_HW 0x20000
-#define TEGRA_MMC_DLLCAL_CFG_EN_CALIBRATE 0x80000000
-#define TEGRA_MMC_DLLCAL_CFG_STATUS_DLL_ACTIVE 0x80000000
-#define TEGRA_MMC_SDMEMCOMPPADCTRL_PAD_E_INPUT_PWRD 0x80000000
-#define TEGRA_MMC_SDMEMCOMPPADCTRL_COMP_VREF_SEL_MASK 0xFFFFFFF0
-#define TEGRA_MMC_AUTOCALCFG_AUTO_CAL_ENABLE 0x20000000
-#define TEGRA_MMC_AUTOCALCFG_AUTO_CAL_START 0x80000000
-#define TEGRA_MMC_AUTOCALSTS_AUTO_CAL_ACTIVE 0x80000000
+#define SDHCI_TEGRA_TUNING_TAP_HW_UPDATED BIT(17)
+#define SDHCI_TEGRA_DLLCAL_CALIBRATE      BIT(31)
+#define SDHCI_TEGRA_DLLCAL_ACTIVE         BIT(31)
+#define SDHCI_TEGRA_PADCTRL_E_INPUT_PWRD  BIT(31)
+#define SDHCI_TEGRA_PADCTRL_VREF_SEL_MASK 0xF
+#define SDHCI_TEGRA_AUTOCAL_SLW_OVERRIDE  BIT(28)
+#define SDHCI_TEGRA_AUTOCAL_ENABLE        BIT(29)
+#define SDHCI_TEGRA_AUTOCAL_START         BIT(31)
+#define SDHCI_TEGRA_AUTOCAL_ACTIVE        BIT(31)
 
 typedef struct _t210_sdmmc_t
 {
@@ -72,21 +73,21 @@ typedef struct _t210_sdmmc_t
 //       ADMA3 not supported. 1.8V VDD2 supported.
 /*  0x44 */ vu32 capareg_hi;
 
-/*  0x48 */ vu32 maxcurr;   // Get information by another method. Can be overriden via maxcurrover and maxcurrover_hi.
-/*  0x4C */ vu8  rsvd0[4];  // 4C-4F reserved for more max current.
-/*  0x50 */ vu16 setacmd12err;
+/*  0x48 */ vu32 maxcurr;      // Get information by another method. Can be overriden via maxcurrover and maxcurrover_hi.
+/*  0x4C */ vu32 maxcurr_hi;
+/*  0x50 */ vu16 setacmd12err; // Force error in acmd12errsts.
 /*  0x52 */ vu16 setinterr;
 /*  0x54 */ vu8  admaerr;
-/*  0x55 */ vu8  rsvd1[3]; // 55-57 reserved.
+/*  0x55 */ vu8  rsvd1[3];     // 55-57 reserved.
 /*  0x58 */ vu32 admaaddr;
 /*  0x5C */ vu32 admaaddr_hi;
 /*  0x60 */ vu16 presets[11];
 /*  0x76 */ vu16 rsvd2;
 /*  0x78 */ vu32 adma3addr;
 /*  0x7C */ vu32 adma3addr_hi;
-/*  0x80 */ vu8  uhs2[124]; // 80-FB UHS-II.
+/*  0x80 */ vu8  uhs2[124];    // 80-FB UHS-II.
 /*  0xFC */ vu16 slotintsts;
-/*  0xFE */ vu16 hcver; // 0x303 (4.00).
+/*  0xFE */ vu16 hcver;        // 0x303 (4.00).
 
 /* UHS-II range. Used for Vendor registers here */
 /* 0x100 */ vu32 venclkctl;
