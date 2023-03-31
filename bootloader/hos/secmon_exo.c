@@ -162,6 +162,10 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	else
 		exo_fw_no = ctxt->pkg1_id->fuses - 1;                    // 3.0.1 - 7.0.1, 8.0.x.
 
+	// Set 12.1.0 specific revision.
+	if (ctxt->pkg1_id->kb == KB_FIRMWARE_VERSION_1210)
+		ctxt->exo_ctx.hos_revision = 1;
+
 	// Handle 15.0.0+.
 	if (ctxt->pkg1_id->fuses >= 17)
 		exo_fw_no++;

@@ -1026,7 +1026,7 @@ int hos_launch(ini_sec_t *cfg)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
 	// Check if FS is compatible with exFAT and if 5.1.0.
-	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || kb == KB_FIRMWARE_VERSION_500))
+	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || kb == KB_FIRMWARE_VERSION_500 || ctxt.pkg1_id->fuses == 13))
 	{
 		bool exfat_compat = _get_fs_exfat_compatible(&kip1_info, &ctxt.exo_ctx.hos_revision);
 
