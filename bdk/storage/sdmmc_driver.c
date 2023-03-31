@@ -297,6 +297,13 @@ static void _sdmmc_reset_all(sdmmc_t *sdmmc)
 		;
 }
 
+void sdmmc_setup_drv_type(sdmmc_t *sdmmc, u32 type)
+{
+	sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_DRV_TYPE_MASK)) | SDHCI_CTRL_DRV_TYPE(type);
+
+	_sdmmc_commit_changes(sdmmc);
+}
+
 int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 {
 	// Disable the SD clock if it was enabled, and reenable it later.

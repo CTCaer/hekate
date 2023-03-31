@@ -1030,6 +1030,28 @@ static void _sd_storage_set_power_limit(sdmmc_storage_t *storage, u16 power_limi
 	}
 }
 
+int _sd_storage_set_driver_type(sdmmc_storage_t *storage, u32 driver, u8 *buf)
+{
+	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, SD_SWITCH_GRP_DRVSTR, driver))
+		return 0;
+
+	u32 driver_out = buf[15] & 0xF;
+	if (driver_out != driver)
+		return 0;
+	DPRINTF("[SD] supports Driver Strength %d\n", driver);
+
+	if (!_sd_storage_switch(storage, buf, SD_SWITCH_SET, SD_SWITCH_GRP_DRVSTR, driver))
+		return 0;
+
+	if (driver_out != (buf[15] & 0xF))
+		return 0;
+	DPRINTF("[SD] card accepted Driver Strength %d\n", driver);
+
+	sdmmc_setup_drv_type(storage->sdmmc, driver);
+
+	return 1;
+}
+
 /*
  * SD Card DDR200 (DDR208) support
  *

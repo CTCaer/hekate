@@ -120,10 +120,12 @@
 /*! SDMMC host control 2. 0x3E. */
 #define SDHCI_CTRL_UHS_MASK        0x7
 #define SDHCI_CTRL_VDD_180         BIT(3)
+#define SDHCI_CTRL_DRV_TYPE_MASK   (3U << 4)
 #define SDHCI_CTRL_DRV_TYPE_B      (0U << 4)
 #define SDHCI_CTRL_DRV_TYPE_A      (1U << 4)
 #define SDHCI_CTRL_DRV_TYPE_C      (2U << 4)
 #define SDHCI_CTRL_DRV_TYPE_D      (3U << 4)
+#define SDHCI_CTRL_DRV_TYPE(type)  ((type) << 4)
 #define SDHCI_CTRL_EXEC_TUNING     BIT(6)
 #define SDHCI_CTRL_TUNED_CLK_SHIFT 7
 #define SDHCI_CTRL_TUNED_CLK       BIT(7)
@@ -317,6 +319,7 @@ int  sdmmc_get_io_power(sdmmc_t *sdmmc);
 u32  sdmmc_get_bus_width(sdmmc_t *sdmmc);
 void sdmmc_set_bus_width(sdmmc_t *sdmmc, u32 bus_width);
 void sdmmc_save_tap_value(sdmmc_t *sdmmc);
+void sdmmc_setup_drv_type(sdmmc_t *sdmmc, u32 type);
 int  sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type);
 void sdmmc_card_clock_powersave(sdmmc_t *sdmmc, int powersave_enable);
 int  sdmmc_get_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type);
