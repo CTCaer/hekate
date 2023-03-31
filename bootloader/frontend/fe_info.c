@@ -249,7 +249,7 @@ void print_sdcard_info()
 				"Make sure that a FAT partition exists..", res);
 		}
 
-		sdmmc_storage_end(&sd_storage);
+		sd_end();
 	}
 	else
 	{
