@@ -812,7 +812,7 @@ static u32 _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
 	u16 norintsts = sdmmc->regs->norintsts;
 	u16 errintsts = sdmmc->regs->errintsts;
 
-DPRINTF("norintsts %08X, errintsts %08X\n", norintsts, errintsts);
+	DPRINTF("norintsts %08X, errintsts %08X\n", norintsts, errintsts);
 
 	if (pout)
 		*pout = norintsts;
@@ -1039,7 +1039,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 	if (!result)
 		EPRINTFARGS("SDMMC%d: Transfer timeout!", sdmmc->id + 1);
 #endif
-DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
+	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
 	if (result)
 	{
