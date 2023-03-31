@@ -22,6 +22,12 @@
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 
+#ifndef BDK_SDMMC_UHS_DDR200_SUPPORT
+#define SD_DEFAULT_SPEED SD_UHS_SDR104
+#else
+#define SD_DEFAULT_SPEED SD_UHS_DDR208
+#endif
+
 static bool sd_mounted = false;
 static bool sd_init_done = false;
 static bool insertion_event = false;
@@ -80,7 +86,11 @@ u32 sd_get_mode()
 int sd_init_retry(bool power_cycle)
 {
 	u32 bus_width = SDMMC_BUS_WIDTH_4;
+#ifndef BDK_SDMMC_UHS_DDR200_SUPPORT
 	u32 type = SDHCI_TIMING_UHS_SDR104;
+#else
+	u32 type = SDHCI_TIMING_UHS_DDR200;
+#endif
 
 	// Power cycle SD card.
 	if (power_cycle)
@@ -111,6 +121,13 @@ int sd_init_retry(bool power_cycle)
 	case SD_UHS_SDR104:
 		type = SDHCI_TIMING_UHS_SDR104;
 		break;
+
+#ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
+	case SD_UHS_DDR208:
+		type = SDHCI_TIMING_UHS_DDR200;
+		break;
+#endif
+
 	default:
 		sd_mode = SD_DEFAULT_SPEED;
 		break;

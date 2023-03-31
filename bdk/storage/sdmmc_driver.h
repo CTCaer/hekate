@@ -262,6 +262,7 @@
 // SDR104 with a 163.2MHz -> 81.6MHz clock.
 #define SDHCI_TIMING_UHS_SDR82  13 // GC FPGA. Obsolete and Repurposed. MMC_HS50 -> SDR82.
 #define SDHCI_TIMING_MMC_HS100  14 // GC ASIC.
+#define SDHCI_TIMING_UHS_DDR200 15
 
 /*! SDMMC Low power features. */
 #define SDMMC_POWER_SAVE_DISABLE 0
@@ -269,6 +270,9 @@
 
 /*! Helper for SWITCH command argument. */
 #define SDMMC_SWITCH(mode, index, value) (((mode) << 24) | ((index) << 16) | ((value) << 8))
+
+#define HW_TAP_TUNING 0x100
+#define INVALID_TAP   0x100
 
 /*! SDMMC controller context. */
 typedef struct _sdmmc_t

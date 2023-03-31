@@ -909,8 +909,6 @@ static void _sd_storage_parse_scr(sdmmc_storage_t *storage)
 
 	memcpy(&resp[2], storage->raw_scr, 8);
 
-	_debug_scr(storage->raw_scr);
-
 	storage->scr.sda_vsn = unstuff_bits(resp, 56, 4);
 	storage->scr.bus_widths = unstuff_bits(resp, 48, 4);
 
@@ -1032,6 +1030,74 @@ static void _sd_storage_set_power_limit(sdmmc_storage_t *storage, u16 power_limi
 	}
 }
 
+/*
+ * SD Card DDR200 (DDR208) support
+ *
+ * Proper procedure:
+ * 1. Check that Vendor Specific Command System is supported.
+ *    Used as Enable DDR200 Bus.
+ * 2. Enable DDR200 bus mode via setting 14 to Group 2 via CMD6.
+ *    Access Mode group is left to default 0 (SDR12).
+ * 3. Setup clock to 200 or 208 MHz.
+ * 4. Set host to DDR bus mode that supports such high clocks.
+ *    Some hosts have special mode, others use DDR50 and others HS400.
+ * 5. Execute Tuning.
+ *
+ * The true validation that this value in Group 2 activates it, is that DDR50 bus
+ * and clocks/timings work fully after that point.
+ *
+ * On Tegra X1, that can be done with DDR50 host mode.
+ * Tuning though can't be done automatically on any DDR mode.
+ * So it needs to be done manually and selected tap will be applied from the biggest
+ * sampling window.
+ *
+ * Finally, all that simply works, because the marketing materials for DDR200 are
+ * basically overstatements to sell the feature. DDR200 is simply SDR104 in DDR mode,
+ * so sampling on rising and falling edge and with variable output data window.
+ * It can be supported by any host that is fast enough to support DDR at 200/208MHz
+ * and can do hw/sw tuning for finding the proper sampling window in that mode.
+ */
+#ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
+static int _sd_storage_enable_DDR200(sdmmc_storage_t *storage, u8 *buf)
+{
+	u32 cmd_system = UHS_DDR200_BUS_SPEED;
+	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, SD_SWITCH_GRP_CMDSYS, cmd_system))
+		return 0;
+
+	u32 system_out = (buf[16] >> 4) & 0xF;
+	if (system_out != cmd_system)
+		return 0;
+	DPRINTF("[SD] supports DDR200 mode\n");
+
+	u16 total_pwr_consumption = ((u16)buf[0] << 8) | buf[1];
+	DPRINTF("[SD] max power: %d mW\n", total_pwr_consumption * 3600 / 1000);
+	storage->card_power_limit = total_pwr_consumption;
+
+	if (total_pwr_consumption <= 800)
+	{
+		if (!_sd_storage_switch(storage, buf, SD_SWITCH_SET, SD_SWITCH_GRP_CMDSYS, cmd_system))
+			return 0;
+
+		if (system_out != ((buf[16] >> 4) & 0xF))
+			return 0;
+		DPRINTF("[SD] card accepted DDR200\n");
+
+		if (!sdmmc_setup_clock(storage->sdmmc, SDHCI_TIMING_UHS_DDR200))
+			return 0;
+		DPRINTF("[SD] after setup clock DDR200\n");
+
+		if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_UHS_DDR200, MMC_SEND_TUNING_BLOCK))
+			return 0;
+		DPRINTF("[SD] after tuning DDR200\n");
+
+		return _sdmmc_storage_check_status(storage);
+	}
+
+	DPRINTF("[SD] card max power over limit\n");
+	return 0;
+}
+#endif
+
 static int _sd_storage_set_card_bus_speed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
 	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, SD_SWITCH_GRP_ACCESS, hs_type))
@@ -1070,12 +1136,27 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		return 0;
 
 	u8  access_mode = buf[13];
-	u16 power_limit = buf[7] | buf[6] << 8;
+	u16 power_limit = buf[7]  | buf[6]  << 8;
+#ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
+	u16 cmd_system  = buf[11] | buf[10] << 8;
+#endif
 	DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
 
 	u32 hs_type = 0;
 	switch (type)
 	{
+#ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
+	case SDHCI_TIMING_UHS_DDR200:
+		// Fall through if DDR200 is not supported.
+		if (cmd_system & SD_MODE_UHS_DDR200)
+		{
+			DPRINTF("[SD] setting bus speed to DDR200\n");
+			storage->csd.busspeed = 200;
+			_sd_storage_set_power_limit(storage, power_limit, buf);
+			return _sd_storage_enable_DDR200(storage, buf);
+		}
+#endif
+
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 		// Fall through if not supported.
@@ -1348,6 +1429,7 @@ static bool _sdmmc_storage_get_bus_uhs_support(u32 bus_width, u32 type)
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 	case SDHCI_TIMING_UHS_DDR50:
+	case SDHCI_TIMING_UHS_DDR200:
 		if (bus_width == SDMMC_BUS_WIDTH_4)
 			return true;
 	default:

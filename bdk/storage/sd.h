@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,7 +30,11 @@ enum
 	SD_1BIT_HS25  = 1,
 	SD_4BIT_HS25  = 2,
 	SD_UHS_SDR82  = 3,
-	SD_UHS_SDR104 = 4
+	SD_UHS_SDR104 = 4,
+#ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
+    SD_UHS_DDR208 = 5
+#endif
+
 };
 
 enum

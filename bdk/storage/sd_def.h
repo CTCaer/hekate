@@ -45,15 +45,14 @@
 #define SD_APP_CHANGE_SECURE_AREA       49 /* adtc                      R1b */
 
 /* OCR bit definitions */
-#define SD_OCR_VDD_18       (1 << 7)	 /* VDD voltage 1.8 */
-#define SD_VHD_27_36        (1 << 8)     /* VDD voltage 2.7 ~ 3.6 */
-#define SD_OCR_VDD_27_34    (0x7F << 15) /* VDD voltage 2.7 ~ 3.4 */
-#define SD_OCR_VDD_32_33    (1 << 20)	 /* VDD voltage 3.2 ~ 3.3 */
-#define SD_OCR_S18R         (1 << 24)    /* 1.8V switching request */
-#define SD_ROCR_S18A        SD_OCR_S18R  /* 1.8V switching accepted by card */
-#define SD_OCR_XPC          (1 << 28)    /* SDXC power control */
-#define SD_OCR_CCS          (1 << 30)    /* Card Capacity Status */
-#define SD_OCR_BUSY         (1 << 31)    /* Card Power up Status */
+#define SD_OCR_VDD_18       (1U << 7)     /* VDD voltage 1.8 */
+#define SD_VHD_27_36        (1U << 8)     /* VDD voltage 2.7 ~ 3.6 */
+#define SD_OCR_VDD_32_33    (1U << 20)    /* VDD voltage 3.2 ~ 3.3 */
+#define SD_OCR_S18R         (1U << 24)    /* 1.8V switching request */
+#define SD_ROCR_S18A        SD_OCR_S18R   /* 1.8V switching accepted by card */
+#define SD_OCR_XPC          (1U << 28)    /* SDXC power control */
+#define SD_OCR_CCS          (1U << 30)    /* Card Capacity Status */
+#define SD_OCR_BUSY         (1U << 31)    /* Card Power up Status */
 
 /*
  * SD_SWITCH argument format:
@@ -90,8 +89,8 @@
 #define SCR_SPEC_VER_0		0	/* Implements system specification 1.0 - 1.01 */
 #define SCR_SPEC_VER_1		1	/* Implements system specification 1.10 */
 #define SCR_SPEC_VER_2		2	/* Implements system specification 2.00-3.0X */
-#define SD_SCR_BUS_WIDTH_1	(1<<0)
-#define SD_SCR_BUS_WIDTH_4	(1<<2)
+#define SD_SCR_BUS_WIDTH_1	(1U << 0)
+#define SD_SCR_BUS_WIDTH_4	(1U << 2)
 
 /*
  * SD bus widths
@@ -102,33 +101,55 @@
 /*
  * SD bus speeds
  */
-#define UHS_SDR12_BUS_SPEED		0
+#define UHS_SDR12_BUS_SPEED	0
 #define HIGH_SPEED_BUS_SPEED	1
-#define UHS_SDR25_BUS_SPEED		1
-#define UHS_SDR50_BUS_SPEED		2
+#define UHS_SDR25_BUS_SPEED	1
+#define UHS_SDR50_BUS_SPEED	2
 #define UHS_SDR104_BUS_SPEED	3
-#define UHS_DDR50_BUS_SPEED		4
-#define HS400_BUS_SPEED 		5
+#define UHS_DDR50_BUS_SPEED	4
+#define HS400_BUS_SPEED 	5
 
-#define SD_MODE_HIGH_SPEED	(1 << HIGH_SPEED_BUS_SPEED)
-#define SD_MODE_UHS_SDR12	(1 << UHS_SDR12_BUS_SPEED)
-#define SD_MODE_UHS_SDR25	(1 << UHS_SDR25_BUS_SPEED)
-#define SD_MODE_UHS_SDR50	(1 << UHS_SDR50_BUS_SPEED)
-#define SD_MODE_UHS_SDR104	(1 << UHS_SDR104_BUS_SPEED)
-#define SD_MODE_UHS_DDR50	(1 << UHS_DDR50_BUS_SPEED)
+#define SD_MODE_HIGH_SPEED	(1U << HIGH_SPEED_BUS_SPEED)
+#define SD_MODE_UHS_SDR12	(1U << UHS_SDR12_BUS_SPEED)
+#define SD_MODE_UHS_SDR25	(1U << UHS_SDR25_BUS_SPEED)
+#define SD_MODE_UHS_SDR50	(1U << UHS_SDR50_BUS_SPEED)
+#define SD_MODE_UHS_SDR104	(1U << UHS_SDR104_BUS_SPEED)
+#define SD_MODE_UHS_DDR50	(1U << UHS_DDR50_BUS_SPEED)
 
-#define SD_DRIVER_TYPE_B	0x01
-#define SD_DRIVER_TYPE_A	0x02
+
+#define SD_SET_DRIVER_TYPE_B	0
+#define SD_SET_DRIVER_TYPE_A	1
+#define SD_SET_DRIVER_TYPE_C	2
+#define SD_SET_DRIVER_TYPE_D	3
+
+#define SD_DRIVER_TYPE_B	(1U << SD_SET_DRIVER_TYPE_B)
+#define SD_DRIVER_TYPE_A	(1U << SD_SET_DRIVER_TYPE_A)
+#define SD_DRIVER_TYPE_C	(1U << SD_SET_DRIVER_TYPE_C)
+#define SD_DRIVER_TYPE_D	(1U << SD_SET_DRIVER_TYPE_D)
 
 #define SD_SET_POWER_LIMIT_0_72	0
 #define SD_SET_POWER_LIMIT_1_44	1
 #define SD_SET_POWER_LIMIT_2_16	2
 #define SD_SET_POWER_LIMIT_2_88	3
 
-#define SD_MAX_POWER_0_72 (1 << SD_SET_POWER_LIMIT_0_72)
-#define SD_MAX_POWER_1_44 (1 << SD_SET_POWER_LIMIT_1_44)
-#define SD_MAX_POWER_2_16 (1 << SD_SET_POWER_LIMIT_2_16)
-#define SD_MAX_POWER_2_88 (1 << SD_SET_POWER_LIMIT_2_88)
+#define SD_MAX_POWER_0_72	(1U << SD_SET_POWER_LIMIT_0_72)
+#define SD_MAX_POWER_1_44	(1U << SD_SET_POWER_LIMIT_1_44)
+#define SD_MAX_POWER_2_16	(1U << SD_SET_POWER_LIMIT_2_16)
+#define SD_MAX_POWER_2_88	(1U << SD_SET_POWER_LIMIT_2_88)
+
+#define SD_SET_CMD_SYSTEM_DEF	0
+#define SD_SET_CMD_SYSTEM_MEC	1
+#define SD_SET_CMD_SYSTEM_OTP	3
+#define SD_SET_CMD_SYSTEM_OSD	3
+#define SD_SET_CMD_SYSTEM_VND	14
+#define UHS_DDR200_BUS_SPEED	SD_SET_CMD_SYSTEM_VND
+
+#define SD_CMD_SYSTEM_DEF	(1U << SD_SET_CMD_SYSTEM_DEF)
+#define SD_CMD_SYSTEM_MEC	(1U << SD_SET_CMD_SYSTEM_MEC)
+#define SD_CMD_SYSTEM_OTP	(1U << SD_SET_CMD_SYSTEM_OTP)
+#define SD_CMD_SYSTEM_OSD	(1U << SD_SET_CMD_SYSTEM_OSD)
+#define SD_CMD_SYSTEM_VND	(1U << SD_SET_CMD_SYSTEM_VND)
+#define SD_MODE_UHS_DDR200	SD_CMD_SYSTEM_VND
 
 /*
  * SD_SWITCH mode
@@ -140,14 +161,14 @@
  * SD_SWITCH function groups
  */
 #define SD_SWITCH_GRP_ACCESS	0
-#define SD_SWITCH_GRP_CMDSYS    1
-#define SD_SWITCH_GRP_DRVSTR    2
-#define SD_SWITCH_GRP_PWRLIM    3
+#define SD_SWITCH_GRP_CMDSYS	1
+#define SD_SWITCH_GRP_DRVSTR	2
+#define SD_SWITCH_GRP_PWRLIM	3
 
 /*
  * SD_SWITCH access modes
  */
 #define SD_SWITCH_ACCESS_DEF	0
-#define SD_SWITCH_ACCESS_HS		1
+#define SD_SWITCH_ACCESS_HS	1
 
 #endif /* SD_DEF_H */
