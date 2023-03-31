@@ -367,7 +367,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	u16 divisor;
 	clock_sdmmc_get_card_clock_div(&clock, &divisor, type);
 	clock_sdmmc_config_clock_source(&clock, sdmmc->id, clock);
-	sdmmc->divisor = (clock + divisor - 1) / divisor;
+	sdmmc->card_clock = (clock + divisor - 1) / divisor;
 
 	//if divisor != 1 && divisor << 31 -> error
 
@@ -657,7 +657,7 @@ static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd)
 			sdmmc->regs->norintsts = SDHCI_INT_DATA_AVAIL;
 			sdmmc->regs->norintstsen &= ~SDHCI_INT_DATA_AVAIL;
 			_sdmmc_commit_changes(sdmmc);
-			usleep((1000 * 8 + sdmmc->divisor - 1) / sdmmc->divisor);
+			usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 			return 1;
 		}
 	}
@@ -666,7 +666,7 @@ static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd)
 
 	sdmmc->regs->norintstsen &= ~SDHCI_INT_DATA_AVAIL;
 	_sdmmc_commit_changes(sdmmc);
-	usleep((1000 * 8 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 
 	return 0;
 }
@@ -897,11 +897,11 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 		should_disable_sd_clock = true;
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 		_sdmmc_commit_changes(sdmmc);
-		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+		usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 	}
 
 	int result = _sdmmc_stop_transmission_inner(sdmmc, rsp);
-	usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
@@ -1408,11 +1408,11 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 		should_disable_sd_clock = 1;
 		sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 		_sdmmc_commit_changes(sdmmc);
-		usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+		usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 	}
 
 	int result = _sdmmc_execute_cmd_inner(sdmmc, cmd, req, blkcnt_out);
-	usleep((8000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;

@@ -225,7 +225,7 @@ typedef struct _sdmmc_t
 {
 	t210_sdmmc_t *regs;
 	u32 id;
-	u32 divisor;
+	u32 card_clock;
 	u32 clock_stopped;
 	int powersave_enabled;
 	int manual_cal;

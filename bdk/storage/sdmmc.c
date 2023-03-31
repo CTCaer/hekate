@@ -675,7 +675,8 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_wid
 		return 0;
 	DPRINTF("[MMC] after init\n");
 
-	usleep(1000 + (74000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	// Wait 1ms + 74 cycles.
+	usleep(1000 + (74 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock);
 
 	if (!_sdmmc_storage_go_idle_state(storage))
 		return 0;
@@ -1383,7 +1384,8 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_widt
 		return 0;
 	DPRINTF("[SD] after init\n");
 
-	usleep(1000 + (74000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	// Wait 1ms + 74 cycles.
+	usleep(1000 + (74 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock);
 
 	if (!_sdmmc_storage_go_idle_state(storage))
 		return 0;
@@ -1527,7 +1529,8 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 		return 0;
 	DPRINTF("[GC] after init\n");
 
-	usleep(1000 + (10000 + sdmmc->divisor - 1) / sdmmc->divisor);
+	// Wait 1ms + 10 clock cycles.
+	usleep(1000 + (10 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock);
 
 	if (!sdmmc_tuning_execute(storage->sdmmc, SDHCI_TIMING_MMC_DDR100, MMC_SEND_TUNING_BLOCK_HS200))
 		return 0;
