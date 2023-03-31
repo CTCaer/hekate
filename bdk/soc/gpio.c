@@ -110,6 +110,26 @@ int gpio_read(u32 port, u32 pins)
 	return (GPIO(port_offset) & pins) ? 1 : 0;
 }
 
+void gpio_set_debounce(u32 port, u32 pins, u32 ms)
+{
+	const u32 db_ctrl_offset = GPIO_DB_CTRL_OFFSET(port);
+	const u32 db_cnt_offset  = GPIO_DB_CNT_OFFSET(port);
+
+	if (ms)
+	{
+		if (ms > 255)
+			ms = 255;
+
+		// Debounce time affects all pins of the same port.
+		GPIO(db_cnt_offset)  = ms;
+		GPIO(db_ctrl_offset) = (pins << 8) | pins;
+	}
+	else
+		GPIO(db_ctrl_offset) = (pins << 8) | 0;
+
+	(void)GPIO(db_ctrl_offset); // Commit the write.
+}
+
 static void _gpio_interrupt_clear(u32 port, u32 pins)
 {
 	const u32 port_offset = GPIO_INT_CLR_OFFSET(port);
