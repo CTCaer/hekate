@@ -1038,7 +1038,7 @@ DPRINTF("[SD] power limit defaulted to 720 mW\n");
 	}
 }
 
-static int _sd_storage_enable_highspeed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
+static int _sd_storage_set_card_bus_speed(sdmmc_storage_t *storage, u32 hs_type, u8 *buf)
 {
 	if (!_sd_storage_switch(storage, buf, SD_SWITCH_CHECK, SD_SWITCH_GRP_ACCESS, hs_type))
 		return 0;
@@ -1115,31 +1115,34 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 			break;
 		}
 /*
+	case SDHCI_TIMING_UHS_DDR50:
+		if (access_mode & SD_MODE_UHS_DDR50)
+		{
+			type    = SDHCI_TIMING_UHS_DDR50;
+			hs_type = UHS_DDR50_BUS_SPEED;
+			DPRINTF("[SD] setting bus speed to DDR50\n");
+			storage->csd.busspeed = 50;
+			break;
+		}
+*/
 	case SDHCI_TIMING_UHS_SDR25:
 		if (access_mode & SD_MODE_UHS_SDR25)
 		{
 			type = SDHCI_TIMING_UHS_SDR25;
 			hs_type = UHS_SDR25_BUS_SPEED;
-DPRINTF("[SD] bus speed set to SDR25\n");
+			DPRINTF("[SD] setting bus speed to SDR25\n");
 			storage->csd.busspeed = 25;
 			break;
 		}
-*/
-	case SDHCI_TIMING_UHS_SDR12:
-		if (!(access_mode & SD_MODE_UHS_SDR12))
-			return 0;
-		type = SDHCI_TIMING_UHS_SDR12;
-		hs_type = UHS_SDR12_BUS_SPEED;
-		DPRINTF("[SD] bus speed set to SDR12\n");
-		storage->csd.busspeed = 12;
-		break;
 
 	default:
-		return 0;
-		break;
+		DPRINTF("[SD] bus speed defaulted to SDR12\n");
+		storage->csd.busspeed = 12;
+		return 1;
 	}
 
-	if (!_sd_storage_enable_highspeed(storage, hs_type, buf))
+	// Setup and set selected card and bus speed.
+	if (!_sd_storage_set_card_bus_speed(storage, hs_type, buf))
 		return 0;
 	DPRINTF("[SD] card accepted UHS\n");
 
@@ -1169,7 +1172,7 @@ static int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 	if (!(access_mode & SD_MODE_HIGH_SPEED))
 		return 1;
 
-	if (!_sd_storage_enable_highspeed(storage, HIGH_SPEED_BUS_SPEED, buf))
+	if (!_sd_storage_set_card_bus_speed(storage, HIGH_SPEED_BUS_SPEED, buf))
 		return 0;
 
 	if (!_sdmmc_storage_check_status(storage))

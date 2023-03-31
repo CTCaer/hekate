@@ -108,7 +108,7 @@ void sdmmc_set_bus_width(sdmmc_t *sdmmc, u32 bus_width)
 
 void sdmmc_save_tap_value(sdmmc_t *sdmmc)
 {
-	sdmmc->venclkctl_tap = sdmmc->regs->venclkctl >> 16;
+	sdmmc->venclkctl_tap = (sdmmc->regs->venclkctl & 0xFF0000) >> 16;
 	sdmmc->venclkctl_set = 1;
 }
 
@@ -331,7 +331,6 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	case SDHCI_TIMING_UHS_SDR50: // T210 Errata: the host must be set to SDR104 to WAR a CRC issue.
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
-	case SDHCI_TIMING_UHS_DDR50:
 	case SDHCI_TIMING_MMC_HS100:
 		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR104_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
@@ -349,6 +348,11 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 
 	case SDHCI_TIMING_UHS_SDR12:
 		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_SDR12_BUS_SPEED;
+		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
+		break;
+
+	case SDHCI_TIMING_UHS_DDR50:
+		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | UHS_DDR50_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
 	}
@@ -664,7 +668,6 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 	switch (type)
 	{
 	case SDHCI_TIMING_MMC_HS200:
-	case SDHCI_TIMING_MMC_HS400:
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 		num_iter = 128;
@@ -672,12 +675,13 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 		break;
 
 	case SDHCI_TIMING_UHS_SDR50:
-	case SDHCI_TIMING_UHS_DDR50:
+	case SDHCI_TIMING_UHS_DDR50: // HW tuning is not supported on DDR modes. But it sets tap to 0 which is proper.
 	case SDHCI_TIMING_MMC_HS100:
 		num_iter = 256;
 		flag = (4 << 13); // 256 iterations.
 		break;
 
+	case SDHCI_TIMING_MMC_HS400:
 	case SDHCI_TIMING_UHS_SDR12:
 	case SDHCI_TIMING_UHS_SDR25:
 		return 1;
