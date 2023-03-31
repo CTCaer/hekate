@@ -671,7 +671,7 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_wid
 
 	DPRINTF("[MMC]-[init: bus: %d, type: %d]\n", bus_width, type);
 
-	if (!sdmmc_init(sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID, SDMMC_POWER_SAVE_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_4, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_MMC_ID))
 		return 0;
 	DPRINTF("[MMC] after init\n");
 
@@ -1379,7 +1379,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_widt
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID, SDMMC_POWER_SAVE_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_1, SDMMC_POWER_3_3, SDMMC_BUS_WIDTH_1, SDHCI_TIMING_SD_ID))
 		return 0;
 	DPRINTF("[SD] after init\n");
 
@@ -1523,7 +1523,7 @@ int sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc)
 	memset(storage, 0, sizeof(sdmmc_storage_t));
 	storage->sdmmc = sdmmc;
 
-	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_DDR100, SDMMC_POWER_SAVE_DISABLE))
+	if (!sdmmc_init(sdmmc, SDMMC_2, SDMMC_POWER_1_8, SDMMC_BUS_WIDTH_8, SDHCI_TIMING_MMC_DDR100))
 		return 0;
 	DPRINTF("[GC] after init\n");
 

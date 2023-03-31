@@ -269,7 +269,7 @@ int  sdmmc_get_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type);
 int  sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd);
 int  sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp);
 bool sdmmc_get_sd_inserted();
-int  sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int powersave_enable);
+int  sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type);
 void sdmmc_end(sdmmc_t *sdmmc);
 void sdmmc_init_cmd(sdmmc_cmd_t *cmdbuf, u16 cmd, u32 arg, u32 rsp_type, u32 check_busy);
 int  sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out);

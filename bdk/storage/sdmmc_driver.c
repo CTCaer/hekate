@@ -1244,7 +1244,7 @@ static void _sdmmc_config_emmc(u32 id, bool t210b01)
 	}
 }
 
-int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int powersave_enable)
+int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 {
 	u32 clock;
 	u16 divisor;
@@ -1322,7 +1322,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type, int p
 
 		if (sdmmc_setup_clock(sdmmc, type))
 		{
-			sdmmc_card_clock_powersave(sdmmc, powersave_enable);
+			sdmmc_card_clock_powersave(sdmmc, SDMMC_POWER_SAVE_DISABLE);
 			_sdmmc_card_clock_enable(sdmmc);
 			_sdmmc_commit_changes(sdmmc);
 
