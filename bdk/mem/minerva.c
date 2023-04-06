@@ -27,6 +27,11 @@
 #include <soc/t210.h>
 #include <utils/util.h>
 
+#define LA_REGS_OFFSET_T210    0x1284
+#define LA_REGS_OFFSET_T210B01 0xFA4
+#define LA_SDMMC1_INDEX 6
+#define LA_SDMMC4_INDEX 9
+
 extern volatile nyx_storage_t *nyx_str;
 
 void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
@@ -140,6 +145,15 @@ void minerva_change_freq(minerva_freq_t freq)
 	}
 }
 
+void minerva_sdmmc_la_program(void *table, bool t210b01)
+{
+
+	u32 *la_scale_regs = (u32 *)(table + (t210b01 ? LA_REGS_OFFSET_T210B01 : LA_REGS_OFFSET_T210));
+
+	// Promote SDMMC1 latency allowance to SDMMC4 (SD to eMMC).
+	la_scale_regs[LA_SDMMC1_INDEX] = la_scale_regs[LA_SDMMC4_INDEX];
+}
+
 void minerva_prep_boot_freq()
 {
 	if (!minerva_cfg)
@@ -163,6 +177,10 @@ void minerva_prep_boot_l4t(int oc_freq)
 		return;
 
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
+
+	// Program SDMMC LA regs.
+	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
+		minerva_sdmmc_la_program(&mtc_cfg->mtc_table[i], false);
 
 	// Add OC frequency.
 	if (oc_freq && mtc_cfg->mtc_table[mtc_cfg->table_entries - 1].rate_khz == FREQ_1600)
