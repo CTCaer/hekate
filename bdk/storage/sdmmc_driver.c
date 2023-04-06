@@ -375,12 +375,10 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	clock_sdmmc_config_clock_source(&clock, sdmmc->id, clock);
 	sdmmc->card_clock = (clock + divisor - 1) / divisor;
 
-	//if divisor != 1 && divisor << 31 -> error
+	// (divisor != 1) && (divisor & 1) -> error
 
 	u16 div_lo = divisor >> 1;
-	u16 div_hi = 0;
-	if (div_lo > 0xFF)
-		div_hi = div_lo >> SDHCI_DIV_LO_SHIFT;
+	u16 div_hi = div_lo  >> 8;
 
 	sdmmc->regs->clkcon = (sdmmc->regs->clkcon & ~(SDHCI_DIV_MASK | SDHCI_DIV_HI_MASK)) |
 						  (div_lo << SDHCI_DIV_LO_SHIFT) | (div_hi << SDHCI_DIV_HI_SHIFT);
@@ -593,7 +591,7 @@ static int _sdmmc_send_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, bool is_data_presen
 		if (cmd->check_busy)
 			cmdflags = SDHCI_CMD_RESP_LEN48_BUSY | SDHCI_CMD_INDEX | SDHCI_CMD_CRC;
 		else
-			cmdflags = SDHCI_CMD_RESP_LEN48 | SDHCI_CMD_INDEX | SDHCI_CMD_CRC;
+			cmdflags = SDHCI_CMD_RESP_LEN48      | SDHCI_CMD_INDEX | SDHCI_CMD_CRC;
 		break;
 
 	case SDMMC_RSP_TYPE_2:
@@ -717,7 +715,6 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 				{
 					best_tap  = (tap_start + tap_end) / 2;
 					best_size = win_size + iter_end;
-
 				}
 
 				tap_start = INVALID_TAP;
@@ -850,14 +847,14 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 
 	sdmmc->regs->hostctl2 &= ~SDHCI_CTRL_PRESET_VAL_EN;
 	sdmmc->regs->clkcon   &= ~SDHCI_PROG_CLOCK_MODE;
-	// Enable 32bit addressing if used (sysad. if blkcnt it fallbacks to 16bit).
+	// Enable 32/64bit addressing if used (sysad. if blkcnt it fallbacks to 16bit).
 	sdmmc->regs->hostctl2 |= SDHCI_HOST_VERSION_4_EN;
 
 	if (!(sdmmc->regs->capareg & SDHCI_CAP_64BIT))
 		return 0;
 
-	sdmmc->regs->hostctl2 |= SDHCI_ADDRESSING_64BIT_EN;
-	sdmmc->regs->hostctl &= ~SDHCI_CTRL_DMA_MASK;
+	sdmmc->regs->hostctl2  |= SDHCI_ADDRESSING_64BIT_EN;
+	sdmmc->regs->hostctl   &= ~SDHCI_CTRL_DMA_MASK; // Use SDMA. Host V4 enabled so adma address regs in use.
 	sdmmc->regs->timeoutcon = (sdmmc->regs->timeoutcon & 0xF0) | 14; // TMCLK * 2^27.
 
 	return 1;
@@ -1025,7 +1022,7 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 	return result;
 }
 
-static int _sdmmc_config_dma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
+static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
 {
 	if (!req->blksize || !req->num_sectors)
 		return 0;
@@ -1042,10 +1039,10 @@ static int _sdmmc_config_dma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
 	sdmmc->regs->admaaddr = admaaddr;
 	sdmmc->regs->admaaddr_hi = 0;
 
-	sdmmc->dma_addr_next = (admaaddr + 0x80000) & 0xFFF80000;
+	sdmmc->dma_addr_next = ALIGN_DOWN((admaaddr + SZ_512K), SZ_512K);
 
-	sdmmc->regs->blksize = req->blksize | 0x7000; // DMA 512KB (Detects A18 carry out).
-	sdmmc->regs->blkcnt = blkcnt;
+	sdmmc->regs->blksize = req->blksize | (7 << 12); // SDMA DMA 512KB Boundary (Detects A18 carry out).
+	sdmmc->regs->blkcnt  = blkcnt;
 
 	if (blkcnt_out)
 		*blkcnt_out = blkcnt;
@@ -1071,7 +1068,7 @@ static int _sdmmc_config_dma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
 	return 1;
 }
 
-static int _sdmmc_update_dma(sdmmc_t *sdmmc)
+static int _sdmmc_update_sdma(sdmmc_t *sdmmc)
 {
 	u16 blkcnt = 0;
 	do
@@ -1097,7 +1094,7 @@ static int _sdmmc_update_dma(sdmmc_t *sdmmc)
 					// Update DMA.
 					sdmmc->regs->admaaddr = sdmmc->dma_addr_next;
 					sdmmc->regs->admaaddr_hi = 0;
-					sdmmc->dma_addr_next += 0x80000;
+					sdmmc->dma_addr_next += SZ_512K;
 				}
 			}
 
@@ -1128,7 +1125,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 	bool is_data_present = false;
 	if (req)
 	{
-		if (!_sdmmc_config_dma(sdmmc, &blkcnt, req))
+		if (!_sdmmc_config_sdma(sdmmc, &blkcnt, req))
 		{
 #ifdef ERROR_EXTRA_PRINTING
 			EPRINTFARGS("SDMMC%d: DMA Wrong cfg!", sdmmc->id + 1);
@@ -1172,7 +1169,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		}
 		if (req && result)
 		{
-			result = _sdmmc_update_dma(sdmmc);
+			result = _sdmmc_update_sdma(sdmmc);
 #ifdef ERROR_EXTRA_PRINTING
 			if (!result)
 				EPRINTFARGS("SDMMC%d: DMA Update failed!", sdmmc->id + 1);
@@ -1369,7 +1366,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	u16 divisor;
 	u8 vref_sel = 7;
 
-	const u8 trim_values_t210[4] = { 2, 8, 3, 8 };
+	const u8 trim_values_t210[4]    = {  2,  8,  3,  8 };
 	const u8 trim_values_t210b01[4] = { 14, 13, 15, 13 };
 	const u8 *trim_values;
 
