@@ -26,6 +26,14 @@
 #include "l4t.h"
 #include "l4t_config.inl"
 
+/*
+ * API Revision info
+ *
+ * 0: Base.
+ * 1: SDMMC1 LA programming for SDMMC1 UHS DDR200.
+ */
+#define L4T_LOADER_API_REV 1
+
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
  #define UPRINTF(...) uart_printf(__VA_ARGS__)
@@ -787,7 +795,10 @@ static void _l4t_bpmpfw_config(l4t_ctxt_t *ctxt)
 	// Set and copy MTC tables.
 	u32 mtc_idx = mtc_table_idx_t210b01[fuse_read_dramid(true)];
 	for (u32 i = 0; i < 3; i++)
+	{
+		minerva_sdmmc_la_program(BPMPFW_MTC_TABLE_OFFSET(mtc_idx, i), true);
 		memcpy(BPMPFW_DTB_EMC_TBL_OFFSET(i), BPMPFW_MTC_TABLE_OFFSET(mtc_idx, i), BPMPFW_MTC_FREQ_TABLE_SIZE);
+	}
 
 	if (ram_oc_freq > DRAM_TBL_PROVIDED_MAX_FREQ)
 	{
@@ -938,8 +949,14 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 		val[0] = '0' + entry_idx;
 	_l4t_bl33_cfg_set_key(bl33_env, "autoboot",      val);
 
+	// NULL terminate at single char for the next env sets.
+	val[1] = 0;
+
 	val[0] = '0' + is_list;
 	_l4t_bl33_cfg_set_key(bl33_env, "autoboot_list", val);
+
+	val[0] = '0' + L4T_LOADER_API_REV;
+	_l4t_bl33_cfg_set_key(bl33_env, "loader_rev", val);
 
 	// Enable BL33 memory env import.
 	*(u32 *)(BL33_ENV_MAGIC_OFFSET) = BL33_ENV_MAGIC;
