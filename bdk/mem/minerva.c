@@ -38,7 +38,7 @@ void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
 
 u32 minerva_init()
 {
-	u32 curr_ram_idx = 0;
+	u32 tbl_idx = 0;
 
 	minerva_cfg = NULL;
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
@@ -103,13 +103,13 @@ u32 minerva_init()
 
 	// Get current frequency
 	u32 current_emc_clk_src = CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
-	for (curr_ram_idx = 0; curr_ram_idx < 10; curr_ram_idx++)
+	for (tbl_idx = 0; tbl_idx < mtc_cfg->table_entries; tbl_idx++)
 	{
-		if (current_emc_clk_src == mtc_cfg->mtc_table[curr_ram_idx].clk_src_emc)
+		if (current_emc_clk_src == mtc_cfg->mtc_table[tbl_idx].clk_src_emc)
 			break;
 	}
 
-	mtc_cfg->rate_from = mtc_cfg->mtc_table[curr_ram_idx].rate_khz;
+	mtc_cfg->rate_from = mtc_cfg->mtc_table[tbl_idx].rate_khz;
 	mtc_cfg->rate_to = FREQ_204;
 	mtc_cfg->train_mode = OP_TRAIN;
 	minerva_cfg(mtc_cfg, NULL);
