@@ -53,8 +53,8 @@ enum sdram_ids_mariko
 {
 	// LPDDR4X 4266Mbps.
 	LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 3, // Replaced from Copper. Die-M. (1y-01).
-	LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 5, // Replaced from Copper. Die-M. (1y-01).
-	LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 6, // Replaced from Copper. Die-M. (1y-01).
+	LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 5, // Replaced from Copper. Die-M. (1y-01).
+	LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 6, // Replaced from Copper. Die-M. (1y-01).
 
 	// LPDDR4X 3733Mbps.
 	LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ        = 8,  // Die-M. 1st gen. 8 banks. 3733Mbps.
