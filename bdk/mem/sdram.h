@@ -23,26 +23,20 @@
 /*
  * Tegra X1/X1+ EMC/DRAM Bandwidth Chart:
  *
- * Note: BWbits T210    = Hz x ddr x bus width x channels = Hz x 2 x 32 x 2.
- *       BWbits T210B01 = Hz x ddr x bus width x channels = Hz x 2 x 64 x 2.
- *       Both assume that both sub-partitions are used and thus reaching max
- *       bandwidth per channel. (T210: 2x16-bit, T210B01: 2x32-bit).
- *       Retail Mariko use one sub-partition, in order to meet Erista perf.
+ * Note: Max BWbits = Hz x ddr x bus width x channels = Hz x 2 x 32 x 2.
+ *       Max BWbits = Hz x ddr x bus width x channels = Hz x 2 x 64 x 1.
+ *       Configurations supported: 1x32, 2x32, 1x64.
+ *       x64 ram modules can be used by combining the 2 32-bit channels into one.
  *
- *              T210   T210B01
- *   40.8 MHz:  0.61   1.22 GiB/s
- *   68.0 MHz:  1.01   2.02 GiB/s
- *  102.0 MHz:  1.52   3.04 GiB/s
- *  204.0 MHz:  3.04   6.08 GiB/s <-- Tegra X1/X1+ Init/SC7 Frequency
- *  408.0 MHz:  6.08  12.16 GiB/s
- *  665.6 MHz:  9.92  19.84 GiB/s
- *  800.0 MHz: 11.92  23.84 GiB/s <-- Tegra X1/X1+ Nvidia OS Boot Frequency
- * 1065.6 MHz: 15.89  31.78 GiB/s
- * 1331.2 MHz: 19.84  39.68 GiB/s
- * 1600.0 MHz: 23.84  47.68 GiB/s <-- Tegra X1/X1+ HOS Max Frequency
- * 1862.4 MHz: 27.75  55.50 GiB/s <-- Tegra X1  Official Max Frequency
- * 2131.2 MHz: 31.76  63.52 GiB/s <-- Tegra X1+ Official Max Frequency
- *
+ *  204.0 MHz:  3.04 <-- Tegra X1/X1+ Init/SC7 Frequency
+ *  408.0 MHz:  6.08
+ *  665.6 MHz:  9.92
+ *  800.0 MHz: 11.92 <-- Tegra X1/X1+ Nvidia OS Boot Frequency
+ * 1065.6 MHz: 15.89
+ * 1331.2 MHz: 19.84
+ * 1600.0 MHz: 23.84
+ * 1862.4 MHz: 27.75 <-- Tegra X1  Official Max Frequency
+ * 2131.2 MHz: 31.76 <-- Tegra X1+ Official Max Frequency. Not all regs have support for > 2046 MHz.
  */
 
 enum sdram_ids_erista
@@ -66,21 +60,21 @@ enum sdram_ids_mariko
 	LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ        = 8,  // Die-M. 1st gen. 8 banks. 3733Mbps.
 	LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AM_MGCJ        = 9,  // Die-M.
 	LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLHR_NME       = 10, // Die-M.
-	LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTE = 11, // 4266Mbps. Die-E.
+	LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTE = 11, // 4266Mbps. Die-E. D9WGB.
 
 	LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AM_MGCJ        = 12, // Die-M. 1st gen. 8 banks. 3733Mbps.
 	LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AM_MGCJ        = 13, // Die-M.
 	LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME       = 14, // Die-M.
-	LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTE = 15, // 4266Mbps. Die-E.
+	LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTE = 15, // 4266Mbps. Die-E. D9WGB.
 
 	// LPDDR4X 4266Mbps.
 	LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 17, // Die-A. (1y-X03). 2nd gen. 8 banks. 4266Mbps.
 	LPDDR4X_IOWA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 18, // Die-A. (1y-X03).
 	LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 19, // Die-A. (1y-X03). 2nd gen. 8 banks. 4266Mbps.
 
-	LPDDR4X_IOWA_4GB_SAMSUNG_1Z                     = 20, // 1z nm. 40% lower power usage. (1z-01).
-	LPDDR4X_HOAG_4GB_SAMSUNG_1Z                     = 21, // 1z nm. 40% lower power usage. (1z-01).
-	LPDDR4X_AULA_4GB_SAMSUNG_1Z                     = 22, // 1z nm. 40% lower power usage. (1z-01).
+	LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AB_MGCL        = 20, // Die-B. 1z nm. 40% lower power usage. (1z-01).
+	LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AB_MGCL        = 21, // Die-B. 1z nm. 40% lower power usage. (1z-01).
+	LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AB_MGCL        = 22, // Die-B. 1z nm. 40% lower power usage. (1z-01).
 
 	LPDDR4X_HOAG_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 23, // Die-A. (1y-X03).
 	LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 24, // Die-A. (1y-X03). 2nd gen. 8 banks. 4266Mbps.
@@ -91,9 +85,9 @@ enum sdram_ids_mariko
 
 	LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 28, // Die-A.
 
-	LPDDR4X_UNK0_4GB_HYNIX_1A                       = 29, // 1a nm. 61% lower power usage. (1a-01).
-	LPDDR4X_UNK1_4GB_HYNIX_1A                       = 30, // 1a nm. 61% lower power usage. (1a-01).
-	LPDDR4X_UNK2_4GB_HYNIX_1A                       = 31, // 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK0_4GB_HYNIX_H9HCNNNBKMMLXR_NEI       = 29, // Die-M. 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK1_4GB_HYNIX_H9HCNNNBKMMLXR_NEI       = 30, // Die-M. 1a nm. 61% lower power usage. (1a-01).
+	LPDDR4X_UNK2_4GB_HYNIX_H9HCNNNBKMMLXR_NEI       = 31, // Die-M. 1a nm. 61% lower power usage. (1a-01).
 
 	LPDDR4X_UNK0_4GB_MICRON_1A                      = 32, // 1a nm. 61% lower power usage. (1a-01).
 	LPDDR4X_UNK1_4GB_MICRON_1A                      = 33, // 1a nm. 61% lower power usage. (1a-01).
@@ -112,11 +106,11 @@ enum sdram_codes_mariko
 	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE = 2, // DRAM IDs: 11, 15.
 	LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL        = 3, // DRAM IDs: 17, 19, 24.
 	LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 4, // DRAM IDs: 18, 23, 28.
-	LPDDR4X_4GB_SAMSUNG_1Z                     = 5, // DRAM IDs: 20, 21, 22.
+	LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL        = 5, // DRAM IDs: 20, 21, 22.
 	LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF = 6, // DRAM IDs: 25, 26, 27.
 	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE       = 7, // DRAM IDs: 03, 05, 06.
 
-	LPDDR4X_4GB_HYNIX_1A                       = 8, // DRAM IDs: 29, 30, 31.
+	LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI       = 8, // DRAM IDs: 29, 30, 31.
 	LPDDR4X_4GB_MICRON_1A                      = 9, // DRAM IDs: 32, 33, 34.
 };
 
