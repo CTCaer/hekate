@@ -47,6 +47,8 @@ enum sdram_ids_erista
 	LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT  = 2, // WT:C.
 
 	LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH        = 4,
+
+	LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX        = 7, // Custom 8GB. XX: CH/CJ/CL. 7 since it can be easily applied in fuses.
 };
 
 enum sdram_ids_mariko

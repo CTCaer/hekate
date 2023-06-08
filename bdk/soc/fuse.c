@@ -102,7 +102,7 @@ u32 fuse_read_dramid(bool raw_id)
 
 	if (tegra_t210)
 	{
-		if (dramid > 6)
+		if (dramid > 7)
 			dramid = 0;
 	}
 	else
