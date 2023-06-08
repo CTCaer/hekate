@@ -1186,16 +1186,15 @@ static u32 _pllm_clk_base_cfg(u32 rate_KHz, u32 clk_src_emc, bool new_src_is_PLL
 	u32 i = 0;
 	u32 pll_ref = 38400; // Only 38.4MHz crystal is supported for T210.
 
-	pllm_clk_config_t *pllm_clk_config;
+	pllm_clk_config_t *pllm_clk_config = NULL;
 
 	for (i = 0; pllm_clk_config_table[i].pll_osc_in; i++)
 	{
-		if (pllm_clk_config_table[i].pll_osc_in == pll_ref && pllm_clk_config_table[i].pll_out == rate_KHz)
-			break;
+		if (pllm_clk_config_table[i].pll_osc_in == pll_ref && (pllm_clk_config_table[i].pll_out - 19200) <= rate_KHz)
+			pllm_clk_config = &pllm_clk_config_table[i];
 	}
 
-	pllm_clk_config = &pllm_clk_config_table[i];
-	if (pllm_clk_config->pll_osc_in)
+	if (pllm_clk_config && pllm_clk_config->pll_osc_in)
 	{
 		dividers = pllm_clk_config->pll_input_div | (pllm_clk_config->pll_feedback_div << 8) | ((pllm_clk_config->pll_post_div & 0x1F) << 20);
 		if (new_src_is_PLLMB)
