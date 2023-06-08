@@ -1270,8 +1270,8 @@ static u32 _digital_dll_prelock(emc_table_t *mtc_table_entry, u32 needs_tristate
 		while (EMC_CH1(EMC_CFG_DIG_DLL) & 1)
 			;
 
-	EMC(EMC_DLL_CFG_0) = mtc_table_entry->burst_regs.emc_dll_cfg_0_idx;
-	EMC(EMC_DLL_CFG_1) = mtc_table_entry->burst_regs.emc_dll_cfg_1_idx;
+	EMC(EMC_DLL_CFG_0) = mtc_table_entry->burst_regs.emc_dll_cfg_0;
+	EMC(EMC_DLL_CFG_1) = mtc_table_entry->burst_regs.emc_dll_cfg_1;
 
 	_change_dll_src(mtc_table_entry, selected_clk_src_emc);
 
@@ -1344,19 +1344,19 @@ static u32 _dvfs_power_ramp_down(bool flip_backward, emc_table_t *src_emc_table_
 
 	if (flip_backward)
 	{
-		pmacro_cmd_pad = dst_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = dst_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = dst_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = dst_emc_table_entry->burst_regs.emc_fbio_cfg5_idx;
-		pmacro_common_tx = dst_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = dst_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = dst_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = dst_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = dst_emc_table_entry->burst_regs.emc_fbio_cfg5;
+		pmacro_common_tx = dst_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl;
 	}
 	else
 	{
-		pmacro_cmd_pad = src_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = (dst_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 0x101) | src_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = src_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = src_emc_table_entry->burst_regs.emc_fbio_cfg5_idx;
-		pmacro_common_tx = src_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = src_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = (dst_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 0x101) | src_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = src_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = src_emc_table_entry->burst_regs.emc_fbio_cfg5;
+		pmacro_common_tx = src_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl;
 	}
 
 	u32 pmacro_cmd_pad_drvforceon = pmacro_cmd_pad | 0x4000000;
@@ -1423,43 +1423,43 @@ static u32 _dvfs_power_ramp_up(bool flip_backward, emc_table_t *src_emc_table_en
 
 	if (flip_backward)
 	{
-		pmacro_cmd_pad = src_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = src_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = src_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = src_emc_table_entry->burst_regs.emc_fbio_cfg5_idx;
-		pmacro_common_tx = src_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = src_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = src_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = src_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = src_emc_table_entry->burst_regs.emc_fbio_cfg5;
+		pmacro_common_tx = src_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl;
 	}
 	else if (needs_training & NEEDS_TRAINING_CA_COMBO)
 	{
-		pmacro_cmd_pad = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = dst_emc_table_entry->shadow_regs_ca_train.emc_fbio_cfg5_idx;
-		pmacro_common_tx = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = dst_emc_table_entry->shadow_regs_ca_train.emc_fbio_cfg5;
+		pmacro_common_tx = dst_emc_table_entry->shadow_regs_ca_train.emc_pmacro_common_pad_tx_ctrl;
 	}
 	else if (needs_training & NEEDS_TRAINING_QUSE_COMBO)
 	{
-		pmacro_cmd_pad = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = dst_emc_table_entry->shadow_regs_quse_train.emc_fbio_cfg5_idx;
-		pmacro_common_tx = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = dst_emc_table_entry->shadow_regs_quse_train.emc_fbio_cfg5;
+		pmacro_common_tx = dst_emc_table_entry->shadow_regs_quse_train.emc_pmacro_common_pad_tx_ctrl;
 	}
 	else if (needs_training & (NEEDS_TRAINING_WR_COMBO | NEEDS_TRAINING_RD_COMBO))
 	{
-		pmacro_cmd_pad = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = dst_emc_table_entry->shadow_regs_rdwr_train.emc_fbio_cfg5_idx;
-		pmacro_common_tx = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = dst_emc_table_entry->shadow_regs_rdwr_train.emc_fbio_cfg5;
+		pmacro_common_tx = dst_emc_table_entry->shadow_regs_rdwr_train.emc_pmacro_common_pad_tx_ctrl;
 	}
 	else
 	{
-		pmacro_cmd_pad = dst_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl_idx;
-		pmacro_dq_pad = dst_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx;
-		pmacro_rfu1 = dst_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1_idx;
-		pmacro_cfg5 = dst_emc_table_entry->burst_regs.emc_fbio_cfg5_idx;
-		pmacro_common_tx = dst_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl_idx;
+		pmacro_cmd_pad = dst_emc_table_entry->burst_regs.emc_pmacro_cmd_pad_tx_ctrl;
+		pmacro_dq_pad = dst_emc_table_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl;
+		pmacro_rfu1 = dst_emc_table_entry->burst_regs.emc_pmacro_brick_ctrl_rfu1;
+		pmacro_cfg5 = dst_emc_table_entry->burst_regs.emc_fbio_cfg5;
+		pmacro_common_tx = dst_emc_table_entry->burst_regs.emc_pmacro_common_pad_tx_ctrl;
 	}
 
 	pmacro_cmd_pad_data = (pmacro_cmd_pad & 0xFAFEFDFD) | 0x4000000;
@@ -1564,22 +1564,22 @@ static u32 _minerva_update_clock_tree_delay(emc_table_t *src_emc_entry, emc_tabl
 	{
 	case DVFS_PT1:
 	case TRAINING_PT1:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx += 100 * cval;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 += 100 * cval;
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 			goto calc_td0_0;
 		break;
 	case DVFS_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 		break;
 	case TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 		break;
 	case PERIODIC_TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx =
-			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx)
-			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 =
+			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0)
+			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 		break;
 	default:
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1587,12 +1587,12 @@ static u32 _minerva_update_clock_tree_delay(emc_table_t *src_emc_entry, emc_tabl
 		break;
 	}
 
-	tdelta = dst_emc_entry->current_dram_clktree_c0d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100);
+	tdelta = dst_emc_entry->current_dram_clktree_c0d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
 	adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-		dst_emc_entry->current_dram_clktree_c0d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx / 100;
+		dst_emc_entry->current_dram_clktree_c0d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 / 100;
 
 calc_td0_0:
 	cval = tval / (src_rate_mhz * temp_ch0_1);
@@ -1600,22 +1600,22 @@ calc_td0_0:
 	{
 	case DVFS_PT1:
 	case TRAINING_PT1:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx += 100 * cval;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 += 100 * cval;
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 			goto calc_td1_0;
 		break;
 	case DVFS_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 		break;
 	case TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 		break;
 	case PERIODIC_TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx =
-			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx)
-			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 =
+			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1)
+			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 		break;
 	default:
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1623,13 +1623,13 @@ calc_td0_0:
 		break;
 	}
 
-	tdelta = dst_emc_entry->current_dram_clktree_c0d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100);
+	tdelta = dst_emc_entry->current_dram_clktree_c0d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
 	if ((u32)tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-		dst_emc_entry->current_dram_clktree_c0d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx / 100;
+		dst_emc_entry->current_dram_clktree_c0d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 / 100;
 
 calc_td1_0:
 	if (channel1_enabled)
@@ -1639,22 +1639,22 @@ calc_td1_0:
 		{
 		case DVFS_PT1:
 		case TRAINING_PT1:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx += 100 * cval;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 += 100 * cval;
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 				goto calc_td1_1;
 			break;
 		case DVFS_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 			break;
 		case TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 			break;
 		case PERIODIC_TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx =
-				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx)
-				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 =
+				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0)
+				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 			break;
 		default:
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1662,13 +1662,13 @@ calc_td1_0:
 			break;
 		}
 
-		tdelta = dst_emc_entry->current_dram_clktree_c1d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100);
+		tdelta = dst_emc_entry->current_dram_clktree_c1d0u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
 		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-			dst_emc_entry->current_dram_clktree_c1d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx / 100;
+			dst_emc_entry->current_dram_clktree_c1d0u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 / 100;
 
 calc_td1_1:
 		cval = tval / (src_rate_mhz * temp_ch1_1);
@@ -1676,22 +1676,22 @@ calc_td1_1:
 		{
 		case DVFS_PT1:
 		case TRAINING_PT1:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx += 100 * cval;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 += 100 * cval;
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 				goto calc_dev2;
 			break;
 		case DVFS_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 			break;
 		case TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 			break;
 		case PERIODIC_TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx =
-				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx)
-				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 =
+				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1)
+				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 			break;
 		default:
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1699,13 +1699,13 @@ calc_td1_1:
 			break;
 		}
 
-		tdelta = dst_emc_entry->current_dram_clktree_c1d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100);
+		tdelta = dst_emc_entry->current_dram_clktree_c1d0u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
 		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-			dst_emc_entry->current_dram_clktree_c1d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx / 100;
+			dst_emc_entry->current_dram_clktree_c1d0u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 / 100;
 	}
 
 calc_dev2:
@@ -1738,22 +1738,22 @@ calc_dev2:
 	{
 	case DVFS_PT1:
 	case TRAINING_PT1:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx += 100 * cval;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 += 100 * cval;
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 			goto calc_tmp_td0_1;
 		break;
 	case DVFS_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 		break;
 	case TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 		break;
 	case PERIODIC_TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx =
-			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx)
-			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 =
+			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0)
+			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 		break;
 	default:
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1761,13 +1761,13 @@ calc_dev2:
 		break;
 	}
 
-	tdelta = dst_emc_entry->current_dram_clktree_c0d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100);
+	tdelta = dst_emc_entry->current_dram_clktree_c0d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
 	if ((u32)tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-		dst_emc_entry->current_dram_clktree_c0d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx / 100;
+		dst_emc_entry->current_dram_clktree_c0d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 / 100;
 
 calc_tmp_td0_1:
 	cval = tval / (src_rate_mhz * temp_ch0_1);
@@ -1775,22 +1775,22 @@ calc_tmp_td0_1:
 	{
 	case DVFS_PT1:
 	case TRAINING_PT1:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx += 100 * cval;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 += 100 * cval;
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 			goto calc_tmp_td1_0;
 		break;
 	case DVFS_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 		break;
 	case TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx =
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 =
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 		break;
 	case PERIODIC_TRAINING_UPDATE:
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx =
-			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx)
-			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 =
+			(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1)
+			/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 		break;
 	default:
 		if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1798,13 +1798,13 @@ calc_tmp_td0_1:
 		break;
 	}
 
-	tdelta = dst_emc_entry->current_dram_clktree_c0d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100);
+	tdelta = dst_emc_entry->current_dram_clktree_c0d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 / 100);
 	if (tdelta < 0)
 		tdelta *= -1;
 	if ((u32)tdelta > adelta)
 		adelta = tdelta;
 	if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-		dst_emc_entry->current_dram_clktree_c0d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx / 100;
+		dst_emc_entry->current_dram_clktree_c0d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 / 100;
 
 calc_tmp_td1_0:
 	if (channel1_enabled)
@@ -1814,22 +1814,22 @@ calc_tmp_td1_0:
 		{
 		case DVFS_PT1:
 		case TRAINING_PT1:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx += 100 * cval;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 += 100 * cval;
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 				goto calc_tmp_td1_1;
 			break;
 		case DVFS_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 			break;
 		case TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 			break;
 		case PERIODIC_TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx =
-				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx)
-				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 =
+				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0)
+				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 			break;
 		default:
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1837,13 +1837,13 @@ calc_tmp_td1_0:
 			break;
 		}
 
-		tdelta = dst_emc_entry->current_dram_clktree_c1d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100);
+		tdelta = dst_emc_entry->current_dram_clktree_c1d1u0 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
 		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-			dst_emc_entry->current_dram_clktree_c1d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx / 100;
+			dst_emc_entry->current_dram_clktree_c1d1u0 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 / 100;
 
 calc_tmp_td1_1:
 		cval = tval / (src_rate_mhz * temp_ch1_1);
@@ -1851,22 +1851,22 @@ calc_tmp_td1_1:
 		{
 		case DVFS_PT1:
 		case TRAINING_PT1:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx += 100 * cval;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 += 100 * cval;
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
 				goto out;
 			break;
 		case DVFS_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 / dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
 			break;
 		case TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx =
-				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / dst_emc_entry->ptfv_list.ptfv_write_samples_idx;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 =
+				dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 / dst_emc_entry->ptfv_list.ptfv_write_samples;
 			break;
 		case PERIODIC_TRAINING_UPDATE:
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx =
-				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx)
-				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight_idx + 1);
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 =
+				(100 * cval + dst_emc_entry->ptfv_list.ptfv_movavg_weight * dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1)
+				/ (dst_emc_entry->ptfv_list.ptfv_movavg_weight + 1);
 			break;
 		default:
 			if (update_type > PERIODIC_TRAINING_UPDATE || !(upd_type_bits & 0x6800))
@@ -1874,13 +1874,13 @@ calc_tmp_td1_1:
 			break;
 		}
 
-		tdelta = dst_emc_entry->current_dram_clktree_c1d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100);
+		tdelta = dst_emc_entry->current_dram_clktree_c1d1u1 - (dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 / 100);
 		if (tdelta < 0)
 			tdelta *= -1;
 		if ((u32)tdelta > adelta)
 			adelta = tdelta;
 		if (update_type == TRAINING_UPDATE || ((dst_rate_mhz * tdelta * 128) / 1000000) > dst_emc_entry->tree_margin)
-			dst_emc_entry->current_dram_clktree_c1d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx / 100;
+			dst_emc_entry->current_dram_clktree_c1d1u1 = dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 / 100;
 	}
 
 out:
@@ -1908,30 +1908,30 @@ static u32 _minerva_periodic_compensation_handler(emc_table_t *src_emc_entry, em
 
 	if (seq_type == DVFS_SEQUENCE)
 	{
-		if (src_emc_entry->periodic_training && dst_emc_entry->ptfv_list.ptfv_config_ctrl_idx & 1)
+		if (src_emc_entry->periodic_training && dst_emc_entry->ptfv_list.ptfv_config_ctrl & 1)
 		{
-			u32 samples = dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx * samples;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx * samples;
+			u32 samples = dst_emc_entry->ptfv_list.ptfv_dvfs_samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 * samples;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 = src_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 * samples;
 		}
 		else
 		{
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx = 0;
-			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 = 0;
+			dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 = 0;
 
-			for (u32 i = 0; i < dst_emc_entry->ptfv_list.ptfv_dvfs_samples_idx; i++)
+			for (u32 i = 0; i < dst_emc_entry->ptfv_list.ptfv_dvfs_samples; i++)
 			{
 				_start_periodic_compensation();
 				_usleep(delay);
@@ -1943,16 +1943,16 @@ static u32 _minerva_periodic_compensation_handler(emc_table_t *src_emc_entry, em
 	}
 	else if (seq_type == WRITE_TRAINING_SEQUENCE)
 	{
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0_idx = 0;
-		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1_idx = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u0 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d0u1 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u0 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d0u1 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u0 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c0d1u1 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u0 = 0;
+		dst_emc_entry->ptfv_list.ptfv_dqsosc_movavg_c1d1u1 = 0;
 
-		for (u32 i = 0; i < dst_emc_entry->ptfv_list.ptfv_write_samples_idx; i++)
+		for (u32 i = 0; i < dst_emc_entry->ptfv_list.ptfv_write_samples; i++)
 		{
 			_start_periodic_compensation();
 			_usleep(delay);
@@ -1972,10 +1972,10 @@ static u32 _minerva_periodic_compensation_handler(emc_table_t *src_emc_entry, em
 }
 
 #define STORE_TRIM_VAL(chan, rank, reg, byte) \
-		((mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank##rank##_##reg##_idx >>	\
+		((mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank##rank##_##reg >>	\
 	 		EMC_PMACRO_OB_DDLL_LONG_DQ_BYTE##byte##_SHIFT) & 0x7FF) \
 		+ \
-		(((mtc_table_entry->trim_perch_regs.emc##chan##_data_brlshft_##rank##_idx >>	\
+		(((mtc_table_entry->trim_perch_regs.emc##chan##_data_brlshft_##rank >>	\
 			EMC_DATA_BRLSHFT_##rank##_RANK##rank##_BYTE##byte##_DATA_BRLSHFT_SHIFT) & 0x7) << 6)
 
 static u32 _minerva_apply_periodic_compensation_trimmer(emc_table_t *mtc_table_entry, u32 trim_emc_reg_addr)
@@ -2200,32 +2200,32 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 
 	if (needs_ca_training)
 	{
-		mtc_table_entry->trim_perch_regs.emc_cmd_brlshft_0_idx = EMC_CH0(EMC_CMD_BRLSHFT_0);
-		mtc_table_entry->trim_perch_regs.emc_cmd_brlshft_1_idx = channel1_enabled ? EMC_CH1(EMC_CMD_BRLSHFT_1) : 0;
-		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_4_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_4);
-		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_5_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_5) : 0;
+		mtc_table_entry->trim_perch_regs.emc_cmd_brlshft_0 = EMC_CH0(EMC_CMD_BRLSHFT_0);
+		mtc_table_entry->trim_perch_regs.emc_cmd_brlshft_1 = channel1_enabled ? EMC_CH1(EMC_CMD_BRLSHFT_1) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_4 = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_4);
+		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_5 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_5) : 0;
 
 		if (needs_training_in_self_refresh)
 		{
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd0_0_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD0_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd0_1_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD0_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd0_2_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD0_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd1_0_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD1_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd1_1_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD1_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd1_2_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD1_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd2_0_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD2_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd2_1_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD2_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd2_2_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD2_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd3_0_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD3_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd3_1_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD3_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd3_2_idx = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD3_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd0_0 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD0_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd0_1 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD0_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd0_2 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD0_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd1_0 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD1_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd1_1 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD1_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd1_2 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD1_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd2_0 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD2_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd2_1 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD2_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd2_2 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD2_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd3_0 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD3_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd3_1 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD3_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_cmd3_2 = EMC(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_CMD3_2);
 		}
 	}
 
 	if (needs_ca_vref_training)
 	{
-		mtc_table_entry->burst_reg_per_ch.emc0_mrw10_idx = (EMC_CH0(EMC_TRAINING_OPT_CA_VREF) & 0xFFFF) | 0x880C0000;
-		mtc_table_entry->burst_reg_per_ch.emc1_mrw10_idx = (channel1_enabled ? EMC_CH1(EMC_TRAINING_OPT_CA_VREF) & 0xFFFF : 0) | 0x880C0000;
+		mtc_table_entry->burst_reg_per_ch.emc0_mrw10 = (EMC_CH0(EMC_TRAINING_OPT_CA_VREF) & 0xFFFF) | 0x880C0000;
+		mtc_table_entry->burst_reg_per_ch.emc1_mrw10 = (channel1_enabled ? EMC_CH1(EMC_TRAINING_OPT_CA_VREF) & 0xFFFF : 0) | 0x880C0000;
 
 		u32 mrw11_dev_selectn;
 		if (dram_dev_num == TWO_RANK)
@@ -2233,12 +2233,12 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 		else
 			mrw11_dev_selectn = 0xC80C0000;
 
-		mtc_table_entry->burst_reg_per_ch.emc0_mrw11_idx =
+		mtc_table_entry->burst_reg_per_ch.emc0_mrw11 =
 			((EMC_CH0(EMC_TRAINING_OPT_CA_VREF) >> 16) & 0xFF)
 			| (EMC_CH0(EMC_TRAINING_OPT_CA_VREF) >> 24 << 8)
 			| (mrw11_dev_selectn & 0xFFFFFF00);
 
-		mtc_table_entry->burst_reg_per_ch.emc1_mrw11_idx =
+		mtc_table_entry->burst_reg_per_ch.emc1_mrw11 =
 			(((channel1_enabled ? EMC_CH1(EMC_TRAINING_OPT_CA_VREF) : 0) >> 16) & 0xFF)
 			| ((channel1_enabled ? EMC_CH1(EMC_TRAINING_OPT_CA_VREF) : 0) >> 24 << 8)
 			| (mrw11_dev_selectn & 0xFFFFFF00);
@@ -2246,23 +2246,23 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 
 	if (needs_quse_training || needs_rd_training)
 	{
-		mtc_table_entry->trim_perch_regs.emc_quse_brlshft_0_idx = EMC_CH0(EMC_QUSE_BRLSHFT_0);
-		mtc_table_entry->trim_perch_regs.emc_quse_brlshft_1_idx = channel1_enabled ? EMC_CH1(EMC_QUSE_BRLSHFT_1) : 0;
+		mtc_table_entry->trim_perch_regs.emc_quse_brlshft_0 = EMC_CH0(EMC_QUSE_BRLSHFT_0);
+		mtc_table_entry->trim_perch_regs.emc_quse_brlshft_1 = channel1_enabled ? EMC_CH1(EMC_QUSE_BRLSHFT_1) : 0;
 
-		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_0_idx = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK0_0);
-		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_1_idx = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK0_1);
-		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK0_2) : 0;
-		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_3_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK0_3) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_0 = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK0_0);
+		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_1 = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK0_1);
+		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK0_2) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank0_3 = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK0_3) : 0;
 
 		if (dram_dev_num == TWO_RANK)
 		{
-			mtc_table_entry->trim_perch_regs.emc_quse_brlshft_2_idx = EMC_CH0(EMC_QUSE_BRLSHFT_2);
-			mtc_table_entry->trim_perch_regs.emc_quse_brlshft_3_idx = channel1_enabled ? EMC_CH1(EMC_QUSE_BRLSHFT_3) : 0;
+			mtc_table_entry->trim_perch_regs.emc_quse_brlshft_2 = EMC_CH0(EMC_QUSE_BRLSHFT_2);
+			mtc_table_entry->trim_perch_regs.emc_quse_brlshft_3 = channel1_enabled ? EMC_CH1(EMC_QUSE_BRLSHFT_3) : 0;
 
-			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_0_idx = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK1_0);
-			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_1_idx = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK1_1);
-			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK1_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_3_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK1_3) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_0 = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK1_0);
+			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_1 = EMC_CH0(EMC_PMACRO_QUSE_DDLL_RANK1_1);
+			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK1_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_quse_ddll_rank1_3 = channel1_enabled ? EMC_CH1(EMC_PMACRO_QUSE_DDLL_RANK1_3) : 0;
 		}
 	}
 
@@ -2289,84 +2289,84 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 				ib_vref_dqs_1 |= (emc1_opt_dqs_array[i] + ((emc1_training_opt_dqs_ib_vref_rank1_val >> (8 * i)) & 0xFF)) >> 1 << (8 * i);
 			}
 
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_0_idx = ib_vref_dqs_0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_1_idx = ib_vref_dqs_1;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_0 = ib_vref_dqs_0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_1 = ib_vref_dqs_1;
 		}
 		else
 		{
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_0_idx = EMC(EMC_PMACRO_IB_VREF_DQS_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_VREF_DQS_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_0 = EMC(EMC_PMACRO_IB_VREF_DQS_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dqs_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_VREF_DQS_1) : 0;
 		}
 	}
 
 	if (needs_rd_training)
 	{
-		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_0);
-		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_1);
-		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_2) : 0;
-		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_3_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_3) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_0);
+		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_1);
+		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_2) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank0_3 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK0_3) : 0;
 
 		if (dram_dev_num == TWO_RANK)
 		{
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_3_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_3) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_long_dqs_rank1_3 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_LONG_DQS_RANK1_3) : 0;
 		}
 
 		if (needs_training_in_self_refresh)
 		{
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte0_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE0_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte0_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE0_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte0_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE0_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte1_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE1_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte1_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE1_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte1_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE1_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte2_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE2_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte2_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE2_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte2_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE2_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte3_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE3_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte3_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE3_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte3_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE3_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte4_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE4_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte4_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE4_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte4_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE4_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte5_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE5_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte5_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE5_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte5_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE5_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte6_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE6_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte6_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE6_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte6_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE6_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte7_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE7_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte7_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE7_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte7_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE7_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte0_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE0_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte0_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE0_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte0_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE0_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte1_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE1_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte1_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE1_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte1_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE1_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte2_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE2_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte2_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE2_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte2_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE2_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte3_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE3_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte3_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE3_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte3_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE3_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte4_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE4_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte4_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE4_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte4_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE4_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte5_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE5_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte5_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE5_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte5_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE5_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte6_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE6_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte6_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE6_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte6_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE6_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte7_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE7_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte7_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE7_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank0_byte7_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK0_BYTE7_2) : 0;
 
 			if (dram_dev_num == TWO_RANK)
 			{
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte0_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE0_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte0_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE0_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte0_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE0_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte1_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE1_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte1_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE1_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte1_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE1_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte2_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE2_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte2_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE2_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte2_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE2_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte3_0_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE3_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte3_1_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE3_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte3_2_idx = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE3_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte4_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE4_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte4_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE4_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte4_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE4_2) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte5_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE5_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte5_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE5_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte5_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE5_2) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte6_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE6_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte6_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE6_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte6_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE6_2) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte7_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE7_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte7_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE7_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte7_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE7_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte0_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE0_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte0_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE0_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte0_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE0_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte1_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE1_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte1_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE1_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte1_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE1_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte2_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE2_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte2_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE2_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte2_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE2_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte3_0 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE3_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte3_1 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE3_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte3_2 = EMC_CH0(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE3_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte4_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE4_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte4_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE4_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte4_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE4_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte5_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE5_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte5_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE5_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte5_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE5_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte6_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE6_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte6_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE6_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte6_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE6_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte7_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE7_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte7_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE7_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ib_ddll_short_dq_rank1_byte7_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_IB_DDLL_SHORT_DQ_RANK1_BYTE7_2) : 0;
 			}
 		}
 
@@ -2388,7 +2388,7 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 			if (mtc_table_entry->save_restore_mod_regs[3] & 0x80000000)
 				ib_vref_dq_byte3_icr = ((EMC(EMC_PMACRO_IB_VREF_DQ_0) >> 24) & 0x7F) - (mtc_table_entry->save_restore_mod_regs[3] & 0x7F);
 
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dq_0_idx =
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dq_0 =
 				 ((ib_vref_dq_byte0_icr & 0x7F)
 				| (ib_vref_dq_byte1_icr & 0x7F) << 8)
 				| ((ib_vref_dq_byte2_icr & 0x7F) << 16)
@@ -2410,7 +2410,7 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 			if (mtc_table_entry->save_restore_mod_regs[7] & 0x80000000)
 				ib_vref_dq_byte7_icr = ((EMC(EMC_PMACRO_IB_VREF_DQ_1) >> 24) & 0x7F) - (mtc_table_entry->save_restore_mod_regs[7] & 0x7F);
 
-			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dq_1_idx =
+			mtc_table_entry->trim_regs.emc_pmacro_ib_vref_dq_1 =
 				 ((ib_vref_dq_byte4_icr & 0x7F)
 				| (ib_vref_dq_byte5_icr & 0x7F) << 8)
 				| ((ib_vref_dq_byte6_icr & 0x7F) << 16)
@@ -2420,81 +2420,81 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 
 	if (needs_wr_training)
 	{
-		mtc_table_entry->trim_perch_regs.emc0_data_brlshft_0_idx = EMC_CH0(EMC_DATA_BRLSHFT_0);
-		mtc_table_entry->trim_perch_regs.emc1_data_brlshft_0_idx = channel1_enabled ? EMC_CH1(EMC_DATA_BRLSHFT_0) : 0;
+		mtc_table_entry->trim_perch_regs.emc0_data_brlshft_0 = EMC_CH0(EMC_DATA_BRLSHFT_0);
+		mtc_table_entry->trim_perch_regs.emc1_data_brlshft_0 = channel1_enabled ? EMC_CH1(EMC_DATA_BRLSHFT_0) : 0;
 
 		if (dram_dev_num == TWO_RANK)
 		{
-			mtc_table_entry->trim_perch_regs.emc0_data_brlshft_1_idx = EMC_CH0(EMC_DATA_BRLSHFT_1);
-			mtc_table_entry->trim_perch_regs.emc1_data_brlshft_1_idx = channel1_enabled ? EMC_CH1(EMC_DATA_BRLSHFT_1) : 0;
+			mtc_table_entry->trim_perch_regs.emc0_data_brlshft_1 = EMC_CH0(EMC_DATA_BRLSHFT_1);
+			mtc_table_entry->trim_perch_regs.emc1_data_brlshft_1 = channel1_enabled ? EMC_CH1(EMC_DATA_BRLSHFT_1) : 0;
 		}
 
-		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_0);
-		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_1);
-		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_2) : 0;
-		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_3_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_3) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_0);
+		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_1);
+		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_2) : 0;
+		mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank0_3 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK0_3) : 0;
 
 		if (dram_dev_num == TWO_RANK)
 		{
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_3_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_3) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_long_dq_rank1_3 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_LONG_DQ_RANK1_3) : 0;
 		}
 
 		if (needs_training_in_self_refresh)
 		{
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte0_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE0_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte0_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE0_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte0_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE0_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte1_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE1_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte1_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE1_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte1_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE1_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte2_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE2_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte2_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE2_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte2_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE2_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte3_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE3_0);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte3_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE3_1);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte3_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE3_2);
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte4_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE4_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte4_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE4_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte4_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE4_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte5_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE5_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte5_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE5_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte5_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE5_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte6_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE6_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte6_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE6_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte6_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE6_2) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte7_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE7_0) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte7_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE7_1) : 0;
-			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte7_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE7_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte0_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE0_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte0_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE0_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte0_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE0_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte1_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE1_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte1_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE1_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte1_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE1_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte2_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE2_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte2_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE2_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte2_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE2_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte3_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE3_0);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte3_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE3_1);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte3_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE3_2);
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte4_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE4_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte4_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE4_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte4_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE4_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte5_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE5_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte5_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE5_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte5_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE5_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte6_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE6_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte6_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE6_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte6_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE6_2) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte7_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE7_0) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte7_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE7_1) : 0;
+			mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank0_byte7_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK0_BYTE7_2) : 0;
 
 			if (dram_dev_num == TWO_RANK)
 			{
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte0_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE0_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte0_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE0_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte0_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE0_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte1_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE1_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte1_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE1_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte1_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE1_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte2_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE2_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte2_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE2_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte2_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE2_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte3_0_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE3_0);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte3_1_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE3_1);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte3_2_idx = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE3_2);
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte4_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE4_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte4_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE4_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte4_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE4_2) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte5_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE5_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte5_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE5_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte5_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE5_2) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte6_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE6_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte6_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE6_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte6_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE6_2) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte7_0_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE7_0) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte7_1_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE7_1) : 0;
-				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte7_2_idx = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE7_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte0_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE0_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte0_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE0_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte0_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE0_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte1_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE1_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte1_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE1_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte1_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE1_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte2_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE2_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte2_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE2_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte2_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE2_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte3_0 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE3_0);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte3_1 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE3_1);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte3_2 = EMC_CH0(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE3_2);
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte4_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE4_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte4_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE4_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte4_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE4_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte5_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE5_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte5_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE5_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte5_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE5_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte6_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE6_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte6_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE6_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte6_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE6_2) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte7_0 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE7_0) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte7_1 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE7_1) : 0;
+				mtc_table_entry->trim_regs.emc_pmacro_ob_ddll_short_dq_rank1_byte7_2 = channel1_enabled ? EMC_CH1(EMC_PMACRO_OB_DDLL_SHORT_DQ_RANK1_BYTE7_2) : 0;
 			}
 		}
 
@@ -2539,10 +2539,10 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 			if (dram_dev_num == TWO_RANK)
 				mr13_dev_ext_cnt_sp_addr = 0x480E0000;
 
-			mtc_table_entry->burst_reg_per_ch.emc1_mrw12_idx = (u8)emc0_ib_vref_dq_byte10_modded_plus | 0x880E0000 | (emc0_ib_vref_dq_byte11_modded_plus << 8);
-			mtc_table_entry->burst_reg_per_ch.emc0_mrw12_idx = emc0_ib_vref_dq_byte8_modded_plus | 0x880E0000 | (emc0_mrw12_op_sp1 << 8);
-			mtc_table_entry->burst_reg_per_ch.emc0_mrw13_idx = emc0_ib_vref_dq_byte9_modded_a_plus << 8 | emc0_mrw13_op_sp0 | mr13_dev_ext_cnt_sp_addr;
-			mtc_table_entry->burst_reg_per_ch.emc1_mrw13_idx = (emc1_mrw13_op_sp1 << 8) | emc1_mrw13_op_sp0 | mr13_dev_ext_cnt_sp_addr;
+			mtc_table_entry->burst_reg_per_ch.emc1_mrw12 = (u8)emc0_ib_vref_dq_byte10_modded_plus | 0x880E0000 | (emc0_ib_vref_dq_byte11_modded_plus << 8);
+			mtc_table_entry->burst_reg_per_ch.emc0_mrw12 = emc0_ib_vref_dq_byte8_modded_plus | 0x880E0000 | (emc0_mrw12_op_sp1 << 8);
+			mtc_table_entry->burst_reg_per_ch.emc0_mrw13 = emc0_ib_vref_dq_byte9_modded_a_plus << 8 | emc0_mrw13_op_sp0 | mr13_dev_ext_cnt_sp_addr;
+			mtc_table_entry->burst_reg_per_ch.emc1_mrw13 = (emc1_mrw13_op_sp1 << 8) | emc1_mrw13_op_sp0 | mr13_dev_ext_cnt_sp_addr;
 		}
 	}
 }
@@ -2593,9 +2593,9 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	bool needs_rd_vref_training = !!(needs_training & NEEDS_TRAINING_RD_VREF);
 	bool needs_swap_rank_training = !!(needs_training & NEEDS_TRAINING_SWAP_RANK);
 
-	bool zcal_resistor_shared = (src_emc_entry->burst_regs.emc_zcal_wait_cnt_idx >> 31) & 1;
-	bool enable_bg_regulator = (dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 1) ^ 1;
-	bool channel1_enabled = (src_emc_entry->burst_regs.emc_fbio_cfg7_idx >> 2) & 1;
+	bool zcal_resistor_shared = (src_emc_entry->burst_regs.emc_zcal_wait_cnt >> 31) & 1;
+	bool enable_bg_regulator = (dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 1) ^ 1;
+	bool channel1_enabled = (src_emc_entry->burst_regs.emc_fbio_cfg7 >> 2) & 1;
 	u32  dram_type = EMC(EMC_FBIO_CFG5) & 3;
 	u32  dram_dev_num = (MC(MC_EMEM_ADR_CFG) & 1) + 1;
 
@@ -2624,7 +2624,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	EPRINTF("Step 1");
 	emc_dbg_o = EMC(EMC_DBG);
 	emc_pin_o = EMC(EMC_PIN);
-	emc_cfg = dst_emc_entry->burst_regs.emc_cfg_idx & 0xFFFFFFF;
+	emc_cfg = dst_emc_entry->burst_regs.emc_cfg & 0xFFFFFFF;
 	emc_sel_dpd_ctrl = dst_emc_entry->emc_sel_dpd_ctrl & 0xFFFFFEC3;
 	emc_cfg_pipe_clk_o = EMC(EMC_CFG_PIPE_CLK);
 	_digital_dll_disable();
@@ -2683,27 +2683,27 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	EMC(EMC_CFG_PIPE_CLK) = emc_cfg_pipe_clk_o | 1; // CLK_ALWAYS_ON.
 	EMC(EMC_FDPD_CTRL_CMD_NO_RAMP) = dst_emc_entry->emc_fdpd_ctrl_cmd_no_ramp & 0xFFFFFFFE;
 
-	bg_regulator_mode_change = src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx ^ dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx;
+	bg_regulator_mode_change = src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 ^ dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0;
 	bg_regulator_mode_change = (bg_regulator_mode_change | (bg_regulator_mode_change >> 2)) & 1;
 
 	if (bg_regulator_mode_change)
 	{
 		EMC(EMC_DBG) = emc_dbg_o | 2;
 		if (enable_bg_regulator)
-			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 0xFFFFFFFE;
+			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 0xFFFFFFFE;
 		else
-			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 0xFFFFFFFB;
+			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 0xFFFFFFFB;
 	}
 
 	// Check if we need to turn on VREF generator.
-	if ((!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 0x100)
-		&& (dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 0x100))
-		|| (!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 1)
-		&& (dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 1)))
+	if ((!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 0x100)
+		&& (dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 0x100))
+		|| (!(src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 1)
+		&& (dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 1)))
 	{
 		EMC(EMC_PMACRO_DATA_PAD_TX_CTRL) =
-			(((dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 1) | (src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx & 0xFFFFFFFE)) & 0xFFFFFEFF)
-			| (((dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl_idx >> 8) & 0x1) << 8);
+			(((dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 1) | (src_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl & 0xFFFFFFFE)) & 0xFFFFFEFF)
+			| (((dst_emc_entry->burst_regs.emc_pmacro_data_pad_tx_ctrl >> 8) & 0x1) << 8);
 	}
 
 	_usleep(1);
@@ -2712,7 +2712,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	// Step 2 - Prelock the DLL.
 	EPRINTF("Step 2");
-	if (dst_emc_entry->burst_regs.emc_cfg_dig_dll_idx & 1)
+	if (dst_emc_entry->burst_regs.emc_cfg_dig_dll & 1)
 		_digital_dll_prelock(dst_emc_entry, needs_tristate_training, selected_clk_src_emc); // Prelock enabled for target frequency.
 	else
 	{
@@ -2779,33 +2779,33 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	u32 tRTM = src_emc_entry->dram_timings.rl + div_o3(3600, src_clock_period) + deltaTWATM + tRPST + nRTP + 1;
 
-	if (tRTM <= src_emc_entry->burst_regs.emc_rp_idx + src_emc_entry->burst_regs.emc_r2p_idx)
+	if (tRTM <= src_emc_entry->burst_regs.emc_rp + src_emc_entry->burst_regs.emc_r2p)
 	{
-		TRPab_war = src_emc_entry->burst_regs.emc_trpab_idx;
-		R2P_war = src_emc_entry->burst_regs.emc_r2p_idx;
-		RP_war = src_emc_entry->burst_regs.emc_rp_idx;
+		TRPab_war = src_emc_entry->burst_regs.emc_trpab;
+		R2P_war = src_emc_entry->burst_regs.emc_r2p;
+		RP_war = src_emc_entry->burst_regs.emc_rp;
 	}
 	else
 	{
-		R2P_war = tRTM - src_emc_entry->burst_regs.emc_rp_idx;
-		TRPab_war = src_emc_entry->burst_regs.emc_trpab_idx;
-		RP_war = src_emc_entry->burst_regs.emc_rp_idx;
+		R2P_war = tRTM - src_emc_entry->burst_regs.emc_rp;
+		TRPab_war = src_emc_entry->burst_regs.emc_trpab;
+		RP_war = src_emc_entry->burst_regs.emc_rp;
 		if (R2P_war > 63)
 		{
 			RP_war = tRTM - 63;
 			R2P_war = 63;
-			if (src_emc_entry->burst_regs.emc_trpab_idx < tRTM - 63)
+			if (src_emc_entry->burst_regs.emc_trpab < tRTM - 63)
 				TRPab_war = tRTM - 63;
 			else
-				TRPab_war = src_emc_entry->burst_regs.emc_trpab_idx;
+				TRPab_war = src_emc_entry->burst_regs.emc_trpab;
 		}
 	}
 
 	if (RP_war >= deltaTWATM)
-		W2P_war = src_emc_entry->burst_regs.emc_w2p_idx;
+		W2P_war = src_emc_entry->burst_regs.emc_w2p;
 	else
 	{
-		u32 W2P_war_temp = deltaTWATM + src_emc_entry->burst_regs.emc_w2p_idx;
+		u32 W2P_war_temp = deltaTWATM + src_emc_entry->burst_regs.emc_w2p;
 		W2P_war = W2P_war_temp - RP_war;
 		if (W2P_war > 63)
 		{
@@ -2816,10 +2816,10 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		}
 	}
 
-	if ( src_emc_entry->burst_regs.emc_w2p_idx != W2P_war
-		|| src_emc_entry->burst_regs.emc_rp_idx != RP_war
-		|| src_emc_entry->burst_regs.emc_r2p_idx != R2P_war
-		|| src_emc_entry->burst_regs.emc_trpab_idx != TRPab_war)
+	if ( src_emc_entry->burst_regs.emc_w2p != W2P_war
+		|| src_emc_entry->burst_regs.emc_rp != RP_war
+		|| src_emc_entry->burst_regs.emc_r2p != R2P_war
+		|| src_emc_entry->burst_regs.emc_trpab != TRPab_war)
 	{
 		EMC(EMC_DBG) = emc_dbg_o | 2;
 		EMC(EMC_RP) = RP_war;
@@ -3060,19 +3060,19 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	// Step 9 - LPDDR4.
 	EPRINTF("Step 9");
-	EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval_idx & 0xFF000000;
-	EMC(EMC_ZCAL_WAIT_CNT) = dst_emc_entry->burst_regs.emc_zcal_wait_cnt_idx & 0xFFFFF800;
+	EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval & 0xFF000000;
+	EMC(EMC_ZCAL_WAIT_CNT) = dst_emc_entry->burst_regs.emc_zcal_wait_cnt & 0xFFFFF800;
 	EMC(EMC_DBG) = emc_dbg_o | 0x40000002;
-	EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval_idx & 0xFF000000;
+	EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval & 0xFF000000;
 	EMC(EMC_DBG) = emc_dbg_o;
 
 	if (needs_tristate_training)
 	{
 		EMC(EMC_DBG) = emc_dbg_o | 2;
-		EMC(EMC_PMACRO_AUTOCAL_CFG_COMMON) = dst_emc_entry->burst_regs.emc_pmacro_autocal_cfg_common_idx | 0x10000;
+		EMC(EMC_PMACRO_AUTOCAL_CFG_COMMON) = dst_emc_entry->burst_regs.emc_pmacro_autocal_cfg_common | 0x10000;
 
 		if (needs_ca_combo_training)
-			EMC(EMC_FBIO_CFG5) = src_emc_entry->burst_regs.emc_fbio_cfg5_idx | 0x8000000;
+			EMC(EMC_FBIO_CFG5) = src_emc_entry->burst_regs.emc_fbio_cfg5 | 0x8000000;
 
 		EMC(EMC_DBG) = emc_dbg_o;
 
@@ -3089,12 +3089,12 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	if (!needs_ca_combo_training && (dst_clock_period <= 2000))
 	{
 		_ccfifo_write(EMC_MRW3, mr13_flip_fspwr ^ 0x40, 0);
-		_ccfifo_write(EMC_MRW6, (src_emc_entry->burst_regs.emc_mrw6_idx & 0xC0C0) | (dst_emc_entry->burst_regs.emc_mrw6_idx & 0xFFFF3F3F), 0);
-		_ccfifo_write(EMC_MRW14, (src_emc_entry->burst_regs.emc_mrw14_idx & 0x3838) | (dst_emc_entry->burst_regs.emc_mrw14_idx & 0xFFFF0707), 0);
+		_ccfifo_write(EMC_MRW6, (src_emc_entry->burst_regs.emc_mrw6 & 0xC0C0) | (dst_emc_entry->burst_regs.emc_mrw6 & 0xFFFF3F3F), 0);
+		_ccfifo_write(EMC_MRW14, (src_emc_entry->burst_regs.emc_mrw14 & 0x3838) | (dst_emc_entry->burst_regs.emc_mrw14 & 0xFFFF0707), 0);
 		if (dram_dev_num == TWO_RANK)
 		{
-			_ccfifo_write(EMC_MRW7, (src_emc_entry->burst_regs.emc_mrw7_idx & 0xC0C0) | (dst_emc_entry->burst_regs.emc_mrw7_idx & 0xFFFF3F3F), 0);
-			_ccfifo_write(EMC_MRW15, (src_emc_entry->burst_regs.emc_mrw15_idx & 0x3838) | (dst_emc_entry->burst_regs.emc_mrw15_idx & 0xFFFF0707), 0);
+			_ccfifo_write(EMC_MRW7, (src_emc_entry->burst_regs.emc_mrw7 & 0xC0C0) | (dst_emc_entry->burst_regs.emc_mrw7 & 0xFFFF3F3F), 0);
+			_ccfifo_write(EMC_MRW15, (src_emc_entry->burst_regs.emc_mrw15 & 0x3838) | (dst_emc_entry->burst_regs.emc_mrw15 & 0xFFFF0707), 0);
 		}
 
 		if (dram_dev_num == ONE_RANK || zcal_resistor_shared)
@@ -3118,7 +3118,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	if (needs_ca_combo_training)
 	{
-		_ccfifo_write(EMC_PMACRO_DATA_RX_TERM_MODE, src_emc_entry->burst_regs.emc_pmacro_data_rx_term_mode_idx & 0xFFFFFCCC, 0);
+		_ccfifo_write(EMC_PMACRO_DATA_RX_TERM_MODE, src_emc_entry->burst_regs.emc_pmacro_data_rx_term_mode & 0xFFFFFCCC, 0);
 
 		if (dram_dev_num == TWO_RANK && needs_swap_rank_training)
 		{
@@ -3285,10 +3285,10 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		{
 			if (enable_bg_regulator)
 				_ccfifo_write(EMC_PMACRO_BG_BIAS_CTRL_0,
-					src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 0xFFFFFFFE, 0);
+					src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 0xFFFFFFFE, 0);
 			else
 				_ccfifo_write(EMC_PMACRO_BG_BIAS_CTRL_0,
-					src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 0xFFFFFFFB, 0);
+					src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 0xFFFFFFFB, 0);
 		}
 
 		_ccfifo_write(EMC_SWITCH_BACK_CTRL, 1, 0);
@@ -3323,7 +3323,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 			_ccfifo_write(EMC_TR_CTRL_0, 0x40, 1000000 / src_clock_period);
 			_ccfifo_write(EMC_MRW3, mr13_catr_enable & 0xFFFFFFFE, 0);
 			_ccfifo_write(EMC_INTSTATUS, 0, 1000000 / src_clock_period);
-			_ccfifo_write(EMC_PMACRO_DATA_RX_TERM_MODE, src_emc_entry->burst_regs.emc_pmacro_data_rx_term_mode_idx, 0);
+			_ccfifo_write(EMC_PMACRO_DATA_RX_TERM_MODE, src_emc_entry->burst_regs.emc_pmacro_data_rx_term_mode, 0);
 		}
 
 		_ccfifo_write(EMC_DBG, emc_dbg_o, 0);
@@ -3355,14 +3355,14 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		{
 			bg_regulator_switch_complete_wait_clks = 1250000 / src_clock_period;
 			_ccfifo_write(EMC_PMACRO_BG_BIAS_CTRL_0,
-				src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx, bg_regulator_switch_complete_wait_clks);
+				src_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0, bg_regulator_switch_complete_wait_clks);
 		}
 		else
 		{
 			if (ramp_up_wait <= 1250000)
 				bg_regulator_switch_complete_wait_clks = (1250000 - ramp_up_wait) / dst_clock_period;
 			_ccfifo_write(EMC_PMACRO_BG_BIAS_CTRL_0,
-				dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx, bg_regulator_switch_complete_wait_clks);
+				dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0, bg_regulator_switch_complete_wait_clks);
 		}
 
 		_ccfifo_write(EMC_DBG, emc_dbg_o, 0);
@@ -3378,9 +3378,9 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	_ccfifo_write(EMC_DBG, emc_dbg_o | 2, 0);
 
 	if (needs_tristate_training)
-		_ccfifo_write(EMC_ZCAL_INTERVAL, src_emc_entry->burst_regs.emc_zcal_interval_idx, 0);
+		_ccfifo_write(EMC_ZCAL_INTERVAL, src_emc_entry->burst_regs.emc_zcal_interval, 0);
 
-	_ccfifo_write(EMC_CFG, dst_emc_entry->burst_regs.emc_cfg_idx & 0xEFFFFFFF, 0);
+	_ccfifo_write(EMC_CFG, dst_emc_entry->burst_regs.emc_cfg & 0xEFFFFFFF, 0);
 
 	// Step 22 - Restore EMC_CFG_PIPE_CLK.
 	EPRINTF("Step 22");
@@ -3394,9 +3394,9 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	if (bg_regulator_mode_change)
 	{
 		if (enable_bg_regulator)
-			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 0xFFFFFFFB;
+			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 0xFFFFFFFB;
 		else
-			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0_idx & 0xFFFFFFFE;
+			EMC(EMC_PMACRO_BG_BIAS_CTRL_0) = dst_emc_entry->burst_regs.emc_pmacro_bg_bias_ctrl_0 & 0xFFFFFFFE;
 	}
 
 	// Step 23 - Clock Change.
@@ -3454,15 +3454,15 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	if (!in_self_refresh)
 	{
 		EMC(EMC_DBG) = emc_dbg_o | 2;
-		EMC(EMC_ZCAL_WAIT_CNT) = dst_emc_entry->burst_regs.emc_zcal_wait_cnt_idx;
-		EMC(EMC_ZCAL_INTERVAL) = dst_emc_entry->burst_regs.emc_zcal_interval_idx;
+		EMC(EMC_ZCAL_WAIT_CNT) = dst_emc_entry->burst_regs.emc_zcal_wait_cnt;
+		EMC(EMC_ZCAL_INTERVAL) = dst_emc_entry->burst_regs.emc_zcal_interval;
 		EMC(EMC_DBG) = emc_dbg_o;
 	}
 
 	// Step 27 - Restore EMC_CFG, FDPD regs.
 	EPRINTF("Step 27");
 	EMC(EMC_DBG) = emc_dbg_o | 2;
-	EMC(EMC_CFG) = dst_emc_entry->burst_regs.emc_cfg_idx;
+	EMC(EMC_CFG) = dst_emc_entry->burst_regs.emc_cfg;
 	EMC(EMC_DBG) = emc_dbg_o;
 	EMC(EMC_FDPD_CTRL_CMD_NO_RAMP) = dst_emc_entry->emc_fdpd_ctrl_cmd_no_ramp;
 	EMC(EMC_SEL_DPD_CTRL) = dst_emc_entry->emc_sel_dpd_ctrl;
@@ -3472,10 +3472,10 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	if (needs_tristate_training)
 	{
 		EMC(EMC_DBG) = emc_dbg_o | 2;
-		EMC(EMC_CFG) = dst_emc_entry->burst_regs.emc_cfg_idx;
+		EMC(EMC_CFG) = dst_emc_entry->burst_regs.emc_cfg;
 		EMC(EMC_SEL_DPD_CTRL) = dst_emc_entry->emc_sel_dpd_ctrl;
-		EMC(EMC_ZCAL_WAIT_CNT) = src_emc_entry->burst_regs.emc_zcal_wait_cnt_idx;
-		EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval_idx;
+		EMC(EMC_ZCAL_WAIT_CNT) = src_emc_entry->burst_regs.emc_zcal_wait_cnt;
+		EMC(EMC_ZCAL_INTERVAL) = src_emc_entry->burst_regs.emc_zcal_interval;
 		EMC(EMC_AUTO_CAL_CONFIG2) = src_emc_entry->emc_auto_cal_config2;
 		EMC(EMC_AUTO_CAL_CONFIG3) = src_emc_entry->emc_auto_cal_config3;
 		EMC(EMC_AUTO_CAL_CONFIG4) = src_emc_entry->emc_auto_cal_config4;
@@ -3484,11 +3484,11 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		EMC(EMC_AUTO_CAL_CONFIG7) = src_emc_entry->emc_auto_cal_config7;
 		EMC(EMC_AUTO_CAL_CONFIG8) = src_emc_entry->emc_auto_cal_config8;
 		EMC(EMC_DBG) = emc_dbg_o;
-		EMC(EMC_TR_DVFS) = dst_emc_entry->burst_regs.emc_tr_dvfs_idx & 0xFFFFFFFE;
+		EMC(EMC_TR_DVFS) = dst_emc_entry->burst_regs.emc_tr_dvfs & 0xFFFFFFFE;
 	}
 
 	EMC(EMC_DBG) = emc_dbg_o | 2;
-	EMC(EMC_PMACRO_AUTOCAL_CFG_COMMON) = dst_emc_entry->burst_regs.emc_pmacro_autocal_cfg_common_idx;
+	EMC(EMC_PMACRO_AUTOCAL_CFG_COMMON) = dst_emc_entry->burst_regs.emc_pmacro_autocal_cfg_common;
 	EMC(EMC_DBG) = emc_dbg_o;
 
 	// Step 29 - Power fix WAR.
@@ -3504,7 +3504,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		EMC(EMC_AUTO_CAL_CONFIG) = src_emc_entry->emc_auto_cal_config;
 	else
 	{
-		if (dst_emc_entry->burst_regs.emc_cfg_dig_dll_idx & 1)
+		if (dst_emc_entry->burst_regs.emc_cfg_dig_dll & 1)
 			_digital_dll_enable_rs(channel1_enabled);
 		EMC(EMC_AUTO_CAL_CONFIG) = dst_emc_entry->emc_auto_cal_config;
 	}
@@ -3514,7 +3514,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, bool switch_rate, u32 selected_clk_src_emc)
 {
-	u32 needs_training_idx = 0;
+	u32 needs_training_num = 0;
 	u32 emc_cfg_dig_dll_val = 0;
 	u32 needs_training_emc_table[8] = {0};
 
@@ -3537,27 +3537,27 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 	{
 		if (needs_training & NEEDS_TRAINING_CA_COMBO)
 		{
-			needs_training_emc_table[needs_training_idx++] =
+			needs_training_emc_table[needs_training_num++] =
 				needs_training & (NEEDS_TRAINING_CA_COMBO | NEEDS_TRAINING_IN_SELF_REFRESH);
 			if (MC(MC_EMEM_ADR_CFG) & 1) // if mapping W8 (1KB page).
-				needs_training_emc_table[needs_training_idx++] =
+				needs_training_emc_table[needs_training_num++] =
 					needs_training & (NEEDS_TRAINING_CA_COMBO | NEEDS_TRAINING_SWAP_RANK | NEEDS_TRAINING_IN_SELF_REFRESH);
 		}
 
 		if (needs_training & NEEDS_TRAINING_QUSE_COMBO)
 		{
-			needs_training_emc_table[needs_training_idx++] =
+			needs_training_emc_table[needs_training_num++] =
 				needs_training & (NEEDS_TRAINING_QUSE_COMBO | NEEDS_TRAINING_IN_SELF_REFRESH);
 			if (MC(MC_EMEM_ADR_CFG) & 1)
-				needs_training_emc_table[needs_training_idx++] =
+				needs_training_emc_table[needs_training_num++] =
 					needs_training & (NEEDS_TRAINING_QUSE | NEEDS_TRAINING_IN_SELF_REFRESH);
 		}
 
 		if (needs_training & (NEEDS_TRAINING_WR_COMBO | NEEDS_TRAINING_RD_COMBO))
-			needs_training_emc_table[needs_training_idx++] =
+			needs_training_emc_table[needs_training_num++] =
 				needs_training & (NEEDS_TRAINING_WR_COMBO | NEEDS_TRAINING_RD_COMBO | NEEDS_TRAINING_IN_SELF_REFRESH);
 
-		for (u32 i = 0; needs_training_idx > i; i++) // Runs more than once for needs_training CA/QUSE/WR/RD.
+		for (u32 i = 0; needs_training_num > i; i++) // Runs more than once for needs_training CA/QUSE/WR/RD.
 		{
 			_minerva_set_clock(src_emc_entry, dst_emc_entry, needs_training_emc_table[i], selected_clk_src_emc);
 
@@ -3573,7 +3573,7 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 			_timing_update(dual_channel);
 
 			emc_cfg_dig_dll_val = EMC(EMC_CFG_DIG_DLL) & 0xFFFFFFFE;
-			if (dst_emc_entry->burst_regs.emc_cfg_dig_dll_idx == 1)
+			if (dst_emc_entry->burst_regs.emc_cfg_dig_dll == 1)
 				emc_cfg_dig_dll_val = EMC(EMC_CFG_DIG_DLL) | 1;
 			EMC(EMC_CFG_DIG_DLL) = (emc_cfg_dig_dll_val & 0xFFFFFF3F) | 0x80;
 			_timing_update(dual_channel);
@@ -3582,10 +3582,10 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 				;
 
 			// Bug 200024907.
-			EMC(EMC_RP) = src_emc_entry->burst_regs.emc_rp_idx;
-			EMC(EMC_R2P) = src_emc_entry->burst_regs.emc_r2p_idx;
-			EMC(EMC_W2P) = src_emc_entry->burst_regs.emc_w2p_idx;
-			EMC(EMC_TRPAB) = src_emc_entry->burst_regs.emc_trpab_idx;
+			EMC(EMC_RP) = src_emc_entry->burst_regs.emc_rp;
+			EMC(EMC_R2P) = src_emc_entry->burst_regs.emc_r2p;
+			EMC(EMC_W2P) = src_emc_entry->burst_regs.emc_w2p;
+			EMC(EMC_TRPAB) = src_emc_entry->burst_regs.emc_trpab;
 
 			_timing_update(dual_channel);
 		}
@@ -3611,9 +3611,9 @@ void _minerva_do_over_temp_compensation(mtc_config_t *mtc_cfg)
 	if (mtc_cfg->prev_temp == dram_temp || dram_temp == (u32)-1)
 		return;
 
-	u32 refr = mtc_cfg->current_emc_table->burst_regs.emc_refresh_idx;
-	u32 pre_refr = mtc_cfg->current_emc_table->burst_regs.emc_pre_refresh_req_cnt_idx;
-	u32 dyn_self_ref = mtc_cfg->current_emc_table->burst_regs.emc_dyn_self_ref_control_idx;
+	u32 refr = mtc_cfg->current_emc_table->burst_regs.emc_refresh;
+	u32 pre_refr = mtc_cfg->current_emc_table->burst_regs.emc_pre_refresh_req_cnt;
+	u32 dyn_self_ref = mtc_cfg->current_emc_table->burst_regs.emc_dyn_self_ref_control;
 
 	switch (dram_temp)
 	{
@@ -3657,7 +3657,7 @@ u32 _minerva_do_periodic_compensation(emc_table_t *mtc_table_entry)
 	{
 		u32  dram_dev_num = (MC(MC_EMEM_ADR_CFG) & 1) + 1;
 		u32  pd_mask = (dram_dev_num == TWO_RANK) ? IN_POWERDOWN_BOTH_MASK : IN_POWERDOWN_1DEV_MASK;
-		bool channel1_enabled = (mtc_table_entry->burst_regs.emc_fbio_cfg7_idx >> 2) & 1;
+		bool channel1_enabled = (mtc_table_entry->burst_regs.emc_fbio_cfg7 >> 2) & 1;
 
 		(void)EMC(EMC_DBG);
 
@@ -3836,7 +3836,7 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 		break;
 	}
 
-	mtc_cfg->table_entries = 10;
+	mtc_cfg->table_entries = EMC_TABLE_SIZE_R7 / EMC_TABLE_ENTRY_SIZE_R7;
 	mtc_cfg->rate_to = 0;
 	mtc_cfg->rate_from = 0;
 	mtc_cfg->train_mode = 0;
