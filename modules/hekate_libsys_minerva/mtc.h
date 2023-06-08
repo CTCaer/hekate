@@ -44,9 +44,9 @@
 #define EMC_CH1(off) _REG(EMC1_BASE, off)
 /* End of addresses and access macros */
 
-#define EMC_TABLE_SIZE_R7         49280
 #define EMC_TABLE_ENTRY_SIZE_R7   4928
 #define EMC_TABLE_ENTRY_SIZE_R3   4300
+#define EMC_TABLE_SIZE_R7         (EMC_TABLE_ENTRY_SIZE_R7 * 7)
 #define EMC_STATUS_UPDATE_TIMEOUT 1000
 #define EMC_PERIODIC_TRAIN_MS     100
 #define EMC_TEMP_COMP_MS          1000

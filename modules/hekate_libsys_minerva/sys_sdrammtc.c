@@ -3822,6 +3822,8 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 
 static void _minerva_get_table(mtc_config_t *mtc_cfg)
 {
+	memset(mtc_cfg->mtc_table, 0, EMC_TABLE_ENTRY_SIZE_R7 * 10);
+
 	switch (mtc_cfg->sdram_id)
 	{
 	case DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN:
@@ -3831,8 +3833,44 @@ static void _minerva_get_table(mtc_config_t *mtc_cfg)
 	case DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT:
 	case DRAM_4GB_COPPER_SAMSUNG:
 	case DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH:
+	case DRAM_8GB_SAMSUNG_K4FBE3D4HM_MGXX:
 	default:
 		memcpy(mtc_cfg->mtc_table, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
+		if (mtc_cfg->sdram_id == DRAM_8GB_SAMSUNG_K4FBE3D4HM_MGXX)
+		{
+			for (u32 i = 0; i < EMC_TABLE_SIZE_R7 / EMC_TABLE_ENTRY_SIZE_R7; i++)
+			{
+				emc_table_t *table = &mtc_cfg->mtc_table[i];
+				u32 period = 1000000000 / table->rate_khz;
+
+				table->burst_regs.emc_rfc = 280000 / period;
+				table->shadow_regs_ca_train.emc_rfc = 280000 / period;
+				table->shadow_regs_quse_train.emc_rfc = 280000 / period;
+				table->shadow_regs_rdwr_train.emc_rfc = 280000 / period;
+
+				table->burst_regs.emc_rfcpb = 140000 / period;
+				table->shadow_regs_ca_train.emc_rfcpb = 140000 / period;
+				table->shadow_regs_quse_train.emc_rfcpb = 140000 / period;
+				table->shadow_regs_rdwr_train.emc_rfcpb = 140000 / period;
+
+				table->burst_regs.emc_txsr = 287500 / period;
+				table->shadow_regs_ca_train.emc_txsr = 287500 / period;
+				table->shadow_regs_quse_train.emc_txsr = 287500 / period;
+				table->shadow_regs_rdwr_train.emc_txsr = 287500 / period;
+
+				table->burst_regs.emc_txsrdll = table->burst_regs.emc_txsr;
+				table->shadow_regs_ca_train.emc_txsrdll = table->shadow_regs_ca_train.emc_txsr;
+				table->shadow_regs_quse_train.emc_txsrdll = table->shadow_regs_quse_train.emc_txsr;
+				table->shadow_regs_rdwr_train.emc_txsrdll = table->shadow_regs_rdwr_train.emc_txsr;
+
+				table->burst_regs.emc_dyn_self_ref_control &= 0x7FFFFFFF;
+				table->shadow_regs_ca_train.emc_dyn_self_ref_control &= 0x7FFFFFFF;
+				table->shadow_regs_quse_train.emc_dyn_self_ref_control &= 0x7FFFFFFF;
+				table->shadow_regs_rdwr_train.emc_dyn_self_ref_control &= 0x7FFFFFFF;
+
+				table->dram_timings.t_rfc = 280;
+			}
+		}
 		break;
 	}
 
