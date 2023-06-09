@@ -1608,13 +1608,15 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	char *txt_buf = (char *)malloc(SZ_16K);
 	txt_buf[0] = '\n';
 	txt_buf[1] = 0;
+	u16 *emmc_errors;
 
 	if (!emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
+		emmc_errors = emmc_get_error_count();
 
-		goto out;
+		goto out_error;
 	}
 
 	u32 speed = 0;
@@ -1804,12 +1806,13 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
 
-	u16 *emmc_errors = emmc_get_error_count();
+	emmc_errors = emmc_get_error_count();
 	if (emmc_get_mode() < EMMC_MMC_HS400  ||
 		emmc_errors[EMMC_ERROR_INIT_FAIL] ||
 		emmc_errors[EMMC_ERROR_RW_FAIL]   ||
 		emmc_errors[EMMC_ERROR_RW_RETRY])
 	{
+out_error:
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -1840,7 +1843,6 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		lv_obj_set_top(mbox, true);
 	}
 
-out:
 	emmc_end();
 	free(txt_buf);
 
@@ -2161,7 +2163,9 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 	u16 *sd_errors = sd_get_error_count();
 	s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
-		sd_errors[0], nyx_str->info.sd_errors[0], sd_errors[1], nyx_str->info.sd_errors[1], sd_errors[2], nyx_str->info.sd_errors[2]);
+		sd_errors[SD_ERROR_INIT_FAIL], nyx_str->info.sd_errors[SD_ERROR_INIT_FAIL],
+		sd_errors[SD_ERROR_RW_FAIL],   nyx_str->info.sd_errors[SD_ERROR_RW_FAIL],
+		sd_errors[SD_ERROR_RW_RETRY],  nyx_str->info.sd_errors[SD_ERROR_RW_RETRY]);
 
 	lv_label_set_text(lb_val4, txt_buf);
 
