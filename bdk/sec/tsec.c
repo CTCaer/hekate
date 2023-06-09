@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -199,10 +199,10 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 
 	// Execute firmware.
 	HOST1X(HOST1X_CH0_SYNC_SYNCPT_160) = 0x34C2E1DA;
-	TSEC(TSEC_STATUS)     = 0;
-	TSEC(TSEC_BOOTKEYVER) = 1; // HOS uses key version 1.
-	TSEC(TSEC_BOOTVEC)    = 0;
-	TSEC(TSEC_CPUCTL)     = TSEC_CPUCTL_STARTCPU;
+	TSEC(TSEC_MAILBOX1) = 0;
+	TSEC(TSEC_MAILBOX0) = 1; // Set HOS key version.
+	TSEC(TSEC_BOOTVEC)  = 0;
+	TSEC(TSEC_CPUCTL)   = TSEC_CPUCTL_STARTCPU;
 
 	if (type == TSEC_FW_TYPE_EMU)
 	{
@@ -245,7 +245,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		// for (int i = 0; i < kidx; i++)
 		// 	gfx_printf("key %08X\n", key[i]);
 
-		// gfx_printf("cpuctl (%08X) mbox (%08X)\n", TSEC(TSEC_CPUCTL), TSEC(TSEC_STATUS));
+		// gfx_printf("cpuctl (%08X) mbox (%08X)\n", TSEC(TSEC_CPUCTL), TSEC(TSEC_MAILBOX1));
 
 		// u32 errst = MC(MC_ERR_STATUS);
 		// gfx_printf(" MC %08X %08X %08X\n", MC(MC_INTSTATUS), errst, MC(MC_ERR_ADR));
@@ -261,14 +261,18 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 			res = -3;
 			goto out_free;
 		}
+
 		u32 timeout = get_tmr_ms() + 2000;
-		while (!TSEC(TSEC_STATUS))
+		while (!TSEC(TSEC_MAILBOX1))
+		{
 			if (get_tmr_ms() > timeout)
 			{
 				res = -4;
 				goto out_free;
 			}
-		if (TSEC(TSEC_STATUS) != 0xB0B0B0B0)
+		}
+
+		if (TSEC(TSEC_MAILBOX1) != 0xB0B0B0B0)
 		{
 			res = -5;
 			goto out_free;
@@ -277,14 +281,14 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		// Fetch result.
 		HOST1X(HOST1X_CH0_SYNC_SYNCPT_160) = 0;
 		u32 buf[4];
-		buf[0] = SOR1(SOR_NV_PDISP_SOR_DP_HDCP_BKSV_LSB);
-		buf[1] = SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_BKSV_LSB);
-		buf[2] = SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB);
-		buf[3] = SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB);
-		SOR1(SOR_NV_PDISP_SOR_DP_HDCP_BKSV_LSB)   = 0;
-		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_BKSV_LSB) = 0;
-		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB)   = 0;
-		SOR1(SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB)   = 0;
+		buf[0] = SOR1(SOR_DP_HDCP_BKSV_LSB);
+		buf[1] = SOR1(SOR_TMDS_HDCP_BKSV_LSB);
+		buf[2] = SOR1(SOR_TMDS_HDCP_CN_MSB);
+		buf[3] = SOR1(SOR_TMDS_HDCP_CN_LSB);
+		SOR1(SOR_DP_HDCP_BKSV_LSB)   = 0;
+		SOR1(SOR_TMDS_HDCP_BKSV_LSB) = 0;
+		SOR1(SOR_TMDS_HDCP_CN_MSB)   = 0;
+		SOR1(SOR_TMDS_HDCP_CN_LSB)   = 0;
 
 		memcpy(tsec_keys, &buf, SE_KEY_128_SIZE);
 	}

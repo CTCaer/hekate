@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2022 CTCaer
+* Copyright (c) 2018-2023 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -135,10 +135,11 @@
 #define USB1(off) _REG(USB1_BASE, off)
 #define TEST_REG(off) _REG(0x0, off)
 
-/* HOST1X registers. */
-#define HOST1X_CH0_SYNC_BASE       0x2100
-#define HOST1X_CH0_SYNC_SYNCPT_9   (HOST1X_CH0_SYNC_BASE + 0xFA4)
-#define HOST1X_CH0_SYNC_SYNCPT_160 (HOST1X_CH0_SYNC_BASE + 0x1200)
+/* HOST1X v3 registers. */
+#define HOST1X_CH0_SYNC_BASE        0x2100
+#define HOST1X_CH0_SYNC_SYNCPT_BASE (HOST1X_CH0_SYNC_BASE + 0xF80)
+#define HOST1X_CH0_SYNC_SYNCPT_9    (HOST1X_CH0_SYNC_SYNCPT_BASE + 0x24)
+#define HOST1X_CH0_SYNC_SYNCPT_160  (HOST1X_CH0_SYNC_SYNCPT_BASE + 0x280)
 
 /*! EVP registers. */
 #define EVP_CPU_RESET_VECTOR          0x100
@@ -223,10 +224,10 @@
 #define SB_AA64_RESET_HIGH           0x34
 
 /*! SOR registers. */
-#define SOR_NV_PDISP_SOR_DP_HDCP_BKSV_LSB   0x1E8
-#define SOR_NV_PDISP_SOR_TMDS_HDCP_BKSV_LSB 0x21C
-#define SOR_NV_PDISP_SOR_TMDS_HDCP_CN_MSB   0x208
-#define SOR_NV_PDISP_SOR_TMDS_HDCP_CN_LSB   0x20C
+#define SOR_DP_HDCP_BKSV_LSB   0x1E8
+#define SOR_TMDS_HDCP_BKSV_LSB 0x21C
+#define SOR_TMDS_HDCP_CN_MSB   0x208
+#define SOR_TMDS_HDCP_CN_LSB   0x20C
 
 /*! RTC registers. */
 #define APBDEV_RTC_SECONDS        0x8
