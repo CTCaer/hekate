@@ -1164,8 +1164,7 @@ int hos_launch(ini_sec_t *cfg)
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = BIT(CLK_H_AHBDMA) | BIT(CLK_H_APBDMA) | BIT(CLK_H_USB2);
 
 	// Scale down RAM OC if enabled.
-	if (ctxt.stock)
-		minerva_prep_boot_freq();
+	minerva_prep_boot_freq();
 
 	// Flush cache and disable MMU.
 	bpmp_mmu_disable();
