@@ -79,50 +79,50 @@
 #define MTCTABLE_BASE     (SECFW_BASE + SZ_512K)           // 512KB after SECFW_BASE.
 
 // Secure Elements addresses for T210B01.
-#define BPMPFW_BASE       (SECFW_BASE)                     // !! DTS carveout-start must match !!
-#define BPMPFW_ENTRYPOINT (BPMPFW_BASE + 0x40)             // Used internally also.
-#define BPMPFW_HEAP_BASE  (BPMPFW_BASE + SZ_256K - SZ_1K)  // 255KB after BPMPFW_BASE.
-#define BPMPFW_EDTB_BASE  (BPMPFW_BASE + SZ_1M - 0)        // Top BPMPFW carveout minus EMC DTB size.
-#define BPMPFW_ADTB_BASE  (BPMPFW_BASE + 0x26008)          // Attached BPMP-FW DTB address.
-#define SC7EXIT_B01_BASE  (BPMPFW_HEAP_BASE - SZ_4K)       // 4KB before BPMP heap.
+#define BPMPFW_B01_BASE       (SECFW_BASE)                         // !! DTS carveout-start must match !!
+#define BPMPFW_B01_ENTRYPOINT (BPMPFW_B01_BASE + 0x40)             // Used internally also.
+#define BPMPFW_B01_HEAP_BASE  (BPMPFW_B01_BASE + SZ_256K - SZ_1K)  // 255KB after BPMPFW_B01_BASE.
+#define BPMPFW_B01_EDTB_BASE  (BPMPFW_B01_BASE + SZ_1M - 0)        // Top BPMPFW carveout minus EMC DTB size.
+#define BPMPFW_B01_ADTB_BASE  (BPMPFW_B01_BASE + 0x26008)          // Attached BPMP-FW DTB address.
+#define SC7EXIT_B01_BASE      (BPMPFW_B01_HEAP_BASE - SZ_4K)       // 4KB before BPMP heap.
 
 // BPMP-FW defines. Offsets are 0xD8 below real main binary.
-#define BPMPFW_DTB_ADDR   (BPMPFW_BASE + 0x14)    // u32. DTB address if not attached.
-#define BPMPFW_CC_INIT_OP (BPMPFW_BASE + 0x17324) // u8.  Initial table training OP. 0: OP_SWITCH, 1: OP_TRAIN, 2: OP_TRAIN_SWITCH. Default: OP_TRAIN.
-#define BPMPFW_LOGLEVEL   (BPMPFW_BASE + 0x2547C) // u32. Log level. Default 3.
-#define BPMPFW_LOGLEVEL   (BPMPFW_BASE + 0x2547C) // u32. Log level. Default 3.
-#define BPMPFW_CC_PT_TIME (BPMPFW_BASE + 0x25644) // u32. Periodic training period (in ms). Default 100 ms.
-#define BPMPFW_CC_DEBUG   (BPMPFW_BASE + 0x257F8) // u32. EMC Clock Change debug mask. Default: 0x50000101.
+#define BPMPFW_B01_DTB_ADDR   (BPMPFW_B01_BASE + 0x14)    // u32. DTB address if not attached.
+#define BPMPFW_B01_CC_INIT_OP (BPMPFW_B01_BASE + 0x17324) // u8.  Initial table training OP. 0: OP_SWITCH, 1: OP_TRAIN, 2: OP_TRAIN_SWITCH. Default: OP_TRAIN.
+#define BPMPFW_B01_LOGLEVEL   (BPMPFW_B01_BASE + 0x2547C) // u32. Log level. Default 3.
+#define BPMPFW_B01_LOGLEVEL   (BPMPFW_B01_BASE + 0x2547C) // u32. Log level. Default 3.
+#define BPMPFW_B01_CC_PT_TIME (BPMPFW_B01_BASE + 0x25644) // u32. Periodic training period (in ms). Default 100 ms.
+#define BPMPFW_B01_CC_DEBUG   (BPMPFW_B01_BASE + 0x257F8) // u32. EMC Clock Change debug mask. Default: 0x50000101.
 
 // BPMP-FW attached DTB defines. Can be generalized.
-#define BPMPFW_DTB_EMC_ENTRIES           4
-#define BPMPFW_DTB_SERIAL_PORT_VAL       (BPMPFW_ADTB_BASE + 0x5B) // u8. DTB UART port offset. 0: Disabled.
-#define BPMPFW_DTB_SET_SERIAL_PORT(port) (*(u8 *)BPMPFW_DTB_SERIAL_PORT_VAL = port)
-#define BPMPFW_DTB_EMC_TBL_OFF           (BPMPFW_ADTB_BASE + 0xA0)
-#define BPMPFW_DTB_EMC_TBL_SZ            0x1120
-#define BPMPFW_DTB_EMC_NAME_VAL          0xA
-#define BPMPFW_DTB_EMC_ENABLE_OFF        0x20
-#define BPMPFW_DTB_EMC_VALUES_OFF        0x4C
-#define BPMPFW_DTB_EMC_FREQ_VAL          0x8C
-#define BPMPFW_DTB_EMC_SCC_OFF           0x108C
-#define BPMPFW_DTB_EMC_PLLM_DIVM_VAL     0x10A4
-#define BPMPFW_DTB_EMC_PLLM_DIVN_VAL     0x10A8
-#define BPMPFW_DTB_EMC_PLLM_DIVP_VAL     0x10AC
-#define BPMPFW_DTB_EMC_TBL_START(idx)             (BPMPFW_DTB_EMC_TBL_OFF + BPMPFW_DTB_EMC_TBL_SZ * (idx))
-#define BPMPFW_DTB_EMC_TBL_SET_VAL(idx, off, val) (*(u32 *)(BPMPFW_DTB_EMC_TBL_START(idx) + (off)) = (val))
-#define BPMPFW_DTB_EMC_TBL_SET_FREQ(idx, freq)    (*(u32 *)(BPMPFW_DTB_EMC_TBL_START(idx) + BPMPFW_DTB_EMC_FREQ_VAL) = (freq))
-#define BPMPFW_DTB_EMC_TBL_SCC_OFFSET(idx)        ((void *)(BPMPFW_DTB_EMC_TBL_START(idx) + BPMPFW_DTB_EMC_SCC_OFF))
-#define BPMPFW_DTB_EMC_TBL_SET_PLLM_DIVN(idx, n)  (*(u32 *)(BPMPFW_DTB_EMC_TBL_START(idx) + BPMPFW_DTB_EMC_PLLM_DIVN_VAL) = (n))
-#define BPMPFW_DTB_EMC_TBL_SET_NAME(idx, name)    (strcpy((char *)(BPMPFW_DTB_EMC_TBL_START(idx) + BPMPFW_DTB_EMC_NAME_VAL), (name)))
-#define BPMPFW_DTB_EMC_TBL_ENABLE(idx)            (*(char *)(BPMPFW_DTB_EMC_TBL_START(idx) + BPMPFW_DTB_EMC_ENABLE_OFF) = 'n')
-#define BPMPFW_DTB_EMC_TBL_OFFSET(idx)            ((void *)(BPMPFW_DTB_EMC_TBL_START(idx) + BPMPFW_DTB_EMC_VALUES_OFF))
+#define BPMPFW_B01_DTB_EMC_ENTRIES           4
+#define BPMPFW_B01_DTB_SERIAL_PORT_VAL       (BPMPFW_B01_ADTB_BASE + 0x5B) // u8. DTB UART port offset. 0: Disabled.
+#define BPMPFW_B01_DTB_SET_SERIAL_PORT(port) (*(u8 *)BPMPFW_B01_DTB_SERIAL_PORT_VAL = port)
+#define BPMPFW_B01_DTB_EMC_TBL_OFF           (BPMPFW_B01_ADTB_BASE + 0xA0)
+#define BPMPFW_B01_DTB_EMC_TBL_SZ            0x1120
+#define BPMPFW_B01_DTB_EMC_NAME_VAL          0xA
+#define BPMPFW_B01_DTB_EMC_ENABLE_OFF        0x20
+#define BPMPFW_B01_DTB_EMC_VALUES_OFF        0x4C
+#define BPMPFW_B01_DTB_EMC_FREQ_VAL          0x8C
+#define BPMPFW_B01_DTB_EMC_SCC_OFF           0x108C
+#define BPMPFW_B01_DTB_EMC_PLLM_DIVM_VAL     0x10A4
+#define BPMPFW_B01_DTB_EMC_PLLM_DIVN_VAL     0x10A8
+#define BPMPFW_B01_DTB_EMC_PLLM_DIVP_VAL     0x10AC
+#define BPMPFW_B01_DTB_EMC_TBL_START(idx)             (BPMPFW_B01_DTB_EMC_TBL_OFF + BPMPFW_B01_DTB_EMC_TBL_SZ * (idx))
+#define BPMPFW_B01_DTB_EMC_TBL_SET_VAL(idx, off, val) (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + (off)) = (val))
+#define BPMPFW_B01_DTB_EMC_TBL_SET_FREQ(idx, freq)    (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_FREQ_VAL) = (freq))
+#define BPMPFW_B01_DTB_EMC_TBL_SCC_OFFSET(idx)        ((void *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_SCC_OFF))
+#define BPMPFW_B01_DTB_EMC_TBL_SET_PLLM_DIVN(idx, n)  (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_PLLM_DIVN_VAL) = (n))
+#define BPMPFW_B01_DTB_EMC_TBL_SET_NAME(idx, name)    (strcpy((char *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_NAME_VAL), (name)))
+#define BPMPFW_B01_DTB_EMC_TBL_ENABLE(idx)            (*(char *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_ENABLE_OFF) = 'n')
+#define BPMPFW_B01_DTB_EMC_TBL_OFFSET(idx)            ((void *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_VALUES_OFF))
 
 // MTC table defines for T210B01.
-#define BPMPFW_MTC_TABLE_BASE            0xA0000000
-#define BPMPFW_MTC_FREQ_TABLE_SIZE       4300
-#define BPMPFW_MTC_TABLE_SIZE            (BPMPFW_MTC_FREQ_TABLE_SIZE * 3)
-#define BPMPFW_MTC_TABLE(idx)                     (BPMPFW_MTC_TABLE_BASE + BPMPFW_MTC_TABLE_SIZE * (idx))
-#define BPMPFW_MTC_TABLE_OFFSET(idx, fidx)        ((void *)(BPMPFW_MTC_TABLE(idx) + BPMPFW_MTC_FREQ_TABLE_SIZE * (fidx)))
+#define BPMPFW_B01_MTC_TABLE_BASE            0xA0000000
+#define BPMPFW_B01_MTC_FREQ_TABLE_SIZE       4300
+#define BPMPFW_B01_MTC_TABLE_SIZE            (BPMPFW_B01_MTC_FREQ_TABLE_SIZE * 3)
+#define BPMPFW_B01_MTC_TABLE(idx)                     (BPMPFW_B01_MTC_TABLE_BASE + BPMPFW_B01_MTC_TABLE_SIZE * (idx))
+#define BPMPFW_B01_MTC_TABLE_OFFSET(idx, fidx)        ((void *)(BPMPFW_B01_MTC_TABLE(idx) + BPMPFW_B01_MTC_FREQ_TABLE_SIZE * (fidx)))
 
 // BL31 Enable IRAM based config.
 #define BL31_IRAM_PARAMS           0x4D415249 // "IRAM".
@@ -281,7 +281,7 @@ typedef struct _l4t_ctxt_t
 #define DRAM_T210_OC_VOLTAGE        1187500
 #define DRAM_T210_OC_THRESHOLD_FREQ 1862400
 
-#define DRAM_TBL_PROVIDED_MAX_FREQ  1600000
+#define DRAM_T210B01_TBL_MAX_FREQ   1600000
 
 // JEDEC frequency table.
 static const u32 ram_jd_t210b01[] = {
@@ -303,23 +303,23 @@ static const u8 mtc_table_idx_t210b01[] = {
 };
 
 static const l4t_fw_t l4t_fw[] = {
-	{ TZDRAM_BASE,           "bl31.bin"        },
-	{ BL33_LOAD_BASE,        "bl33.bin"        },
-	{ SC7ENTRY_BASE,         "sc7entry.bin"    },
-	{ SC7EXIT_BASE,          "sc7exit.bin"     },
-	{ SC7EXIT_B01_BASE,      "sc7exit_b01.bin" },
-	{ BPMPFW_BASE,           "bpmpfw_b01.bin"  },
-	{ BPMPFW_MTC_TABLE_BASE, "mtc_tbl_b01.bin" },
+	{ TZDRAM_BASE,               "bl31.bin"        },
+	{ BL33_LOAD_BASE,            "bl33.bin"        },
+	{ SC7ENTRY_BASE,             "sc7entry.bin"    },
+	{ SC7EXIT_BASE,              "sc7exit.bin"     },
+	{ SC7EXIT_B01_BASE,          "sc7exit_b01.bin" },
+	{ BPMPFW_B01_BASE,           "bpmpfw_b01.bin"  },
+	{ BPMPFW_B01_MTC_TABLE_BASE, "mtc_tbl_b01.bin" },
 };
 
 enum {
-	BL31_FW        = 0,
-	BL33_FW        = 1,
-	SC7ENTRY_FW    = 2,
-	SC7EXIT_FW     = 3,
-	SC7EXIT_B01_FW = 4,
-	BPMPFW_FW      = 5,
-	BPMPFW_MTC_TBL = 6
+	BL31_FW            = 0,
+	BL33_FW            = 1,
+	SC7ENTRY_FW        = 2,
+	SC7EXIT_FW         = 3,
+	SC7EXIT_B01_FW     = 4,
+	BPMPFW_B01_FW      = 5,
+	BPMPFW_B01_MTC_TBL = 6
 };
 
 static void _l4t_crit_error(const char *text)
@@ -771,39 +771,39 @@ static void _l4t_late_hw_config(bool t210b01)
 #endif
 }
 
-static void _l4t_bpmpfw_config(l4t_ctxt_t *ctxt)
+static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 {
 	char *ram_oc_txt   = ctxt->ram_oc_txt;
 	u32   ram_oc_freq  = ctxt->ram_oc_freq;
 	u32   ram_oc_divn  = 0;
 
 	// Set default parameters.
-	*(u32 *)BPMPFW_DTB_ADDR = 0;
-	*(u8  *)BPMPFW_CC_INIT_OP = OP_TRAIN;
-	*(u32 *)BPMPFW_CC_PT_TIME = 100;
+	*(u32 *)BPMPFW_B01_DTB_ADDR = 0;
+	*(u8  *)BPMPFW_B01_CC_INIT_OP = OP_TRAIN;
+	*(u32 *)BPMPFW_B01_CC_PT_TIME = 100;
 
 #if DEBUG_LOG_BPMPFW
 	// Set default debug parameters.
-	*(u32 *)BPMPFW_LOGLEVEL = 3;
-	*(u32 *)BPMPFW_CC_DEBUG = 0x50000101;
+	*(u32 *)BPMPFW_B01_LOGLEVEL = 3;
+	*(u32 *)BPMPFW_B01_CC_DEBUG = 0x50000101;
 
 	// Set serial debug port.
-	if (*(u32 *)BPMPFW_ADTB_BASE == DTB_MAGIC)
-		BPMPFW_DTB_SET_SERIAL_PORT(ctxt->serial_port);
+	if (*(u32 *)BPMPFW_B01_ADTB_BASE == DTB_MAGIC)
+		BPMPFW_B01_DTB_SET_SERIAL_PORT(ctxt->serial_port);
 #endif
 
 	// Set and copy MTC tables.
 	u32 mtc_idx = mtc_table_idx_t210b01[fuse_read_dramid(true)];
 	for (u32 i = 0; i < 3; i++)
 	{
-		minerva_sdmmc_la_program(BPMPFW_MTC_TABLE_OFFSET(mtc_idx, i), true);
-		memcpy(BPMPFW_DTB_EMC_TBL_OFFSET(i), BPMPFW_MTC_TABLE_OFFSET(mtc_idx, i), BPMPFW_MTC_FREQ_TABLE_SIZE);
+		minerva_sdmmc_la_program(BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), true);
+		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(i), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
 	}
 
-	if (ram_oc_freq > DRAM_TBL_PROVIDED_MAX_FREQ)
+	if (ram_oc_freq > DRAM_T210B01_TBL_MAX_FREQ)
 	{
 		// Final table.
-		const u32 tbl_idx = BPMPFW_DTB_EMC_ENTRIES - 1;
+		const u32 tbl_idx = BPMPFW_B01_DTB_EMC_ENTRIES - 1;
 
 		// Set Overclock.
 		for (u32 i = 0; i < ARRAY_SIZE(ram_jd_t210b01); i++)
@@ -827,12 +827,12 @@ static void _l4t_bpmpfw_config(l4t_ctxt_t *ctxt)
 		}
 
 		// Copy table and set parameters.
-		memcpy(BPMPFW_DTB_EMC_TBL_OFFSET(tbl_idx), BPMPFW_MTC_TABLE_OFFSET(mtc_idx, 2), BPMPFW_MTC_FREQ_TABLE_SIZE);
+		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(tbl_idx), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, 2), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
 
-		BPMPFW_DTB_EMC_TBL_SET_NAME(tbl_idx, ram_oc_txt);
-		BPMPFW_DTB_EMC_TBL_SET_FREQ(tbl_idx, ram_oc_freq);
+		BPMPFW_B01_DTB_EMC_TBL_SET_NAME(tbl_idx, ram_oc_txt);
+		BPMPFW_B01_DTB_EMC_TBL_SET_FREQ(tbl_idx, ram_oc_freq);
 
-		pll_spread_spectrum_t210b01_t *ssc = BPMPFW_DTB_EMC_TBL_SCC_OFFSET(tbl_idx);
+		pll_spread_spectrum_t210b01_t *ssc = BPMPFW_B01_DTB_EMC_TBL_SCC_OFFSET(tbl_idx);
 
 		if (ram_oc_divn <= DRAM_T210B01_SSC_PARAMS)
 		{
@@ -852,13 +852,13 @@ static void _l4t_bpmpfw_config(l4t_ctxt_t *ctxt)
 		}
 
 		// Enable table.
-		BPMPFW_DTB_EMC_TBL_ENABLE(tbl_idx);
+		BPMPFW_B01_DTB_EMC_TBL_ENABLE(tbl_idx);
 
 		UPRINTF("RAM Frequency set to: %d KHz. Voltage: %d mV\n", ram_oc_freq, ram_oc_volt);
 	}
 
 	// Save BPMP-FW entrypoint for TZ.
-	PMC(APBDEV_PMC_SCRATCH39) = BPMPFW_ENTRYPOINT;
+	PMC(APBDEV_PMC_SCRATCH39) = BPMPFW_B01_ENTRYPOINT;
 	PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1) |= BIT(15);
 }
 
@@ -1191,7 +1191,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 
 	// Set BPMP-FW parameters.
 	if (t210b01)
-		_l4t_bpmpfw_config(&ctxt);
+		_l4t_bpmpfw_b01_config(&ctxt);
 
 	// Set carveouts and save them to PMC for SC7 Exit.
 	_l4t_mc_config_carveout(t210b01);
@@ -1213,8 +1213,8 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	if (t210b01)
 	{
 		// Prep reset vector for SC7 save state and start BPMP-FW.
-		EXCP_VEC(EVP_COP_RESET_VECTOR) = BPMPFW_ENTRYPOINT;
-		void (*bpmp_fw_ptr)() = (void *)BPMPFW_ENTRYPOINT;
+		EXCP_VEC(EVP_COP_RESET_VECTOR) = BPMPFW_B01_ENTRYPOINT;
+		void (*bpmp_fw_ptr)() = (void *)BPMPFW_B01_ENTRYPOINT;
 		(*bpmp_fw_ptr)();
 	}
 
