@@ -273,6 +273,8 @@ typedef struct _l4t_ctxt_t
 
 	char *ram_oc_txt;
 	int   ram_oc_freq;
+	int   ram_oc_vdd2;
+	int   ram_oc_vddq;
 
 	u32   serial_port;
 	u32   sc7entry_size;
@@ -280,10 +282,11 @@ typedef struct _l4t_ctxt_t
 	emc_table_t *mtc_table;
 } l4t_ctxt_t;
 
-#define DRAM_T210_OC_VOLTAGE        1187500
-#define DRAM_T210_OC_THRESHOLD_FREQ 1862400
-
-#define DRAM_T210B01_TBL_MAX_FREQ   1600000
+#define DRAM_VDD2_OC_MIN_VOLTAGE  1100
+#define DRAM_VDD2_OC_MAX_VOLTAGE  1175
+#define DRAM_VDDQ_OC_MIN_VOLTAGE  600
+#define DRAM_VDDQ_OC_MAX_VOLTAGE  650
+#define DRAM_T210B01_TBL_MAX_FREQ 1600000
 
 // JEDEC frequency table.
 static const u32 ram_jd_t210b01[] = {
@@ -826,6 +829,12 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 		if (!ram_oc_divn)
 			ram_oc_divn = ram_oc_freq / 38400;
 
+		// Set DRAM voltage.
+		if (ctxt->ram_oc_vdd2)
+			max7762x_regulator_set_voltage(REGULATOR_SD1,  ctxt->ram_oc_vdd2 * 1000);
+		if (ctxt->ram_oc_vddq)
+			max7762x_regulator_set_voltage(REGULATOR_RAM0, ctxt->ram_oc_vddq * 1000);
+
 		// Copy table and set parameters.
 		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(tbl_idx), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, 2), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
 
@@ -920,14 +929,30 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 	// Parse ini section and prepare BL33 env.
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 	{
-		if (!strcmp("boot_prefixes",  kv->key))
+		if (!strcmp("boot_prefixes",    kv->key))
 			ctxt->path        = kv->val;
-		else if (!strcmp("ram_oc",    kv->key))
+		else if (!strcmp("ram_oc",      kv->key))
 		{
 			ctxt->ram_oc_txt  = kv->val;
 			ctxt->ram_oc_freq = atoi(kv->val);
 		}
-		else if (!strcmp("uart_port", kv->key))
+		else if (!strcmp("ram_oc_vdd2", kv->key))
+		{
+			ctxt->ram_oc_vdd2 = atoi(kv->val);
+			if (ctxt->ram_oc_vdd2 > DRAM_VDD2_OC_MAX_VOLTAGE)
+				ctxt->ram_oc_vdd2 = DRAM_VDD2_OC_MAX_VOLTAGE;
+			else if (ctxt->ram_oc_vdd2 < DRAM_VDD2_OC_MIN_VOLTAGE)
+				ctxt->ram_oc_vdd2 = 0;
+		}
+		else if (!strcmp("ram_oc_vddq", kv->key))
+		{
+			ctxt->ram_oc_vddq = atoi(kv->val);
+			if (ctxt->ram_oc_vddq > DRAM_VDDQ_OC_MAX_VOLTAGE)
+				ctxt->ram_oc_vddq = DRAM_VDDQ_OC_MAX_VOLTAGE;
+			else if (ctxt->ram_oc_vddq < DRAM_VDDQ_OC_MIN_VOLTAGE)
+				ctxt->ram_oc_vddq = 0;
+		}
+		else if (!strcmp("uart_port",   kv->key))
 			ctxt->serial_port = atoi(kv->val);
 
 		// Set key/val to BL33 env.
@@ -1161,8 +1186,8 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	if (ctxt.mtc_table)
 	{
 		// Set DRAM voltage.
-		if (ctxt.ram_oc_freq > DRAM_T210_OC_THRESHOLD_FREQ)
-			max7762x_regulator_set_voltage(REGULATOR_SD1, DRAM_T210_OC_VOLTAGE);
+		if (ctxt.ram_oc_vdd2)
+			max7762x_regulator_set_voltage(REGULATOR_SD1, ctxt.ram_oc_vdd2 * 1000);
 
 		// Train the rest of the table, apply FSP WAR, set RAM to 800 MHz.
 		minerva_prep_boot_l4t(ctxt.ram_oc_freq);
