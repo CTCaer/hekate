@@ -33,6 +33,7 @@
  * 1: SDMMC1 LA programming for SDMMC1 UHS DDR200.
  */
 #define L4T_LOADER_API_REV 1
+#define L4T_FIRMWARE_REV   0x32524556 // REV2.
 
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
@@ -329,10 +330,11 @@ enum {
 	BPMPFW_B01_MTC_TBL = 7
 };
 
-static void _l4t_crit_error(const char *text)
+static void _l4t_crit_error(const char *text, bool needs_update)
 {
 	gfx_con.mute = false;
-	gfx_printf("%kL4T Error: %s!\nFailed to launch L4T!\n%k", TXT_CLR_ERROR, text, TXT_CLR_DEFAULT);
+	gfx_printf("%kL4T Error: %s!%sFailed to launch L4T!\n%k",
+		TXT_CLR_ERROR, text, needs_update ? "\nUpdate bootloader folder!\n\n" : "\n\n", TXT_CLR_DEFAULT);
 }
 
 char *sd_path;
@@ -355,6 +357,10 @@ static int _l4t_sd_load(u32 idx)
 		size = 0;
 
 	f_close(&fp);
+
+	u32 rev = *(u32 *)(load_address + size - sizeof(u32));
+	if (idx >= SC7ENTRY_FW && rev != L4T_FIRMWARE_REV)
+		return 0;
 
 	return size;
 }
@@ -1006,7 +1012,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 
 	if (!ctxt.path)
 	{
-		_l4t_crit_error("Path missing");
+		_l4t_crit_error("Path missing", false);
 		return;
 	}
 
@@ -1014,28 +1020,28 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	ctxt.mtc_table = minerva_get_mtc_table();
 	if (!t210b01 && !ctxt.mtc_table)
 	{
-		_l4t_crit_error("Minerva missing");
+		_l4t_crit_error("Minerva missing", true);
 		return;
 	}
 
 	// U-BOOT does not support exfat.
 	if (sd_fs.fs_type == FS_EXFAT)
 	{
-		_l4t_crit_error("exFAT not supported");
+		_l4t_crit_error("exFAT not supported", false);
 		return;
 	}
 
 	// Load BL31 (ATF/TrustZone fw).
 	if (!_l4t_sd_load(BL31_FW))
 	{
-		_l4t_crit_error("BL31 missing");
+		_l4t_crit_error("BL31 missing", false);
 		return;
 	}
 
 	// Load BL33 (U-BOOT/CBOOT).
 	if (!_l4t_sd_load(BL33_FW))
 	{
-		_l4t_crit_error("BL33 missing");
+		_l4t_crit_error("BL33 missing", false);
 		return;
 	}
 
@@ -1049,30 +1055,30 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 		ctxt.sc7entry_size = _l4t_sd_load(SC7ENTRY_FW);
 		if (!ctxt.sc7entry_size)
 		{
-			_l4t_crit_error("SC7-Entry missing");
+			_l4t_crit_error("loading SC7-Entry", true);
 			return;
 		}
 
 		// Load BPMP-FW. Does power management.
 		if (!_l4t_sd_load(BPMPFW_FW))
 		{
-			_l4t_crit_error("BPMP-FW missing");
+			_l4t_crit_error("loading BPMP-FW", true);
 			return;
 		}
 	}
 	else
 	{
 		// Load BPMP-FW. Manages SC7-Entry also.
-		if (!_l4t_sd_load(BPMPFW_FW))
+		if (!_l4t_sd_load(BPMPFW_B01_FW))
 		{
-			_l4t_crit_error("BPMP-FW missing");
+			_l4t_crit_error("loading BPMP-FW", true);
 			return;
 		}
 
 		// Load BPMP-FW MTC table.
-		if (!_l4t_sd_load(BPMPFW_MTC_TBL))
+		if (!_l4t_sd_load(BPMPFW_B01_MTC_TBL))
 		{
-			_l4t_crit_error("BPMP-FW MTC missing");
+			_l4t_crit_error("loading BPMP-FW MTC", true);
 			return;
 		}
 	}
@@ -1080,7 +1086,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	// Load SC7-Exit firmware.
 	if (!_l4t_sd_load(!t210b01 ? SC7EXIT_FW : SC7EXIT_B01_FW))
 	{
-		_l4t_crit_error("SC7-Exit missing");
+		_l4t_crit_error("loading SC7-Exit", true);
 		return;
 	}
 
