@@ -505,6 +505,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
 			strcpy(dram_man, "Samsung K4FHE3D4HM-MGCH 6GB");
 			break;
+		case LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX:
+			strcpy(dram_man, "Samsung K4FBE3D4HM-MGXX 8GB");
+			break;
 		default:
 			strcpy(dram_man, "#FF8000 Unknown#");
 			break;
@@ -543,10 +546,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL:
 			strcpy(dram_man, "Samsung K4UBE3D4AA-MGCL 8GB");
 			break;
-		case LPDDR4X_IOWA_4GB_SAMSUNG_1Z:
-		case LPDDR4X_HOAG_4GB_SAMSUNG_1Z:
-		case LPDDR4X_AULA_4GB_SAMSUNG_1Z:
-			strcpy(dram_man, "Samsung 1z B 4GB");
+		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
+		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
+		case LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
+			strcpy(dram_man, "Samsung K4U6E3S4AB-MGCL 4GB");
 			break;
 		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
 		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF:
@@ -554,15 +557,15 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcpy(dram_man, "Micron MT53E512M32D2NP-046 WT:F");
 			break;
 		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
-		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 		case LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
+		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEE 4GB");
 			break;
 
-		case LPDDR4X_UNK0_4GB_HYNIX_1A:
-		case LPDDR4X_UNK1_4GB_HYNIX_1A:
-		case LPDDR4X_UNK2_4GB_HYNIX_1A:
-			strcpy(dram_man, "Hynix 1a 4GB #FF8000 Contact me!#");
+		case LPDDR4X_UNK0_4GB_HYNIX_H9HCNNNBKMMLXR_NEI:
+		case LPDDR4X_UNK1_4GB_HYNIX_H9HCNNNBKMMLXR_NEI:
+		case LPDDR4X_UNK2_4GB_HYNIX_H9HCNNNBKMMLXR_NEI:
+			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEI 4GB");
 			break;
 
 		case LPDDR4X_UNK0_4GB_MICRON_1A:
