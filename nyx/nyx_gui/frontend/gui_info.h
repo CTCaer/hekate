@@ -20,5 +20,6 @@
 #include <libs/lvgl/lvgl.h>
 
 void create_tab_info(lv_theme_t *th, lv_obj_t *parent);
+int  dump_cal0();
 
 #endif
