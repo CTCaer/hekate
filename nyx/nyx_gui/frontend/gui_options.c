@@ -19,6 +19,7 @@
 #include <bdk.h>
 
 #include "gui.h"
+#include "gui_info.h"
 #include "../config.h"
 #include <libs/lvgl/lv_themes/lv_theme_hekate.h>
 #include <libs/lvgl/lvgl.h>
@@ -28,6 +29,7 @@
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
+extern u8 *cal0_buf;
 
 static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
@@ -859,6 +861,13 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	char *data = (char *)malloc(SZ_16K);
 	char *txt_buf = (char *)malloc(SZ_4K);
 
+	if (nx_hoag)
+	{
+		error = dump_cal0();
+		if (!error)
+			goto save_data;
+	}
+
 	if (!jc_pad || nx_hoag)
 	{
 		error = 255;
@@ -874,43 +883,105 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	jc_pad->bt_conn_l.type = is_l_hos ? jc_pad->bt_conn_l.type : 0;
 	jc_pad->bt_conn_r.type = is_r_hos ? jc_pad->bt_conn_r.type : 0;
 
+save_data:
 	error = !sd_mount();
 
 	if (!error)
 	{
-		// Save binary dump.
-		memcpy(data, &jc_pad->bt_conn_l, sizeof(jc_bt_conn_t));
-		memcpy(data + sizeof(jc_bt_conn_t), &jc_pad->bt_conn_r, sizeof(jc_bt_conn_t));
-
-		f_mkdir("switchroot");
-		error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin");
-
-		// Save readable dump.
-		jc_bt_conn_t *bt = &jc_pad->bt_conn_l;
-		s_printf(data,
-			"[joycon_00]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
-			"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
-			"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n\n",
-			bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
-			bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
-			bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
-			bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
-		bt = &jc_pad->bt_conn_r;
-		s_printf(data + strlen(data),
-			"[joycon_01]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
-			"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
-			"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
-			bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
-			bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
-			bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
-			bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
-
-		if (!error)
-			error = f_open(&fp, "switchroot/joycon_mac.ini", FA_WRITE | FA_CREATE_ALWAYS);
-		if (!error)
+		if (!nx_hoag)
 		{
-			f_puts(data, &fp);
-			f_close(&fp);
+			// Save binary dump.
+			memcpy(data, &jc_pad->bt_conn_l, sizeof(jc_bt_conn_t));
+			memcpy(data + sizeof(jc_bt_conn_t), &jc_pad->bt_conn_r, sizeof(jc_bt_conn_t));
+
+			f_mkdir("switchroot");
+			error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin");
+
+			// Save readable dump.
+			jc_bt_conn_t *bt = &jc_pad->bt_conn_l;
+			s_printf(data,
+				"[joycon_00]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
+				"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
+				"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n\n",
+				bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
+				bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
+				bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
+				bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
+			bt = &jc_pad->bt_conn_r;
+			s_printf(data + strlen(data),
+				"[joycon_01]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
+				"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
+				"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
+				bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
+				bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
+				bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
+				bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
+
+			if (!error)
+				error = f_open(&fp, "switchroot/joycon_mac.ini", FA_WRITE | FA_CREATE_ALWAYS);
+			if (!error)
+			{
+				f_puts(data, &fp);
+				f_close(&fp);
+			}
+		}
+		else
+		{
+			nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
+			jc_calib_t *stick_cal_l = (jc_calib_t *)cal0->analog_stick_cal_l;
+			jc_calib_t *stick_cal_r = (jc_calib_t *)cal0->analog_stick_cal_r;
+
+			f_mkdir("switchroot");
+
+			//! TODO: Add Accelerometer and Gyroscope calibration.
+			// Save Lite Gamepad Calibration data.
+			s_printf(data,
+				"lite_cal_lx_min=0x%X\n"
+				"lite_cal_lx_cnt=0x%X\n"
+				"lite_cal_lx_max=0x%X\n"
+				"lite_cal_ly_min=0x%X\n"
+				"lite_cal_ly_cnt=0x%X\n"
+				"lite_cal_ly_max=0x%X\n\n"
+
+				"lite_cal_rx_min=0x%X\n"
+				"lite_cal_rx_cnt=0x%X\n"
+				"lite_cal_rx_max=0x%X\n"
+				"lite_cal_ry_min=0x%X\n"
+				"lite_cal_ry_cnt=0x%X\n"
+				"lite_cal_ry_max=0x%X\n\n"
+
+				"acc_cal_off_x=0x%X\n"
+				"acc_cal_off_y=0x%X\n"
+				"acc_cal_off_z=0x%X\n"
+				"acc_cal_scl_x=0x%X\n"
+				"acc_cal_scl_y=0x%X\n"
+				"acc_cal_scl_z=0x%X\n\n"
+
+				"gyr_cal_off_x=0x%X\n"
+				"gyr_cal_off_y=0x%X\n"
+				"gyr_cal_off_z=0x%X\n"
+				"gyr_cal_scl_x=0x%X\n"
+				"gyr_cal_scl_y=0x%X\n"
+				"gyr_cal_scl_z=0x%X\n\n"
+
+				"device_bt_mac=%02X:%02X:%02X:%02X:%02X:%02X\n",
+				stick_cal_l->x_center - stick_cal_l->x_min, stick_cal_l->x_center, stick_cal_l->x_center + stick_cal_l->x_max,
+				stick_cal_l->y_center - stick_cal_l->y_min, stick_cal_l->y_center, stick_cal_l->y_center + stick_cal_l->y_max,
+				stick_cal_r->x_center - stick_cal_r->x_min, stick_cal_r->x_center, stick_cal_r->x_center + stick_cal_r->x_max,
+				stick_cal_r->y_center - stick_cal_r->y_min, stick_cal_r->y_center, stick_cal_r->y_center + stick_cal_r->y_max,
+				cal0->acc_offset[0],  cal0->acc_offset[1],  cal0->acc_offset[2],
+				cal0->acc_scale[0],   cal0->acc_scale[1],   cal0->acc_scale[2],
+				cal0->gyro_offset[0], cal0->gyro_offset[1], cal0->gyro_offset[2],
+				cal0->gyro_scale[0],  cal0->gyro_scale[1],  cal0->gyro_scale[2],
+				cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5]);
+
+			if (!error)
+				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS);
+			if (!error)
+			{
+				f_puts(data, &fp);
+				f_close(&fp);
+			}
 		}
 
 		sd_unmount();
@@ -928,51 +999,61 @@ disabled:;
 
 	if (!error)
 	{
-		s_printf(txt_buf,
-			"Dumping to SD card finished!\n"
-			"Saved to: #C7EA46 switchroot/joycon_mac.[bin/ini]#\n\n");
+		if (!nx_hoag)
+		{
+			s_printf(txt_buf,
+				"Dumping to SD card finished!\n"
+				"Saved to: #C7EA46 switchroot/joycon_mac.[bin/ini]#\n\n");
 
-		bool success = true;
+			bool success = true;
 
-		// Check if pairing info was found.
-		if (joycon_found == 2)
-			strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
+			// Check if pairing info was found.
+			if (joycon_found == 2)
+				strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
+			else
+			{
+				s_printf(txt_buf + strlen(txt_buf), "#FF8000 Failed!#\n#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
+				success = false;
+			}
+
+			// Check if pairing was done in HOS.
+			if (is_l_hos && is_r_hos)
+				strcat(txt_buf, "#C7EA46 Both pairing data are HOS based!#");
+			else if (!is_l_hos && is_r_hos)
+			{
+				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Left# pairing data is not HOS based!");
+				success = false;
+			}
+			else if (is_l_hos && !is_r_hos)
+			{
+				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Right# pairing data is not HOS based!");
+				success = false;
+			}
+			else
+			{
+				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 No# pairing data is HOS based!");
+				success = false;
+			}
+
+			if (!success)
+				strcat(txt_buf,
+					"\n\n#FFDD00 Make sure that both Joy-Con are connected,#\n"
+					"#FFDD00 and that you paired them in HOS!#");
+		}
 		else
 		{
-			s_printf(txt_buf + strlen(txt_buf), "#FF8000 Failed!#\n#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
-			success = false;
+			s_printf(txt_buf,
+				"Dumping to SD card finished!\n"
+				"Saved to: #C7EA46 switchroot/lite_gamepad.cal#\n\n");
+			strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found Lite Gamepad data!#\n");
 		}
-
-		// Check if pairing was done in HOS.
-		if (is_l_hos && is_r_hos)
-			strcat(txt_buf, "#C7EA46 Both pairing data are HOS based!#");
-		else if (!is_l_hos && is_r_hos)
-		{
-			strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Left# pairing data is not HOS based!");
-			success = false;
-		}
-		else if (is_l_hos && !is_r_hos)
-		{
-			strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Right# pairing data is not HOS based!");
-			success = false;
-		}
-		else
-		{
-			strcat(txt_buf, "#FF8000 Warning:# #FFDD00 No# pairing data is HOS based!");
-			success = false;
-		}
-
-		if (!success)
-			strcat(txt_buf,
-				"\n\n#FFDD00 Make sure that both Joy-Con are connected,#\n"
-				"#FFDD00 and that you paired them in HOS!#");
 	}
 	else
 	{
 		if (!nx_hoag)
 			s_printf(txt_buf, "#FFDD00 Failed to dump Joy-Con pairing info!#\n#FFDD00 Error: %d#", error);
 		else
-			s_printf(txt_buf, "#FFDD00 Not supported on Switch Lite!#\n");
+			s_printf(txt_buf, "#FFDD00 Failed to get Lite Gamepad info!#\n");
 	}
 
 	lv_mbox_set_text(mbox, txt_buf);
