@@ -214,12 +214,12 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 #ifdef ERROR_EXTRA_PRINTING
 	// Check if Comp pad is open or short to ground.
 	// SDMMC1: CZ pads - T210/T210B01: 7-bit/5-bit. SDMMC2/4: LV_CZ pads - 5-bit.
-	u8 code_mask = (sdmmc->t210b01 || sdmmc->id != SDMMC_1) ? 0x1F : 0x7F;
-	u8 autocal_pu_status = sdmmc->regs->autocalsts & code_mask;
+	// Use 0x1F mask for all.
+	u8 autocal_pu_status = sdmmc->regs->autocalsts & 0x1F;
 	if (!autocal_pu_status)
-		EPRINTFARGS("SDMMC%d: Comp Pad short to gnd!", sdmmc->id + 1);
-	else if (autocal_pu_status == code_mask)
 		EPRINTFARGS("SDMMC%d: Comp Pad open!", sdmmc->id + 1);
+	else if (autocal_pu_status == 0x1F)
+		EPRINTFARGS("SDMMC%d: Comp Pad short to gnd!", sdmmc->id + 1);
 #endif
 
 	// In case auto calibration fails, we load suggested standard values.
