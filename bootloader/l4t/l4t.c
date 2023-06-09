@@ -71,12 +71,14 @@
 #define SC7ENTRY_HDR_SIZE 0x400
 
 // Secure Elements addresses for T210.
-#define SECFW_BASE        (TZDRAM_BASE - SZ_1M)            // 0xFFE00000 or 0xFF700000.
-#define SC7ENTRY_HDR_BASE (SECFW_BASE + 0)
-#define SC7ENTRY_BASE     (SECFW_BASE + SC7ENTRY_HDR_SIZE) // After header.
-#define SC7EXIT_BASE      (SECFW_BASE + SZ_64K)            //  64KB after SECFW_BASE.
-#define R2P_PAYLOAD_BASE  (SECFW_BASE + SZ_256K)           // 256KB after SECFW_BASE.
-#define MTCTABLE_BASE     (SECFW_BASE + SZ_512K)           // 512KB after SECFW_BASE.
+#define SECFW_BASE             (TZDRAM_BASE - SZ_1M)            // 0xFFE00000 or 0xFF700000.
+#define SC7ENTRY_HDR_BASE      (SECFW_BASE + 0)
+#define SC7ENTRY_BASE          (SECFW_BASE + SC7ENTRY_HDR_SIZE) // After header.
+#define SC7EXIT_BASE           (SECFW_BASE + SZ_64K)            //  64KB after SECFW_BASE.
+#define R2P_PAYLOAD_BASE       (SECFW_BASE + SZ_256K)           // 256KB after SECFW_BASE.
+#define MTCTABLE_BASE          (SECFW_BASE + SZ_512K)           // 512KB after SECFW_BASE.
+#define BPMPFW_BASE            (SECFW_BASE + SZ_512K + SZ_256K) // 768KB after SECFW_BASE.
+#define BPMPFW_ENTRYPOINT      (BPMPFW_BASE + 0x100)            // Used internally also.
 
 // Secure Elements addresses for T210B01.
 #define BPMPFW_B01_BASE       (SECFW_BASE)                         // !! DTS carveout-start must match !!
@@ -308,6 +310,7 @@ static const l4t_fw_t l4t_fw[] = {
 	{ SC7ENTRY_BASE,             "sc7entry.bin"    },
 	{ SC7EXIT_BASE,              "sc7exit.bin"     },
 	{ SC7EXIT_B01_BASE,          "sc7exit_b01.bin" },
+	{ BPMPFW_BASE,               "bpmpfw.bin"      },
 	{ BPMPFW_B01_BASE,           "bpmpfw_b01.bin"  },
 	{ BPMPFW_B01_MTC_TABLE_BASE, "mtc_tbl_b01.bin" },
 };
@@ -318,8 +321,9 @@ enum {
 	SC7ENTRY_FW        = 2,
 	SC7EXIT_FW         = 3,
 	SC7EXIT_B01_FW     = 4,
-	BPMPFW_B01_FW      = 5,
-	BPMPFW_B01_MTC_TBL = 6
+	BPMPFW_FW          = 5,
+	BPMPFW_B01_FW      = 6,
+	BPMPFW_B01_MTC_TBL = 7
 };
 
 static void _l4t_crit_error(const char *text)
@@ -1023,6 +1027,13 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 			_l4t_crit_error("SC7-Entry missing");
 			return;
 		}
+
+		// Load BPMP-FW. Does power management.
+		if (!_l4t_sd_load(BPMPFW_FW))
+		{
+			_l4t_crit_error("BPMP-FW missing");
+			return;
+		}
 	}
 	else
 	{
@@ -1198,19 +1209,24 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	// Do late hardware config.
 	_l4t_late_hw_config(t210b01);
 
-	// Launch BL31.
-	ccplex_boot_cpu0(TZDRAM_COLD_ENTRY);
-
-	// Enable Wrap burst for BPMP, GPU and PCIE.
-	MSELECT(MSELECT_CONFIG) = (MSELECT(MSELECT_CONFIG) & (~(MSELECT_CFG_ERR_RESP_EN_GPU | MSELECT_CFG_ERR_RESP_EN_PCIE))) |
-							  (MSELECT_CFG_WRAP_TO_INCR_GPU | MSELECT_CFG_WRAP_TO_INCR_PCIE | MSELECT_CFG_WRAP_TO_INCR_BPMP);
-
-	// If T210B01 run BPMP-FW.
 	if (t210b01)
 	{
-		// Prep reset vector for SC7 save state and start BPMP-FW.
+		// Launch BL31.
+		ccplex_boot_cpu0(TZDRAM_COLD_ENTRY);
+
+		// Enable Wrap burst for BPMP, GPU and PCIE.
+		MSELECT(MSELECT_CONFIG) = (MSELECT(MSELECT_CONFIG) & (~(MSELECT_CFG_ERR_RESP_EN_GPU | MSELECT_CFG_ERR_RESP_EN_PCIE))) |
+								  (MSELECT_CFG_WRAP_TO_INCR_GPU | MSELECT_CFG_WRAP_TO_INCR_PCIE | MSELECT_CFG_WRAP_TO_INCR_BPMP);
+
+		// For T210B01, prep reset vector for SC7 save state and start BPMP-FW.
 		EXCP_VEC(EVP_COP_RESET_VECTOR) = BPMPFW_B01_ENTRYPOINT;
 		void (*bpmp_fw_ptr)() = (void *)BPMPFW_B01_ENTRYPOINT;
+		(*bpmp_fw_ptr)();
+	}
+	else
+	{
+		// If T210, BPMP-FW runs BL31.
+		void (*bpmp_fw_ptr)() = (void *)BPMPFW_ENTRYPOINT;
 		(*bpmp_fw_ptr)();
 	}
 
