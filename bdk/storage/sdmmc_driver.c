@@ -344,6 +344,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 		break;
 
 	case SDHCI_TIMING_MMC_HS400:
+		// Non standard.
 		sdmmc->regs->hostctl2  = (sdmmc->regs->hostctl2 & (~SDHCI_CTRL_UHS_MASK)) | HS400_BUS_SPEED;
 		sdmmc->regs->hostctl2 |= SDHCI_CTRL_VDD_180;
 		break;
@@ -723,8 +724,9 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 		}
 	}
 
-	// Check if failed.
-	if (!best_tap)
+
+	// Check if failed or window too small.
+	if (!best_tap || best_size < SAMPLING_WINDOW_SIZE_MIN)
 		return 0;
 
 	sdmmc->regs->clkcon     &= ~SDHCI_CLOCK_CARD_EN;
@@ -743,9 +745,12 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
  * SD Card DDR200 (DDR208) support
  *
  * On Tegra X1, that can be done with DDR50 host mode.
- * Tuning though can't be done automatically on any DDR mode.
+ * That's because HS400 4-bit or HS400 generally, is not supported on SDMMC1/3.
+ * And also, tuning can't be done automatically on any DDR mode.
  * So it needs to be done manually and selected tap will be applied from the biggest
  * sampling window.
+ * That allows DDR200 support on every DDR200 sd card, other than the original maker
+ * of DDR200, Sandisk. Since Sandisk cards mandate DLL syncing.
  */
 static int sdmmc_tuning_execute_ddr200(sdmmc_t *sdmmc)
 {
@@ -1041,7 +1046,7 @@ static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
 
 	sdmmc->dma_addr_next = ALIGN_DOWN((admaaddr + SZ_512K), SZ_512K);
 
-	sdmmc->regs->blksize = req->blksize | (7 << 12); // SDMA DMA 512KB Boundary (Detects A18 carry out).
+	sdmmc->regs->blksize = req->blksize | (7u << 12); // SDMA DMA 512KB Boundary (Detects A18 carry out).
 	sdmmc->regs->blkcnt  = blkcnt;
 
 	if (blkcnt_out)

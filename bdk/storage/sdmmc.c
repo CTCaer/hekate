@@ -1187,29 +1187,40 @@ int _sd_storage_set_driver_type(sdmmc_storage_t *storage, u32 driver, u8 *buf)
 /*
  * SD Card DDR200 (DDR208) support
  *
- * Proper procedure:
+ * DLL Tuning (a) or Tuning Window (b) procedure:
  * 1. Check that Vendor Specific Command System is supported.
  *    Used as Enable DDR200 Bus.
  * 2. Enable DDR200 bus mode via setting 14 to Group 2 via CMD6.
  *    Access Mode group is left to default 0 (SDR12).
  * 3. Setup clock to 200 or 208 MHz.
- * 4. Set host to DDR bus mode that supports such high clocks.
- *    Some hosts have special mode, others use DDR50 and others HS400.
- * 5. Execute Tuning.
+ * 4a. Set host to DDR200/HS400 bus mode that enables DLL syncing.
+ *     Actual implementation supported by all DDR200 cards.
+ * --
+ * 4b. Set host to DDR50 bus mode that supports such high clocks.
+ *     Execute Manual Tuning.
+ *     Limited to non-Sandisk cards.
  *
- * The true validation that this value in Group 2 activates it, is that DDR50 bus
- * and clocks/timings work fully after that point.
+ * On Tegra SoCs, that can be done with DDR50 host mode.
+ * That's because HS400 4-bit or HS400 generally, is not supported on SD SDMMC.
+ * And also, tuning can't be done automatically on any DDR mode.
+ * So it needs to be done manually and selected tap will be applied from the
+ * biggest sampling window.
+ * That allows DDR200 support on every DDR200 SD card, other than the original
+ * maker of DDR200, Sandisk.
  *
- * On Tegra X1, that can be done with DDR50 host mode.
- * Tuning though can't be done automatically on any DDR mode.
- * So it needs to be done manually and selected tap will be applied from the biggest
- * sampling window.
+ * On the original implementation of DDR200 from Sandisk, a DLL mechanism,
+ * like the one in eMMC HS400 is mandatory.
+ * So the card can start data signals whenever it wants, and the host should
+ * synchronize to the first DAT signal edge change.
+ * Every single other vendor that implemented that, always starts data transfers
+ * aligned to clock. That basically makes DDR200 in such SD cards a SDR104 but
+ * sampled on both edges. So effectively, it's an in-spec signal with DDR50,
+ * only that is clocked at 200MHz, instead of 50MHz.
+ * So the extra needed thing is using a tuning window, which is absent from the
+ * original implementation, since DDL syncing does not use that.
  *
- * Finally, all that simply works, because the marketing materials for DDR200 are
- * basically overstatements to sell the feature. DDR200 is simply SDR104 in DDR mode,
- * so sampling on rising and falling edge and with variable output data window.
- * It can be supported by any host that is fast enough to support DDR at 200/208MHz
- * and can do hw/sw tuning for finding the proper sampling window in that mode.
+ * On DLL tuning method expected cards, the tuning window is tiny.
+ * So check against a minimum of 8 taps window, to disallow DDR200.
  */
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 static int _sd_storage_enable_DDR200(sdmmc_storage_t *storage, u8 *buf)

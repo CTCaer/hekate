@@ -23,9 +23,9 @@
 
 /*! SDMMC controller IDs. */
 #define SDMMC_1 0 // Version 4.00.
-#define SDMMC_2 1 // Version 5.1.
+#define SDMMC_2 1 // Version 5.0 + SW CQE + Enhanced Strobe.
 #define SDMMC_3 2 // Version 4.00.
-#define SDMMC_4 3 // Version 5.1.
+#define SDMMC_4 3 // Version 5.0 + SW CQE + Enhanced Strobe.
 
 /*! SDMMC power types. */
 #define SDMMC_POWER_OFF 0
@@ -273,8 +273,9 @@
 /*! Helper for SWITCH command argument. */
 #define SDMMC_SWITCH(mode, index, value) (((mode) << 24) | ((index) << 16) | ((value) << 8))
 
-#define HW_TAP_TUNING 0x100
-#define INVALID_TAP   0x100
+#define HW_TAP_TUNING            0x100
+#define INVALID_TAP              0x100
+#define SAMPLING_WINDOW_SIZE_MIN 8
 
 /*! SDMMC controller context. */
 typedef struct _sdmmc_t
