@@ -812,8 +812,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 			if ((ram_jd_t210b01[i] - 19200) < ram_oc_freq &&
 				(ram_jd_t210b01[i] + 19200) > ram_oc_freq)
 			{
-				// Set actual frequency and divider.
-				ram_oc_freq = ram_jd_t210b01[i];
+				// Set divider.
 				ram_oc_divn = i + 1;
 
 				break;
@@ -821,10 +820,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 		}
 
 		if (!ram_oc_divn)
-		{
 			ram_oc_divn = ram_oc_freq / 38400;
-			ram_oc_freq = ram_oc_divn * 38400;
-		}
 
 		// Copy table and set parameters.
 		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(tbl_idx), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, 2), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
