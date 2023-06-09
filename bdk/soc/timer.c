@@ -71,6 +71,12 @@ void usleep(u32 us)
 #endif
 }
 
+// Instruction wait loop. Each loop is 3 cycles (SUBS+BGT). Usage: isleep(ILOOP(instr)). Base 408MHz: 7.35ns.
+void __attribute__((target("arm"))) isleep(u32 is)
+{
+	asm volatile( "0:" "SUBS %[is_cnt], #1;" "BGT 0b;" : [is_cnt] "+r" (is));
+}
+
 void timer_usleep(u32 us)
 {
 	TMR(TIMER_TMR8_TMR_PTV) = TIMER_EN | us;

@@ -51,6 +51,8 @@ u32  get_tmr_ms();
 u32  get_tmr_s();
 void usleep(u32 us);
 void msleep(u32 ms);
+#define ILOOP(is) ((is) / 3)
+void isleep(u32 is);
 
 void timer_usleep(u32 us);
 
