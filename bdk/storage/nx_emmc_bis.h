@@ -85,13 +85,13 @@ typedef struct _nx_emmc_cal0_t
 	u8   bd_mac[6];
 	u8   crc16_pad4[2];
 	u8   rsvd2[8];
-	u8   acc_offset[6];
+	u16  acc_offset[3];
 	u8   crc16_pad5[2];
-	u8   acc_scale[6];
+	u16  acc_scale[3];
 	u8   crc16_pad6[2];
-	u8   gyro_offset[6];
+	u16  gyro_offset[3];
 	u8   crc16_pad7[2];
-	u8   gyro_scale[6];
+	u16  gyro_scale[3];
 	u8   crc16_pad8[2];
 	char serial_number[0x18];
 	u8   crc16_pad9[8];
@@ -213,11 +213,15 @@ typedef struct _nx_emmc_cal0_t
 
 	// 6.0.0 and up.
 	u8   battery_ver;
-	u8   crc16_pad58[0x1F];
+	u8   crc16_pad58[0xF];
+
+	// 10.0.0 and up.
+	u8   touch_ic_vendor_id;
+	u8   crc16_pad59[0xF];
 
 	// 9.0.0 and up.
-	u32  home_menu_scheme_model;
-	u8   crc16_pad59[0xC];
+	u32  color_model;
+	u8   crc16_pad60[0xC];
 
 	// 10.0.0 and up.
 	u8   console_6axis_sensor_mount_type;
