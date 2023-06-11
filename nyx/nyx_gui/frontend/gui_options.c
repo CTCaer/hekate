@@ -933,22 +933,22 @@ save_data:
 
 			f_mkdir("switchroot");
 
-			//! TODO: Add Accelerometer and Gyroscope calibration.
 			// Save Lite Gamepad Calibration data.
+			// Actual max/min are right/left and up/down offsets.
 			s_printf(data,
-				"lite_cal_lx_min=0x%X\n"
+				"lite_cal_lx_lof=0x%X\n"
 				"lite_cal_lx_cnt=0x%X\n"
-				"lite_cal_lx_max=0x%X\n"
-				"lite_cal_ly_min=0x%X\n"
+				"lite_cal_lx_rof=0x%X\n"
+				"lite_cal_ly_dof=0x%X\n"
 				"lite_cal_ly_cnt=0x%X\n"
-				"lite_cal_ly_max=0x%X\n\n"
+				"lite_cal_ly_uof=0x%X\n\n"
 
-				"lite_cal_rx_min=0x%X\n"
+				"lite_cal_rx_lof=0x%X\n"
 				"lite_cal_rx_cnt=0x%X\n"
-				"lite_cal_rx_max=0x%X\n"
-				"lite_cal_ry_min=0x%X\n"
+				"lite_cal_rx_rof=0x%X\n"
+				"lite_cal_ry_dof=0x%X\n"
 				"lite_cal_ry_cnt=0x%X\n"
-				"lite_cal_ry_max=0x%X\n\n"
+				"lite_cal_ry_uof=0x%X\n\n"
 
 				"acc_cal_off_x=0x%X\n"
 				"acc_cal_off_y=0x%X\n"
@@ -965,10 +965,10 @@ save_data:
 				"gyr_cal_scl_z=0x%X\n\n"
 
 				"device_bt_mac=%02X:%02X:%02X:%02X:%02X:%02X\n",
-				stick_cal_l->x_center - stick_cal_l->x_min, stick_cal_l->x_center, stick_cal_l->x_center + stick_cal_l->x_max,
-				stick_cal_l->y_center - stick_cal_l->y_min, stick_cal_l->y_center, stick_cal_l->y_center + stick_cal_l->y_max,
-				stick_cal_r->x_center - stick_cal_r->x_min, stick_cal_r->x_center, stick_cal_r->x_center + stick_cal_r->x_max,
-				stick_cal_r->y_center - stick_cal_r->y_min, stick_cal_r->y_center, stick_cal_r->y_center + stick_cal_r->y_max,
+				stick_cal_l->x_min, stick_cal_l->x_center, stick_cal_l->x_max,
+				stick_cal_l->y_min, stick_cal_l->y_center, stick_cal_l->y_max,
+				stick_cal_r->x_min, stick_cal_r->x_center, stick_cal_r->x_max,
+				stick_cal_r->y_min, stick_cal_r->y_center, stick_cal_r->y_max,
 				cal0->acc_offset[0],  cal0->acc_offset[1],  cal0->acc_offset[2],
 				cal0->acc_scale[0],   cal0->acc_scale[1],   cal0->acc_scale[2],
 				cal0->gyro_offset[0], cal0->gyro_offset[1], cal0->gyro_offset[2],
