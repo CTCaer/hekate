@@ -489,8 +489,8 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 
 	/* DRAM size information */
 	.mc_emem_adr_cfg                                 = 0x00000001, // 2 Ranks.
-	.mc_emem_adr_cfg_dev0                            = 0x00070302, // Rank 0 Density 512MB.
-	.mc_emem_adr_cfg_dev1                            = 0x00070302, // Rank 1 Density 512MB.
+	.mc_emem_adr_cfg_dev0                            = 0x00070302, // Chip 0 Density 512MB.
+	.mc_emem_adr_cfg_dev1                            = 0x00070302, // Chip 1 Density 512MB.
 	.mc_emem_adr_cfg_channel_mask                    = 0xFFFF2400,
 	.mc_emem_adr_cfg_bank_mask0                      = 0x6E574400,
 	.mc_emem_adr_cfg_bank_mask1                      = 0x39722800,
@@ -655,8 +655,8 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	{ 0x00000005, 0x5C0 / 4, DRAM_ID(1) }, // mc_emem_arb_timing_r2w.
 
 	// Samsung 6GB density config.
-	{ 0x000C0302, 0x56C / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev0. 768MB Rank 0 density.
-	{ 0x000C0302, 0x570 / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev1. 768MB Rank 1 density.
+	{ 0x000C0302, 0x56C / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev0. 768MB Chip 0 density.
+	{ 0x000C0302, 0x570 / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev1. 768MB Chip 1 density.
 	{ 0x00001800, 0x584 / 4, DRAM_ID(4) }, // mc_emem_cfg. 6GB total density.
 
 	// Samsung 8GB density config.
@@ -665,7 +665,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	{ 0x0000003B, 0x1C0 / 4, DRAM_ID(7) }, // emc_txsr.
 	{ 0x0000003B, 0x1C4 / 4, DRAM_ID(7) }, // emc_txsr_dll.
 	{ 0x00000713, 0x2B4 / 4, DRAM_ID(7) }, // emc_dyn_self_ref_control.
-	{ 0x00080302, 0x56C / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev0. 1024MB Rank 0 density.
-	{ 0x00080302, 0x570 / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev1. 1024MB Rank 1 density.
+	{ 0x00080302, 0x56C / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev0. 1024MB Chip 0 density.
+	{ 0x00080302, 0x570 / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev1. 1024MB Chip 1 density.
 	{ 0x00002000, 0x584 / 4, DRAM_ID(7) }, // mc_emem_cfg. 8GB total density.
 };

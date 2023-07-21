@@ -542,8 +542,8 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 
 	/* DRAM size information */
 	.mc_emem_adr_cfg                                 = 0x00000000, // 1 Rank.
-	.mc_emem_adr_cfg_dev0                            = 0x00080302, // Rank 0 Density 1024MB.
-	.mc_emem_adr_cfg_dev1                            = 0x00080302, // Rank 1 Density 1024MB.
+	.mc_emem_adr_cfg_dev0                            = 0x00080302, // Chip 0 Density 1024MB.
+	.mc_emem_adr_cfg_dev1                            = 0x00080302, // Chip 1 Density 1024MB.
 	.mc_emem_adr_cfg_channel_mask                    = 0xFFFF2400,
 	.mc_emem_adr_cfg_bank_mask0                      = 0x6E574400,
 	.mc_emem_adr_cfg_bank_mask1                      = 0x39722800,
