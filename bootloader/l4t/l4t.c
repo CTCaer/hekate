@@ -32,8 +32,8 @@
  * 0: Base.
  * 1: SDMMC1 LA programming for SDMMC1 UHS DDR200.
  */
-#define L4T_LOADER_API_REV 1
-#define L4T_FIRMWARE_REV   0x32524556 // REV2.
+#define L4T_LOADER_API_REV 3
+#define L4T_FIRMWARE_REV   0x33524556 // REV3.
 
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
@@ -114,8 +114,6 @@
 #define BPMPFW_B01_DTB_EMC_TBL_START(idx)             (BPMPFW_B01_DTB_EMC_TBL_OFF + BPMPFW_B01_DTB_EMC_TBL_SZ * (idx))
 #define BPMPFW_B01_DTB_EMC_TBL_SET_VAL(idx, off, val) (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + (off)) = (val))
 #define BPMPFW_B01_DTB_EMC_TBL_SET_FREQ(idx, freq)    (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_FREQ_VAL) = (freq))
-#define BPMPFW_B01_DTB_EMC_TBL_SCC_OFFSET(idx)        ((void *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_SCC_OFF))
-#define BPMPFW_B01_DTB_EMC_TBL_SET_PLLM_DIVN(idx, n)  (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_PLLM_DIVN_VAL) = (n))
 #define BPMPFW_B01_DTB_EMC_TBL_SET_NAME(idx, name)    (strcpy((char *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_NAME_VAL), (name)))
 #define BPMPFW_B01_DTB_EMC_TBL_ENABLE(idx)            (*(char *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_ENABLE_OFF) = 'n')
 #define BPMPFW_B01_DTB_EMC_TBL_OFFSET(idx)            ((void *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_VALUES_OFF))
@@ -244,24 +242,6 @@ typedef struct _plat_params_from_bl2 {
 	u64 flags;                    // Platform flags.
 } plat_params_from_bl2_t;
 
-typedef struct _pll_spread_spectrum_t210b01_t {
-	u32 ss_cfg;
-	u32 ss_ctrl1;
-	u32 ss_ctrl2;
-	u32 ss2_cfg;
-	u32 ss2_ctrl1;
-	u32 ss2_ctrl2;
-	u32 divm;
-	u32 divn;
-	u32 pdivp;
-} pll_spread_spectrum_t210b01_t;
-
-typedef struct _pll_ssc_t210b01_t {
-	u32 ss_ctrl1;
-	u32 ss_ctrl2;
-	u32 divn;
-} pll_ssc_t210b01_t;
-
 typedef struct _l4t_fw_t
 {
 	u32   addr;
@@ -288,19 +268,6 @@ typedef struct _l4t_ctxt_t
 #define DRAM_VDDQ_OC_MIN_VOLTAGE  600
 #define DRAM_VDDQ_OC_MAX_VOLTAGE  650
 #define DRAM_T210B01_TBL_MAX_FREQ 1600000
-
-// JEDEC frequency table.
-static const u32 ram_jd_t210b01[] = {
-	1866000,
-	2133000,
-};
-
-#define DRAM_T210B01_SSC_PARAMS 2
-
-static const pll_ssc_t210b01_t pll_jd_ssc_t210b01[DRAM_T210B01_SSC_PARAMS] = {
-	{ 0x300FB3A,    0x30300, 48 },
-	{ 0x180F89D, 0x10070180, 55 },
-};
 
 //! TODO: Update on dram config changes.
 static const u8 mtc_table_idx_t210b01[] = {
@@ -786,9 +753,9 @@ static void _l4t_late_hw_config(bool t210b01)
 
 static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 {
-	char *ram_oc_txt   = ctxt->ram_oc_txt;
-	u32   ram_oc_freq  = ctxt->ram_oc_freq;
-	u32   ram_oc_divn  = 0;
+	char *ram_oc_txt  = ctxt->ram_oc_txt;
+	u32   ram_oc_freq = ctxt->ram_oc_freq;
+	u32   ram_id      = fuse_read_dramid(true);
 
 	// Set default parameters.
 	*(u32 *)BPMPFW_B01_DTB_ADDR = 0;
@@ -806,34 +773,34 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 #endif
 
 	// Set and copy MTC tables.
-	u32 mtc_idx = mtc_table_idx_t210b01[fuse_read_dramid(true)];
+	u32 mtc_idx = mtc_table_idx_t210b01[ram_id];
 	for (u32 i = 0; i < 3; i++)
 	{
 		minerva_sdmmc_la_program(BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), true);
 		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(i), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
 	}
 
+	// Always use Arachne Register Cell (ARC) for setting rated frequencies if no ram_oc is defined.
+	if (!ram_oc_freq)
+	{
+		if (ram_id >= LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AM_MGCJ &&
+			ram_id <= LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTE)
+		{
+			ram_oc_txt  = "1866000";
+			ram_oc_freq = 1866000;
+		}
+		else
+		{
+			ram_oc_txt  = "2133000";
+			ram_oc_freq = 2133000;
+		}
+	}
+
+	// A frequency of lower or equal with stock max will skip ARC.
 	if (ram_oc_freq > DRAM_T210B01_TBL_MAX_FREQ)
 	{
 		// Final table.
 		const u32 tbl_idx = BPMPFW_B01_DTB_EMC_ENTRIES - 1;
-
-		// Set Overclock.
-		for (u32 i = 0; i < ARRAY_SIZE(ram_jd_t210b01); i++)
-		{
-			// Normalize the check at 38.4 MHz window.
-			if ((ram_jd_t210b01[i] - 19200) < ram_oc_freq &&
-				(ram_jd_t210b01[i] + 19200) > ram_oc_freq)
-			{
-				// Set divider.
-				ram_oc_divn = i + 1;
-
-				break;
-			}
-		}
-
-		if (!ram_oc_divn)
-			ram_oc_divn = ram_oc_freq / 38400;
 
 		// Set DRAM voltage.
 		if (ctxt->ram_oc_vdd2)
@@ -841,30 +808,11 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 		if (ctxt->ram_oc_vddq)
 			max7762x_regulator_set_voltage(REGULATOR_RAM0, ctxt->ram_oc_vddq * 1000);
 
-		// Copy table and set parameters.
+		// Copy table and prep it for Arachne.
 		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(tbl_idx), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, 2), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
 
 		BPMPFW_B01_DTB_EMC_TBL_SET_NAME(tbl_idx, ram_oc_txt);
 		BPMPFW_B01_DTB_EMC_TBL_SET_FREQ(tbl_idx, ram_oc_freq);
-
-		pll_spread_spectrum_t210b01_t *ssc = BPMPFW_B01_DTB_EMC_TBL_SCC_OFFSET(tbl_idx);
-
-		if (ram_oc_divn <= DRAM_T210B01_SSC_PARAMS)
-		{
-			// Standard frequency.
-			const pll_ssc_t210b01_t *ssc_cfg = &pll_jd_ssc_t210b01[ram_oc_divn - 1];
-
-			ssc->ss_ctrl1  = ssc_cfg->ss_ctrl1;
-			ssc->ss_ctrl2  = ssc_cfg->ss_ctrl2;
-			ssc->ss2_ctrl1 = ssc_cfg->ss_ctrl1;
-			ssc->ss2_ctrl2 = ssc_cfg->ss_ctrl2;
-			ssc->divn      = ssc_cfg->divn;
-		}
-		else
-		{
-			// Non standard frequency.
-			ssc->divn = ram_oc_divn;
-		}
 
 		// Enable table.
 		BPMPFW_B01_DTB_EMC_TBL_ENABLE(tbl_idx);
