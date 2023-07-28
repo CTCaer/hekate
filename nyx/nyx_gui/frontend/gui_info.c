@@ -326,8 +326,16 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		break;
 	}
 
+	s_printf(txt_buf + strlen(txt_buf),
+		" (%06X)\n#FF8000 Touch Vendor:#      %d\n"
+		"#FF8000 IMU Type/Mount:#    %d / %d\n"
+		"#FF8000 Stick L/R Type:#    %02X / %02X\n",
+		cal0->lcd_vendor, cal0->touch_ic_vendor_id,
+		cal0->console_6axis_sensor_type, cal0->console_6axis_sensor_mount_type,
+		cal0->analog_stick_type_l, cal0->analog_stick_type_r);
+
 	bool valid_cal0 = !memcmp(hash, cal0->body_sha256, 0x20);
-	s_printf(txt_buf + strlen(txt_buf), " (%06X)\n#FF8000 SHA256 Hash Match:# %s", cal0->lcd_vendor, valid_cal0 ? "Pass" : "Failed");
+	s_printf(txt_buf + strlen(txt_buf), "#FF8000 SHA256 Hash Match:# %s", valid_cal0 ? "Pass" : "Failed");
 
 	lv_label_set_text(lb_desc, txt_buf);
 
