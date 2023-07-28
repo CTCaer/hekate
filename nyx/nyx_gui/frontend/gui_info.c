@@ -172,7 +172,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	const u32 fuse_array_size = (h_cfg.t210b01 ? FUSE_ARRAY_WORDS_NUM_T210B01 : FUSE_ARRAY_WORDS_NUM) * sizeof(u32);
+	const u32 fuse_array_size = (h_cfg.t210b01 ? FUSE_ARRAY_WORDS_NUM_B01 : FUSE_ARRAY_WORDS_NUM) * sizeof(u32);
 
 	int error = !sd_mount();
 	if (!error)
@@ -192,7 +192,7 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 				error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
 		}
 
-		u32 words[FUSE_ARRAY_WORDS_NUM_T210B01];
+		u32 words[FUSE_ARRAY_WORDS_NUM_B01];
 		fuse_read_array(words);
 		if (!h_cfg.t210b01)
 			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
@@ -2224,7 +2224,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "max77620 v%d\n#FF8000 Unknown OTP# (%02X)\n", main_pmic_version, value);
 
 	// CPU/GPU/DRAM Pmic IC info.
-	u32 cpu_gpu_pmic_type = h_cfg.t210b01 ? (FUSE(FUSE_RESERVED_ODM28_T210B01) & 1) + 1 : 0;
+	u32 cpu_gpu_pmic_type = h_cfg.t210b01 ? (FUSE(FUSE_RESERVED_ODM28_B01) & 1) + 1 : 0;
 	switch (cpu_gpu_pmic_type)
 	{
 	case 0:
