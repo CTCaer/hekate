@@ -372,7 +372,8 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"ODM Fields (4, 6, 7):\n"
 		"Secure Boot Key (SBK):\n"
 		"Device Key (DK):\n"
-		"Keygen Revision:\n"
+		"Public Key (PK SHA256):\n\n"
+		"HOS Keygen Revision:\n"
 		"USB Stack:\n"
 		"Final Test Revision:\n"
 		"Chip Probing Revision:\n"
@@ -388,7 +389,6 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"Vendor Code:\n"
 		"FAB Code:\n"
 		"LOT Code 0:\n"
-		"LOT Code 1:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
 		"Y Coordinate:\n"
@@ -610,16 +610,21 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%d\n"
+		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
-		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n%d\n"
+		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n"
 		"ID: %02X, Major: A%02d, Minor: %d",
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
 		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY0)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY1)),
 		byte_swap_32(FUSE(FUSE_PRIVATE_KEY2)), byte_swap_32(FUSE(FUSE_PRIVATE_KEY3)),
-		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)), fuse_read_odm_keygen_rev(),
+		byte_swap_32(FUSE(FUSE_PRIVATE_KEY4)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY0)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY1)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY2)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY3)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY4)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY5)),
+		byte_swap_32(FUSE(FUSE_PUBLIC_KEY6)), byte_swap_32(FUSE(FUSE_PUBLIC_KEY7)),
+		fuse_read_odm_keygen_rev(),
 		((FUSE(FUSE_RESERVED_SW) & 0x80) || h_cfg.t210b01) ? "XUSB" : "USB2",
 		(FUSE(FUSE_OPT_FT_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_FT_REV) & 0x1F, FUSE(FUSE_OPT_FT_REV),
 		(FUSE(FUSE_OPT_CP_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_CP_REV) & 0x1F, FUSE(FUSE_OPT_CP_REV),
@@ -627,7 +632,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_SOC_SPEEDO_0_CALIB), FUSE(FUSE_SOC_SPEEDO_1_CALIB), FUSE(FUSE_SOC_SPEEDO_2_CALIB),
 		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB),
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
-		FUSE(FUSE_OPT_LOT_CODE_1), FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
+		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
 		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
 
 	lv_label_set_text(lb_val, txt_buf);
