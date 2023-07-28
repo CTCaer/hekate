@@ -2073,7 +2073,10 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 	lv_obj_t * mbox = lv_mbox_create(lv_scr_act(), NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
-	int res = !create_config_entry();
+	int res = 0;
+
+	if (sd_mount())
+		res = create_config_entry();
 
 	if (res)
 		lv_mbox_set_text(mbox, "#FF8000 hekate Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
@@ -2083,6 +2086,8 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 	lv_obj_set_top(mbox, true);
 
 	nyx_options_clear_ini_changes_made();
+
+	sd_unmount();
 
 	return LV_RES_OK;
 }

@@ -64,9 +64,6 @@ void set_nyx_default_configuration()
 
 int create_config_entry()
 {
-	if (!sd_mount())
-		return 1;
-
 	char lbuf[64];
 	FIL fp;
 	bool mainIniFound = false;
@@ -184,7 +181,6 @@ int create_config_entry()
 	}
 
 	f_close(&fp);
-	sd_unmount();
 
 	return 0;
 }
