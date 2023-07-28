@@ -97,25 +97,9 @@ static lv_res_t _battery_dump_window_action(lv_obj_t * btn)
 	if (!error)
 	{
 		char path[64];
-		u8 *buf = (u8 *)malloc(0x100 * 2);
+		void *buf = malloc(0x100 * 2);
 
-		// Unlock model table.
-		u16 unlock = 0x59;
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable1, (u8 *)&unlock, 2);
-		unlock = 0xC4;
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable2, (u8 *)&unlock, 2);
-
-		// Dump all battery fuel gauge registers.
-		for (int i = 0; i < 0x200; i += 2)
-		{
-			i2c_recv_buf_small(buf + i, 2, I2C_1, MAXIM17050_I2C_ADDR, i >> 1);
-			msleep(1);
-		}
-
-		// Lock model table.
-		unlock = 0;
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable1, (u8 *)&unlock, 2);
-		i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable2, (u8 *)&unlock, 2);
+		max17050_dump_regs(buf);
 
 		emmcsn_path_impl(path, "/dumps", "fuel_gauge.bin", NULL);
 		error = sd_save_to_file((u8 *)buf, 0x200, path);
