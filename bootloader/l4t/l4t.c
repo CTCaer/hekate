@@ -31,6 +31,8 @@
  *
  * 0: Base.
  * 1: SDMMC1 LA programming for SDMMC1 UHS DDR200.
+ * 2: Arachne Register Cell v1.
+ * 3: Arachne Register Cell v2. PTSA Rework support.
  */
 #define L4T_LOADER_API_REV 3
 #define L4T_FIRMWARE_REV   0x33524556 // REV3.
