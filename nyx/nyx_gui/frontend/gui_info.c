@@ -648,13 +648,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_recolor(lb_desc2, true);
 
 	// Prepare DRAM info.
-	emc_mr_data_t ram_vendor = sdram_read_mrx(MR5_MAN_ID);
-	emc_mr_data_t ram_rev0 = sdram_read_mrx(MR6_REV_ID1);
-	emc_mr_data_t ram_rev1 = sdram_read_mrx(MR7_REV_ID2);
+	emc_mr_data_t ram_vendor  = sdram_read_mrx(MR5_MAN_ID);
+	emc_mr_data_t ram_rev0    = sdram_read_mrx(MR6_REV_ID1);
+	emc_mr_data_t ram_rev1    = sdram_read_mrx(MR7_REV_ID2);
 	emc_mr_data_t ram_density = sdram_read_mrx(MR8_DENSITY);
 	u32 ranks = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
-	u32 die_channels = ranks * ((channels & 1) + ((channels & 2) >> 1));
+	channels = (channels & 1) + ((channels & 2) >> 1);
 	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", h_cfg.t210b01 ? "LPDDR4X" : "LPDDR4");
 	switch (ram_vendor.rank0_ch0)
 	{
@@ -716,7 +716,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
-		ram_rev0.rank0_ch0, ram_rev1.rank0_ch0, ram_rev0.rank0_ch1, ram_rev1.rank0_ch1, die_channels);
+		ram_rev0.rank0_ch0, ram_rev1.rank0_ch0, ram_rev0.rank0_ch1, ram_rev1.rank0_ch1, ranks * channels);
 	switch ((ram_density.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
@@ -738,7 +738,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", die_channels);
+	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", ranks * channels);
 	switch ((ram_density.rank0_ch1 & 0x3C) >> 2)
 	{
 	case 2:
