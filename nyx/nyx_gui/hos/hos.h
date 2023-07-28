@@ -86,9 +86,12 @@ typedef struct _launch_ctxt_t
 	ini_sec_t *cfg;
 } launch_ctxt_t;
 
+extern u8 *cal0_buf;
+
 void hos_eks_clear(u32 kb);
 int  hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt);
 int  hos_bis_keygen();
 void hos_bis_keys_clear();
+int  hos_dump_cal0();
 
 #endif

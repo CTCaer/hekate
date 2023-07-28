@@ -27,6 +27,7 @@
 
 extern hekate_config h_cfg;
 
+u8 *cal0_buf = NULL;
 static u8 *bis_keys = NULL;
 
 typedef struct _tsec_keys_t
@@ -667,4 +668,53 @@ void hos_bis_keys_clear()
 	// Clear all aes bis keyslots.
 	for (u32 i = 0; i < 6; i++)
 		se_aes_key_clear(i);
+}
+
+int hos_dump_cal0()
+{
+	// Init eMMC.
+	if (!emmc_initialize(false))
+		return 1;
+
+	// Generate BIS keys
+	hos_bis_keygen();
+
+	if (!cal0_buf)
+		cal0_buf = malloc(SZ_64K);
+
+	// Read and decrypt CAL0.
+	emmc_set_partition(EMMC_GPP);
+	LIST_INIT(gpt);
+	emmc_gpt_parse(&gpt);
+	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
+	nx_emmc_bis_init(cal0_part, false, 0);
+	nx_emmc_bis_read(0, 0x40, cal0_buf);
+	nx_emmc_bis_end();
+	emmc_gpt_free(&gpt);
+
+	emmc_end();
+
+	// Clear BIS keys slots.
+	hos_bis_keys_clear();
+
+	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
+
+	// Check keys validity.
+	if (memcmp(&cal0->magic, "CAL0", 4))
+	{
+		free(cal0_buf);
+		cal0_buf = NULL;
+
+		// Clear EKS keys.
+		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
+
+		return 2;
+	}
+
+	u32 hash[8];
+	se_calc_sha256_oneshot(hash, (u8 *)cal0 + 0x40, cal0->body_size);
+	if (memcmp(hash, cal0->body_sha256, 0x20))
+		return 3;
+
+	return 0;
 }

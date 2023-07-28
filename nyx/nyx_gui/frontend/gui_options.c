@@ -29,7 +29,6 @@
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
-extern u8 *cal0_buf;
 
 static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
@@ -863,7 +862,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 
 	if (nx_hoag)
 	{
-		error = dump_cal0();
+		error = hos_dump_cal0();
 		if (!error)
 			goto save_data;
 	}
@@ -1044,7 +1043,7 @@ disabled:;
 		{
 			s_printf(txt_buf,
 				"Dumping to SD card finished!\n"
-				"Saved to: #C7EA46 switchroot/lite_gamepad.cal#\n\n");
+				"Saved to: #C7EA46 switchroot/switch.cal#\n\n");
 			strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found Lite Gamepad data!#\n");
 		}
 	}

@@ -33,8 +33,6 @@ extern volatile nyx_storage_t *nyx_str;
 extern lv_res_t launch_payload(lv_obj_t *list);
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
-u8 *cal0_buf = NULL;
-
 static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -237,55 +235,6 @@ static lv_res_t _kfuse_dump_window_action(lv_obj_t * btn)
 	return LV_RES_OK;
 }
 
-int dump_cal0()
-{
-	// Init eMMC.
-	if (!emmc_initialize(false))
-		return 1;
-
-	// Generate BIS keys
-	hos_bis_keygen();
-
-	if (!cal0_buf)
-		cal0_buf = malloc(SZ_64K);
-
-	// Read and decrypt CAL0.
-	emmc_set_partition(EMMC_GPP);
-	LIST_INIT(gpt);
-	emmc_gpt_parse(&gpt);
-	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
-	nx_emmc_bis_init(cal0_part, false, 0);
-	nx_emmc_bis_read(0, 0x40, cal0_buf);
-	nx_emmc_bis_end();
-	emmc_gpt_free(&gpt);
-
-	emmc_end();
-
-	// Clear BIS keys slots.
-	hos_bis_keys_clear();
-
-	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
-
-	// Check keys validity.
-	if (memcmp(&cal0->magic, "CAL0", 4))
-	{
-		free(cal0_buf);
-		cal0_buf = NULL;
-
-		// Clear EKS keys.
-		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
-
-		return 2;
-	}
-
-	u32 hash[8];
-	se_calc_sha256_oneshot(hash, (u8 *)cal0 + 0x40, cal0->body_size);
-	if (memcmp(hash, cal0->body_sha256, 0x20))
-		return 3;
-
-	return 0;
-}
-
 static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -311,7 +260,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	sd_mount();
 
 	// Dump CAL0.
-	int cal0_res = dump_cal0();
+	int cal0_res = hos_dump_cal0();
 
 	// Check result. Don't error if hash doesn't match.
 	if (cal0_res == 1)
