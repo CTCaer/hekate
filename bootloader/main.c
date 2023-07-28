@@ -786,6 +786,7 @@ static void _auto_launch()
 		u32 pos_y;
 	};
 
+	u32 boot_wait             = h_cfg.bootwait;
 	u32 boot_entry_id         = 0;
 	ini_sec_t *cfg_sec        = NULL;
 	char *emummc_path         = NULL;
@@ -827,28 +828,18 @@ static void _auto_launch()
 					else if (!strcmp("autoboot_list", kv->key))
 						h_cfg.autoboot_list = atoi(kv->val);
 					else if (!strcmp("bootwait",      kv->key))
-					{
-						h_cfg.bootwait = atoi(kv->val);
-
-						/*
-						 * Clamp value to default if it exceeds 20s to protect against corruption.
-						 * Allow up to 20s though for use in cases where user needs lots of time.
-						 * For example dock-only use and r2p with enough time to reach dock and cancel it.
-						*/
-						if (h_cfg.bootwait > 20)
-							h_cfg.bootwait = 3;
-					}
-					else if (!strcmp("backlight",   kv->key))
+						boot_wait = atoi(kv->val);
+					else if (!strcmp("backlight",     kv->key))
 						h_cfg.backlight   = atoi(kv->val);
-					else if (!strcmp("noticker",    kv->key))
+					else if (!strcmp("noticker",      kv->key))
 						h_cfg.noticker    = atoi(kv->val);
-					else if (!strcmp("autohosoff",  kv->key))
+					else if (!strcmp("autohosoff",    kv->key))
 						h_cfg.autohosoff  = atoi(kv->val);
-					else if (!strcmp("autonogc",    kv->key))
+					else if (!strcmp("autonogc",      kv->key))
 						h_cfg.autonogc    = atoi(kv->val);
-					else if (!strcmp("updater2p",   kv->key))
+					else if (!strcmp("updater2p",     kv->key))
 						h_cfg.updater2p   = atoi(kv->val);
-					else if (!strcmp("bootprotect", kv->key))
+					else if (!strcmp("bootprotect",   kv->key))
 						h_cfg.bootprotect = atoi(kv->val);
 				}
 				boot_entry_id++;
@@ -856,12 +847,16 @@ static void _auto_launch()
 				// Override autoboot.
 				if (b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN)
 				{
-					h_cfg.autoboot = b_cfg.autoboot;
+					h_cfg.autoboot      = b_cfg.autoboot;
 					h_cfg.autoboot_list = b_cfg.autoboot_list;
 				}
 
 				// Apply bootloader protection against corruption.
 				_bootloader_corruption_protect();
+
+				// If ini list, exit here.
+				if (!boot_from_id && h_cfg.autoboot_list)
+					break;
 
 				continue;
 			}
@@ -879,6 +874,8 @@ static void _auto_launch()
 						emummc_path = kv->val;
 					else if (!strcmp("emummc_force_disable", kv->key))
 						h_cfg.emummc_force_disable = atoi(kv->val);
+					else if (!strcmp("bootwait", kv->key))
+						boot_wait = atoi(kv->val);
 				}
 			}
 			if (cfg_sec)
@@ -924,6 +921,8 @@ static void _auto_launch()
 						emummc_path = kv->val;
 					else if (!strcmp("emummc_force_disable", kv->key))
 						h_cfg.emummc_force_disable = atoi(kv->val);
+					else if (!strcmp("bootwait", kv->key))
+						boot_wait = atoi(kv->val);
 				}
 			}
 			if (cfg_sec)
@@ -939,8 +938,8 @@ skip_list:
 	// Check if entry is payload or l4t special case.
 	char *special_path = ini_check_special_section(cfg_sec);
 
-	if ((!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && h_cfg.bootwait) || // Conditional for HOS/Payload.
-		(special_path && special_path == (char *)-1))                   // Always show for L4T.
+	if ((!(b_cfg.boot_cfg & BOOT_CFG_FROM_LAUNCH) && boot_wait) || // Conditional for HOS/Payload.
+		(special_path && special_path == (char *)-1))              // Always show for L4T.
 	{
 		u32 fsize;
 		u8 *logo_buf = NULL;
@@ -994,6 +993,10 @@ skip_list:
 				free(bitmap);
 		}
 
+		// Clamp value to default if it exceeds 20s to protect against corruption.
+		if (boot_wait > 20)
+			boot_wait = 3;
+
 		// Render boot logo.
 		if (bootlogoFound)
 		{
@@ -1002,13 +1005,13 @@ skip_list:
 			free(logo_buf);
 
 			// Do animated waiting before booting. If VOL- is pressed go into bootloader menu.
-			if (render_ticker(h_cfg.bootwait, h_cfg.backlight, h_cfg.noticker))
+			if (render_ticker(boot_wait, h_cfg.backlight, h_cfg.noticker))
 				goto out;
 		}
 		else
 		{
 			// Do animated waiting before booting. If VOL- is pressed go into bootloader menu.
-			if (render_ticker_logo(h_cfg.bootwait, h_cfg.backlight))
+			if (render_ticker_logo(boot_wait, h_cfg.backlight))
 				goto out;
 		}
 	}

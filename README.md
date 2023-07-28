@@ -119,6 +119,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | uart_port=0            | Enables logging on serial port for L4T uboot/kernel.       |
 | Additional keys        | Each distro supports more keys. Check README_CONFIG.txt  for more info. |
 | ---------------------- | ---------------------------------------------------------- |
+| bootwait=3             | Overrides global bootwait from `[config]`.                 |
 | id=IDNAME              | Identifies boot entry for forced boot via id. Max 7 chars. |
 | logopath={FILE path}   | If it exists, it will load the specified bitmap. Otherwise `bootloader/bootlogo.bmp` will be used if exists |
 | icon={FILE path}       | Force Nyx to use the icon defined here. If this is not found, it will check for a bmp named as the boot entry ([Test 2] -> `bootloader/res/Test 2.bmp`). Otherwise defaults will be used. |
