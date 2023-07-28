@@ -271,6 +271,14 @@ static int _config_exo_fatal_payload(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_ucid(launch_ctxt_t *ctxt, const char *value)
+{
+	// Override uCID if set.
+	ctxt->ucid = atoi(value);
+
+	return 1;
+}
+
 typedef struct _cfg_handler_t
 {
 	const char *key;
@@ -278,23 +286,24 @@ typedef struct _cfg_handler_t
 } cfg_handler_t;
 
 static const cfg_handler_t _config_handlers[] = {
-	{ "warmboot", _config_warmboot },
-	{ "secmon", _config_secmon },
-	{ "kernel", _config_kernel },
-	{ "kip1", _config_kip1 },
-	{ "kip1patch", config_kip1patch },
-	{ "fullsvcperm", _config_svcperm },
-	{ "debugmode", _config_debugmode },
-	{ "stock", _config_stock },
-	{ "atmosphere", _config_atmosphere },
-	{ "fss0", _config_fss },
-	{ "exofatal", _config_exo_fatal_payload},
-	{ "emummcforce", _config_emummc_forced },
+	{ "warmboot",         _config_warmboot },
+	{ "secmon",           _config_secmon },
+	{ "kernel",           _config_kernel },
+	{ "kip1",             _config_kip1 },
+	{ "kip1patch",        config_kip1patch },
+	{ "fullsvcperm",      _config_svcperm },
+	{ "debugmode",        _config_debugmode },
+	{ "stock",            _config_stock },
+	{ "atmosphere",       _config_atmosphere },
+	{ "fss0",             _config_fss },
+	{ "exofatal",         _config_exo_fatal_payload},
+	{ "emummcforce",      _config_emummc_forced },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },
-	{ "userpmu", _config_exo_user_pmu_access },
-	{ "usb3force", _config_exo_usb3_force },
-	{ "cal0blank", _config_exo_cal0_blanking },
-	{ "cal0writesys", _config_exo_cal0_writes_enable },
+	{ "userpmu",          _config_exo_user_pmu_access },
+	{ "usb3force",        _config_exo_usb3_force },
+	{ "cal0blank",        _config_exo_cal0_blanking },
+	{ "cal0writesys",     _config_exo_cal0_writes_enable },
+	{ "ucid",             _config_ucid },
 	{ NULL, NULL },
 };
 

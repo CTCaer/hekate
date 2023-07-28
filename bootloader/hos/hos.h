@@ -94,8 +94,8 @@ typedef struct _launch_ctxt_t
 	u32   pkg2_size;
 	bool  new_pkg2;
 
-	void  *kernel;
-	u32    kernel_size;
+	void *kernel;
+	u32   kernel_size;
 
 	link_t kip1_list;
 	char*  kip1_patches;
@@ -108,6 +108,8 @@ typedef struct _launch_ctxt_t
 	char *fss0_main_path;
 	u32   fss0_hosver;
 	bool  atmosphere;
+
+	int ucid;
 
 	exo_ctxt_t exo_ctx;
 

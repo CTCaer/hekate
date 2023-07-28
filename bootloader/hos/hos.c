@@ -1156,8 +1156,8 @@ int hos_launch(ini_sec_t *cfg)
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
 	display_end();
 
-	// Clear EMC_SCRATCH0.
-	EMC(EMC_SCRATCH0) = 0;
+	// Override uCID if set.
+	EMC(EMC_SCRATCH0) = ctxt.ucid;
 
 	// Hold USBD, USB2, AHBDMA and APBDMA in reset for SoC state validation on sleep.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_USBD);
