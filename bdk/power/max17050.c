@@ -279,3 +279,26 @@ int max17050_fix_configuration()
 
 	return 0;
 }
+
+void max17050_dump_regs(void *buf)
+{
+	u16 *buff = (u16 *)buf;
+
+	// Unlock model table.
+	u16 unlock = 0x59;
+	i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable1, (u8 *)&unlock, 2);
+	unlock = 0xC4;
+	i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable2, (u8 *)&unlock, 2);
+
+	// Dump all battery fuel gauge registers.
+	for (u32 i = 0; i < 0x100; i++)
+	{
+		buff[i] = max17050_get_reg(i);
+		msleep(1);
+	}
+
+	// Lock model table.
+	unlock = 0;
+	i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable1, (u8 *)&unlock, 2);
+	i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, MAX17050_MODELEnable2, (u8 *)&unlock, 2);
+}
