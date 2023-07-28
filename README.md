@@ -116,6 +116,8 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | l4t=1                  | L4T Linux/Android native launching.                        |
 | boot_prefixes={FOLDER path} | L4T bootstack directory.                              |
 | ram_oc=0               | L4T RAM Overclocking. Check README_CONFIG.txt for more info. |
+| ram_oc_vdd2=1100       | L4T RAM VDD2 Voltage. Set VDD2 (T210B01) or VDD2/VDDQ (T210) voltage. 1050-1175. |
+| ram_oc_vddq=600        | L4T RAM VDDQ Voltage. Set VDDQ (T210B01). 550-650.         |
 | uart_port=0            | Enables logging on serial port for L4T uboot/kernel.       |
 | Additional keys        | Each distro supports more keys. Check README_CONFIG.txt  for more info. |
 | ---------------------- | ---------------------------------------------------------- |

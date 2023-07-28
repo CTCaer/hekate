@@ -263,9 +263,9 @@ typedef struct _l4t_ctxt_t
 	emc_table_t *mtc_table;
 } l4t_ctxt_t;
 
-#define DRAM_VDD2_OC_MIN_VOLTAGE  1100
+#define DRAM_VDD2_OC_MIN_VOLTAGE  1050
 #define DRAM_VDD2_OC_MAX_VOLTAGE  1175
-#define DRAM_VDDQ_OC_MIN_VOLTAGE  600
+#define DRAM_VDDQ_OC_MIN_VOLTAGE  550
 #define DRAM_VDDQ_OC_MAX_VOLTAGE  650
 #define DRAM_T210B01_TBL_MAX_FREQ 1600000
 
