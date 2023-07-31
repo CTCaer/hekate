@@ -39,12 +39,7 @@
 #endif
 
 /*! SCMMC controller base addresses. */
-static const u32 _sdmmc_bases[4] = {
-	0x700B0000,
-	0x700B0200,
-	0x700B0400,
-	0x700B0600,
-};
+static const u16 _sdmmc_base_offsets[4] = { 0x0, 0x200, 0x400, 0x600 };
 
 int sdmmc_get_io_power(sdmmc_t *sdmmc)
 {
@@ -1380,7 +1375,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 
 	memset(sdmmc, 0, sizeof(sdmmc_t));
 
-	sdmmc->regs = (t210_sdmmc_t *)_sdmmc_bases[id];
+	sdmmc->regs = (t210_sdmmc_t *)(SDMMC_BASE + (u32)_sdmmc_base_offsets[id]);
 	sdmmc->id = id;
 	sdmmc->clock_stopped = 1;
 	sdmmc->t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;

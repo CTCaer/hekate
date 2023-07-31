@@ -20,120 +20,140 @@
 
 #include <utils/types.h>
 
-#define BOOTROM_BASE 0x100000
-#define IRAM_BASE 0x40000000
-#define HOST1X_BASE 0x50000000
-#define BPMP_CACHE_BASE 0x50040000
-#define DISPLAY_A_BASE 0x54200000
-#define DSI_BASE 0x54300000
-#define VIC_BASE 0x54340000
-#define NVDEC_BASE 0x54480000
-#define TSEC_BASE 0x54500000
-#define SOR1_BASE 0x54580000
-#define MSELECT_BASE 0x50060000
-#define ICTLR_BASE 0x60004000
-#define TMR_BASE 0x60005000
-#define CLOCK_BASE 0x60006000
-#define FLOW_CTLR_BASE 0x60007000
-#define AHBDMA_BASE 0x60008000
-#define SYSREG_BASE 0x6000C000
-#define SB_BASE (SYSREG_BASE + 0x200)
-#define ACTMON_BASE 0x6000C800
-#define GPIO_BASE 0x6000D000
-#define GPIO_1_BASE (GPIO_BASE)
-#define GPIO_2_BASE (GPIO_BASE + 0x100)
-#define GPIO_3_BASE (GPIO_BASE + 0x200)
-#define GPIO_4_BASE (GPIO_BASE + 0x300)
-#define GPIO_5_BASE (GPIO_BASE + 0x400)
-#define GPIO_6_BASE (GPIO_BASE + 0x500)
-#define GPIO_7_BASE (GPIO_BASE + 0x600)
-#define GPIO_8_BASE (GPIO_BASE + 0x700)
-#define EXCP_VEC_BASE 0x6000F000
-#define IPATCH_BASE 0x6001DC00
-#define APBDMA_BASE 0x60020000
-#define APB_MISC_BASE 0x70000000
-#define PINMUX_AUX_BASE 0x70003000
-#define UART_BASE 0x70006000
-#define PWM_BASE 0x7000A000
-#define RTC_BASE 0x7000E000
-#define PMC_BASE 0x7000E400
-#define SYSCTR0_BASE 0x700F0000
-#define FUSE_BASE 0x7000F800
-#define KFUSE_BASE 0x7000FC00
-#define SE_BASE 0x70012000
-#define MC_BASE 0x70019000
-#define EMC_BASE 0x7001B000
-#define EMC0_BASE 0x7001E000
-#define EMC1_BASE 0x7001F000
-#define XUSB_HOST_BASE 0x70090000
+#define IROM_BASE          0x100000
+#define IRAM_BASE        0x40000000
+#define HOST1X_BASE      0x50000000
+#define BPMP_CACHE_BASE  0x50040000
+#define MSELECT_BASE     0x50060000
+#define DPAUX1_BASE      0x54040000
+#define TSEC2_BASE       0x54100000
+#define DISPLAY_A_BASE   0x54200000
+#define DISPLAY_B_BASE   0x54240000
+#define DSI_BASE         0x54300000
+#define VIC_BASE         0x54340000
+#define NVJPG_BASE       0x54380000
+#define NVDEC_BASE       0x54480000
+#define NVENC_BASE       0x544C0000
+#define TSEC_BASE        0x54500000
+#define SOR1_BASE        0x54580000
+#define GPU_BASE         0x57000000
+#define GPU_USER_BASE    0x58000000
+#define RES_SEMAPH_BASE  0x60001000
+#define ARB_SEMAPH_BASE  0x60002000
+#define ARBPRI_BASE      0x60003000
+#define ICTLR_BASE       0x60004000
+#define TMR_BASE         0x60005000
+#define CLOCK_BASE       0x60006000
+#define FLOW_CTLR_BASE   0x60007000
+#define AHBDMA_BASE      0x60008000
+#define SYSREG_BASE      0x6000C000
+#define SB_BASE          (SYSREG_BASE + 0x200)
+#define ACTMON_BASE      0x6000C800
+#define GPIO_BASE        0x6000D000
+#define EXCP_VEC_BASE    0x6000F000
+#define IPATCH_BASE      0x6001DC00
+#define APBDMA_BASE      0x60020000
+#define VGPIO_BASE       0x60024000
+#define APB_MISC_BASE    0x70000000
+#define PINMUX_AUX_BASE  0x70003000
+#define UART_BASE        0x70006000
+#define PWM_BASE         0x7000A000
+#define I2C_BASE         0x7000C000
+#define RTC_BASE         0x7000E000
+#define PMC_BASE         0x7000E400
+#define FUSE_BASE        0x7000F800
+#define KFUSE_BASE       0x7000FC00
+#define SE_BASE          0x70012000
+#define TSENSOR_BASE     0x70014000
+#define ATOMICS_BASE     0x70016000
+#define MC_BASE          0x70019000
+#define EMC_BASE         0x7001B000
+#define EMC0_BASE        0x7001E000
+#define EMC1_BASE        0x7001F000
+#define XUSB_HOST_BASE   0x70090000
 #define XUSB_PADCTL_BASE 0x7009F000
-#define XUSB_DEV_BASE 0x700D0000
-#define MIPI_CAL_BASE 0x700E3000
-#define CL_DVFS_BASE 0x70110000
-#define I2S_BASE 0x702D1000
-#define ADMA_BASE 0x702E2000
-#define TZRAM_BASE 0x7C010000
+#define XUSB_DEV_BASE    0x700D0000
+#define SDMMC_BASE       0x700B0000
+#define SOC_THERM_BASE   0x700E2000
+#define MIPI_CAL_BASE    0x700E3000
+#define SYSCTR0_BASE     0x700F0000
+#define SYSCTR1_BASE     0x70100000
+#define CL_DVFS_BASE     0x70110000
+#define APE_BASE         0x702C0000
+#define AHUB_BASE        0x702D0000
+#define AXBAR_BASE       0x702D0800
+#define I2S_BASE         0x702D1000
+#define ADMA_BASE        0x702E2000
+#define SE2_BASE         0x70412000
+#define SE_PKA1_BASE     0x70420000
+#define TZRAM_BASE       0x7C010000
 #define  TZRAM_SIZE         0x10000
 #define  TZRAM_T210B01_SIZE 0x3C000
-#define USB_BASE 0x7D000000
-#define USB_OTG_BASE USB_BASE
-#define USB1_BASE 0x7D004000
+#define USB_BASE         0x7D000000
+#define USB_OTG_BASE     USB_BASE
+#define USB1_BASE        0x7D004000
+#define EMEM_BASE        0x80000000
 
-#define _REG(base, off) *(vu32 *)((base) + (off))
+#define MMIO_REG32(base, off) *(vu32 *)((base) + (off))
 
-#define HOST1X(off) _REG(HOST1X_BASE, off)
-#define BPMP_CACHE_CTRL(off) _REG(BPMP_CACHE_BASE, off)
-#define DISPLAY_A(off) _REG(DISPLAY_A_BASE, off)
-#define DSI(off) _REG(DSI_BASE, off)
-#define VIC(off) _REG(VIC_BASE, off)
-#define NVDEC(off) _REG(NVDEC_BASE, off)
-#define TSEC(off) _REG(TSEC_BASE, off)
-#define SOR1(off) _REG(SOR1_BASE, off)
-#define MSELECT(off) _REG(MSELECT_BASE, off)
-#define ICTLR(cidx, off) _REG(ICTLR_BASE + (0x100 * (cidx)), off)
-#define TMR(off) _REG(TMR_BASE, off)
-#define CLOCK(off) _REG(CLOCK_BASE, off)
-#define FLOW_CTLR(off) _REG(FLOW_CTLR_BASE, off)
-#define SYSREG(off) _REG(SYSREG_BASE, off)
-#define AHB_GIZMO(off) _REG(SYSREG_BASE, off)
-#define SB(off) _REG(SB_BASE, off)
-#define ACTMON(off) _REG(ACTMON_BASE, off)
-#define GPIO(off) _REG(GPIO_BASE, off)
-#define GPIO_1(off) _REG(GPIO_1_BASE, off)
-#define GPIO_2(off) _REG(GPIO_2_BASE, off)
-#define GPIO_3(off) _REG(GPIO_3_BASE, off)
-#define GPIO_4(off) _REG(GPIO_4_BASE, off)
-#define GPIO_5(off) _REG(GPIO_5_BASE, off)
-#define GPIO_6(off) _REG(GPIO_6_BASE, off)
-#define GPIO_7(off) _REG(GPIO_7_BASE, off)
-#define GPIO_8(off) _REG(GPIO_8_BASE, off)
-#define EXCP_VEC(off) _REG(EXCP_VEC_BASE, off)
-#define APB_MISC(off) _REG(APB_MISC_BASE, off)
-#define PINMUX_AUX(off) _REG(PINMUX_AUX_BASE, off)
-#define PWM(off) _REG(PWM_BASE, off)
-#define RTC(off) _REG(RTC_BASE, off)
-#define PMC(off) _REG(PMC_BASE, off)
-#define SYSCTR0(off) _REG(SYSCTR0_BASE, off)
-#define FUSE(off) _REG(FUSE_BASE, off)
-#define KFUSE(off) _REG(KFUSE_BASE, off)
-#define SE(off) _REG(SE_BASE, off)
-#define MC(off) _REG(MC_BASE, off)
-#define EMC(off) _REG(EMC_BASE, off)
-#define EMC_CH0(off) _REG(EMC0_BASE, off)
-#define EMC_CH1(off) _REG(EMC1_BASE, off)
-#define XUSB_HOST(off) _REG(XUSB_HOST_BASE, off)
-#define XUSB_PADCTL(off) _REG(XUSB_PADCTL_BASE, off)
-#define XUSB_DEV(off) _REG(XUSB_DEV_BASE, off)
-#define XUSB_DEV_XHCI(off) _REG(XUSB_DEV_BASE, off)
-#define XUSB_DEV_PCI(off) _REG(XUSB_DEV_BASE + 0x8000, off)
-#define XUSB_DEV_DEV(off) _REG(XUSB_DEV_BASE + 0x9000, off)
-#define MIPI_CAL(off) _REG(MIPI_CAL_BASE, off)
-#define CL_DVFS(off) _REG(CL_DVFS_BASE, off)
-#define I2S(off) _REG(I2S_BASE, off)
-#define ADMA(off) _REG(ADMA_BASE, off)
-#define USB(off) _REG(USB_BASE, off)
-#define USB1(off) _REG(USB1_BASE, off)
-#define TEST_REG(off) _REG(0x0, off)
+#define HOST1X(off)          MMIO_REG32(HOST1X_BASE, off)
+#define BPMP_CACHE_CTRL(off) MMIO_REG32(BPMP_CACHE_BASE, off)
+#define MSELECT(off)         MMIO_REG32(MSELECT_BASE, off)
+#define DPAUX1(off)          MMIO_REG32(DPAUX1_BASE, off)
+#define TSEC2(off)           MMIO_REG32(TSEC2_BASE, off)
+#define DISPLAY_A(off)       MMIO_REG32(DISPLAY_A_BASE, off)
+#define DISPLAY_B(off)       MMIO_REG32(DISPLAY_B_BASE, off)
+#define DSI(off)             MMIO_REG32(DSI_BASE, off)
+#define VIC(off)             MMIO_REG32(VIC_BASE, off)
+#define NVJPG(off)           MMIO_REG32(NVJPG_BASE, off)
+#define NVDEC(off)           MMIO_REG32(NVDEC_BASE, off)
+#define NVENC(off)           MMIO_REG32(NVENC_BASE, off)
+#define TSEC(off)            MMIO_REG32(TSEC_BASE, off)
+#define SOR1(off)            MMIO_REG32(SOR1_BASE, off)
+#define GPU(off)             MMIO_REG32(GPU_BASE, off)
+#define GPU_USER(off)        MMIO_REG32(GPU_USER_BASE, off)
+#define ICTLR(cidx, off)     MMIO_REG32(ICTLR_BASE + (0x100 * (cidx)), off)
+#define TMR(off)             MMIO_REG32(TMR_BASE, off)
+#define CLOCK(off)           MMIO_REG32(CLOCK_BASE, off)
+#define FLOW_CTLR(off)       MMIO_REG32(FLOW_CTLR_BASE, off)
+#define AHBDMA(off)          MMIO_REG32(AHBDMA_BASE, off)
+#define SYSREG(off)          MMIO_REG32(SYSREG_BASE, off)
+#define AHB_GIZMO(off)       MMIO_REG32(SYSREG_BASE, off)
+#define SB(off)              MMIO_REG32(SB_BASE, off)
+#define ACTMON(off)          MMIO_REG32(ACTMON_BASE, off)
+#define GPIO(off)            MMIO_REG32(GPIO_BASE, off)
+#define EXCP_VEC(off)        MMIO_REG32(EXCP_VEC_BASE, off)
+#define APBDMA(off)          MMIO_REG32(APBDMA_BASE, off)
+#define VGPIO(off)           MMIO_REG32(VGPIO_BASE, off)
+#define APB_MISC(off)        MMIO_REG32(APB_MISC_BASE, off)
+#define PINMUX_AUX(off)      MMIO_REG32(PINMUX_AUX_BASE, off)
+#define PWM(off)             MMIO_REG32(PWM_BASE, off)
+#define RTC(off)             MMIO_REG32(RTC_BASE, off)
+#define PMC(off)             MMIO_REG32(PMC_BASE, off)
+#define SYSCTR0(off)         MMIO_REG32(SYSCTR0_BASE, off)
+#define SYSCTR1(off)         MMIO_REG32(SYSCTR1_BASE, off)
+#define FUSE(off)            MMIO_REG32(FUSE_BASE, off)
+#define KFUSE(off)           MMIO_REG32(KFUSE_BASE, off)
+#define SE(off)              MMIO_REG32(SE_BASE, off)
+#define MC(off)              MMIO_REG32(MC_BASE, off)
+#define EMC(off)             MMIO_REG32(EMC_BASE, off)
+#define EMC_CH0(off)         MMIO_REG32(EMC0_BASE, off)
+#define EMC_CH1(off)         MMIO_REG32(EMC1_BASE, off)
+#define XUSB_HOST(off)       MMIO_REG32(XUSB_HOST_BASE, off)
+#define XUSB_PADCTL(off)     MMIO_REG32(XUSB_PADCTL_BASE, off)
+#define XUSB_DEV(off)        MMIO_REG32(XUSB_DEV_BASE, off)
+#define XUSB_DEV_XHCI(off)   MMIO_REG32(XUSB_DEV_BASE, off)
+#define XUSB_DEV_PCI(off)    MMIO_REG32(XUSB_DEV_BASE + 0x8000, off)
+#define XUSB_DEV_DEV(off)    MMIO_REG32(XUSB_DEV_BASE + 0x9000, off)
+#define MIPI_CAL(off)        MMIO_REG32(MIPI_CAL_BASE, off)
+#define CL_DVFS(off)         MMIO_REG32(CL_DVFS_BASE, off)
+#define I2S(off)             MMIO_REG32(I2S_BASE, off)
+#define ADMA(off)            MMIO_REG32(ADMA_BASE, off)
+#define SE2(off)             MMIO_REG32(SE2_BASE, off)
+#define SE_PKA1(off)         MMIO_REG32(SE_PKA1_BASE, off)
+#define USB(off)             MMIO_REG32(USB_BASE, off)
+#define USB1(off)            MMIO_REG32(USB1_BASE, off)
+#define TEST_REG(off)        MMIO_REG32(0x0, off)
 
 /* HOST1X v3 registers. */
 #define HOST1X_CH0_SYNC_BASE        0x2100
@@ -205,6 +225,12 @@
 #define  GP_HIDREV_MAJOR_T210                  0x1
 #define  GP_HIDREV_MAJOR_T210B01               0x2
 #define APB_MISC_GP_ASDBGREG                  0x810
+#define APB_MISC_GP_TRANSACTOR_SCRATCH        0x864
+#define APB_MISC_GP_AVP_TRANSACTOR_SCRATCH    0x880
+#define APB_MISC_GP_CPU0_TRANSACTOR_SCRATCH   0x884
+#define APB_MISC_GP_CPU1_TRANSACTOR_SCRATCH   0x888
+#define APB_MISC_GP_CPU2_TRANSACTOR_SCRATCH   0x88C
+#define APB_MISC_GP_CPU3_TRANSACTOR_SCRATCH   0x890
 #define APB_MISC_GP_AUD_MCLK_CFGPADCTRL       0x8F4
 #define APB_MISC_GP_LCD_BL_PWM_CFGPADCTRL     0xA34
 #define APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL     0xA98
@@ -251,6 +277,12 @@
 #define SYSCTR0_COUNTERID9    0xFF4
 #define SYSCTR0_COUNTERID10   0xFF8
 #define SYSCTR0_COUNTERID11   0xFFC
+
+/*! IPATCH registers. */
+#define IPATCH_CAM_VALID   0x0
+#define IPATCH_CAM_BASE    0x4
+#define IPATCH_CAM(i)      (IPATCH_CAM_BASE + (i) * 4)
+#define IPATCH_CAM_ENTRIES 12
 
 /*! I2S registers. */
 #define I2S1_CG   0x88

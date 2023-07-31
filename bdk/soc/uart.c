@@ -21,11 +21,11 @@
 #include <soc/t210.h>
 
 /* UART A, B, C, D and E. */
-static const u32 uart_baseoff[5] = { 0, 0x40, 0x200, 0x300, 0x400 };
+static const u16 _uart_base_offsets[5] = { 0, 0x40, 0x200, 0x300, 0x400 };
 
 void uart_init(u32 idx, u32 baud, u32 mode)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	// Make sure no data is being sent.
 	if (!(mode & (UART_MCR_CTS_EN | UART_MCR_DTR)))
@@ -70,7 +70,7 @@ void uart_init(u32 idx, u32 baud, u32 mode)
 
 void uart_wait_xfer(u32 idx, u32 which)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 	if (UART_TX_IDLE & which)
 	{
 		while (!(uart->UART_LSR & UART_LSR_TMTY))
@@ -85,7 +85,7 @@ void uart_wait_xfer(u32 idx, u32 which)
 
 void uart_send(u32 idx, const u8 *buf, u32 len)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	for (u32 i = 0; i != len; i++)
 	{
@@ -97,7 +97,7 @@ void uart_send(u32 idx, const u8 *buf, u32 len)
 
 u32 uart_recv(u32 idx, u8 *buf, u32 len)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 	bool manual_mode = uart->UART_MCR & UART_MCR_RTS;
 	u32 timeout = get_tmr_us() + 250;
 	u32 i;
@@ -127,7 +127,7 @@ out:
 
 void uart_invert(u32 idx, bool enable, u32 invert_mask)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	if (enable)
 		uart->UART_IRDA_CSR |= invert_mask;
@@ -138,7 +138,7 @@ void uart_invert(u32 idx, bool enable, u32 invert_mask)
 
 void uart_set_mode(u32 idx, u32 mode)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	uart->UART_MCR = mode;
 	(void)uart->UART_SPR;
@@ -146,7 +146,7 @@ void uart_set_mode(u32 idx, u32 mode)
 
 u32 uart_get_IIR(u32 idx)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	u32 iir = uart->UART_IIR_FCR & UART_IIR_INT_MASK;
 
@@ -158,7 +158,7 @@ u32 uart_get_IIR(u32 idx)
 
 void uart_set_IIR(u32 idx)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	uart->UART_IER_DLAB &= ~UART_IER_DLAB_IE_EORD;
 	(void)uart->UART_SPR;
@@ -168,7 +168,7 @@ void uart_set_IIR(u32 idx)
 
 void uart_empty_fifo(u32 idx, u32 which)
 {
-	uart_t *uart = (uart_t *)(UART_BASE + uart_baseoff[idx]);
+	uart_t *uart = (uart_t *)(UART_BASE + (u32)_uart_base_offsets[idx]);
 
 	uart->UART_MCR = 0;
 	(void)uart->UART_SPR;

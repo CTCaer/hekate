@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <soc/i2c.h>
+#include <soc/t210.h>
 #include <soc/timer.h>
 
 #define I2C_PACKET_PROT_I2C  BIT(4)
@@ -81,14 +82,8 @@
 #define  MSTR_CONFIG_LOAD     BIT(0)
 #define  TIMEOUT_CONFIG_LOAD  BIT(2)
 
-static const u32 i2c_addrs[] = {
-	0x7000C000, // I2C_1.
-	0x7000C400, // I2C_2.
-	0x7000C500, // I2C_3.
-	0x7000C700, // I2C_4.
-	0x7000D000, // I2C_5.
-	0x7000D100  // I2C_6.
-};
+/* I2C_1, 2, 3, 4, 5 and 6. */
+static const u16 _i2c_base_offsets[6] = { 0x0, 0x400, 0x500, 0x700, 0x1000, 0x1100 };
 
 static void _i2c_load_cfg_wait(vu32 *base)
 {
@@ -108,7 +103,7 @@ static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, u8 *buf, u32 size)
 
 	u32 tmp = 0;
 
-	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
 	// Set device address and send mode.
 	base[I2C_CMD_ADDR0] = dev_addr << 1 | ADDR0_WRITE;
@@ -154,7 +149,7 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	if (size > 8)
 		return 0;
 
-	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
 	// Set device address and recv mode.
 	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_READ;
@@ -198,7 +193,7 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 
 	int res = 0;
 
-	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
 	// Enable interrupts.
 	base[I2C_INT_EN] = ALL_PACKETS_COMPLETE | PACKET_COMPLETE | NO_ACK |
@@ -270,7 +265,7 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 
 	int res = 0;
 
-	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
 	// Enable interrupts.
 	base[I2C_INT_EN] = ALL_PACKETS_COMPLETE | PACKET_COMPLETE | NO_ACK |
@@ -352,7 +347,7 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 
 void i2c_init(u32 i2c_idx)
 {
-	vu32 *base = (vu32 *)i2c_addrs[i2c_idx];
+	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
 	base[I2C_CLK_DIVISOR] = (5 << 16) | 1; // SF mode Div: 6, HS mode div: 2.
 	base[I2C_BUS_CLEAR_CONFIG] = (9 << 16) | BC_TERMINATE | BC_ENABLE;
