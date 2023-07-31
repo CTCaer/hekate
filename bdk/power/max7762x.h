@@ -47,6 +47,27 @@
 *  ldo8 | XUSB, DP, MCU | 50000   | 800000 | 1050000    | 2800000 | 1.05V/2.8V (pcv)
 */
 
+
+// GPIOs T210: 3: 3.3V, 5: CPU PMIC, 6: GPU PMIC, 7: DSI/VI 1.2V powered by ldo0.
+
+/*
+ * OTP:  T210 - T210B01:
+ * SD0:  1.0V   1.05V - SoC. EN Based on FPSSRC.
+ * SD1:  1.15V  1.1V  - DRAM for T210. EN Based on FPSSRC.
+ * SD2:  1.35V  1.35V
+ * SD3:  1.8V   1.8V
+ * All powered off?
+ * LDO0:   --   --    - Display
+ * LDO1: 1.05V  1.05V
+ * LDO2:   --   --    - SD
+ * LDO3: 3.1V   3.1V  - GC ASIC
+ * LDO4: 1.0V   0.8V  - Needed for RTC domain on T210.
+ * LDO5: 3.1V   3.1V
+ * LDO6: 2.8V   2.9V  - Touch.
+ * LDO7: 1.05V  1.0V
+ * LDO8: 1.05V  1.0V
+ */
+
 /*
 * MAX77620_AME_GPIO: control GPIO modes (bits 0 - 7 correspond to GPIO0 - GPIO7); 0 -> GPIO, 1 -> alt-mode
 * MAX77620_REG_GPIOx: 0x9 sets output and enable

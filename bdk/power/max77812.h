@@ -75,14 +75,14 @@
 #define MAX77812_REG_GLB_CFG3		0x35
 
 /*! Protected area and settings only for MAX77812_ES2_VERSION */
-#define MAX77812_REG_GLB_CFG4		0x36
-#define MAX77812_REG_GLB_CFG5		0x37 // HOS: 0x3E. Unmasked write.
-#define MAX77812_REG_GLB_CFG6		0x38 // HOS: 0x90. Unmasked write.
-#define MAX77812_REG_GLB_CFG7		0x39
-#define MAX77812_REG_GLB_CFG8		0x3A // HOS: 0x3A. Unmasked write.
+#define MAX77812_REG_GLB_CFG4		0x36 // QS: 0xBB.
+#define MAX77812_REG_GLB_CFG5		0x37 // QS: 0x39. ES2: Set to 0x3E.
+#define MAX77812_REG_GLB_CFG6		0x38 // QS: 0x88. ES2: Set to 0x90.
+#define MAX77812_REG_GLB_CFG7		0x39 // QS: 0x04.
+#define MAX77812_REG_GLB_CFG8		0x3A // QS: 0x3A. ES2: Set to 0x3A.
 
 #define MAX77812_REG_PROT_ACCESS	0xFD // 0x00: Lock, 0x5A: Unlock.
-#define MAX77812_REG_MAX			0xFD
+#define MAX77812_REG_UNKNOWN		0xFE
 
 #define MAX77812_REG_EN_CTRL_MASK(n)		BIT(n)
 #define MAX77812_START_SLEW_RATE_MASK		0x07
