@@ -90,6 +90,13 @@ static pllm_clk_config_t pllm_clk_config_table[] =
 	{38400, 2064000, 215, 4, 0}, // Custom. Normalized 2066 MHz.
 	{38400, 2099200, 164, 3, 0}, // Custom. Normalized 2100 MHz.
 	{38400, 2131200, 111, 2, 0}, // JEDEC Standard. (T210B01 official max).
+	{38400, 2163200, 169, 3, 0}, // Custom. Normalized 2166 MHz.
+	{38400, 2188800,  57, 1, 0}, // Custom. Normalized 2200 MHz.
+	{38400, 2227200,  58, 1, 0}, // Custom. Normalized 2233 MHz.
+	{38400, 2265600,  59, 1, 0}, // Custom. Normalized 2266 MHz.
+	{38400, 2291200, 179, 3, 0}, // Custom. Normalized 2300 MHz.
+	{38400, 2329600, 182, 3, 0}, // Custom. Normalized 2333 MHz.
+	{38400, 2361600, 123, 2, 0}, // Custom. Normalized 2366 MHz.
  	{0,     0,       0,   0, 0}
 };
 
