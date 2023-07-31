@@ -132,20 +132,20 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 			error = 255;
 
 		emmcsn_path_impl(path, "/dumps", "bootrom_patched.bin", NULL);
-		int res = sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path);
+		int res = sd_save_to_file((u8 *)IROM_BASE, BOOTROM_SIZE, path);
 		if (!error)
 			error = res;
 
-		u32 ipatch_backup[14];
-		memcpy(ipatch_backup, (void *)IPATCH_BASE, sizeof(ipatch_backup));
-		memset((void*)IPATCH_BASE, 0, sizeof(ipatch_backup));
+		u32 ipatch_cam[IPATCH_CAM_ENTRIES + 1];
+		memcpy(ipatch_cam, (void *)IPATCH_BASE, sizeof(ipatch_cam));
+		memset((void*)IPATCH_BASE, 0, sizeof(ipatch_cam)); // Zeroing valid entries is enough but zero everything.
 
 		emmcsn_path_impl(path, "/dumps", "bootrom_unpatched.bin", NULL);
-		res = sd_save_to_file((u8 *)BOOTROM_BASE, BOOTROM_SIZE, path);
+		res = sd_save_to_file((u8 *)IROM_BASE, BOOTROM_SIZE, path);
 		if (!error)
 			error = res;
 
-		memcpy((void*)IPATCH_BASE, ipatch_backup, sizeof(ipatch_backup));
+		memcpy((void*)IPATCH_BASE, ipatch_cam, sizeof(ipatch_cam));
 
 		sd_unmount();
 	}
@@ -975,7 +975,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 static char *ipatches_txt;
 static void _ipatch_process(u32 offset, u32 value)
 {
-	s_printf(ipatches_txt + strlen(ipatches_txt), "%6X     %4X    ", BOOTROM_BASE + offset, value);
+	s_printf(ipatches_txt + strlen(ipatches_txt), "%6X     %4X    ", IROM_BASE + offset, value);
 	u8 lo = value & 0xFF;
 	switch (value >> 8)
 	{
