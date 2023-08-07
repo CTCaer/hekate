@@ -26,6 +26,7 @@
 
 #define CLOCK_MIN_YEAR 2023
 #define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
+#define CLOCK_YEARLIST "2023\n2024\n2025\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033"
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
@@ -763,18 +764,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 
 	// Create year roller.
 	lv_obj_t *roller_year = lv_roller_create(h1, NULL);
-	lv_roller_set_options(roller_year,
-		"2022\n"
-		"2023\n"
-		"2024\n"
-		"2025\n"
-		"2026\n"
-		"2027\n"
-		"2028\n"
-		"2029\n"
-		"2030\n"
-		"2031\n"
-		"2032");
+	lv_roller_set_options(roller_year, CLOCK_YEARLIST);
 	lv_roller_set_selected(roller_year, time.year, false);
 	lv_roller_set_visible_row_count(roller_year, 3);
 	clock_ctxt.year = roller_year;
