@@ -348,7 +348,7 @@ static void _show_errors(int sd_error)
 	if (*excp_enabled == EXCP_MAGIC || sd_error)
 	{
 		gfx_clear_grey(0);
-		gfx_con_setpos(0, 0);
+		gfx_con_setpos(0, 0, 0);
 		display_backlight_brightness(150, 1000);
 		display_init_framebuffer_log();
 		display_activate_console();

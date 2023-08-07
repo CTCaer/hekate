@@ -352,14 +352,14 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	if (console_enabled)
 	{
 		// Print input debugging in console.
-		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
-		gfx_con_setpos(32, 638);
+		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
+		gfx_con_setpos(32, 638, GFX_COL_AUTO);
 		gfx_con.fntsz = 8;
 		gfx_printf("x: %4d, y: %4d | z: %3d | ", touchpad.x, touchpad.y, touchpad.z);
-		gfx_printf("1: %02x, 2: %02x, 3: %02x, ", touchpad.raw[1], touchpad.raw[2], touchpad.raw[3]);
-		gfx_printf("4: %02X, 5: %02x, 6: %02x, 7: %02x",
+		gfx_printf("1: %02X, 2: %02X, 3: %02X, ", touchpad.raw[1], touchpad.raw[2], touchpad.raw[3]);
+		gfx_printf("4: %02X, 5: %02X, 6: %02X, 7: %02X",
 			touchpad.raw[4], touchpad.raw[5], touchpad.raw[6], touchpad.raw[7]);
-		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 		gfx_con.fntsz = 16;
 
 		return false;
@@ -470,10 +470,10 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 			{
 				display_activate_console();
 				console_enabled = true;
-				gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
-				gfx_con_setpos(964, 630);
+				gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
+				gfx_con_setpos(964, 630, GFX_COL_AUTO);
 				gfx_printf("Press -/+ to close");
-				gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+				gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 			}
 			else
 			{
@@ -491,14 +491,14 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	if (console_enabled)
 	{
 		// Print input debugging in console.
-		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy);
-		gfx_con_setpos(32, 630);
+		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
+		gfx_con_setpos(32, 630, GFX_COL_AUTO);
 		gfx_con.fntsz = 8;
-		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %d | cx: %03X - %03x, cy: %03X - %03x",
+		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %d | cx: %03X - %03X, cy: %03X - %03X",
 			jc_pad->lstick_x, jc_pad->lstick_y, jc_pad->buttons,
 			jc_pad->batt_info_l, jc_pad->batt_info_r,
 			jc_drv_ctx.cx_min, jc_drv_ctx.cx_max, jc_drv_ctx.cy_min, jc_drv_ctx.cy_max);
-		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy);
+		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 		gfx_con.fntsz = 16;
 
 		data->state = LV_INDEV_STATE_REL;

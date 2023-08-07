@@ -21,6 +21,9 @@
 
 #include <bdk.h>
 
+#define GFX_COL_KEEP 0xFFFE
+#define GFX_COL_AUTO 0xFFFF
+
 #define TXT_CLR_BG        0xFF000000 // Black.
 #define TXT_CLR_DEFAULT   0xFFFFFFFF // White.
 #define TXT_CLR_WARNING   0xFFFFDD00 // Yellow.
@@ -55,8 +58,10 @@ typedef struct _gfx_con_t
 	u32 fntsz;
 	u32 x;
 	u32 y;
+	u32 col;
 	u32 savedx;
 	u32 savedy;
+	u32 savedcol;
 	u32 fgcol;
 	int fillbg;
 	u32 bgcol;
@@ -72,8 +77,8 @@ void gfx_clear_grey(u8 color);
 void gfx_clear_color(u32 color);
 void gfx_con_init();
 void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol);
-void gfx_con_getpos(u32 *x, u32 *y);
-void gfx_con_setpos(u32 x, u32 y);
+void gfx_con_getpos(u32 *x, u32 *y, u32 *c);
+void gfx_con_setpos(u32 x, u32 y, u32 c);
 void gfx_putc(char c);
 void gfx_puts(const char *s);
 void gfx_wputs(const char *s);

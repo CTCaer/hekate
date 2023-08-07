@@ -19,6 +19,8 @@
 #include <string.h>
 #include "gfx.h"
 
+#define COLUMN2_X 640
+
 // Global gfx console and context.
 gfx_ctxt_t gfx_ctxt;
 gfx_con_t gfx_con;
@@ -150,6 +152,7 @@ void gfx_con_init()
 	gfx_con.fntsz = 16;
 	gfx_con.x = 0;
 	gfx_con.y = 0;
+	gfx_con.col = 0;
 	gfx_con.savedx = 0;
 	gfx_con.savedy = 0;
 	gfx_con.fgcol = TXT_CLR_DEFAULT;
@@ -167,20 +170,32 @@ void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol)
 	gfx_con.bgcol = bgcol;
 }
 
-void gfx_con_getpos(u32 *x, u32 *y)
+void gfx_con_getpos(u32 *x, u32 *y, u32 *c)
 {
 	*x = gfx_con.x;
 	*y = gfx_con.y;
+	*c = gfx_con.col;
 }
 
-static int gfx_column = 0;
-void gfx_con_setpos(u32 x, u32 y)
+void gfx_con_setpos(u32 x, u32 y, u32 c)
 {
 	gfx_con.x = x;
 	gfx_con.y = y;
 
-	if (!x)
-		gfx_column = 0;
+	switch (c)
+	{
+	case GFX_COL_KEEP:
+		break;
+	case GFX_COL_AUTO:
+		if (x < COLUMN2_X)
+			gfx_con.col = 0;
+		else
+			gfx_con.col = COLUMN2_X;
+		break;
+	default:
+		gfx_con.col = c;
+		break;
+	}
 }
 
 void gfx_putc(char c)
@@ -216,33 +231,33 @@ void gfx_putc(char c)
 			gfx_con.x += 16;
 			if (gfx_con.x > gfx_ctxt.width - 16)
 			{
-				gfx_con.x = gfx_column;
+				gfx_con.x = gfx_con.col;
 				gfx_con.y += 16;
 				if (gfx_con.y > gfx_ctxt.height - 33)
 				{
 					gfx_con.y = 0;
 
-					if (!gfx_column)
-						gfx_column = 640;
+					if (!gfx_con.col)
+						gfx_con.col = COLUMN2_X;
 					else
-						gfx_column = 0;
-					gfx_con.x = gfx_column;
+						gfx_con.col = 0;
+					gfx_con.x = gfx_con.col;
 				}
 			}
 		}
 		else if (c == '\n')
 		{
-			gfx_con.x = gfx_column;
+			gfx_con.x = gfx_con.col;
 			gfx_con.y += 16;
 			if (gfx_con.y > gfx_ctxt.height - 33)
 			{
 				gfx_con.y = 0;
 
-				if (!gfx_column)
-					gfx_column = 640;
+				if (!gfx_con.col)
+					gfx_con.col = COLUMN2_X;
 				else
-					gfx_column = 0;
-				gfx_con.x = gfx_column;
+					gfx_con.col = 0;
+				gfx_con.x = gfx_con.col;
 			}
 		}
 		break;
@@ -265,35 +280,35 @@ void gfx_putc(char c)
 				}
 			}
 			gfx_con.x += 8;
-			if (gfx_con.x > gfx_ctxt.width / 2 + gfx_column - 8)
+			if (gfx_con.x > gfx_ctxt.width / 2 + gfx_con.col - 8)
 			{
-				gfx_con.x = gfx_column;
+				gfx_con.x = gfx_con.col;
 				gfx_con.y += 8;
 				if (gfx_con.y > gfx_ctxt.height - 33)
 				{
 					gfx_con.y = 0;
 
-					if (!gfx_column)
-						gfx_column = 640;
+					if (!gfx_con.col)
+						gfx_con.col = COLUMN2_X;
 					else
-						gfx_column = 0;
-					gfx_con.x = gfx_column;
+						gfx_con.col = 0;
+					gfx_con.x = gfx_con.col;
 				}
 			}
 		}
 		else if (c == '\n')
 		{
-			gfx_con.x = gfx_column;
+			gfx_con.x = gfx_con.col;
 			gfx_con.y += 8;
 			if (gfx_con.y > gfx_ctxt.height - 33)
 			{
 				gfx_con.y = 0;
 
-				if (!gfx_column)
-					gfx_column = 640;
+				if (!gfx_con.col)
+					gfx_con.col = COLUMN2_X;
 				else
-					gfx_column = 0;
-				gfx_con.x = gfx_column;
+					gfx_con.col = 0;
+				gfx_con.x = gfx_con.col;
 			}
 		}
 		break;
