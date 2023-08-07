@@ -35,8 +35,8 @@ typedef struct _mbr_ctxt_t
 	u32 sector_start;
 } mbr_ctxt_t;
 
+static bool emummc_backup;
 static mbr_ctxt_t mbr_ctx;
-
 static lv_obj_t *emummc_manage_window;
 static lv_res_t (*emummc_tools)(lv_obj_t *btn);
 
@@ -518,7 +518,10 @@ static void _migrate_sd_backup_file_based()
 	f_open(&fp, "emuMMC/BK00/file_based", FA_CREATE_ALWAYS | FA_WRITE);
 	f_close(&fp);
 
-	emmcsn_path_impl(backup_path, "", "", NULL);
+	if (!emummc_backup)
+		emmcsn_path_impl(backup_path, "", "", NULL);
+	else
+		emmcsn_path_impl(backup_path, "/emummc", "", NULL);
 
 	// Move BOOT0.
 	s_printf(backup_file_path, "%s/BOOT0", backup_path);
@@ -689,9 +692,14 @@ static lv_res_t _create_emummc_migrate_action(lv_obj_t * btns, const char * txt)
 
 	if (backup)
 	{
-		s_printf(txt_buf,
-			"#C7EA46 Found suitable backup for emuMMC!#\n\n"
-			"#FF8000 Do you want to migrate it?#\n");
+		if (!emummc_backup)
+			s_printf(txt_buf,
+				"#C7EA46 Found suitable eMMC backup!#\n\n"
+				"#FF8000 Do you want to migrate it?#\n");
+		else
+			s_printf(txt_buf,
+				"#C7EA46 Found suitable emuMMC backup!#\n\n"
+				"#FF8000 Do you want to migrate it?#\n");
 		lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_mig4_action);
 	}
 	else if (emummc)
@@ -823,6 +831,8 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 	if (!f_stat(path_buf, NULL))
 		em_file = true;
 
+	emummc_backup = false;
+
 	emmcsn_path_impl(path_buf, "", "BOOT0", &emmc_storage);
 	if (!f_stat(path_buf, NULL))
 		backup = true;
@@ -836,6 +846,26 @@ static lv_res_t _create_mbox_emummc_migrate(lv_obj_t *btn)
 		rawnand_backup = true;
 
 	backup = backup && rawnand_backup;
+
+	if (!backup)
+	{
+		rawnand_backup = false;
+		emummc_backup = true;
+
+		emmcsn_path_impl(path_buf, "/emummc", "BOOT0", &emmc_storage);
+		if (!f_stat(path_buf, NULL))
+			backup = true;
+
+		emmcsn_path_impl(path_buf, "/emummc", "rawnand.bin", &emmc_storage);
+		if (!f_stat(path_buf, NULL))
+			rawnand_backup = true;
+
+		emmcsn_path_impl(path_buf, "/emummc", "rawnand.bin.00", &emmc_storage);
+		if (!f_stat(path_buf, NULL))
+			rawnand_backup = true;
+
+		backup = backup && rawnand_backup;
+	}
 
 	sd_unmount();
 	emmc_end();
