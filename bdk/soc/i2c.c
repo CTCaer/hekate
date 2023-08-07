@@ -386,7 +386,7 @@ int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, u8 *buf, u32 size)
 {
-	u8 tmp[4];
+	u8 tmp[8];
 
 	if (size > 7)
 		return 0;
