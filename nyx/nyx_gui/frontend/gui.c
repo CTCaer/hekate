@@ -2076,7 +2076,7 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 	int res = 0;
 
 	if (sd_mount())
-		res = create_config_entry();
+		res = !create_config_entry();
 
 	if (res)
 		lv_mbox_set_text(mbox, "#FF8000 hekate Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
