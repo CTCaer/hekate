@@ -171,7 +171,7 @@ void minerva_prep_boot_freq()
 	minerva_change_freq(FREQ_800);
 }
 
-void minerva_prep_boot_l4t(int oc_freq)
+void minerva_prep_boot_l4t(u32 oc_freq)
 {
 	if (!minerva_cfg)
 		return;
@@ -201,7 +201,10 @@ void minerva_prep_boot_l4t(int oc_freq)
 	{
 		mtc_cfg->rate_to = mtc_cfg->mtc_table[i].rate_khz;
 		// Skip already trained frequencies.
-		if (mtc_cfg->rate_to == FREQ_204 || mtc_cfg->rate_to == FREQ_800 || mtc_cfg->rate_to == FREQ_1600)
+		if (mtc_cfg->rate_to == FREQ_204  ||
+			mtc_cfg->rate_to == FREQ_800  ||
+			mtc_cfg->rate_to == FREQ_1600 ||
+			mtc_cfg->rate_to == oc_freq) // Skip OC freq since Arachne handles it.
 			continue;
 
 		// Train frequency.
