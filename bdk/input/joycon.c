@@ -304,7 +304,7 @@ typedef struct _jc_sio_hid_in_rpt_t
 	u8 stick_h_right;
 	u8 stick_m_right;
 	u8 stick_v_right;
-	u8 siaxis_rpt_num; // Max 15.
+	u8 siaxis_rpt; // bit0-3: report num. bit4-7: imu type.
 	// Each report is 800 us?
 	jc_hid_in_sixaxis_rpt_t sixaxis[15];
 } jc_sio_hid_in_rpt_t;
