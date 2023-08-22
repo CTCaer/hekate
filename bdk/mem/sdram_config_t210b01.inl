@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 CTCaer
+ * Copyright (c) 2020-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -715,7 +715,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
-										DRAM_CC(LPDDR4X_4GB_MICRON_1A)                      | \
+										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
 #define DRAM_CC_LPDDR4X_DYN_SELF_CTRL  (DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE) | \
@@ -723,7 +723,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
-										DRAM_CC(LPDDR4X_4GB_MICRON_1A)                      | \
+										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
 #define DRAM_CC_LPDDR4X_QUSE_EINPUT    (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
@@ -732,17 +732,17 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
-										DRAM_CC(LPDDR4X_4GB_MICRON_1A)                      | \
+										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
 #define DRAM_CC_LPDDR4X_FAW            (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
-										DRAM_CC(LPDDR4X_4GB_MICRON_1A))
+										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB))
 
 #define DRAM_CC_LPDDR4X_VPR            (DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
-										DRAM_CC(LPDDR4X_4GB_MICRON_1A)                      | \
+										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
 #define DRAM_CC_LPDDR4X_8GB            (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
