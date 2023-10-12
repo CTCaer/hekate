@@ -490,8 +490,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_IOWA_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
 		case LPDDR4X_HOAG_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
 		case LPDDR4X_AULA_4GB_SAMSUNG_K4U6E3S4AB_MGCL:
-			//strcpy(dram_man, "Samsung K4U6E3S4AB-MGCL 4GB");
-			strcpy(dram_man, "Samsung 1z 4GB #FF8000 Contact me!#");
+			strcpy(dram_man, "Samsung K4U6E3S4AB-MGCL 4GB");
 			break;
 		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTF:
 		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTF:
