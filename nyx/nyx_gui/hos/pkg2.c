@@ -46,16 +46,26 @@ u32 pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 
 void pkg2_get_newkern_info(u8 *kern_data)
 {
+	u32 crt_start = 0;
 	u32 pkg2_newkern_ini1_info = 0;
 	pkg2_newkern_ini1_start    = 0;
+
+	u32 first_op = *(u32 *)kern_data;
+	if ((first_op & 0xFE000000) == 0x14000000)
+		crt_start = (first_op & 0x1FFFFFF) << 2;
 
 	// Find static OP offset that is close to INI1 offset.
 	u32 counter_ops = 0x100;
 	while (counter_ops)
 	{
-		if (*(u32 *)(kern_data + 0x100 - counter_ops) == PKG2_NEWKERN_GET_INI1_HEURISTIC)
+		if (*(u32 *)(kern_data + crt_start + 0x100 - counter_ops) == PKG2_NEWKERN_GET_INI1_HEURISTIC)
 		{
-			pkg2_newkern_ini1_info = 0x100 - counter_ops + 12; // OP found. Add 12 for the INI1 offset.
+			// OP found. Add 12 for the INI1 info offset.
+			pkg2_newkern_ini1_info = crt_start + 0x100 - counter_ops + 12;
+
+			// On v2 kernel with dynamic crt there's a NOP after heuristic. Offset one op.
+			if (crt_start)
+				pkg2_newkern_ini1_info += 4;
 			break;
 		}
 
@@ -71,6 +81,13 @@ void pkg2_get_newkern_info(u8 *kern_data)
 
 	pkg2_newkern_ini1_start = *(u32 *)(kern_data + pkg2_newkern_ini1_info);
 	pkg2_newkern_ini1_end   = *(u32 *)(kern_data + pkg2_newkern_ini1_info + 0x8);
+
+	// On v2 kernel with dynamic crt, values are relative to value address.
+	if (crt_start)
+	{
+		pkg2_newkern_ini1_start += pkg2_newkern_ini1_info;
+		pkg2_newkern_ini1_end   += pkg2_newkern_ini1_info + 0x8;
+	}
 }
 
 //!TODO: Update on mkey changes.
@@ -92,6 +109,8 @@ static const u8 mkey_vector_7xx[HOS_KB_VERSION_MAX - HOS_KB_VERSION_810 + 1][SE_
 	{ 0xB1, 0x81, 0xA6, 0x0D, 0x72, 0xC7, 0xEE, 0x15, 0x21, 0xF3, 0xC0, 0xB5, 0x6B, 0x61, 0x6D, 0xE7 },
 	// Master key 14 encrypted with 15. (15.0.0 with 16.0.0)
 	{ 0xAF, 0x11, 0x4C, 0x67, 0x17, 0x7A, 0x52, 0x43, 0xF7, 0x70, 0x2F, 0xC7, 0xEF, 0x81, 0x72, 0x16 },
+	// Master key 15 encrypted with 16. (16.0.0 with 17.0.0)
+	{ 0x25, 0x12, 0x8B, 0xCB, 0xB5, 0x46, 0xA1, 0xF8, 0xE0, 0x52, 0x15, 0xB7, 0x0B, 0x57, 0x00, 0xBD },
 };
 
 static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)

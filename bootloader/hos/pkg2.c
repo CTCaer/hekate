@@ -190,16 +190,26 @@ static u32 _pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 
 void pkg2_get_newkern_info(u8 *kern_data)
 {
+	u32 crt_start = 0;
 	pkg2_newkern_ini1_info  = 0;
 	pkg2_newkern_ini1_start = 0;
+
+	u32 first_op = *(u32 *)kern_data;
+	if ((first_op & 0xFE000000) == 0x14000000)
+		crt_start = (first_op & 0x1FFFFFF) << 2;
 
 	// Find static OP offset that is close to INI1 offset.
 	u32 counter_ops = 0x100;
 	while (counter_ops)
 	{
-		if (*(u32 *)(kern_data + 0x100 - counter_ops) == PKG2_NEWKERN_GET_INI1_HEURISTIC)
+		if (*(u32 *)(kern_data + crt_start + 0x100 - counter_ops) == PKG2_NEWKERN_GET_INI1_HEURISTIC)
 		{
-			pkg2_newkern_ini1_info = 0x100 - counter_ops + 12; // OP found. Add 12 for the INI1 offset.
+			// OP found. Add 12 for the INI1 info offset.
+			pkg2_newkern_ini1_info = crt_start + 0x100 - counter_ops + 12;
+
+			// On v2 kernel with dynamic crt there's a NOP after heuristic. Offset one op.
+			if (crt_start)
+				pkg2_newkern_ini1_info += 4;
 			break;
 		}
 
@@ -215,6 +225,13 @@ void pkg2_get_newkern_info(u8 *kern_data)
 
 	pkg2_newkern_ini1_start = *(u32 *)(kern_data + pkg2_newkern_ini1_info);
 	pkg2_newkern_ini1_end   = *(u32 *)(kern_data + pkg2_newkern_ini1_info + 0x8);
+
+	// On v2 kernel with dynamic crt, values are relative to value address.
+	if (crt_start)
+	{
+		pkg2_newkern_ini1_start += pkg2_newkern_ini1_info;
+		pkg2_newkern_ini1_end   += pkg2_newkern_ini1_info + 0x8;
+	}
 }
 
 bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
@@ -754,12 +771,13 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo)
 {
 	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
+	u32 meso_magic = *(u32 *)(ctxt->kernel + 4) & 0xFFFFFF;
 	u32 kernel_size = ctxt->kernel_size;
-	bool is_meso = *(u32 *)(ctxt->kernel + 4) == ATM_MESOSPHERE;
 	u8 kb = ctxt->pkg1_id->kb;
 	u8 *pdst = (u8 *)dst;
 
 	// Force new Package2 if Mesosphere.
+	bool is_meso = meso_magic == ATM_MESOSPHERE;
 	if (is_meso)
 		ctxt->new_pkg2 = true;
 
@@ -803,7 +821,11 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
 
 		// Set new INI1 offset to kernel.
-		*(u32 *)(pdst + (is_meso ? 8 : pkg2_newkern_ini1_info)) = kernel_size;
+		u32 meso_meta_offset = *(u32 *)(pdst + 8);
+		if (is_meso && meso_meta_offset)
+			*(u32 *)(pdst + meso_meta_offset) = kernel_size - meso_meta_offset;
+		else if (ini1_size)
+			*(u32 *)(pdst + (is_meso ? 8 : pkg2_newkern_ini1_info)) = kernel_size;
 
 		kernel_size += ini1_size;
 	}
