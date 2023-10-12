@@ -702,29 +702,38 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 	return hdr;
 }
 
-static u32 _pkg2_ini1_build(u8 *pdst, pkg2_hdr_t *hdr, link_t *kips_info, bool new_pkg2)
+static u32 _pkg2_ini1_build(u8 *pdst, u8 *psec, pkg2_hdr_t *hdr, link_t *kips_info, bool new_pkg2)
 {
+	// Calculate INI1 size.
 	u32 ini1_size = sizeof(pkg2_ini1_t);
-	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)pdst;
+	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, kips_info, link)
+	{
+		ini1_size += ki->size;
+	}
+
+	// Align size and set it.
+	ini1_size = ALIGN(ini1_size, 4);
+
+	// For new kernel if INI1 fits in the old one, use it.
+	bool use_old_ini_region = psec && ini1_size <= (pkg2_newkern_ini1_end - pkg2_newkern_ini1_start);
+	if (use_old_ini_region)
+		pdst = psec + pkg2_newkern_ini1_start;
 
 	// Set initial header and magic.
+	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)pdst;
 	memset(ini1, 0, sizeof(pkg2_ini1_t));
 	ini1->magic = INI1_MAGIC;
+	ini1->size  = ini1_size;
 	pdst += sizeof(pkg2_ini1_t);
 
-	// Merge kips into INI1.
+	// Merge KIPs into INI1.
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, kips_info, link)
 	{
 DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->size);
 		memcpy(pdst, ki->kip1, ki->size);
 		pdst += ki->size;
-		ini1_size += ki->size;
 		ini1->num_procs++;
 	}
-
-	// Align size and set it.
-	ini1_size = ALIGN(ini1_size, 4);
-	ini1->size = ini1_size;
 
 	// Encrypt INI1 in its own section if old pkg2. Otherwise it gets embedded into Kernel.
 	if (!new_pkg2)
@@ -739,16 +748,16 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 		hdr->sec_off[PKG2_SEC_INI1] = 0;
 	}
 
-	return ini1_size;
+	return !use_old_ini_region ? ini1_size : 0;
 }
 
 void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo)
 {
-	u8 *pdst = (u8 *)dst;
 	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
 	u32 kernel_size = ctxt->kernel_size;
 	bool is_meso = *(u32 *)(ctxt->kernel + 4) == ATM_MESOSPHERE;
 	u8 kb = ctxt->pkg1_id->kb;
+	u8 *pdst = (u8 *)dst;
 
 	// Force new Package2 if Mesosphere.
 	if (is_meso)
@@ -789,12 +798,14 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 		hdr->sec_off[PKG2_SEC_KERNEL] = 0x10000000;
 	else
 	{
+		// Build INI1 for new Package2.
+		u32 ini1_size = _pkg2_ini1_build(pdst + kernel_size, is_meso ? NULL : pdst, hdr, kips_info, true);
+		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
+
 		// Set new INI1 offset to kernel.
 		*(u32 *)(pdst + (is_meso ? 8 : pkg2_newkern_ini1_info)) = kernel_size;
 
-		// Build INI1 for new Package2.
-		kernel_size += _pkg2_ini1_build(pdst + kernel_size, hdr, kips_info, ctxt->new_pkg2);
-		hdr->sec_off[PKG2_SEC_KERNEL] = 0x60000;
+		kernel_size += ini1_size;
 	}
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
 	se_aes_crypt_ctr(pkg2_keyslot, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * SE_AES_IV_SIZE]);
@@ -804,7 +815,7 @@ DPRINTF("kernel encrypted\n");
 	// Build INI1 for old Package2.
 	u32 ini1_size = 0;
 	if (!ctxt->new_pkg2)
-		ini1_size = _pkg2_ini1_build(pdst, hdr, kips_info, false);
+		ini1_size = _pkg2_ini1_build(pdst, NULL, hdr, kips_info, false);
 DPRINTF("INI1 encrypted\n");
 
 	if (!is_exo) // Not needed on Exosphere 1.0.0 and up.
