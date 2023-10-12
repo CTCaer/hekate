@@ -52,7 +52,7 @@ typedef struct _kb_t
 	u8 padding[0x150];
 } kb_t;
 
-static const u8 keyblob_keyseeds[][SE_KEY_128_SIZE] = {
+static const u8 keyblob_keyseeds[HOS_KB_VERSION_600 - HOS_KB_VERSION_100 + 1][SE_KEY_128_SIZE] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, // 3.0.0.
 	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, // 3.0.1.
@@ -79,7 +79,7 @@ static const u8 master_kekseed_t210_max[SE_KEY_128_SIZE] =
 	{ 0x99, 0x22, 0x09, 0x57, 0xA7, 0xF9, 0x5E, 0x94, 0xFE, 0x78, 0x7F, 0x41, 0xD6, 0xE7, 0x56, 0xE6 }; // 16.0.0.
 
 //!TODO: Update on mkey changes.
-static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
+static const u8 master_kekseed_t210b01[HOS_KB_VERSION_MAX - HOS_KB_VERSION_600 + 1][SE_KEY_128_SIZE] = {
 	{ 0x77, 0x60, 0x5A, 0xD2, 0xEE, 0x6E, 0xF8, 0x3C, 0x3F, 0x72, 0xE2, 0x59, 0x9D, 0xAC, 0x5E, 0x56 }, // 6.0.0.
 	{ 0x1E, 0x80, 0xB8, 0x17, 0x3E, 0xC0, 0x60, 0xAA, 0x11, 0xBE, 0x1A, 0x4A, 0xA6, 0x6F, 0xE4, 0xAE }, // 6.2.0.
 	{ 0x94, 0x08, 0x67, 0xBD, 0x0A, 0x00, 0x38, 0x84, 0x11, 0xD3, 0x1A, 0xDB, 0xDD, 0x8D, 0xF1, 0x8A }, // 7.0.0.
@@ -103,7 +103,7 @@ const u8 package2_keyseed[SE_KEY_128_SIZE] =
 	{ 0xFB, 0x8B, 0x6A, 0x9C, 0x79, 0x00, 0xC8, 0x49, 0xEF, 0xD2, 0x4D, 0x85, 0x4D, 0x30, 0xA0, 0xC7 };
 
 //!TODO: Update on mkey changes.
-static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][SE_KEY_128_SIZE] = {
+static const u8 mkey_vectors[HOS_KB_VERSION_MAX + 1][SE_KEY_128_SIZE] = {
 	{ 0x0C, 0xF0, 0x59, 0xAC, 0x85, 0xF6, 0x26, 0x65, 0xE1, 0xE9, 0x19, 0x55, 0xE6, 0xF2, 0x67, 0x3D }, // Zeroes  encrypted with mkey 00.
 	{ 0x29, 0x4C, 0x04, 0xC8, 0xEB, 0x10, 0xED, 0x9D, 0x51, 0x64, 0x97, 0xFB, 0xF3, 0x4D, 0x50, 0xDD }, // Mkey 00 encrypted with mkey 01.
 	{ 0xDE, 0xCF, 0xEB, 0xEB, 0x10, 0xAE, 0x74, 0xD8, 0xAD, 0x7C, 0xF4, 0x9E, 0x62, 0xE0, 0xE8, 0x72 }, // Mkey 01 encrypted with mkey 02.
@@ -123,7 +123,7 @@ static const u8 mkey_vectors[KB_FIRMWARE_VERSION_MAX + 1][SE_KEY_128_SIZE] = {
 };
 
 //!TODO: Update on mkey changes.
-static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][SE_KEY_128_SIZE] = {
+static const u8 new_console_keyseed[HOS_KB_VERSION_MAX - HOS_KB_VERSION_400 + 1][SE_KEY_128_SIZE] = {
 	{ 0x8B, 0x4E, 0x1C, 0x22, 0x42, 0x07, 0xC8, 0x73, 0x56, 0x94, 0x08, 0x8B, 0xCC, 0x47, 0x0F, 0x5D }, // 4.x    New Device Key Source.
 	{ 0x6C, 0xEF, 0xC6, 0x27, 0x8B, 0xEC, 0x8A, 0x91, 0x99, 0xAB, 0x24, 0xAC, 0x4F, 0x1C, 0x8F, 0x1C }, // 5.x    New Device Key Source.
 	{ 0x70, 0x08, 0x1B, 0x97, 0x44, 0x64, 0xF8, 0x91, 0x54, 0x9D, 0xC6, 0x84, 0x8F, 0x1A, 0xB2, 0xE4 }, // 6.x    New Device Key Source.
@@ -140,7 +140,7 @@ static const u8 new_console_keyseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSIO
 };
 
 //!TODO: Update on mkey changes.
-static const u8 new_console_kekseed[KB_FIRMWARE_VERSION_MAX - KB_FIRMWARE_VERSION_400 + 1][SE_KEY_128_SIZE] = {
+static const u8 new_console_kekseed[HOS_KB_VERSION_MAX - HOS_KB_VERSION_400 + 1][SE_KEY_128_SIZE] = {
 	{ 0x88, 0x62, 0x34, 0x6E, 0xFA, 0xF7, 0xD8, 0x3F, 0xE1, 0x30, 0x39, 0x50, 0xF0, 0xB7, 0x5D, 0x5D }, // 4.x    New Device Keygen Source.
 	{ 0x06, 0x1E, 0x7B, 0xE9, 0x6D, 0x47, 0x8C, 0x77, 0xC5, 0xC8, 0xE7, 0x94, 0x9A, 0xA8, 0x5F, 0x2E }, // 5.x    New Device Keygen Source.
 	{ 0x99, 0xFA, 0x98, 0xBD, 0x15, 0x1C, 0x72, 0xFD, 0x7D, 0x9A, 0xD5, 0x41, 0x00, 0xFD, 0xB2, 0xEF }, // 6.x    New Device Keygen Source.
@@ -292,7 +292,7 @@ void hos_eks_clear(u32 kb)
 	if (h_cfg.t210b01)
 		return;
 
-	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
+	if (h_cfg.eks && kb >= HOS_KB_VERSION_700)
 	{
 		// Check if current Master key is enabled.
 		if (h_cfg.eks->enabled)
@@ -327,7 +327,7 @@ int hos_keygen_t210b01(u32 kb)
 	se_aes_unwrap_key(10, 14, console_keyseed_4xx);
 
 	// Derive master key.
-	se_aes_unwrap_key(7, 12, master_kekseed_t210b01[kb - KB_FIRMWARE_VERSION_600]);
+	se_aes_unwrap_key(7, 12, master_kekseed_t210b01[kb - HOS_KB_VERSION_600]);
 	se_aes_unwrap_key(7, 7,  master_keyseed_retail);
 
 	// Derive latest pkg2 key.
@@ -343,7 +343,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	tsec_keys_t tsec_keys;
 	kb_t *kb_data = (kb_t *)keyblob;
 
-	if (kb > KB_FIRMWARE_VERSION_MAX)
+	if (kb > HOS_KB_VERSION_MAX)
 		return 0;
 
 	if (h_cfg.t210b01)
@@ -355,15 +355,15 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	_hos_eks_get();
 
 	// Use tsec keygen for old firmware or if EKS keys does not exist for newer.
-	if (kb <= KB_FIRMWARE_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
+	if (kb <= HOS_KB_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
 		use_tsec = true;
 
-	if (kb <= KB_FIRMWARE_VERSION_600)
+	if (kb <= HOS_KB_VERSION_600)
 	{
 		tsec_ctxt->size = 0xF00;
 		tsec_ctxt->type = TSEC_FW_TYPE_OLD;
 	}
-	else if (kb == KB_FIRMWARE_VERSION_620)
+	else if (kb == HOS_KB_VERSION_620)
 	{
 		tsec_ctxt->size = 0x2900;
 		tsec_ctxt->type = TSEC_FW_TYPE_EMU;
@@ -413,7 +413,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		}
 	}
 
-	if (kb >= KB_FIRMWARE_VERSION_700)
+	if (kb >= HOS_KB_VERSION_700)
 	{
 		// For 7.0.0 and up, save EKS slot if it doesn't exist.
 		if (use_tsec)
@@ -439,7 +439,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		// Package2 key.
 		se_aes_unwrap_key(8, 7, package2_keyseed);
 	}
-	else if (kb == KB_FIRMWARE_VERSION_620)
+	else if (kb == HOS_KB_VERSION_620)
 	{
 		// Set TSEC key.
 		se_aes_key_set(12, tsec_keys.tsec, SE_KEY_128_SIZE);
@@ -496,20 +496,20 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 
 		switch (kb)
 		{
-		case KB_FIRMWARE_VERSION_100:
-		case KB_FIRMWARE_VERSION_300:
-		case KB_FIRMWARE_VERSION_301:
+		case HOS_KB_VERSION_100:
+		case HOS_KB_VERSION_300:
+		case HOS_KB_VERSION_301:
 			se_aes_unwrap_key(13, 15, console_keyseed);
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
-		case KB_FIRMWARE_VERSION_400:
+		case HOS_KB_VERSION_400:
 			se_aes_unwrap_key(13, 15, console_keyseed_4xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
 			//se_aes_unwrap_key(14, 12, master_keyseed_4xx); // In this context it's useless. So don't kill SBK.
 			se_aes_unwrap_key(12, 12, master_keyseed_retail);
 			break;
-		case KB_FIRMWARE_VERSION_500:
-		case KB_FIRMWARE_VERSION_600:
+		case HOS_KB_VERSION_500:
+		case HOS_KB_VERSION_600:
 			se_aes_unwrap_key(10, 15, console_keyseed_4xx);
 			se_aes_unwrap_key(15, 15, console_keyseed);
 			//se_aes_unwrap_key(14, 12, master_keyseed_4xx); // In this context it's useless. So don't kill SBK.
@@ -547,7 +547,7 @@ static void _hos_validate_mkey()
 	} while (mkey_idx - 1);
 
 	se_aes_key_clear(2);
-	hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
+	hos_eks_clear(HOS_KB_VERSION_MAX);
 }
 
 static void _hos_bis_print_key(u32 idx, u8 *key)
@@ -566,14 +566,14 @@ static void _hos_bis_print_key(u32 idx, u8 *key)
 int hos_bis_keygen()
 {
 	u32 keygen_rev = 0;
-	u32 console_key_slot = 15; // KB_FIRMWARE_VERSION_MAX. Only for Erista.
+	u32 console_key_slot = 15; // HOS_KB_VERSION_MAX. Only for Erista.
 	tsec_ctxt_t tsec_ctxt = {0};
 
 	if (!bis_keys)
 		bis_keys = malloc(SE_KEY_128_SIZE * 6);
 
 	// Run initial keygen.
-	hos_keygen(NULL, KB_FIRMWARE_VERSION_MAX, &tsec_ctxt);
+	hos_keygen(NULL, HOS_KB_VERSION_MAX, &tsec_ctxt);
 
 	// All Mariko use new device keygen. New keygen was introduced in 4.0.0.
 	// We check unconditionally in order to support downgrades.
@@ -587,7 +587,7 @@ int hos_bis_keygen()
 		u32 mkey_idx = sizeof(mkey_vectors) / SE_KEY_128_SIZE;
 
 		// Keygen revision uses bootloader version, which starts from 1.
-		keygen_rev -= (KB_FIRMWARE_VERSION_400 + 1);
+		keygen_rev -= (HOS_KB_VERSION_400 + 1);
 
 		// Derive mkey 0.
 		do
@@ -637,7 +637,7 @@ int hos_bis_keygen()
 	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (4 * SE_KEY_128_SIZE), bis_keyseed[4]);
 	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (5 * SE_KEY_128_SIZE), bis_keyseed[5]);
 
-	// Validate key because KB_FIRMWARE_VERSION_MAX.
+	// Validate key because HOS_KB_VERSION_MAX.
 	if (!h_cfg.t210b01)
 		_hos_validate_mkey();
 
@@ -706,7 +706,7 @@ int hos_dump_cal0()
 		cal0_buf = NULL;
 
 		// Clear EKS keys.
-		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
+		hos_eks_clear(HOS_KB_VERSION_MAX);
 
 		return 2;
 	}

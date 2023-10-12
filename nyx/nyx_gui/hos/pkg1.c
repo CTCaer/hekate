@@ -117,9 +117,9 @@ const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t
 	u32 sec_size[3] = { hdr->wb_size, hdr->ldr_size, hdr->sm_size };
 
 	// Get correct header mapping.
-	if (id->kb == KB_FIRMWARE_VERSION_100 && !strcmp(id->id, "20161121183008"))
+	if (id->kb == HOS_KB_VERSION_100 && !strcmp(id->id, "20161121183008"))
 		sec_map = sec_map_100;
-	else if (id->kb >= KB_FIRMWARE_VERSION_100 && id->kb <= KB_FIRMWARE_VERSION_301)
+	else if (id->kb >= HOS_KB_VERSION_100 && id->kb <= HOS_KB_VERSION_301)
 		sec_map = sec_map_2xx;
 	else
 		sec_map = sec_map_4xx;

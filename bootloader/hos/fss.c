@@ -1,7 +1,7 @@
 /*
  * Atmosphère Fusée Secondary Storage (Package3) parser.
  *
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -120,7 +120,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 	bool experimental = false;
 
 	// Skip if stock and Exosphere and warmboot are not needed.
-	bool pkg1_old = ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_620; // Should check if t210b01?
+	bool pkg1_old = ctxt->pkg1_id->kb <= HOS_KB_VERSION_620; // Should check if t210b01?
 	bool emummc_disabled = !emu_cfg.enabled || h_cfg.emummc_force_disable;
 
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)

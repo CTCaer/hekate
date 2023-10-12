@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -109,7 +109,7 @@ DPRINTF(" kip1 %d:%s @ %08X (%08X)\n", i, kip1->name, (u32)kip1, ki->size);
 }
 
 //!TODO: Update on mkey changes.
-static const u8 mkey_vector_7xx[][SE_KEY_128_SIZE] =
+static const u8 mkey_vector_7xx[HOS_KB_VERSION_MAX - HOS_KB_VERSION_810 + 1][SE_KEY_128_SIZE] =
 {
 	// Master key 7  encrypted with 8.  (7.0.0 with 8.1.0)
 	{ 0xEA, 0x60, 0xB3, 0xEA, 0xCE, 0x8F, 0x24, 0x46, 0x7D, 0x33, 0x9C, 0xD1, 0xBC, 0x24, 0x98, 0x29 },
@@ -165,13 +165,13 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 		goto key_found;
 
 	// Decrypt older pkg2 via new mkeys.
-	if ((kb >= KB_FIRMWARE_VERSION_700) && (kb < KB_FIRMWARE_VERSION_MAX))
+	if ((kb >= HOS_KB_VERSION_700) && (kb < HOS_KB_VERSION_MAX))
 	{
 		u8 tmp_mkey[SE_KEY_128_SIZE];
 		u8 decr_slot = 7; // THK mkey or T210B01 mkey.
 		u8 mkey_seeds_cnt = sizeof(mkey_vector_7xx) / SE_KEY_128_SIZE;
 		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
-		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (KB_FIRMWARE_VERSION_MAX - kb);
+		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (HOS_KB_VERSION_MAX - kb);
 
 		while (mkey_seeds_cnt)
 		{

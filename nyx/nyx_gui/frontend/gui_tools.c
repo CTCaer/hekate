@@ -1215,7 +1215,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	hos_keygen(keyblob, kb, &tsec_ctxt);
 	free(keyblob);
 
-	if (h_cfg.t210b01 || kb <= KB_FIRMWARE_VERSION_600)
+	if (h_cfg.t210b01 || kb <= HOS_KB_VERSION_600)
 	{
 		if (!pkg1_decrypt(pkg1_id, pkg1))
 		{
@@ -1227,7 +1227,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		}
 	}
 
-	if (h_cfg.t210b01 || kb <= KB_FIRMWARE_VERSION_620)
+	if (h_cfg.t210b01 || kb <= HOS_KB_VERSION_620)
 	{
 		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
 		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pk1_offset + pkg1_id->pkg11_off + 0x20);
@@ -1361,12 +1361,12 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	manual_system_maintenance(true);
 
 	// Dump INI1.
-	u32 ini1_off = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
+	u32 ini1_off  = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
 	u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
 	if (!ini1_size)
 	{
 		pkg2_get_newkern_info(pkg2_hdr->data);
-		ini1_off = pkg2_newkern_ini1_start;
+		ini1_off  = pkg2_newkern_ini1_start;
 		ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
 	}
 
@@ -1431,7 +1431,7 @@ out_free:
 	emmc_end();
 	sd_unmount();
 
-	if (kb >= KB_FIRMWARE_VERSION_620)
+	if (kb >= HOS_KB_VERSION_620)
 		se_aes_key_clear(8);
 out_end:
 	// Enable buttons.

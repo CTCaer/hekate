@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -797,7 +797,7 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 	if (memcmp(&cal0->magic, "CAL0", 4))
 	{
 		// Clear EKS keys.
-		hos_eks_clear(KB_FIRMWARE_VERSION_MAX);
+		hos_eks_clear(HOS_KB_VERSION_MAX);
 
 		strcpy(txt_buf, "#FFDD00 BIS keys validation failed!#\n");
 		error = true;

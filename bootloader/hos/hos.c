@@ -89,7 +89,7 @@ typedef struct _kb_t
 	u8 padding[0x150];
 } kb_t;
 
-static const u8 keyblob_keyseeds[][SE_KEY_128_SIZE] = {
+static const u8 keyblob_keyseeds[HOS_KB_VERSION_600 - HOS_KB_VERSION_100 + 1][SE_KEY_128_SIZE] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, // 3.0.0.
 	{ 0x33, 0x76, 0x85, 0xEE, 0x88, 0x4A, 0xAE, 0x0A, 0xC2, 0x8A, 0xFD, 0x7D, 0x63, 0xC0, 0x43, 0x3B }, // 3.0.1.
@@ -111,7 +111,7 @@ static const u8 master_kekseed_620[SE_KEY_128_SIZE] =
 	{ 0x37, 0x4B, 0x77, 0x29, 0x59, 0xB4, 0x04, 0x30, 0x81, 0xF6, 0xE5, 0x8C, 0x6D, 0x36, 0x17, 0x9A };
 
 //!TODO: Update on tsec/mkey changes.
-static const u8 master_kekseed_t210_tsec_v4[][SE_KEY_128_SIZE] = {
+static const u8 master_kekseed_t210_tsec_v4[HOS_KB_VERSION_MAX - HOS_KB_VERSION_810 + 1][SE_KEY_128_SIZE] = {
 	{ 0xDE, 0xDC, 0xE3, 0x39, 0x30, 0x88, 0x16, 0xF8, 0xAE, 0x97, 0xAD, 0xEC, 0x64, 0x2D, 0x41, 0x41 }, // 8.1.0.
 	{ 0x1A, 0xEC, 0x11, 0x82, 0x2B, 0x32, 0x38, 0x7A, 0x2B, 0xED, 0xBA, 0x01, 0x47, 0x7E, 0x3B, 0x67 }, // 9.0.0.
 	{ 0x30, 0x3F, 0x02, 0x7E, 0xD8, 0x38, 0xEC, 0xD7, 0x93, 0x25, 0x34, 0xB5, 0x30, 0xEB, 0xCA, 0x7A }, // 9.1.0.
@@ -123,7 +123,7 @@ static const u8 master_kekseed_t210_tsec_v4[][SE_KEY_128_SIZE] = {
 };
 
 //!TODO: Update on mkey changes.
-static const u8 master_kekseed_t210b01[][SE_KEY_128_SIZE] = {
+static const u8 master_kekseed_t210b01[HOS_KB_VERSION_MAX - HOS_KB_VERSION_600 + 1][SE_KEY_128_SIZE] = {
 	{ 0x77, 0x60, 0x5A, 0xD2, 0xEE, 0x6E, 0xF8, 0x3C, 0x3F, 0x72, 0xE2, 0x59, 0x9D, 0xAC, 0x5E, 0x56 }, // 6.0.0.
 	{ 0x1E, 0x80, 0xB8, 0x17, 0x3E, 0xC0, 0x60, 0xAA, 0x11, 0xBE, 0x1A, 0x4A, 0xA6, 0x6F, 0xE4, 0xAE }, // 6.2.0.
 	{ 0x94, 0x08, 0x67, 0xBD, 0x0A, 0x00, 0x38, 0x84, 0x11, 0xD3, 0x1A, 0xDB, 0xDD, 0x8D, 0xF1, 0x8A }, // 7.0.0.
@@ -302,7 +302,7 @@ void hos_eks_clear(u32 kb)
 	if (h_cfg.t210b01)
 		return;
 
-	if (h_cfg.eks && kb >= KB_FIRMWARE_VERSION_700)
+	if (h_cfg.eks && kb >= HOS_KB_VERSION_700)
 	{
 		// Check if current Master key is enabled.
 		if (h_cfg.eks->enabled)
@@ -337,7 +337,7 @@ int hos_keygen_t210b01(u32 kb)
 	se_aes_unwrap_key(10, 14, console_keyseed_4xx);
 
 	// Derive master key.
-	se_aes_unwrap_key(7, 12, master_kekseed_t210b01[kb - KB_FIRMWARE_VERSION_600]);
+	se_aes_unwrap_key(7, 12, master_kekseed_t210b01[kb - HOS_KB_VERSION_600]);
 	se_aes_unwrap_key(7, 7,  master_keyseed_retail);
 
 	// Derive latest pkg2 key.
@@ -355,7 +355,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 	tsec_keys_t tsec_keys;
 	kb_t *kb_data = (kb_t *)keyblob;
 
-	if (kb > KB_FIRMWARE_VERSION_MAX)
+	if (kb > HOS_KB_VERSION_MAX)
 		return 0;
 
 	if (h_cfg.t210b01)
@@ -376,15 +376,15 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 	_hos_eks_get();
 
 	// Use tsec keygen for old firmware or if EKS keys does not exist for newer.
-	if (kb <= KB_FIRMWARE_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
+	if (kb <= HOS_KB_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
 		use_tsec = true;
 
-	if (kb <= KB_FIRMWARE_VERSION_600)
+	if (kb <= HOS_KB_VERSION_600)
 	{
 		tsec_ctxt->size = 0xF00;
 		tsec_ctxt->type = TSEC_FW_TYPE_OLD;
 	}
-	else if (kb == KB_FIRMWARE_VERSION_620)
+	else if (kb == HOS_KB_VERSION_620)
 	{
 		tsec_ctxt->size = 0x2900;
 		tsec_ctxt->type = TSEC_FW_TYPE_EMU;
@@ -434,7 +434,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 		}
 	}
 
-	if (kb >= KB_FIRMWARE_VERSION_700)
+	if (kb >= HOS_KB_VERSION_700)
 	{
 		// For 7.0.0 and up, save EKS slot if it doesn't exist.
 		if (use_tsec)
@@ -445,8 +445,8 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 
 		// Use 8.1.0 for 7.0.0 otherwise the proper one.
 		u32 mkey_idx = 0;
-		if (kb >= KB_FIRMWARE_VERSION_810)
-			mkey_idx = kb - KB_FIRMWARE_VERSION_810;
+		if (kb >= HOS_KB_VERSION_810)
+			mkey_idx = kb - HOS_KB_VERSION_810;
 
 		if (!is_exo)
 		{
@@ -475,7 +475,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 			se_aes_unwrap_key(8, 13, package2_keyseed);
 		}
 	}
-	else if (kb == KB_FIRMWARE_VERSION_620)
+	else if (kb == HOS_KB_VERSION_620)
 	{
 		// Set TSEC key.
 		se_aes_key_set(12, tsec_keys.tsec, SE_KEY_128_SIZE);
@@ -552,21 +552,21 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 		{
 			switch (kb)
 			{
-			case KB_FIRMWARE_VERSION_100:
-			case KB_FIRMWARE_VERSION_300:
-			case KB_FIRMWARE_VERSION_301:
+			case HOS_KB_VERSION_100:
+			case HOS_KB_VERSION_300:
+			case HOS_KB_VERSION_301:
 				se_aes_unwrap_key(13, 15, console_keyseed);
 				se_aes_unwrap_key(12, 12, master_keyseed_retail);
 				break;
-			case KB_FIRMWARE_VERSION_400:
+			case HOS_KB_VERSION_400:
 				se_aes_unwrap_key(13, 15, console_keyseed_4xx);
 				se_aes_unwrap_key(15, 15, console_keyseed);
 				se_aes_unwrap_key(14, 12, master_keyseed_4xx);
 				se_aes_unwrap_key(12, 12, master_keyseed_retail);
 				sbk_wiped = true;
 				break;
-			case KB_FIRMWARE_VERSION_500:
-			case KB_FIRMWARE_VERSION_600:
+			case HOS_KB_VERSION_500:
+			case HOS_KB_VERSION_600:
 				se_aes_unwrap_key(10, 15, console_keyseed_4xx);
 				se_aes_unwrap_key(15, 15, console_keyseed);
 				se_aes_unwrap_key(14, 12, master_keyseed_4xx);
@@ -642,7 +642,7 @@ try_load:
 	gfx_printf("Identified pkg1 and mkey %d\n\n", ctxt->pkg1_id->kb);
 
 	// Read the correct keyblob for older HOS versions.
-	if (ctxt->pkg1_id->kb <= KB_FIRMWARE_VERSION_600)
+	if (ctxt->pkg1_id->kb <= HOS_KB_VERSION_600)
 	{
 		ctxt->keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
 		emummc_storage_read(PKG1_HOS_KEYBLOBS_OFFSET / EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
@@ -865,7 +865,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!ctxt.warmboot || !ctxt.secmon)
 	{
 		// Decrypt PK1 or PK11.
-		if (kb <= KB_FIRMWARE_VERSION_600 || h_cfg.t210b01)
+		if (kb <= HOS_KB_VERSION_600 || h_cfg.t210b01)
 		{
 			if (!pkg1_decrypt(ctxt.pkg1_id, ctxt.pkg1))
 			{
@@ -886,7 +886,7 @@ int hos_launch(ini_sec_t *cfg)
 		}
 
 		// Unpack PK11.
-		if (h_cfg.t210b01 || (kb <= KB_FIRMWARE_VERSION_620 && !emummc_enabled))
+		if (h_cfg.t210b01 || (kb <= HOS_KB_VERSION_620 && !emummc_enabled))
 		{
 			// Skip T210B01 OEM header.
 			u32 pk1_offset = 0;
@@ -925,7 +925,7 @@ int hos_launch(ini_sec_t *cfg)
 	else if (!h_cfg.t210b01)
 	{
 		// Patch warmboot on T210 to allow downgrading.
-		if (kb >= KB_FIRMWARE_VERSION_700)
+		if (kb >= HOS_KB_VERSION_700)
 		{
 			_hos_crit_error("No warmboot provided!");
 			goto error;
@@ -1026,7 +1026,7 @@ int hos_launch(ini_sec_t *cfg)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
 	// Check if FS is compatible with exFAT and if 5.1.0.
-	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || kb == KB_FIRMWARE_VERSION_500 || ctxt.pkg1_id->fuses == 13))
+	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || kb == HOS_KB_VERSION_500 || ctxt.pkg1_id->fuses == 13))
 	{
 		bool exfat_compat = _get_fs_exfat_compatible(&kip1_info, &ctxt.exo_ctx.hos_revision);
 
@@ -1090,23 +1090,23 @@ int hos_launch(ini_sec_t *cfg)
 	// Finalize per firmware key access. Skip access control if Exosphere 2.
 	switch (kb | (is_exo << 7))
 	{
-	case KB_FIRMWARE_VERSION_100:
-	case KB_FIRMWARE_VERSION_300:
-	case KB_FIRMWARE_VERSION_301:
+	case HOS_KB_VERSION_100:
+	case HOS_KB_VERSION_300:
+	case HOS_KB_VERSION_301:
 		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
 		se_key_acc_ctrl(13, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
 		pkg1_state_pkg2_ready = PKG1_STATE_PKG2_READY_OLD;
 		break;
-	case KB_FIRMWARE_VERSION_400:
-	case KB_FIRMWARE_VERSION_500:
-	case KB_FIRMWARE_VERSION_600:
+	case HOS_KB_VERSION_400:
+	case HOS_KB_VERSION_500:
+	case HOS_KB_VERSION_600:
 		se_key_acc_ctrl(12, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
 		se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEY_ACCESS_FLAG | SE_KEY_LOCK_FLAG);
 		break;
 	}
 
 	// Clear BCT area for retail units and copy it over if dev unit.
-	if (kb <= KB_FIRMWARE_VERSION_500 && !is_exo)
+	if (kb <= HOS_KB_VERSION_500 && !is_exo)
 	{
 		memset((void *)SECMON_BCT_CFG_ADDR, 0, SZ_4K + SZ_8K);
 		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
@@ -1120,14 +1120,14 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Finalize MC carveout.
-	if (kb <= KB_FIRMWARE_VERSION_301 && !is_exo)
+	if (kb <= HOS_KB_VERSION_301 && !is_exo)
 		mc_config_carveout();
 
 	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise lock bootrom and ipatches.
-	_se_lock(kb <= KB_FIRMWARE_VERSION_600 && !is_exo);
+	_se_lock(kb <= HOS_KB_VERSION_600 && !is_exo);
 
 	// Reset sysctr0 counters.
-	if (kb >= KB_FIRMWARE_VERSION_620)
+	if (kb >= HOS_KB_VERSION_620)
 	{
 		for (u32 i = 0; i < SYSCTR0_COUNTERS; i += sizeof(u32))
 			SYSCTR0(SYSCTR0_COUNTERS_BASE + i) = 0;
@@ -1137,14 +1137,14 @@ int hos_launch(ini_sec_t *cfg)
 	//pmc_scratch_lock(PMC_SEC_LOCK_LP0_PARAMS);
 
 	// Set secmon mailbox address and clear it.
-	if (kb >= KB_FIRMWARE_VERSION_700 || is_exo)
+	if (kb >= HOS_KB_VERSION_700 || is_exo)
 	{
 		memset((void *)SECMON7_MAILBOX_ADDR, 0, 0x200);
 		secmon_mailbox = (secmon_mailbox_t *)(SECMON7_MAILBOX_ADDR + SECMON_STATE_OFFSET);
 	}
 	else
 	{
-		if (kb <= KB_FIRMWARE_VERSION_301)
+		if (kb <= HOS_KB_VERSION_301)
 			memset((void *)SECMON_MAILBOX_ADDR, 0, 0x200);
 		secmon_mailbox = (secmon_mailbox_t *)(SECMON_MAILBOX_ADDR + SECMON_STATE_OFFSET);
 	}

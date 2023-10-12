@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -278,9 +278,9 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 	else if (t210b01)
 	{
 		// For T210B01 we patch 6.X.X as is. Otherwise we decompress the program payload.
-		if (ctxt->pkg1_id->kb == KB_FIRMWARE_VERSION_600)
+		if (ctxt->pkg1_id->kb == HOS_KB_VERSION_600)
 			secmon_patchset = _secmon_6_mariko_patchset;
-		else if (ctxt->pkg1_id->kb == KB_FIRMWARE_VERSION_620)
+		else if (ctxt->pkg1_id->kb == HOS_KB_VERSION_620)
 			secmon_patchset = _secmon_620_mariko_patchset;
 		else
 		{
@@ -289,9 +289,9 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 			memset((void *)TZRAM_PROG_ADDR, 0, 0x38800);
 
 			// Get size of compressed program payload and set patch offset.
-			u32 idx = ctxt->pkg1_id->kb - KB_FIRMWARE_VERSION_700;
+			u32 idx = ctxt->pkg1_id->kb - HOS_KB_VERSION_700;
 			u32 patch_offset = TZRAM_PROG_PK2_SIG_PATCH;
-			if (ctxt->pkg1_id->kb > KB_FIRMWARE_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8)) //TODO: Add 11.0.0 support.
+			if (ctxt->pkg1_id->kb > HOS_KB_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303104606", 8)) //TODO: Add 11.0.0 support.
 			{
 				idx++;
 				patch_offset = TZRAM_PROG_PK2_SIG_PATCH_1000;
@@ -419,13 +419,13 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 kb)
 	else
 	{
 		// Set warmboot address in PMC if required.
-		if (kb <= KB_FIRMWARE_VERSION_301)
+		if (kb <= HOS_KB_VERSION_301)
 			PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
 		// Set Warmboot Physical Address ID for 3.0.0 - 3.0.2.
-		if (kb == KB_FIRMWARE_VERSION_300)
+		if (kb == HOS_KB_VERSION_300)
 			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
-		else if (kb == KB_FIRMWARE_VERSION_301)
+		else if (kb == HOS_KB_VERSION_301)
 			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
 	}
 

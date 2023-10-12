@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2023 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -667,7 +667,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo)
 	pkg2_keyslot = 8;
 
 	// Decrypt 7.0.0 pkg2 via 8.1.0 mkey on Erista.
-	if (!h_cfg.t210b01 && kb == KB_FIRMWARE_VERSION_700)
+	if (!h_cfg.t210b01 && kb == HOS_KB_VERSION_700)
 	{
 		u8 tmp_mkey[SE_KEY_128_SIZE];
 
@@ -758,7 +758,7 @@ void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_ex
 	u8 key_ver = kb ? kb + 1 : 0;
 	if (pkg2_keyslot == 9)
 	{
-		key_ver = KB_FIRMWARE_VERSION_810 + 1;
+		key_ver = HOS_KB_VERSION_810 + 1;
 		pkg2_keyslot = 8;
 	}
 
