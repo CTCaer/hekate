@@ -28,12 +28,13 @@
 #define INI1_MAGIC 0x31494E49
 
 //! TODO: Update on kernel change if needed.
-#define PKG2_NEWKERN_GET_INI1_HEURISTIC 0xD2800015 // Offset of OP + 12 is the INI1 offset.
+// Offset of OP + 12 is the INI1 offset. On v2 with dynamic crt0 it's + 16.
+#define PKG2_NEWKERN_GET_INI1_HEURISTIC 0xD2800015
 #define PKG2_NEWKERN_START 0x800
 
 #define ATM_MESOSPHERE 0x3053534D
 
-extern u32 pkg2_newkern_ini1_val;
+extern u32 pkg2_newkern_ini1_info;
 extern u32 pkg2_newkern_ini1_start;
 extern u32 pkg2_newkern_ini1_end;
 
