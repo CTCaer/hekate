@@ -1383,7 +1383,7 @@ static void _about()
 {
 	static const char credits[] =
 		"\nhekate   (c) 2018,      naehrwert, st4rk\n\n"
-		"         (c) 2018-2022, CTCaer\n\n"
+		"         (c) 2018-2023, CTCaer\n\n"
 		" ___________________________________________\n\n"
 		"Thanks to: %kderrek, nedwill, plutoo,\n"
 		"           shuffle2, smea, thexyz, yellows8%k\n"
