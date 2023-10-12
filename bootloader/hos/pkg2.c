@@ -771,13 +771,13 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo)
 {
 	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
-	u32 meso_magic = *(u32 *)(ctxt->kernel + 4) & 0xFFFFFF;
+	u32 meso_magic = *(u32 *)(ctxt->kernel + 4);
 	u32 kernel_size = ctxt->kernel_size;
 	u8 kb = ctxt->pkg1_id->kb;
 	u8 *pdst = (u8 *)dst;
 
 	// Force new Package2 if Mesosphere.
-	bool is_meso = meso_magic == ATM_MESOSPHERE;
+	bool is_meso = (meso_magic & 0xF0FFFFFF) == ATM_MESOSPHERE;
 	if (is_meso)
 		ctxt->new_pkg2 = true;
 
@@ -822,7 +822,7 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 
 		// Set new INI1 offset to kernel.
 		u32 meso_meta_offset = *(u32 *)(pdst + 8);
-		if (is_meso && meso_meta_offset)
+		if (is_meso && (meso_magic & 0xF000000)) // MSS1.
 			*(u32 *)(pdst + meso_meta_offset) = kernel_size - meso_meta_offset;
 		else if (ini1_size)
 			*(u32 *)(pdst + (is_meso ? 8 : pkg2_newkern_ini1_info)) = kernel_size;
