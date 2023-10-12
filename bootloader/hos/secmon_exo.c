@@ -171,10 +171,10 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		exo_fw_no++;
 
 	// Handle versions that change API and do not burn new fuse.
-	if (!memcmp(ctxt->pkg1_id->id, "20190314172056", 8) || //  8.0.x, same fuses with  7.0.1.
-		!memcmp(ctxt->pkg1_id->id, "20210129111626", 8) || // 12.0.0, same fuses with 11.0.0.
-		!memcmp(ctxt->pkg1_id->id, "20210805123730", 8) || // 13.0.0, same fuses with 12.1.0.
-		!memcmp(ctxt->pkg1_id->id, "20220209100018", 8)    // 14.0.0, same fuses with 13.2.1.
+	if (!memcmp(ctxt->pkg1_id->id, "20190314", 8) || //  8.0.x, same fuses with  7.0.1.
+		!memcmp(ctxt->pkg1_id->id, "20210129", 8) || // 12.0.0, same fuses with 11.0.0.
+		!memcmp(ctxt->pkg1_id->id, "20210805", 8) || // 13.0.0, same fuses with 12.1.0.
+		!memcmp(ctxt->pkg1_id->id, "20220209", 8)    // 14.0.0, same fuses with 13.2.1.
 	   )
 		exo_fw_no++;
 
