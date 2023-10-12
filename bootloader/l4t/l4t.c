@@ -798,17 +798,17 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 		}
 	}
 
+	// Set DRAM voltage.
+	if (ctxt->ram_oc_vdd2)
+		max7762x_regulator_set_voltage(REGULATOR_SD1,  ctxt->ram_oc_vdd2 * 1000);
+	if (ctxt->ram_oc_vddq)
+		max7762x_regulator_set_voltage(REGULATOR_RAM0, ctxt->ram_oc_vddq * 1000);
+
 	// A frequency of lower or equal with stock max will skip ARC.
 	if (ram_oc_freq > DRAM_T210B01_TBL_MAX_FREQ)
 	{
 		// Final table.
 		const u32 tbl_idx = BPMPFW_B01_DTB_EMC_ENTRIES - 1;
-
-		// Set DRAM voltage.
-		if (ctxt->ram_oc_vdd2)
-			max7762x_regulator_set_voltage(REGULATOR_SD1,  ctxt->ram_oc_vdd2 * 1000);
-		if (ctxt->ram_oc_vddq)
-			max7762x_regulator_set_voltage(REGULATOR_RAM0, ctxt->ram_oc_vddq * 1000);
 
 		// Copy table and prep it for Arachne.
 		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(tbl_idx), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, 2), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
