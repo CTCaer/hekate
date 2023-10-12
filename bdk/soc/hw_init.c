@@ -367,7 +367,7 @@ void hw_init()
 	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
 #endif
 
-	// Enable Dynamic Voltage and Frequency Scaling device clock.
+	// Enable CL-DVFS clock unconditionally to avoid issues with I2C5 sharing.
 	clock_enable_cl_dvfs();
 
 	// Enable clocks to I2C1 and I2CPWR.
