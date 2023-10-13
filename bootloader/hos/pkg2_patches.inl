@@ -784,7 +784,7 @@ static kip1_patchset_t _fs_patches_1603_exfat[] = {
 };
 
 static kip1_patch_t _fs_nogc_1700[] = {
-	{ KPS(KIP_TEXT) | 0x165100, 8, "\xFD\x7B\xBE\xA9\xF4\x4F\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x165100, 8, "\xFD\x7B\xBD\xA9\xF5\x0B\x00\xF9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
 	{ KPS(KIP_TEXT) | 0x18B048, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
 	{ 0, 0, NULL, NULL }
 };
@@ -796,7 +796,7 @@ static kip1_patchset_t _fs_patches_1700[] = {
 };
 
 static kip1_patch_t _fs_nogc_1700_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x16FF60, 8, "\xFD\x7B\xBE\xA9\xF4\x4F\x01\xA9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x16FF60, 8, "\xFD\x7B\xBD\xA9\xF5\x0B\x00\xF9", "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
 	{ KPS(KIP_TEXT) | 0x195EA8, 4, "\x14\x40\x80\x52", "\x14\x80\x80\x52" },
 	{ 0, 0, NULL, NULL }
 };
