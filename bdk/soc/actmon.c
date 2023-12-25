@@ -76,7 +76,9 @@
 #define ACTMON_HISTOGRAM_DATA_BASE 0x380
 #define  ACTMON_HISTOGRAM_DATA_NUM 32
 
-#define ACTMON_FREQ 19200000
+#define ACTMON_FREQ      19200000
+#define ACTMON_PERIOD_MS 20
+#define DEV_COUNT_WEIGHT 5
 
 typedef struct _actmon_dev_reg_t
 {
@@ -91,10 +93,8 @@ typedef struct _actmon_dev_reg_t
 	vu32 avg_count;
 	vu32 intr_status;
 	vu32 ctrl2;
-	vu32 unk[5];
+	vu32 rsvd[5];
 } actmon_dev_reg_t;
-
-u32 sample_period = 0;
 
 void actmon_hist_enable(actmon_hist_src_t src)
 {
@@ -120,10 +120,10 @@ void actmon_dev_enable(actmon_dev_t dev)
 {
 	actmon_dev_reg_t *regs = (actmon_dev_reg_t *)(ACTMON_DEV_BASE + (dev * ACTMON_DEV_SIZE));
 
-	regs->init_avg = 0;
-	regs->count_weight = 5;
+	regs->init_avg = ACTMON_FREQ * ACTMON_PERIOD_MS * DEV_COUNT_WEIGHT / 100;
+	regs->count_weight = DEV_COUNT_WEIGHT;
 
-	regs->ctrl = ACTMON_DEV_CTRL_ENB | ACTMON_DEV_CTRL_ENB_PERIODIC;
+	regs->ctrl = ACTMON_DEV_CTRL_ENB | ACTMON_DEV_CTRL_ENB_PERIODIC | ACTMON_DEV_CTRL_K_VAL(7); // 128 samples average.
 }
 
 void actmon_dev_disable(actmon_dev_t dev)
@@ -138,7 +138,7 @@ u32 actmon_dev_get_load(actmon_dev_t dev)
 	actmon_dev_reg_t *regs = (actmon_dev_reg_t *)(ACTMON_DEV_BASE + (dev * ACTMON_DEV_SIZE));
 
 	// Get load-based sampling. 1 decimal point precision.
-	u32 load = regs->count / (ACTMON_FREQ / 1000);
+	u32 load = regs->count * 100 / (ACTMON_FREQ / (ACTMON_PERIOD_MS * DEV_COUNT_WEIGHT));
 
 	return load;
 }
@@ -148,7 +148,7 @@ u32 actmon_dev_get_load_avg(actmon_dev_t dev)
 	actmon_dev_reg_t *regs = (actmon_dev_reg_t *)(ACTMON_DEV_BASE + (dev * ACTMON_DEV_SIZE));
 
 	// Get load-based sampling. 1 decimal point precision.
-	u32 avg_load = regs->avg_count / (ACTMON_FREQ / 1000);
+	u32 avg_load = regs->avg_count * 100 / (ACTMON_FREQ / (ACTMON_PERIOD_MS * DEV_COUNT_WEIGHT));
 
 	return avg_load;
 }
@@ -162,9 +162,8 @@ void actmon_init()
 {
 	clock_enable_actmon();
 
-	// Set period to 200ms.
-	ACTMON(ACTMON_GLB_PERIOD_CTRL) &= ~ACTMON_GLB_PERIOD_USEC;
-	ACTMON(ACTMON_GLB_PERIOD_CTRL) |= ACTMON_GLB_PERIOD_SAMPLE(200);
+	// Set period.
+	ACTMON(ACTMON_GLB_PERIOD_CTRL) = ACTMON_GLB_PERIOD_SAMPLE(ACTMON_PERIOD_MS);
 }
 
 void actmon_end()
