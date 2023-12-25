@@ -615,9 +615,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	// Parse fuses and display them.
 	s_printf(txt_buf,
 		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
-		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d\n%d\n%d\n"
+		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d (%d)\n%d (%d)\n%d (%d)\n"
 		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n"
-		"ID: %02X, Major: A%02d, Minor: %d",
+		"ID: %02X, Major: %d, Minor: A%02d",
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
 		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7),
@@ -634,7 +634,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		(FUSE(FUSE_OPT_CP_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_CP_REV) & 0x1F, FUSE(FUSE_OPT_CP_REV),
 		FUSE(FUSE_CPU_SPEEDO_0_CALIB), FUSE(FUSE_CPU_SPEEDO_1_CALIB), FUSE(FUSE_CPU_SPEEDO_2_CALIB),
 		FUSE(FUSE_SOC_SPEEDO_0_CALIB), FUSE(FUSE_SOC_SPEEDO_1_CALIB), FUSE(FUSE_SOC_SPEEDO_2_CALIB),
-		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB),
+		FUSE(FUSE_CPU_IDDQ_CALIB), FUSE(FUSE_CPU_IDDQ_CALIB) * 4,
+		FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB) * 4,
+		FUSE(FUSE_GPU_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB) * 5,
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
 		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
 		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
@@ -1604,7 +1606,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%d.%d\n%04X\n%02d/%04d\n\n",
 		emmc_storage.cid.manfid,
 		emmc_storage.cid.prod_name[0], emmc_storage.cid.prod_name[1], emmc_storage.cid.prod_name[2],
-		emmc_storage.cid.prod_name[3], emmc_storage.cid.prod_name[4],	emmc_storage.cid.prod_name[5],
+		emmc_storage.cid.prod_name[3], emmc_storage.cid.prod_name[4], emmc_storage.cid.prod_name[5],
 		emmc_storage.cid.prv & 0xF, emmc_storage.cid.prv >> 4,
 		emmc_storage.cid.serial, emmc_storage.cid.month, emmc_storage.cid.year);
 
