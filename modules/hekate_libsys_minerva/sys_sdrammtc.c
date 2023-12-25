@@ -91,9 +91,9 @@ static pllm_clk_config_t pllm_clk_config_table[] =
 	{38400, 2099200, 164, 3, 0}, // Custom. Normalized 2100 MHz.
 	{38400, 2131200, 111, 2, 0}, // JEDEC Standard. (T210B01 official max).
 	{38400, 2163200, 169, 3, 0}, // Custom. Normalized 2166 MHz.
-	{38400, 2188800,  57, 1, 0}, // Custom. Normalized 2200 MHz.
-	{38400, 2227200,  58, 1, 0}, // Custom. Normalized 2233 MHz.
-	{38400, 2265600,  59, 1, 0}, // Custom. Normalized 2266 MHz.
+	{38400, 2188800, 114, 2, 0}, // Custom. Normalized 2200 MHz.
+	{38400, 2227200, 116, 2, 0}, // Custom. Normalized 2233 MHz.
+	{38400, 2265600, 118, 2, 0}, // Custom. Normalized 2266 MHz.
 	{38400, 2291200, 179, 3, 0}, // Custom. Normalized 2300 MHz.
 	{38400, 2329600, 182, 3, 0}, // Custom. Normalized 2333 MHz.
 	{38400, 2361600, 123, 2, 0}, // Custom. Normalized 2366 MHz.
@@ -3280,7 +3280,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 		if (needs_wr_training)
 			training_command |= (1 << 3);  // WR: Initiates WR Training.
 		if (needs_wr_vref_training)
-			training_command |= (1 << 6);  // WR_VREF: Initiates OB (wrire) DRAM_VREF Training.
+			training_command |= (1 << 6);  // WR_VREF: Initiates OB (write) DRAM_VREF Training.
 		if (needs_rd_training)
 			training_command |= (1 << 2);  // RD: Initiates RD Training.
 		if (needs_rd_vref_training)
@@ -3614,9 +3614,9 @@ void _minerva_do_over_temp_compensation(mtc_config_t *mtc_cfg)
 	if (dram_type != DRAM_TYPE_LPDDR4)
 		return;
 
-	u32 dram_temp = _get_dram_temperature();
+	s32 dram_temp = _get_dram_temperature();
 
-	if (mtc_cfg->prev_temp == dram_temp || dram_temp == (u32)-1)
+	if (dram_temp < 0 || mtc_cfg->prev_temp == (u32)dram_temp)
 		return;
 
 	u32 refr = mtc_cfg->current_emc_table->burst_regs.emc_refresh;
@@ -3632,7 +3632,7 @@ void _minerva_do_over_temp_compensation(mtc_config_t *mtc_cfg)
 	case 3:
 		if (mtc_cfg->prev_temp < 4)
 		{
-			mtc_cfg->prev_temp = dram_temp;
+			mtc_cfg->prev_temp = (u32)dram_temp;
 			return;
 		}
 		break;
