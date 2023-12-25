@@ -552,7 +552,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	 * Specifies the value for MC_EMEM_CFG which holds the external memory
 	 * size (in KBytes)
 	 */
-	.mc_emem_cfg                                     = 0x00001000, // 4GB total density.
+	.mc_emem_cfg                                     = 0x00001000, // 4GB total density. Max 8GB.
 
 	/* MC arbitration configuration */
 	.mc_emem_arb_cfg                                 = 0x08000001,
@@ -714,7 +714,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
-										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
+										DRAM_CC(LPDDR4X_4GB_HYNIX_H54G46CYRBX267)           | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
@@ -722,7 +722,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
-										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
+										DRAM_CC(LPDDR4X_4GB_HYNIX_H54G46CYRBX267)           | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
@@ -731,7 +731,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
-										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
+										DRAM_CC(LPDDR4X_4GB_HYNIX_H54G46CYRBX267)           | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
@@ -741,7 +741,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB))
 
 #define DRAM_CC_LPDDR4X_VPR            (DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
-										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEI)       | \
+										DRAM_CC(LPDDR4X_4GB_HYNIX_H54G46CYRBX267)           | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
@@ -780,7 +780,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x00000008, 0x24C / 4, DRAM_CC_LPDDR4X_FAW }, // emc_tfaw.
 	{ 0x00000001, 0x670 / 4, DRAM_CC_LPDDR4X_FAW }, // mc_emem_arb_timing_faw.
 
-	{ 0xE4FACB43, 0x6D4 / 4, DRAM_CC_LPDDR4X_VPR }, // mc_video_protect_vpr_override. + TSEC, NVENC.
+	{ 0xE4FACB43, 0x6D4 / 4, DRAM_CC_LPDDR4X_VPR }, // mc_video_protect_vpr_override.  + TSEC,  NVENC.
 	{ 0x0600FED3, 0x6D8 / 4, DRAM_CC_LPDDR4X_VPR }, // mc_video_protect_vpr_override1. + TSECB, TSEC1, TSECB1.
 
 	{ 0x00000001, 0x134 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_adr_cfg. 2 Ranks.
@@ -801,7 +801,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x00000000, 0x594 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_pmacro_tx_pwrd4.
 	{ 0x00001000, 0x598 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_pmacro_tx_pwrd5.
 	{ 0x00000001, 0x630 / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_adr_cfg. 2 Ranks.
-	{ 0x00002000, 0x64C / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_cfg. 8GB total density.
+	{ 0x00002000, 0x64C / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_cfg. 8GB total density. Max 8GB.
 	{ 0x00000002, 0x680 / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_arb_timing_r2r.
 	{ 0x02020001, 0x694 / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_arb_da_turns.
 };

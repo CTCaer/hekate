@@ -499,7 +499,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	 * Specifies the value for MC_EMEM_CFG which holds the external memory
 	 * size (in KBytes)
 	 */
-	.mc_emem_cfg                                     = 0x00001000, // 4GB total density.
+	.mc_emem_cfg                                     = 0x00001000, // 4GB total density. Max 8GB.
 
 	/* MC arbitration configuration */
 	.mc_emem_arb_cfg                                 = 0x08000001,
@@ -657,7 +657,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	// Samsung 6GB density config.
 	{ 0x000C0302, 0x56C / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev0. 768MB Chip 0 density.
 	{ 0x000C0302, 0x570 / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev1. 768MB Chip 1 density.
-	{ 0x00001800, 0x584 / 4, DRAM_ID(4) }, // mc_emem_cfg. 6GB total density.
+	{ 0x00001800, 0x584 / 4, DRAM_ID(4) }, // mc_emem_cfg. 6GB total density. Max 8GB.
 
 	// Samsung 8GB density config.
 	{ 0x0000003A,  0xEC / 4, DRAM_ID(7) }, // emc_rfc.
@@ -667,5 +667,5 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	{ 0x00000713, 0x2B4 / 4, DRAM_ID(7) }, // emc_dyn_self_ref_control.
 	{ 0x00080302, 0x56C / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev0. 1024MB Chip 0 density.
 	{ 0x00080302, 0x570 / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev1. 1024MB Chip 1 density.
-	{ 0x00002000, 0x584 / 4, DRAM_ID(7) }, // mc_emem_cfg. 8GB total density.
+	{ 0x00002000, 0x584 / 4, DRAM_ID(7) }, // mc_emem_cfg. 8GB total density. Max 8GB.
 };
