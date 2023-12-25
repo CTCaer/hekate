@@ -819,7 +819,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 		// Enable table.
 		BPMPFW_B01_DTB_EMC_TBL_ENABLE(tbl_idx);
 
-		UPRINTF("RAM Frequency set to: %d KHz. Voltage: %d mV\n", ram_oc_freq, ram_oc_volt);
+		UPRINTF("RAM Frequency set to: %d KHz. Voltage: %d mV\n", ram_oc_freq, ctxt->ram_oc_vdd2);
 	}
 
 	// Save BPMP-FW entrypoint for TZ.
