@@ -850,18 +850,16 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	char *data = (char *)malloc(SZ_16K);
 	char *txt_buf = (char *)malloc(SZ_4K);
 
-	if (nx_hoag)
-	{
-		error = hos_dump_cal0();
-		if (!error)
-			goto save_data;
-	}
+	error = hos_dump_cal0();
 
-	if (!jc_pad || nx_hoag)
+	if ((!nx_hoag && !jc_pad) || error)
 	{
 		error = 255;
 		goto disabled;
 	}
+
+	if (nx_hoag)
+		goto save_data;
 
 	// Count valid joycon.
 	u32 joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
@@ -877,13 +875,16 @@ save_data:
 
 	if (!error)
 	{
+		nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
+
+		f_mkdir("switchroot");
+
 		if (!nx_hoag)
 		{
 			// Save binary dump.
 			memcpy(data, &jc_pad->bt_conn_l, sizeof(jc_bt_conn_t));
 			memcpy(data + sizeof(jc_bt_conn_t), &jc_pad->bt_conn_r, sizeof(jc_bt_conn_t));
 
-			f_mkdir("switchroot");
 			error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin");
 
 			// Save readable dump.
@@ -913,32 +914,12 @@ save_data:
 				f_puts(data, &fp);
 				f_close(&fp);
 			}
-		}
-		else
-		{
-			nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
-			jc_calib_t *stick_cal_l = (jc_calib_t *)cal0->analog_stick_cal_l;
-			jc_calib_t *stick_cal_r = (jc_calib_t *)cal0->analog_stick_cal_r;
 
 			f_mkdir("switchroot");
 
-			// Save Lite Gamepad Calibration data.
-			// Actual max/min are right/left and up/down offsets.
+			// Save IMU Calibration data.
 			s_printf(data,
-				"lite_cal_lx_lof=0x%X\n"
-				"lite_cal_lx_cnt=0x%X\n"
-				"lite_cal_lx_rof=0x%X\n"
-				"lite_cal_ly_dof=0x%X\n"
-				"lite_cal_ly_cnt=0x%X\n"
-				"lite_cal_ly_uof=0x%X\n\n"
-
-				"lite_cal_rx_lof=0x%X\n"
-				"lite_cal_rx_cnt=0x%X\n"
-				"lite_cal_rx_rof=0x%X\n"
-				"lite_cal_ry_dof=0x%X\n"
-				"lite_cal_ry_cnt=0x%X\n"
-				"lite_cal_ry_uof=0x%X\n\n"
-
+				"imu_type=%d\n\n"
 				"acc_cal_off_x=0x%X\n"
 				"acc_cal_off_y=0x%X\n"
 				"acc_cal_off_z=0x%X\n"
@@ -954,16 +935,72 @@ save_data:
 				"gyr_cal_scl_z=0x%X\n\n"
 
 				"device_bt_mac=%02X:%02X:%02X:%02X:%02X:%02X\n",
-				stick_cal_l->x_min, stick_cal_l->x_center, stick_cal_l->x_max,
-				stick_cal_l->y_min, stick_cal_l->y_center, stick_cal_l->y_max,
-				stick_cal_r->x_min, stick_cal_r->x_center, stick_cal_r->x_max,
-				stick_cal_r->y_min, stick_cal_r->y_center, stick_cal_r->y_max,
+				cal0->console_6axis_sensor_type,
 				cal0->acc_offset[0],  cal0->acc_offset[1],  cal0->acc_offset[2],
 				cal0->acc_scale[0],   cal0->acc_scale[1],   cal0->acc_scale[2],
 				cal0->gyro_offset[0], cal0->gyro_offset[1], cal0->gyro_offset[2],
 				cal0->gyro_scale[0],  cal0->gyro_scale[1],  cal0->gyro_scale[2],
 				cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5]);
+			if (!error)
+				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS);
+			if (!error)
+			{
+				f_puts(data, &fp);
+				f_close(&fp);
+			}
+		}
+		else
+		{
+			jc_calib_t *stick_cal_l = (jc_calib_t *)cal0->analog_stick_cal_l;
+			jc_calib_t *stick_cal_r = (jc_calib_t *)cal0->analog_stick_cal_r;
 
+			// Save Lite Gamepad and IMU Calibration data.
+			// Actual max/min are right/left and up/down offsets.
+			s_printf(data,
+				"lite_cal_l_type=0x%X\n"
+				"lite_cal_lx_lof=0x%X\n"
+				"lite_cal_lx_cnt=0x%X\n"
+				"lite_cal_lx_rof=0x%X\n"
+				"lite_cal_ly_dof=0x%X\n"
+				"lite_cal_ly_cnt=0x%X\n"
+				"lite_cal_ly_uof=0x%X\n\n"
+
+				"lite_cal_r_type=0x%X\n"
+				"lite_cal_rx_lof=0x%X\n"
+				"lite_cal_rx_cnt=0x%X\n"
+				"lite_cal_rx_rof=0x%X\n"
+				"lite_cal_ry_dof=0x%X\n"
+				"lite_cal_ry_cnt=0x%X\n"
+				"lite_cal_ry_uof=0x%X\n\n"
+
+				"imu_type=%d\n\n"
+				"acc_cal_off_x=0x%X\n"
+				"acc_cal_off_y=0x%X\n"
+				"acc_cal_off_z=0x%X\n"
+				"acc_cal_scl_x=0x%X\n"
+				"acc_cal_scl_y=0x%X\n"
+				"acc_cal_scl_z=0x%X\n\n"
+
+				"gyr_cal_off_x=0x%X\n"
+				"gyr_cal_off_y=0x%X\n"
+				"gyr_cal_off_z=0x%X\n"
+				"gyr_cal_scl_x=0x%X\n"
+				"gyr_cal_scl_y=0x%X\n"
+				"gyr_cal_scl_z=0x%X\n\n"
+
+				"device_bt_mac=%02X:%02X:%02X:%02X:%02X:%02X\n",
+				cal0->analog_stick_type_l,
+				stick_cal_l->x_min, stick_cal_l->x_center, stick_cal_l->x_max,
+				stick_cal_l->y_min, stick_cal_l->y_center, stick_cal_l->y_max,
+				cal0->analog_stick_type_r,
+				stick_cal_r->x_min, stick_cal_r->x_center, stick_cal_r->x_max,
+				stick_cal_r->y_min, stick_cal_r->y_center, stick_cal_r->y_max,
+				cal0->console_6axis_sensor_type,
+				cal0->acc_offset[0],  cal0->acc_offset[1],  cal0->acc_offset[2],
+				cal0->acc_scale[0],   cal0->acc_scale[1],   cal0->acc_scale[2],
+				cal0->gyro_offset[0], cal0->gyro_offset[1], cal0->gyro_offset[2],
+				cal0->gyro_scale[0],  cal0->gyro_scale[1],  cal0->gyro_scale[2],
+				cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5]);
 			if (!error)
 				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS);
 			if (!error)
