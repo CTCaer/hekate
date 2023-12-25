@@ -42,6 +42,26 @@ static bool _nx_aula = false;
 
 static void _display_panel_and_hw_end(bool no_panel_deinit);
 
+void display_enable_interrupt(u32 intr)
+{
+	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) |= intr;
+}
+
+void display_disable_interrupt(u32 intr)
+{
+	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) &= ~intr;
+	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = intr;
+}
+
+void display_wait_interrupt(u32 intr)
+{
+	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = intr;
+
+	// Interrupts are masked. Poll status register for checking if fired.
+	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & intr))
+			;
+}
+
 static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 {
 	u32 end = get_tmr_us() + timeout;
@@ -64,22 +84,18 @@ static void _display_dsi_wait_vblank(bool enable)
 	if (enable)
 	{
 		// Enable vblank interrupt.
-		DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = DC_CMD_INT_FRAME_END_INT;
+		display_enable_interrupt(DC_CMD_INT_FRAME_END_INT);
 
 		// Use the 4th line to transmit the host cmd packet.
 		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE | DSI_DSI_LINE_TYPE(4);
 
 		// Wait for vblank before starting the transfer.
-		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
-			;
+		display_wait_interrupt(DC_CMD_INT_FRAME_END_INT);
 	}
 	else
 	{
 		// Wait for vblank before resetting sync points.
-		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT; // Clear interrupt.
-		while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & DC_CMD_INT_FRAME_END_INT))
-			;
+		display_wait_interrupt(DC_CMD_INT_FRAME_END_INT);
 		usleep(14);
 
 		// Reset all states of syncpt block.
@@ -94,8 +110,7 @@ static void _display_dsi_wait_vblank(bool enable)
 		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
 
 		// Disable and clear vblank interrupt.
-		DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) = 0;
-		DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = DC_CMD_INT_FRAME_END_INT;
+		display_disable_interrupt(DC_CMD_INT_FRAME_END_INT);
 	}
 }
 
