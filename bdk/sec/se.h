@@ -30,7 +30,9 @@ void se_aes_iv_set(u32 ks, void *iv);
 void se_aes_key_get(u32 ks, void *key, u32 size);
 void se_aes_key_clear(u32 ks);
 void se_aes_iv_clear(u32 ks);
+void se_aes_iv_updated_clear(u32 ks);
 int  se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *input);
+int  se_aes_crypt_hash(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size);
 int  se_aes_crypt_cbc(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size);
 int  se_aes_crypt_ecb(u32 ks, u32 enc, void *dst, u32 dst_size, const void *src, u32 src_size);
 int  se_aes_crypt_block_ecb(u32 ks, u32 enc, void *dst, const void *src);
@@ -42,5 +44,6 @@ int  se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u6
 int  se_calc_sha256_oneshot(void *hash, const void *src, u32 src_size);
 int  se_calc_sha256_finalize(void *hash, u32 *msg_left);
 int  se_gen_prng128(void *dst);
+int  se_aes_cmac_128(u32 ks, void *dst, const void *src, u32 src_size);
 
 #endif
