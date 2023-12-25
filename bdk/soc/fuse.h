@@ -255,10 +255,31 @@
 #define FUSE_SPARE_BIT_31                     0x3FC
 
 /*! Fuse commands. */
+#define FUSE_IDLE     0x0
 #define FUSE_READ     0x1
 #define FUSE_WRITE    0x2
 #define FUSE_SENSE    0x3
 #define FUSE_CMD_MASK 0x3
+
+/*! Fuse status. */
+#define  FUSE_STATUS_RESET                   0
+#define  FUSE_STATUS_POST_RESET              1
+#define  FUSE_STATUS_LOAD_ROW0               2
+#define  FUSE_STATUS_LOAD_ROW1               3
+#define  FUSE_STATUS_IDLE                    4
+#define  FUSE_STATUS_READ_SETUP              5
+#define  FUSE_STATUS_READ_STROBE             6
+#define  FUSE_STATUS_SAMPLE_FUSES            7
+#define  FUSE_STATUS_READ_HOLD               8
+#define  FUSE_STATUS_FUSE_SRC_SETUP          9
+#define  FUSE_STATUS_WRITE_SETUP             10
+#define  FUSE_STATUS_WRITE_ADDR_SETUP        11
+#define  FUSE_STATUS_WRITE_PROGRAM           12
+#define  FUSE_STATUS_WRITE_ADDR_HOLD         13
+#define  FUSE_STATUS_FUSE_SRC_HOLD           14
+#define  FUSE_STATUS_LOAD_RIR                15
+#define  FUSE_STATUS_READ_BEFORE_WRITE_SETUP 16
+#define  FUSE_STATUS_READ_DEASSERT_PD        17
 
 /*! Fuse cache registers. */
 #define FUSE_RESERVED_ODMX(x) (0x1C8 + 4 * (x))

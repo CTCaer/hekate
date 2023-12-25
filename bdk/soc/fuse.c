@@ -167,11 +167,8 @@ int fuse_set_sbk()
 
 void fuse_wait_idle()
 {
-	u32 ctrl;
-	do
-	{
-		ctrl = FUSE(FUSE_CTRL);
-	} while (((ctrl >> 16) & 0x1f) != 4);
+	while (((FUSE(FUSE_CTRL) >> 16) & 0x1F) != FUSE_STATUS_IDLE)
+		;
 }
 
 u32 fuse_read(u32 addr)
