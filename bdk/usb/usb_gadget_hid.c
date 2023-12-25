@@ -56,16 +56,19 @@ typedef struct _gamepad_report_t
 
 typedef struct _jc_cal_t
 {
-	bool cl_done;
-	bool cr_done;
-	u16  clx_max;
-	u16  clx_min;
-	u16  cly_max;
-	u16  cly_min;
-	u16  crx_max;
-	u16  crx_min;
-	u16  cry_max;
-	u16  cry_min;
+// 15ms * JC_CAL_MAX_STEPS = 240 ms.
+#define JC_CAL_MAX_STEPS 16
+	u32 cl_step;
+	u32 cr_step;
+
+	u16 clx_max;
+	u16 clx_min;
+	u16 cly_max;
+	u16 cly_min;
+	u16 crx_max;
+	u16 crx_min;
+	u16 cry_max;
+	u16 cry_min;
 } jc_cal_t;
 
 static jc_cal_t jc_cal_ctx;
@@ -74,34 +77,40 @@ static usb_ops_t usb_ops;
 static bool _jc_calibration(jc_gamepad_rpt_t *jc_pad)
 {
 	// Calibrate left stick.
-	if (!jc_cal_ctx.cl_done)
+	if (jc_cal_ctx.cl_step != JC_CAL_MAX_STEPS)
 	{
 		if (jc_pad->conn_l
 			&& jc_pad->lstick_x > 0x400 && jc_pad->lstick_y > 0x400
 			&& jc_pad->lstick_x < 0xC00 && jc_pad->lstick_y < 0xC00)
 		{
+			jc_cal_ctx.cl_step++;
 			jc_cal_ctx.clx_max = jc_pad->lstick_x + 0x72;
 			jc_cal_ctx.clx_min = jc_pad->lstick_x - 0x72;
 			jc_cal_ctx.cly_max = jc_pad->lstick_y + 0x72;
 			jc_cal_ctx.cly_min = jc_pad->lstick_y - 0x72;
-			jc_cal_ctx.cl_done = true;
+
+			if (jc_cal_ctx.cl_step != JC_CAL_MAX_STEPS)
+				return false;
 		}
 		else
 			return false;
 	}
 
 	// Calibrate right stick.
-	if (!jc_cal_ctx.cr_done)
+	if (jc_cal_ctx.cr_step != JC_CAL_MAX_STEPS)
 	{
 		if (jc_pad->conn_r
 			&& jc_pad->rstick_x > 0x400 && jc_pad->rstick_y > 0x400
 			&& jc_pad->rstick_x < 0xC00 && jc_pad->rstick_y < 0xC00)
 		{
+			jc_cal_ctx.cr_step++;
 			jc_cal_ctx.crx_max = jc_pad->rstick_x + 0x72;
 			jc_cal_ctx.crx_min = jc_pad->rstick_x - 0x72;
 			jc_cal_ctx.cry_max = jc_pad->rstick_y + 0x72;
 			jc_cal_ctx.cry_min = jc_pad->rstick_y - 0x72;
-			jc_cal_ctx.cr_done = true;
+
+			if (jc_cal_ctx.cr_step != JC_CAL_MAX_STEPS)
+				return false;
 		}
 		else
 			return false;
@@ -122,7 +131,7 @@ static bool _jc_poll(gamepad_report_t *rpt)
 	if (jc_pad->l3 && jc_pad->home)
 		return true;
 
-	if (!jc_cal_ctx.cl_done || !jc_cal_ctx.cr_done)
+	if (jc_cal_ctx.cl_step != JC_CAL_MAX_STEPS || jc_cal_ctx.cr_step != JC_CAL_MAX_STEPS)
 	{
 		if (!_jc_calibration(jc_pad))
 			return false;
@@ -130,9 +139,9 @@ static bool _jc_poll(gamepad_report_t *rpt)
 
 	// Re-calibrate on disconnection.
 	if (!jc_pad->conn_l)
-		jc_cal_ctx.cl_done = false;
+		jc_cal_ctx.cl_step = 0;
 	if (!jc_pad->conn_r)
-		jc_cal_ctx.cr_done = false;
+		jc_cal_ctx.cr_step = 0;
 
 	// Calculate left analog stick.
 	if (jc_pad->lstick_x <= jc_cal_ctx.clx_max && jc_pad->lstick_x >= jc_cal_ctx.clx_min)
