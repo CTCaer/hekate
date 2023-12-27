@@ -167,12 +167,12 @@ static void _sdram_config_t210(const sdram_params_t210_t *params)
 {
 	// Program DPD3/DPD4 regs (coldboot path).
 	// Enable sel_dpd on unused pins.
-	u32 dpd_req = (params->emc_pmc_scratch1 & 0x3FFFFFFF) | 0x80000000;
+	u32 dpd_req = (params->emc_pmc_scratch1 & 0x3FFFFFFF) | (2 << 30u);
 	PMC(APBDEV_PMC_IO_DPD3_REQ) = (dpd_req ^ 0xFFFF) & 0xC000FFFF;
 	usleep(params->pmc_io_dpd3_req_wait);
 
 	// Disable e_dpd_vttgen.
-	dpd_req = (params->emc_pmc_scratch2 & 0x3FFFFFFF) | 0x80000000;
+	dpd_req = (params->emc_pmc_scratch2 & 0x3FFFFFFF) | (2 << 30u);
 	PMC(APBDEV_PMC_IO_DPD4_REQ) = (dpd_req & 0xFFFF0000) ^ 0x3FFF0000;
 	usleep(params->pmc_io_dpd4_req_wait);
 
@@ -209,7 +209,7 @@ break_nosleep:
 	if (params->emc_clock_source_dll)
 		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC_DLL) = params->emc_clock_source_dll;
 	if (params->clear_clock2_mc1)
-		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = 0x40000000; // Clear Reset to MC1.
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_CLR) = BIT(CLK_W_MC1); // Clear Reset to MC1.
 
 	// Enable and clear reset for memory clocks.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
@@ -233,7 +233,7 @@ break_nosleep:
 
 	// Program CMD mapping. Required before brick mapping, else
 	// we can't guarantee CK will be differential at all times.
-	EMC(EMC_FBIO_CFG7) = params->emc_fbio_cfg7;
+	EMC(EMC_FBIO_CFG7)          = params->emc_fbio_cfg7;
 	EMC(EMC_CMD_MAPPING_CMD0_0) = params->emc_cmd_mapping_cmd0_0;
 	EMC(EMC_CMD_MAPPING_CMD0_1) = params->emc_cmd_mapping_cmd0_1;
 	EMC(EMC_CMD_MAPPING_CMD0_2) = params->emc_cmd_mapping_cmd0_2;
@@ -246,7 +246,7 @@ break_nosleep:
 	EMC(EMC_CMD_MAPPING_CMD3_0) = params->emc_cmd_mapping_cmd3_0;
 	EMC(EMC_CMD_MAPPING_CMD3_1) = params->emc_cmd_mapping_cmd3_1;
 	EMC(EMC_CMD_MAPPING_CMD3_2) = params->emc_cmd_mapping_cmd3_2;
-	EMC(EMC_CMD_MAPPING_BYTE) = params->emc_cmd_mapping_byte;
+	EMC(EMC_CMD_MAPPING_BYTE)   = params->emc_cmd_mapping_byte;
 
 	// Program brick mapping.
 	EMC(EMC_PMACRO_BRICK_MAPPING_0) = params->emc_pmacro_brick_mapping0;
@@ -289,13 +289,13 @@ break_nosleep:
 	EMC(EMC_AUTO_CAL_CONFIG7) = params->emc_auto_cal_config7;
 	EMC(EMC_AUTO_CAL_CONFIG8) = params->emc_auto_cal_config8;
 
-	EMC(EMC_PMACRO_RX_TERM)    = params->emc_pmacro_rx_term;
-	EMC(EMC_PMACRO_DQ_TX_DRV)  = params->emc_pmacro_dq_tx_drive;
-	EMC(EMC_PMACRO_CA_TX_DRV)  = params->emc_pmacro_ca_tx_drive;
-	EMC(EMC_PMACRO_CMD_TX_DRV) = params->emc_pmacro_cmd_tx_drive;
+	EMC(EMC_PMACRO_RX_TERM)            = params->emc_pmacro_rx_term;
+	EMC(EMC_PMACRO_DQ_TX_DRV)          = params->emc_pmacro_dq_tx_drive;
+	EMC(EMC_PMACRO_CA_TX_DRV)          = params->emc_pmacro_ca_tx_drive;
+	EMC(EMC_PMACRO_CMD_TX_DRV)         = params->emc_pmacro_cmd_tx_drive;
 	EMC(EMC_PMACRO_AUTOCAL_CFG_COMMON) = params->emc_pmacro_auto_cal_common;
-	EMC(EMC_AUTO_CAL_CHANNEL)  = params->emc_auto_cal_channel;
-	EMC(EMC_PMACRO_ZCTRL)      = params->emc_pmacro_zcrtl;
+	EMC(EMC_AUTO_CAL_CHANNEL)          = params->emc_auto_cal_channel;
+	EMC(EMC_PMACRO_ZCTRL)              = params->emc_pmacro_zcrtl;
 
 	EMC(EMC_DLL_CFG_0)     = params->emc_dll_cfg0;
 	EMC(EMC_DLL_CFG_1)     = params->emc_dll_cfg1;
@@ -328,7 +328,7 @@ break_nosleep:
 	EMC(EMC_PMACRO_CMD_RX_TERM_MODE)     = params->emc_pmacro_cmd_rx_term_mode;
 	EMC(EMC_PMACRO_CMD_PAD_TX_CTRL)      = params->emc_pmacro_cmd_pad_tx_ctrl;
 
-	EMC(EMC_CFG_3) = params->emc_cfg3;
+	EMC(EMC_CFG_3)                   = params->emc_cfg3;
 	EMC(EMC_PMACRO_TX_PWRD_0)        = params->emc_pmacro_tx_pwrd0;
 	EMC(EMC_PMACRO_TX_PWRD_1)        = params->emc_pmacro_tx_pwrd1;
 	EMC(EMC_PMACRO_TX_PWRD_2)        = params->emc_pmacro_tx_pwrd2;
@@ -561,9 +561,11 @@ break_nosleep:
 
 	EMC(EMC_PMACRO_COMMON_PAD_TX_CTRL) = params->emc_pmacro_common_pad_tx_ctrl;
 	EMC(EMC_DBG)                 = params->emc_dbg;
+
 	EMC(EMC_QRST)                = params->emc_qrst;
 	EMC(EMC_ISSUE_QRST)          = 1;
 	EMC(EMC_ISSUE_QRST)          = 0;
+
 	EMC(EMC_QSAFE)               = params->emc_qsafe;
 	EMC(EMC_RDV)                 = params->emc_rdv;
 	EMC(EMC_RDV_MASK)            = params->emc_rdv_mask;
@@ -616,7 +618,7 @@ break_nosleep:
 	}
 
 	// Release SEL_DPD_CMD.
-	PMC(APBDEV_PMC_IO_DPD3_REQ) = ((params->emc_pmc_scratch1 & 0x3FFFFFFF) | 0x40000000) & 0xCFFF0000;
+	PMC(APBDEV_PMC_IO_DPD3_REQ) = (params->emc_pmc_scratch1 & 0xFFF0000) | (1 << 30u);
 	usleep(params->pmc_io_dpd3_req_wait);
 
 	// Set autocal interval if not configured.
@@ -707,7 +709,7 @@ break_nosleep:
 		EMC(EMC_REF) = (((1 << params->emc_extra_refresh_num) - 1) << 8) | (params->emc_dev_select << 30) | 3;
 
 	// Enable refresh.
-	EMC(EMC_REFCTRL) = params->emc_dev_select | 0x80000000;
+	EMC(EMC_REFCTRL) = params->emc_dev_select | BIT(31);
 
 	EMC(EMC_DYN_SELF_REF_CONTROL) = params->emc_dyn_self_ref_control;
 	EMC(EMC_CFG_UPDATE)    = params->emc_cfg_update;
@@ -717,7 +719,7 @@ break_nosleep:
 	EMC(EMC_SEL_DPD_CTRL)  = params->emc_sel_dpd_ctrl;
 
 	// Write addr swizzle lock bit.
-	EMC(EMC_FBIO_SPARE) = params->emc_fbio_spare | 2;
+	EMC(EMC_FBIO_SPARE) = params->emc_fbio_spare | BIT(1);
 
 	EMC(EMC_TIMING_CONTROL) = 1; // Re-trigger timing to latch power saving functions.
 
@@ -751,15 +753,15 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	// Program DPD3/DPD4 regs (coldboot path).
 	// Enable sel_dpd on unused pins.
 	PMC(APBDEV_PMC_WEAK_BIAS)   = (pmc_scratch1 & 0x1000) << 19 | (pmc_scratch1 & 0xFFF) << 18 | (pmc_scratch1 & 0x8000) << 15;
-	PMC(APBDEV_PMC_IO_DPD3_REQ) = (pmc_scratch1 & 0x9FFF) + 0x80000000;
+	PMC(APBDEV_PMC_IO_DPD3_REQ) = (pmc_scratch1 & 0x9FFF) | (2 << 30u);
 	usleep(params->pmc_io_dpd3_req_wait);
 
 	// Disable e_dpd_vttgen.
-	PMC(APBDEV_PMC_IO_DPD4_REQ) = (pmc_scratch2 & 0x3FFF0000) | 0x80000000;
+	PMC(APBDEV_PMC_IO_DPD4_REQ) = (pmc_scratch2 & 0x3FFF0000) | (2 << 30u);
 	usleep(params->pmc_io_dpd4_req_wait);
 
 	// Disable e_dpd_bg.
-	PMC(APBDEV_PMC_IO_DPD4_REQ) = (pmc_scratch2 & 0x1FFF) | 0x80000000;
+	PMC(APBDEV_PMC_IO_DPD4_REQ) = (pmc_scratch2 & 0x1FFF) | (2 << 30u);
 	usleep(1);
 
 	// Program CMD mapping. Required before brick mapping, else
@@ -1155,9 +1157,11 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	EMC(EMC_PUTERM_WIDTH)    = params->emc_puterm_width;
 
 	EMC(EMC_DBG)                 = params->emc_dbg;
+
 	EMC(EMC_QRST)                = params->emc_qrst;
 	EMC(EMC_ISSUE_QRST)          = 1;
 	EMC(EMC_ISSUE_QRST)          = 0;
+
 	EMC(EMC_QSAFE)               = params->emc_qsafe;
 	EMC(EMC_RDV)                 = params->emc_rdv;
 	EMC(EMC_RDV_MASK)            = params->emc_rdv_mask;
@@ -1219,7 +1223,7 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 		*(vu32 *)params->emc_bct_spare_secure16 = params->emc_bct_spare_secure17;
 
 	// Release SEL_DPD_CMD.
-	PMC(APBDEV_PMC_IO_DPD3_REQ) = ((params->emc_pmc_scratch1 & 0x3FFFFFFF) | 0x40000000) & 0xCFFF0000;
+	PMC(APBDEV_PMC_IO_DPD3_REQ) = (params->emc_pmc_scratch1 & 0xFFF0000) | (1 << 30u);
 	usleep(params->pmc_io_dpd3_req_wait);
 
 	// Set transmission pad control parameters.
@@ -1315,7 +1319,7 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 		EMC(EMC_REF) = ((1 << params->emc_extra_refresh_num << 8) - 253) | (params->emc_dev_select << 30);
 
 	// Enable refresh.
-	EMC(EMC_REFCTRL) = params->emc_dev_select | 0x80000000;
+	EMC(EMC_REFCTRL) = params->emc_dev_select | BIT(31);
 
 	EMC(EMC_DYN_SELF_REF_CONTROL) = params->emc_dyn_self_ref_control;
 	EMC(EMC_CFG)           = params->emc_cfg;
@@ -1324,7 +1328,7 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	EMC(EMC_SEL_DPD_CTRL)  = params->emc_sel_dpd_ctrl;
 
 	// Write addr swizzle lock bit.
-	EMC(EMC_FBIO_SPARE) = params->emc_fbio_spare | 2;
+	EMC(EMC_FBIO_SPARE) = params->emc_fbio_spare | BIT(1);
 
 	EMC(EMC_TIMING_CONTROL) = 1; // Re-trigger timing to latch power saving functions.
 
