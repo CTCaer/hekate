@@ -1998,9 +1998,8 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"Bus Width:\n"
 		"Current Rate:\n"
 		"Speed Class:\n"
-		"UHS Grade:\n"
-		"Video Class:\n"
-		"App perf class:\n"
+		"UHS Grade/Classes:\n"
+		"Max Bus Speed:\n\n"
 		"Write Protect:"
 	);
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
@@ -2034,14 +2033,32 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		uhs_au_size /= 1024;
 	}
 
+	sd_func_modes_t fmodes = { 0 };
+	sd_storage_get_fmodes(&sd_storage, NULL, &fmodes);
+
+	char *bus_speed;
+	if      (fmodes.cmd_system & SD_MODE_UHS_DDR200)
+		bus_speed = "DDR200";
+	else if (fmodes.access_mode & SD_MODE_UHS_SDR104)
+		bus_speed = "SDR104";
+	else if (fmodes.access_mode & SD_MODE_UHS_SDR50)
+		bus_speed = "SDR50";
+	else if (fmodes.access_mode & SD_MODE_UHS_DDR50)
+		bus_speed = "DDR50";
+	else if (fmodes.access_mode & SD_MODE_UHS_SDR25)
+		bus_speed = "SDR25";
+	else
+		bus_speed = "SDR12";
+
 	s_printf(txt_buf,
-		"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d\nV%d\nA%d\n%s",
+		"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d V%d A%d\n%s\n\n%s",
 		sd_storage.csd.structure + 1, sd_storage.csd.cmdclass,
 		sd_storage.sec_cnt >> 11, sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
 		sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
 		(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
-		sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)", sd_storage.ssr.uhs_grade,
-		sd_storage.ssr.video_class, sd_storage.ssr.app_class, wp_info);
+		sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)",
+		sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class, sd_storage.ssr.app_class,
+		bus_speed, wp_info);
 
 	lv_label_set_text(lb_val2, txt_buf);
 
