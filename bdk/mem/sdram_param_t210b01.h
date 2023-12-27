@@ -225,7 +225,6 @@ typedef struct _sdram_params_t210b01_t
 	u32 emc_r2p;
 	/* Specifies the value for EMC_W2P */
 	u32 emc_w2p;
-	/* Specifies the value for EMC_RD_RCD */
 
 	u32 emc_tppd;
 	u32 emc_trtm;
@@ -235,6 +234,7 @@ typedef struct _sdram_params_t210b01_t
 	u32 emc_tr2ref;
 	u32 emc_ccdmw;
 
+	/* Specifies the value for EMC_RD_RCD */
 	u32 emc_rd_rcd;
 	/* Specifies the value for EMC_WR_RCD */
 	u32 emc_wr_rcd;

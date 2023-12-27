@@ -549,6 +549,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 
 	.mc_video_protect_gpu_override0                  = 0x00000000,
 	.mc_video_protect_gpu_override1                  = 0x00000000,
+
 	.mc_sec_carveout_bom                             = 0xFFF00000,
 	.mc_sec_carveout_adr_hi                          = 0x00000000,
 	.mc_sec_carveout_size_mb                         = 0x00000000,
@@ -646,26 +647,28 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.mc_mts_carveout_reg_ctrl                        = 0x00000000
 };
 
+#define DCFG_OFFSET_OF(m) (OFFSET_OF(sdram_params_t210_t, m) / 4)
 static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	// Hynix timing config.
-	{ 0x0000000D, 0x10C / 4, DRAM_ID(1) }, // emc_r2w.
-	{ 0x00000001, 0x16C / 4, DRAM_ID(1) }, // emc_puterm_extra.
-	{ 0x80000000, 0x170 / 4, DRAM_ID(1) }, // emc_puterm_width.
-	{ 0x00000210, 0x4F4 / 4, DRAM_ID(1) }, // emc_pmacro_data_rx_term_mode.
-	{ 0x00000005, 0x5C0 / 4, DRAM_ID(1) }, // mc_emem_arb_timing_r2w.
+	{ 0x0000000D, DRAM_ID(1), DCFG_OFFSET_OF(emc_r2w)                      },
+	{ 0x00000001, DRAM_ID(1), DCFG_OFFSET_OF(emc_puterm_extra)             },
+	{ 0x80000000, DRAM_ID(1), DCFG_OFFSET_OF(emc_puterm_width)             },
+	{ 0x00000210, DRAM_ID(1), DCFG_OFFSET_OF(emc_pmacro_data_rx_term_mode) },
+	{ 0x00000005, DRAM_ID(1), DCFG_OFFSET_OF(mc_emem_arb_timing_r2w)       },
 
 	// Samsung 6GB density config.
-	{ 0x000C0302, 0x56C / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev0. 768MB Chip 0 density.
-	{ 0x000C0302, 0x570 / 4, DRAM_ID(4) }, // mc_emem_adr_cfg_dev1. 768MB Chip 1 density.
-	{ 0x00001800, 0x584 / 4, DRAM_ID(4) }, // mc_emem_cfg. 6GB total density. Max 8GB.
+	{ 0x000C0302, DRAM_ID(4), DCFG_OFFSET_OF(mc_emem_adr_cfg_dev0)         }, // 768MB Chip 0 density.
+	{ 0x000C0302, DRAM_ID(4), DCFG_OFFSET_OF(mc_emem_adr_cfg_dev1)         }, // 768MB Chip 1 density.
+	{ 0x00001800, DRAM_ID(4), DCFG_OFFSET_OF(mc_emem_cfg)                  }, // 6GB total density. Max 8GB.
 
 	// Samsung 8GB density config.
-	{ 0x0000003A,  0xEC / 4, DRAM_ID(7) }, // emc_rfc.
-	{ 0x0000001D,  0xF0 / 4, DRAM_ID(7) }, // emc_rfc_pb.
-	{ 0x0000003B, 0x1C0 / 4, DRAM_ID(7) }, // emc_txsr.
-	{ 0x0000003B, 0x1C4 / 4, DRAM_ID(7) }, // emc_txsr_dll.
-	{ 0x00000713, 0x2B4 / 4, DRAM_ID(7) }, // emc_dyn_self_ref_control.
-	{ 0x00080302, 0x56C / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev0. 1024MB Chip 0 density.
-	{ 0x00080302, 0x570 / 4, DRAM_ID(7) }, // mc_emem_adr_cfg_dev1. 1024MB Chip 1 density.
-	{ 0x00002000, 0x584 / 4, DRAM_ID(7) }, // mc_emem_cfg. 8GB total density. Max 8GB.
+	{ 0x0000003A, DRAM_ID(7), DCFG_OFFSET_OF(emc_rfc)                      },
+	{ 0x0000001D, DRAM_ID(7), DCFG_OFFSET_OF(emc_rfc_pb)                   },
+	{ 0x0000003B, DRAM_ID(7), DCFG_OFFSET_OF(emc_txsr)                     },
+	{ 0x0000003B, DRAM_ID(7), DCFG_OFFSET_OF(emc_txsr_dll)                 },
+	{ 0x00000713, DRAM_ID(7), DCFG_OFFSET_OF(emc_dyn_self_ref_control)     },
+	{ 0x00080302, DRAM_ID(7), DCFG_OFFSET_OF(mc_emem_adr_cfg_dev0)         }, // 1024MB Chip 0 density.
+	{ 0x00080302, DRAM_ID(7), DCFG_OFFSET_OF(mc_emem_adr_cfg_dev1)         }, // 1024MB Chip 1 density.
+	{ 0x00002000, DRAM_ID(7), DCFG_OFFSET_OF(mc_emem_cfg)                  }, // 8GB total density. Max 8GB.
 };
+#undef DCFG_OFFSET_OF

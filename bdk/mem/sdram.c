@@ -42,8 +42,8 @@
 typedef struct _sdram_vendor_patch_t
 {
 	u32 val;
-	u32 offset:16;
 	u32 dramcf:16;
+	u32 offset:16;
 } sdram_vendor_patch_t;
 
 static const u8 dram_encoding_t210b01[] = {

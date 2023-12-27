@@ -708,7 +708,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 
 #define DRAM_CC_LPDDR4X_PMACRO_IB      (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ))
 
-#define DRAM_CC_LPDDR4X_AUTOCAL_VPR    (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
+#define DRAM_CC_LPDDR4X_PUPD_VPR       (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL)        | \
@@ -718,7 +718,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
-#define DRAM_CC_LPDDR4X_DYN_SELF_CTRL  (DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE) | \
+#define DRAM_CC_LPDDR4X_DSR            (DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTE) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
 										DRAM_CC(LPDDR4X_4GB_HYNIX_H9HCNNNBKMMLXR_NEE)       | \
@@ -726,7 +726,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D1NP_046_WTB) | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AB_MGCL))
 
-#define DRAM_CC_LPDDR4X_QUSE_EINPUT    (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
+#define DRAM_CC_LPDDR4X_QUSE           (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
 										DRAM_CC(LPDDR4X_4GB_SAMSUNG_K4U6E3S4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL)        | \
 										DRAM_CC(LPDDR4X_4GB_MICRON_MT53E512M32D2NP_046_WTF) | \
@@ -748,60 +748,62 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 #define DRAM_CC_LPDDR4X_8GB            (DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AM_MGCJ)        | \
 										DRAM_CC(LPDDR4X_8GB_SAMSUNG_K4UBE3D4AA_MGCL))
 
+#define DCFG_OFFSET_OF(m) (OFFSET_OF(sdram_params_t210b01_t, m) / 4)
 static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 
 	// Samsung LPDDR4X 8GB K4UBE3D4AM-MGCJ Die-M for SDEV Iowa and Hoag.
-	{ 0x35353535, 0x350 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_vref_dq_0.
-	{ 0x35353535, 0x354 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_vref_dq_1.
-	{ 0x00100010, 0x3FC / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank0_0.
-	{ 0x00100010, 0x400 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank0_1.
-	{ 0x00100010, 0x404 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank0_2.
-	{ 0x00100010, 0x408 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank0_3.
-	{ 0x00100010, 0x40C / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank1_0.
-	{ 0x00100010, 0x410 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank1_1.
-	{ 0x00100010, 0x414 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank1_2.
-	{ 0x00100010, 0x418 / 4, DRAM_CC_LPDDR4X_PMACRO_IB }, // emc_pmacro_ib_ddll_long_dqs_rank1_3.
+	{ 0x35353535, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_vref_dq_0)             },
+	{ 0x35353535, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_vref_dq_1)             },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank0_0) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank0_1) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank0_2) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank0_3) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank1_0) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank1_1) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank1_2) },
+	{ 0x00100010, DRAM_CC_LPDDR4X_PMACRO_IB, DCFG_OFFSET_OF(emc_pmacro_ib_ddll_long_dqs_rank1_3) },
 
 	/*! Shared patched between DRAM Codes. */
-	{ 0x05500000, 0x0D4 / 4, DRAM_CC_LPDDR4X_AUTOCAL_VPR }, // emc_auto_cal_config2.
-	{ 0xC9AFBCBC, 0x0F4 / 4, DRAM_CC_LPDDR4X_AUTOCAL_VPR }, // emc_auto_cal_vref_sel0.
-	{ 0x2A800000, 0x6DC / 4, DRAM_CC_LPDDR4X_AUTOCAL_VPR }, // mc_video_protect_gpu_override0.
-	{ 0x00000002, 0x6E0 / 4, DRAM_CC_LPDDR4X_AUTOCAL_VPR }, // mc_video_protect_gpu_override1.
+	{ 0x05500000, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(emc_auto_cal_config2)                },
+	{ 0xC9AFBCBC, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(emc_auto_cal_vref_sel0)              },
+	{ 0x2A800000, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(mc_video_protect_gpu_override0)      },
+	{ 0x00000002, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(mc_video_protect_gpu_override1)      },
 	//!TODO Find out what mc_video_protect_gpu_override0 and mc_video_protect_gpu_override1 new bits are.
 
-	{ 0x88161414, 0x2E0 / 4, DRAM_CC_LPDDR4X_DYN_SELF_CTRL }, // emc_mrw14.
-	{ 0x80000713, 0x32C / 4, DRAM_CC_LPDDR4X_DYN_SELF_CTRL }, // emc_dyn_self_ref_control.
+	{ 0x88161414, DRAM_CC_LPDDR4X_DSR,       DCFG_OFFSET_OF(emc_mrw14)                           },
+	{ 0x80000713, DRAM_CC_LPDDR4X_DSR,       DCFG_OFFSET_OF(emc_dyn_self_ref_control)            },
 
-	{ 0x00000006, 0x1CC / 4, DRAM_CC_LPDDR4X_QUSE_EINPUT }, // emc_quse.
-	{ 0x00000005, 0x1D0 / 4, DRAM_CC_LPDDR4X_QUSE_EINPUT }, // emc_quse_width.
-	{ 0x00000003, 0x1DC / 4, DRAM_CC_LPDDR4X_QUSE_EINPUT }, // emc_einput.
-	{ 0x0000000C, 0x1E0 / 4, DRAM_CC_LPDDR4X_QUSE_EINPUT }, // emc_einput_duration.
+	{ 0x00000006, DRAM_CC_LPDDR4X_QUSE,      DCFG_OFFSET_OF(emc_quse)                            },
+	{ 0x00000005, DRAM_CC_LPDDR4X_QUSE,      DCFG_OFFSET_OF(emc_quse_width)                      },
+	{ 0x00000003, DRAM_CC_LPDDR4X_QUSE,      DCFG_OFFSET_OF(emc_einput)                          },
+	{ 0x0000000C, DRAM_CC_LPDDR4X_QUSE,      DCFG_OFFSET_OF(emc_einput_duration)                 },
 
-	{ 0x00000008, 0x24C / 4, DRAM_CC_LPDDR4X_FAW }, // emc_tfaw.
-	{ 0x00000001, 0x670 / 4, DRAM_CC_LPDDR4X_FAW }, // mc_emem_arb_timing_faw.
+	{ 0x00000008, DRAM_CC_LPDDR4X_FAW,       DCFG_OFFSET_OF(emc_tfaw)                            },
+	{ 0x00000001, DRAM_CC_LPDDR4X_FAW,       DCFG_OFFSET_OF(mc_emem_arb_timing_faw)              },
 
-	{ 0xE4FACB43, 0x6D4 / 4, DRAM_CC_LPDDR4X_VPR }, // mc_video_protect_vpr_override.  + TSEC,  NVENC.
-	{ 0x0600FED3, 0x6D8 / 4, DRAM_CC_LPDDR4X_VPR }, // mc_video_protect_vpr_override1. + TSECB, TSEC1, TSECB1.
+	{ 0xE4FACB43, DRAM_CC_LPDDR4X_VPR,       DCFG_OFFSET_OF(mc_video_protect_vpr_override)       }, // + TSEC,  NVENC.
+	{ 0x0600FED3, DRAM_CC_LPDDR4X_VPR,       DCFG_OFFSET_OF(mc_video_protect_vpr_override1)      }, // + TSECB, TSEC1, TSECB1.
 
-	{ 0x00000001, 0x134 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_adr_cfg. 2 Ranks.
-	{ 0x08010004, 0x2B8 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw1.
-	{ 0x08020000, 0x2BC / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw2.
-	{ 0x080D0000, 0x2C0 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw3.
-	{ 0x08033131, 0x2C8 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw6.
-	{ 0x080B0000, 0x2CC / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw8.
-	{ 0x0C0E5D5D, 0x2D0 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw9.
-	{ 0x080C5D5D, 0x2D4 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw10.
-	{ 0x0C0D0808, 0x2D8 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw12.
-	{ 0x0C0D0000, 0x2DC / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw13.
-	{ 0x08161414, 0x2E0 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw14.
-	{ 0x08010004, 0x2E4 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_mrw_extra.
-	{ 0x00000000, 0x340 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_dev_select. Both devices.
-	{ 0x0051004F, 0x450 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_zcal_mrw_cmd.
-	{ 0x40000001, 0x45C / 4, DRAM_CC_LPDDR4X_8GB }, // emc_zcal_init_dev1.
-	{ 0x00000000, 0x594 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_pmacro_tx_pwrd4.
-	{ 0x00001000, 0x598 / 4, DRAM_CC_LPDDR4X_8GB }, // emc_pmacro_tx_pwrd5.
-	{ 0x00000001, 0x630 / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_adr_cfg. 2 Ranks.
-	{ 0x00002000, 0x64C / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_cfg. 8GB total density. Max 8GB.
-	{ 0x00000002, 0x680 / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_arb_timing_r2r.
-	{ 0x02020001, 0x694 / 4, DRAM_CC_LPDDR4X_8GB }, // mc_emem_arb_da_turns.
+	{ 0x00000001, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_adr_cfg)                         }, // 2 Ranks.
+	{ 0x08010004, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw1)                            },
+	{ 0x08020000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw2)                            },
+	{ 0x080D0000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw3)                            },
+	{ 0x08033131, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw6)                            },
+	{ 0x080B0000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw8)                            },
+	{ 0x0C0E5D5D, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw9)                            },
+	{ 0x080C5D5D, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw10)                           },
+	{ 0x0C0D0808, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw12)                           },
+	{ 0x0C0D0000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw13)                           },
+	{ 0x08161414, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw14)                           },
+	{ 0x08010004, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw_extra)                       },
+	{ 0x00000000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_dev_select)                      }, // Both devices.
+	{ 0x0051004F, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_zcal_mrw_cmd)                    },
+	{ 0x40000001, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_zcal_init_dev1)                  },
+	{ 0x00000000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_pmacro_tx_pwrd4)                 },
+	{ 0x00001000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_pmacro_tx_pwrd5)                 },
+	{ 0x00000001, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(mc_emem_adr_cfg)                     }, // 2 Ranks.
+	{ 0x00002000, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(mc_emem_cfg)                         }, // 8GB total density. Max 8GB.
+	{ 0x00000002, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(mc_emem_arb_timing_r2r)              },
+	{ 0x02020001, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(mc_emem_arb_da_turns)                },
 };
+#undef DCFG_OFFSET_OF
