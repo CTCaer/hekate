@@ -487,6 +487,23 @@ int se_aes_xts_crypt(u32 tweak_ks, u32 crypt_ks, u32 enc, u64 sec, void *dst, vo
 	return 1;
 }
 
+static void se_calc_sha256_get_hash(void *hash, u32 *msg_left)
+{
+	u32 hash32[SE_SHA_256_SIZE / 4];
+
+	// Backup message left.
+	if (msg_left)
+	{
+		msg_left[0] = SE(SE_SHA_MSG_LEFT_0_REG);
+		msg_left[1] = SE(SE_SHA_MSG_LEFT_1_REG);
+	}
+
+	// Copy output hash.
+	for (u32 i = 0; i < (SE_SHA_256_SIZE / 4); i++)
+		hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG + (i * 4)));
+	memcpy(hash, hash32, SE_SHA_256_SIZE);
+}
+
 int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64 total_size, u32 sha_cfg, bool is_oneshot)
 {
 	int res;
@@ -495,6 +512,17 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 	//! TODO: src_size must be 512 bit aligned if continuing and not last block for SHA256.
 	if (src_size > 0xFFFFFF || !hash) // Max 16MB - 1 chunks and aligned x4 hash buffer.
 		return 0;
+
+	// Src size of 0 is not supported, so return null string sha256.
+	// if (!src_size)
+	// {
+	// 	const u8 null_hash[SE_SHA_256_SIZE] = {
+	// 		0xE3, 0xB0, 0xC4, 0x42, 0x98, 0xFC, 0x1C, 0x14, 0x9A, 0xFB, 0xF4, 0xC8, 0x99, 0x6F, 0xB9, 0x24,
+	// 		0x27, 0xAE, 0x41, 0xE4, 0x64, 0x9B, 0x93, 0x4C, 0xA4, 0x95, 0x99, 0x1B, 0x78, 0x52, 0xB8, 0x55
+	// 	};
+	// 	memcpy(hash, null_hash, SE_SHA_256_SIZE);
+	// 	return 1;
+	// }
 
 	// Setup config for SHA256.
 	SE(SE_CONFIG_REG) = SE_CONFIG_ENC_MODE(MODE_SHA256) | SE_CONFIG_ENC_ALG(ALG_SHA) | SE_CONFIG_DST(DST_HASHREG);
@@ -534,19 +562,7 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 	res = _se_execute(SE_OP_START, NULL, 0, src, src_size, is_oneshot);
 
 	if (is_oneshot)
-	{
-		// Backup message left.
-		if (msg_left)
-		{
-			msg_left[0] = SE(SE_SHA_MSG_LEFT_0_REG);
-			msg_left[1] = SE(SE_SHA_MSG_LEFT_1_REG);
-		}
-
-		// Copy output hash.
-		for (u32 i = 0; i < (SE_SHA_256_SIZE / 4); i++)
-			hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG + (i * 4)));
-		memcpy(hash, hash32, SE_SHA_256_SIZE);
-	}
+		se_calc_sha256_get_hash(hash, msg_left);
 
 	return res;
 }
@@ -558,20 +574,9 @@ int se_calc_sha256_oneshot(void *hash, const void *src, u32 src_size)
 
 int se_calc_sha256_finalize(void *hash, u32 *msg_left)
 {
-	u32 hash32[SE_SHA_256_SIZE / 4];
 	int res = _se_execute_finalize();
 
-	// Backup message left.
-	if (msg_left)
-	{
-		msg_left[0] = SE(SE_SHA_MSG_LEFT_0_REG);
-		msg_left[1] = SE(SE_SHA_MSG_LEFT_1_REG);
-	}
-
-	// Copy output hash.
-	for (u32 i = 0; i < (SE_SHA_256_SIZE / 4); i++)
-		hash32[i] = byte_swap_32(SE(SE_HASH_RESULT_REG + (i * 4)));
-	memcpy(hash, hash32, SE_SHA_256_SIZE);
+	se_calc_sha256_get_hash(hash, msg_left);
 
 	return res;
 }
