@@ -19,6 +19,7 @@
 #define _SDMMC_H_
 
 #include <utils/types.h>
+#include <storage/sd_def.h>
 #include <storage/sdmmc_driver.h>
 
 extern u32 sd_power_cycle_time_start;
@@ -195,6 +196,14 @@ typedef struct _sdmmc_storage_t
 	sd_ssr_t      ssr;
 } sdmmc_storage_t;
 
+typedef struct _sd_func_modes_t
+{
+	u16 access_mode;
+	u16 cmd_system;
+	u16 driver_strength;
+	u16 power_limit;
+} sd_func_modes_t;
+
 int  sdmmc_storage_end(sdmmc_storage_t *storage);
 int  sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf);
 int  sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf);
@@ -209,6 +218,7 @@ int  sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf);
 
 int  mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf);
 
+int  sd_storage_get_fmodes(sdmmc_storage_t *storage, u8 *buf, sd_func_modes_t *functions);
 int  sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf);
 int  sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf);
 u32  sd_storage_get_ssr_au(sdmmc_storage_t *storage);

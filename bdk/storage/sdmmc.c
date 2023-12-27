@@ -1292,21 +1292,36 @@ static int _sd_storage_set_card_bus_speed(sdmmc_storage_t *storage, u32 hs_type,
 	return 0;
 }
 
-static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
+int sd_storage_get_fmodes(sdmmc_storage_t *storage, u8 *buf, sd_func_modes_t *fmodes)
 {
-	if (sdmmc_get_bus_width(storage->sdmmc) != SDMMC_BUS_WIDTH_4)
-		return 0;
+	if (!buf)
+		buf = (u8 *)SDMMC_UPPER_BUFFER;
 
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
 
-	u8  access_mode = buf[13];
-	u16 power_limit = buf[7]  | (buf[6]  << 8);
+	fmodes->access_mode     = buf[13] | (buf[12] << 8);
+	fmodes->cmd_system      = buf[11] | (buf[10] << 8);
+	fmodes->driver_strength = buf[9]  | (buf[8]  << 8);
+	fmodes->power_limit     = buf[7]  | (buf[6]  << 8);
+
+	return 1;
+}
+
+static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u8 *buf)
+{
+	sd_func_modes_t fmodes;
+
+	if (sdmmc_get_bus_width(storage->sdmmc) != SDMMC_BUS_WIDTH_4)
+		return 0;
+
+	if (!sd_storage_get_fmodes(storage, buf, &fmodes))
+		return 0;
+
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
-	u16 cmd_system  = buf[11] | (buf[10] << 8);
-	DPRINTF("[SD] access: %02X, power: %02X, cmd: %02X\n", access_mode, power_limit, cmd_system);
+	DPRINTF("[SD] access: %02X, power: %02X, cmd: %02X\n", fmodes.access_mode, fmodes.power_limit, fmodes.cmd_system);
 #else
-	DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
+	DPRINTF("[SD] access: %02X, power: %02X\n", fmodes.access_mode, fmodes.power_limit);
 #endif
 
 	u32 hs_type = 0;
@@ -1315,11 +1330,11 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 	case SDHCI_TIMING_UHS_DDR200:
 		// Fall through if DDR200 is not supported.
-		if (cmd_system & SD_MODE_UHS_DDR200)
+		if (fmodes.cmd_system & SD_MODE_UHS_DDR200)
 		{
 			DPRINTF("[SD] setting bus speed to DDR200\n");
 			storage->csd.busspeed = 200;
-			_sd_storage_set_power_limit(storage, power_limit, buf);
+			_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 			return _sd_storage_enable_DDR200(storage, buf);
 		}
 #endif
@@ -1327,7 +1342,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 	case SDHCI_TIMING_UHS_SDR104:
 	case SDHCI_TIMING_UHS_SDR82:
 		// Fall through if not supported.
-		if (access_mode & SD_MODE_UHS_SDR104)
+		if (fmodes.access_mode & SD_MODE_UHS_SDR104)
 		{
 			type    = SDHCI_TIMING_UHS_SDR104;
 			hs_type = UHS_SDR104_BUS_SPEED;
@@ -1345,7 +1360,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		}
 
 	case SDHCI_TIMING_UHS_SDR50:
-		if (access_mode & SD_MODE_UHS_SDR50)
+		if (fmodes.access_mode & SD_MODE_UHS_SDR50)
 		{
 			type    = SDHCI_TIMING_UHS_SDR50;
 			hs_type = UHS_SDR50_BUS_SPEED;
@@ -1355,7 +1370,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		}
 /*
 	case SDHCI_TIMING_UHS_DDR50:
-		if (access_mode & SD_MODE_UHS_DDR50)
+		if (fmodes.access_mode & SD_MODE_UHS_DDR50)
 		{
 			type    = SDHCI_TIMING_UHS_DDR50;
 			hs_type = UHS_DDR50_BUS_SPEED;
@@ -1365,7 +1380,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 		}
 */
 	case SDHCI_TIMING_UHS_SDR25:
-		if (access_mode & SD_MODE_UHS_SDR25)
+		if (fmodes.access_mode & SD_MODE_UHS_SDR25)
 		{
 			type = SDHCI_TIMING_UHS_SDR25;
 			hs_type = UHS_SDR25_BUS_SPEED;
@@ -1382,7 +1397,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 
 	// Try to raise the power limit to let the card perform better.
 	if (hs_type != UHS_SDR25_BUS_SPEED)
-		_sd_storage_set_power_limit(storage, power_limit, buf);
+		_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 
 	// Setup and set selected card and bus speed.
 	if (!_sd_storage_set_card_bus_speed(storage, hs_type, buf))
@@ -1402,17 +1417,17 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 
 static int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 {
-	if (!_sd_storage_switch_get(storage, buf))
+	sd_func_modes_t fmodes;
+
+	if (!sd_storage_get_fmodes(storage, buf, &fmodes))
 		return 0;
 
-	u8  access_mode = buf[13];
-	u16 power_limit = buf[7] | buf[6] << 8;
-	DPRINTF("[SD] access: %02X, power: %02X\n", access_mode, power_limit);
+	DPRINTF("[SD] access: %02X, power: %02X\n", fmodes.access_mode, fmodes.power_limit);
 
 	// Try to raise the power limit to let the card perform better.
-	_sd_storage_set_power_limit(storage, power_limit, buf);
+	_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 
-	if (!(access_mode & SD_MODE_HIGH_SPEED))
+	if (!(fmodes.access_mode & SD_MODE_HIGH_SPEED))
 		return 1;
 
 	if (!_sd_storage_set_card_bus_speed(storage, HIGH_SPEED_BUS_SPEED, buf))
