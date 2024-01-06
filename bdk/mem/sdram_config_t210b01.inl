@@ -600,8 +600,8 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus SE2, SE2B and TSECB, TSEC1, TSECB1.
 	.mc_video_protect_vpr_override1                  = 0x0600FED3, // Default: 0x06001ED3.
 
-	.mc_video_protect_gpu_override0                  = 0x00000000,
-	.mc_video_protect_gpu_override1                  = 0x00000000,
+	.mc_video_protect_gpu_override0                  = 0x2A800000, // Default: 0x00000000. Forced to 1 by HOS Secmon.
+	.mc_video_protect_gpu_override1                  = 0x00000002, // Default: 0x00000000. Forced to 0 by HOS Secmon.
 
 	.mc_sec_carveout_bom                             = 0xFFF00000,
 	.mc_sec_carveout_adr_hi                          = 0x00000000,
@@ -767,9 +767,10 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	/*! Shared patched between DRAM Codes. */
 	{ 0x05500000, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(emc_auto_cal_config2)                },
 	{ 0xC9AFBCBC, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(emc_auto_cal_vref_sel0)              },
-	{ 0x2A800000, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(mc_video_protect_gpu_override0)      },
-	{ 0x00000002, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(mc_video_protect_gpu_override1)      },
-	//!TODO Find out what mc_video_protect_gpu_override0 and mc_video_protect_gpu_override1 new bits are.
+
+	// Moved to default config.
+	// { 0x2A800000, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(mc_video_protect_gpu_override0)      },
+	// { 0x00000002, DRAM_CC_LPDDR4X_PUPD_VPR,  DCFG_OFFSET_OF(mc_video_protect_gpu_override1)      },
 
 	{ 0x88161414, DRAM_CC_LPDDR4X_DSR,       DCFG_OFFSET_OF(emc_mrw14)                           },
 	{ 0x80000713, DRAM_CC_LPDDR4X_DSR,       DCFG_OFFSET_OF(emc_dyn_self_ref_control)            },

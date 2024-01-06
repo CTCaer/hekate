@@ -547,8 +547,8 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus TSECB, TSEC1, TSECB1.
 	.mc_video_protect_vpr_override1                  = 0x0000FED3, // Default: 0x00001ED3. New: 0x0000FED3. + TSECB, TSEC1, TSECB1.
 
-	.mc_video_protect_gpu_override0                  = 0x00000000,
-	.mc_video_protect_gpu_override1                  = 0x00000000,
+	.mc_video_protect_gpu_override0                  = 0x2A800000, // Default: 0x00000000. Forced to 1 by HOS Secmon.
+	.mc_video_protect_gpu_override1                  = 0x00000002, // Default: 0x00000000. Forced to 0 by HOS Secmon.
 
 	.mc_sec_carveout_bom                             = 0xFFF00000,
 	.mc_sec_carveout_adr_hi                          = 0x00000000,
