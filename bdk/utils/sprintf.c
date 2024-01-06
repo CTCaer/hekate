@@ -112,7 +112,9 @@ void s_printf(char *out_buf, const char *fmt, ...)
 			switch (*fmt)
 			{
 			case 'c':
-				_s_putc(va_arg(ap, u32));
+				char c = va_arg(ap, u32);
+				if (c != '\0')
+					_s_putc(c);
 				break;
 			case 's':
 				_s_puts(va_arg(ap, char *));
