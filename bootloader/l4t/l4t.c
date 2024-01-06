@@ -362,8 +362,6 @@ static void _l4t_sdram_lp0_save_params(bool t210b01)
 	} else {
 		s(MC_VIDEO_PROTECT_REG_CTRL, 1:0, secure_scratch14, 31:30);
 	}
-	s32(MC_VIDEO_PROTECT_GPU_OVERRIDE_0, secure_scratch12);
-	s(MC_VIDEO_PROTECT_GPU_OVERRIDE_1, 15:0, secure_scratch49, 15:0);
 
 	// TZD.
 	s(MC_SEC_CARVEOUT_BOM,     31:20, secure_scratch53, 23:12);
@@ -471,14 +469,6 @@ static void _l4t_mc_config_carveout(bool t210b01)
 	// Disabled VPR carveout. DT decides if enabled or not.
 	MC(MC_VIDEO_PROTECT_BOM) = 0xFFF00000;
 	MC(MC_VIDEO_PROTECT_SIZE_MB) = 0;
-	if (!t210b01)
-	{
-		// For T210 force the following values for Falcon to configure WPR access.
-		// For T210B01 use default, already set from dram config.
-		// HOS forces 1 and 0.
-		MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_0) = 0x2A800000;
-		MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_1) = 2;
-	}
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = VPR_CTRL_TZ_SECURE | VPR_CTRL_LOCKED;
 
 	// Temporarily disable TZDRAM carveout. For launching coldboot TZ.
