@@ -440,7 +440,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
 			strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
 			break;
-		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WT:
+		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WTC:
 			strcpy(dram_man, "Micron MT53B512M32D2NP-062 WT:C");
 			break;
 		case LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH:
