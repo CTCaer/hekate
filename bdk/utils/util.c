@@ -102,8 +102,9 @@ u64 sqrt64(u64 num)
 	return square_root;
 }
 
-#define	TLONG_MAX	((long)(((unsigned long)(~0L)) >> 1))
-#define	TLONG_MIN	((long)(~TLONG_MAX))
+#define	TULONG_MAX  ((unsigned long)((unsigned long)(~0L)))
+#define	TLONG_MAX   ((long)(((unsigned long)(~0L)) >> 1))
+#define	TLONG_MIN   ((long)(~TLONG_MAX))
 #define ISSPACE(ch) ((ch >= '\t' && ch <= '\r') || (ch == ' '))
 #define ISDIGIT(ch) ( ch >= '0'  && ch <= '9' )
 #define ISALPHA(ch) ((ch >= 'a'  && ch <= 'z')  || (ch >= 'A' && ch <= 'Z'))
@@ -162,7 +163,7 @@ long strtol(const char *nptr, char **endptr, register int base)
 	 * Set any if any `digits' consumed; make it negative to indicate
 	 * overflow.
 	 */
-	cutoff = neg ? -(unsigned long)TLONG_MIN : TLONG_MAX;
+	cutoff = neg ? -(unsigned long)TLONG_MIN : (base == 16 ? TULONG_MAX : TLONG_MAX);
 	cutlim = cutoff % (unsigned long)base;
 	cutoff /= (unsigned long)base;
 	for (acc = 0, any = 0;; c = *s++) {
