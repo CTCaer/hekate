@@ -595,10 +595,10 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	.mc_video_protect_bom_adr_hi                     = 0x00000000,
 	.mc_video_protect_size_mb                        = 0x00000000,
 
-	// AFI, BPMP, HC, ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1, SDMMC1A, SDMMC2A, SDMMC3A.
-	.mc_video_protect_vpr_override                   = 0xE4BAC343,
-	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus SE2, SE2B.
-	.mc_video_protect_vpr_override1                  = 0x06001ED3,
+	// AFI, BPMP, HC, ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1, SDMMC1A, SDMMC2A, SDMMC3A. Plus TSEC, NVENC.
+	.mc_video_protect_vpr_override                   = 0xE4FACB43, // Default: 0xE4BAC343.
+	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus SE2, SE2B and TSECB, TSEC1, TSECB1.
+	.mc_video_protect_vpr_override1                  = 0x0600FED3, // Default: 0x06001ED3.
 
 	.mc_video_protect_gpu_override0                  = 0x00000000,
 	.mc_video_protect_gpu_override1                  = 0x00000000,
@@ -606,6 +606,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	.mc_sec_carveout_bom                             = 0xFFF00000,
 	.mc_sec_carveout_adr_hi                          = 0x00000000,
 	.mc_sec_carveout_size_mb                         = 0x00000000,
+
 	.mc_video_protect_write_access                   = 0x00000000,
 	.mc_sec_carveout_protect_write_access            = 0x00000000,
 
@@ -781,8 +782,9 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210b01[] = {
 	{ 0x00000008, DRAM_CC_LPDDR4X_FAW,       DCFG_OFFSET_OF(emc_tfaw)                            },
 	{ 0x00000001, DRAM_CC_LPDDR4X_FAW,       DCFG_OFFSET_OF(mc_emem_arb_timing_faw)              },
 
-	{ 0xE4FACB43, DRAM_CC_LPDDR4X_VPR,       DCFG_OFFSET_OF(mc_video_protect_vpr_override)       }, // + TSEC,  NVENC.
-	{ 0x0600FED3, DRAM_CC_LPDDR4X_VPR,       DCFG_OFFSET_OF(mc_video_protect_vpr_override1)      }, // + TSECB, TSEC1, TSECB1.
+	// Moved to default config.
+	// { 0xE4FACB43, DRAM_CC_LPDDR4X_VPR,       DCFG_OFFSET_OF(mc_video_protect_vpr_override)       }, // + TSEC,  NVENC.
+	// { 0x0600FED3, DRAM_CC_LPDDR4X_VPR,       DCFG_OFFSET_OF(mc_video_protect_vpr_override1)      }, // + TSECB, TSEC1, TSECB1.
 
 	{ 0x00000001, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_adr_cfg)                         }, // 2 Ranks.
 	{ 0x08010004, DRAM_CC_LPDDR4X_8GB,       DCFG_OFFSET_OF(emc_mrw1)                            },

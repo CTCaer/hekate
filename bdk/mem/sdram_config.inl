@@ -542,10 +542,10 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.mc_video_protect_bom_adr_hi                     = 0x00000000,
 	.mc_video_protect_size_mb                        = 0x00000000,
 
-	// AFI, BPMP, HC, ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1, SDMMC1A, SDMMC2A, SDMMC3A.
-	.mc_video_protect_vpr_override                   = 0xE4BAC343,
-	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR.
-	.mc_video_protect_vpr_override1                  = 0x00001ED3,
+	// AFI, BPMP, HC, ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1, SDMMC1A, SDMMC2A, SDMMC3A. Plus TSEC, NVENC.
+	.mc_video_protect_vpr_override                   = 0xE4FACB43, // Default: 0xE4BAC343. New: 0xE4FACB43. + TSEC,  NVENC.
+	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus TSECB, TSEC1, TSECB1.
+	.mc_video_protect_vpr_override1                  = 0x0000FED3, // Default: 0x00001ED3. New: 0x0000FED3. + TSECB, TSEC1, TSECB1.
 
 	.mc_video_protect_gpu_override0                  = 0x00000000,
 	.mc_video_protect_gpu_override1                  = 0x00000000,
@@ -553,6 +553,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.mc_sec_carveout_bom                             = 0xFFF00000,
 	.mc_sec_carveout_adr_hi                          = 0x00000000,
 	.mc_sec_carveout_size_mb                         = 0x00000000,
+
 	.mc_video_protect_write_access                   = 0x00000000,
 	.mc_sec_carveout_protect_write_access            = 0x00000000,
 
