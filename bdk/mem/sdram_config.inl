@@ -667,7 +667,6 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	{ 0x0000001D, DRAM_ID(7), DCFG_OFFSET_OF(emc_rfc_pb)                   },
 	{ 0x0000003B, DRAM_ID(7), DCFG_OFFSET_OF(emc_txsr)                     },
 	{ 0x0000003B, DRAM_ID(7), DCFG_OFFSET_OF(emc_txsr_dll)                 },
-	{ 0x00000713, DRAM_ID(7), DCFG_OFFSET_OF(emc_dyn_self_ref_control)     },
 	{ 0x00080302, DRAM_ID(7), DCFG_OFFSET_OF(mc_emem_adr_cfg_dev0)         }, // 1024MB Chip 0 density.
 	{ 0x00080302, DRAM_ID(7), DCFG_OFFSET_OF(mc_emem_adr_cfg_dev1)         }, // 1024MB Chip 1 density.
 	{ 0x00002000, DRAM_ID(7), DCFG_OFFSET_OF(mc_emem_cfg)                  }, // 8GB total density. Max 8GB.
