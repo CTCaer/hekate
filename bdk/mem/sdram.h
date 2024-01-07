@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2020-2023 CTCaer
+ * Copyright (c) 2020-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -95,6 +95,7 @@ enum sdram_ids_mariko
 
 	LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL        = 28, // Die-A. (1y-X03). 2nd gen.
 
+	// Old naming scheme: H9HCNNNBKMCLXR-NEE
 	LPDDR4X_IOWA_4GB_HYNIX_H54G46CYRBX267           = 29, // Die-C. (1a-01). 61% lp.
 	LPDDR4X_HOAG_4GB_HYNIX_H54G46CYRBX267           = 30, // Die-C. (1a-01). 61% lp.
 	LPDDR4X_AULA_4GB_HYNIX_H54G46CYRBX267           = 31, // Die-C. (1a-01). 61% lp.
