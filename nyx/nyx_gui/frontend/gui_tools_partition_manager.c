@@ -30,7 +30,7 @@
 #define SECTORS_PER_GB   0x200000
 
 #define HOS_MIN_SIZE_MB        2048
-#define ANDROID_SYSTEM_SIZE_MB 4096 // 4 GB which is > 3888 MB of the actual size.
+#define ANDROID_SYSTEM_SIZE_MB 6144 // 6 GB. Fits both Legacy (4912MB) and Dynamic (6144MB) partition schemes.
 
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
@@ -48,6 +48,8 @@ typedef struct _partition_ctxt_t
 
 	bool emu_double;
 	bool emmc_is_64gb;
+
+	bool and_dynamic;
 
 	mbr_t mbr_old;
 
@@ -387,37 +389,66 @@ static void _prepare_and_flash_mbr_gpt()
 		if (part_info.l4t_size)
 			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, part_info.l4t_size << 11, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6);
 
-		// Android Vendor partition. 1GB
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x200000, (char[]) { 'v', 0, 'e', 0, 'n', 0, 'd', 0, 'o', 0, 'r', 0 }, 12);
+		if (part_info.and_dynamic)
+		{
+			// Android Linux Kernel partition. 64MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8);
 
-		// Android System partition. 2GB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x400000, (char[]) { 'A', 0, 'P', 0, 'P', 0 }, 6);
+			// Android Recovery partition. 64MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16);
 
-		// Android Linux Kernel partition. 32MB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x10000, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6);
+			// Android Device Tree Reference partition. 1MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, (char[]) { 'd', 0, 't', 0, 'b', 0 }, 6);
 
-		// Android Recovery partition. 64MB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6);
+			// Android Misc partition. 3MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, (char[]) { 'm', 0, 'i', 0, 's', 0, 'c', 0 }, 8);
 
-		// Android Device Tree Reference partition. 1MB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6);
+			// Android Cache partition. 60MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x1E000, (char[]) { 'c', 0, 'a', 0, 'c', 0, 'h', 0, 'e', 0 }, 10);
 
-		// Android Encryption partition. 16MB.
-		// Note: 16MB size is for aligning UDA. If any other tiny partition must be added, it should split the MDA one.
-		sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear the whole of it.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, (char[]) { 'M', 0, 'D', 0, 'A', 0 }, 6);
+			// Android Super dynamic partition. 5922MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0xB91000, (char[]) { 's', 0, 'u', 0, 'p', 0, 'e', 0, 'r', 0 }, 10);
 
-		// Android Cache partition. 700MB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x15E000, (char[]) { 'C', 0, 'A', 0, 'C', 0 }, 6);
+			// Android Userdata partition.
+			u32 uda_size = (part_info.and_size << 11) - 0xC00000; // Subtract the other partitions (6144MB).
+			if (!part_info.emu_size)
+				uda_size -= 0x800; // Reserve 1MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, (char[]) { 'u', 0, 's', 0, 'e', 0, 'r', 0, 'd', 0, 'a', 0, 't', 0, 'a', 0 }, 16);
+		}
+		else
+		{
+			// Android Vendor partition. 1GB
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x200000, (char[]) { 'v', 0, 'e', 0, 'n', 0, 'd', 0, 'o', 0, 'r', 0 }, 12);
 
-		// Android Misc partition. 3MB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, (char[]) { 'M', 0, 'S', 0, 'C', 0 }, 6);
+			// Android System partition. 3GB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x600000, (char[]) { 'A', 0, 'P', 0, 'P', 0 }, 6);
 
-		// Android Userdata partition.
-		u32 uda_size = (part_info.and_size << 11) - 0x798000; // Subtract the other partitions (3888MB).
-		if (!part_info.emu_size)
-			uda_size -= 0x800; // Reserve 1MB.
-		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, (char[]) { 'U', 0, 'D', 0, 'A', 0 }, 6);
+			// Android Linux Kernel partition. 32MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x10000, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6);
+
+			// Android Recovery partition. 64MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6);
+
+			// Android Device Tree Reference partition. 1MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6);
+
+			// Android Encryption partition. 16MB.
+			// Note: 16MB size is for aligning UDA. If any other tiny partition must be added, it should split the MDA one.
+			sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear the whole of it.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, (char[]) { 'M', 0, 'D', 0, 'A', 0 }, 6);
+
+			// Android Cache partition. 700MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x15E000, (char[]) { 'C', 0, 'A', 0, 'C', 0 }, 6);
+
+			// Android Misc partition. 3MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, (char[]) { 'M', 0, 'S', 0, 'C', 0 }, 6);
+
+			// Android Userdata partition.
+			u32 uda_size = (part_info.and_size << 11) - 0x998000; // Subtract the other partitions (4912MB).
+			if (!part_info.emu_size)
+				uda_size -= 0x800; // Reserve 1MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, (char[]) { 'U', 0, 'D', 0, 'A', 0 }, 6);
+		}
 
 		// Handle emuMMC partitions manually.
 		if (part_info.emu_size)
@@ -796,7 +827,7 @@ static bool _get_available_android_partition()
 	// Find kernel partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (gpt->entries[i].lba_start && !memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
+		if (gpt->entries[i].lba_start && (!memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8)))
 		{
 			free(gpt);
 
@@ -1026,7 +1057,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 	// Find Kernel partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6))
+		if (!memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8))
 		{
 			offset_sct = gpt->entries[i].lba_start;
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -1090,7 +1121,7 @@ boot_img_not_found:
 	// Find Recovery partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
+		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16))
 		{
 			offset_sct = gpt->entries[i].lba_start;
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -1152,7 +1183,7 @@ recovery_not_found:
 	// Find Device Tree partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6))
+		if (!memcmp(gpt->entries[i].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'd', 0, 't', 0, 'b', 0 }, 6))
 		{
 			offset_sct = gpt->entries[i].lba_start;
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -1198,7 +1229,7 @@ dtb_not_found:
 	// Check if Recovery is flashed unconditionally.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6))
+		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16))
 		{
 			u8 *buf = malloc(512);
 			sdmmc_storage_read(&sd_storage, gpt->entries[i].lba_start, 1, buf);
@@ -1679,7 +1710,7 @@ static lv_res_t _create_mbox_partitioning_option1(lv_obj_t *btns, const char *tx
 	return LV_RES_OK;
 }
 
-static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn)
+static lv_res_t _create_mbox_partitioning_warn(lv_obj_t *btn)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -1724,6 +1755,53 @@ static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn)
 	free(txt_buf);
 
 	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_partitioning_android(lv_obj_t *btns, const char *txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	mbox_action(btns, txt);
+
+	part_info.and_dynamic = !btn_idx;
+	_create_mbox_partitioning_warn(NULL);
+
+	return LV_RES_INV;
+}
+
+static lv_res_t _create_mbox_partitioning_andr_part(lv_obj_t *btn)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\222Dynamic", "\222Legacy", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	lv_obj_set_width(mbox, LV_HOR_RES / 10 * 5);
+	lv_mbox_set_text(mbox, "#FF8000 Android Partitioning#");
+
+	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_status, true);
+
+	lv_label_set_text(lbl_status,
+		"Please select a partition scheme:\n\n"
+		"#C7EA46 Dynamic:# Android 13+\n"
+		"#C7EA46 Legacy:# Android 10-11\n");
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_partitioning_android);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn) {
+	if (part_info.and_size)
+		return _create_mbox_partitioning_andr_part(NULL);
+	else
+		return _create_mbox_partitioning_warn(NULL);
 }
 
 static void _update_partition_bar()
