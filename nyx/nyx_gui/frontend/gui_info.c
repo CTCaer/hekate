@@ -658,11 +658,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	emc_mr_data_t ram_rev0    = sdram_read_mrx(MR6_REV_ID1);
 	emc_mr_data_t ram_rev1    = sdram_read_mrx(MR7_REV_ID2);
 	emc_mr_data_t ram_density = sdram_read_mrx(MR8_DENSITY);
-	u32 ranks = EMC(EMC_ADR_CFG) + 1;
+	u32 ranks    = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
 	channels = (channels & 1) + ((channels & 2) >> 1);
 	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", h_cfg.t210b01 ? "LPDDR4X" : "LPDDR4");
-	switch (ram_vendor.rank0_ch0)
+	switch (ram_vendor.chip0.rank0_ch0)
 	{
 	case 1:
 		strcat(txt_buf, "Samsung");
@@ -682,11 +682,23 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case 9:
 		strcat(txt_buf, "ESMT");
 		break;
+	case 19:
+		strcat(txt_buf, "CXMT");
+		break;
 	case 26:
-		strcat(txt_buf, "Xi'an UniIC Semiconductors Co., Ltd");
+		strcat(txt_buf, "Xi'an UniIC");
+		break;
+	case 27:
+		strcat(txt_buf, "ISSI");
 		break;
 	case 28:
 		strcat(txt_buf, "JSC");
+		break;
+	case 197:
+		strcat(txt_buf, "SINKER");
+		break;
+	case 229:
+		strcat(txt_buf, "Dosilicon");
 		break;
 	case 248:
 		strcat(txt_buf, "Fidelix");
@@ -702,11 +714,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.rank0_ch0);
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.chip0.rank0_ch0);
 		break;
 	}
 	strcat(txt_buf, " #FF8000 |# ");
-	switch (ram_vendor.rank0_ch1)
+	switch (ram_vendor.chip1.rank0_ch0)
 	{
 	case 1:
 		strcat(txt_buf, "Samsung");
@@ -718,12 +730,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.rank0_ch1);
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.chip1.rank0_ch0);
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
-		ram_rev0.rank0_ch0, ram_rev1.rank0_ch0, ram_rev0.rank0_ch1, ram_rev1.rank0_ch1, ranks * channels);
-	switch ((ram_density.rank0_ch0 & 0x3C) >> 2)
+		ram_rev0.chip0.rank0_ch0, ram_rev1.chip0.rank0_ch0, ram_rev0.chip1.rank0_ch0, ram_rev1.chip1.rank0_ch0, ranks * channels);
+	switch ((ram_density.chip0.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
 		strcat(txt_buf, " x 512MB");
@@ -741,11 +753,11 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x 2GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch0 & 0x3C) >> 2);
+		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip0.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", ranks * channels);
-	switch ((ram_density.rank0_ch1 & 0x3C) >> 2)
+	switch ((ram_density.chip1.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
 		strcat(txt_buf, " x 512MB");
@@ -763,7 +775,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, " x 2GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.rank0_ch1 & 0x3C) >> 2);
+		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip1.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
 	strcat(txt_buf, "\n\n");
