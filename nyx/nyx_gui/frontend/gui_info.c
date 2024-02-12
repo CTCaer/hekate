@@ -813,6 +813,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case 0x98:
 			strcat(txt_buf, "-???");
 			break;
+		case 0x99:
+			strcat(txt_buf, "-???");
+			break;
 		default:
 			strcat(txt_buf, " #FFDD00 Contact me!#");
 			break;
@@ -832,13 +835,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "02");
 			break;
 		case 0x96:
-			strcat(txt_buf, "XX");
+			strcat(txt_buf, "??");
 			break;
 		case 0x97:
-			strcat(txt_buf, "XX");
+			strcat(txt_buf, "??");
 			break;
 		case 0x98:
-			strcat(txt_buf, "XX");
+			strcat(txt_buf, "??");
 			break;
 		default:
 			strcat(txt_buf, " #FFDD00 Contact me!#");
@@ -2010,7 +2013,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"Bus Width:\n"
 		"Current Rate:\n"
 		"Speed Class:\n"
-		"UHS Grade/Classes:\n"
+		"UHS Classes:\n"
 		"Max Bus Speed:\n\n"
 		"Write Protect:"
 	);
