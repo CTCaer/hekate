@@ -127,14 +127,18 @@ static void _sdram_req_mrr_data(u32 data, bool dual_channel)
 emc_mr_data_t sdram_read_mrx(emc_mr_t mrx)
 {
 	emc_mr_data_t data;
-	u32 dual_channel = (EMC(EMC_FBIO_CFG7) >> 2) & 1;
+	u32 mrr;
+	bool dual_rank    = EMC(EMC_ADR_CFG) & 1;
+	bool dual_channel = (EMC(EMC_FBIO_CFG7) >> 2) & 1; // Each EMC channel is a RAM chip module.
 
 	// Clear left overs.
-	for (u32 i = 0; i < 32; i++)
+	for (u32 i = 0; i < 16; i++)
 	{
 		(void)EMC(EMC_MRR);
 		usleep(1);
 	}
+
+	memset(&data, 0xFF, sizeof(emc_mr_data_t));
 
 	/*
 	 * When a dram chip has only one rank, then the info from the 2 ranks differs.
@@ -143,21 +147,38 @@ emc_mr_data_t sdram_read_mrx(emc_mr_t mrx)
 
 	// Get Device 0 (Rank 0) info from both dram chips (channels).
 	_sdram_req_mrr_data((2u << 30) | (mrx << 16), dual_channel);
-	data.rank0_ch0 = EMC(EMC_MRR) & 0xFF;
-	data.rank0_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
+
+	// Ram module 0 info.
+	mrr = EMC_CH0(EMC_MRR);
+	data.chip0.rank0_ch0 = mrr & 0xFF;
+	data.chip0.rank0_ch1 = (mrr & 0xFF00 >> 8);
+
+	// Ram module 1 info.
+	if (dual_channel)
+	{
+		mrr = EMC_CH1(EMC_MRR);
+		data.chip1.rank0_ch0 = mrr & 0xFF;
+		data.chip1.rank0_ch1 = (mrr & 0xFF00 >> 8);
+	}
 
 	// If Rank 1 exists, get info.
-	if (EMC(EMC_ADR_CFG) & 1)
+	if (dual_rank)
 	{
 		// Get Device 1 (Rank 1) info from both dram chips (channels).
 		_sdram_req_mrr_data((1u << 30) | (mrx << 16), dual_channel);
-		data.rank1_ch0 = EMC(EMC_MRR) & 0xFF;
-		data.rank1_ch1 = (EMC(EMC_MRR) & 0xFF00 >> 8);
-	}
-	else
-	{
-		data.rank1_ch0 = 0xFF;
-		data.rank1_ch1 = 0xFF;
+
+		// Ram module 0 info.
+		mrr = EMC_CH0(EMC_MRR);
+		data.chip0.rank1_ch0 = mrr & 0xFF;
+		data.chip0.rank1_ch1 = (mrr & 0xFF00 >> 8);
+
+		// Ram module 1 info.
+		if (dual_channel)
+		{
+			mrr = EMC_CH1(EMC_MRR);
+			data.chip1.rank1_ch0 = mrr & 0xFF;
+			data.chip1.rank1_ch1 = (mrr & 0xFF00 >> 8);
+		}
 	}
 
 	return data;

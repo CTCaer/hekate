@@ -712,7 +712,7 @@ enum
 	EMC_CHAN1 = 1
 };
 
-typedef struct _emc_mr_data_t
+typedef struct _emc_mr_chip_data_t
 {
 	// Device 0.
 	u8 rank0_ch0;
@@ -721,6 +721,12 @@ typedef struct _emc_mr_data_t
 	// Device 1.
 	u8 rank1_ch0;
 	u8 rank1_ch1;
+} emc_mr_chip_data_t;
+
+typedef struct _emc_mr_data_t
+{
+	emc_mr_chip_data_t chip0;
+	emc_mr_chip_data_t chip1;
 } emc_mr_data_t;
 
 #endif
