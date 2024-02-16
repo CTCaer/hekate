@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -24,9 +24,9 @@
 #include <libs/lvgl/lv_themes/lv_theme_hekate.h>
 #include <libs/lvgl/lvgl.h>
 
-#define CLOCK_MIN_YEAR 2023
+#define CLOCK_MIN_YEAR 2024
 #define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
-#define CLOCK_YEARLIST "2023\n2024\n2025\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033"
+#define CLOCK_YEARLIST "2024\n2025\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033\n2034"
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
