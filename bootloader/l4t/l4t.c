@@ -264,10 +264,11 @@ typedef struct _l4t_ctxt_t
 	emc_table_t *mtc_table;
 } l4t_ctxt_t;
 
-#define DRAM_VDD2_OC_MIN_VOLTAGE  1050
-#define DRAM_VDD2_OC_MAX_VOLTAGE  1175
-#define DRAM_VDDQ_OC_MIN_VOLTAGE  550
-#define DRAM_VDDQ_OC_MAX_VOLTAGE  650
+#define DRAM_VDD2_OC_MIN_VOLTAGE   1050
+#define DRAM_VDD2_OC_MAX_VOLTAGE   1175
+#define DRAM_VDD2Q_OC_MAX_VOLTAGE  1237
+#define DRAM_VDDQ_OC_MIN_VOLTAGE   550
+#define DRAM_VDDQ_OC_MAX_VOLTAGE   650
 #define DRAM_T210B01_TBL_MAX_FREQ 1600000
 
 //! TODO: Update on dram config changes.
@@ -840,7 +841,7 @@ static void _l4t_bl33_cfg_set_key(char *env, char *key, char *val)
 	strcat(env, "\n");
 }
 
-static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entry_idx, int is_list)
+static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b01)
 {
 	char *bl33_env = (char *)BL33_ENV_BASE;
 	bl33_env[0] = '\0';
@@ -859,10 +860,13 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 		else if (!strcmp("ram_oc_vdd2", kv->key))
 		{
 			ctxt->ram_oc_vdd2 = atoi(kv->val);
-			if (ctxt->ram_oc_vdd2 > DRAM_VDD2_OC_MAX_VOLTAGE)
+
+			if (t210b01 && ctxt->ram_oc_vdd2 > DRAM_VDD2_OC_MAX_VOLTAGE)
 				ctxt->ram_oc_vdd2 = DRAM_VDD2_OC_MAX_VOLTAGE;
+			else if (!t210b01 && ctxt->ram_oc_vdd2 > DRAM_VDD2Q_OC_MAX_VOLTAGE)
+				ctxt->ram_oc_vdd2 = DRAM_VDD2Q_OC_MAX_VOLTAGE;
 			else if (ctxt->ram_oc_vdd2 < DRAM_VDD2_OC_MIN_VOLTAGE)
-				ctxt->ram_oc_vdd2 = 0;
+				ctxt->ram_oc_vdd2 = DRAM_VDD2_OC_MIN_VOLTAGE;
 		}
 		else if (!strcmp("ram_oc_vddq", kv->key))
 		{
@@ -924,7 +928,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	gfx_con_setpos(0, 0);
 
 	// Parse config.
-	_l4t_set_config(&ctxt, ini_sec, entry_idx, is_list);
+	_l4t_set_config(&ctxt, ini_sec, entry_idx, is_list, t210b01);
 
 	if (!ctxt.path)
 	{
