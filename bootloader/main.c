@@ -665,7 +665,7 @@ static void _nyx_load_run()
 
 		gfx_con_setpos(0, 0);
 		WPRINTF("Old Nyx GUI found! There will be dragons!\n");
-		WPRINTF("\nUpdate the bootloader folder!\n\n");
+		WPRINTF("\nUpdate bootloader folder!\n\n");
 		WPRINTF("Press any key...");
 
 		msleep(1000);
