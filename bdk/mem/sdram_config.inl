@@ -434,9 +434,9 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.emc_dll_cfg0                                    = 0x1F13412F,
 	.emc_dll_cfg1                                    = 0x00010014,
 
-	.emc_pmc_scratch1                                = 0x4FAFFFFF,
+	.emc_pmc_scratch1                                = 0x4FAFFFFF, // APBDEV_PMC_IO_DPD3_REQ.
 	.emc_pmc_scratch2                                = 0x7FFFFFFF,
-	.emc_pmc_scratch3                                = 0x4006D70B,
+	.emc_pmc_scratch3                                = 0x4006D70B, // APBDEV_PMC_DDR_CNTRL.
 
 	.emc_pmacro_pad_cfg_ctrl                         = 0x00020000,
 	.emc_pmacro_vttgen_ctrl0                         = 0x00030808,
