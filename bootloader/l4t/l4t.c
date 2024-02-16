@@ -109,13 +109,11 @@
 #define BPMPFW_B01_DTB_EMC_ENABLE_OFF        0x20
 #define BPMPFW_B01_DTB_EMC_VALUES_OFF        0x4C
 #define BPMPFW_B01_DTB_EMC_FREQ_VAL          0x8C
-#define BPMPFW_B01_DTB_EMC_SCC_OFF           0x108C
-#define BPMPFW_B01_DTB_EMC_PLLM_DIVM_VAL     0x10A4
-#define BPMPFW_B01_DTB_EMC_PLLM_DIVN_VAL     0x10A8
-#define BPMPFW_B01_DTB_EMC_PLLM_DIVP_VAL     0x10AC
+#define BPMPFW_B01_DTB_EMC_OPT_VAL           0xEDC
 #define BPMPFW_B01_DTB_EMC_TBL_START(idx)             (BPMPFW_B01_DTB_EMC_TBL_OFF + BPMPFW_B01_DTB_EMC_TBL_SZ * (idx))
 #define BPMPFW_B01_DTB_EMC_TBL_SET_VAL(idx, off, val) (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + (off)) = (val))
 #define BPMPFW_B01_DTB_EMC_TBL_SET_FREQ(idx, freq)    (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_FREQ_VAL) = (freq))
+#define BPMPFW_B01_DTB_EMC_TBL_SET_OPTC(idx, opt)     (*(u32 *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_OPT_VAL) = (opt))
 #define BPMPFW_B01_DTB_EMC_TBL_SET_NAME(idx, name)    (strcpy((char *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_NAME_VAL), (name)))
 #define BPMPFW_B01_DTB_EMC_TBL_ENABLE(idx)            (*(char *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_ENABLE_OFF) = 'n')
 #define BPMPFW_B01_DTB_EMC_TBL_OFFSET(idx)            ((void *)(BPMPFW_B01_DTB_EMC_TBL_START(idx) + BPMPFW_B01_DTB_EMC_VALUES_OFF))
@@ -258,6 +256,7 @@ typedef struct _l4t_ctxt_t
 	int   ram_oc_freq;
 	int   ram_oc_vdd2;
 	int   ram_oc_vddq;
+	int   ram_oc_opt;
 
 	u32   serial_port;
 	u32   sc7entry_size;
@@ -720,6 +719,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 {
 	char *ram_oc_txt  = ctxt->ram_oc_txt;
 	u32   ram_oc_freq = ctxt->ram_oc_freq;
+	u32   ram_oc_opt  = ctxt->ram_oc_opt;
 	u32   ram_id      = fuse_read_dramid(true);
 
 	// Set default parameters.
@@ -778,6 +778,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 
 		BPMPFW_B01_DTB_EMC_TBL_SET_NAME(tbl_idx, ram_oc_txt);
 		BPMPFW_B01_DTB_EMC_TBL_SET_FREQ(tbl_idx, ram_oc_freq);
+		BPMPFW_B01_DTB_EMC_TBL_SET_OPTC(tbl_idx, ram_oc_opt);
 
 		// Enable table.
 		BPMPFW_B01_DTB_EMC_TBL_ENABLE(tbl_idx);
@@ -871,6 +872,8 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 			else if (ctxt->ram_oc_vddq < DRAM_VDDQ_OC_MIN_VOLTAGE)
 				ctxt->ram_oc_vddq = 0;
 		}
+		else if (!strcmp("ram_oc_opt",  kv->key))
+			ctxt->ram_oc_opt = atoi(kv->val);
 		else if (!strcmp("uart_port",   kv->key))
 			ctxt->serial_port = atoi(kv->val);
 
@@ -1109,7 +1112,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 			max7762x_regulator_set_voltage(REGULATOR_SD1, ctxt.ram_oc_vdd2 * 1000);
 
 		// Train the rest of the table, apply FSP WAR, set RAM to 800 MHz.
-		minerva_prep_boot_l4t(ctxt.ram_oc_freq);
+		minerva_prep_boot_l4t(ctxt.ram_oc_freq, ctxt.ram_oc_opt);
 
 		// Set emc table parameters and copy it.
 		int table_entries = minerva_get_mtc_table_entries();
