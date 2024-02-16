@@ -1168,7 +1168,7 @@ static u32 _get_dram_temperature()
 	if (channel1_enabled)
 	{
 		_request_mmr_data(0x40040000, EMC_CHANNEL1);
-		mr4_1 = EMC(EMC_MRR);
+		mr4_1 = EMC(EMC_MRR) & 0xFFFF;
 
 		if (mr4_1 < 0xF001)
 			mr4_1 &= 0x7;
@@ -1549,21 +1549,25 @@ static u32 _minerva_update_clock_tree_delay(emc_table_t *src_emc_entry, emc_tabl
 	if (upd_type_bits & 0x5400)
 	{
 		_request_mmr_data(0x80130000, channel1_enabled); // Dev0 MRR 19.
-		temp_ch0_0 = (EMC(EMC_MRR) & 0xFF) << 8;
-		temp_ch0_1 = EMC(EMC_MRR) & 0xFF00;
+		u32 mrr = EMC(EMC_MRR);
+		temp_ch0_0 = (mrr & 0xFF) << 8;
+		temp_ch0_1 = mrr & 0xFF00;
 		if (channel1_enabled)
 		{
-			temp_ch1_0 = (EMC_CH1(EMC_MRR) & 0xFF) << 8;
-			temp_ch1_1 = EMC_CH1(EMC_MRR) & 0xFF00;
+			mrr = EMC_CH1(EMC_MRR);
+			temp_ch1_0 = (mrr & 0xFF) << 8;
+			temp_ch1_1 = mrr & 0xFF00;
 		}
 
 		_request_mmr_data(0x80120000, channel1_enabled); // Dev0 MRR 18.
-		temp_ch0_0 |= EMC(EMC_MRR) & 0xFF;
-		temp_ch0_1 |= (EMC(EMC_MRR) & 0xFF00) >> 8;
+		mrr = EMC(EMC_MRR);
+		temp_ch0_0 |= mrr & 0xFF;
+		temp_ch0_1 |= (mrr & 0xFF00) >> 8;
 		if (channel1_enabled)
 		{
-			temp_ch1_0 |= EMC_CH1(EMC_MRR) & 0xFF;
-			temp_ch1_1 |= (EMC_CH1(EMC_MRR) & 0xFF00) >> 8;
+			mrr = EMC_CH1(EMC_MRR);
+			temp_ch1_0 |= mrr & 0xFF;
+			temp_ch1_1 |= (mrr & 0xFF00) >> 8;
 		}
 	}
 
@@ -1723,21 +1727,25 @@ calc_dev2:
 	if (update_type <= PERIODIC_TRAINING_UPDATE && upd_type_bits & 0x5400)
 	{
 		_request_mmr_data(0x40130000, channel1_enabled); // Dev1 MRR 19.
-		temp_ch0_0 = (EMC(EMC_MRR) & 0xFF) << 8;
-		temp_ch0_1 = EMC(EMC_MRR) & 0xFF00;
+		u32 mrr = EMC(EMC_MRR);
+		temp_ch0_0 = (mrr& 0xFF) << 8;
+		temp_ch0_1 = mrr & 0xFF00;
 		if (channel1_enabled)
 		{
-			temp_ch1_0 = (EMC_CH1(EMC_MRR) & 0xFF) << 8;
-			temp_ch1_1 = EMC_CH1(EMC_MRR) & 0xFF00;
+			mrr = EMC_CH1(EMC_MRR);
+			temp_ch1_0 = (mrr & 0xFF) << 8;
+			temp_ch1_1 = mrr & 0xFF00;
 		}
 
 		_request_mmr_data(0x40120000, channel1_enabled); // Dev1 MRR 18
-		temp_ch0_0 |= EMC(EMC_MRR) & 0xFF;
-		temp_ch0_1 |= ((EMC(EMC_MRR) & 0xFF00) >> 8);
+		mrr = EMC(EMC_MRR);
+		temp_ch0_0 |= mrr & 0xFF;
+		temp_ch0_1 |= ((mrr & 0xFF00) >> 8);
 		if (channel1_enabled)
 		{
-			temp_ch1_0 |= EMC_CH1(EMC_MRR) & 0xFF;
-			temp_ch1_1 |= (EMC_CH1(EMC_MRR) & 0xFF00) >> 8;
+			mrr = EMC_CH1(EMC_MRR);
+			temp_ch1_0 |= mrr & 0xFF;
+			temp_ch1_1 |= (mrr & 0xFF00) >> 8;
 		}
 	}
 
