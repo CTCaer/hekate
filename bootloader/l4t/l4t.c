@@ -34,8 +34,8 @@
  * 2: Arachne Register Cell v1.
  * 3: Arachne Register Cell v2. PTSA Rework support.
  */
-#define L4T_LOADER_API_REV 3
-#define L4T_FIRMWARE_REV   0x33524556 // REV3.
+#define L4T_LOADER_API_REV 4
+#define L4T_FIRMWARE_REV   0x34524556 // REV4.
 
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
@@ -941,13 +941,6 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	if (!t210b01 && !ctxt.mtc_table)
 	{
 		_l4t_crit_error("Minerva missing", true);
-		return;
-	}
-
-	// U-BOOT does not support exfat.
-	if (sd_fs.fs_type == FS_EXFAT)
-	{
-		_l4t_crit_error("exFAT not supported", false);
 		return;
 	}
 
