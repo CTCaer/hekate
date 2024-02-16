@@ -171,7 +171,7 @@ void minerva_prep_boot_freq()
 	minerva_change_freq(FREQ_800);
 }
 
-void minerva_prep_boot_l4t(u32 oc_freq)
+void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom)
 {
 	if (!minerva_cfg)
 		return;
@@ -188,7 +188,9 @@ void minerva_prep_boot_l4t(u32 oc_freq)
 		memcpy(&mtc_cfg->mtc_table[mtc_cfg->table_entries],
 			   &mtc_cfg->mtc_table[mtc_cfg->table_entries - 1],
 			   sizeof(emc_table_t));
-		mtc_cfg->mtc_table[mtc_cfg->table_entries].rate_khz = oc_freq;
+
+		mtc_cfg->mtc_table[mtc_cfg->table_entries].opt_custom = opt_custom;
+		mtc_cfg->mtc_table[mtc_cfg->table_entries].rate_khz   = oc_freq;
 		mtc_cfg->table_entries++;
 	}
 

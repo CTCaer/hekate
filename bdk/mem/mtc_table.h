@@ -481,7 +481,8 @@ typedef struct
 	u32 rate_khz;
 	u32 min_volt;
 	u32 gpu_min_volt;
-	char clock_src[32];
+	char clock_src[28];
+	u32 opt_custom;
 	u32 clk_src_emc;
 	u32 needs_training;
 	u32 training_pattern;
