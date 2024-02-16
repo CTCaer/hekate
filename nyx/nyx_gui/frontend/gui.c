@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1330,11 +1330,13 @@ static void _update_status_bar(void *params)
 	max17050_get_property(MAX17050_VCELL, &batt_volt);
 	max17050_get_property(MAX17050_Current, &batt_curr);
 
-	// Enable fan if more than 46 oC.
+	// Enable fan if more than 41 oC.
 	u32 soc_temp_dec = (soc_temp >> 8);
 	if (soc_temp_dec > 51)
 		set_fan_duty(102);
 	else if (soc_temp_dec > 46)
+		set_fan_duty(76);
+	else if (soc_temp_dec > 41)
 		set_fan_duty(51);
 	else if (soc_temp_dec < 40)
 		set_fan_duty(0);
