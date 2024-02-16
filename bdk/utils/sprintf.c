@@ -39,7 +39,7 @@ static void _s_putn(u32 v, int base, char fill, int fcnt)
 	static const char digits[] = "0123456789ABCDEF";
 
 	char *p;
-	char buf[65];
+	char buf[65]; // Number char size + leftover for padding.
 	int c = fcnt;
 	bool negative = false;
 
@@ -93,22 +93,36 @@ void s_printf(char *out_buf, const char *fmt, ...)
 			fmt++;
 			fill = 0;
 			fcnt = 0;
+
+			// Check for padding. Number or space based.
 			if ((*fmt >= '0' && *fmt <= '9') || *fmt == ' ')
 			{
-				fcnt = *fmt;
+				fcnt = *fmt; // Padding size or padding type.
 				fmt++;
+
 				if (*fmt >= '0' && *fmt <= '9')
 				{
+					// Padding size exists. Previous char was type.
 					fill = fcnt;
 					fcnt = *fmt - '0';
 					fmt++;
+parse_padding_dec:
+					// Parse padding size extra digits.
+					if (*fmt >= '0' && *fmt <= '9')
+					{
+						fcnt = fcnt * 10 + *fmt - '0';
+						fmt++;
+						goto parse_padding_dec;
+					}
 				}
 				else
 				{
+					// No padding type, use space. (Max padding size is 9).
 					fill = ' ';
 					fcnt -= '0';
 				}
 			}
+
 			switch (*fmt)
 			{
 			case 'c':
@@ -116,23 +130,29 @@ void s_printf(char *out_buf, const char *fmt, ...)
 				if (c != '\0')
 					_s_putc(c);
 				break;
+
 			case 's':
 				_s_puts(va_arg(ap, char *));
 				break;
+
 			case 'd':
 				_s_putn(va_arg(ap, u32), 10, fill, fcnt);
 				break;
+
 			case 'p':
 			case 'P':
 			case 'x':
 			case 'X':
 				_s_putn(va_arg(ap, u32), 16, fill, fcnt);
 				break;
+
 			case '%':
 				_s_putc('%');
 				break;
+
 			case '\0':
 				goto out;
+
 			default:
 				_s_putc('%');
 				_s_putc(*fmt);
@@ -162,44 +182,66 @@ void s_vprintf(char *out_buf, const char *fmt, va_list ap)
 			fmt++;
 			fill = 0;
 			fcnt = 0;
+
+			// Check for padding. Number or space based.
 			if ((*fmt >= '0' && *fmt <= '9') || *fmt == ' ')
 			{
-				fcnt = *fmt;
+				fcnt = *fmt; // Padding size or padding type.
 				fmt++;
+
 				if (*fmt >= '0' && *fmt <= '9')
 				{
+					// Padding size exists. Previous char was type.
 					fill = fcnt;
 					fcnt = *fmt - '0';
 					fmt++;
+parse_padding_dec:
+					// Parse padding size extra digits.
+					if (*fmt >= '0' && *fmt <= '9')
+					{
+						fcnt = fcnt * 10 + *fmt - '0';
+						fmt++;
+						goto parse_padding_dec;
+					}
 				}
 				else
 				{
+					// No padding type, use space. (Max padding size is 9).
 					fill = ' ';
 					fcnt -= '0';
 				}
 			}
-			switch(*fmt)
+
+			switch (*fmt)
 			{
 			case 'c':
-				_s_putc(va_arg(ap, u32));
+				char c = va_arg(ap, u32);
+				if (c != '\0')
+					_s_putc(c);
 				break;
+
 			case 's':
 				_s_puts(va_arg(ap, char *));
 				break;
+
 			case 'd':
 				_s_putn(va_arg(ap, u32), 10, fill, fcnt);
 				break;
+
 			case 'p':
 			case 'P':
 			case 'x':
 			case 'X':
 				_s_putn(va_arg(ap, u32), 16, fill, fcnt);
 				break;
+
 			case '%':
 				_s_putc('%');
 				break;
+
 			case '\0':
 				goto out;
+
 			default:
 				_s_putc('%');
 				_s_putc(*fmt);
