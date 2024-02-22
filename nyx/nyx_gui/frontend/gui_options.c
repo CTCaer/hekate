@@ -841,7 +841,7 @@ void first_time_clock_edit(void *param)
 static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 {
 	FIL fp;
-	int error;
+	int error = 0;
 	bool is_l_hos = false;
 	bool is_r_hos = false;
 	bool nx_hoag = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
@@ -850,13 +850,14 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	char *data = (char *)malloc(SZ_16K);
 	char *txt_buf = (char *)malloc(SZ_4K);
 
-	error = hos_dump_cal0();
-
-	if ((!nx_hoag && !jc_pad) || error)
-	{
+	if (!nx_hoag && !jc_pad)
 		error = 255;
-		goto disabled;
-	}
+
+	if (!error)
+		error = hos_dump_cal0();
+
+	if (error)
+		goto disabled_or_cal0_issue;
 
 	if (nx_hoag)
 		goto save_data;
@@ -871,7 +872,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	jc_pad->bt_conn_r.type = is_r_hos ? jc_pad->bt_conn_r.type : 0;
 
 save_data:
-	error = !sd_mount();
+	error = !sd_mount() ? 5 : 0;
 
 	if (!error)
 	{
@@ -885,7 +886,7 @@ save_data:
 			memcpy(data, &jc_pad->bt_conn_l, sizeof(jc_bt_conn_t));
 			memcpy(data + sizeof(jc_bt_conn_t), &jc_pad->bt_conn_r, sizeof(jc_bt_conn_t));
 
-			error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin");
+			error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin") ? 4 : 0;
 
 			// Save readable dump.
 			jc_bt_conn_t *bt = &jc_pad->bt_conn_l;
@@ -908,7 +909,7 @@ save_data:
 				bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
 
 			if (!error)
-				error = f_open(&fp, "switchroot/joycon_mac.ini", FA_WRITE | FA_CREATE_ALWAYS);
+				error = f_open(&fp, "switchroot/joycon_mac.ini", FA_WRITE | FA_CREATE_ALWAYS) ? 4 : 0;
 			if (!error)
 			{
 				f_puts(data, &fp);
@@ -942,7 +943,7 @@ save_data:
 				cal0->gyro_scale[0],  cal0->gyro_scale[1],  cal0->gyro_scale[2],
 				cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5]);
 			if (!error)
-				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS);
+				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS) ? 4 : 0;
 			if (!error)
 			{
 				f_puts(data, &fp);
@@ -1002,7 +1003,7 @@ save_data:
 				cal0->gyro_scale[0],  cal0->gyro_scale[1],  cal0->gyro_scale[2],
 				cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5]);
 			if (!error)
-				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS);
+				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS) ? 4 : 0;
 			if (!error)
 			{
 				f_puts(data, &fp);
@@ -1013,7 +1014,7 @@ save_data:
 		sd_unmount();
 	}
 
-disabled:;
+disabled_or_cal0_issue:;
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -1079,7 +1080,7 @@ disabled:;
 		if (!nx_hoag)
 			s_printf(txt_buf, "#FFDD00 Failed to dump Joy-Con pairing info!#\n#FFDD00 Error: %d#", error);
 		else
-			s_printf(txt_buf, "#FFDD00 Failed to get Lite Gamepad info!#\n");
+			s_printf(txt_buf, "#FFDD00 Failed to get Lite Gamepad info!#\n#FFDD00 Error: %d#", error);
 	}
 
 	lv_mbox_set_text(mbox, txt_buf);
