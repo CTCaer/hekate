@@ -164,6 +164,27 @@ void bq24193_enable_charger()
 	i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_PORConfig, reg);
 }
 
+void bq24193_set_current_limit(u32 current_limit)
+{
+	u8 reg = bq24193_get_reg(BQ24193_InputSource);
+	reg &= ~BQ24193_INCONFIG_INLIMIT_MASK;
+
+	// select a predefined mode lower or equal to the requested limit
+	u8 inlimit_mode = 0;
+	if (current_limit >= 100)  inlimit_mode = 0;
+	if (current_limit >= 150)  inlimit_mode = 1;
+	if (current_limit >= 500)  inlimit_mode = 2;
+	if (current_limit >= 900)  inlimit_mode = 3;
+	if (current_limit >= 1200) inlimit_mode = 4;
+	if (current_limit >= 1500) inlimit_mode = 5;
+	if (current_limit >= 2000) inlimit_mode = 6;
+	if (current_limit >= 3000) inlimit_mode = 7;
+
+	reg |= inlimit_mode;
+
+	i2c_send_byte(I2C_1, BQ24193_I2C_ADDR, BQ24193_InputSource, reg);
+}
+
 void bq24193_fake_battery_removal()
 {
 	// Disable watchdog to keep BATFET disabled.

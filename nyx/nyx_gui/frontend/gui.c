@@ -627,11 +627,12 @@ typedef struct _system_maintenance_tasks_t
 {
 	union
 	{
-		lv_task_t *tasks[2];
+		lv_task_t *tasks[3];
 		struct
 		{
 			lv_task_t *status_bar;
 			lv_task_t *dram_periodic_comp;
+			lv_task_t *quick_charge_update;
 		} task;
 	};
 } system_maintenance_tasks_t;
@@ -1382,6 +1383,21 @@ static void _update_status_bar(void *params)
 
 	lv_label_set_text(status_bar.battery_more, label);
 	lv_obj_realign(status_bar.battery_more);
+}
+
+static void _quick_charge_update(void *params)
+{
+	bool inserted;
+	usb_pd_objects_t usb_pd;
+	bm92t36_get_sink_info(&inserted, &usb_pd);
+
+	if (usb_pd.pdo_no) {
+		// set the input current limit corresponding to the selected PD profile
+		bq24193_set_current_limit(usb_pd.selected_pdo.amperage);
+	} else {
+		// bq24193 detects the usb disconnect by itself
+		// the current limit will be reset by itself, without any races
+	}
 }
 
 static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
@@ -2366,6 +2382,8 @@ static void _nyx_main_menu(lv_theme_t * th)
 
 	system_tasks.task.status_bar = lv_task_create(_update_status_bar, 5000, LV_TASK_PRIO_LOW, NULL);
 	lv_task_ready(system_tasks.task.status_bar);
+	
+	system_tasks.task.quick_charge_update = lv_task_create(_quick_charge_update, 1000, LV_TASK_PRIO_LOW, NULL);
 
 	lv_task_create(_check_sd_card_removed, 2000, LV_TASK_PRIO_LOWEST, NULL);
 

@@ -19,6 +19,8 @@
 #ifndef __BQ24193_H_
 #define __BQ24193_H_
 
+#include <utils/types.h>
+
 #define BQ24193_I2C_ADDR 0x6B
 
 // REG 0 masks.
@@ -116,6 +118,7 @@ enum BQ24193_reg_prop {
 
 int bq24193_get_property(enum BQ24193_reg_prop prop, int *value);
 void bq24193_enable_charger();
+void bq24193_set_current_limit(u32 current_limit);
 void bq24193_fake_battery_removal();
 
 #endif /* __BQ24193_H_ */
