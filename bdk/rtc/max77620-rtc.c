@@ -23,6 +23,8 @@
 #include <soc/timer.h>
 #include <soc/t210.h>
 
+int epoch_offset = 0;
+
 void max77620_rtc_prep_read()
 {
 	i2c_send_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_UPDATE0_REG, MAX77620_RTC_READ_UPDATE);
@@ -152,6 +154,21 @@ u32 max77620_rtc_date_to_epoch(const rtc_time_t *time)
 	epoch += (3600 * time->hour) + (60 * time->min) + time->sec; // Add hours, minutes and seconds.
 
 	return epoch;
+}
+
+void max77620_rtc_get_time_adjusted(rtc_time_t *time)
+{
+	max77620_rtc_get_time(time);
+	if (epoch_offset)
+	{
+		u32 epoch = (u32)((s64)max77620_rtc_date_to_epoch(time) + epoch_offset);
+		max77620_rtc_epoch_to_date(epoch, time);
+	}
+}
+
+void max77620_rtc_set_epoch_offset(int offset)
+{
+	epoch_offset = offset;
 }
 
 void max77620_rtc_set_reboot_reason(rtc_reboot_reason_t *rr)
