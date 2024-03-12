@@ -706,9 +706,14 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 
 		u32 new_epoch = max77620_rtc_date_to_epoch(&time);
 
+		// Stored in u32 and allow overflow for integer offset casting.
 		n_cfg.timeoff = new_epoch - epoch;
+
+		// If canceled set 1 for invalidating first boot clock edit.
 		if (!n_cfg.timeoff)
 			n_cfg.timeoff = 1;
+		else
+			max77620_rtc_set_epoch_offset((int)n_cfg.timeoff);
 
 		nyx_changes_made = true;
 	}
@@ -744,12 +749,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 
 	// Get current time.
 	rtc_time_t time;
-	max77620_rtc_get_time(&time);
-	if (n_cfg.timeoff)
-	{
-		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
-		max77620_rtc_epoch_to_date(epoch, &time);
-	}
+	max77620_rtc_get_time_adjusted(&time);
 
 	// Normalize year if out of range.
 	if (time.year < CLOCK_MIN_YEAR)

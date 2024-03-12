@@ -282,12 +282,7 @@ static void _save_fb_to_bmp()
 	// Create date/time name.
 	char fname[32];
 	rtc_time_t time;
-	max77620_rtc_get_time(&time);
-	if (n_cfg.timeoff)
-	{
-		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
-		max77620_rtc_epoch_to_date(epoch, &time);
-	}
+	max77620_rtc_get_time_adjusted(&time);
 	s_printf(fname, "%04d%02d%02d_%02d%02d%02d", time.year, time.month, time.day, time.hour, time.min, time.sec);
 	s_printf(path + strlen(path), "/nyx%s.bmp", fname);
 
@@ -1318,12 +1313,7 @@ static void _update_status_bar(void *params)
 	rtc_time_t time;
 
 	// Get sensor data.
-	max77620_rtc_get_time(&time);
-	if (n_cfg.timeoff)
-	{
-		u32 epoch = max77620_rtc_date_to_epoch(&time) + (s32)n_cfg.timeoff;
-		max77620_rtc_epoch_to_date(epoch, &time);
-	}
+	max77620_rtc_get_time_adjusted(&time);
 	soc_temp = tmp451_get_soc_temp(false);
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
 	max17050_get_property(MAX17050_RepSOC, (int *)&batt_percent);

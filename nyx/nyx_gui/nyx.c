@@ -269,7 +269,11 @@ skip_main_cfg_parse:
 				else if (!strcmp("entries5col",  kv->key))
 					n_cfg.entries_5_col  = atoi(kv->val) == 1;
 				else if (!strcmp("timeoff",      kv->key))
+				{
 					n_cfg.timeoff        = strtol(kv->val, NULL, 16);
+					if (n_cfg.timeoff != 1)
+						max77620_rtc_set_epoch_offset((int)n_cfg.timeoff);
+				}
 				else if (!strcmp("homescreen",   kv->key))
 					n_cfg.home_screen    = atoi(kv->val);
 				else if (!strcmp("verification", kv->key))
