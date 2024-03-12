@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 balika011
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -94,7 +94,7 @@ void smmu_enable()
 	if (smmu_used)
 		return;
 
-	ccplex_boot_cpu0((u32)smmu_payload);
+	ccplex_boot_cpu0((u32)smmu_payload, true);
 	smmu_used = true;
 	msleep(150);
 
