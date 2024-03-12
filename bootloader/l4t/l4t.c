@@ -1156,7 +1156,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	if (t210b01)
 	{
 		// Launch BL31.
-		ccplex_boot_cpu0(TZDRAM_COLD_ENTRY);
+		ccplex_boot_cpu0(TZDRAM_COLD_ENTRY, true);
 
 		// Enable Wrap burst for BPMP, GPU and PCIE.
 		MSELECT(MSELECT_CONFIG) = (MSELECT(MSELECT_CONFIG) & (~(MSELECT_CFG_ERR_RESP_EN_GPU | MSELECT_CFG_ERR_RESP_EN_PCIE))) |

@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -857,7 +857,6 @@ int hos_launch(ini_sec_t *cfg)
 	tsec_ctxt.fw = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
 	tsec_ctxt.pkg1 = ctxt.pkg1;
 	tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
-	tsec_ctxt.secmon_base = secmon_base;
 
 	if (!hos_keygen(ctxt.keyblob, kb, &tsec_ctxt, ctxt.stock, is_exo))
 		goto error;
@@ -1173,10 +1172,7 @@ int hos_launch(ini_sec_t *cfg)
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 
 	// Launch secmon.
-	if (smmu_is_used())
-		smmu_exit();
-	else
-		ccplex_boot_cpu0(secmon_base);
+	ccplex_boot_cpu0(secmon_base, true);
 
 	// Halt ourselves in wait-event state.
 	while (true)

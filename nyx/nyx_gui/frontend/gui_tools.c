@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1205,7 +1205,6 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
 	tsec_ctxt.pkg1 = (void *)pkg1;
 	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
-	tsec_ctxt.secmon_base = pkg1_id->secmon_base;
 
 	// Read keyblob.
 	u8 *keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
