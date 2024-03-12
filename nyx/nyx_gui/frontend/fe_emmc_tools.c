@@ -57,7 +57,7 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 		{
 			if (backup)
 			{
-				u8 gpt_check[512] = { 0 };
+				u8 gpt_check[SD_BLOCKSIZE] = { 0 };
 				sdmmc_storage_read(&sd_storage, *sector_start + 0xC001, 1, gpt_check);
 				if (!memcmp(gpt_check, "EFI PART", 8))
 				{

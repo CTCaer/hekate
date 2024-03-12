@@ -926,8 +926,8 @@ static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
 				goto error;
 			}
 
-			// Last part. Align size to LBA (512 bytes).
-			fno.fsize = ALIGN((u64)fno.fsize, 512);
+			// Last part. Align size to LBA (SD_BLOCKSIZE).
+			fno.fsize = ALIGN((u64)fno.fsize, SD_BLOCKSIZE);
 			idx--;
 		}
 		l4t_flash_ctxt.image_size_sct += (u64)fno.fsize >> 9;
@@ -1231,7 +1231,7 @@ dtb_not_found:
 	{
 		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16))
 		{
-			u8 *buf = malloc(512);
+			u8 *buf = malloc(SD_BLOCKSIZE);
 			sdmmc_storage_read(&sd_storage, gpt->entries[i].lba_start, 1, buf);
 			if (!memcmp(buf, "ANDROID", 7))
 				boot_recovery = true;
@@ -2429,7 +2429,7 @@ check_changes:
 				gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
 				// Write main GPT.
-				u32 aligned_entries_size = ALIGN(entries_size, 512);
+				u32 aligned_entries_size = ALIGN(entries_size, SD_BLOCKSIZE);
 				sdmmc_storage_write(&sd_storage, gpt->header.my_lba, (sizeof(gpt_header_t) + aligned_entries_size) >> 9, gpt);
 
 				// Write backup GPT partition table.

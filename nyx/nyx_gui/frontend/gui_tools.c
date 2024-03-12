@@ -595,7 +595,7 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 				error = 1;
 				usbs.offset = emu_info.sector + 0x4000;
 
-				u8 *gpt = malloc(512);
+				u8 *gpt = malloc(SD_BLOCKSIZE);
 				if (sdmmc_storage_read(&sd_storage, usbs.offset + 1, 1, gpt))
 				{
 					if (!memcmp(gpt, "EFI PART", 8))

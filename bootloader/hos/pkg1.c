@@ -436,7 +436,7 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 kb)
 void pkg1_warmboot_rsa_mod(u32 warmboot_base)
 {
 	// Set warmboot binary rsa modulus.
-	u8 *rsa_mod = (u8 *)malloc(512);
+	u8 *rsa_mod = (u8 *)malloc(EMMC_BLOCKSIZE);
 
 	emmc_set_partition(EMMC_BOOT0);
 

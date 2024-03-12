@@ -145,7 +145,7 @@ void print_mmc_info()
 				" Current Rate:  %d MB/s\n"
 				" Type Support:  ",
 				emmc_storage.csd.mmca_vsn, emmc_storage.ext_csd.rev, emmc_storage.ext_csd.dev_version, emmc_storage.csd.cmdclass,
-				emmc_storage.csd.capacity == (4096 * 512) ? "High" : "Low", speed & 0xFFFF, (speed >> 16) & 0xFFFF,
+				emmc_storage.csd.capacity == (4096 * EMMC_BLOCKSIZE) ? "High" : "Low", speed & 0xFFFF, (speed >> 16) & 0xFFFF,
 				emmc_storage.csd.busspeed);
 			gfx_con.fntsz = 8;
 			gfx_printf("%s", card_type_support);
@@ -156,13 +156,13 @@ void print_mmc_info()
 			u32 rpmb_size = emmc_storage.ext_csd.rpmb_mult << 17;
 			gfx_printf("%keMMC Partitions:%k\n", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 			gfx_printf(" 1: %kBOOT0      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
-				boot_size / 1024, boot_size / 512);
+				boot_size / 1024, boot_size / EMMC_BLOCKSIZE);
 			gfx_put_small_sep();
 			gfx_printf(" 2: %kBOOT1      %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
-				boot_size / 1024, boot_size / 512);
+				boot_size / 1024, boot_size / EMMC_BLOCKSIZE);
 			gfx_put_small_sep();
 			gfx_printf(" 3: %kRPMB       %k\n    Size: %5d KiB (LBA Sectors: 0x%07X)\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
-				rpmb_size / 1024, rpmb_size / 512);
+				rpmb_size / 1024, rpmb_size / EMMC_BLOCKSIZE);
 			gfx_put_small_sep();
 			gfx_printf(" 0: %kGPP (USER) %k\n    Size: %5d MiB (LBA Sectors: 0x%07X)\n\n", TXT_CLR_GREENISH, TXT_CLR_DEFAULT,
 				emmc_storage.sec_cnt >> SECTORS_TO_MIB_COEFF, emmc_storage.sec_cnt);
