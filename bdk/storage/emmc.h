@@ -26,7 +26,7 @@
 
 #define GPT_FIRST_LBA  1
 #define GPT_NUM_BLOCKS 33
-#define EMMC_BLOCKSIZE 512
+#define EMMC_BLOCKSIZE SDMMC_DAT_BLOCKSIZE
 
 enum
 {

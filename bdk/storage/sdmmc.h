@@ -22,6 +22,9 @@
 #include <storage/sd_def.h>
 #include <storage/sdmmc_driver.h>
 
+#define SDMMC_CMD_BLOCKSIZE 64
+#define SDMMC_DAT_BLOCKSIZE 512
+
 extern u32 sd_power_cycle_time_start;
 
 typedef enum _sdmmc_type

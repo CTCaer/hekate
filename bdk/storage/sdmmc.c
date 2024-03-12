@@ -184,7 +184,7 @@ int sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf)
 
 	reqbuf.buf              = buf;
 	reqbuf.num_sectors      = 1;
-	reqbuf.blksize          = 512;
+	reqbuf.blksize          = SDMMC_DAT_BLOCKSIZE;
 	reqbuf.is_write         = 0;
 	reqbuf.is_multi_block   = 0;
 	reqbuf.is_auto_stop_trn = 0;
@@ -215,7 +215,7 @@ static int _sdmmc_storage_readwrite_ex(sdmmc_storage_t *storage, u32 *blkcnt_out
 
 	reqbuf.buf              = buf;
 	reqbuf.num_sectors      = num_sectors;
-	reqbuf.blksize          = 512;
+	reqbuf.blksize          = SDMMC_DAT_BLOCKSIZE;
 	reqbuf.is_write         = is_write;
 	reqbuf.is_multi_block   = 1;
 	reqbuf.is_auto_stop_trn = 1;
@@ -326,7 +326,7 @@ reinit_try:
 out:
 		sct_off += blkcnt;
 		sct_total -= blkcnt;
-		bbuf += 512 * blkcnt;
+		bbuf += SDMMC_DAT_BLOCKSIZE * blkcnt;
 	}
 
 	return 1;
@@ -338,13 +338,13 @@ int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, vo
 	if (mc_client_has_access(buf) && !((u32)buf % 8))
 		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 0);
 
-	if (num_sectors > (SDMMC_UP_BUF_SZ / 512))
+	if (num_sectors > (SDMMC_UP_BUF_SZ / SDMMC_DAT_BLOCKSIZE))
 		return 0;
 
 	u8 *tmp_buf = (u8 *)SDMMC_UPPER_BUFFER;
 	if (_sdmmc_storage_readwrite(storage, sector, num_sectors, tmp_buf, 0))
 	{
-		memcpy(buf, tmp_buf, 512 * num_sectors);
+		memcpy(buf, tmp_buf, SDMMC_DAT_BLOCKSIZE * num_sectors);
 		return 1;
 	}
 	return 0;
@@ -356,11 +356,11 @@ int sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, v
 	if (mc_client_has_access(buf) && !((u32)buf % 8))
 		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 1);
 
-	if (num_sectors > (SDMMC_UP_BUF_SZ / 512))
+	if (num_sectors > (SDMMC_UP_BUF_SZ / SDMMC_DAT_BLOCKSIZE))
 		return 0;
 
 	u8 *tmp_buf = (u8 *)SDMMC_UPPER_BUFFER;
-	memcpy(tmp_buf, buf, 512 * num_sectors);
+	memcpy(tmp_buf, buf, SDMMC_DAT_BLOCKSIZE * num_sectors);
 	return _sdmmc_storage_readwrite(storage, sector, num_sectors, tmp_buf, 1);
 }
 
@@ -519,7 +519,7 @@ int mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf)
 
 	sdmmc_req_t reqbuf;
 	reqbuf.buf = buf;
-	reqbuf.blksize = 512;
+	reqbuf.blksize = SDMMC_DAT_BLOCKSIZE;
 	reqbuf.num_sectors = 1;
 	reqbuf.is_write = 0;
 	reqbuf.is_multi_block = 0;
@@ -708,9 +708,9 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_wid
 		return 0;
 	DPRINTF("[MMC] card selected\n");
 
-	if (!_sdmmc_storage_set_blocklen(storage, 512))
+	if (!_sdmmc_storage_set_blocklen(storage, EMMC_BLOCKSIZE))
 		return 0;
-	DPRINTF("[MMC] set blocklen to 512\n");
+	DPRINTF("[MMC] set blocklen to EMMC_BLOCKSIZE\n");
 
 	// Check system specification version, only version 4.0 and later support below features.
 	if (storage->csd.mmca_vsn < CSD_SPEC_VER_4)
@@ -1089,7 +1089,7 @@ static int _sd_storage_switch_get(sdmmc_storage_t *storage, void *buf)
 
 	sdmmc_req_t reqbuf;
 	reqbuf.buf              = buf;
-	reqbuf.blksize          = 64;
+	reqbuf.blksize          = SDMMC_CMD_BLOCKSIZE;
 	reqbuf.num_sectors      = 1;
 	reqbuf.is_write         = 0;
 	reqbuf.is_multi_block   = 0;
@@ -1113,7 +1113,7 @@ static int _sd_storage_switch(sdmmc_storage_t *storage, void *buf, int mode, int
 
 	sdmmc_req_t reqbuf;
 	reqbuf.buf              = buf;
-	reqbuf.blksize          = 64;
+	reqbuf.blksize          = SDMMC_CMD_BLOCKSIZE;
 	reqbuf.num_sectors      = 1;
 	reqbuf.is_write         = 0;
 	reqbuf.is_multi_block   = 0;
@@ -1526,7 +1526,7 @@ int sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
 
 	sdmmc_req_t reqbuf;
 	reqbuf.buf              = buf;
-	reqbuf.blksize          = 64;
+	reqbuf.blksize          = SDMMC_CMD_BLOCKSIZE;
 	reqbuf.num_sectors      = 1;
 	reqbuf.is_write         = 0;
 	reqbuf.is_multi_block   = 0;
@@ -1545,7 +1545,7 @@ int sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
 	sdmmc_get_rsp(storage->sdmmc, &tmp, 4, SDMMC_RSP_TYPE_1);
 
 	// Convert buffer to LE.
-	for (int i = 0; i < 64; i += 4)
+	for (int i = 0; i < SDMMC_CMD_BLOCKSIZE; i += 4)
 	{
 		storage->raw_ssr[i + 3] = buf[i];
 		storage->raw_ssr[i + 2] = buf[i + 1];
@@ -1596,7 +1596,7 @@ static void _sd_storage_parse_csd(sdmmc_storage_t *storage)
 	{
 	case 0:
 		storage->csd.capacity = (1 + unstuff_bits(raw_csd, 62, 12)) << (unstuff_bits(raw_csd, 47, 3) + 2);
-		storage->csd.capacity <<= unstuff_bits(raw_csd, 80, 4) - 9; // Convert native block size to LBA 512B.
+		storage->csd.capacity <<= unstuff_bits(raw_csd, 80, 4) - 9; // Convert native block size to LBA SDMMC_DAT_BLOCKSIZE.
 		break;
 
 	case 1:
@@ -1698,9 +1698,9 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_widt
 		return 0;
 	DPRINTF("[SD] card selected\n");
 
-	if (!_sdmmc_storage_set_blocklen(storage, 512))
+	if (!_sdmmc_storage_set_blocklen(storage, SD_BLOCKSIZE))
 		return 0;
-	DPRINTF("[SD] set blocklen to 512\n");
+	DPRINTF("[SD] set blocklen to SD_BLOCKSIZE\n");
 
 	// Disconnect Card Detect resistor from DAT3.
 	if (!_sd_storage_execute_app_cmd_type1(storage, &tmp, SD_APP_SET_CLR_CARD_DETECT, 0, 0, R1_STATE_TRAN))
@@ -1775,7 +1775,7 @@ int _gc_storage_custom_cmd(sdmmc_storage_t *storage, void *buf)
 
 	sdmmc_req_t reqbuf;
 	reqbuf.buf              = buf;
-	reqbuf.blksize          = 64;
+	reqbuf.blksize          = SDMMC_CMD_BLOCKSIZE;
 	reqbuf.num_sectors      = 1;
 	reqbuf.is_write         = 1;
 	reqbuf.is_multi_block   = 0;

@@ -22,7 +22,7 @@
 #include <storage/sdmmc_driver.h>
 #include <libs/fatfs/ff.h>
 
-#define SD_BLOCKSIZE 512
+#define SD_BLOCKSIZE SDMMC_DAT_BLOCKSIZE
 
 enum
 {
