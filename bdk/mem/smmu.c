@@ -23,27 +23,18 @@
 #include <soc/t210.h>
 #include <mem/mc_t210.h>
 #include <mem/smmu.h>
-#include <utils/aarch64_util.h>
 
-bool smmu_used = false;
 u8 *_pageheap = (u8 *)SMMU_HEAP_ADDR;
 
-//Enabling SMMU requires a TZ secure write: MC(MC_SMMU_CONFIG) = 1;
+// Enabling SMMU requires a TZ secure write: MC(MC_SMMU_CONFIG) = 1;
 u8 smmu_payload[] __attribute__((aligned(16))) = {
-	0x41, 0x01, 0x00, 0x58, // 0x00: LDR  X1, =0x70019010
+	0xC1, 0x00, 0x00, 0x58, // 0x00: LDR  X1, =0x70019010
 	0x20, 0x00, 0x80, 0xD2, // 0x04: MOV  X0, #0x1
 	0x20, 0x00, 0x00, 0xB9, // 0x08: STR  W0, [X1]
 	0x1F, 0x71, 0x08, 0xD5, // 0x0C: IC   IALLUIS
 	0x9F, 0x3B, 0x03, 0xD5, // 0x10: DSB  ISH
 	0xFE, 0xFF, 0xFF, 0x17, // 0x14: B    loop
-	0x00, 0x00, 0x80, 0xD2, // 0x18: MOV  X0, #0x0
-	0x20, 0x00, 0x00, 0xB9, // 0x1C: STR  W0, [X1]
-	0x80, 0x00, 0x00, 0x58, // 0x20: LDR  X0, =0x4002B000
-	0x00, 0x00, 0x1F, 0xD6, // 0x28: BR   X0
-	0x10, 0x90, 0x01, 0x70, // 0x28: MC_SMMU_CONFIG
-	0x00, 0x00, 0x00, 0x00, // 0x2C:
-	0x00, 0x00, 0x00, 0x00, // 0x30: secmon address
-	0x00, 0x00, 0x00, 0x00  // 0x34:
+	0x10, 0x90, 0x01, 0x70, // 0x18: MC_SMMU_CONFIG
 };
 
 void *page_alloc(u32 num)
@@ -76,7 +67,7 @@ void smmu_flush_all()
 	smmu_flush_regs();
 }
 
-void smmu_init(u32 secmon_base)
+void smmu_init()
 {
 	MC(MC_SMMU_PTB_ASID)   = 0;
 	MC(MC_SMMU_PTB_DATA)   = 0;
@@ -84,31 +75,22 @@ void smmu_init(u32 secmon_base)
 	MC(MC_SMMU_PTC_CONFIG) = 0x28000F3F;
 	MC(MC_SMMU_PTC_FLUSH)  = 0;
 	MC(MC_SMMU_TLB_FLUSH)  = 0;
-
-	// Set the secmon address
-	*(u32 *)(smmu_payload + 0x30) = secmon_base;
 }
 
 void smmu_enable()
 {
-	if (smmu_used)
+	static bool enabled = false;
+
+	if (enabled)
 		return;
 
-	ccplex_boot_cpu0((u32)smmu_payload, true);
-	smmu_used = true;
-	msleep(150);
+	ccplex_boot_cpu0((u32)smmu_payload, false);
+	msleep(100);
+	ccplex_powergate_cpu0();
 
 	smmu_flush_all();
-}
 
-bool smmu_is_used()
-{
-	return smmu_used;
-}
-
-void smmu_exit()
-{
-	*(u32 *)(smmu_payload + 0x14) = _NOP();
+	enabled = true;
 }
 
 u32 *smmu_init_domain4(u32 dev_base, u32 asid)

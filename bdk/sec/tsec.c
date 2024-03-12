@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -146,10 +146,10 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	{
 		// Init SMMU translation for TSEC.
 		pdir = smmu_init_for_tsec();
-		smmu_init(tsec_ctxt->secmon_base);
-		// Enable SMMU
-		if (!smmu_is_used())
-			smmu_enable();
+		smmu_init();
+
+		// Enable SMMU.
+		smmu_enable();
 
 		// Clock reset controller.
 		car = page_alloc(1);

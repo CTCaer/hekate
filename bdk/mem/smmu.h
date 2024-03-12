@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -72,10 +73,8 @@ void *page_alloc(u32 num);
 u32 *smmu_alloc_pdir();
 void smmu_flush_regs();
 void smmu_flush_all();
-void smmu_init(u32 secmon_base);
+void smmu_init();
 void smmu_enable();
-bool smmu_is_used();
-void smmu_exit();
 u32 *smmu_init_domain4(u32 dev_base, u32 asid);
 u32 *smmu_get_pte(u32 *pdir, u32 iova);
 void smmu_map(u32 *pdir, u32 addr, u32 page, int cnt, u32 attr);
