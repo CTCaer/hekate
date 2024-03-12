@@ -194,7 +194,7 @@ void irq_wait_event(u32 irq)
 	_irq_enable_source(irq);
 
 	// Halt BPMP and wait for the IRQ. No need to use WAIT_EVENT + LIC_IRQ when BPMP serves the IRQ.
-	FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_COP_STOP_UNTIL_IRQ;
+	FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_MODE_STOP_UNTIL_IRQ;
 
 	_irq_disable_source(irq);
 	_irq_ack_source(irq);

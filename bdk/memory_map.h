@@ -50,7 +50,9 @@
 /* Stack theoretical max: 33MB */
 #define IPL_STACK_TOP  0x83100000
 #define IPL_HEAP_START 0x84000000
-#define  IPL_HEAP_SZ      SZ_512M
+#define  IPL_HEAP_SZ     (SZ_512M - SZ_64M)
+
+#define SMMU_HEAP_ADDR 0xA0000000
 /* --- Gap: 1040MB 0xA4000000 - 0xE4FFFFFF --- */
 
 // Virtual disk / Chainloader buffers.

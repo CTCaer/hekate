@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, NVIDIA Corporation. All rights reserved.
+ * Copyright (c) 2014, NVIDIA Corporation.
+ * Copyright (c) 2018-2023, CTCaer
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -14,6 +15,22 @@
 #ifndef _MC_T210_H_
 #define _MC_T210_H_
 
+/*! MC SMMU registers */
+#define MC_SMMU_CONFIG               0x10
+#define MC_SMMU_TLB_CONFIG           0x14
+#define MC_SMMU_PTC_CONFIG           0x18
+#define MC_SMMU_PTB_ASID             0x1c
+#define MC_SMMU_PTB_DATA             0x20
+#define MC_SMMU_TLB_FLUSH            0x30
+#define MC_SMMU_PTC_FLUSH            0x34
+#define MC_SMMU_ASID_SECURITY        0x38
+#define MC_SMMU_TRANSLATION_ENABLE_0 0x228
+#define MC_SMMU_TRANSLATION_ENABLE_1 0x22c
+#define MC_SMMU_TRANSLATION_ENABLE_2 0x230
+#define MC_SMMU_TRANSLATION_ENABLE_3 0x234
+#define MC_SMMU_TRANSLATION_ENABLE_4 0xb98
+
+/*! MC General registers */
 #define MC_INTSTATUS                                            0x0
 #define MC_INTMASK                                              0x4
 #define MC_ERR_STATUS                                           0x8
@@ -464,7 +481,7 @@
 #define MC_UNTRANSLATED_REGION_CHECK                            0x948
 #define MC_DA_CONFIG0                                           0x9dc
 
-/* MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS0 */
+/*! MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS0 */
 #define SEC_CARVEOUT_CA0_R_PTCR       BIT(0)
 #define SEC_CARVEOUT_CA0_R_DISPLAY0A  BIT(1)
 #define SEC_CARVEOUT_CA0_R_DISPLAY0AB BIT(2)
@@ -484,7 +501,7 @@
 #define SEC_CARVEOUT_CA0_R_PPCSAHBSLV BIT(30)
 #define SEC_CARVEOUT_CA0_R_SATAR      BIT(31)
 
-/* MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS1 */
+/*! MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS1 */
 #define SEC_CARVEOUT_CA1_R_VDEBSEV    BIT(2)
 #define SEC_CARVEOUT_CA1_R_VDEMBE     BIT(3)
 #define SEC_CARVEOUT_CA1_R_VDEMCE     BIT(4)
@@ -504,7 +521,7 @@
 #define SEC_CARVEOUT_CA1_W_VDEBSEV    BIT(30)
 #define SEC_CARVEOUT_CA1_W_VDEDBG     BIT(31)
 
-/* MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS2 */
+/*! MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS2 */
 #define SEC_CARVEOUT_CA2_W_VDEMBE    BIT(0)
 #define SEC_CARVEOUT_CA2_W_VDETPM    BIT(1)
 #define SEC_CARVEOUT_CA2_R_ISPRA     BIT(4)
@@ -524,7 +541,7 @@
 #define SEC_CARVEOUT_CA2_W_GPU       BIT(25)
 #define SEC_CARVEOUT_CA2_R_DISPLAYT  BIT(26)
 
-/* MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS3 */
+/*! MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS3 */
 #define SEC_CARVEOUT_CA3_R_SDMMCA   BIT(0)
 #define SEC_CARVEOUT_CA3_R_SDMMCAA  BIT(1)
 #define SEC_CARVEOUT_CA3_R_SDMMC    BIT(2)
@@ -544,7 +561,7 @@
 #define SEC_CARVEOUT_CA3_R_NVJPG    BIT(30)
 #define SEC_CARVEOUT_CA3_W_NVJPG    BIT(31)
 
-/* MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS4 */
+/*! MC_SECURITY_CARVEOUTX_CLIENT_FORCE_INTERNAL_ACCESS4 */
 #define SEC_CARVEOUT_CA4_R_SE    BIT(0)
 #define SEC_CARVEOUT_CA4_W_SE    BIT(1)
 #define SEC_CARVEOUT_CA4_R_AXIAP BIT(2)

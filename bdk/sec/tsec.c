@@ -145,20 +145,20 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	if (type == TSEC_FW_TYPE_EMU)
 	{
 		// Init SMMU translation for TSEC.
-		pdir = smmu_init_for_tsec();
+		pdir = smmu_init_domain(MC_SMMU_TSEC_ASID);
 		smmu_init();
 
 		// Enable SMMU.
 		smmu_enable();
 
 		// Clock reset controller.
-		car = page_alloc(1);
+		car = smmu_page_zalloc(1);
 		memcpy(car, (void *)CLOCK_BASE, SZ_PAGE);
 		car[CLK_RST_CONTROLLER_CLK_SOURCE_TSEC / 4] = 2;
 		smmu_map(pdir, CLOCK_BASE, (u32)car, 1, _WRITABLE | _READABLE | _NONSECURE);
 
 		// Fuse driver.
-		fuse = page_alloc(1);
+		fuse = smmu_page_zalloc(1);
 		memcpy((void *)&fuse[0x800/4], (void *)FUSE_BASE, SZ_1K);
 		fuse[0x82C / 4] = 0;
 		fuse[0x9E0 / 4] = (1 << (TSEC_HOS_KB_620 + 2)) - 1;
@@ -166,34 +166,34 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		smmu_map(pdir, (FUSE_BASE - 0x800), (u32)fuse, 1, _READABLE | _NONSECURE);
 
 		// Power management controller.
-		pmc = page_alloc(1);
+		pmc = smmu_page_zalloc(1);
 		smmu_map(pdir, RTC_BASE, (u32)pmc, 1, _READABLE | _NONSECURE);
 
 		// Flow control.
-		flowctrl = page_alloc(1);
+		flowctrl = smmu_page_zalloc(1);
 		smmu_map(pdir, FLOW_CTLR_BASE, (u32)flowctrl, 1, _WRITABLE | _NONSECURE);
 
 		// Security engine.
-		se = page_alloc(1);
+		se = smmu_page_zalloc(1);
 		memcpy(se, (void *)SE_BASE, SZ_PAGE);
 		smmu_map(pdir, SE_BASE, (u32)se, 1, _READABLE | _WRITABLE | _NONSECURE);
 
 		// Memory controller.
-		mc = page_alloc(1);
+		mc = smmu_page_zalloc(1);
 		memcpy(mc, (void *)MC_BASE, SZ_PAGE);
 		mc[MC_IRAM_BOM / 4] = 0;
 		mc[MC_IRAM_TOM / 4] = DRAM_START;
 		smmu_map(pdir, MC_BASE, (u32)mc, 1, _READABLE | _NONSECURE);
 
 		// IRAM
-		iram = page_alloc(0x30);
+		iram = smmu_page_zalloc(0x30);
 		memcpy(iram, tsec_ctxt->pkg1, 0x30000);
 		// PKG1.1 magic offset.
 		pkg11_magic_off = (u32 *)(iram + ((tsec_ctxt->pkg11_off + 0x20) / 4));
 		smmu_map(pdir, 0x40010000, (u32)iram, 0x30, _READABLE | _WRITABLE | _NONSECURE);
 
 		// Exception vectors
-		evec = page_alloc(1);
+		evec = smmu_page_zalloc(1);
 		smmu_map(pdir, EXCP_VEC_BASE, (u32)evec, 1, _READABLE | _WRITABLE | _NONSECURE);
 	}
 
@@ -229,7 +229,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		if (kidx != 8)
 		{
 			res = -6;
-			smmu_deinit_for_tsec();
+			smmu_deinit_domain(MC_SMMU_TSEC_ASID);
 
 			goto out_free;
 		}
@@ -240,7 +240,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		memcpy(tsec_keys, &key, 0x20);
 		memcpy(tsec_ctxt->pkg1, iram, 0x30000);
 
-		smmu_deinit_for_tsec();
+		smmu_deinit_domain(MC_SMMU_TSEC_ASID);
 
 		// for (int i = 0; i < kidx; i++)
 		// 	gfx_printf("key %08X\n", key[i]);
