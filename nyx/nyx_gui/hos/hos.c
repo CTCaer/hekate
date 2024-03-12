@@ -373,7 +373,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 		tsec_ctxt->type = TSEC_FW_TYPE_EMU;
 
 		// Prepare smmu tsec page for 6.2.0.
-		u8 *tsec_paged = (u8 *)page_alloc(3);
+		u8 *tsec_paged = (u8 *)smmu_page_zalloc(3);
 		memcpy(tsec_paged, (void *)tsec_ctxt->fw, tsec_ctxt->size);
 		tsec_ctxt->fw = tsec_paged;
 	}
