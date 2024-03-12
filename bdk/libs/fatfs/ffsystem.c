@@ -18,7 +18,8 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null if no
 	UINT msize		/* Number of bytes to allocate */
 )
 {
-	return malloc(msize);	/* Allocate a new memory block with POSIX API */
+	// Ensure size is aligned to SDMMC block size.
+	return malloc(ALIGN(msize, 512));	/* Allocate a new memory block with POSIX API */
 }
 
 
