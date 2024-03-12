@@ -287,10 +287,10 @@ void bpmp_usleep(u32 us)
 	// Each iteration takes 1us.
 	while (us)
 	{
-		delay = (us > HALT_COP_MAX_CNT) ? HALT_COP_MAX_CNT : us;
+		delay = (us > HALT_MAX_CNT) ? HALT_MAX_CNT : us;
 		us -= delay;
 
-		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_COP_WAIT_EVENT | HALT_COP_USEC | delay;
+		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_MODE_WAITEVENT | HALT_USEC | delay;
 	}
 }
 
@@ -301,14 +301,14 @@ void bpmp_msleep(u32 ms)
 	// Iteration time is variable. ~200 - 1000us.
 	while (ms)
 	{
-		delay = (ms > HALT_COP_MAX_CNT) ? HALT_COP_MAX_CNT : ms;
+		delay = (ms > HALT_MAX_CNT) ? HALT_MAX_CNT : ms;
 		ms -= delay;
 
-		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_COP_WAIT_EVENT | HALT_COP_MSEC | delay;
+		FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_MODE_WAITEVENT | HALT_MSEC | delay;
 	}
 }
 
 void bpmp_halt()
 {
-	FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_COP_WAIT_EVENT | HALT_COP_JTAG;
+	FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_MODE_WAITEVENT | HALT_JTAG;
 }

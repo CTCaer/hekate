@@ -308,29 +308,47 @@
 #define  EMC_HEKA_UPD BIT(30)
 
 /*! Flow controller registers. */
-#define FLOW_CTLR_HALT_COP_EVENTS      0x4
-#define  HALT_COP_GIC_IRQ               BIT(9)
-#define  HALT_COP_LIC_IRQ               BIT(11)
-#define  HALT_COP_SEC                   BIT(23)
-#define  HALT_COP_MSEC                  BIT(24)
-#define  HALT_COP_USEC                  BIT(25)
-#define  HALT_COP_JTAG                  BIT(28)
-#define  HALT_COP_WAIT_EVENT            BIT(30)
-#define  HALT_COP_STOP_UNTIL_IRQ        BIT(31)
-#define  HALT_COP_MAX_CNT               0xFF
-#define FLOW_CTLR_HALT_CPU0_EVENTS     0x0
-#define FLOW_CTLR_HALT_CPU1_EVENTS     0x14
-#define FLOW_CTLR_HALT_CPU2_EVENTS     0x1C
-#define FLOW_CTLR_HALT_CPU3_EVENTS     0x24
-#define FLOW_CTLR_CPU0_CSR             0x8
-#define FLOW_CTLR_CPU1_CSR             0x18
-#define FLOW_CTLR_CPU2_CSR             0x20
-#define FLOW_CTLR_CPU3_CSR             0x28
-#define FLOW_CTLR_RAM_REPAIR           0x40
-#define  RAM_REPAIR_REQ                 BIT(0)
-#define  RAM_REPAIR_STS                 BIT(1)
-#define FLOW_CTLR_BPMP_CLUSTER_CONTROL 0x98
-#define  CLUSTER_CTRL_ACTIVE_SLOW       BIT(0)
+#define FLOW_CTLR_HALT_COP_EVENTS          0x4
+#define FLOW_CTLR_HALT_CPU0_EVENTS         0x0
+#define FLOW_CTLR_HALT_CPU1_EVENTS         0x14
+#define FLOW_CTLR_HALT_CPU2_EVENTS         0x1C
+#define FLOW_CTLR_HALT_CPU3_EVENTS         0x24
+#define  HALT_GIC_IRQ                       BIT(9)
+#define  HALT_LIC_IRQ                       BIT(11)
+#define  HALT_SEC                           BIT(23)
+#define  HALT_MSEC                          BIT(24)
+#define  HALT_USEC                          BIT(25)
+#define  HALT_JTAG                          BIT(28)
+#define  HALT_MODE_NONE                     (0 << 29u)
+#define  HALT_MODE_RUN_AND_INT              (1 << 29u)
+#define  HALT_MODE_WAITEVENT                (2 << 29u)
+#define  HALT_MODE_WAITEVENT_AND_INT        (3 << 29u)
+#define  HALT_MODE_STOP_UNTIL_IRQ           (4 << 29u)
+#define  HALT_MODE_STOP_UNTIL_IRQ_AND_INT   (5 << 29u)
+#define  HALT_MODE_STOP_UNTIL_EVENT_AND_IRQ (6 << 29u)
+#define  HALT_MAX_CNT                       0xFF
+#define FLOW_CTLR_COP_CSR                  0xC
+#define FLOW_CTLR_CPU0_CSR                 0x8
+#define FLOW_CTLR_CPU1_CSR                 0x18
+#define FLOW_CTLR_CPU2_CSR                 0x20
+#define FLOW_CTLR_CPU3_CSR                 0x28
+#define  CSR_ENABLE                         BIT(0)
+#define  CSR_WAIT_WFI_NONE                  (0 << 8u)
+#define  CSR_WAIT_WFI_CPU0                  (BIT(0) << 8u)
+#define  CSR_ENABLE_EXT_CPU_ONLY            (0 << 12u)
+#define  CSR_ENABLE_EXT_CPU_NCPU            (1 << 12u)
+#define  CSR_ENABLE_EXT_CPU_RAIL            (2 << 12u)
+#define  CSR_EVENT_FLAG                     BIT(14)
+#define  CSR_INTR_FLAG                      BIT(15)
+#define  CSR_HALT                           BIT(22)
+#define FLOW_CTLR_CPU_PWR_CSR              0x38
+#define  CPU_PWR_RAIL_STS_MASK              (3 << 1u)
+#define  CPU_PWR_RAIL_OFF                   0
+#define FLOW_CTLR_RAM_REPAIR               0x40
+#define  RAM_REPAIR_REQ                     BIT(0)
+#define  RAM_REPAIR_STS                     BIT(1)
+#define FLOW_CTLR_BPMP_CLUSTER_CONTROL     0x98
+#define  CLUSTER_CTRL_ACTIVE_SLOW           BIT(0)
 
 /* MSelect registers */
 #define MSELECT_CONFIG 0x00
