@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -197,6 +197,9 @@
 #define PLLC4_MISC_EN_LCKDET BIT(30)
 
 #define UTMIPLL_LOCK         BIT(31)
+
+/*! Clock source */
+#define CLK_SRC_DIV(d) ((d) ? ((u32)(((d) - 1) * 2)) : 0)
 
 /*! PTO_CLK_CNT */
 #define PTO_REF_CLK_WIN_CFG_MASK 0xF

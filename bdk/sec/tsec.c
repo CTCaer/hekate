@@ -154,7 +154,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		// Clock reset controller.
 		car = smmu_page_zalloc(1);
 		memcpy(car, (void *)CLOCK_BASE, SZ_PAGE);
-		car[CLK_RST_CONTROLLER_CLK_SOURCE_TSEC / 4] = 2;
+		car[CLK_RST_CONTROLLER_CLK_SOURCE_TSEC / 4] = CLK_SRC_DIV(2);
 		smmu_map(pdir, CLOCK_BASE, (u32)car, 1, _WRITABLE | _READABLE | _NONSECURE);
 
 		// Fuse driver.

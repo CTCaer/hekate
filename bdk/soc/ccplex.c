@@ -76,7 +76,7 @@ void ccplex_boot_cpu0(u32 entry, bool lock)
 	clock_enable_pllx();
 
 	// Configure MSELECT source and enable clock to 102MHz.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_MSELECT) = 6;
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_MSELECT) = (0 << 29) | CLK_SRC_DIV(4);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_SET)      = BIT(CLK_V_MSELECT);
 
 	// Configure initial CPU clock frequency and enable clock.
