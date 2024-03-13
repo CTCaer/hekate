@@ -1619,6 +1619,9 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	case 0x90:
 		strcat(txt_buf, "SK Hynix ");
 		break;
+	default:
+		strcat(txt_buf, "Unknown ");
+		break;
 	}
 
 	s_printf(txt_buf + strlen(txt_buf), "(%02X)\n%c%c%c%c%c%c\n%d.%d\n%04X\n%02d/%04d\n\n",
