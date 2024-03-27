@@ -694,12 +694,12 @@ out:
 
 static void _free_launch_components(launch_ctxt_t *ctxt)
 {
+	// Free the malloc'ed guaranteed addresses.
+	free(ctxt->fss0);
 	free(ctxt->keyblob);
 	free(ctxt->pkg1);
 	free(ctxt->pkg2);
 	free(ctxt->warmboot);
-	free(ctxt->secmon);
-	free(ctxt->kernel);
 	free(ctxt->kip1_patches);
 }
 
@@ -1035,7 +1035,6 @@ int hos_launch(ini_sec_t *cfg)
 		{
 			_hos_crit_error("SD Card is exFAT but installed HOS driver\nonly supports FAT32!");
 
-			_free_launch_components(&ctxt);
 			goto error;
 		}
 	}
@@ -1056,10 +1055,7 @@ int hos_launch(ini_sec_t *cfg)
 		}
 
 		if (emmc_patch_failed || !(btn_wait() & BTN_POWER))
-		{
-			_free_launch_components(&ctxt);
 			goto error; // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
-		}
 	}
 
 	// Rebuild and encrypt package2.
@@ -1179,6 +1175,7 @@ int hos_launch(ini_sec_t *cfg)
 		bpmp_halt();
 
 error:
+	_free_launch_components(&ctxt);
 	emmc_end();
 
 	EPRINTF("\nFailed to launch HOS!");

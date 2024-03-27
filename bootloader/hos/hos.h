@@ -109,6 +109,7 @@ typedef struct _launch_ctxt_t
 	bool stock;
 	bool emummc_forced;
 
+	void *fss0;
 	u32   fss0_hosver;
 	bool  atmosphere;
 

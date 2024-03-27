@@ -209,6 +209,8 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 		gfx_printf("Done!\n");
 		f_close(&fp);
 
+		ctxt->fss0 = fss;
+
 		// Update r2p if needed.
 		_fss_update_r2p();
 
