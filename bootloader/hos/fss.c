@@ -1,7 +1,7 @@
 /*
  * Atmosphère Fusée Secondary Storage (Package3) parser.
  *
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -82,34 +82,13 @@ typedef struct _fss_content_t
 	char name[0x10];
 } fss_content_t;
 
-static void _set_fss_path_and_update_r2p(launch_ctxt_t *ctxt, const char *path)
+static void _fss_update_r2p()
 {
-	char *r2p_path = malloc(256);
-	u32 path_len = strlen(path);
+	u8 *r2p_payload = sd_file_read("atmosphere/reboot_payload.bin", NULL);
 
-	strcpy(r2p_path, path);
+	is_ipl_updated(r2p_payload, "atmosphere/reboot_payload.bin", h_cfg.updater2p ? true : false);
 
-	while (path_len)
-	{
-		if ((r2p_path[path_len - 1] == '/') || (r2p_path[path_len - 1] == '\\'))
-		{
-			r2p_path[path_len] = 0;
-			strcat(r2p_path, "reboot_payload.bin");
-			u8 *r2p_payload = sd_file_read(r2p_path, NULL);
-
-			is_ipl_updated(r2p_payload, r2p_path, h_cfg.updater2p ? true : false);
-
-			free(r2p_payload);
-
-			// Save FSS0 parent path.
-			r2p_path[path_len] = 0;
-			ctxt->fss0_main_path = r2p_path;
-			return;
-		}
-		path_len--;
-	}
-
-	free(r2p_path);
+	free(r2p_payload);
 }
 
 int parse_fss(launch_ctxt_t *ctxt, const char *path)
@@ -230,8 +209,8 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 		gfx_printf("Done!\n");
 		f_close(&fp);
 
-		// Set FSS0 path and update r2p if needed.
-		_set_fss_path_and_update_r2p(ctxt, path);
+		// Update r2p if needed.
+		_fss_update_r2p();
 
 		return 1;
 	}

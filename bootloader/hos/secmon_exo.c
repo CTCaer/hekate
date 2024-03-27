@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -245,32 +245,29 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 				}
 				break;
 			}
-		}
 
-		// Parse usb mtim settings. Avoid parsing if it's overridden.
-		if (ctxt->fss0_main_path && !ctxt->exo_ctx.usb3_force)
-		{
-			char settings_path[256];
-			strcpy(settings_path, ctxt->fss0_main_path);
-			strcat(settings_path, "config/system_settings.ini");
-			LIST_INIT(sys_settings);
-			if (ini_parse(&ini_sections, settings_path, false))
+			// Parse usb mtim settings. Avoid parsing if it's overridden.
+			if (!ctxt->exo_ctx.usb3_force)
 			{
-				LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+				LIST_INIT(ini_sections);
+				if (ini_parse(&ini_sections, "atmosphere/config/system_settings.ini", false))
 				{
-					// Only parse usb section.
-					if (!(ini_sec->type == INI_CHOICE) || strcmp(ini_sec->name, "usb"))
-						continue;
-
-					LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
+					LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 					{
-						if (!strcmp("usb30_force_enabled", kv->key))
+						// Only parse usb section.
+						if (!(ini_sec->type == INI_CHOICE) || strcmp(ini_sec->name, "usb"))
+							continue;
+
+						LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 						{
-							usb3_force = !strcmp("u8!0x1", kv->val);
-							break; // Only parse usb30_force_enabled key.
+							if (!strcmp("usb30_force_enabled", kv->key))
+							{
+								usb3_force = !strcmp("u8!0x1", kv->val);
+								break; // Only parse usb30_force_enabled key.
+							}
 						}
+						break;
 					}
-					break;
 				}
 			}
 		}
@@ -416,7 +413,7 @@ void secmon_exo_check_panic()
 	// Save context to the SD card.
 	char filepath[0x40];
 	f_mkdir("atmosphere/fatal_errors");
-	strcpy(filepath, "/atmosphere/fatal_errors/report_");
+	strcpy(filepath, "atmosphere/fatal_errors/report_");
 	itoa((u32)((u64)rpt->report_identifier >> 32), filepath + strlen(filepath), 16);
 	itoa((u32)(rpt->report_identifier), filepath + strlen(filepath), 16);
 	strcat(filepath, ".bin");

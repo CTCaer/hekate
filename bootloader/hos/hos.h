@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -109,7 +109,6 @@ typedef struct _launch_ctxt_t
 	bool stock;
 	bool emummc_forced;
 
-	char *fss0_main_path;
 	u32   fss0_hosver;
 	bool  atmosphere;
 
