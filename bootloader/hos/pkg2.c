@@ -633,7 +633,8 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 
 								// If source does not match and is not already patched, throw an error.
 								u32 patch_offset = GET_KIP_PATCH_OFFSET(patch->offset);
-								if ((memcmp(&kip_sect_data[patch_offset], patch->src_data, patch->length) != 0) &&
+								if (patch->src_data != KIP1_PATCH_SRC_NO_CHECK                                  &&
+									(memcmp(&kip_sect_data[patch_offset], patch->src_data, patch->length) != 0) &&
 									(memcmp(&kip_sect_data[patch_offset], patch->dst_data, patch->length) != 0))
 								{
 									gfx_con.mute = false;

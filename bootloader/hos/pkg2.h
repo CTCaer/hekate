@@ -127,6 +127,8 @@ typedef struct _pkg2_kernel_id_t
 	kernel_patch_t *kernel_patchset;
 } pkg2_kernel_id_t;
 
+#define KIP1_PATCH_SRC_NO_CHECK (char *)(-1)
+
 typedef struct _kip1_patch_t
 {
 	u32   offset;   // section+offset of patch to apply.
