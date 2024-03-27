@@ -772,6 +772,28 @@ static kip1_patchset_t _fs_patches_1700_exfat[] = {
 	{ NULL, NULL }
 };
 
+static kip1_patch_t _fs_nogc_1800[] = {
+	{ KPS(KIP_TEXT) | 0x164A50, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x18AE48, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_1800[] = {
+	{ "nogc",     _fs_nogc_1800 },
+	{ NULL, NULL }
+};
+
+static kip1_patch_t _fs_nogc_1800_exfat[] = {
+	{ KPS(KIP_TEXT) | 0x16FAE0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0x195ED8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ 0, 0, NULL, NULL }
+};
+
+static kip1_patchset_t _fs_patches_1800_exfat[] = {
+	{ "nogc",     _fs_nogc_1800_exfat },
+	{ NULL, NULL }
+};
+
 // SHA256 hashes.
 static kip1_id_t _kip_ids[] =
 {
@@ -831,4 +853,6 @@ static kip1_id_t _kip_ids[] =
 	{ "FS", "\x62\xC6\x5E\xFD\x9A\xBF\x7C\x43", _fs_patches_1603_exfat }, // FS 16.0.3 exFAT
 	{ "FS", "\x27\x07\x3B\xF0\xA1\xB8\xCE\x61", _fs_patches_1700 },       // FS 17.0.0
 	{ "FS", "\xEE\x0F\x4B\xAC\x6D\x1F\xFC\x4B", _fs_patches_1700_exfat }, // FS 17.0.0 exFAT
+	{ "FS", "\x79\x5F\x5A\x5E\xB0\xC6\x77\x9E", _fs_patches_1800 },       // FS 18.0.0
+	{ "FS", "\x1E\x2C\x64\xB1\xCC\xE2\x78\x24", _fs_patches_1800_exfat }, // FS 18.0.0 exFAT
 };
