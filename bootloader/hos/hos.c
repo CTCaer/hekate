@@ -712,7 +712,7 @@ static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 	{
-		if (strncmp((const char*)ki->kip1->name, "FS", sizeof(ki->kip1->name)))
+		if (strcmp((char *)ki->kip1->name, "FS"))
 			continue;
 
 		if (!se_calc_sha256_oneshot(sha_buf, ki->kip1, ki->size))

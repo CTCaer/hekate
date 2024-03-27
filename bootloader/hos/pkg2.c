@@ -379,7 +379,7 @@ static int _decompress_kip(pkg2_kip1_info_t *ki, u32 sectsToDecomp)
 
 static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info_t *ki)
 {
-	if (!strncmp((const char *)ki->kip1->name, target_name, sizeof(ki->kip1->name)))
+	if (!strcmp((char *)ki->kip1->name, target_name))
 	{
 		u32 size = 0;
 		u8 *kipm_data = (u8 *)sd_file_read(kipm_path, &size);
@@ -517,7 +517,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 		for (u32 kip_id_idx = 0; kip_id_idx < _kip_id_sets_cnt; kip_id_idx++)
 		{
 			// Check if KIP name macthes ID's KIP name.
-			if (strncmp((char *)ki->kip1->name, _kip_id_sets[kip_id_idx].name, sizeof(ki->kip1->name)) != 0)
+			if (strcmp((char *)ki->kip1->name, _kip_id_sets[kip_id_idx].name) != 0)
 				continue;
 
 			// Check if there are patches to apply.
@@ -652,7 +652,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 				patchset++;
 			}
 
-			if (emummc_patch_selected && !strncmp(_kip_id_sets[kip_id_idx].name, "FS", sizeof(ki->kip1->name)))
+			if (emummc_patch_selected && !strcmp((char *)_kip_id_sets[kip_id_idx].name, "FS"))
 			{
 				// Encode ID.
 				emu_cfg.fs_ver = kip_id_idx;
