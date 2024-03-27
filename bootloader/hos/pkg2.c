@@ -445,6 +445,8 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 	if (patch_names == NULL || patch_names[0] == 0)
 		return NULL;
 
+	gfx_printf("%kPatching kips%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
+
 	static const u32 MAX_NUM_PATCHES_REQUESTED = sizeof(u32) * 8;
 	char *patches[MAX_NUM_PATCHES_REQUESTED];
 

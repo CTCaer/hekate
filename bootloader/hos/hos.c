@@ -849,15 +849,18 @@ int hos_launch(ini_sec_t *cfg)
 	// Check if secmon is exosphere.
 	if (ctxt.secmon)
 		is_exo = !memcmp((void *)((u8 *)ctxt.secmon + ctxt.secmon_size - 4), "LENY", 4);
+
+	// Get secmon and warmboot bases.
 	const pkg1_id_t *pk1_latest = pkg1_get_latest();
-	secmon_base = is_exo ? pk1_latest->secmon_base : ctxt.pkg1_id->secmon_base;
+	secmon_base   = is_exo ? pk1_latest->secmon_base   : ctxt.pkg1_id->secmon_base;
 	warmboot_base = is_exo ? pk1_latest->warmboot_base : ctxt.pkg1_id->warmboot_base;
 
-	// Generate keys.
-	tsec_ctxt.fw = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
-	tsec_ctxt.pkg1 = ctxt.pkg1;
+	// Set package1 and tsec fw offsets.
+	tsec_ctxt.fw        = (u8 *)ctxt.pkg1 + ctxt.pkg1_id->tsec_off;
+	tsec_ctxt.pkg1      = ctxt.pkg1;
 	tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
 
+	// Generate keys.
 	if (!hos_keygen(ctxt.keyblob, kb, &tsec_ctxt, ctxt.stock, is_exo))
 		goto error;
 	gfx_puts("Generated keys\n");
@@ -902,7 +905,7 @@ int hos_launch(ini_sec_t *cfg)
 		}
 		else
 		{
-			_hos_crit_error("No mandatory secmon or warmboot provided!");
+			_hos_crit_error("No mandatory pkg1 files provided!");
 			goto error;
 		}
 	}
@@ -1040,14 +1043,12 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Patch kip1s in memory if needed.
-	if (ctxt.kip1_patches)
-		gfx_printf("%kPatching kips%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
-	const char* unappliedPatch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
-	if (unappliedPatch != NULL)
+	const char *failed_patch = pkg2_patch_kips(&kip1_info, ctxt.kip1_patches);
+	if (failed_patch != NULL)
 	{
-		EHPRINTFARGS("Failed to apply '%s'!", unappliedPatch);
+		EHPRINTFARGS("Failed to apply '%s'!", failed_patch);
 
-		bool emmc_patch_failed = !strcmp(unappliedPatch, "emummc");
+		bool emmc_patch_failed = !strcmp(failed_patch, "emummc");
 		if (!emmc_patch_failed)
 		{
 			gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
@@ -1144,7 +1145,7 @@ int hos_launch(ini_sec_t *cfg)
 	}
 
 	// Start directly from PKG2 ready signal and reset outgoing value.
-	secmon_mailbox->in = pkg1_state_pkg2_ready;
+	secmon_mailbox->in  = pkg1_state_pkg2_ready;
 	secmon_mailbox->out = SECMON_STATE_NOT_READY;
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
