@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2018 Reisyukaku
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -32,22 +32,14 @@ extern hekate_config h_cfg;
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
 
-void _toggle_autorcm(bool enable)
+static void _toggle_autorcm(bool enable)
 {
 	gfx_clear_partial_grey(0x1B, 0, 1256);
 	gfx_con_setpos(0, 0);
 
-	if (!emmc_initialize(false))
-	{
-		EPRINTF("Failed to init eMMC.");
-		goto out;
-	}
-
-	u8 *tempbuf = (u8 *)malloc(0x200);
-	emmc_set_partition(EMMC_BOOT0);
-
 	int i, sect = 0;
 	u8 corr_mod0, mod1;
+	u8 *tempbuf = (u8 *)malloc(0x200);
 
 	// Get the correct RSA modulus byte masks.
 	nx_emmc_get_autorcm_masks(&corr_mod0, &mod1);
@@ -70,7 +62,6 @@ void _toggle_autorcm(bool enable)
 	}
 
 	free(tempbuf);
-	emmc_end();
 
 	if (enable)
 		gfx_printf("%kAutoRCM mode enabled!%k",  TXT_CLR_ORANGE, TXT_CLR_DEFAULT);
@@ -78,12 +69,34 @@ void _toggle_autorcm(bool enable)
 		gfx_printf("%kAutoRCM mode disabled!%k", TXT_CLR_GREENISH, TXT_CLR_DEFAULT);
 	gfx_printf("\n\nPress any key...\n");
 
-out:
 	btn_wait();
 }
 
-void _enable_autorcm()  { _toggle_autorcm(true); }
-void _disable_autorcm() { _toggle_autorcm(false); }
+static void _enable_autorcm()  { _toggle_autorcm(true); }
+static void _disable_autorcm() { _toggle_autorcm(false); }
+
+bool tools_autorcm_enabled()
+{
+	u8 mod0, mod1;
+	u8 *tempbuf = (u8 *)malloc(0x200);
+
+	// Get the correct RSA modulus byte masks.
+	nx_emmc_get_autorcm_masks(&mod0, &mod1);
+
+	// Get 1st RSA modulus.
+	emmc_set_partition(EMMC_BOOT0);
+	sdmmc_storage_read(&emmc_storage, 0x200 / EMMC_BLOCKSIZE, 1, tempbuf);
+
+	// Check if 2nd byte of modulus is correct.
+	bool enabled = false;
+	if (tempbuf[0x11] == mod1)
+		if (tempbuf[0x10] != mod0)
+			enabled = true;
+
+	free(tempbuf);
+
+	return enabled;
+}
 
 void menu_autorcm()
 {
@@ -98,9 +111,6 @@ void menu_autorcm()
 		return;
 	}
 
-	// Do a simple check on the main BCT.
-	bool disabled = true;
-
 	if (!emmc_initialize(false))
 	{
 		EPRINTF("Failed to init eMMC.");
@@ -109,21 +119,8 @@ void menu_autorcm()
 		return;
 	}
 
-	u8 mod0, mod1;
-	// Get the correct RSA modulus byte masks.
-	nx_emmc_get_autorcm_masks(&mod0, &mod1);
-
-	u8 *tempbuf = (u8 *)malloc(0x200);
-	emmc_set_partition(EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, 0x200 / EMMC_BLOCKSIZE, 1, tempbuf);
-
-	// Check if 2nd byte of modulus is correct.
-	if (tempbuf[0x11] == mod1)
-		if (tempbuf[0x10] != mod0)
-			disabled = false;
-
-	free(tempbuf);
-	emmc_end();
+	// Do a simple check on the main BCT.
+	bool enabled = tools_autorcm_enabled();
 
 	// Create AutoRCM menu.
 	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * 6);
@@ -135,7 +132,7 @@ void menu_autorcm()
 
 	ments[2].type = MENT_CAPTION;
 	ments[3].type = MENT_CHGLINE;
-	if (disabled)
+	if (!enabled)
 	{
 		ments[2].caption = "Status: Disabled!";
 		ments[2].color   = TXT_CLR_GREENISH;
@@ -156,6 +153,8 @@ void menu_autorcm()
 	menu_t menu = {ments, "This corrupts BOOT0!", 0, 0};
 
 	tui_do_menu(&menu);
+
+	emmc_end();
 }
 
 #pragma GCC pop_options
