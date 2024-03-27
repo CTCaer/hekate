@@ -789,10 +789,12 @@ enum
 	PANEL_SHP_LQ055T1SW10 = 0x1040,
 	PANEL_SAM_AMS699VC01  = 0x2050,
 
+	// Found on 6/2" clones. Unknown markings. Quality seems JDI like. Has bad low backlight scaling. ID: [83] 94 [0F].
+	PANEL_OEM_CLONE_6_2   = 0x0F83,
 	// Found on 5.5" clones with AUO A055TAN02 (59.05A30.001) fake markings.
-	PANEL_OEM_CLONE_5_5   = 0xB3,
+	PANEL_OEM_CLONE_5_5   = 0x00B3,
 	// Found on 5.5" clones with AUO A055TAN02 (59.05A30.001) fake markings.
-	PANEL_OEM_CLONE       = 0
+	PANEL_OEM_CLONE       = 0x0000
 };
 
 void display_init();
