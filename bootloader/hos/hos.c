@@ -25,6 +25,7 @@
 #include "hos.h"
 #include "hos_config.h"
 #include "secmon_exo.h"
+#include "../frontend/fe_tools.h"
 #include "../config.h"
 #include "../storage/emummc.h"
 
@@ -785,18 +786,30 @@ int hos_launch(ini_sec_t *cfg)
 		goto error;
 	}
 
-	// Read package1 and the correct keyblob.
-	if (!_read_emmc_pkg1(&ctxt))
-		goto error;
-
-	kb = ctxt.pkg1_id->kb;
-
 	// Try to parse config if present.
 	if (ctxt.cfg && !parse_boot_config(&ctxt))
 	{
 		_hos_crit_error("Wrong ini cfg or missing/corrupt files!");
 		goto error;
 	}
+
+	// Read package1 and the correct keyblob.
+	if (!_read_emmc_pkg1(&ctxt))
+	{
+		// Check if stock is enabled and device can boot in OFW.
+		if (ctxt.stock && (h_cfg.t210b01 || !tools_autorcm_enabled()))
+		{
+			emmc_end();
+
+			WPRINTF("\nRebooting to OFW in 5s...");
+			msleep(5000);
+
+			power_set_state(REBOOT_BYPASS_FUSES);
+		}
+		goto error;
+	}
+
+	kb = ctxt.pkg1_id->kb;
 
 	bool emummc_enabled = emu_cfg.enabled && !h_cfg.emummc_force_disable;
 
