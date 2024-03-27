@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -156,6 +156,13 @@ void *calloc(u32 num, u32 size)
 {
 	void *res = (void *)_heap_alloc(num * size);
 	memset(res, 0, ALIGN(num * size, sizeof(hnode_t))); // Clear the aligned size.
+	return res;
+}
+
+void *zalloc(u32 size)
+{
+	void *res = (void *)_heap_alloc(size);
+	memset(res, 0, ALIGN(size, sizeof(hnode_t))); // Clear the aligned size.
 	return res;
 }
 

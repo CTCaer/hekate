@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,8 +30,8 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 	DIR dir;
 	FILINFO fno;
 
-	char *dir_entries = (char *)calloc(MAX_ENTRIES, 256);
-	char *temp = (char *)calloc(1, 256);
+	char *dir_entries = (char *)zalloc(MAX_ENTRIES * 256);
+	char *temp = (char *)zalloc(256);
 
 	if (!pattern && !f_opendir(&dir, directory))
 	{

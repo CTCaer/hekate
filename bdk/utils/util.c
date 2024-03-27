@@ -211,7 +211,7 @@ u32 crc32_calc(u32 crc, const u8 *buf, u32 len)
 	// Calculate CRC table.
 	if (!table)
 	{
-		table = calloc(256, sizeof(u32));
+		table = zalloc(256 * sizeof(u32));
 		for (u32 i = 0; i < 256; i++)
 		{
 			u32 rem = i;

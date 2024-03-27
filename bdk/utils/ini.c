@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -41,7 +41,7 @@ ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type
 
 	// Calculate total allocation size.
 	u32 len = name ? strlen(name) + 1 : 0;
-	char *buf = calloc(sizeof(ini_sec_t) + len, 1);
+	char *buf = zalloc(sizeof(ini_sec_t) + len);
 
 	csec = (ini_sec_t *)buf;
 	csec->name = strcpy_ns(buf + sizeof(ini_sec_t), name);
@@ -144,7 +144,7 @@ int ini_parse(link_t *dst, char *ini_path, bool is_dir)
 				// Calculate total allocation size.
 				u32 klen  = strlen(&lbuf[0]) + 1;
 				u32 vlen  = strlen(&lbuf[i + 1]) + 1;
-				char *buf = calloc(sizeof(ini_kv_t) + klen + vlen, 1);
+				char *buf = zalloc(sizeof(ini_kv_t) + klen + vlen);
 
 				ini_kv_t *kv = (ini_kv_t *)buf;
 				buf += sizeof(ini_kv_t);

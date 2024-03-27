@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2019-2022 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -135,7 +135,7 @@ int emmc_set_partition(u32 partition) { return sdmmc_storage_set_mmc_partition(&
 
 void emmc_gpt_parse(link_t *gpt)
 {
-	gpt_t *gpt_buf = (gpt_t *)calloc(GPT_NUM_BLOCKS, EMMC_BLOCKSIZE);
+	gpt_t *gpt_buf = (gpt_t *)zalloc(GPT_NUM_BLOCKS * EMMC_BLOCKSIZE);
 
 #ifdef BDK_EMUMMC_ENABLE
 	emummc_storage_read(GPT_FIRST_LBA, GPT_NUM_BLOCKS, gpt_buf);
@@ -149,7 +149,7 @@ void emmc_gpt_parse(link_t *gpt)
 
 	for (u32 i = 0; i < gpt_buf->header.num_part_ents; i++)
 	{
-		emmc_part_t *part = (emmc_part_t *)calloc(sizeof(emmc_part_t), 1);
+		emmc_part_t *part = (emmc_part_t *)zalloc(sizeof(emmc_part_t));
 
 		if (gpt_buf->entries[i].lba_start < gpt_buf->header.first_use_lba)
 			continue;

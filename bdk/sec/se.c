@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -182,7 +182,7 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	if (!src || !dst)
 		return 0;
 
-	u8 *block = (u8 *)calloc(1, SE_AES_BLOCK_SIZE);
+	u8 *block = (u8 *)zalloc(SE_AES_BLOCK_SIZE);
 
 	SE(SE_CRYPTO_BLOCK_COUNT_REG) = 1 - 1;
 
@@ -657,8 +657,8 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 int se_aes_cmac_128(u32 ks, void *dst, const void *src, u32 src_size)
 {
 	int res = 0;
-	u8 *key = (u8 *)calloc(1, SE_KEY_128_SIZE);
-	u8 *last_block = (u8 *)calloc(1, SE_AES_BLOCK_SIZE);
+	u8 *key = (u8 *)zalloc(SE_KEY_128_SIZE);
+	u8 *last_block = (u8 *)zalloc(SE_AES_BLOCK_SIZE);
 
 	se_aes_iv_clear(ks);
 	se_aes_iv_updated_clear(ks);

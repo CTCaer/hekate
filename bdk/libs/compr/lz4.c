@@ -107,7 +107,7 @@
 **************************************/
 #include <mem/heap.h>   /* malloc, calloc, free */
 #define ALLOC(s) malloc(s)
-#define ALLOC_AND_ZERO(s) calloc(1,s)
+#define ALLOC_AND_ZERO(s) zalloc(s)
 #define FREEMEM        free
 #include <string.h>   /* memset, memcpy */
 #define MEM_INIT       memset
