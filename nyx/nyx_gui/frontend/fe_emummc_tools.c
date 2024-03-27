@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -705,7 +705,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		// Read MBR, GPT and backup GPT.
 		mbr_t mbr;
-		gpt_t *gpt = calloc(1, sizeof(gpt_t));
+		gpt_t *gpt = zalloc(sizeof(gpt_t));
 		gpt_header_t gpt_hdr_backup;
 		sdmmc_storage_read(&emmc_storage, 0, 1, &mbr);
 		sdmmc_storage_read(&emmc_storage, 1, sizeof(gpt_t) >> 9, gpt);

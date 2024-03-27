@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -80,7 +80,7 @@ static ini_kip_sec_t *_ini_create_kip_section(link_t *dst, ini_kip_sec_t *ksec, 
 
 	// Calculate total allocation size.
 	u32 len = strlen(name);
-	char *buf = calloc(sizeof(ini_kip_sec_t) + len + 1, 1);
+	char *buf = zalloc(sizeof(ini_kip_sec_t) + len + 1);
 
 	ksec = (ini_kip_sec_t *)buf;
 	u32 i = _find_patch_section_name(name, len, ':') + 1;
@@ -132,7 +132,7 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 			u32 pos = _find_patch_section_name(lbuf, lblen, '=');
 
 			// Calculate total allocation size.
-			char *buf = calloc(sizeof(ini_patchset_t) + strlen(&lbuf[1]) + 1, 1);
+			char *buf = zalloc(sizeof(ini_patchset_t) + strlen(&lbuf[1]) + 1);
 			ini_patchset_t *pt = (ini_patchset_t *)buf;
 
 			// Set patch name.

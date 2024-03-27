@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -1107,7 +1107,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 
 	lv_mbox_set_text(mbox, "#C7EA46 Sandisk Device Report#");
 
-	u8 *buf = calloc(EMMC_BLOCKSIZE, 1);
+	u8 *buf = zalloc(EMMC_BLOCKSIZE);
 	char *txt_buf = (char *)malloc(SZ_32K);
 	char *txt_buf2 = (char *)malloc(SZ_32K);
 	txt_buf[0] = 0;

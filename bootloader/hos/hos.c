@@ -218,7 +218,7 @@ static void _hos_eks_get()
 	if (!h_cfg.eks)
 	{
 		// Read EKS blob.
-		u8 *mbr = calloc(SD_BLOCKSIZE, 1);
+		u8 *mbr = zalloc(SD_BLOCKSIZE);
 		if (!hos_eks_rw_try(mbr, false))
 			goto out;
 
@@ -248,7 +248,7 @@ static void _hos_eks_save()
 	bool new_eks = false;
 	if (!h_cfg.eks)
 	{
-		h_cfg.eks = calloc(SD_BLOCKSIZE, 1);
+		h_cfg.eks = zalloc(SD_BLOCKSIZE);
 		new_eks = true;
 	}
 
@@ -256,7 +256,7 @@ static void _hos_eks_save()
 	if (h_cfg.eks->enabled != HOS_EKS_TSEC_VER)
 	{
 		// Read EKS blob.
-		u8 *mbr = calloc(SD_BLOCKSIZE, 1);
+		u8 *mbr = zalloc(SD_BLOCKSIZE);
 		if (!hos_eks_rw_try(mbr, false))
 		{
 			if (new_eks)
@@ -269,7 +269,7 @@ static void _hos_eks_save()
 		}
 
 		// Get keys.
-		u8 *keys = (u8 *)calloc(SZ_4K, 2);
+		u8 *keys = (u8 *)zalloc(SZ_8K);
 		se_get_aes_keys(keys + SZ_4K, keys, SE_KEY_128_SIZE);
 
 		// Set magic and personalized info.
@@ -283,7 +283,7 @@ static void _hos_eks_save()
 		memcpy(h_cfg.eks->troot_dev, keys + 11 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 
 		// Encrypt EKS blob.
-		u8 *eks = calloc(SD_BLOCKSIZE, 1);
+		u8 *eks = zalloc(SD_BLOCKSIZE);
 		memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 		se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
@@ -310,7 +310,7 @@ void hos_eks_clear(u32 kb)
 		if (h_cfg.eks->enabled)
 		{
 			// Read EKS blob.
-			u8 *mbr = calloc(SD_BLOCKSIZE, 1);
+			u8 *mbr = zalloc(SD_BLOCKSIZE);
 			if (!hos_eks_rw_try(mbr, false))
 				goto out;
 
@@ -318,7 +318,7 @@ void hos_eks_clear(u32 kb)
 			h_cfg.eks->enabled = 0;
 
 			// Encrypt EKS blob.
-			u8 *eks = calloc(SD_BLOCKSIZE, 1);
+			u8 *eks = zalloc(SD_BLOCKSIZE);
 			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 			se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
@@ -646,7 +646,7 @@ try_load:
 	// Read the correct keyblob for older HOS versions.
 	if (ctxt->pkg1_id->kb <= HOS_KB_VERSION_600)
 	{
-		ctxt->keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
+		ctxt->keyblob = (u8 *)zalloc(EMMC_BLOCKSIZE);
 		emummc_storage_read(PKG1_HOS_KEYBLOBS_OFFSET / EMMC_BLOCKSIZE + ctxt->pkg1_id->kb, 1, ctxt->keyblob);
 	}
 

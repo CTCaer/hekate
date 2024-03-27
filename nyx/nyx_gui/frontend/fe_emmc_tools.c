@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -40,7 +40,7 @@ extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_s
 static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_idx, bool backup)
 {
 	sd_mount();
-	mbr_t *mbr = (mbr_t *)calloc(sizeof(mbr_t), 1);
+	mbr_t *mbr = (mbr_t *)zalloc(sizeof(mbr_t));
 	sdmmc_storage_read(&sd_storage, 0, 1, mbr);
 
 	*part_idx = 0;
@@ -90,7 +90,7 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 	// Get emuMMC GPP size.
 	if (backup && *part_idx && *sector_size)
 	{
-		gpt_t *gpt = (gpt_t *)calloc(sizeof(gpt_t), 1);
+		gpt_t *gpt = (gpt_t *)zalloc(sizeof(gpt_t));
 		sdmmc_storage_read(&sd_storage, *sector_start + 0x4001, 1, gpt);
 
 		u32 new_size = gpt->header.alt_lba + 1;

@@ -1145,10 +1145,10 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	char path[128];
 
 	u8 kb = 0;
-	u8 *pkg1 = (u8 *)calloc(1, SZ_256K);
-	u8 *warmboot = (u8 *)calloc(1, SZ_256K);
-	u8 *secmon = (u8 *)calloc(1, SZ_256K);
-	u8 *loader = (u8 *)calloc(1, SZ_256K);
+	u8 *pkg1 = (u8 *)zalloc(SZ_256K);
+	u8 *warmboot = (u8 *)zalloc(SZ_256K);
+	u8 *secmon = (u8 *)zalloc(SZ_256K);
+	u8 *loader = (u8 *)zalloc(SZ_256K);
 	u8 *pkg2 = NULL;
 
 	char *txt_buf  = (char *)malloc(SZ_16K);
@@ -1207,7 +1207,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
 
 	// Read keyblob.
-	u8 *keyblob = (u8 *)calloc(EMMC_BLOCKSIZE, 1);
+	u8 *keyblob = (u8 *)zalloc(EMMC_BLOCKSIZE);
 	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / EMMC_BLOCKSIZE + kb, 1, keyblob);
 
 	// Decrypt.

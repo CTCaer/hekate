@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -77,7 +77,7 @@ static void parse_external_kip_patches()
 	if (ini_patch_parse(&ini_kip_sections, "bootloader/patches.ini"))
 	{
 		// Copy ids into a new patchset.
-		_kip_id_sets = calloc(sizeof(kip1_id_t), 256); // Max 256 kip ids.
+		_kip_id_sets = zalloc(sizeof(kip1_id_t) * 256); // Max 256 kip ids.
 		memcpy(_kip_id_sets, _kip_ids, sizeof(_kip_ids));
 
 		// Parse patchsets and glue them together.
@@ -109,12 +109,12 @@ static void parse_external_kip_patches()
 			{
 				curr_kip->name = ini_psec->name;
 				memcpy(curr_kip->hash, ini_psec->hash, 8);
-				curr_kip->patchset = calloc(sizeof(kip1_patchset_t), 1);
+				curr_kip->patchset = zalloc(sizeof(kip1_patchset_t));
 
 				_kip_id_sets_cnt++;
 			}
 
-			kip1_patchset_t *patchsets = (kip1_patchset_t *)calloc(sizeof(kip1_patchset_t), 16); // Max 16 patchsets per kip.
+			kip1_patchset_t *patchsets = (kip1_patchset_t *)zalloc(sizeof(kip1_patchset_t) * 16); // Max 16 patchsets per kip.
 
 			u32 curr_patchset_idx;
 			for (curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
@@ -128,7 +128,7 @@ static void parse_external_kip_patches()
 			u32 curr_patch_idx = 0;
 
 			// Parse patches and glue them together to a patchset.
-			kip1_patch_t *patches = calloc(sizeof(kip1_patch_t), 32); // Max 32 patches per set.
+			kip1_patch_t *patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
 			LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
 			{
 				if (first_ext_patch)
@@ -142,7 +142,7 @@ static void parse_external_kip_patches()
 					// New patchset name found, create a new set.
 					curr_patchset_idx++;
 					curr_patch_idx = 0;
-					patches = calloc(sizeof(kip1_patch_t), 32); // Max 32 patches per set.
+					patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
 
 					patchsets[curr_patchset_idx].name = pt->name;
 					patchsets[curr_patchset_idx].patches = patches;

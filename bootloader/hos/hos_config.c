@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -122,27 +122,28 @@ int config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 	if (value == NULL)
 		return 0;
 
-	int valueLen = strlen(value);
-	if (!valueLen)
+	int len = strlen(value);
+	if (!len)
 		return 0;
 
 	if (ctxt->kip1_patches == NULL)
 	{
-		ctxt->kip1_patches = malloc(valueLen + 1);
-		memcpy(ctxt->kip1_patches, value, valueLen);
-		ctxt->kip1_patches[valueLen] = 0;
+		ctxt->kip1_patches = malloc(len + 1);
+		memcpy(ctxt->kip1_patches, value, len);
+		ctxt->kip1_patches[len] = 0;
 	}
 	else
 	{
-		char *oldAlloc = ctxt->kip1_patches;
-		int oldSize = strlen(oldAlloc);
-		ctxt->kip1_patches = malloc(oldSize + 1 + valueLen + 1);
-		memcpy(ctxt->kip1_patches, oldAlloc, oldSize);
-		free(oldAlloc);
-		oldAlloc = NULL;
-		ctxt->kip1_patches[oldSize++] = ',';
-		memcpy(&ctxt->kip1_patches[oldSize], value, valueLen);
-		ctxt->kip1_patches[oldSize + valueLen] = 0;
+		char *old_addr = ctxt->kip1_patches;
+		int old_len = strlen(old_addr);
+
+		ctxt->kip1_patches = malloc(old_len + 1 + len + 1);
+		memcpy(ctxt->kip1_patches, old_addr, old_len);
+		free(old_addr);
+
+		ctxt->kip1_patches[old_len++] = ',';
+		memcpy(&ctxt->kip1_patches[old_len], value, len);
+		ctxt->kip1_patches[old_len + len] = 0;
 	}
 	return 1;
 }
@@ -220,7 +221,7 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_usb3_force(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_ctx.usb3_force = calloc(sizeof(bool), 1);
+	ctxt->exo_ctx.usb3_force = zalloc(sizeof(bool));
 
 	if (*value == '1')
 	{
@@ -233,7 +234,7 @@ static int _config_exo_usb3_force(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_ctx.cal0_blank = calloc(sizeof(bool), 1);
+	ctxt->exo_ctx.cal0_blank = zalloc(sizeof(bool));
 
 	if (*value == '1')
 	{
@@ -246,7 +247,7 @@ static int _config_exo_cal0_blanking(launch_ctxt_t *ctxt, const char *value)
 static int _config_exo_cal0_writes_enable(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
-	ctxt->exo_ctx.cal0_allow_writes_sys = calloc(sizeof(bool), 1);
+	ctxt->exo_ctx.cal0_allow_writes_sys = zalloc(sizeof(bool));
 
 	if (*value == '1')
 	{

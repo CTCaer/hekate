@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -767,7 +767,7 @@ static void _check_for_updated_bootloader()
 			_launch_payload("bootloader/update.bin", true, false);
 		else
 		{
-			u8 *buf = calloc(0x200, 1);
+			u8 *buf = zalloc(0x200);
 			is_ipl_updated(buf, "bootloader/update.bin", true);
 			free(buf);
 		}
@@ -1236,7 +1236,7 @@ static void _check_low_battery()
 
 	u8 *battery_icon     = malloc(0x95A); // 21x38x3
 	u8 *charging_icon    = malloc(0x2F4); // 21x12x3
-	u8 *no_charging_icon = calloc(0x2F4, 1);
+	u8 *no_charging_icon = zalloc(0x2F4);
 
 	memcpy(charging_icon, battery_res, 0x2F4);
 	memcpy(battery_icon, battery_res + 0x2F4, 0x95A);
