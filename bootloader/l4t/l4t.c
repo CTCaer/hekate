@@ -33,9 +33,12 @@
  * 1: SDMMC1 LA programming for SDMMC1 UHS DDR200.
  * 2: Arachne Register Cell v1.
  * 3: Arachne Register Cell v2. PTSA Rework support.
+ * 4: Arachne Register Cell v3. DRAM OPT and DDR200 changes.
+ * 5: Arachne Register Cell v4. DRAM FREQ and DDR200 changes.
  */
-#define L4T_LOADER_API_REV 4
-#define L4T_FIRMWARE_REV   0x34524556 // REV4.
+
+#define L4T_LOADER_API_REV 5
+#define L4T_FIRMWARE_REV   0x35524556 // REV5.
 
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
