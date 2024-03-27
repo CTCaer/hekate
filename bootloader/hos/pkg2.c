@@ -442,6 +442,8 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 
 const char *pkg2_patch_kips(link_t *info, char *patch_names)
 {
+	bool emummc_patch_selected = false;
+
 	if (patch_names == NULL || patch_names[0] == 0)
 		return NULL;
 
@@ -500,7 +502,15 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 	// Parse external patches if needed.
 	for (u32 i = 0; i < patches_num; i++)
 	{
-		if (strcmp(patches[i], "emummc") && strcmp(patches[i], "nogc"))
+		if (!strcmp(patches[i], "emummc"))
+		{
+			// emuMMC patch is managed on its own.
+			emummc_patch_selected = true;
+			patches_applied |= BIT(i);
+			continue;
+		}
+
+		if (strcmp(patches[i], "nogc"))
 		{
 			parse_external_kip_patches();
 			break;
@@ -512,6 +522,8 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 	{
 		// Reset hash so it can be calculated for the new kip.
 		kip_hash[0] = 0;
+
+		bool emummc_patch_apply = emummc_patch_selected && !strcmp((char *)ki->kip1->name, "FS");
 
 		// Check all SHA256 ID sets. (IDs are grouped per KIP. IDs are still unique.)
 		for (u32 kip_id_idx = 0; kip_id_idx < _kip_id_sets_cnt; kip_id_idx++)
@@ -538,7 +550,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 			}
 
 			// Don't bother hashing this KIP if no patches are enabled for it.
-			if (!patches_found)
+			if (!patches_found && !emummc_patch_apply)
 				continue;
 
 			// Check if current KIP not hashed and hash it.
@@ -562,9 +574,6 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 						if (strcmp(patchset->name, patches[patch_idx]))
 							continue;
 
-						if (!strcmp(patchset->name, "emummc"))
-							sections_affected |= BIT(GET_KIP_PATCH_SECTION(patchset->patches->offset));
-
 						for (const kip1_patch_t *patch = patchset->patches; patch != NULL && (patch->length != 0); patch++)
 							sections_affected |= BIT(GET_KIP_PATCH_SECTION(patch->offset));
 					}
@@ -572,13 +581,16 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 				patchset++;
 			}
 
+			// If emuMMC is enabled, set its affected section.
+			if (emummc_patch_apply)
+				sections_affected |= BIT(KIP_TEXT);
+
 			// Got patches to apply to this kip, have to decompress it.
 			if (_decompress_kip(ki, sections_affected))
 				return (char *)ki->kip1->name; // Failed to decompress.
 
-			// Apply all patches from matched ID.
+			// Apply all patches for matched ID.
 			patchset = _kip_id_sets[kip_id_idx].patchset;
-			bool emummc_patch_selected = false;
 			while (patchset != NULL && patchset->name != NULL)
 			{
 				for (u32 patch_idx = 0; patch_idx < patches_num; patch_idx++)
@@ -588,14 +600,6 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 						continue;
 
 					u32 applied_mask = BIT(patch_idx);
-
-					if (!strcmp(patchset->name, "emummc"))
-					{
-						emummc_patch_selected = true;
-						patches_applied |= applied_mask;
-
-						continue; // Patching is done later.
-					}
 
 					// Check if patchset is empty.
 					if (patchset->patches == NULL)
@@ -652,7 +656,8 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 				patchset++;
 			}
 
-			if (emummc_patch_selected && !strcmp((char *)_kip_id_sets[kip_id_idx].name, "FS"))
+			// emuMMC must be applied after all other patches, since it affects TEXT offset.
+			if (emummc_patch_apply)
 			{
 				// Encode ID.
 				emu_cfg.fs_ver = kip_id_idx;
@@ -668,6 +673,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 
 				// Skip checking again.
 				emummc_patch_selected = false;
+				emummc_patch_apply    = false;
 			}
 		}
 	}

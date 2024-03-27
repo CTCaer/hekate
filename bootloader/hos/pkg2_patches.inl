@@ -448,14 +448,8 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 };
 
 // All kip patch offsets are without the 0x100-sized header.
-static kip1_patch_t _fs_emummc[] = {
-	{ KPS(KIP_TEXT) | 1, 0, "", "" },
-	{ 0, 0, NULL, NULL }
-};
-
 static kip1_patchset_t _fs_patches_100[] = {
 	{ "nogc",     NULL },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -467,7 +461,6 @@ static kip1_patch_t _fs_nogc_40x[] = {
 
 static kip1_patchset_t _fs_patches_40x[] = {
 	{ "nogc",     _fs_nogc_40x },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -479,7 +472,6 @@ static kip1_patch_t _fs_nogc_410[] = {
 
 static kip1_patchset_t _fs_patches_410[] = {
 	{ "nogc",     _fs_nogc_410 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -491,7 +483,6 @@ static kip1_patch_t _fs_nogc_50x[] = {
 
 static kip1_patchset_t _fs_patches_50x[] = {
 	{ "nogc",     _fs_nogc_50x },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -503,7 +494,6 @@ static kip1_patch_t _fs_nogc_510[] = {
 
 static kip1_patchset_t _fs_patches_510[] = {
 	{ "nogc",     _fs_nogc_510 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -521,13 +511,11 @@ static kip1_patch_t _fs_nogc_600_exfat[] = {
 
 static kip1_patchset_t _fs_patches_600[] = {
 	{ "nogc",     _fs_nogc_600 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_600_exfat[] = {
 	{ "nogc",     _fs_nogc_600_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -545,13 +533,11 @@ static kip1_patch_t _fs_nogc_700_exfat[] = {
 
 static kip1_patchset_t _fs_patches_700[] = {
 	{ "nogc",     _fs_nogc_700 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_700_exfat[] = {
 	{ "nogc",     _fs_nogc_700_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -569,13 +555,11 @@ static kip1_patch_t _fs_nogc_800_exfat[] = {
 
 static kip1_patchset_t _fs_patches_800[] = {
 	{ "nogc",     _fs_nogc_800 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
 static kip1_patchset_t _fs_patches_800_exfat[] = {
 	{ "nogc",     _fs_nogc_800_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -587,7 +571,6 @@ static kip1_patch_t _fs_nogc_900[] = {
 
 static kip1_patchset_t _fs_patches_900[] = {
 	{ "nogc",     _fs_nogc_900 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -599,7 +582,6 @@ static kip1_patch_t _fs_nogc_910[] = {
 
 static kip1_patchset_t _fs_patches_910[] = {
 	{ "nogc",     _fs_nogc_910 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -611,7 +593,6 @@ static kip1_patch_t _fs_nogc_1000[] = {
 
 static kip1_patchset_t _fs_patches_1000[] = {
 	{ "nogc",     _fs_nogc_1000 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -623,7 +604,6 @@ static kip1_patch_t _fs_nogc_1020[] = {
 
 static kip1_patchset_t _fs_patches_1020[] = {
 	{ "nogc",     _fs_nogc_1020 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -635,7 +615,6 @@ static kip1_patch_t _fs_nogc_1100[] = {
 
 static kip1_patchset_t _fs_patches_1100[] = {
 	{ "nogc",     _fs_nogc_1100 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -647,7 +626,6 @@ static kip1_patch_t _fs_nogc_1200[] = {
 
 static kip1_patchset_t _fs_patches_1200[] = {
 	{ "nogc",     _fs_nogc_1200 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -659,7 +637,6 @@ static kip1_patch_t _fs_nogc_1203[] = {
 
 static kip1_patchset_t _fs_patches_1203[] = {
 	{ "nogc",     _fs_nogc_1203 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -671,7 +648,6 @@ static kip1_patch_t _fs_nogc_1300[] = {
 
 static kip1_patchset_t _fs_patches_1300[] = {
 	{ "nogc",     _fs_nogc_1300 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -683,7 +659,6 @@ static kip1_patch_t _fs_nogc_1310[] = {
 
 static kip1_patchset_t _fs_patches_1310[] = {
 	{ "nogc",     _fs_nogc_1310 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -695,7 +670,6 @@ static kip1_patch_t _fs_nogc_1400[] = {
 
 static kip1_patchset_t _fs_patches_1400[] = {
 	{ "nogc",     _fs_nogc_1400 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -707,7 +681,6 @@ static kip1_patch_t _fs_nogc_1400_exfat[] = {
 
 static kip1_patchset_t _fs_patches_1400_exfat[] = {
 	{ "nogc",     _fs_nogc_1400_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -719,7 +692,6 @@ static kip1_patch_t _fs_nogc_1500[] = {
 
 static kip1_patchset_t _fs_patches_1500[] = {
 	{ "nogc",     _fs_nogc_1500 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -731,7 +703,6 @@ static kip1_patch_t _fs_nogc_1500_exfat[] = {
 
 static kip1_patchset_t _fs_patches_1500_exfat[] = {
 	{ "nogc",     _fs_nogc_1500_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -743,7 +714,6 @@ static kip1_patch_t _fs_nogc_1600[] = {
 
 static kip1_patchset_t _fs_patches_1600[] = {
 	{ "nogc",     _fs_nogc_1600 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -755,7 +725,6 @@ static kip1_patch_t _fs_nogc_1600_exfat[] = {
 
 static kip1_patchset_t _fs_patches_1600_exfat[] = {
 	{ "nogc",     _fs_nogc_1600_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -767,7 +736,6 @@ static kip1_patch_t _fs_nogc_1603[] = {
 
 static kip1_patchset_t _fs_patches_1603[] = {
 	{ "nogc",     _fs_nogc_1603 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -779,7 +747,6 @@ static kip1_patch_t _fs_nogc_1603_exfat[] = {
 
 static kip1_patchset_t _fs_patches_1603_exfat[] = {
 	{ "nogc",     _fs_nogc_1603_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -791,7 +758,6 @@ static kip1_patch_t _fs_nogc_1700[] = {
 
 static kip1_patchset_t _fs_patches_1700[] = {
 	{ "nogc",     _fs_nogc_1700 },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
@@ -803,7 +769,6 @@ static kip1_patch_t _fs_nogc_1700_exfat[] = {
 
 static kip1_patchset_t _fs_patches_1700_exfat[] = {
 	{ "nogc",     _fs_nogc_1700_exfat },
-	{ "emummc",   _fs_emummc },
 	{ NULL, NULL }
 };
 
