@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -155,13 +155,13 @@ void minerva_sdmmc_la_program(void *table, bool t210b01)
 	switch (freq)
 	{
 	case 204000:
-		la_scale_regs[LA_SDMMC1_INDEX] = (la_scale_regs[LA_SDMMC1_INDEX] & 0xFF0000) | 75;
+		la_scale_regs[LA_SDMMC1_INDEX] = (la_scale_regs[LA_SDMMC1_INDEX] & 0xFF0000) | 50;
 		break;
 	case 408000:
-		la_scale_regs[LA_SDMMC1_INDEX] = (la_scale_regs[LA_SDMMC1_INDEX] & 0xFF0000) | 37;
+		la_scale_regs[LA_SDMMC1_INDEX] = (la_scale_regs[LA_SDMMC1_INDEX] & 0xFF0000) | 25;
 		break;
 	default:
-		la_scale_regs[LA_SDMMC1_INDEX] = (la_scale_regs[LA_SDMMC1_INDEX] & 0xFF0000) | 30;
+		la_scale_regs[LA_SDMMC1_INDEX] = (la_scale_regs[LA_SDMMC1_INDEX] & 0xFF0000) | 20;
 		break;
 	}
 }
@@ -206,6 +206,23 @@ void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom)
 		mtc_cfg->table_entries++;
 	}
 
+	// Trim table.
+	int entries = 0;
+	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
+	{
+		// Copy frequencies from 204/408/800 MHz and 1333+ MHz.
+		int rate = mtc_cfg->mtc_table[i].rate_khz;
+		if (rate == FREQ_204 ||
+			rate == FREQ_408 ||
+			rate == FREQ_800 ||
+			rate >= FREQ_1333)
+		{
+			memcpy(&mtc_cfg->mtc_table[entries], &mtc_cfg->mtc_table[i], sizeof(emc_table_t));
+			entries++;
+		}
+	}
+	mtc_cfg->table_entries = entries;
+
 	// Set init frequency.
 	minerva_change_freq(FREQ_204);
 
@@ -213,37 +230,20 @@ void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom)
 	mtc_cfg->train_mode = OP_TRAIN;
 	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
 	{
-		mtc_cfg->rate_to = mtc_cfg->mtc_table[i].rate_khz;
-		// Skip already trained frequencies.
-		if (mtc_cfg->rate_to == FREQ_204  ||
-			mtc_cfg->rate_to == FREQ_800  ||
-			mtc_cfg->rate_to == FREQ_1600 ||
-			mtc_cfg->rate_to == oc_freq) // Skip OC freq since Arachne handles it.
+		// Skip already trained frequencies and OC freq (Arachne handles it).
+		if (mtc_cfg->mtc_table[i].trained || mtc_cfg->rate_to == oc_freq)
 			continue;
 
 		// Train frequency.
+		mtc_cfg->rate_to = mtc_cfg->mtc_table[i].rate_khz;
 		minerva_cfg(mtc_cfg, NULL);
 	}
 
 	// Do FSP WAR and scale to 800 MHz as boot freq.
 	bool fsp_opwr_disabled = !(EMC(EMC_MRW3) & 0xC0);
 	if (fsp_opwr_disabled)
-		minerva_change_freq(FREQ_666);
+		minerva_change_freq(FREQ_1333);
 	minerva_change_freq(FREQ_800);
-
-	// Trim table.
-	int entries = 0;
-	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
-	{
-		// Copy freqs from 204 MHz to 800 MHz and 1600 MHz and above.
-		int rate = mtc_cfg->mtc_table[i].rate_khz;
-		if ((rate >= FREQ_204 && rate <= FREQ_800) || rate >= FREQ_1600)
-		{
-			memcpy(&mtc_cfg->mtc_table[entries], &mtc_cfg->mtc_table[i], sizeof(emc_table_t));
-			entries++;
-		}
-	}
-	mtc_cfg->table_entries = entries;
 
 	// Do not let other mtc ops.
 	mtc_cfg->init_done = 0;

@@ -53,8 +53,9 @@ enum train_mode_t
 typedef enum
 {
 	FREQ_204  = 204000,
-	FREQ_666  = 665600,
+	FREQ_408  = 408000,
 	FREQ_800  = 800000,
+	FREQ_1333 = 1331200,
 	FREQ_1600 = 1600000
 } minerva_freq_t;
 
