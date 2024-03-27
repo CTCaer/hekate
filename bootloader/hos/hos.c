@@ -1123,12 +1123,9 @@ int hos_launch(ini_sec_t *cfg)
 	// Lock SE before starting 'SecureMonitor' if < 6.2.0, otherwise lock bootrom and ipatches.
 	_se_lock(kb <= HOS_KB_VERSION_600 && !is_exo);
 
-	// Reset sysctr0 counters.
-	if (kb >= HOS_KB_VERSION_620)
-	{
-		for (u32 i = 0; i < SYSCTR0_COUNTERS; i += sizeof(u32))
-			SYSCTR0(SYSCTR0_COUNTERS_BASE + i) = 0;
-	}
+	// Reset sysctr0 counters. Mandatory for 6.2.0 and up.
+	for (u32 i = 0; i < SYSCTR0_COUNTERS; i++)
+		SYSCTR0(SYSCTR0_COUNTERS_BASE + i * sizeof(u32)) = 0;
 
 	// NX Bootloader locks LP0 Carveout secure scratch registers.
 	//pmc_scratch_lock(PMC_SEC_LOCK_LP0_PARAMS);
