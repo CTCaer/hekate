@@ -158,11 +158,11 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 
 				// Set patch source data.
 				str_start = _find_patch_section_name(&lbuf[pos], lblen - pos, ',');
-				pt->srcData = _htoa(NULL, &lbuf[pos], pt->length, buf);
+				pt->src_data = _htoa(NULL, &lbuf[pos], pt->length, buf);
 				pos += str_start + 1;
 
 				// Set patch destination data.
-				pt->dstData = _htoa(NULL, &lbuf[pos], pt->length, buf + pt->length);
+				pt->dst_data = _htoa(NULL, &lbuf[pos], pt->length, buf + pt->length);
 			}
 
 			list_append(&ksec->pts, &pt->link);

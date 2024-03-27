@@ -83,49 +83,49 @@ static void parse_external_kip_patches()
 		// Parse patchsets and glue them together.
 		LIST_FOREACH_ENTRY(ini_kip_sec_t, ini_psec, &ini_kip_sections, link)
 		{
-			kip1_id_t* curr_kip = NULL;
+			kip1_id_t *kip = NULL;
 			bool found = false;
-			for (u32 curr_kip_idx = 0; curr_kip_idx < _kip_id_sets_cnt + 1; curr_kip_idx++)
+			for (u32 kip_idx = 0; kip_idx < _kip_id_sets_cnt + 1; kip_idx++)
 			{
-				curr_kip = &_kip_id_sets[curr_kip_idx];
+				kip = &_kip_id_sets[kip_idx];
 
 				// Check if reached the end of predefined list.
-				if (!curr_kip->name)
+				if (!kip->name)
 					break;
 
 				// Check if name and hash match.
-				if (!strcmp(curr_kip->name, ini_psec->name) && !memcmp(curr_kip->hash, ini_psec->hash, 8))
+				if (!strcmp(kip->name, ini_psec->name) && !memcmp(kip->hash, ini_psec->hash, 8))
 				{
 					found = true;
 					break;
 				}
 			}
 
-			if (!curr_kip)
+			if (!kip)
 				continue;
 
 			// If not found, create a new empty entry.
 			if (!found)
 			{
-				curr_kip->name = ini_psec->name;
-				memcpy(curr_kip->hash, ini_psec->hash, 8);
-				curr_kip->patchset = zalloc(sizeof(kip1_patchset_t));
+				kip->name = ini_psec->name;
+				memcpy(kip->hash, ini_psec->hash, 8);
+				kip->patchset = zalloc(sizeof(kip1_patchset_t));
 
 				_kip_id_sets_cnt++;
 			}
 
 			kip1_patchset_t *patchsets = (kip1_patchset_t *)zalloc(sizeof(kip1_patchset_t) * 16); // Max 16 patchsets per kip.
 
-			u32 curr_patchset_idx;
-			for (curr_patchset_idx = 0; curr_kip->patchset[curr_patchset_idx].name != NULL; curr_patchset_idx++)
+			u32 patchset_idx;
+			for (patchset_idx = 0; kip->patchset[patchset_idx].name != NULL; patchset_idx++)
 			{
-				patchsets[curr_patchset_idx].name = curr_kip->patchset[curr_patchset_idx].name;
-				patchsets[curr_patchset_idx].patches = curr_kip->patchset[curr_patchset_idx].patches;
+				patchsets[patchset_idx].name    = kip->patchset[patchset_idx].name;
+				patchsets[patchset_idx].patches = kip->patchset[patchset_idx].patches;
 			}
 
-			curr_kip->patchset = patchsets;
+			kip->patchset = patchsets;
 			bool first_ext_patch = true;
-			u32 curr_patch_idx = 0;
+			u32 patch_idx = 0;
 
 			// Parse patches and glue them together to a patchset.
 			kip1_patch_t *patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
@@ -134,36 +134,36 @@ static void parse_external_kip_patches()
 				if (first_ext_patch)
 				{
 					first_ext_patch = false;
-					patchsets[curr_patchset_idx].name = pt->name;
-					patchsets[curr_patchset_idx].patches = patches;
+					patchsets[patchset_idx].name    = pt->name;
+					patchsets[patchset_idx].patches = patches;
 				}
-				else if (strcmp(pt->name, patchsets[curr_patchset_idx].name))
+				else if (strcmp(pt->name, patchsets[patchset_idx].name))
 				{
 					// New patchset name found, create a new set.
-					curr_patchset_idx++;
-					curr_patch_idx = 0;
+					patchset_idx++;
+					patch_idx = 0;
 					patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
 
-					patchsets[curr_patchset_idx].name = pt->name;
-					patchsets[curr_patchset_idx].patches = patches;
+					patchsets[patchset_idx].name    = pt->name;
+					patchsets[patchset_idx].patches = patches;
 				}
 
 				if (pt->length)
 				{
-					patches[curr_patch_idx].offset = pt->offset;
-					patches[curr_patch_idx].length = pt->length;
+					patches[patch_idx].offset = pt->offset;
+					patches[patch_idx].length = pt->length;
 
-					patches[curr_patch_idx].srcData = (char *)pt->srcData;
-					patches[curr_patch_idx].dstData = (char *)pt->dstData;
+					patches[patch_idx].src_data = (char *)pt->src_data;
+					patches[patch_idx].dst_data = (char *)pt->dst_data;
 				}
 				else
-					patches[curr_patch_idx].srcData = malloc(1); // Empty patches check. Keep everything else as 0.
+					patches[patch_idx].src_data = malloc(1); // Empty patches check. Keep everything else as 0.
 
-				curr_patch_idx++;
+				patch_idx++;
 			}
-			curr_patchset_idx++;
-			patchsets[curr_patchset_idx].name = NULL;
-			patchsets[curr_patchset_idx].patches = NULL;
+			patchset_idx++;
+			patchsets[patchset_idx].name = NULL;
+			patchsets[patchset_idx].patches = NULL;
 		}
 	}
 
@@ -307,7 +307,7 @@ void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1)
 		pkg2_add_kip(info, kip1);
 }
 
-int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
+static int _decompress_kip(pkg2_kip1_info_t *ki, u32 sectsToDecomp)
 {
 	u32 compClearMask = ~sectsToDecomp;
 	if ((ki->kip1->flags & compClearMask) == ki->kip1->flags)
@@ -316,68 +316,68 @@ int pkg2_decompress_kip(pkg2_kip1_info_t* ki, u32 sectsToDecomp)
 	pkg2_kip1_t hdr;
 	memcpy(&hdr, ki->kip1, sizeof(hdr));
 
-	unsigned int newKipSize = sizeof(hdr);
-	for (u32 sectIdx = 0; sectIdx < KIP1_NUM_SECTIONS; sectIdx++)
+	u32 new_kip_size = sizeof(hdr);
+	for (u32 sect_idx = 0; sect_idx < KIP1_NUM_SECTIONS; sect_idx++)
 	{
-		u32 sectCompBit = BIT(sectIdx);
+		u32 comp_bit_mask = BIT(sect_idx);
 		// For compressed, cant get actual decompressed size without doing it, so use safe "output size".
-		if (sectIdx < 3 && (sectsToDecomp & sectCompBit) && (hdr.flags & sectCompBit))
-			newKipSize += hdr.sections[sectIdx].size_decomp;
+		if (sect_idx < 3 && (sectsToDecomp & comp_bit_mask) && (hdr.flags & comp_bit_mask))
+			new_kip_size += hdr.sections[sect_idx].size_decomp;
 		else
-			newKipSize += hdr.sections[sectIdx].size_comp;
+			new_kip_size += hdr.sections[sect_idx].size_comp;
 	}
 
-	pkg2_kip1_t* newKip = malloc(newKipSize);
-	unsigned char* dstDataPtr = newKip->data;
-	const unsigned char* srcDataPtr = ki->kip1->data;
-	for (u32 sectIdx = 0; sectIdx < KIP1_NUM_SECTIONS; sectIdx++)
+	pkg2_kip1_t *new_kip = malloc(new_kip_size);
+	u8 *dst_data = new_kip->data;
+	const u8 *src_data = ki->kip1->data;
+	for (u32 sect_idx = 0; sect_idx < KIP1_NUM_SECTIONS; sect_idx++)
 	{
-		u32 sectCompBit = BIT(sectIdx);
+		u32 comp_bit_mask = BIT(sect_idx);
 		// Easy copy path for uncompressed or ones we dont want to uncompress.
-		if (sectIdx >= 3 || !(sectsToDecomp & sectCompBit) || !(hdr.flags & sectCompBit))
+		if (sect_idx >= 3 || !(sectsToDecomp & comp_bit_mask) || !(hdr.flags & comp_bit_mask))
 		{
-			unsigned int dataSize = hdr.sections[sectIdx].size_comp;
+			u32 dataSize = hdr.sections[sect_idx].size_comp;
 			if (dataSize == 0)
 				continue;
 
-			memcpy(dstDataPtr, srcDataPtr, dataSize);
-			srcDataPtr += dataSize;
-			dstDataPtr += dataSize;
+			memcpy(dst_data, src_data, dataSize);
+			src_data += dataSize;
+			dst_data += dataSize;
 			continue;
 		}
 
-		unsigned int compSize = hdr.sections[sectIdx].size_comp;
-		unsigned int outputSize = hdr.sections[sectIdx].size_decomp;
-		gfx_printf("Decomping '%s', sect %d, size %d..\n", (const char*)hdr.name, sectIdx, compSize);
-		if (blz_uncompress_srcdest(srcDataPtr, compSize, dstDataPtr, outputSize) == 0)
+		u32 comp_size = hdr.sections[sect_idx].size_comp;
+		u32 output_size = hdr.sections[sect_idx].size_decomp;
+		gfx_printf("Decomping '%s', sect %d, size %d..\n", (char *)hdr.name, sect_idx, comp_size);
+		if (blz_uncompress_srcdest(src_data, comp_size, dst_data, output_size) == 0)
 		{
 			gfx_con.mute = false;
-			gfx_printf("%kERROR decomping sect %d of '%s'!%k\n", TXT_CLR_ERROR, sectIdx, (char*)hdr.name, TXT_CLR_DEFAULT);
-			free(newKip);
+			gfx_printf("%kERROR decomping sect %d of '%s'!%k\n", TXT_CLR_ERROR, sect_idx, (char *)hdr.name, TXT_CLR_DEFAULT);
+			free(new_kip);
 
 			return 1;
 		}
 		else
 		{
-			DPRINTF("Done! Decompressed size is %d!\n", outputSize);
+			DPRINTF("Done! Decompressed size is %d!\n", output_size);
 		}
-		hdr.sections[sectIdx].size_comp = outputSize;
-		srcDataPtr += compSize;
-		dstDataPtr += outputSize;
+		hdr.sections[sect_idx].size_comp = output_size;
+		src_data += comp_size;
+		dst_data += output_size;
 	}
 
 	hdr.flags &= compClearMask;
-	memcpy(newKip, &hdr, sizeof(hdr));
-	newKipSize = dstDataPtr-(unsigned char*)(newKip);
+	memcpy(new_kip, &hdr, sizeof(hdr));
+	new_kip_size = dst_data - (u8 *)(new_kip);
 
 	free(ki->kip1);
-	ki->kip1 = newKip;
-	ki->size = newKipSize;
+	ki->kip1 = new_kip;
+	ki->size = new_kip_size;
 
 	return 0;
 }
 
-static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info_t* ki)
+static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info_t *ki)
 {
 	if (!strncmp((const char *)ki->kip1->name, target_name, sizeof(ki->kip1->name)))
 	{
@@ -403,9 +403,9 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 
 		u32 new_offset = 0;
 
-		for (u32 currSectIdx = 0; currSectIdx < KIP1_NUM_SECTIONS - 2; currSectIdx++)
+		for (u32 section_idx = 0; section_idx < KIP1_NUM_SECTIONS - 2; section_idx++)
 		{
-			if (!currSectIdx) // .text.
+			if (!section_idx) // .text.
 			{
 				memcpy(ki->kip1->data + inject_size, fs_kip->data, fs_kip->sections[0].size_comp);
 				ki->kip1->sections[0].size_decomp += inject_size;
@@ -413,11 +413,11 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 			}
 			else // Others.
 			{
-				if (currSectIdx < 3)
-					memcpy(ki->kip1->data + new_offset + inject_size, fs_kip->data + new_offset, fs_kip->sections[currSectIdx].size_comp);
-				ki->kip1->sections[currSectIdx].offset += inject_size;
+				if (section_idx < 3)
+					memcpy(ki->kip1->data + new_offset + inject_size, fs_kip->data + new_offset, fs_kip->sections[section_idx].size_comp);
+				ki->kip1->sections[section_idx].offset += inject_size;
 			}
-			new_offset += fs_kip->sections[currSectIdx].size_comp;
+			new_offset += fs_kip->sections[section_idx].size_comp;
 		}
 
 		// Patch PMC capabilities for 1.0.0.
@@ -440,24 +440,24 @@ static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info
 	return 1;
 }
 
-const char* pkg2_patch_kips(link_t *info, char* patchNames)
+const char *pkg2_patch_kips(link_t *info, char *patch_names)
 {
-	if (patchNames == NULL || patchNames[0] == 0)
+	if (patch_names == NULL || patch_names[0] == 0)
 		return NULL;
 
 	static const u32 MAX_NUM_PATCHES_REQUESTED = sizeof(u32) * 8;
-	char* patches[MAX_NUM_PATCHES_REQUESTED];
+	char *patches[MAX_NUM_PATCHES_REQUESTED];
 
-	u32 numPatches = 1;
-	patches[0] = patchNames;
+	u32 patches_num = 1;
+	patches[0] = patch_names;
 	{
-		for (char* p = patchNames; *p != 0; p++)
+		for (char *p = patch_names; *p != 0; p++)
 		{
 			if (*p == ',')
 			{
 				*p = 0;
-				patches[numPatches++] = p + 1;
-				if (numPatches >= MAX_NUM_PATCHES_REQUESTED)
+				patches[patches_num++] = p + 1;
+				if (patches_num >= MAX_NUM_PATCHES_REQUESTED)
 					return "too_many_patches";
 			}
 			else if (*p >= 'A' && *p <= 'Z') // Convert to lowercase.
@@ -465,37 +465,38 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		}
 	}
 
-	u32 patchesApplied = 0; // Bitset over patches.
-	for (u32 i = 0; i < numPatches; i++)
+	u32 patches_applied = 0; // Bitset over patches.
+	for (u32 i = 0; i < patches_num; i++)
 	{
 		// Eliminate leading spaces.
-		for (const char* p = patches[i]; *p != 0; p++)
+		for (const char *p = patches[i]; *p != 0; p++)
 		{
 			if (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
 				patches[i]++;
 			else
 				break;
 		}
-		int valueLen = strlen(patches[i]);
-		if (valueLen == 0)
+
+		int patch_len = strlen(patches[i]);
+		if (patch_len == 0)
 			continue;
 
 		// Eliminate trailing spaces.
-		for (int chIdx = valueLen - 1; chIdx >= 0; chIdx--)
+		for (int chIdx = patch_len - 1; chIdx >= 0; chIdx--)
 		{
-			const char* p = patches[i] + chIdx;
+			const char *p = patches[i] + chIdx;
 			if (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
-				valueLen = chIdx;
+				patch_len = chIdx;
 			else
 				break;
 		}
-		patches[i][valueLen] = 0;
+		patches[i][patch_len] = 0;
 
 		DPRINTF("Requested patch: '%s'\n", patches[i]);
 	}
 
 	// Parse external patches if needed.
-	for (u32 i = 0; i < numPatches; i++)
+	for (u32 i = 0; i < patches_num; i++)
 	{
 		if (strcmp(patches[i], "emummc") && strcmp(patches[i], "nogc"))
 		{
@@ -504,159 +505,175 @@ const char* pkg2_patch_kips(link_t *info, char* patchNames)
 		}
 	}
 
-	u32 shaBuf[SE_SHA_256_SIZE / sizeof(u32)];
+	u32 kip_hash[SE_SHA_256_SIZE / sizeof(u32)];
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 	{
-		shaBuf[0] = 0; // sha256 for this kip not yet calculated.
-		for (u32 currKipIdx = 0; currKipIdx < _kip_id_sets_cnt; currKipIdx++)
+		// Reset hash so it can be calculated for the new kip.
+		kip_hash[0] = 0;
+
+		// Check all SHA256 ID sets. (IDs are grouped per KIP. IDs are still unique.)
+		for (u32 kip_id_idx = 0; kip_id_idx < _kip_id_sets_cnt; kip_id_idx++)
 		{
-			if (strncmp((const char*)ki->kip1->name, _kip_id_sets[currKipIdx].name, sizeof(ki->kip1->name)) != 0)
+			// Check if KIP name macthes ID's KIP name.
+			if (strncmp((char *)ki->kip1->name, _kip_id_sets[kip_id_idx].name, sizeof(ki->kip1->name)) != 0)
 				continue;
 
-			u32 bitsAffected = 0;
-			kip1_patchset_t* currPatchset = _kip_id_sets[currKipIdx].patchset;
-			while (currPatchset != NULL && currPatchset->name != NULL)
+			// Check if there are patches to apply.
+			bool patches_found = false;
+			kip1_patchset_t *patchset = _kip_id_sets[kip_id_idx].patchset;
+			while (patchset != NULL && patchset->name != NULL && !patches_found)
 			{
-				for (u32 i = 0; i < numPatches; i++)
+				for (u32 i = 0; i < patches_num; i++)
 				{
 					// Continue if patch name does not match.
-					if (strcmp(currPatchset->name, patches[i]) != 0)
+					if (strcmp(patchset->name, patches[i]) != 0)
 						continue;
 
-					bitsAffected = i + 1;
+					patches_found = true;
 					break;
 				}
-				currPatchset++;
+				patchset++;
 			}
 
-			// Dont bother even hashing this KIP if we dont have any patches enabled for it.
-			if (bitsAffected == 0)
+			// Don't bother hashing this KIP if no patches are enabled for it.
+			if (!patches_found)
 				continue;
 
-			if (shaBuf[0] == 0)
-			{
-				if (!se_calc_sha256_oneshot(shaBuf, ki->kip1, ki->size))
-					memset(shaBuf, 0, sizeof(shaBuf));
-			}
+			// Check if current KIP not hashed and hash it.
+			if (kip_hash[0] == 0)
+				if (!se_calc_sha256_oneshot(kip_hash, ki->kip1, ki->size))
+					memset(kip_hash, 0, sizeof(kip_hash));
 
-			if (memcmp(shaBuf, _kip_id_sets[currKipIdx].hash, sizeof(_kip_id_sets[0].hash)) != 0)
+			// Check if kip is the expected version.
+			if (memcmp(kip_hash, _kip_id_sets[kip_id_idx].hash, sizeof(_kip_id_sets[0].hash)) != 0)
 				continue;
 
-			// Find out which sections are affected by the enabled patches, to know which to decompress.
-			bitsAffected = 0;
-			currPatchset = _kip_id_sets[currKipIdx].patchset;
-			while (currPatchset != NULL && currPatchset->name != NULL)
+			// Find out which sections are affected by the enabled patches, in order to decompress them.
+			u32 sections_affected = 0;
+			patchset = _kip_id_sets[kip_id_idx].patchset;
+			while (patchset != NULL && patchset->name != NULL)
 			{
-				if (currPatchset->patches != NULL)
+				if (patchset->patches != NULL)
 				{
-					for (u32 currEnabIdx = 0; currEnabIdx < numPatches; currEnabIdx++)
+					for (u32 patch_idx = 0; patch_idx < patches_num; patch_idx++)
 					{
-						if (strcmp(currPatchset->name, patches[currEnabIdx]))
+						if (strcmp(patchset->name, patches[patch_idx]))
 							continue;
 
-						if (!strcmp(currPatchset->name, "emummc"))
-							bitsAffected |= BIT(GET_KIP_PATCH_SECTION(currPatchset->patches->offset));
+						if (!strcmp(patchset->name, "emummc"))
+							sections_affected |= BIT(GET_KIP_PATCH_SECTION(patchset->patches->offset));
 
-						for (const kip1_patch_t* currPatch=currPatchset->patches; currPatch != NULL && (currPatch->length != 0); currPatch++)
-							bitsAffected |= BIT(GET_KIP_PATCH_SECTION(currPatch->offset));
+						for (const kip1_patch_t *patch = patchset->patches; patch != NULL && (patch->length != 0); patch++)
+							sections_affected |= BIT(GET_KIP_PATCH_SECTION(patch->offset));
 					}
 				}
-				currPatchset++;
+				patchset++;
 			}
 
 			// Got patches to apply to this kip, have to decompress it.
-			if (pkg2_decompress_kip(ki, bitsAffected))
-				return (const char*)ki->kip1->name; // Failed to decompress.
+			if (_decompress_kip(ki, sections_affected))
+				return (char *)ki->kip1->name; // Failed to decompress.
 
-			currPatchset = _kip_id_sets[currKipIdx].patchset;
+			// Apply all patches from matched ID.
+			patchset = _kip_id_sets[kip_id_idx].patchset;
 			bool emummc_patch_selected = false;
-			while (currPatchset != NULL && currPatchset->name != NULL)
+			while (patchset != NULL && patchset->name != NULL)
 			{
-				for (u32 currEnabIdx = 0; currEnabIdx < numPatches; currEnabIdx++)
+				for (u32 patch_idx = 0; patch_idx < patches_num; patch_idx++)
 				{
-					if (strcmp(currPatchset->name, patches[currEnabIdx]))
+					// Check if patchset name matches requested patch.
+					if (strcmp(patchset->name, patches[patch_idx]))
 						continue;
 
-					u32 appliedMask = BIT(currEnabIdx);
+					u32 applied_mask = BIT(patch_idx);
 
-					if (!strcmp(currPatchset->name, "emummc"))
+					if (!strcmp(patchset->name, "emummc"))
 					{
 						emummc_patch_selected = true;
-						patchesApplied |= appliedMask;
+						patches_applied |= applied_mask;
 
 						continue; // Patching is done later.
 					}
 
-					if (currPatchset->patches == NULL)
+					// Check if patchset is empty.
+					if (patchset->patches == NULL)
 					{
-						DPRINTF("Patch '%s' not necessary for %s\n", currPatchset->name, (const char*)ki->kip1->name);
-						patchesApplied |= appliedMask;
+						DPRINTF("Patch '%s' not necessary for %s\n", patchset->name, (char *)ki->kip1->name);
+						patches_applied |= applied_mask;
 
 						continue; // Continue in case it's double defined.
 					}
 
-					unsigned char* kipSectData = ki->kip1->data;
-					for (u32 currSectIdx = 0; currSectIdx < KIP1_NUM_SECTIONS; currSectIdx++)
+					// Apply patches per section.
+					u8 *kip_sect_data = ki->kip1->data;
+					for (u32 section_idx = 0; section_idx < KIP1_NUM_SECTIONS; section_idx++)
 					{
-						if (bitsAffected & BIT(currSectIdx))
+						if (sections_affected & BIT(section_idx))
 						{
-							gfx_printf("Applying '%s' on %s, sect %d\n", currPatchset->name, (const char*)ki->kip1->name, currSectIdx);
-							for (const kip1_patch_t* currPatch = currPatchset->patches; currPatch != NULL && currPatch->srcData != NULL; currPatch++)
+							gfx_printf("Applying '%s' on %s, sect %d\n", patchset->name, (char *)ki->kip1->name, section_idx);
+							for (const kip1_patch_t *patch = patchset->patches; patch != NULL && patch->src_data != NULL; patch++)
 							{
-								if (GET_KIP_PATCH_SECTION(currPatch->offset) != currSectIdx)
+								// Check if patch is in current section.
+								if (GET_KIP_PATCH_SECTION(patch->offset) != section_idx)
 									continue;
 
-								if (!currPatch->length)
+								// Check if patch is empty.
+								if (!patch->length)
 								{
 									gfx_con.mute = false;
 									gfx_printf("%kPatch empty!%k\n", TXT_CLR_ERROR, TXT_CLR_DEFAULT);
-									return currPatchset->name; // MUST stop here as it's not probably intended.
+									return patchset->name; // MUST stop here as it's not probably intended.
 								}
 
-								u32 currOffset = GET_KIP_PATCH_OFFSET(currPatch->offset);
 								// If source does not match and is not already patched, throw an error.
-								if ((memcmp(&kipSectData[currOffset], currPatch->srcData, currPatch->length) != 0) &&
-									(memcmp(&kipSectData[currOffset], currPatch->dstData, currPatch->length) != 0))
+								u32 patch_offset = GET_KIP_PATCH_OFFSET(patch->offset);
+								if ((memcmp(&kip_sect_data[patch_offset], patch->src_data, patch->length) != 0) &&
+									(memcmp(&kip_sect_data[patch_offset], patch->dst_data, patch->length) != 0))
 								{
 									gfx_con.mute = false;
-									gfx_printf("%kPatch mismatch at 0x%x!%k\n", TXT_CLR_ERROR, currOffset, TXT_CLR_DEFAULT);
-									return currPatchset->name; // MUST stop here as kip is likely corrupt.
+									gfx_printf("%kPatch mismatch at 0x%x!%k\n", TXT_CLR_ERROR, patch_offset, TXT_CLR_DEFAULT);
+									return patchset->name; // MUST stop here as kip is likely corrupt.
 								}
 								else
 								{
-									DPRINTF("Patching %d bytes at offset 0x%x\n", currPatch->length, currOffset);
-									memcpy(&kipSectData[currOffset], currPatch->dstData, currPatch->length);
+									DPRINTF("Patching %d bytes at offset 0x%x\n", patch->length, patch_offset);
+									memcpy(&kip_sect_data[patch_offset], patch->dst_data, patch->length);
 								}
 							}
 						}
-						kipSectData += ki->kip1->sections[currSectIdx].size_comp;
+						kip_sect_data += ki->kip1->sections[section_idx].size_comp;
 					}
 
-					patchesApplied |= appliedMask;
-					continue; // Continue in case it's double defined.
+					patches_applied |= applied_mask;
 				}
-				currPatchset++;
+
+				patchset++;
 			}
 
-			if (emummc_patch_selected && !strncmp(_kip_id_sets[currKipIdx].name, "FS", sizeof(ki->kip1->name)))
+			if (emummc_patch_selected && !strncmp(_kip_id_sets[kip_id_idx].name, "FS", sizeof(ki->kip1->name)))
 			{
-				emummc_patch_selected = false;
-				emu_cfg.fs_ver = currKipIdx;
-				if (currKipIdx)
+				// Encode ID.
+				emu_cfg.fs_ver = kip_id_idx;
+				if (kip_id_idx)
 					emu_cfg.fs_ver--;
-				if (currKipIdx > 17)
+				if (kip_id_idx > 17)
 					emu_cfg.fs_ver -= 2;
 
+				// Inject emuMMC code.
 				gfx_printf("Injecting emuMMC. FS ID: %d\n", emu_cfg.fs_ver);
-				if (_kipm_inject("/bootloader/sys/emummc.kipm", "FS", ki))
+				if (_kipm_inject("bootloader/sys/emummc.kipm", "FS", ki))
 					return "emummc";
+
+				// Skip checking again.
+				emummc_patch_selected = false;
 			}
 		}
 	}
 
-	for (u32 i = 0; i < numPatches; i++)
+	// Check if all patches were applied.
+	for (u32 i = 0; i < patches_num; i++)
 	{
-		if ((patchesApplied & BIT(i)) == 0)
+		if ((patches_applied & BIT(i)) == 0)
 			return patches[i];
 	}
 
@@ -746,7 +763,7 @@ static u32 _pkg2_ini1_build(u8 *pdst, u8 *psec, pkg2_hdr_t *hdr, link_t *kips_in
 	// Merge KIPs into INI1.
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, kips_info, link)
 	{
-DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->size);
+DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", (char *)ki->kip1->name, (u32)ki->kip1, ki->size);
 		memcpy(pdst, ki->kip1, ki->size);
 		pdst += ki->size;
 		ini1->num_procs++;
@@ -770,7 +787,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", ki->kip1->name, (u32)ki->kip1, ki->s
 
 void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo)
 {
-	launch_ctxt_t * ctxt = (launch_ctxt_t *)hos_ctxt;
+	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
 	u32 meso_magic = *(u32 *)(ctxt->kernel + 4);
 	u32 kernel_size = ctxt->kernel_size;
 	u8 kb = ctxt->pkg1_id->kb;

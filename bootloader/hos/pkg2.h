@@ -40,9 +40,9 @@ extern u32 pkg2_newkern_ini1_end;
 
 typedef struct _kernel_patch_t
 {
-	u32 id;
-	u32 off;
-	u32 val;
+	u32  id;
+	u32  off;
+	u32  val;
 	u32 *ptr;
 } kernel_patch_t;
 
@@ -67,8 +67,8 @@ enum
 
 typedef struct _pkg2_hdr_t
 {
-	u8 ctr[0x10];
-	u8 sec_ctr[0x40];
+	u8  ctr[0x10];
+	u8  sec_ctr[0x40];
 	u32 magic;
 	u32 base;
 	u32 pad0;
@@ -77,8 +77,8 @@ typedef struct _pkg2_hdr_t
 	u16 pad1;
 	u32 sec_size[4];
 	u32 sec_off[4];
-	u8 sec_sha256[0x80];
-	u8 data[];
+	u8  sec_sha256[0x80];
+	u8  data[];
 } pkg2_hdr_t;
 
 typedef struct _pkg2_ini1_t
@@ -102,7 +102,7 @@ typedef struct _pkg2_kip1_sec_t
 typedef struct _pkg2_kip1_t
 {
 /* 0x000 */	u32 magic;
-/* 0x004*/	u8 name[12]; 
+/* 0x004*/	u8 name[12];
 /* 0x010 */	u64 tid;
 /* 0x018 */	u32 proc_cat;
 /* 0x01C */	u8 main_thrd_prio;
@@ -129,23 +129,23 @@ typedef struct _pkg2_kernel_id_t
 
 typedef struct _kip1_patch_t
 {
-	u32 offset; // section+offset of patch to apply.
-	u32 length; // In bytes, 0 means last patch.
-	char* srcData; // That must match.
-	char* dstData; // That it gets replaced by.
+	u32   offset;   // section+offset of patch to apply.
+	u32   length;   // In bytes, 0 means last patch.
+	char *src_data; // That must match.
+	char *dst_data; // That it gets replaced by.
 } kip1_patch_t;
 
 typedef struct _kip1_patchset_t
 {
-	char* name; // NULL means end.
-	kip1_patch_t* patches; // NULL means not necessary.
+	char *name;            // NULL means end.
+	kip1_patch_t *patches; // NULL means not necessary.
 } kip1_patchset_t;
 
 typedef struct _kip1_id_t
 {
-	const char* name;
+	const char *name;
 	u8 hash[8];
-	kip1_patchset_t* patchset;
+	kip1_patchset_t *patchset;
 } kip1_id_t;
 
 void pkg2_get_newkern_info(u8 *kern_data);
@@ -155,7 +155,7 @@ void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1);
 void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_get_ids(kip1_id_t **ids, u32 *entries);
-const char* pkg2_patch_kips(link_t *info, char* patchNames);
+const char *pkg2_patch_kips(link_t *info, char *patch_names);
 
 const pkg2_kernel_id_t *pkg2_identify(u8 *hash);
 pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo);

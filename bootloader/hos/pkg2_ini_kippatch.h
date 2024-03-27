@@ -22,10 +22,10 @@
 typedef struct _ini_patchset_t
 {
 	char *name;
-	u32 offset;  // section + offset of patch to apply.
-	u32 length;  // In bytes, 0 means last patch.
-	u8 *srcData; // That must match.
-	u8 *dstData; // Gets replaced with.
+	u32 offset;   // section + offset of patch to apply.
+	u32 length;   // In bytes, 0 means last patch.
+	u8 *src_data; // That must match.
+	u8 *dst_data; // Gets replaced with.
 	link_t link;
 } ini_patchset_t;
 
