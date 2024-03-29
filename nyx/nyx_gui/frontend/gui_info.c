@@ -858,6 +858,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
 		break;
+	case PANEL_OEM_CLONE_6_2:
+		strcat(txt_buf, "#FFDD00 OEM Clone 6.2\"#");
+		break;
 	case PANEL_OEM_CLONE_5_5:
 		strcat(txt_buf, "#FFDD00 OEM Clone 5.5\"#");
 		break;
