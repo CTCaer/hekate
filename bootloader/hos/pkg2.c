@@ -511,10 +511,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 		}
 
 		if (strcmp(patches[i], "nogc"))
-		{
 			parse_external_kip_patches();
-			break;
-		}
 	}
 
 	u32 kip_hash[SE_SHA_256_SIZE / sizeof(u32)];
