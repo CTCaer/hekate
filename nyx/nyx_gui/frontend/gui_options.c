@@ -1081,7 +1081,7 @@ disabled_or_cal0_issue:;
 					"#FFDD00 and that you paired them in HOS!#");
 
 			if (cal_error)
-				strcat(txt_buf, "\n\n#FF8000 Warning:# Failed to get full calibration data!");
+				s_printf(txt_buf + strlen(txt_buf), "\n\n#FF8000 Warning: Failed (%d) to get IMU calibration!#", cal_error);
 		}
 		else
 		{
