@@ -23,6 +23,8 @@
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
 #include <libs/fatfs/ff.h>
+#include "gpt_nx_32.inc"
+#include "gpt_nx_64.inc"
 
 #define SECTORS_TO_MIB_COEFF 11
 
@@ -1555,9 +1557,105 @@ out:
 	return LV_RES_OK;
 }
 
+static lv_res_t _launch_emmc_rebuild_gpt_action(lv_obj_t *btns, const char *txt)
+{
+
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	mbox_action(btns, txt);
+
+	if (btn_idx == 1)
+	{
+		// u16 *emmc_errors;
+
+		if (!emmc_initialize(false))
+		{
+		}
+
+		u8 _gpt_data[3072];
+
+		u32 emmc_sec_cnt = emmc_storage.sec_cnt;
+
+		// 0x747c000  64G扇区数
+		// 0x3A3E000  32G扇区数
+
+		if (emmc_sec_cnt == 0x3A3E000)
+		{
+			memcpy(_gpt_data, _gpt_data_32, sizeof(_gpt_data_32));
+		}
+		else
+		{
+			memcpy(_gpt_data, _gpt_data_64, sizeof(_gpt_data_64));
+		}
+
+		u8 gptHeader_buff[1 * 512] = {0};
+		u8 gptPrefix_buff[33 * 512] = {0};
+		u8 gptSuffix_buff[33 * 512] = {0};
+
+		// gpt头
+		for (int i = 0, j = 0; i < 512; i++, j++)
+		{
+			gptHeader_buff[i] = _gpt_data[j];
+		}
+		// 主gpt
+		for (int i = 0, j = 512; i < 512; i++, j++)
+		{
+			gptPrefix_buff[i] = _gpt_data[j];
+		}
+		for (int i = 512, j = 3 * 512; i < 33 * 512 && j < 6 * 512; i++, j++)
+		{
+			gptPrefix_buff[i] = _gpt_data[j];
+		}
+		// 备份gpt
+		for (int i = 0, j = 3 * 512; i < 32 * 512 && j < 6 * 512; i++, j++)
+		{
+			gptSuffix_buff[i] = _gpt_data[j];
+		}
+		for (int i = 32 * 512, j = 2 * 512; i < 33 * 512; i++, j++)
+		{
+			gptSuffix_buff[i] = _gpt_data[j];
+		}
+
+		sdmmc_storage_write(&emmc_storage, 0, 1, gptHeader_buff);
+		sdmmc_storage_write(&emmc_storage, 1, 33, gptPrefix_buff);
+		sdmmc_storage_write(&emmc_storage, emmc_sec_cnt - 33, 33, gptSuffix_buff);
+	}
+
+	return LV_RES_INV;
+	// return LV_RES_OK;
+}
+
+
+static lv_res_t _create_mbox_rebuild_gpt(lv_obj_t *btn)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = {"\251", "\222Continue", "\222Close", "\251", ""};
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+
+	lv_mbox_set_text(mbox, "#FF8000 Rebuild Emmc GPT#\n\n This operation will \n #96FF00 rebuild the partition table of the eMMC.# \n\n Do you want to continue?\n\n");
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _launch_emmc_rebuild_gpt_action);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_emmc_bench(lv_obj_t * btn)
 {
 	_create_mbox_benchmark(false);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_emmc_rebuild_gpt(lv_obj_t *btn)
+{
+	_create_mbox_rebuild_gpt(false);
 
 	return LV_RES_OK;
 }
@@ -1573,6 +1671,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 {
 	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Internal eMMC Info");
 	lv_win_add_btn(win, NULL, SYMBOL_CHIP" Benchmark", _create_mbox_emmc_bench);
+	lv_win_add_btn(win, NULL, SYMBOL_CHIP " Rebuild GPT", _create_mbox_emmc_rebuild_gpt); // 在EMMC界面增加了修复GPT的功能按钮
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
 	lv_obj_set_size(desc, LV_HOR_RES / 2 / 6 * 2, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
