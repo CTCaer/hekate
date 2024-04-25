@@ -43,34 +43,34 @@ typedef struct _jc_gamepad_rpt_t
 		struct
 		{
 			// Joy-Con (R).
-			u32 y:1;
-			u32 x:1;
-			u32 b:1;
-			u32 a:1;
-			u32 sr_r:1;
-			u32 sl_r:1;
-			u32 r:1;
-			u32 zr:1;
+/*00*/		u32 y:1;
+/*01*/		u32 x:1;
+/*02*/		u32 b:1;
+/*03*/		u32 a:1;
+/*04*/		u32 sr_r:1;
+/*05*/		u32 sl_r:1;
+/*06*/		u32 r:1;
+/*07*/		u32 zr:1;
 
 			// Shared
-			u32 minus:1;
-			u32 plus:1;
-			u32 r3:1;
-			u32 l3:1;
-			u32 home:1;
-			u32 cap:1;
-			u32 pad:1;
-			u32 wired:1;
+/*08*/		u32 minus:1;
+/*09*/		u32 plus:1;
+/*10*/		u32 r3:1;
+/*11*/		u32 l3:1;
+/*12*/		u32 home:1;
+/*13*/		u32 cap:1;
+/*14*/		u32 pad:1;
+/*15*/		u32 wired:1;
 
 			// Joy-Con (L).
-			u32 down:1;
-			u32 up:1;
-			u32 right:1;
-			u32 left:1;
-			u32 sr_l:1;
-			u32 sl_l:1;
-			u32 l:1;
-			u32 zl:1;
+/*16*/		u32 down:1;
+/*17*/		u32 up:1;
+/*18*/		u32 right:1;
+/*19*/		u32 left:1;
+/*20*/		u32 sr_l:1;
+/*21*/		u32 sl_l:1;
+/*22*/		u32 l:1;
+/*23*/		u32 zl:1;
 		};
 		u32 buttons;
 	};
