@@ -1743,10 +1743,10 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	u32 boot_size = emmc_storage.ext_csd.boot_mult << 17;
 	u32 rpmb_size = emmc_storage.ext_csd.rpmb_mult << 17;
 	strcpy(txt_buf, "#00DDFF eMMC Physical Partitions:#\n");
-	s_printf(txt_buf + strlen(txt_buf), "1: #96FF00 BOOT0# Size: %6d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / EMMC_BLOCKSIZE);
-	s_printf(txt_buf + strlen(txt_buf), "2: #96FF00 BOOT1# Size: %6d KiB (Sect: 0x%08X)\n", boot_size / 1024, boot_size / EMMC_BLOCKSIZE);
-	s_printf(txt_buf + strlen(txt_buf), "3: #96FF00 RPMB#  Size: %6d KiB (Sect: 0x%08X)\n", rpmb_size / 1024, rpmb_size / EMMC_BLOCKSIZE);
-	s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#   Size: %6d MiB (Sect: 0x%08X)\n", emmc_storage.sec_cnt >> SECTORS_TO_MIB_COEFF, emmc_storage.sec_cnt);
+	s_printf(txt_buf + strlen(txt_buf), "1: #96FF00 BOOT0#  Size: %6d KiB  Sectors: 0x%08X\n", boot_size / 1024, boot_size / EMMC_BLOCKSIZE);
+	s_printf(txt_buf + strlen(txt_buf), "2: #96FF00 BOOT1#  Size: %6d KiB  Sectors: 0x%08X\n", boot_size / 1024, boot_size / EMMC_BLOCKSIZE);
+	s_printf(txt_buf + strlen(txt_buf), "3: #96FF00 RPMB#   Size: %6d KiB  Sectors: 0x%08X\n", rpmb_size / 1024, rpmb_size / EMMC_BLOCKSIZE);
+	s_printf(txt_buf + strlen(txt_buf), "0: #96FF00 GPP#    Size: %6d MiB  Sectors: 0x%08X\n", emmc_storage.sec_cnt >> SECTORS_TO_MIB_COEFF, emmc_storage.sec_cnt);
 	strcat(txt_buf, "\n#00DDFF GPP (eMMC USER) Partition Table:#\n");
 
 	emmc_set_partition(EMMC_GPP);
@@ -1754,28 +1754,31 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	emmc_gpt_parse(&gpt);
 
 	u32 idx = 0;
+	u32 lines_left = 20;
+	s_printf(txt_buf + strlen(txt_buf), "#FFBA00 Idx Name                      Size        Offset     Sectors#\n");
 	LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 	{
-		if (idx > 10)
+		int lines = strlen(part->name) > 25 ? 2 : 1;
+		if ((lines_left - lines) <= 0)
 		{
 			strcat(txt_buf, "#FFDD00 Table does not fit on screen!#");
 			break;
 		}
 
-		if (part->index < 2)
+		if (lines == 2)
 		{
-			s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#%s Size: %d MiB (Sect: 0x%X), Start: %06X\n",
-				part->index, part->name, !part->name[8] ? " " : "",
-				(part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
-				part->lba_end - part->lba_start + 1, part->lba_start);
+			s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#\n                              %6d MiB  %8Xh  %8Xh\n",
+				part->index, part->name, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
+				part->lba_start, part->lba_end - part->lba_start + 1);
 		}
 		else
 		{
-			s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %s#\n    Size: %7d MiB (Sect: 0x%07X), Start: %07X\n",
+			s_printf(txt_buf + strlen(txt_buf), "%02d: #96FF00 %.25s# %6d MiB  %8Xh  %8Xh\n",
 				part->index, part->name, (part->lba_end - part->lba_start + 1) >> SECTORS_TO_MIB_COEFF,
-				part->lba_end - part->lba_start + 1, part->lba_start);
+				part->lba_start, part->lba_end - part->lba_start + 1);
 		}
 
+		lines_left -= lines;
 		idx++;
 	}
 	if (!idx)
