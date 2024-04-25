@@ -59,7 +59,7 @@ void display_wait_interrupt(u32 intr)
 
 	// Interrupts are masked. Poll status register for checking if fired.
 	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & intr))
-			;
+		;
 }
 
 static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
@@ -505,9 +505,9 @@ void display_init()
 	{
 	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
-		// Set color mode to natural. Stock is Saturated (0x00). (Reset value is 0x20).
+		// Set color mode to basic (natural). Stock is Saturated (0x00). (Reset value is 0x20).
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
-							  MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_NATURAL << 8), 0);
+							  MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_BASIC << 8), 0);
 		// Enable backlight and smooth PWM.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 							  MIPI_DCS_SET_CONTROL_DISPLAY | ((DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL | DCS_CONTROL_DISPLAY_DIMMING_CTRL) << 8), 0);
