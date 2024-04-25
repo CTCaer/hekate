@@ -48,7 +48,14 @@ enum sdram_ids_erista
 
 	LPDDR4_ICOSA_6GB_SAMSUNG_K4FHE3D4HM_MGCH        = 4, // Die-C. (2y-01).
 
-	// Custom hekate/L4T supported 8GB. 7 dram id can be easily applied in fuses.
+	/*
+	 * Custom hekate/L4T supported 8GB. 7 dram id can be easily applied in fuses.
+	 *
+	 * 4GB modules:
+	 * Samsung K4FBE3D4HM-MGCH/CJ/CL. MG/TF/GF/TH/GH: Package + Temperature.
+	 * Hynix   H9HCNNNCPUMLXR-NME/NEE/NEI. E/I: Temperature.
+	 * Hynix   H54G56BYYVX046/QX046/PX046. V/Q/P: Package + Temperature.
+	 */
 	LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX        = 7, // XX: CH/CJ/CL.
 };
 
