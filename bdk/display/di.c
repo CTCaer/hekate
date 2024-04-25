@@ -914,6 +914,9 @@ u32 *display_init_framebuffer_log()
 
 void display_activate_console()
 {
+	// Only update active registers on vsync.
+	DISPLAY_A(_DIREG(DC_CMD_REG_ACT_CONTROL)) = DISPLAY_A(_DIREG(DC_CMD_REG_ACT_CONTROL)) & ~WIN_D_ACT_HCNTR_SEL;
+
 	// Select window D.
 	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT;
 
