@@ -21,6 +21,24 @@
 
 #include <utils/types.h>
 
+/*
+ * Padding:
+ *  Numbers:
+ *   %3d:   Fill: ' ', Count: 3.
+ *   % 3d:  Fill: ' ', Count: 3.
+ *   %23d:  Fill: '2', Count: 3.
+ *   % 23d: Fill: ' ', Count: 23.
+ *   %223d: Fill: '2', Count: 23.
+ *
+ * Strings, Fill: ' ':
+ *  %3s:    Count: 5,   Left.
+ *  %23s:   Count: 5,   Left.
+ *  %223s:  Count: 25,  Left.
+ *  %.3s:   Count: 5,   Right.
+ *  %.23s:  Count: 25,  Right.
+ *  %.223s: Count: 225, Right.
+ */
+
 void s_printf(char *out_buf, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void s_vprintf(char *out_buf, const char *fmt, va_list ap);
 

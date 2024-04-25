@@ -28,10 +28,32 @@ static void _s_putc(char c)
 	*sout_buf += 1;
 }
 
-static void _s_puts(char *s)
+static void _s_putspace(int fcnt)
 {
+	if (fcnt <= 0)
+		return;
+
+	for (int i = 0; i < fcnt; i++)
+		_s_putc(' ');
+}
+
+static void _s_puts(char *s, char fill, int fcnt)
+{
+	if (fcnt)
+	{
+		fcnt = fcnt - strlen(s);
+
+		// Left padding. Check if padding is not space based (dot counts as such).
+		if (fill != '.')
+			_s_putspace(fcnt);
+	}
+
 	for (; *s; s++)
 		_s_putc(*s);
+
+	// Right padding. Check if padding is space based (dot counts as such).
+	if (fill == '.')
+		_s_putspace(fcnt);
 }
 
 static void _s_putn(u32 v, int base, char fill, int fcnt)
@@ -75,8 +97,27 @@ static void _s_putn(u32 v, int base, char fill, int fcnt)
 		}
 	}
 
-	_s_puts(p);
+	_s_puts(p, 0, 0);
 }
+
+/*
+ * Padding:
+ *  Numbers:
+ *   %3d:   Fill: ' ', Count: 3.
+ *   % 3d:  Fill: ' ', Count: 3.
+ *   %.3d:  Fill: '.', Count: 3.
+ *   %23d:  Fill: '2', Count: 3.
+ *   % 23d: Fill: ' ', Count: 23.
+ *   %223d: Fill: '2', Count: 23.
+ *
+ * Strings, Fill: ' ':
+ *  %3s:    Count: 5,   Left.
+ *  %23s:   Count: 5,   Left.
+ *  %223s:  Count: 25,  Left.
+ *  %.3s:   Count: 5,   Right.
+ *  %.23s:  Count: 25,  Right.
+ *  %.223s: Count: 225, Right.
+ */
 
 void s_printf(char *out_buf, const char *fmt, ...)
 {
@@ -94,8 +135,8 @@ void s_printf(char *out_buf, const char *fmt, ...)
 			fill = 0;
 			fcnt = 0;
 
-			// Check for padding. Number or space based.
-			if ((*fmt >= '0' && *fmt <= '9') || *fmt == ' ')
+			// Check for padding. Number or space based (dot count as space for string).
+			if ((*fmt >= '0' && *fmt <= '9') || *fmt == ' ' || *fmt == '.')
 			{
 				fcnt = *fmt; // Padding size or padding type.
 				fmt++;
@@ -132,7 +173,7 @@ parse_padding_dec:
 				break;
 
 			case 's':
-				_s_puts(va_arg(ap, char *));
+				_s_puts(va_arg(ap, char *), fill, fcnt);
 				break;
 
 			case 'd':
@@ -221,7 +262,7 @@ parse_padding_dec:
 				break;
 
 			case 's':
-				_s_puts(va_arg(ap, char *));
+				_s_puts(va_arg(ap, char *), fill, fcnt);
 				break;
 
 			case 'd':
