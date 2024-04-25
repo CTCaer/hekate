@@ -104,10 +104,10 @@ enum
 enum
 {
 	JC_BATT_EMTPY = 0,
-	JC_BATT_CRIT  = 2,
-	JC_BATT_LOW   = 4,
-	JC_BATT_MID   = 6,
-	JC_BATT_FULL  = 8
+	JC_BATT_CRIT  = 1,
+	JC_BATT_LOW   = 2,
+	JC_BATT_MID   = 3,
+	JC_BATT_FULL  = 4
 };
 
 static const u8 sio_init[] = {
@@ -596,9 +596,9 @@ static void _jc_charging_decider(u8 batt, u8 uart)
 	u32 system_batt_enough = max17050_get_cached_batt_volt() > 4000;
 
 	// Power supply control based on battery levels and charging.
-	if ((batt >> 1 << 1) < JC_BATT_LOW) // Level without checking charging.
+	if ((batt >> 1) < JC_BATT_LOW) // Level without checking charging.
 		_jc_power_supply(uart, true);
-	else if (batt > (system_batt_enough ? JC_BATT_FULL : JC_BATT_MID)) // Addresses the charging bit.
+	else if (batt > (system_batt_enough ? JC_BATT_FULL : JC_BATT_MID) << 1) // Addresses the charging bit.
 		_jc_power_supply(uart, false);
 }
 
