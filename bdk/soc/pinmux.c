@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -29,4 +30,12 @@ void pinmux_config_i2c(u32 idx)
 {
 	PINMUX_AUX(PINMUX_AUX_X_I2C_SCL(idx)) = PINMUX_INPUT_ENABLE;
 	PINMUX_AUX(PINMUX_AUX_X_I2C_SDA(idx)) = PINMUX_INPUT_ENABLE;
+}
+
+void pinmux_config_i2s(u32 idx)
+{
+	PINMUX_AUX(PINMUX_AUX_X_I2S_LRCK(idx)) = PINMUX_DRIVE_4X | PINMUX_PULL_DOWN;
+	PINMUX_AUX(PINMUX_AUX_X_I2C_DIN(idx))  = PINMUX_DRIVE_4X | PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_DOWN;
+	PINMUX_AUX(PINMUX_AUX_X_I2C_DOUT(idx)) = PINMUX_DRIVE_4X | PINMUX_PULL_DOWN;
+	PINMUX_AUX(PINMUX_AUX_X_I2C_BCLK(idx)) = PINMUX_DRIVE_4X | PINMUX_PULL_DOWN;
 }
