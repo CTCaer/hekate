@@ -839,7 +839,7 @@ int hos_launch(ini_sec_t *cfg)
 	if (!ctxt.stock)
 	{
 		u32 fuses = fuse_read_odm(7);
-		if ((h_cfg.autonogc &&
+		if ((h_cfg.autonogc && // Prevent GC fuse burning (sysMMC and emuMMC).
 			  (
 				(!(fuses &    ~0xF) && (ctxt.pkg1_id->fuses >=  5)) || // LAFW v2,  4.0.0+
 				(!(fuses &  ~0x3FF) && (ctxt.pkg1_id->fuses >= 11)) || // LAFW v3,  9.0.0+
@@ -848,12 +848,12 @@ int hos_launch(ini_sec_t *cfg)
 				(!(fuses & ~0x3FFF) && (ctxt.pkg1_id->fuses >= 15))    // LAFW v5, 12.0.2+
 			  )
 			)
-		|| ((emummc_enabled) &&
+		|| ((emummc_enabled) && // Force NOGC if already burnt (only emuMMC).
 			  (
-				((fuses & 0x400)  && (ctxt.pkg1_id->fuses <= 10)) || // HOS  9.0.0+ fuses burnt.
-				((fuses & 0x2000) && (ctxt.pkg1_id->fuses <= 13)) || // HOS 11.0.0+ fuses burnt.
-				// Detection broken! Use kip1patch=nogc              // HOS 12.0.0+
-				((fuses & 0x4000) && (ctxt.pkg1_id->fuses <= 14))    // HOS 12.0.2+ fuses burnt.
+				((fuses & BIT(10)) && (ctxt.pkg1_id->fuses <= 10)) || // HOS  9.0.0+ fuses burnt.
+				((fuses & BIT(13)) && (ctxt.pkg1_id->fuses <= 13)) || // HOS 11.0.0+ fuses burnt.
+				// Detection broken! Use kip1patch=nogc               // HOS 12.0.0+
+				((fuses & BIT(14)) && (ctxt.pkg1_id->fuses <= 14))    // HOS 12.0.2+ fuses burnt.
 			  )
 			))
 			config_kip1patch(&ctxt, "nogc");
