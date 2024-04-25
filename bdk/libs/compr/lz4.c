@@ -92,16 +92,6 @@
 #  define LZ4_FORCE_O2_INLINE_GCC_PPC64LE static
 #endif
 
-#if (defined(__GNUC__) && (__GNUC__ >= 3)) || (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 800)) || defined(__clang__)
-#  define expect(expr,value)    (__builtin_expect ((expr),(value)) )
-#else
-#  define expect(expr,value)    (expr)
-#endif
-
-#define likely(expr)     expect((expr) != 0, 1)
-#define unlikely(expr)   expect((expr) != 0, 0)
-
-
 /*-************************************
 *  Memory routines
 **************************************/

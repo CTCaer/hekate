@@ -102,6 +102,8 @@ typedef unsigned long uptr;
 #define byte_swap_32(num) ((((num) >> 24) & 0xff) | (((num) << 8) & 0xff0000) | \
 						(((num) >> 8 ) & 0xff00) | (((num) << 24) & 0xff000000))
 
+#define likely(x)   (__builtin_expect((x) != 0, 1))
+#define unlikely(x) (__builtin_expect((x) != 0, 0))
 
 /* Bootloader/Nyx */
 #define BOOT_CFG_AUTOBOOT_EN BIT(0)
