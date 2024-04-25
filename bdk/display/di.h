@@ -269,17 +269,18 @@
 #define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
 
 #define DC_WINC_COLOR_PALETTE 0x500
-#define DC_WINC_COLOR_PALETTE_IDX(off) (DC_WINC_COLOR_PALETTE + (off))
+#define  COLOR_PALETTE_IDX(off) (DC_WINC_COLOR_PALETTE + (off))
+#define  COLOR_PALETTE_RGB(rgb) (byte_swap_32(rgb) >> 8)
 #define DC_WINC_PALETTE_COLOR_EXT 0x600
 
-#define DC_WIN_CSC_YOF 0x611
-#define DC_WIN_CSC_KYRGB 0x612
-#define DC_WIN_CSC_KUR 0x613
-#define DC_WIN_CSC_KVR 0x614
-#define DC_WIN_CSC_KUG 0x615
-#define DC_WIN_CSC_KVG 0x616
-#define DC_WIN_CSC_KUB 0x617
-#define DC_WIN_CSC_KVB 0x618
+#define DC_WINC_CSC_YOF 0x611
+#define DC_WINC_CSC_KYRGB 0x612
+#define DC_WINC_CSC_KUR 0x613
+#define DC_WINC_CSC_KVR 0x614
+#define DC_WINC_CSC_KUG 0x615
+#define DC_WINC_CSC_KVG 0x616
+#define DC_WINC_CSC_KUB 0x617
+#define DC_WINC_CSC_KVB 0x618
 #define DC_WIN_AD_WIN_OPTIONS 0xB80
 #define DC_WIN_BD_WIN_OPTIONS 0xD80
 #define DC_WIN_CD_WIN_OPTIONS 0xF80
@@ -292,13 +293,12 @@
 #define  COLOR_EXPAND         BIT(6)
 #define  COLOR_PALETTE_ENABLE BIT(16)
 #define  CSC_ENABLE           BIT(18)
+#define  DV_ENABLE            BIT(20)
 #define  WIN_ENABLE           BIT(30)
 
 #define DC_WIN_BUFFER_CONTROL 0x702
 #define  BUFFER_CONTROL_HOST  0
 #define  BUFFER_CONTROL_VI    1
-#define  BUFFER_CONTROL_EPP   2
-#define  BUFFER_CONTROL_MPEGE 3
 #define  BUFFER_CONTROL_SB2D  4
 
 #define DC_WIN_COLOR_DEPTH 0x703
@@ -324,6 +324,10 @@
 #define  WIN_COLOR_DEPTH_YUV422R        0x17
 #define  WIN_COLOR_DEPTH_YCbCr422RA     0x18
 #define  WIN_COLOR_DEPTH_YUV422RA       0x19
+#define  WIN_COLOR_DEPTH_X1R5G5B5       0x1E
+#define  WIN_COLOR_DEPTH_R5G5B5X1       0x1F
+#define  WIN_COLOR_DEPTH_X1B5G5R5       0x20
+#define  WIN_COLOR_DEPTH_B5G5R5X1       0x21
 #define  WIN_COLOR_DEPTH_YCbCr444P      0x29
 #define  WIN_COLOR_DEPTH_YCrCb420SP     0x2A
 #define  WIN_COLOR_DEPTH_YCbCr420SP     0x2B
@@ -359,7 +363,11 @@
 #define DC_WIN_LINE_STRIDE 0x70A
 #define  LINE_STRIDE(x)	   (x)
 #define  UV_LINE_STRIDE(x) (((x) & 0xffff) << 16)
+
 #define DC_WIN_DV_CONTROL 0x70E
+#define DV_CTRL_R(r) (((r) & 7) << 16)
+#define DV_CTRL_G(g) (((g) & 7) << 8)
+#define DV_CTRL_B(b) (((b) & 7) << 0)
 
 #define DC_WINBUF_BLEND_LAYER_CONTROL 0x716
 #define  WIN_BLEND_DEPTH(x) (((x) & 0xff) << 0)
@@ -407,6 +415,8 @@
 #define  TILED	(1 << 0)
 #define  BLOCK	(2 << 0)
 #define  BLOCK_HEIGHT(x) (((x) & 0x7) << 4)
+
+#define DC_WINBUF_MEMFETCH_CONTROL 0x82B
 
 /*! Display serial interface registers. */
 #define _DSIREG(reg) ((reg) * 4)
