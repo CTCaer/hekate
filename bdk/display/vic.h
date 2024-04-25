@@ -33,6 +33,10 @@ typedef enum _vic_rotation_t
 
 typedef enum _vic_pix_format_t
 {
+	VIC_PIX_FORMAT_L8       =  1, //  8-bit LUT.
+	VIC_PIX_FORMAT_X1B5G5R5 = 21, // 16-bit XBGR.
+	VIC_PIX_FORMAT_B5G5R5X1 = 23, // 16-bit BGRX.
+
 	VIC_PIX_FORMAT_A8B8G8R8 = 31, // 32-bit ABGR.
 	VIC_PIX_FORMAT_A8R8G8B8 = 32, // 32-bit ARGB.
 	VIC_PIX_FORMAT_B8G8R8A8 = 33, // 32-bit BGRA.
@@ -42,7 +46,6 @@ typedef enum _vic_pix_format_t
 	VIC_PIX_FORMAT_X8R8G8B8 = 36, // 32-bit XRGB.
 	VIC_PIX_FORMAT_B8G8R8X8 = 37, // 32-bit BGRX.
 	VIC_PIX_FORMAT_R8G8B8X8 = 38, // 32-bit RGBX.
-
 } vic_pix_format_t;
 
 typedef struct _vic_surface_t
