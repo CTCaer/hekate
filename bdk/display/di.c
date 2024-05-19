@@ -630,6 +630,8 @@ void display_backlight_pwm_init()
 	PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN;
 
 	PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = (PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) & ~PINMUX_FUNC_MASK) | 1; // Set PWM0 mode.
+	usleep(2);
+
 	gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight power mode.
 }
 
