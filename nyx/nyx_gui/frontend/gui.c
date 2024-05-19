@@ -490,10 +490,9 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
 		gfx_con_setpos(32, 630, GFX_COL_AUTO);
 		gfx_con.fntsz = 8;
-		gfx_printf("x: %4X, y: %4X | b: %06X | bt: %d %d | cx: %03X - %03X, cy: %03X - %03X",
-			jc_pad->lstick_x, jc_pad->lstick_y, jc_pad->buttons,
-			jc_pad->batt_info_l, jc_pad->batt_info_r,
-			jc_drv_ctx.cx_min, jc_drv_ctx.cx_max, jc_drv_ctx.cy_min, jc_drv_ctx.cy_max);
+		gfx_printf("x: %4X, y: %4X | rx: %4X, ry: %4X | b: %06X | bt: %d %d",
+			jc_pad->lstick_x, jc_pad->lstick_y, jc_pad->rstick_x, jc_pad->rstick_y,
+			jc_pad->buttons, jc_pad->batt_info_l, jc_pad->batt_info_r);
 		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 		gfx_con.fntsz = 16;
 
