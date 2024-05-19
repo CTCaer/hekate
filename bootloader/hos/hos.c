@@ -1173,6 +1173,9 @@ int hos_launch(ini_sec_t *cfg)
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_USBD);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_SET) = BIT(CLK_H_AHBDMA) | BIT(CLK_H_APBDMA) | BIT(CLK_H_USB2);
 
+	// Reset arbiter.
+	hw_config_arbiter(true);
+
 	// Scale down RAM OC if enabled.
 	minerva_prep_boot_freq();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -66,6 +66,12 @@ void loader_main()
 	CLOCK(CLK_RST_CONTROLLER_SUPER_SCLK_DIVIDER) = 0x80000000; // Enable SUPER_SDIV to 1.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE)    = 2;          // Set HCLK div to 1 and PCLK div to 3.
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY)  = 0x20003333; // Set SCLK to PLLP_OUT (408MHz).
+
+	// Set arbiter.
+	ARB_PRI(ARB_PRIO_CPU_PRIORITY) = 0x12412D1;
+	ARB_PRI(ARB_PRIO_COP_PRIORITY) = 0x0000000;
+	ARB_PRI(ARB_PRIO_VCP_PRIORITY) = 0x220244A;
+	ARB_PRI(ARB_PRIO_DMA_PRIORITY) = 0x320369B;
 
 	// Get Payload size.
 	u32 payload_size  = sizeof(payload_00) + sizeof(payload_01);                // Actual payload size.
