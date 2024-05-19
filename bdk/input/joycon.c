@@ -1,7 +1,7 @@
 /*
  * Joy-Con UART driver for Nintendo Switch
  *
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -407,11 +407,15 @@ static void _jc_detect()
 	if (!jc_gamepad.sio_mode)
 	{
 		// Turn on Joy-Con detect. (UARTB/C TX). UART CTS also if HW flow control and irq is enabled.
-		PINMUX_AUX(PINMUX_AUX_UART2_TX) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
-		PINMUX_AUX(PINMUX_AUX_UART3_TX) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
+		PINMUX_AUX(PINMUX_AUX_UART2_TX) = PINMUX_INPUT_ENABLE;
+		PINMUX_AUX(PINMUX_AUX_UART3_TX) = PINMUX_INPUT_ENABLE;
 		gpio_direction_input(GPIO_PORT_G, GPIO_PIN_0);
 		gpio_direction_input(GPIO_PORT_D, GPIO_PIN_1);
 		usleep(20);
+
+		//! HW BUG: Unlatch gpio buffer.
+		(void)gpio_read(GPIO_PORT_H, GPIO_PIN_6);
+		(void)gpio_read(GPIO_PORT_E, GPIO_PIN_6);
 
 		// Read H6/E6 which are shared with UART TX pins.
 		jc_r.detected = !gpio_read(GPIO_PORT_H, GPIO_PIN_6);
@@ -842,7 +846,7 @@ static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 	else
 		_joycon_send_raw(jc->uart, hori_pad_status, sizeof(hori_pad_status));
 
-	jc->last_status_req_time = get_tmr_ms() + 15;
+	jc->last_status_req_time = get_tmr_ms() + (!jc->sio_mode ? 15 : 7);
 }
 
 static bool _jc_validate_pairing_info(u8 *buf, bool *is_hos)
