@@ -64,7 +64,8 @@ char *text_color;
 
 typedef struct _jc_lv_driver_t
 {
-	lv_indev_t *indev;
+	lv_indev_t *indev_jc;
+	lv_indev_t *indev_touch;
 // LV_INDEV_READ_PERIOD * JC_CAL_MAX_STEPS = 264 ms.
 #define JC_CAL_MAX_STEPS 8
 	u32 calibration_step;
@@ -585,7 +586,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 
 		jc_drv_ctx.cursor_hidden = false;
 		jc_drv_ctx.cursor_timeout = get_tmr_ms();
-		lv_indev_set_cursor(jc_drv_ctx.indev, jc_drv_ctx.cursor);
+		lv_indev_set_cursor(jc_drv_ctx.indev_jc, jc_drv_ctx.cursor);
 
 		// Un hide cursor.
 		lv_obj_set_opa_scale_enable(jc_drv_ctx.cursor, false);
@@ -597,7 +598,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 			if (((u32)get_tmr_ms() - jc_drv_ctx.cursor_timeout) > 3000)
 			{
 				// Remove cursor and hide it.
-				lv_indev_set_cursor(jc_drv_ctx.indev, NULL);
+				lv_indev_set_cursor(jc_drv_ctx.indev_jc, NULL);
 				lv_obj_set_opa_scale_enable(jc_drv_ctx.cursor, true);
 				lv_obj_set_opa_scale(jc_drv_ctx.cursor, LV_OPA_TRANSP);
 
@@ -2428,7 +2429,7 @@ void nyx_load_and_run()
 	indev_drv_jc.type = LV_INDEV_TYPE_POINTER;
 	indev_drv_jc.read = _jc_virt_mouse_read;
 	memset(&jc_drv_ctx, 0, sizeof(jc_lv_driver_t));
-	jc_drv_ctx.indev = lv_indev_drv_register(&indev_drv_jc);
+	jc_drv_ctx.indev_jc = lv_indev_drv_register(&indev_drv_jc);
 	close_btn = NULL;
 
 	// Initialize touch.
@@ -2437,7 +2438,7 @@ void nyx_load_and_run()
 	lv_indev_drv_init(&indev_drv_touch);
 	indev_drv_touch.type = LV_INDEV_TYPE_POINTER;
 	indev_drv_touch.read = _fts_touch_read;
-	lv_indev_drv_register(&indev_drv_touch);
+	jc_drv_ctx.indev_touch = lv_indev_drv_register(&indev_drv_touch);
 	touchpad.touch = false;
 
 	// Initialize temperature sensor.
