@@ -40,7 +40,7 @@
 #define GPU_USER_BASE    0x58000000
 #define RES_SEMAPH_BASE  0x60001000
 #define ARB_SEMAPH_BASE  0x60002000
-#define ARBPRI_BASE      0x60003000
+#define ARB_PRI_BASE     0x60003000
 #define ICTLR_BASE       0x60004000
 #define TMR_BASE         0x60005000
 #define CLOCK_BASE       0x60006000
@@ -112,6 +112,7 @@
 #define SOR1(off)            MMIO_REG32(SOR1_BASE, off)
 #define GPU(off)             MMIO_REG32(GPU_BASE, off)
 #define GPU_USER(off)        MMIO_REG32(GPU_USER_BASE, off)
+#define ARB_PRI(off)         MMIO_REG32(ARB_PRI_BASE, off)
 #define ICTLR(cidx, off)     MMIO_REG32(ICTLR_BASE + (0x100 * (cidx)), off)
 #define TMR(off)             MMIO_REG32(TMR_BASE, off)
 #define CLOCK(off)           MMIO_REG32(CLOCK_BASE, off)
@@ -174,6 +175,7 @@
 #define EVP_COP_IRQ_STS               0x220
 
 /*! Primary Interrupt Controller registers. */
+#define PRI_ICTLR_ISR           0x10
 #define PRI_ICTLR_FIR           0x14
 #define PRI_ICTLR_FIR_SET       0x18
 #define PRI_ICTLR_FIR_CLR       0x1C
@@ -185,6 +187,13 @@
 #define PRI_ICTLR_COP_IER_SET   0x34
 #define PRI_ICTLR_COP_IER_CLR   0x38
 #define PRI_ICTLR_COP_IEP_CLASS 0x3C
+
+/* Arbiter registers */
+#define ARB_PRIO_CPU_PRIORITY 0x0
+#define ARB_PRIO_COP_PRIORITY 0x4
+#define ARB_PRIO_VCP_PRIORITY 0x8
+#define ARB_PRIO_DMA_PRIORITY 0xC
+#define ARB_PRIO_UCQ_PRIORITY 0x10
 
 /*! AHB Gizmo registers. */
 #define AHB_ARBITRATION_PRIORITY_CTRL        0x8
