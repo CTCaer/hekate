@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -77,6 +77,7 @@
 #define DC_CMD_INT_ENABLE 0x39
 #define  DC_CMD_INT_FRAME_END_INT BIT(1)
 #define  DC_CMD_INT_V_BLANK_INT   BIT(2)
+#define DC_CMD_INT_POLARITY 0x3B
 
 #define DC_CMD_STATE_ACCESS 0x40
 #define  READ_MUX  BIT(0)
@@ -136,6 +137,31 @@
 #define DC_COM_PIN_OUTPUT_ENABLE(x) (0x302 + (x))
 #define DC_COM_PIN_OUTPUT_POLARITY(x) (0x306 + (x))
 #define  LSC0_OUTPUT_POLARITY_LOW BIT(24)
+
+// CMU registers.
+#define DC_COM_CMU_CSC_KRR    0x32A
+#define DC_COM_CMU_CSC_KGR    0x32B
+#define DC_COM_CMU_CSC_KBR    0x32C
+#define DC_COM_CMU_CSC_KRG    0x32D
+#define DC_COM_CMU_CSC_KGG    0x32E
+#define DC_COM_CMU_CSC_KBG    0x32F
+#define DC_COM_CMU_CSC_KRB    0x330
+#define DC_COM_CMU_CSC_KGB    0x331
+#define DC_COM_CMU_CSC_KBB    0x332
+#define DC_COM_CMU_LUT1       0x336
+#define  LUT1_ADDR(x)      ((x) & 0xFF)
+#define  LUT1_DATA(x)      (((x) & 0xFFF) << 16)
+#define  LUT1_READ_DATA(x) (((x) >> 16) & 0xFFF)
+#define DC_COM_CMU_LUT2       0x337
+#define  LUT2_ADDR(x)      ((x) & 0x3FF)
+#define  LUT2_DATA(x)      (((x) & 0xFF) << 16)
+#define  LUT2_READ_DATA(x) (((x) >> 16) & 0xFF)
+#define DC_COM_CMU_LUT1_READ  0x338
+#define  LUT1_READ_ADDR(x) (((x) & 0xFF) << 8)
+#define  LUT1_READ_EN      BIT(0)
+#define DC_COM_CMU_LUT2_READ  0x339
+#define  LUT2_READ_ADDR(x) (((x) & 0x3FF) << 8)
+#define  LUT2_READ_EN      BIT(0)
 
 #define DC_COM_DSC_TOP_CTL 0x33E
 
@@ -207,11 +233,7 @@
 #define  DISP_ORDER_BLUE_RED        (1 << 9)
 
 #define DC_DISP_DISP_COLOR_CONTROL 0x430
-#define  DITHER_CONTROL_MASK    (3 << 8)
-#define  DITHER_CONTROL_DISABLE (0 << 8)
-#define  DITHER_CONTROL_ORDERED (2 << 8)
-#define  DITHER_CONTROL_ERRDIFF (3 << 8)
-#define  BASE_COLOR_SIZE_MASK   (0xf << 0)
+#define  BASE_COLOR_SIZE_MASK   (0xF << 0)
 #define  BASE_COLOR_SIZE_666    (0 << 0)
 #define  BASE_COLOR_SIZE_111    (1 << 0)
 #define  BASE_COLOR_SIZE_222    (2 << 0)
@@ -221,6 +243,13 @@
 #define  BASE_COLOR_SIZE_565    (6 << 0)
 #define  BASE_COLOR_SIZE_332    (7 << 0)
 #define  BASE_COLOR_SIZE_888    (8 << 0)
+#define  DITHER_CONTROL_MASK    (3 << 8)
+#define  DITHER_CONTROL_DISABLE (0 << 8)
+#define  DITHER_CONTROL_ORDERED (2 << 8)
+#define  DITHER_CONTROL_ERRDIFF (3 << 8)
+#define  DISP_COLOR_SWAP        BIT(16)
+#define  BLANK_COLOR_WHITE      BIT(17)
+#define  CMU_ENABLE             BIT(20)
 
 #define DC_DISP_SHIFT_CLOCK_OPTIONS 0x431
 #define  SC0_H_QUALIFIER_NONE	BIT(0)
@@ -273,6 +302,10 @@
 #define  COLOR_PALETTE_RGB(rgb) (byte_swap_32(rgb) >> 8)
 #define DC_WINC_PALETTE_COLOR_EXT 0x600
 
+#define DC_WINC_H_FILTER_P(p) (0x601 + (p))
+#define DC_WINC_V_FILTER_P(p) (0x619 + (p))
+#define DC_WINC_H_FILTER_HI_P(p) (0x629 + (p))
+
 #define DC_WINC_CSC_YOF 0x611
 #define DC_WINC_CSC_KYRGB 0x612
 #define DC_WINC_CSC_KUR 0x613
@@ -291,10 +324,13 @@
 #define  V_DIRECTION          BIT(2)
 #define  SCAN_COLUMN          BIT(4)
 #define  COLOR_EXPAND         BIT(6)
+#define  H_FILTER_ENABLE      BIT(8)
+#define  V_FILTER_ENABLE      BIT(10)
 #define  COLOR_PALETTE_ENABLE BIT(16)
 #define  CSC_ENABLE           BIT(18)
 #define  DV_ENABLE            BIT(20)
 #define  WIN_ENABLE           BIT(30)
+#define  H_FILTER_EXPAND      BIT(31)
 
 #define DC_WIN_BUFFER_CONTROL 0x702
 #define  BUFFER_CONTROL_HOST  0
