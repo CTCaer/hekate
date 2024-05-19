@@ -431,7 +431,7 @@ static lv_res_t _action_ums_emmc_boot0(lv_obj_t *btn)
 	usbs.type = MMC_EMMC;
 	usbs.partition = EMMC_BOOT0 + 1;
 	usbs.offset = 0;
-	usbs.sectors = 0x2000;
+	usbs.sectors = 0;
 	usbs.ro = usb_msc_emmc_read_only;
 	usbs.system_maintenance = &manual_system_maintenance;
 	usbs.set_text = &usb_gadget_set_text;
@@ -450,7 +450,7 @@ static lv_res_t _action_ums_emmc_boot1(lv_obj_t *btn)
 	usbs.type = MMC_EMMC;
 	usbs.partition = EMMC_BOOT1 + 1;
 	usbs.offset = 0;
-	usbs.sectors = 0x2000;
+	usbs.sectors = 0;
 	usbs.ro = usb_msc_emmc_read_only;
 	usbs.system_maintenance = &manual_system_maintenance;
 	usbs.set_text = &usb_gadget_set_text;
@@ -516,7 +516,7 @@ static lv_res_t _action_ums_emuemmc_boot0(lv_obj_t *btn)
 	{
 		usbs.type = MMC_SD;
 		usbs.partition = EMMC_BOOT0 + 1;
-		usbs.sectors = 0x2000;
+		usbs.sectors = 0x2000; // Forced 4MB.
 		usbs.ro = usb_msc_emmc_read_only;
 		usbs.system_maintenance = &manual_system_maintenance;
 		usbs.set_text = &usb_gadget_set_text;
@@ -563,7 +563,7 @@ static lv_res_t _action_ums_emuemmc_boot1(lv_obj_t *btn)
 	{
 		usbs.type = MMC_SD;
 		usbs.partition = EMMC_BOOT1 + 1;
-		usbs.sectors = 0x2000;
+		usbs.sectors = 0x2000; // Forced 4MB.
 		usbs.ro = usb_msc_emmc_read_only;
 		usbs.system_maintenance = &manual_system_maintenance;
 		usbs.set_text = &usb_gadget_set_text;
