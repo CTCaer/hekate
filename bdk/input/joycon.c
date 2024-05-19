@@ -234,7 +234,7 @@ typedef struct _jc_hid_in_rpt_t
 	u8 stick_h_right;
 	u8 stick_m_right;
 	u8 stick_v_right;
-	u8 vib_decider; // right:8, left:8. (bit3 en, bit2-0 buffer avail).
+	u8 vib_decider; // right:4, left:4 (bit3 en, bit2-0 buffer avail).
 	u8 submcd_ack;
 	u8 subcmd;
 	u8 subcmd_data[];
@@ -606,7 +606,7 @@ static void _jc_charging_decider(u8 batt, u8 uart)
 		_jc_power_supply(uart, false);
 }
 
-static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
+static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
 {
 	u32 btn_tmp;
 	jc_hid_in_rpt_t *hid_pkt = (jc_hid_in_rpt_t *)packet;
@@ -614,7 +614,14 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
 	switch (hid_pkt->cmd)
 	{
 	case JC_HORI_INPUT_RPT:
+		if (!(jc->type & JC_ID_HORI))
+			return;
+
 	case JC_HID_INPUT_RPT:
+		// Discard incomplete hid packets.
+		if (size < 12)
+			break;
+
 		btn_tmp = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
 
 		if (jc->type & JC_ID_L)
@@ -674,8 +681,12 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8* packet, u32 size)
 	}
 }
 
-static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8* data, u32 size)
+static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8 *data, int size)
 {
+	// Discard empty packets.
+	if (size <= 0)
+		return;
+
 	switch (data[0])
 	{
 	case JC_WIRED_CMD_GET_INFO:
@@ -698,13 +709,13 @@ static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8* data, u32 size)
 	}
 }
 
-static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, size_t size)
+static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int size)
 {
 	switch (pkt->cmd)
 	{
 	case JC_HORI_INPUT_RPT_CMD:
 	case JC_WIRED_HID:
-		_jc_parse_wired_hid(jc, pkt->payload, (pkt->data[0] << 8) | pkt->data[1]);
+		_jc_parse_wired_hid(jc, pkt->payload, size - sizeof(jc_wired_hdr_t));
 		break;
 	case JC_WIRED_INIT_REPLY:
 		_jc_parse_wired_init(jc, pkt->data, size - sizeof(jc_uart_hdr_t) - 1);
@@ -719,11 +730,15 @@ static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, siz
 	jc->last_received_time = get_tmr_ms();
 }
 
-static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8* payload, u32 size)
+static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8 *payload, int size)
 {
 	switch (cmd)
 	{
 	case JC_SIO_CMD_STATUS:
+		// Discard incomplete packets.
+		if (size < 12)
+			break;
+
 		jc_sio_hid_in_rpt_t *hid_pkt = (jc_sio_hid_in_rpt_t *)payload;
 		jc_gamepad.buttons = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
 		jc_gamepad.home    = !gpio_read(GPIO_PORT_V, GPIO_PIN_3);
@@ -744,7 +759,7 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8* payload, 
 	}
 }
 
-static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt, u32 size)
+static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt, int size)
 {
 	if (pkt->crc_hdr != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1, 0))
 		return;
@@ -761,7 +776,7 @@ static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt
 		break;
 	case JC_SIO_CMD_IAP_VER:
 	case JC_SIO_CMD_STATUS:
-		_jc_sio_parse_payload(jc, cmd, pkt->payload, pkt->payload_size);
+		_jc_sio_parse_payload(jc, cmd, pkt->payload, size - sizeof(jc_sio_in_rpt_t));
 		break;
 	case JC_SIO_CMD_UNK02:
 	case JC_SIO_CMD_UNK20:
@@ -788,7 +803,7 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	jc_wired_hdr_t *jc_pkt = (jc_wired_hdr_t *)jc->buf;
 	if (!jc->sio_mode && !memcmp(jc_pkt->uart_hdr.magic, "\x19\x81\x03", 3))
 	{
-		_jc_uart_pkt_parse(jc, jc_pkt, jc_pkt->uart_hdr.total_size_lsb + sizeof(jc_uart_hdr_t));
+		_jc_uart_pkt_parse(jc, jc_pkt, len);
 
 		return;
 	}
@@ -797,7 +812,7 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	jc_sio_in_rpt_t *sio_pkt = (jc_sio_in_rpt_t *)(jc->buf);
 	if (jc->sio_mode && sio_pkt->cmd == JC_SIO_INPUT_RPT && (sio_pkt->ack & JC_SIO_CMD_ACK) == JC_SIO_CMD_ACK)
 	{
-		_jc_sio_uart_pkt_parse(jc, sio_pkt, sio_pkt->payload_size + sizeof(jc_sio_in_rpt_t));
+		_jc_sio_uart_pkt_parse(jc, sio_pkt, len);
 
 		return;
 	}
