@@ -1151,7 +1151,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	_l4t_mc_config_carveout(t210b01);
 
 	// Deinit any unneeded HW.
-	hw_reinit_workaround(false, BL_MAGIC_L4TLDR_SLD);
+	hw_deinit(false, BL_MAGIC_L4TLDR_SLD);
 
 	// Do late hardware config.
 	_l4t_late_hw_config(t210b01);

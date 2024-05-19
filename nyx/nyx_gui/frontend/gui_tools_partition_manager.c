@@ -985,7 +985,7 @@ static lv_res_t _action_reboot_recovery(lv_obj_t * btns, const char * txt)
 
 		// Deinit hardware.
 		sd_end();
-		hw_reinit_workaround(false, 0);
+		hw_deinit(false, 0);
 
 		// Chainload to hekate main.
 		(*main_ptr)();

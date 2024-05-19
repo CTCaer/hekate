@@ -923,7 +923,7 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 
 	sd_end();
 
-	hw_reinit_workaround(false, 0);
+	hw_deinit(false, 0);
 
 	(*main_ptr)();
 }
@@ -939,10 +939,7 @@ void reload_nyx()
 
 	sd_end();
 
-	hw_reinit_workaround(false, 0);
-
-	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-	sdmmc_storage_init_wait_sd();
+	hw_deinit(false, 0);
 
 	(*main_ptr)();
 }

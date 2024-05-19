@@ -252,7 +252,7 @@ static void _launch_payload(char *path, bool update, bool clear_screen)
 		else
 			_reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
-		hw_reinit_workaround(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
+		hw_deinit(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
 	}
 	else
 	{
@@ -262,7 +262,7 @@ static void _launch_payload(char *path, bool update, bool clear_screen)
 		u32 magic = 0;
 		char *magic_ptr = buf + COREBOOT_VER_OFF;
 		memcpy(&magic, magic_ptr + strlen(magic_ptr) - 4, 4);
-		hw_reinit_workaround(true, magic);
+		hw_deinit(true, magic);
 	}
 
 	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
@@ -1372,7 +1372,7 @@ static void _r2p_get_config_t210b01()
 
 static void _ipl_reload()
 {
-	hw_reinit_workaround(false, 0);
+	hw_deinit(false, 0);
 
 	// Reload hekate.
 	void (*ipl_ptr)() = (void *)IPL_LOAD_ADDR;
