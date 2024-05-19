@@ -436,7 +436,7 @@ void hw_init()
 	clock_enable_host1x();
 }
 
-void hw_reinit_workaround(bool coreboot, u32 bl_magic)
+void hw_deinit(bool coreboot, u32 bl_magic)
 {
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 

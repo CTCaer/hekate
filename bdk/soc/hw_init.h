@@ -27,7 +27,7 @@ extern u32 hw_rst_status;
 extern u32 hw_rst_reason;
 
 void hw_init();
-void hw_reinit_workaround(bool coreboot, u32 magic);
+void hw_deinit(bool coreboot, u32 magic);
 void hw_config_arbiter(bool reset);
 u32  hw_get_chip_id();
 

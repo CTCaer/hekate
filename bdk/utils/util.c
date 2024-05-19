@@ -262,7 +262,7 @@ void power_set_state(power_state_t state)
 	sd_end();
 
 	// De-initialize and power down various hardware.
-	hw_reinit_workaround(false, 0);
+	hw_deinit(false, 0);
 
 	// Set power state.
 	switch (state)
