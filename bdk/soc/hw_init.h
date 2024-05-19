@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -28,6 +28,7 @@ extern u32 hw_rst_reason;
 
 void hw_init();
 void hw_reinit_workaround(bool coreboot, u32 magic);
+void hw_config_arbiter(bool reset);
 u32  hw_get_chip_id();
 
 #endif

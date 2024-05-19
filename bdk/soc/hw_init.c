@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -91,6 +91,24 @@ static void _config_oscillators()
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY)  = 0x20004444; // Set BPMP/SCLK source to Run and PLLP_OUT2 (204MHz).
 	CLOCK(CLK_RST_CONTROLLER_SUPER_SCLK_DIVIDER) = 0x80000000; // Enable SUPER_SDIV to 1.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE)    = 2;          // Set HCLK div to 1 and PCLK div to 3.
+}
+
+void hw_config_arbiter(bool reset)
+{
+	if (reset)
+	{
+		ARB_PRI(ARB_PRIO_CPU_PRIORITY) = 0x0040090;
+		ARB_PRI(ARB_PRIO_COP_PRIORITY) = 0x12024C2;
+		ARB_PRI(ARB_PRIO_VCP_PRIORITY) = 0x2201209;
+		ARB_PRI(ARB_PRIO_DMA_PRIORITY) = 0x320365B;
+	}
+	else
+	{
+		ARB_PRI(ARB_PRIO_CPU_PRIORITY) = 0x12412D1;
+		ARB_PRI(ARB_PRIO_COP_PRIORITY) = 0x0000000;
+		ARB_PRI(ARB_PRIO_VCP_PRIORITY) = 0x220244A;
+		ARB_PRI(ARB_PRIO_DMA_PRIORITY) = 0x320369B;
+	}
 }
 
 // The uart is skipped for Copper, Hoag and Calcio. Used in Icosa, Iowa and Aula.
@@ -406,6 +424,9 @@ void hw_init()
 		PMC(APBDEV_PMC_TZRAM_SEC_DISABLE)     = PMC_TZRAM_DISABLE_REG_WRITE | PMC_TZRAM_DISABLE_REG_READ;
 	}
 
+	// Set arbiter.
+	hw_config_arbiter(false);
+
 	// Initialize External memory controller and configure DRAM parameters.
 	sdram_init();
 
@@ -438,6 +459,9 @@ void hw_reinit_workaround(bool coreboot, u32 bl_magic)
 
 	// Flush/disable MMU cache.
 	bpmp_mmu_disable();
+
+	// Reset arbiter.
+	hw_config_arbiter(true);
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
 	if (tegra_t210)
