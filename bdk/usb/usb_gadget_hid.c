@@ -71,6 +71,12 @@ typedef struct _jc_cal_t
 	u16 cry_min;
 } jc_cal_t;
 
+enum {
+	INPUT_POLL_HAS_PACKET,
+	INPUT_POLL_NO_PACKET,
+	INPUT_POLL_EXIT,
+};
+
 static jc_cal_t jc_cal_ctx;
 static usb_ops_t usb_ops;
 
@@ -119,22 +125,24 @@ static bool _jc_calibration(jc_gamepad_rpt_t *jc_pad)
 	return true;
 }
 
-static bool _jc_poll(gamepad_report_t *rpt)
+static int _jc_poll(gamepad_report_t *rpt)
 {
+	static gamepad_report_t prev_rpt = {0};
+
 	// Poll Joy-Con.
 	jc_gamepad_rpt_t *jc_pad = joycon_poll();
 
 	if (!jc_pad)
-		return false;
+		return INPUT_POLL_NO_PACKET;
 
 	// Exit emulation if Left stick and Home are pressed.
 	if (jc_pad->l3 && jc_pad->home)
-		return true;
+		return INPUT_POLL_EXIT;
 
 	if (jc_cal_ctx.cl_step != JC_CAL_MAX_STEPS || jc_cal_ctx.cr_step != JC_CAL_MAX_STEPS)
 	{
 		if (!_jc_calibration(jc_pad))
-			return false;
+			return INPUT_POLL_NO_PACKET;
 	}
 
 	// Re-calibrate on disconnection.
@@ -282,7 +290,12 @@ static bool _jc_poll(gamepad_report_t *rpt)
 	//rpt->btn13 = jc_pad->cap;
 	//rpt->btn14 = jc_pad->home;
 
-	return false;
+	if (!memcmp(rpt, &prev_rpt, sizeof(gamepad_report_t)))
+		return INPUT_POLL_NO_PACKET;
+
+	memcpy(&prev_rpt, rpt, sizeof(gamepad_report_t));
+
+	return INPUT_POLL_HAS_PACKET;
 }
 
 typedef struct _touchpad_report_t
@@ -351,12 +364,14 @@ static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 
 static bool _hid_poll_jc(usb_ctxt_t *usbs)
 {
-	if (_jc_poll((gamepad_report_t *)USB_EP_BULK_IN_BUF_ADDR))
+	int res = _jc_poll((gamepad_report_t *)USB_EP_BULK_IN_BUF_ADDR);
+	if (res == INPUT_POLL_EXIT)
 		return true;
 
 	// Send HID report.
-	if (_hid_transfer_start(usbs, sizeof(gamepad_report_t)))
-		return true; // EP Error.
+	if (res == INPUT_POLL_HAS_PACKET)
+		if (_hid_transfer_start(usbs, sizeof(gamepad_report_t)))
+			return true; // EP Error.
 
 	return false;
 }
