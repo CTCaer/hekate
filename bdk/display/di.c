@@ -870,7 +870,7 @@ u32 *display_init_framebuffer_pitch()
 	memset((u32 *)IPL_FB_ADDRESS, 0, IPL_FB_SZ);
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch, ARRAY_SIZE(_di_win_framebuffer_pitch));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_winA_pitch, ARRAY_SIZE(_di_winA_pitch));
 	//usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
@@ -881,7 +881,7 @@ u32 *display_init_framebuffer_pitch_vic()
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		usleep(8000); // Wait half frame for PWM to apply.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_vic, ARRAY_SIZE(_di_win_framebuffer_pitch_vic));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_winA_pitch_vic, ARRAY_SIZE(_di_winA_pitch_vic));
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		usleep(35000); // Wait 2 frames.
 
@@ -891,7 +891,7 @@ u32 *display_init_framebuffer_pitch_vic()
 u32 *display_init_framebuffer_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_inv, ARRAY_SIZE(_di_win_framebuffer_pitch_inv));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_winA_pitch_inv, ARRAY_SIZE(_di_winA_pitch_inv));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
@@ -900,7 +900,7 @@ u32 *display_init_framebuffer_pitch_inv()
 u32 *display_init_framebuffer_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_block, ARRAY_SIZE(_di_win_framebuffer_block));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_winA_block, ARRAY_SIZE(_di_winA_block));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
@@ -909,7 +909,7 @@ u32 *display_init_framebuffer_block()
 u32 *display_init_framebuffer_log()
 {
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_log, ARRAY_SIZE(_di_win_framebuffer_log));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_winD_log, ARRAY_SIZE(_di_winD_log));
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }

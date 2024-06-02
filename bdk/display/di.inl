@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2022 CTCaer
+* Copyright (c) 2018-2024 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -479,7 +479,7 @@ static const cfg_op_t _di_win_one_color[] = {
 };
 
 // Display A Window A linear pitch config.
-static const cfg_op_t _di_win_framebuffer_pitch[] = {
+static const cfg_op_t _di_winA_pitch[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_C_SELECT | WINDOW_B_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
@@ -505,7 +505,7 @@ static const cfg_op_t _di_win_framebuffer_pitch[] = {
 };
 
 // Display A Window A linear pitch + Win D support config.
-static const cfg_op_t _di_win_framebuffer_pitch_vic[] = {
+static const cfg_op_t _di_winA_pitch_vic[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT | WINDOW_C_SELECT | WINDOW_B_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
@@ -531,7 +531,7 @@ static const cfg_op_t _di_win_framebuffer_pitch_vic[] = {
 };
 
 // Display A Window A linear pitch inverse + Win D support config.
-static const cfg_op_t _di_win_framebuffer_pitch_inv[] = {
+static const cfg_op_t _di_winA_pitch_inv[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT | WINDOW_C_SELECT | WINDOW_B_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
@@ -557,7 +557,7 @@ static const cfg_op_t _di_win_framebuffer_pitch_inv[] = {
 };
 
 // Display A Window A block linear config.
-static const cfg_op_t _di_win_framebuffer_block[] = {
+static const cfg_op_t _di_winA_block[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT | WINDOW_C_SELECT | WINDOW_B_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
@@ -583,7 +583,7 @@ static const cfg_op_t _di_win_framebuffer_block[] = {
 };
 
 // Display A Window D config.
-static const cfg_op_t _di_win_framebuffer_log[] = {
+static const cfg_op_t _di_winD_log[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8},
