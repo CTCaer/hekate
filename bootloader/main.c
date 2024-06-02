@@ -265,15 +265,17 @@ static void _launch_payload(char *path, bool update, bool clear_screen)
 		hw_deinit(true, magic);
 	}
 
-	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-	sdmmc_storage_init_wait_sd();
-
 	void (*update_ptr)()      = (void *)RCM_PAYLOAD_ADDR;
 	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
 
 	// Launch our payload.
 	if (!update)
+	{
+		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
+		sdmmc_storage_init_wait_sd();
+
 		(*ext_payload_ptr)();
+	}
 	else
 	{
 		// Set updated flag to skip check on launch.
