@@ -69,7 +69,7 @@ static const cfg_op_t _di_dc_setup_win_config[] = {
 };
 
 // DSI Init config.
-static const cfg_op_t _di_dsi_init_irq_pkt_config0[] = {
+static const cfg_op_t _di_dsi_init_config0[] = {
 	{DSI_WR_DATA, 0},
 	{DSI_INT_ENABLE, 0},
 	{DSI_INT_STATUS, 0},
@@ -79,7 +79,7 @@ static const cfg_op_t _di_dsi_init_irq_pkt_config0[] = {
 	{DSI_INIT_SEQ_DATA_2, 0},
 	{DSI_INIT_SEQ_DATA_3, 0}
 };
-static const cfg_op_t _di_dsi_init_irq_pkt_config1[] = {
+static const cfg_op_t _di_dsi_init_config1[] = {
 	{DSI_DCS_CMDS, 0},
 	{DSI_PKT_SEQ_0_LO, 0},
 	{DSI_PKT_SEQ_1_LO, 0},
@@ -104,7 +104,7 @@ static const cfg_op_t _di_dsi_init_pads_t210b01[] = {
 	{DSI_PAD_CONTROL_6_B01, 0},
 	{DSI_PAD_CONTROL_7_B01, 0}
 };
-static const cfg_op_t _di_dsi_init_timing_pkt_config2[] = {
+static const cfg_op_t _di_dsi_init_config2[] = {
 	{DSI_PAD_CONTROL_CD, 0},
 	{DSI_SOL_DELAY,     24},
 	{DSI_MAX_THRESHOLD, 480},
@@ -114,23 +114,21 @@ static const cfg_op_t _di_dsi_init_timing_pkt_config2[] = {
 	{DSI_PKT_LEN_2_3, 0},
 	{DSI_PKT_LEN_4_5, 0},
 	{DSI_PKT_LEN_6_7, 0},
-	{DSI_PAD_CONTROL_1, 0}
-};
-static const cfg_op_t _di_dsi_init_timing_pwrctrl_config[] = {
+	{DSI_PAD_CONTROL_1, 0},
+	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30109},
 	{DSI_BTA_TIMING,   0x190A14},
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
 	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x765)   | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
-	{DSI_PAD_CONTROL_0, DSI_PAD_CONTROL_VS1_PULLDN(0) | DSI_PAD_CONTROL_VS1_PDIO(0)}, // Enable
+	{DSI_PAD_CONTROL_0, DSI_PAD_CONTROL_VS1_PULLDN(0) | DSI_PAD_CONTROL_VS1_PDIO(0)}, // Power up.
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, 0},
 	{DSI_POWER_CONTROL, 0},
-	{DSI_PAD_CONTROL_1, 0}
-};
-static const cfg_op_t _di_dsi_init_timing_pkt_config3[] = {
+	{DSI_PAD_CONTROL_1, 0},
+	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
 	{DSI_BTA_TIMING,   0x190A14},
@@ -196,6 +194,8 @@ static const cfg_op_t _di_dsi_panel_init_config_jdi[] = {
 
 // DSI packet config.
 static const cfg_op_t _di_dsi_init_seq_pkt_final_config[] = {
+	{DSI_PAD_CONTROL_1, 0},
+	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30172},
 	{DSI_BTA_TIMING,   0x190A14},
@@ -380,7 +380,7 @@ static const cfg_op_t _di_dc_video_disable_config[] = {
 static const cfg_op_t _di_dsi_timing_deinit_config[] = {
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0},
-	{DSI_PHY_TIMING_0, 0x6070601}, //mariko changes
+	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
 	{DSI_BTA_TIMING,   0x190A14},

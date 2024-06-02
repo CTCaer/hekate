@@ -451,23 +451,16 @@ void display_init()
 	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, ARRAY_SIZE(_di_dc_setup_win_config));
 
 	// Setup dsi init sequence packets.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config0,  ARRAY_SIZE(_di_dsi_init_irq_pkt_config0));
-	if (tegra_t210)
-		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15)) = 0;
-	else
-		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15_B01)) = 0;
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config1,  ARRAY_SIZE(_di_dsi_init_irq_pkt_config1));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_config0,  ARRAY_SIZE(_di_dsi_init_config0));
+	DSI(_DSIREG(tegra_t210 ? DSI_INIT_SEQ_DATA_15 : DSI_INIT_SEQ_DATA_15_B01)) = 0;
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_config1,  ARRAY_SIZE(_di_dsi_init_config1));
 
 	// Reset pad trimmers for T210B01.
 	if (!tegra_t210)
 		exec_cfg((u32 *)DSI_BASE, _di_dsi_init_pads_t210b01, ARRAY_SIZE(_di_dsi_init_pads_t210b01));
 
-	// Setup init sequence packets and timings.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pkt_config2, ARRAY_SIZE(_di_dsi_init_timing_pkt_config2));
-	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603; // DSI_THSPREPR: 1 : 3.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pwrctrl_config, ARRAY_SIZE(_di_dsi_init_timing_pwrctrl_config));
-	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603; // DSI_THSPREPR: 1 : 3.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pkt_config3, ARRAY_SIZE(_di_dsi_init_timing_pkt_config3));
+	// Setup init sequence packets, timings and power on DSI.
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_config2, ARRAY_SIZE(_di_dsi_init_config2));
 	usleep(10000);
 
 	// Enable LCD Reset.
@@ -578,8 +571,6 @@ void display_init()
 	clock_enable_plld(1, 24, false, tegra_t210);
 
 	// Finalize DSI init packet sequence configuration.
-	DSI(_DSIREG(DSI_PAD_CONTROL_1)) = 0;
-	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603;
 	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_seq_pkt_final_config, ARRAY_SIZE(_di_dsi_init_seq_pkt_final_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
@@ -590,7 +581,7 @@ void display_init()
 	usleep(10000);
 
 	// Calibrate display communication pads.
-	u32 loops = tegra_t210 ? 1 : 2; // Calibrate pads 2 times on T210B01.
+	const u32 loops = tegra_t210 ? 1 : 2; // Calibrate pads 2 times on T210B01.
 	exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, ARRAY_SIZE(_di_mipi_pad_cal_config));
 	for (u32 i = 0; i < loops; i++)
 	{
@@ -624,6 +615,7 @@ void display_backlight_pwm_init()
 	if (_display_id == PANEL_SAM_AMS699VC01)
 		return;
 
+	// Enable PWM clock.
 	clock_enable_pwm();
 
 	// Enable PWM and set it to 25KHz PFM. 29.5KHz is stock.
