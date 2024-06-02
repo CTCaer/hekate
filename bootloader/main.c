@@ -1513,6 +1513,9 @@ void ipl_main()
 	// Initialize display.
 	display_init();
 
+	// Overclock BPMP.
+	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
+
 	// Mount SD Card.
 	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
 
@@ -1541,11 +1544,9 @@ skip_lp0_minerva_config:
 	gfx_init_ctxt(fb, 720, 1280, 720);
 	gfx_con_init();
 
+	// Initialize backlight PWM.
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
-
-	// Overclock BPMP.
-	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
 
 	// Get R2P config from RTC.
 	if (h_cfg.t210b01)
