@@ -1,7 +1,7 @@
 /*
  * BPMP-Lite Cache/MMU and Frequency driver for Tegra X1
  *
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -200,10 +200,44 @@ void bpmp_mmu_disable()
 	BPMP_CACHE_CTRL(BPMP_CACHE_CONFIG) = 0;
 }
 
+
+/*
+ * CLK_RST_CONTROLLER_SCLK_BURST_POLICY:
+ * 0 = CLKM
+ * 1 = PLLC_OUT1
+ * 2 = PLLC4_OUT3
+ * 3 = PLLP_OUT0
+ * 4 = PLLP_OUT2
+ * 5 = PLLC4_OUT1
+ * 6 = CLK_S
+ * 7 = PLLC4_OUT2
+ */
+
+bpmp_freq_t bpmp_fid_current = BPMP_CLK_NORMAL;
+
+void bpmp_clk_rate_relaxed(bool enable)
+{
+	// This is a glitch-free way to reduce the SCLK timings.
+	if (enable)
+	{
+		// Restore to PLLP source during PLLC configuration.
+		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003330; // PLLP_OUT.
+		usleep(100); // Wait a bit for clock source change.
+		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / (2 + 1). HCLK == SCLK.
+	}
+	else if (bpmp_fid_current)
+	{
+		// Restore to PLLC_OUT1.
+		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / (3 + 1). HCLK == SCLK.
+		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003310; // PLLC_OUT1 and CLKM for idle.
+		usleep(100); // Wait a bit for clock source change.
+	}
+}
+
 // APB clock affects RTC, PWM, MEMFETCH, APE, USB, SOR PWM,
 // I2C host, DC/DSI/DISP. UART gives extra stress.
 // 92: 100% success ratio. 93-94: 595-602MHz has 99% success ratio. 95: 608MHz less.
-const u8 pll_divn[] = {
+static const u8 pll_divn[] = {
 	0,   // BPMP_CLK_NORMAL:      408MHz  0% - 136MHz APB.
 	85,  // BPMP_CLK_HIGH_BOOST:  544MHz 33% - 136MHz APB.
 	88,  // BPMP_CLK_HIGH2_BOOST: 563MHz 38% - 141MHz APB.
@@ -212,8 +246,6 @@ const u8 pll_divn[] = {
 	// Do not use for public releases!
 	//95   // BPMP_CLK_DEV_BOOST: 608MHz 49% - 152MHz APB.
 };
-
-bpmp_freq_t bpmp_fid_current = BPMP_CLK_NORMAL;
 
 void bpmp_clk_rate_get()
 {
@@ -237,45 +269,35 @@ void bpmp_clk_rate_get()
 	}
 }
 
-bpmp_freq_t bpmp_clk_rate_set(bpmp_freq_t fid)
+void bpmp_clk_rate_set(bpmp_freq_t fid)
 {
-	bpmp_freq_t prev_fid = bpmp_fid_current;
-
 	if (fid > (BPMP_CLK_MAX - 1))
 		fid = BPMP_CLK_MAX - 1;
 
-	if (prev_fid == fid)
-		return prev_fid;
+	if (bpmp_fid_current == fid)
+		return;
+
+	bpmp_fid_current = fid;
 
 	if (fid)
 	{
-		if (prev_fid)
-		{
-			// Restore to PLLP source during PLLC configuration.
-			CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333; // PLLP_OUT.
-			msleep(1); // Wait a bit for clock source change.
-		}
+		// Use default SCLK / HCLK / PCLK clocks.
+		bpmp_clk_rate_relaxed(true);
 
 		// Configure and enable PLLC.
 		clock_enable_pllc(pll_divn[fid]);
 
-		// Set SCLK / HCLK / PCLK.
-		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / (3 + 1). HCLK == SCLK.
-		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003310; // PLLC_OUT1 for active and CLKM for idle.
+		// Set new source and SCLK / HCLK / PCLK dividers.
+		bpmp_clk_rate_relaxed(false);
 	}
 	else
 	{
-		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003330; // PLLP_OUT for active and CLKM for idle.
-		msleep(1); // Wait a bit for clock source change.
-		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / (2 + 1). HCLK == SCLK.
+		// Use default SCLK / HCLK / PCLK clocks.
+		bpmp_clk_rate_relaxed(true);
 
 		// Disable PLLC to save power.
 		clock_disable_pllc();
 	}
-	bpmp_fid_current = fid;
-
-	// Return old fid in case of temporary swap.
-	return prev_fid;
 }
 
 // The following functions halt BPMP to reduce power while sleeping.

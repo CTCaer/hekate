@@ -1215,16 +1215,10 @@ void jc_init_hw()
 		pinmux_config_uart(UART_B);
 	pinmux_config_uart(UART_C);
 
-	// Ease the stress to APB.
-	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-
 	// Enable UART B and C clocks.
 	if (!jc_gamepad.sio_mode)
 		clock_enable_uart(UART_B);
 	clock_enable_uart(UART_C);
-
-	// Restore OC.
-	bpmp_clk_rate_set(prev_fid);
 
 	jc_init_done = true;
 #endif

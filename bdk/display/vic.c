@@ -1,7 +1,7 @@
 /*
  * VIC driver for Tegra X1
  *
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -539,13 +539,7 @@ int vic_compose()
 
 int vic_init()
 {
-	// Ease the stress to APB.
-	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-
 	clock_enable_vic();
-
-	// Restore sys clock.
-	bpmp_clk_rate_set(prev_fid);
 
 	// Load Fetch Control Engine microcode.
 	for (u32 i = 0; i < sizeof(vic_fce_ucode) / sizeof(u32); i++)

@@ -75,7 +75,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	void *ptb;
 
 	bpmp_mmu_disable();
-	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	bpmp_clk_rate_relaxed(true);
 
 	// Enable clocks.
 	clock_enable_tsec();
@@ -305,7 +305,7 @@ out:
 	clock_disable_sor_safe();
 	clock_disable_tsec();
 	bpmp_mmu_enable();
-	bpmp_clk_rate_set(prev_fid);
+	bpmp_clk_rate_relaxed(false);
 
 #ifdef BDK_MC_ENABLE_AHB_REDIRECT
 	// Re-enable AHB aperture.

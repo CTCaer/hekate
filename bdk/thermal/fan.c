@@ -1,7 +1,7 @@
 /*
  * Fan driver for Nintendo Switch
  *
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -49,15 +49,7 @@ void set_fan_duty(u32 duty)
 
 		// Enable PWM if disabled.
 		if (fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA)
-		{
-			// Ease the stress to APB.
-			bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
-
 			clock_enable_pwm();
-
-			// Restore OC.
-			bpmp_clk_rate_set(prev_fid);
-		}
 
 		PWM(PWM_CONTROLLER_PWM_CSR_1) = PWM_CSR_EN | (0x100 << 16); // Max PWM to disable fan.
 
