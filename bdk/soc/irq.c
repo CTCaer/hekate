@@ -1,7 +1,7 @@
 /*
  * BPMP-Lite IRQ driver for Tegra X1
  *
- * Copyright (c) 2019 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -71,17 +71,7 @@ static void _irq_disable_and_ack_all()
 	{
 		u32 enabled_irqs = ICTLR(ctrl_idx, PRI_ICTLR_COP_IER);
 		ICTLR(ctrl_idx, PRI_ICTLR_COP_IER_CLR) = enabled_irqs;
-		ICTLR(ctrl_idx, PRI_ICTLR_FIR_CLR)     = enabled_irqs;
 	}
-}
-
-static void _irq_ack_source(u32 irq)
-{
-	u32 ctrl_idx = irq >> 5;
-	u32 bit = irq % 32;
-
-	// Force stop the interrupt as it's serviced here.
-	ICTLR(ctrl_idx, PRI_ICTLR_FIR_CLR) = BIT(bit);
 }
 
 void irq_free(u32 irq)
@@ -121,7 +111,6 @@ static irq_status_t _irq_handle_source(u32 irq)
 	int status = IRQ_NONE;
 
 	_irq_disable_source(irq);
-	_irq_ack_source(irq);
 
 	u32 idx;
 	for (idx = 0; idx < IRQ_MAX_HANDLERS; idx++)
@@ -155,7 +144,6 @@ void irq_handler()
 	if (!irq_init_done)
 	{
 		_irq_disable_source(irq);
-		_irq_ack_source(irq);
 
 		return;
 	}
@@ -197,7 +185,6 @@ void irq_wait_event(u32 irq)
 	FLOW_CTLR(FLOW_CTLR_HALT_COP_EVENTS) = HALT_MODE_STOP_UNTIL_IRQ;
 
 	_irq_disable_source(irq);
-	_irq_ack_source(irq);
 
 	irq_enable_cpu_irq_exceptions();
 }
