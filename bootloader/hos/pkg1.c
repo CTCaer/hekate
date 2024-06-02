@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ const u8 *pkg1_unpack(void *wm_dst, u32 *wb_sz, void *sm_dst, void *ldr_dst, con
 
 void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 {
-	patch_t *secmon_patchset;
+	const patch_t *secmon_patchset;
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
 
 	// Patch Secmon to allow for an unsigned package2 and patched kernel.
@@ -320,7 +320,7 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 void pkg1_warmboot_patch(void *hos_ctxt)
 {
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
-	patch_t *warmboot_patchset;
+	const patch_t *warmboot_patchset;
 
 	// Patch warmboot on T210 to allow downgrading.
 	switch (ctxt->pkg1_id->kb)

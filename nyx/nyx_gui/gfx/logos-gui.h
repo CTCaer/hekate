@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2018-2024 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _LOGOS_GUI_H_
 #define _LOGOS_GUI_H_
 
@@ -374,7 +390,7 @@ const u8 touch_cursor_map[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-lv_img_dsc_t touch_cursor = {
+const lv_img_dsc_t touch_cursor = {
 	.header.always_zero = 0,
 	.header.w = 33,
 	.header.h = 33,
@@ -385,7 +401,7 @@ lv_img_dsc_t touch_cursor = {
 
 #ifdef HEKATE_LOGO
 
-lv_img_dsc_t hekate_logo = {
+const lv_img_dsc_t hekate_logo = {
 	.header.always_zero = 0,
 	.header.w = 193,
 	.header.h = 76,
@@ -394,7 +410,7 @@ lv_img_dsc_t hekate_logo = {
 	.data = (const uint8_t *)(NYX_RES_ADDR + 0x1D900),
 };
 
-lv_img_dsc_t ctcaer_logo = {
+const lv_img_dsc_t ctcaer_logo = {
 	.header.always_zero = 0,
 	.header.w = 147,
 	.header.h = 76,

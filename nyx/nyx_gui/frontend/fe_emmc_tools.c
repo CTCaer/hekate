@@ -145,7 +145,7 @@ static int _dump_emmc_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32
 	u32 prevPct = 200;
 	u32 sdFileSector = 0;
 	int res = 0;
-	const char hexa[] = "0123456789abcdef";
+	static const char hexa[] = "0123456789abcdef";
 	DWORD *clmt = NULL;
 
 	u8 hashEm[SE_SHA_256_SIZE];
@@ -340,8 +340,8 @@ bool partial_sd_full_unmount = false;
 
 static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part, sdmmc_storage_t *storage, emmc_part_t *part)
 {
-	const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
-	const u32 SECTORS_TO_MIB_COEFF = 11;
+	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
+	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
 	partial_sd_full_unmount = false;
 
@@ -942,7 +942,7 @@ out:
 
 static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part, sdmmc_storage_t *storage, emmc_part_t *part, bool allow_multi_part)
 {
-	const u32 SECTORS_TO_MIB_COEFF = 11;
+	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
 	u32 lba_end = part->lba_end;
 	u32 totalSectors = part->lba_end - part->lba_start + 1;

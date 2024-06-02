@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2022-2023 CTCaer
+ * Copyright (c) 2022-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -41,7 +41,7 @@ typedef struct _patch_t
 } patch_t;
 
 #define PATCHSET_DEF(name, ...) \
-	patch_t name[] = { \
+	const patch_t name[] = { \
 		__VA_ARGS__, \
 		{ 0xFFFFFFFF, 0xFFFFFFFF } \
 	}
@@ -79,7 +79,7 @@ typedef struct _pkg1_id_t
 	u16 pkg11_off;
 	u32 secmon_base;
 	u32 warmboot_base;
-	patch_t *secmon_patchset;
+	const patch_t *secmon_patchset;
 } pkg1_id_t;
 
 typedef struct _pk11_hdr_t

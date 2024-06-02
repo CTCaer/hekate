@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -43,11 +43,11 @@ typedef struct _kernel_patch_t
 	u32  id;
 	u32  off;
 	u32  val;
-	u32 *ptr;
+	const u32 *ptr;
 } kernel_patch_t;
 
 #define KERNEL_PATCHSET_DEF(name, ...) \
-	kernel_patch_t name[] = { \
+	static const kernel_patch_t name[] = { \
 		__VA_ARGS__, \
 		{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, (u32 *)0xFFFFFFFF} \
 	}
@@ -124,7 +124,7 @@ typedef struct _pkg2_kip1_info_t
 typedef struct _pkg2_kernel_id_t
 {
 	u8 hash[8];
-	kernel_patch_t *kernel_patchset;
+	const kernel_patch_t *kernel_patchset;
 } pkg2_kernel_id_t;
 
 #define KIP1_PATCH_SRC_NO_CHECK (char *)(-1)
@@ -140,14 +140,14 @@ typedef struct _kip1_patch_t
 typedef struct _kip1_patchset_t
 {
 	char *name;            // NULL means end.
-	kip1_patch_t *patches; // NULL means not necessary.
+	const kip1_patch_t *patches; // NULL means not necessary.
 } kip1_patchset_t;
 
 typedef struct _kip1_id_t
 {
 	const char *name;
 	u8 hash[8];
-	kip1_patchset_t *patchset;
+	const kip1_patchset_t *patchset;
 } kip1_id_t;
 
 void pkg2_get_newkern_info(u8 *kern_data);

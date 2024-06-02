@@ -672,7 +672,7 @@ DPRINTF("Parsed GPT\n");
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	const u32 BCT_SIZE = SZ_16K;
+	static const u32 BCT_SIZE = SZ_16K;
 	bctBuf = (u8 *)malloc(BCT_SIZE);
 	emmc_part_read(pkg2_part, BCT_SIZE / EMMC_BLOCKSIZE, 1, bctBuf);
 	u32 *hdr = (u32 *)(bctBuf + 0x100);
@@ -1017,7 +1017,7 @@ int hos_launch(ini_sec_t *cfg)
 			}
 
 			// In case a kernel patch option is set; allows to disable SVC verification or/and enable debug mode.
-			kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
+			const kernel_patch_t *kernel_patchset = ctxt.pkg2_kernel_id->kernel_patchset;
 			if (kernel_patchset != NULL)
 			{
 				gfx_printf("%kPatching kernel%k\n", TXT_CLR_ORANGE, TXT_CLR_DEFAULT);

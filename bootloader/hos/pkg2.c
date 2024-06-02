@@ -57,7 +57,7 @@ enum kip_offset_section
 
 #include "pkg2_patches.inl"
 
-static kip1_id_t *_kip_id_sets = _kip_ids;
+static kip1_id_t *_kip_id_sets = (kip1_id_t *)_kip_ids;
 static u32 _kip_id_sets_cnt = ARRAY_SIZE(_kip_ids);
 
 void pkg2_get_ids(kip1_id_t **ids, u32 *entries)
@@ -531,7 +531,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 
 			// Check if there are patches to apply.
 			bool patches_found = false;
-			kip1_patchset_t *patchset = _kip_id_sets[kip_id_idx].patchset;
+			const kip1_patchset_t *patchset = _kip_id_sets[kip_id_idx].patchset;
 			while (patchset != NULL && patchset->name != NULL && !patches_found)
 			{
 				for (u32 i = 0; i < patches_num; i++)

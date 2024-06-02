@@ -37,7 +37,7 @@ const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver
 	.rsvd1 = 0
 };
 
-const volatile char __attribute__((section ("._octopus"))) octopus[] =
+const char __attribute__((section ("._octopus"))) octopus[] =
 	"\n"
 	"                         ___\n"
 	"                      .-'   `'.\n"
