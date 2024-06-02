@@ -188,20 +188,26 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 
 ```
 hekate  (c) 2018,      naehrwert, st4rk.
-        (c) 2018-2023, CTCaer.
+        (c) 2018-2024, CTCaer.
 
-Nyx GUI (c) 2019-2023, CTCaer.
+Nyx GUI (c) 2019-2024, CTCaer.
 
 Thanks to: derrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8.
 Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
 
 Open source and free packages used:
- - FatFs R0.13a, Copyright (c) 2017, ChaN
- - bcl-1.2.0, Copyright (c) 2003-2006, Marcus Geelnard
- - Atmosphère (Exosphere types/panic, prc id kernel patches),
-   Copyright (c) 2018-2019, Atmosphère-NX
- - elfload, Copyright (c) 2014 Owen Shepherd, Copyright (c) 2018 M4xw
- - Littlev Graphics Library, Copyright (c) 2016 Gabor Kiss-Vamosi
+ - Littlev Graphics Library,
+   Copyright (c) 2016-2018 Gabor Kiss-Vamosi
+ - FatFs R0.13c,
+   Copyright (c) 2006-2018, ChaN
+   Copyright (c) 2018-2022, CTCaer
+ - bcl-1.2.0,
+   Copyright (c) 2003-2006, Marcus Geelnard
+ - blz,
+   Copyright (c) 2018, SciresM
+ - elfload,
+   Copyright (c) 2014 Owen Shepherd,
+   Copyright (c) 2018 M4xw
 
                          ___
                       .-'   `'.

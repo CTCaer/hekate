@@ -1231,10 +1231,10 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_label_set_style(lbl_credits, &monospace_text);
 	lv_label_set_recolor(lbl_credits, true);
 	lv_label_set_static_text(lbl_credits,
-		"#C7EA46 hekate#  (c) 2018,      #C7EA46 naehrwert#, #C7EA46 st4rk#\n"
-		"        (c) 2018-2023, #C7EA46 CTCaer#\n"
+		"#C7EA46 hekate# (c) 2018,      #C7EA46 naehrwert#, #C7EA46 st4rk#\n"
+		"       (c) 2018-2024, #C7EA46 CTCaer#\n"
 		"\n"
-		"#C7EA46 Nyx GUI# (c) 2019-2023, #C7EA46 CTCaer#\n"
+		"#C7EA46 Nyx#    (c) 2019-2024, #C7EA46 CTCaer#\n"
 		"\n"
 		"Thanks to: #00CCFF derrek, nedwill, plutoo, #\n"
 		"           #00CCFF shuffle2, smea, thexyz, yellows8 #\n"
@@ -1242,18 +1242,19 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 		"Greetings to: fincs, hexkyz, SciresM,\n"
 		"              Shiny Quagsire, WinterMute\n"
 		"\n"
-		"Open source and free packages used:\n\n"
+		"Open source and free packages used:                    \n" // Label width alignment padding.
+		" - Littlev Graphics Library,\n"
+		"   Copyright (c) 2016-2018, Gabor Kiss-Vamosi\n\n"
 		" - FatFs R0.13c,\n"
-		"   Copyright (c) 2018, ChaN\n\n"
+		"   Copyright (c) 2006-2018, ChaN\n"
+		"   Copyright (c) 2018-2022, CTCaer\n\n"
 		" - bcl-1.2.0,\n"
 		"   Copyright (c) 2003-2006, Marcus Geelnard\n\n"
-		" - Atmosphere (Exosphere types/panic, proc id patches),\n"
-		"   Copyright (c) 2018-2019, Atmosphere-NX\n\n"
+		" - blz,\n"
+		"   Copyright (c) 2018, SciresM\n\n"
 		" - elfload,\n"
 		"   Copyright (c) 2014, Owen Shepherd\n"
-		"   Copyright (c) 2018, M4xw\n\n"
-		" - Littlev Graphics Library,\n"
-		"   Copyright (c) 2016 Gabor Kiss-Vamosi"
+		"   Copyright (c) 2018, M4xw"
 	);
 
 	lv_obj_t * lbl_octopus = lv_label_create(parent, NULL);
