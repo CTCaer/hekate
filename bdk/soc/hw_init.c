@@ -373,18 +373,6 @@ void hw_init()
 	// Initialize pin configuration.
 	_config_gpios(nx_hoag);
 
-#ifdef DEBUG_UART_PORT
-	#if   (DEBUG_UART_PORT == UART_B)
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-	#elif (DEBUG_UART_PORT == UART_C)
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-	#endif
-	pinmux_config_uart(DEBUG_UART_PORT);
-	clock_enable_uart(DEBUG_UART_PORT);
-	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE, UART_AO_TX_AO_RX);
-	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
-#endif
-
 	// Enable CL-DVFS clock unconditionally to avoid issues with I2C5 sharing.
 	clock_enable_cl_dvfs();
 
@@ -434,6 +422,19 @@ void hw_init()
 
 	// Enable HOST1X used by every display module (DC, VIC, NVDEC, NVENC, TSEC, etc).
 	clock_enable_host1x();
+
+#ifdef DEBUG_UART_PORT
+	// Setup debug uart port.
+	#if   (DEBUG_UART_PORT == UART_B)
+		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
+	#elif (DEBUG_UART_PORT == UART_C)
+		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
+	#endif
+	pinmux_config_uart(DEBUG_UART_PORT);
+	clock_enable_uart(DEBUG_UART_PORT);
+	uart_init(DEBUG_UART_PORT, DEBUG_UART_BAUDRATE, UART_AO_TX_AO_RX);
+	uart_invert(DEBUG_UART_PORT, DEBUG_UART_INVERT, UART_INVERT_TXD);
+#endif
 }
 
 void hw_deinit(bool coreboot, u32 bl_magic)
