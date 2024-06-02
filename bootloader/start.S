@@ -60,7 +60,8 @@ _reloc_ipl:
 	BX R3
 
 _real_start:
-	/* Initially, we place our stack in IRAM but will move it to SDRAM later. */
+	/* Initially, we place our stack under relocator but will move it to under the payload. */
+	/* This depends on application scope. */
 	LDR SP, =0x4003FF00
 	LDR R0, =__bss_start
 	EOR R1, R1, R1
