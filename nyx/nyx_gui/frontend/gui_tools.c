@@ -362,7 +362,7 @@ static lv_res_t _action_hid_jc(lv_obj_t *btn)
 	// Reduce BPMP, RAM and backlight and power off SDMMC1 to conserve power.
 	sd_end();
 	minerva_change_freq(FREQ_800);
-	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	bpmp_clk_rate_relaxed(true);
 	display_backlight_brightness(10, 1000);
 
 	usb_ctxt_t usbs;
@@ -374,7 +374,7 @@ static lv_res_t _action_hid_jc(lv_obj_t *btn)
 
 	// Restore BPMP, RAM and backlight.
 	minerva_change_freq(FREQ_1600);
-	bpmp_clk_rate_set(prev_fid);
+	bpmp_clk_rate_relaxed(false);
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 
 	return LV_RES_OK;
@@ -386,7 +386,7 @@ static lv_res_t _action_hid_touch(lv_obj_t *btn)
 	// Reduce BPMP, RAM and backlight and power off SDMMC1 to conserve power.
 	sd_end();
 	minerva_change_freq(FREQ_800);
-	bpmp_freq_t prev_fid = bpmp_clk_rate_set(BPMP_CLK_NORMAL);
+	bpmp_clk_rate_relaxed(true);
 	display_backlight_brightness(10, 1000);
 
 	usb_ctxt_t usbs;
@@ -398,7 +398,7 @@ static lv_res_t _action_hid_touch(lv_obj_t *btn)
 
 	// Restore BPMP, RAM and backlight.
 	minerva_change_freq(FREQ_1600);
-	bpmp_clk_rate_set(prev_fid);
+	bpmp_clk_rate_relaxed(false);
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 
 	return LV_RES_OK;
