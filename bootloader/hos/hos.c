@@ -759,6 +759,7 @@ int hos_launch(ini_sec_t *cfg)
 	volatile secmon_mailbox_t *secmon_mailbox;
 
 	minerva_change_freq(FREQ_1600);
+	sdram_div_disable(true);
 	list_init(&ctxt.kip1_list);
 
 	ctxt.cfg = cfg;
@@ -1178,6 +1179,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Scale down RAM OC if enabled.
 	minerva_prep_boot_freq();
+	sdram_div_disable(false);
 
 	// Flush cache and disable MMU.
 	bpmp_mmu_disable();
@@ -1192,6 +1194,7 @@ int hos_launch(ini_sec_t *cfg)
 
 error:
 	_free_launch_components(&ctxt);
+	sdram_div_disable(false);
 	emmc_end();
 
 	EPRINTF("\nFailed to launch HOS!");
