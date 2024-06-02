@@ -2,7 +2,7 @@
  * arch/arm/mach-tegra/tegra21_emc.h
  *
  * Copyright (c) 2014-2015, NVIDIA CORPORATION.  All rights reserved.
- * Copyright (c) 2019-2020, CTCaer.
+ * Copyright (c) 2019-2024, CTCaer.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #ifndef _EMC_H_
 #define _EMC_H_
 
+#define EMC_INTSTATUS                             0x0
 #define EMC_DBG                                   0x8
 #define EMC_CFG                                   0xC
 #define EMC_CONFIG_SAMPLE_DELAY                   0x5f0
