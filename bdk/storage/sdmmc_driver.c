@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -109,8 +109,8 @@ void sdmmc_save_tap_value(sdmmc_t *sdmmc)
 
 static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 {
-	const u32 dqs_trim_val = 40; // 24 if HS533/HS667.
-	const u8  tap_values_t210[4] = { 4, 0, 3, 0 };
+	static const u32 dqs_trim_val = 40; // 24 if HS533/HS667.
+	static const u8  tap_values_t210[4] = { 4, 0, 3, 0 };
 
 	u32 tap_val = 0;
 
@@ -1366,8 +1366,8 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	u16 divisor;
 	u8 vref_sel = 7;
 
-	const u8 trim_values_t210[4]    = {  2,  8,  3,  8 };
-	const u8 trim_values_t210b01[4] = { 14, 13, 15, 13 };
+	static const u8 trim_values_t210[4]    = {  2,  8,  3,  8 };
+	static const u8 trim_values_t210b01[4] = { 14, 13, 15, 13 };
 	const u8 *trim_values;
 
 	if (id > SDMMC_4 || id == SDMMC_3)

@@ -81,6 +81,7 @@
 #define CL_DVFS_BASE     0x70110000
 #define APE_BASE         0x702C0000
 #define AHUB_BASE        0x702D0000
+#define ADMAIF_BASE      0x702D0000
 #define AXBAR_BASE       0x702D0800
 #define I2S_BASE         0x702D1000
 #define ADMA_BASE        0x702E2000

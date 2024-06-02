@@ -59,7 +59,7 @@ typedef enum
 #define BPMP_CLK_DEFAULT_BOOST BPMP_CLK_HYPER_BOOST
 
 void bpmp_mmu_maintenance(u32 op, bool force);
-void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply);
+void bpmp_mmu_set_entry(int idx, const bpmp_mmu_entry_t *entry, bool apply);
 void bpmp_mmu_enable();
 void bpmp_mmu_disable();
 void bpmp_clk_rate_relaxed(bool enable);

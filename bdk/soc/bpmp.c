@@ -118,7 +118,7 @@
 #define  MMU_EN_READ                    BIT(2)
 #define  MMU_EN_WRITE                   BIT(3)
 
-bpmp_mmu_entry_t mmu_entries[] =
+static const bpmp_mmu_entry_t mmu_entries[] =
 {
 	{ DRAM_START, 0xFFFFFFFF, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true },
 	{ IRAM_BASE,  0x4003FFFF, MMU_EN_READ | MMU_EN_WRITE | MMU_EN_EXEC | MMU_EN_CACHED, true }
@@ -140,7 +140,7 @@ void bpmp_mmu_maintenance(u32 op, bool force)
 	BPMP_CACHE_CTRL(BPMP_CACHE_INT_CLEAR) = BPMP_CACHE_CTRL(BPMP_CACHE_INT_RAW_EVENT);
 }
 
-void bpmp_mmu_set_entry(int idx, bpmp_mmu_entry_t *entry, bool apply)
+void bpmp_mmu_set_entry(int idx, const bpmp_mmu_entry_t *entry, bool apply)
 {
 	if (idx > 31)
 		return;

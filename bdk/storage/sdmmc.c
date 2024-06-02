@@ -275,7 +275,7 @@ reinit_try:
 		// Disk IO failure! Reinit SD/EMMC to a lower speed.
 		if (storage->sdmmc->id == SDMMC_1 || storage->sdmmc->id == SDMMC_4)
 		{
-			int res;
+			int res = 0;
 
 			if (storage->sdmmc->id == SDMMC_1)
 			{
