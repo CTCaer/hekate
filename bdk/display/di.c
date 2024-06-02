@@ -644,9 +644,9 @@ static void _display_dsi_backlight_brightness(u32 duty)
 	u16 bl_ctrl = byte_swap_16((u16)candela);
 	display_dsi_vblank_write(MIPI_DCS_SET_BRIGHTNESS, 2, &bl_ctrl);
 
-	// Wait for backlight to completely turn off. 6+1 frames.
+	// Wait for backlight to completely turn off. 6 frames.
 	if (!duty)
-		usleep(120000);
+		usleep(100000);
 
 	_dsi_bl = duty;
 }
@@ -707,7 +707,8 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	DSI(_DSIREG(DSI_WR_DATA)) = (MIPI_DCS_SET_DISPLAY_OFF << 8) | MIPI_DSI_DCS_SHORT_WRITE;
 
 	// Wait for 5 frames (HOST1X_CH0_SYNC_SYNCPT_9).
-	// Not here.
+	// Not here. Wait for 1 frame manually.
+	usleep(20000);
 
 	// Propagate changes to all register buffers and disable host cmd packets during video.
 	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX_ACTIVE | WRITE_MUX_ACTIVE;
