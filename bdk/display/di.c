@@ -448,26 +448,26 @@ void display_init()
 	clock_enable_plld(3, 20, true, tegra_t210);
 
 	// Setup Display Interface initial window configuration.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, CFG_SIZE(_di_dc_setup_win_config));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, ARRAY_SIZE(_di_dc_setup_win_config));
 
 	// Setup dsi init sequence packets.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config0,  CFG_SIZE(_di_dsi_init_irq_pkt_config0));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config0,  ARRAY_SIZE(_di_dsi_init_irq_pkt_config0));
 	if (tegra_t210)
 		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15)) = 0;
 	else
 		DSI(_DSIREG(DSI_INIT_SEQ_DATA_15_B01)) = 0;
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config1,  CFG_SIZE(_di_dsi_init_irq_pkt_config1));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_irq_pkt_config1,  ARRAY_SIZE(_di_dsi_init_irq_pkt_config1));
 
 	// Reset pad trimmers for T210B01.
 	if (!tegra_t210)
-		exec_cfg((u32 *)DSI_BASE, _di_dsi_init_pads_t210b01, CFG_SIZE(_di_dsi_init_pads_t210b01));
+		exec_cfg((u32 *)DSI_BASE, _di_dsi_init_pads_t210b01, ARRAY_SIZE(_di_dsi_init_pads_t210b01));
 
 	// Setup init sequence packets and timings.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pkt_config2, CFG_SIZE(_di_dsi_init_timing_pkt_config2));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pkt_config2, ARRAY_SIZE(_di_dsi_init_timing_pkt_config2));
 	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603; // DSI_THSPREPR: 1 : 3.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pwrctrl_config, CFG_SIZE(_di_dsi_init_timing_pwrctrl_config));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pwrctrl_config, ARRAY_SIZE(_di_dsi_init_timing_pwrctrl_config));
 	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603; // DSI_THSPREPR: 1 : 3.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pkt_config3, CFG_SIZE(_di_dsi_init_timing_pkt_config3));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_timing_pkt_config3, ARRAY_SIZE(_di_dsi_init_timing_pkt_config3));
 	usleep(10000);
 
 	// Enable LCD Reset.
@@ -537,7 +537,7 @@ void display_init()
 		break;
 
 	case PANEL_JDI_XXX062M:
-		exec_cfg((u32 *)DSI_BASE, _di_dsi_panel_init_config_jdi, CFG_SIZE(_di_dsi_panel_init_config_jdi));
+		exec_cfg((u32 *)DSI_BASE, _di_dsi_panel_init_config_jdi, ARRAY_SIZE(_di_dsi_panel_init_config_jdi));
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 		break;
 
@@ -580,18 +580,18 @@ void display_init()
 	// Finalize DSI init packet sequence configuration.
 	DSI(_DSIREG(DSI_PAD_CONTROL_1)) = 0;
 	DSI(_DSIREG(DSI_PHY_TIMING_0)) = tegra_t210 ? 0x6070601 : 0x6070603;
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_seq_pkt_final_config, CFG_SIZE(_di_dsi_init_seq_pkt_final_config));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_init_seq_pkt_final_config, ARRAY_SIZE(_di_dsi_init_seq_pkt_final_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
 	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
 
 	// Set DSI mode.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_mode_config, CFG_SIZE(_di_dsi_mode_config));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_mode_config, ARRAY_SIZE(_di_dsi_mode_config));
 	usleep(10000);
 
 	// Calibrate display communication pads.
 	u32 loops = tegra_t210 ? 1 : 2; // Calibrate pads 2 times on T210B01.
-	exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, CFG_SIZE(_di_mipi_pad_cal_config));
+	exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, ARRAY_SIZE(_di_mipi_pad_cal_config));
 	for (u32 i = 0; i < loops; i++)
 	{
 		// Set MIPI bias pad config.
@@ -601,22 +601,22 @@ void display_init()
 		// Set pad trimmers and set MIPI DSI cal offsets.
 		if (tegra_t210)
 		{
-			exec_cfg((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          CFG_SIZE(_di_dsi_pad_cal_config_t210));
-			exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210, CFG_SIZE(_di_mipi_dsi_cal_offsets_config_t210));
+			exec_cfg((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
+			exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210, ARRAY_SIZE(_di_mipi_dsi_cal_offsets_config_t210));
 		}
 		else
 		{
-			exec_cfg((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,          CFG_SIZE(_di_dsi_pad_cal_config_t210b01));
-			exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210b01, CFG_SIZE(_di_mipi_dsi_cal_offsets_config_t210b01));
+			exec_cfg((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210b01));
+			exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210b01, ARRAY_SIZE(_di_mipi_dsi_cal_offsets_config_t210b01));
 		}
 
 		// Reset all MIPI cal offsets and start calibration.
-		exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_start_dsi_cal_config, CFG_SIZE(_di_mipi_start_dsi_cal_config));
+		exec_cfg((u32 *)MIPI_CAL_BASE, _di_mipi_start_dsi_cal_config, ARRAY_SIZE(_di_mipi_start_dsi_cal_config));
 	}
 	usleep(10000);
 
 	// Enable video display controller.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_video_enable_config, CFG_SIZE(_di_dc_video_enable_config));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_video_enable_config, ARRAY_SIZE(_di_dc_video_enable_config));
 }
 
 void display_backlight_pwm_init()
@@ -722,7 +722,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
 
 	// De-initialize video controller.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, CFG_SIZE(_di_dc_video_disable_config));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, ARRAY_SIZE(_di_dc_video_disable_config));
 
 	// Set DISP1 clock source, parent clock and DSI/PCLK to low power mode.
 	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-PCLK): 50.0 MHz. (PCLK: 16.66 MHz)
@@ -730,7 +730,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210);
 
 	// Set timings for lowpower clocks.
-	exec_cfg((u32 *)DSI_BASE, _di_dsi_timing_deinit_config, CFG_SIZE(_di_dsi_timing_deinit_config));
+	exec_cfg((u32 *)DSI_BASE, _di_dsi_timing_deinit_config, ARRAY_SIZE(_di_dsi_timing_deinit_config));
 
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		usleep(10000);
@@ -739,11 +739,11 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	switch (_display_id)
 	{
 	case PANEL_JDI_XXX062M:
-		exec_cfg((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_jdi, CFG_SIZE(_di_dsi_panel_deinit_config_jdi));
+		exec_cfg((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_jdi, ARRAY_SIZE(_di_dsi_panel_deinit_config_jdi));
 		break;
 
 	case PANEL_AUO_A062TAN01:
-		exec_cfg((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_auo, CFG_SIZE(_di_dsi_panel_deinit_config_auo));
+		exec_cfg((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_auo, ARRAY_SIZE(_di_dsi_panel_deinit_config_auo));
 		break;
 
 	case PANEL_INL_2J055IA_27A:
@@ -848,7 +848,7 @@ void display_set_decoded_panel_id(u32 id)
 
 void display_color_screen(u32 color)
 {
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_one_color, CFG_SIZE(_di_win_one_color));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_one_color, ARRAY_SIZE(_di_win_one_color));
 
 	// Configure display to show single color.
 	DISPLAY_A(_DIREG(DC_WIN_AD_WIN_OPTIONS)) = 0;
@@ -870,7 +870,7 @@ u32 *display_init_framebuffer_pitch()
 	memset((u32 *)IPL_FB_ADDRESS, 0, IPL_FB_SZ);
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch, CFG_SIZE(_di_win_framebuffer_pitch));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch, ARRAY_SIZE(_di_win_framebuffer_pitch));
 	//usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
@@ -881,7 +881,7 @@ u32 *display_init_framebuffer_pitch_vic()
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		usleep(8000); // Wait half frame for PWM to apply.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_vic, CFG_SIZE(_di_win_framebuffer_pitch_vic));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_vic, ARRAY_SIZE(_di_win_framebuffer_pitch_vic));
 	if (_display_id != PANEL_SAM_AMS699VC01)
 		usleep(35000); // Wait 2 frames.
 
@@ -891,7 +891,7 @@ u32 *display_init_framebuffer_pitch_vic()
 u32 *display_init_framebuffer_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_inv, CFG_SIZE(_di_win_framebuffer_pitch_inv));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_pitch_inv, ARRAY_SIZE(_di_win_framebuffer_pitch_inv));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
@@ -900,7 +900,7 @@ u32 *display_init_framebuffer_pitch_inv()
 u32 *display_init_framebuffer_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280.
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_block, CFG_SIZE(_di_win_framebuffer_block));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_block, ARRAY_SIZE(_di_win_framebuffer_block));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
@@ -909,7 +909,7 @@ u32 *display_init_framebuffer_block()
 u32 *display_init_framebuffer_log()
 {
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
-	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_log, CFG_SIZE(_di_win_framebuffer_log));
+	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_framebuffer_log, ARRAY_SIZE(_di_win_framebuffer_log));
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
@@ -970,7 +970,7 @@ void display_deactivate_console()
 	}
 
 	// Disable window D.
-	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
+	DISPLAY_A(_DIREG(DC_WIN_POSITION))    = 0;
 	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0;
 
 	// Arm and activate changes.
