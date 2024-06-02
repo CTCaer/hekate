@@ -417,10 +417,8 @@ void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)
 	if (lowpower && tegra_t210)
 		misc = 0x2D0000 | 0x0AAA; // Clock enable and PLLD_SDM_DIN:  2730 -> DIVN + 0.833.
 
-
-	// Set DISP1 clock source and parent clock.
-	if (lowpower)
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DISP1) = (2 << 29u) | CLK_SRC_DIV(1); // PLLD_OUT0.
+	// Set DISP1 clock source.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DISP1) = 2 << 29u; // PLLD_OUT0.
 
 	// Set dividers and enable PLLD.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE)  = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plld_div;
