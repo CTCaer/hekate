@@ -710,7 +710,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// Not here.
 
 	// Propagate changes to all register buffers and disable host cmd packets during video.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX | WRITE_MUX;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX_ACTIVE | WRITE_MUX_ACTIVE;
 	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
 
 	// De-initialize video controller.
@@ -840,14 +840,15 @@ void display_set_decoded_panel_id(u32 id)
 
 void display_color_screen(u32 color)
 {
+	// Disable all windows.
 	exec_cfg((u32 *)DISPLAY_A_BASE, _di_win_one_color, ARRAY_SIZE(_di_win_one_color));
 
 	// Configure display to show single color.
-	DISPLAY_A(_DIREG(DC_WIN_AD_WIN_OPTIONS)) = 0;
-	DISPLAY_A(_DIREG(DC_WIN_BD_WIN_OPTIONS)) = 0;
-	DISPLAY_A(_DIREG(DC_WIN_CD_WIN_OPTIONS)) = 0;
 	DISPLAY_A(_DIREG(DC_DISP_BLEND_BACKGROUND_COLOR)) = color;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = (DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) & 0xFFFFFFFE) | GENERAL_ACT_REQ;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_A_UPDATE |  WIN_B_UPDATE  | WIN_C_UPDATE  | WIN_D_UPDATE;
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ | WIN_D_ACT_REQ;
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	if (_display_id != PANEL_SAM_AMS699VC01)

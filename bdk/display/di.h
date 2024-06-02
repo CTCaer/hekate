@@ -43,8 +43,8 @@
 
 // DC_CMD non-shadowed command/sync registers.
 #define DC_CMD_GENERAL_INCR_SYNCPT 0x00
-#define  SYNCPT_GENERAL_INDX(x) (((x) & 0xff) << 0)
-#define  SYNCPT_GENERAL_COND(x) (((x) & 0xff) << 8)
+#define  SYNCPT_GENERAL_INDX(x) (((x) & 0xFF) << 0)
+#define  SYNCPT_GENERAL_COND(x) (((x) & 0xFF) << 8)
 #define  COND_REG_WR_SAFE 3
 
 #define DC_CMD_GENERAL_INCR_SYNCPT_CNTRL 0x01
@@ -52,7 +52,7 @@
 #define  SYNCPT_CNTRL_NO_STALL   BIT(8)
 
 #define DC_CMD_CONT_SYNCPT_VSYNC 0x28
-#define  SYNCPT_VSYNC_INDX(x) (((x) & 0xff) << 0)
+#define  SYNCPT_VSYNC_INDX(x) (((x) & 0xFF) << 0)
 #define  SYNCPT_VSYNC_ENABLE  BIT(8)
 
 #define DC_CMD_DISPLAY_COMMAND_OPTION0 0x031
@@ -80,8 +80,10 @@
 #define DC_CMD_INT_POLARITY 0x3B
 
 #define DC_CMD_STATE_ACCESS 0x40
-#define  READ_MUX  BIT(0)
-#define  WRITE_MUX BIT(2)
+#define  READ_MUX_ASSEMBLY  0x0
+#define  WRITE_MUX_ASSEMBLY 0x0
+#define  READ_MUX_ACTIVE    BIT(0)
+#define  WRITE_MUX_ACTIVE   BIT(2)
 
 #define DC_CMD_STATE_CONTROL 0x41
 #define  GENERAL_ACT_REQ BIT(0)
@@ -179,30 +181,30 @@
 #define DC_DISP_DISP_MEM_HIGH_PRIORITY_TIMER 0x404
 
 #define DC_DISP_DISP_TIMING_OPTIONS 0x405
-#define  VSYNC_H_POSITION(x) (((x) & 0x1fff) << 0)
+#define  VSYNC_H_POSITION(x) (((x) & 0x1FFF) << 0)
 
 #define DC_DISP_REF_TO_SYNC 0x406
-#define  H_REF_TO_SYNC(x) (((x) & 0x1fff) <<  0) // Min 0 pixel clock.
-#define  V_REF_TO_SYNC(x) (((x) & 0x1fff) << 16) // Min 1 line  clock.
+#define  H_REF_TO_SYNC(x) (((x) & 0x1FFF) <<  0) // Min 0 pixel clock.
+#define  V_REF_TO_SYNC(x) (((x) & 0x1FFF) << 16) // Min 1 line  clock.
 
 #define DC_DISP_SYNC_WIDTH 0x407
-#define  H_SYNC_WIDTH(x) (((x) & 0x1fff) <<  0) // Min 1 pixel clock.
-#define  V_SYNC_WIDTH(x) (((x) & 0x1fff) << 16) // Min 1 line  clock.
+#define  H_SYNC_WIDTH(x) (((x) & 0x1FFF) <<  0) // Min 1 pixel clock.
+#define  V_SYNC_WIDTH(x) (((x) & 0x1FFF) << 16) // Min 1 line  clock.
 
 #define DC_DISP_BACK_PORCH 0x408
-#define  H_BACK_PORCH(x) (((x) & 0x1fff) <<  0)
-#define  V_BACK_PORCH(x) (((x) & 0x1fff) << 16)
+#define  H_BACK_PORCH(x) (((x) & 0x1FFF) <<  0)
+#define  V_BACK_PORCH(x) (((x) & 0x1FFF) << 16)
 
 #define DC_DISP_ACTIVE 0x409
-#define  H_DISP_ACTIVE(x) (((x) & 0x1fff) <<  0) // Min 16 pixel clock.
-#define  V_DISP_ACTIVE(x) (((x) & 0x1fff) << 16) // Min 16 line  clock.
+#define  H_DISP_ACTIVE(x) (((x) & 0x1FFF) <<  0) // Min 16 pixel clock.
+#define  V_DISP_ACTIVE(x) (((x) & 0x1FFF) << 16) // Min 16 line  clock.
 
 #define DC_DISP_FRONT_PORCH 0x40A
-#define  H_FRONT_PORCH(x) (((x) & 0x1fff) <<  0) // Min -=PS_=-H_REF_TO_SYNC + 1
-#define  V_FRONT_PORCH(x) (((x) & 0x1fff) << 16) // Min -=PS_=-V_REF_TO_SYNC + 1
+#define  H_FRONT_PORCH(x) (((x) & 0x1FFF) <<  0) // Min -=PS_=-H_REF_TO_SYNC + 1
+#define  V_FRONT_PORCH(x) (((x) & 0x1FFF) << 16) // Min -=PS_=-V_REF_TO_SYNC + 1
 
 #define DC_DISP_DISP_CLOCK_CONTROL 0x42E
-#define  SHIFT_CLK_DIVIDER(x)    ((x) & 0xff)
+#define  SHIFT_CLK_DIVIDER(x)    ((x) & 0xFF)
 #define  PIXEL_CLK_DIVIDER_PCD1  (0 << 8)
 #define  PIXEL_CLK_DIVIDER_PCD1H (1 << 8)
 #define  PIXEL_CLK_DIVIDER_PCD2  (2 << 8)
@@ -271,6 +273,7 @@
 #define  CURSOR_COLOR(r,g,b) (((r) & 0xFF) | (((g) & 0xFF) << 8) | (((b) & 0xFF) << 16))
 
 #define DC_DISP_CURSOR_START_ADDR    0x43E
+#define DC_DISP_CURSOR_START_ADDR_NS 0x43F
 #define  CURSOR_CLIPPING(w) ((w) << 28)
 #define   CURSOR_CLIP_WIN_A 1
 #define   CURSOR_CLIP_WIN_B 2
@@ -282,6 +285,7 @@
 #define DC_DISP_CURSOR_POSITION      0x440
 #define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
 #define DC_DISP_CURSOR_START_ADDR_HI 0x4EC
+#define DC_DISP_CURSOR_START_ADDR_HI_NS 0x4ED
 #define DC_DISP_BLEND_CURSOR_CONTROL 0x4F1
 #define  CURSOR_BLEND_2BIT     (0 << 24)
 #define  CURSOR_BLEND_R8G8B8A8 (1 << 24)
@@ -378,27 +382,27 @@
 #define  WIN_COLOR_DEPTH_YUV444SP       0x3C
 
 #define DC_WIN_POSITION 0x704
-#define  H_POSITION(x) (((x) & 0xffff) <<  0) // Support negative.
-#define  V_POSITION(x) (((x) & 0xffff) << 16) // Support negative.
+#define  H_POSITION(x) (((x) & 0xFFFF) <<  0) // Support negative.
+#define  V_POSITION(x) (((x) & 0xFFFF) << 16) // Support negative.
 
 #define DC_WIN_SIZE 0x705
-#define  H_SIZE(x) (((x) & 0x1fff) <<  0)
-#define  V_SIZE(x) (((x) & 0x1fff) << 16)
+#define  H_SIZE(x) (((x) & 0x1FFF) <<  0)
+#define  V_SIZE(x) (((x) & 0x1FFF) << 16)
 
 #define DC_WIN_PRESCALED_SIZE 0x706
-#define  H_PRESCALED_SIZE(x) (((x) & 0x7fff) <<  0)
-#define  V_PRESCALED_SIZE(x) (((x) & 0x1fff) << 16)
+#define  H_PRESCALED_SIZE(x) (((x) & 0x7FFF) <<  0)
+#define  V_PRESCALED_SIZE(x) (((x) & 0x1FFF) << 16)
 
 #define DC_WIN_H_INITIAL_DDA 0x707
 #define DC_WIN_V_INITIAL_DDA 0x708
 
 #define DC_WIN_DDA_INC 0x709
-#define  H_DDA_INC(x) (((x) & 0xffff) <<  0)
-#define  V_DDA_INC(x) (((x) & 0xffff) << 16)
+#define  H_DDA_INC(x) (((x) & 0xFFFF) <<  0)
+#define  V_DDA_INC(x) (((x) & 0xFFFF) << 16)
 
 #define DC_WIN_LINE_STRIDE 0x70A
 #define  LINE_STRIDE(x)	   (x)
-#define  UV_LINE_STRIDE(x) (((x) & 0xffff) << 16)
+#define  UV_LINE_STRIDE(x) (((x) & 0xFFFF) << 16)
 
 #define DC_WIN_DV_CONTROL 0x70E
 #define DV_CTRL_R(r) (((r) & 7) << 16)
@@ -406,9 +410,9 @@
 #define DV_CTRL_B(b) (((b) & 7) << 0)
 
 #define DC_WINBUF_BLEND_LAYER_CONTROL 0x716
-#define  WIN_BLEND_DEPTH(x) (((x) & 0xff) << 0)
-#define  WIN_K1(x) (((x) & 0xff) << 8)
-#define  WIN_K2(x) (((x) & 0xff) << 16)
+#define  WIN_BLEND_DEPTH(x) (((x) & 0xFF) << 0)
+#define  WIN_K1(x) (((x) & 0xFF) << 8)
+#define  WIN_K2(x) (((x) & 0xFF) << 16)
 #define  WIN_BLEND_ENABLE (0 << 24)
 #define  WIN_BLEND_BYPASS (1 << 24)
 
@@ -439,8 +443,8 @@
 #define  WIN_BLEND_FACT_DST_ALPHA_MATCH_SEL_K2               (3 << 12)
 
 #define DC_WINBUF_BLEND_ALPHA_1BIT 0x719
-#define  WIN_ALPHA_1BIT_WEIGHT0(x) (((x) & 0xff) << 0)
-#define  WIN_ALPHA_1BIT_WEIGHT1(x) (((x) & 0xff) << 8)
+#define  WIN_ALPHA_1BIT_WEIGHT0(x) (((x) & 0xFF) << 0)
+#define  WIN_ALPHA_1BIT_WEIGHT1(x) (((x) & 0xFF) << 8)
 
 /*! The following registers are A/B/C shadows of the 0xBC0/0xDC0/0xFC0 registers (see DISPLAY_WINDOW_HEADER). */
 #define DC_WINBUF_START_ADDR 0x800
@@ -532,8 +536,8 @@
 #define DSI_PKT_LEN_2_3 0x35
 #define DSI_PKT_LEN_4_5 0x36
 #define DSI_PKT_LEN_6_7 0x37
-#define  PKT0_LEN(x) (((x) & 0xffff) <<  0)
-#define  PKT1_LEN(x) (((x) & 0xffff) << 16)
+#define  PKT0_LEN(x) (((x) & 0xFFFF) <<  0)
+#define  PKT1_LEN(x) (((x) & 0xFFFF) << 16)
 
 #define DSI_PHY_TIMING_0 0x3C
 #define DSI_PHY_TIMING_1 0x3D
@@ -541,20 +545,20 @@
 #define DSI_BTA_TIMING 0x3F
 
 #define DSI_TIMEOUT_0 0x44
-#define  DSI_TIMEOUT_HTX(x) (((x) & 0xffff) <<  0)
-#define  DSI_TIMEOUT_LRX(x) (((x) & 0xffff) << 16)
+#define  DSI_TIMEOUT_HTX(x) (((x) & 0xFFFF) <<  0)
+#define  DSI_TIMEOUT_LRX(x) (((x) & 0xFFFF) << 16)
 
 #define DSI_TIMEOUT_1 0x45
-#define  DSI_TIMEOUT_TA(x) (((x) & 0xffff) <<  0)
-#define  DSI_TIMEOUT_PR(x) (((x) & 0xffff) << 16)
+#define  DSI_TIMEOUT_TA(x) (((x) & 0xFFFF) <<  0)
+#define  DSI_TIMEOUT_PR(x) (((x) & 0xFFFF) << 16)
 
 #define DSI_TO_TALLY 0x46
 
 #define DSI_PAD_CONTROL_0 0x4B
 #define  DSI_PAD_CONTROL_VS1_PDIO_CLK   BIT(8)
-#define  DSI_PAD_CONTROL_VS1_PDIO(x)    (((x) & 0xf) <<  0)
+#define  DSI_PAD_CONTROL_VS1_PDIO(x)    (((x) & 0xF) <<  0)
 #define  DSI_PAD_CONTROL_VS1_PULLDN_CLK BIT(24)
-#define  DSI_PAD_CONTROL_VS1_PULLDN(x)  (((x) & 0xf) << 16)
+#define  DSI_PAD_CONTROL_VS1_PULLDN(x)  (((x) & 0xF) << 16)
 
 #define DSI_PAD_CONTROL_CD 0x4C
 #define DSI_VIDEO_MODE_CONTROL 0x4E
