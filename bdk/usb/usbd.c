@@ -1,7 +1,7 @@
 /*
  * Enhanced USB Device (EDCI) driver for Tegra X1
  *
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -355,8 +355,14 @@ int usb_device_init()
 	if (usb_init_done)
 		return USB_RES_OK;
 
+	// Ease the stress to APB.
+	bpmp_clk_rate_relaxed(true);
+
 	// Initialize USB2 controller PHY.
 	_usb_init_phy();
+
+	// Restore OC.
+	bpmp_clk_rate_relaxed(false);
 
 	// AHB USB performance cfg.
 	AHB_GIZMO(AHB_GIZMO_AHB_MEM) |= AHB_MEM_DONT_SPLIT_AHB_WR | AHB_MEM_ENB_FAST_REARBITRATE;

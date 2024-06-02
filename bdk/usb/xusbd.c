@@ -1,7 +1,7 @@
 /*
  * eXtensible USB Device driver (XDCI) for Tegra X1
  *
- * Copyright (c) 2020-2022 CTCaer
+ * Copyright (c) 2020-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -883,6 +883,9 @@ static void _xusbd_init_device_clocks()
 
 int xusb_device_init()
 {
+	// Ease the stress to APB.
+	bpmp_clk_rate_relaxed(true);
+
 	// Disable USB2 device controller clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_USBD);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = BIT(CLK_L_USBD);
@@ -919,6 +922,9 @@ int xusb_device_init()
 
 	// Initialize device clocks.
 	_xusbd_init_device_clocks();
+
+	// Restore OC.
+	bpmp_clk_rate_relaxed(false);
 
 	// Enable AHB redirect for access to IRAM for Event/EP ring buffers.
 	mc_enable_ahb_redirect();
