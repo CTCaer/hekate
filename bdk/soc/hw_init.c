@@ -333,8 +333,19 @@ static void _config_regulators(bool tegra_t210)
 		max77621_config_default(REGULATOR_CPU0, MAX77621_CTRL_POR_CFG);
 		max77621_config_default(REGULATOR_GPU0, MAX77621_CTRL_POR_CFG);
 	}
-	else // Tegra X1+ set vdd_core voltage to 1.05V.
+	else
+	{
+		// Tegra X1+ set vdd_core voltage to 1.05V.
 		max7762x_regulator_set_voltage(REGULATOR_SD0, 1050000);
+
+		// Power on SD2 regulator for supplying LDO0/1/8.
+		max7762x_regulator_set_voltage(REGULATOR_SD2, 1325000);
+
+		// Set slew rate and enable SD2 regulator.
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD2_CFG, (1 << MAX77620_SD_SR_SHIFT)                                  |
+																	  (MAX77620_POWER_MODE_NORMAL << MAX77620_SD_POWER_MODE_SHIFT) |
+																	  MAX77620_SD_CFG1_FSRADE_SD_ENABLE);
+	}
 }
 
 void hw_init()
