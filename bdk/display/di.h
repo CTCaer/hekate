@@ -868,17 +868,18 @@ void display_backlight(bool enable);
 void display_backlight_brightness(u32 brightness, u32 step_delay);
 u32  display_get_backlight_brightness();
 
-/*! Init display in full 720x1280 resolution (B8G8R8A8, line stride 720, framebuffer size = 720*1280*4 bytes). */
-u32 *display_init_framebuffer_pitch();
-u32 *display_init_framebuffer_pitch_vic();
-u32 *display_init_framebuffer_pitch_inv();
-u32 *display_init_framebuffer_block();
-u32 *display_init_framebuffer_log();
-void display_activate_console();
-void display_deactivate_console();
-void display_init_cursor(void *crs_fb, u32 size);
-void display_set_pos_cursor(u32 x, u32 y);
-void display_deinit_cursor();
+u32 *display_init_window_a_pitch();
+u32 *display_init_window_a_pitch_vic();
+u32 *display_init_window_a_pitch_inv();
+u32 *display_init_window_a_block();
+u32 *display_init_window_d_console();
+
+void display_window_d_console_enable();
+void display_window_d_console_disable();
+
+void display_cursor_init(void *crs_fb, u32 size);
+void display_cursor_set_pos(u32 x, u32 y);
+void display_cursor_deinit();
 
 int  display_dsi_read(u8 cmd, u32 len, void *data);
 int  display_dsi_vblank_read(u8 cmd, u32 len, void *data);

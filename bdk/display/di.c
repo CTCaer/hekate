@@ -861,7 +861,7 @@ void display_color_screen(u32 color)
 		display_backlight_brightness(150, 0);
 }
 
-u32 *display_init_framebuffer_pitch()
+u32 *display_init_window_a_pitch()
 {
 	// Sanitize framebuffer area.
 	memset((u32 *)IPL_FB_ADDRESS, 0, IPL_FB_SZ);
@@ -873,7 +873,7 @@ u32 *display_init_framebuffer_pitch()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
-u32 *display_init_framebuffer_pitch_vic()
+u32 *display_init_window_a_pitch_vic()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	if (_display_id != PANEL_SAM_AMS699VC01)
@@ -885,7 +885,7 @@ u32 *display_init_framebuffer_pitch_vic()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
-u32 *display_init_framebuffer_pitch_inv()
+u32 *display_init_window_a_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch_inv, ARRAY_SIZE(_di_winA_pitch_inv));
@@ -894,7 +894,7 @@ u32 *display_init_framebuffer_pitch_inv()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
-u32 *display_init_framebuffer_block()
+u32 *display_init_window_a_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280.
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_block, ARRAY_SIZE(_di_winA_block));
@@ -903,7 +903,7 @@ u32 *display_init_framebuffer_block()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
-u32 *display_init_framebuffer_log()
+u32 *display_init_window_d_console()
 {
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winD_log, ARRAY_SIZE(_di_winD_log));
@@ -911,7 +911,7 @@ u32 *display_init_framebuffer_log()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
-void display_activate_console()
+void display_window_d_console_enable()
 {
 	// Only update active registers on vsync.
 	DISPLAY_A(_DIREG(DC_CMD_REG_ACT_CONTROL)) = DISPLAY_A(_DIREG(DC_CMD_REG_ACT_CONTROL)) & ~WIN_D_ACT_HCNTR_SEL;
@@ -949,7 +949,7 @@ void display_activate_console()
 	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT;
 }
 
-void display_deactivate_console()
+void display_window_d_console_disable()
 {
 	// Select window D.
 	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT;
@@ -978,7 +978,7 @@ void display_deactivate_console()
 	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT;
 }
 
-void display_init_cursor(void *crs_fb, u32 size)
+void display_cursor_init(void *crs_fb, u32 size)
 {
 	// Setup cursor.
 	DISPLAY_A(_DIREG(DC_DISP_CURSOR_START_ADDR))    = CURSOR_CLIPPING(CURSOR_CLIP_WIN_A) | size | ((u32)crs_fb >> 10);
@@ -994,7 +994,7 @@ void display_init_cursor(void *crs_fb, u32 size)
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
-void display_set_pos_cursor(u32 x, u32 y)
+void display_cursor_set_pos(u32 x, u32 y)
 {
 	// Set cursor position.
 	DISPLAY_A(_DIREG(DC_DISP_CURSOR_POSITION)) = x | (y << 16);
@@ -1004,7 +1004,7 @@ void display_set_pos_cursor(u32 x, u32 y)
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
-void display_deinit_cursor()
+void display_cursor_deinit()
 {
 	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) = 0;
 	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) &= ~CURSOR_ENABLE;
