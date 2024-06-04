@@ -252,19 +252,19 @@ static const reg_cfg_t _di_dsi_pad_cal_config_t210b01[] = {
 };
 
 // MIPI CAL config.
-static const reg_cfg_t _di_mipi_dsi_cal_offsets_config_t210[] = {
+static const reg_cfg_t _di_mipi_dsi_cal_prod_config_t210[] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x200002},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x200002}
 };
-static const reg_cfg_t _di_mipi_dsi_cal_offsets_config_t210b01[] = {
+static const reg_cfg_t _di_mipi_dsi_cal_prod_config_t210b01[] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200006},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200006},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x260000},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x260000}
 };
-static const reg_cfg_t _di_mipi_start_dsi_cal_config[] = {
+static const reg_cfg_t _di_mipi_dsi_cal_unused_config[] = {
 	{MIPI_CAL_CILA_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILB_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILC_MIPI_CAL_CONFIG,   0},
@@ -275,8 +275,7 @@ static const reg_cfg_t _di_mipi_start_dsi_cal_config[] = {
 	{MIPI_CAL_DSID_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0},
 	{MIPI_CAL_DSIC_MIPI_CAL_CONFIG_2, 0},
-	{MIPI_CAL_DSID_MIPI_CAL_CONFIG_2, 0},
-	{MIPI_CAL_MIPI_CAL_CTRL,          0x2A000001} // Set Prescale and filter and start calibration.
+	{MIPI_CAL_DSID_MIPI_CAL_CONFIG_2, 0}
 };
 
 // Display A enable config.

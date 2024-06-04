@@ -580,10 +580,15 @@ void display_init()
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_mode_config, ARRAY_SIZE(_di_dsi_mode_config));
 	usleep(10000);
 
-	// Calibrate display communication pads.
-	const u32 loops = tegra_t210 ? 1 : 2; // Calibrate pads 2 times on T210B01.
+	/*
+	 * Calibrate display communication pads.
+	 * When switching to the 16ff pad brick, the clock lane termination control
+	 * is separated from data lane termination. This change of the mipi cal
+	 * brings in a bug that the DSI pad clock termination code can't be loaded
+	 * in one time calibration. Trigger calibration twice.
+	 */
 	reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, ARRAY_SIZE(_di_mipi_pad_cal_config));
-	for (u32 i = 0; i < loops; i++)
+	for (u32 i = 0; i < 2; i++)
 	{
 		// Set MIPI bias pad config.
 		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0x10010;
@@ -592,17 +597,20 @@ void display_init()
 		// Set pad trimmers and set MIPI DSI cal offsets.
 		if (tegra_t210)
 		{
-			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
-			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210, ARRAY_SIZE(_di_mipi_dsi_cal_offsets_config_t210));
+			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,       ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
+			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210, ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210));
 		}
 		else
 		{
-			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210b01));
-			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_offsets_config_t210b01, ARRAY_SIZE(_di_mipi_dsi_cal_offsets_config_t210b01));
+			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,       ARRAY_SIZE(_di_dsi_pad_cal_config_t210b01));
+			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210b01, ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210b01));
 		}
 
-		// Reset all MIPI cal offsets and start calibration.
-		reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_start_dsi_cal_config, ARRAY_SIZE(_di_mipi_start_dsi_cal_config));
+		// Reset all unused MIPI cal offsets.
+		reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_unused_config, ARRAY_SIZE(_di_mipi_dsi_cal_unused_config));
+
+		// Set Prescale/filter and start calibration.
+		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_CAL_CTRL)) = 0x2A000001;
 	}
 	usleep(10000);
 
