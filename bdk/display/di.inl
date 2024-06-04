@@ -16,7 +16,7 @@
 */
 
 // Display A config.
-static const cfg_op_t _di_dc_setup_win_config[] = {
+static const reg_cfg_t _di_dc_setup_win_config[] = {
 	{DC_CMD_STATE_ACCESS, READ_MUX_ASSEMBLY | WRITE_MUX_ASSEMBLY},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
@@ -64,7 +64,7 @@ static const cfg_op_t _di_dc_setup_win_config[] = {
 };
 
 // DSI Init config.
-static const cfg_op_t _di_dsi_init_config0[] = {
+static const reg_cfg_t _di_dsi_init_config0[] = {
 	{DSI_WR_DATA, 0},
 	{DSI_INT_ENABLE, 0},
 	{DSI_INT_STATUS, 0},
@@ -74,7 +74,7 @@ static const cfg_op_t _di_dsi_init_config0[] = {
 	{DSI_INIT_SEQ_DATA_2, 0},
 	{DSI_INIT_SEQ_DATA_3, 0}
 };
-static const cfg_op_t _di_dsi_init_config1[] = {
+static const reg_cfg_t _di_dsi_init_config1[] = {
 	{DSI_DCS_CMDS, 0},
 	{DSI_PKT_SEQ_0_LO, 0},
 	{DSI_PKT_SEQ_1_LO, 0},
@@ -90,7 +90,7 @@ static const cfg_op_t _di_dsi_init_config1[] = {
 	{DSI_PKT_SEQ_5_HI, 0},
 	{DSI_CONTROL, 0}
 };
-static const cfg_op_t _di_dsi_init_pads_t210b01[] = {
+static const reg_cfg_t _di_dsi_init_pads_t210b01[] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PAD_CONTROL_2, 0},
 	{DSI_PAD_CONTROL_3, 0},
@@ -99,7 +99,7 @@ static const cfg_op_t _di_dsi_init_pads_t210b01[] = {
 	{DSI_PAD_CONTROL_6_B01, 0},
 	{DSI_PAD_CONTROL_7_B01, 0}
 };
-static const cfg_op_t _di_dsi_init_config2[] = {
+static const reg_cfg_t _di_dsi_init_config2[] = {
 	{DSI_PAD_CONTROL_CD, 0},
 	{DSI_SOL_DELAY,     24},
 	{DSI_MAX_THRESHOLD, 480},
@@ -141,7 +141,7 @@ static const cfg_op_t _di_dsi_init_config2[] = {
 };
 
 // DSI panel JDI config.
-static const cfg_op_t _di_dsi_panel_init_config_jdi[] = {
+static const reg_cfg_t _di_dsi_panel_init_config_jdi[] = {
 	{DSI_WR_DATA, 0x0439},     // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -188,7 +188,7 @@ static const cfg_op_t _di_dsi_panel_init_config_jdi[] = {
 };
 
 // DSI packet config.
-static const cfg_op_t _di_dsi_init_seq_pkt_final_config[] = {
+static const reg_cfg_t _di_dsi_init_seq_pkt_final_config[] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
@@ -213,7 +213,7 @@ static const cfg_op_t _di_dsi_init_seq_pkt_final_config[] = {
 };
 
 // DSI mode config.
-static const cfg_op_t _di_dsi_mode_config[] = {
+static const reg_cfg_t _di_dsi_mode_config[] = {
 	{DSI_TRIGGER, 0},
 	{DSI_CONTROL, 0},
 	{DSI_SOL_DELAY, 6},
@@ -227,7 +227,7 @@ static const cfg_op_t _di_dsi_mode_config[] = {
 };
 
 // MIPI CAL config.
-static const cfg_op_t _di_mipi_pad_cal_config[] = {
+static const reg_cfg_t _di_mipi_pad_cal_config[] = {
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG2,  0},
 	{MIPI_CAL_CIL_MIPI_CAL_STATUS, 0xF3F10000},
 	{MIPI_CAL_MIPI_BIAS_PAD_CFG0,  0},
@@ -235,13 +235,13 @@ static const cfg_op_t _di_mipi_pad_cal_config[] = {
 };
 
 // DSI pad config.
-static const cfg_op_t _di_dsi_pad_cal_config_t210[] = {
+static const reg_cfg_t _di_dsi_pad_cal_config_t210[] = {
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PAD_CONTROL_2, 0},
 	{DSI_PAD_CONTROL_3, DSI_PAD_PREEMP_PD_CLK(0x3) | DSI_PAD_PREEMP_PU_CLK(0x3) | DSI_PAD_PREEMP_PD(0x03) | DSI_PAD_PREEMP_PU(0x3)},
 	{DSI_PAD_CONTROL_4, 0}
 };
-static const cfg_op_t _di_dsi_pad_cal_config_t210b01[] = {
+static const reg_cfg_t _di_dsi_pad_cal_config_t210b01[] = {
 	{DSI_PAD_CONTROL_1,     0},
 	{DSI_PAD_CONTROL_2,     0},
 	{DSI_PAD_CONTROL_3,     0},
@@ -252,19 +252,19 @@ static const cfg_op_t _di_dsi_pad_cal_config_t210b01[] = {
 };
 
 // MIPI CAL config.
-static const cfg_op_t _di_mipi_dsi_cal_offsets_config_t210[] = {
+static const reg_cfg_t _di_mipi_dsi_cal_offsets_config_t210[] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200200},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x200002},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x200002}
 };
-static const cfg_op_t _di_mipi_dsi_cal_offsets_config_t210b01[] = {
+static const reg_cfg_t _di_mipi_dsi_cal_offsets_config_t210b01[] = {
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG,   0x200006},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG,   0x200006},
 	{MIPI_CAL_DSIA_MIPI_CAL_CONFIG_2, 0x260000},
 	{MIPI_CAL_DSIB_MIPI_CAL_CONFIG_2, 0x260000}
 };
-static const cfg_op_t _di_mipi_start_dsi_cal_config[] = {
+static const reg_cfg_t _di_mipi_start_dsi_cal_config[] = {
 	{MIPI_CAL_CILA_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILB_MIPI_CAL_CONFIG,   0},
 	{MIPI_CAL_CILC_MIPI_CAL_CONFIG,   0},
@@ -280,7 +280,7 @@ static const cfg_op_t _di_mipi_start_dsi_cal_config[] = {
 };
 
 // Display A enable config.
-static const cfg_op_t _di_dc_video_enable_config[] = {
+static const reg_cfg_t _di_dc_video_enable_config[] = {
 	/* Set panel timings */
 	{DC_DISP_DISP_TIMING_OPTIONS, VSYNC_H_POSITION(0)},
 	{DC_DISP_REF_TO_SYNC, V_REF_TO_SYNC(1)    | H_REF_TO_SYNC(0)},
@@ -309,7 +309,7 @@ static const cfg_op_t _di_dc_video_enable_config[] = {
 };
 
 // Display A disable config.
-static const cfg_op_t _di_dc_video_disable_config[] = {
+static const reg_cfg_t _di_dc_video_disable_config[] = {
 	{DC_CMD_INT_MASK, 0},
 	{DC_CMD_STATE_ACCESS, READ_MUX_ASSEMBLY | WRITE_MUX_ASSEMBLY},
 	{DC_CMD_INT_ENABLE, 0},
@@ -332,7 +332,7 @@ static const cfg_op_t _di_dc_video_disable_config[] = {
 };
 
 // DSI deinit config.
-static const cfg_op_t _di_dsi_timing_deinit_config[] = {
+static const reg_cfg_t _di_dsi_timing_deinit_config[] = {
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0},
 	{DSI_PHY_TIMING_0, 0x6070603},
@@ -352,7 +352,7 @@ static const cfg_op_t _di_dsi_timing_deinit_config[] = {
 };
 
 // DSI panel JDI deinit config.
-static const cfg_op_t _di_dsi_panel_deinit_config_jdi[] = {
+static const reg_cfg_t _di_dsi_panel_deinit_config_jdi[] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -378,7 +378,7 @@ static const cfg_op_t _di_dsi_panel_deinit_config_jdi[] = {
 };
 
 // DSI panel AUO deinit config.
-static const cfg_op_t _di_dsi_panel_deinit_config_auo[] = {
+static const reg_cfg_t _di_dsi_panel_deinit_config_auo[] = {
 	{DSI_WR_DATA, 0x439},      // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
 	{DSI_WR_DATA, 0x9483FFB9}, // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -420,7 +420,7 @@ static const cfg_op_t _di_dsi_panel_deinit_config_auo[] = {
 };
 
 /*
-static const cfg_op_t _di_init_config_invert[] = {
+static const reg_cfg_t _di_init_config_invert[] = {
 	{DSI_WR_DATA, 0x239},
 	{DSI_WR_DATA, 0x02C1}, // INV_EN.
 	{DSI_TRIGGER, DSI_TRIGGER_HOST},
@@ -428,7 +428,7 @@ static const cfg_op_t _di_init_config_invert[] = {
 */
 
 // Display A Window A one color config.
-static const cfg_op_t _di_win_one_color[] = {
+static const reg_cfg_t _di_win_one_color[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT | WINDOW_B_SELECT | WINDOW_C_SELECT | WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
@@ -436,7 +436,7 @@ static const cfg_op_t _di_win_one_color[] = {
 };
 
 // Display A Window A linear pitch config.
-static const cfg_op_t _di_winA_pitch[] = {
+static const reg_cfg_t _di_winA_pitch[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
@@ -460,7 +460,7 @@ static const cfg_op_t _di_winA_pitch[] = {
 };
 
 // Display A Window A linear pitch + Win D support config.
-static const cfg_op_t _di_winA_pitch_vic[] = {
+static const reg_cfg_t _di_winA_pitch_vic[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
@@ -484,7 +484,7 @@ static const cfg_op_t _di_winA_pitch_vic[] = {
 };
 
 // Display A Window A linear pitch inverse + Win D support config.
-static const cfg_op_t _di_winA_pitch_inv[] = {
+static const reg_cfg_t _di_winA_pitch_inv[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
@@ -508,7 +508,7 @@ static const cfg_op_t _di_winA_pitch_inv[] = {
 };
 
 // Display A Window A block linear config.
-static const cfg_op_t _di_winA_block[] = {
+static const reg_cfg_t _di_winA_block[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, DSI_ENABLE},
@@ -532,7 +532,7 @@ static const cfg_op_t _di_winA_block[] = {
 };
 
 // Display A Window D config.
-static const cfg_op_t _di_winD_log[] = {
+static const reg_cfg_t _di_winD_log[] = {
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_WIN_COLOR_DEPTH, WIN_COLOR_DEPTH_B8G8R8A8},

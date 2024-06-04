@@ -197,10 +197,11 @@ int atoi(const char *nptr)
   return (int)strtol(nptr, (char **)NULL, 10);
 }
 
-void exec_cfg(u32 *base, const cfg_op_t *ops, u32 num_ops)
+void reg_write_array(u32 *base, const reg_cfg_t *cfg, u32 num_cfg)
 {
-	for (u32 i = 0; i < num_ops; i++)
-		base[ops[i].off] = ops[i].val;
+	// Expected register offset is a u32 array index.
+	for (u32 i = 0; i < num_cfg; i++)
+		base[cfg[i].idx] = cfg[i].val;
 }
 
 u32 crc32_calc(u32 crc, const u8 *buf, u32 len)
