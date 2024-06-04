@@ -286,7 +286,7 @@ static void _config_se_brom()
 	APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) = (APB_MISC(APB_MISC_PP_STRAPPING_OPT_A) & 0xF0) | (7 << 10);
 }
 
-static void _config_regulators(bool tegra_t210)
+static void _config_regulators(bool tegra_t210, bool nx_hoag)
 {
 	// Set RTC/AO domain to POR voltage.
 	if (tegra_t210)
@@ -345,6 +345,13 @@ static void _config_regulators(bool tegra_t210)
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_SD2_CFG, (1 << MAX77620_SD_SR_SHIFT)                                  |
 																	  (MAX77620_POWER_MODE_NORMAL << MAX77620_SD_POWER_MODE_SHIFT) |
 																	  MAX77620_SD_CFG1_FSRADE_SD_ENABLE);
+
+		// Enable LDO8 on HOAG as it also powers I2C1 IO pads.
+		if (nx_hoag)
+		{
+			max7762x_regulator_set_voltage(REGULATOR_LDO8, 2800000);
+			max7762x_regulator_enable(REGULATOR_LDO8, true);
+		}
 	}
 }
 
@@ -397,18 +404,11 @@ void hw_init()
 	// Initialize I2C5, mandatory for PMIC.
 	i2c_init(I2C_5);
 
-	// Enable LDO8 on HOAG as it also powers I2C1 IO pads.
-	if (nx_hoag)
-	{
-		max7762x_regulator_set_voltage(REGULATOR_LDO8, 2800000);
-		max7762x_regulator_enable(REGULATOR_LDO8, true);
-	}
+	// Initialize various regulators based on Erista/Mariko platform.
+	_config_regulators(tegra_t210, nx_hoag);
 
 	// Initialize I2C1 for various power related devices.
 	i2c_init(I2C_1);
-
-	// Initialize various regulators based on Erista/Mariko platform.
-	_config_regulators(tegra_t210);
 
 	_config_pmc_scratch(); // Missing from 4.x+
 
