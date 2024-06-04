@@ -108,10 +108,10 @@ static void _nyx_disp_init()
 	vic_compose();
 
 	// Switch to new window configuration.
-	display_init_framebuffer_pitch_vic();
+	display_init_window_a_pitch_vic();
 
 	// Enable logging on window D.
-	display_init_framebuffer_log();
+	display_init_window_d_console();
 	// Switch back the backlight.
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }
@@ -464,7 +464,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		{
 			if (!console_enabled)
 			{
-				display_activate_console();
+				display_window_d_console_enable();
 				console_enabled = true;
 				gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
 				gfx_con_setpos(964, 630, GFX_COL_AUTO);
@@ -473,7 +473,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 			}
 			else
 			{
-				display_deactivate_console();
+				display_window_d_console_disable();
 				console_enabled = false;
 			}
 

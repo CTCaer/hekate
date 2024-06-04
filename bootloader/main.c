@@ -1297,7 +1297,7 @@ static void _check_low_battery()
 			if (!screen_on)
 			{
 				display_init();
-				u32 *fb = display_init_framebuffer_pitch();
+				u32 *fb = display_init_window_a_pitch();
 				gfx_init_ctxt(fb, 720, 1280, 720);
 
 				gfx_set_rect_rgb(battery_icon,         BATTERY_EMPTY_WIDTH, BATTERY_EMPTY_BATT_HEIGHT, 16, battery_icon_y_pos);
@@ -1540,7 +1540,7 @@ void ipl_main()
 
 skip_lp0_minerva_config:
 	// Initialize display window, backlight and gfx console.
-	u32 *fb = display_init_framebuffer_pitch();
+	u32 *fb = display_init_window_a_pitch();
 	gfx_init_ctxt(fb, 720, 1280, 720);
 	gfx_con_init();
 
