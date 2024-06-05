@@ -373,12 +373,9 @@ void display_init()
 	// Get Chip ID.
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 
-	// Enable LCD DVDD.
+	// Enable DSI AVDD.
 	max7762x_regulator_set_voltage(REGULATOR_LDO0, 1200000);
 	max7762x_regulator_enable(REGULATOR_LDO0, true);
-
-	if (tegra_t210)
-		max77620_config_gpio(7, MAX77620_GPIO_OUTPUT_ENABLE); // T210: LD0 -> GPIO7 -> LCD.
 
 	// Enable Display Interface specific clocks.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_MIPI_CAL) | BIT(CLK_H_DSI);
@@ -791,6 +788,10 @@ skip_panel_deinit:
 	{
 		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD AVDD -5.4V disable.
 		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD AVDD +5.4V disable.
+
+		// Make sure LCD PWM backlight pin is in PWM0 mode.
+		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
+		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = PINMUX_TRISTATE | PINMUX_PULL_DOWN | 1; // Set PWM0 mode.
 	}
 	usleep(10000);
 
@@ -805,14 +806,7 @@ skip_panel_deinit:
 									  DSI_PAD_CONTROL_VS1_PDIO_CLK   | DSI_PAD_CONTROL_VS1_PDIO(0xF);
 	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
 
-	// Switch LCD PWM backlight pin to special function mode and enable PWM0 mode.
-	if (!_nx_aula)
-	{
-		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
-		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = PINMUX_TRISTATE | PINMUX_PULL_DOWN | 1; // Set PWM0 mode.
-	}
-
-	// Disable LCD DVDD.
+	// Disable DSI AVDD.
 	max7762x_regulator_enable(REGULATOR_LDO0, false);
 }
 

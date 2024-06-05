@@ -300,7 +300,7 @@ static void _config_regulators(bool tegra_t210, bool nx_hoag)
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_LOW);
 	sd_power_cycle_time_start = get_tmr_ms();
 
-	// Disable LCD DVDD to make sure it's in a reset state.
+	// Disable DSI AVDD to make sure it's in a reset state.
 	max7762x_regulator_enable(REGULATOR_LDO0, false);
 
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGBBC, MAX77620_CNFGBBC_RESISTOR_1K);
