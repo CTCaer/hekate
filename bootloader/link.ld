@@ -16,6 +16,7 @@ SECTIONS {
 	}
 	. = ALIGN(0x10);
 	__ipl_end = .;
+	__end__ = .;
 	.bss : {
 		__bss_start = .;
 		*(COMMON)

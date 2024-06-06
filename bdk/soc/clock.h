@@ -64,6 +64,7 @@
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRA 0xF8
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRB 0xFC
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2S2 0x100
+#define CLK_RST_CONTROLLER_CLK_SOURCE_I2S3 0x104
 #define CLK_RST_CONTROLLER_CLK_SOURCE_PWM 0x110
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C1 0x124
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C5 0x128
@@ -116,13 +117,17 @@
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRC 0x3A0
 #define CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD 0x3A4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_MSELECT 0x3B4
+#define CLK_RST_CONTROLLER_CLK_SOURCE_I2S4 0x3BC
+#define CLK_RST_CONTROLLER_CLK_SOURCE_I2S5 0x3C0
 #define CLK_RST_CONTROLLER_CLK_SOURCE_I2C4 0x3C4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_AHUB 0x3D0
+#define CLK_RST_CONTROLLER_CLK_SOURCE_HDA2CODEC_2X 0x3E4
 #define CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON 0x3E8
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH1 0x3EC
 #define CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH2 0x3F0
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SYS 0x400
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SOR1 0x410
+#define CLK_RST_CONTROLLER_CLK_SOURCE_HDA 0x428
 #define CLK_RST_CONTROLLER_CLK_SOURCE_SE 0x42C
 #define CLK_RST_CONTROLLER_RST_DEV_V_SET 0x430
 #define CLK_RST_CONTROLLER_RST_DEV_V_CLR 0x434
@@ -138,7 +143,11 @@
 #define CLK_RST_CONTROLLER_UTMIP_PLL_CFG1 0x484
 #define CLK_RST_CONTROLLER_UTMIP_PLL_CFG2 0x488
 #define CLK_RST_CONTROLLER_PLLE_AUX 0x48C
-#define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S0 0x4A0
+#define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S1 0x4A0
+#define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S2 0x4A4
+#define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S3 0x4A8
+#define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S4 0x4AC
+#define CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S5 0x4B0
 #define CLK_RST_CONTROLLER_UTMIP_PLL_CFG3 0x4C0
 #define CLK_RST_CONTROLLER_PLLX_MISC_3 0x518
 #define CLK_RST_CONTROLLER_UTMIPLL_HW_PWRDN_CFG0 0x52C
@@ -743,6 +752,11 @@ void clock_disable_uart(u32 idx);
 int  clock_uart_use_src_div(u32 idx, u32 baud);
 void clock_enable_i2c(u32 idx);
 void clock_disable_i2c(u32 idx);
+void clock_enable_i2s_controller();
+void clock_disable_i2s_controller();
+void clock_enable_i2s(u32 idx);
+void clock_disable_i2s(u32 idx);
+void clock_enable_audio();
 void clock_enable_se();
 void clock_enable_tzram();
 void clock_enable_host1x();
@@ -780,6 +794,7 @@ void clock_disable_extperiph1();
 void clock_enable_extperiph2();
 void clock_disable_extperiph2();
 
+void clock_enable_plla();
 void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210);
 void clock_enable_pllx();
 void clock_enable_pllc(u32 divn);

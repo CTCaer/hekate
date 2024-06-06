@@ -59,6 +59,22 @@ static const clk_rst_t _clock_i2c[] = {
 	{ CLK_RST_CONTROLLER_RST_DEVICES_X, CLK_RST_CONTROLLER_CLK_OUT_ENB_X, CLK_RST_CONTROLLER_CLK_SOURCE_I2C6, CLK_X_I2C6, 0, CLK_SRC_DIV(10.5) }  //20.4MHz -> 100KHz
 };
 
+static const clk_rst_t _clock_i2s[] = {
+	{ CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2S1, CLK_L_I2S1, 0, CLK_SRC_DIV(80) }, // PLLA_out0 (120MHz) / 9 -> 1.5MHz
+	{ CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2S2, CLK_L_I2S2, 0, CLK_SRC_DIV(80) }, // PLLA_out0 (120MHz) / 9 -> 1.5MHz
+	{ CLK_RST_CONTROLLER_RST_DEVICES_L, CLK_RST_CONTROLLER_CLK_OUT_ENB_L, CLK_RST_CONTROLLER_CLK_SOURCE_I2S3, CLK_L_I2S3, 0, CLK_SRC_DIV(80) }, // PLLA_out0 (120MHz) / 9 -> 1.5MHz
+	{ CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_I2S4, CLK_V_I2S4, 0, CLK_SRC_DIV(80) }, // PLLA_out0 (120MHz) / 9 -> 1.5MHz
+	{ CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_I2S5, CLK_V_I2S5, 0, CLK_SRC_DIV(80) }, // PLLA_out0 (120MHz) / 9 -> 1.5MHz
+};
+
+static const clk_rst_t _clock_audio_sync_clk_i2s[] = {
+	{ CLK_NOT_USED, CLK_NOT_USED, CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S1, CLK_NOT_USED, 0, CLK_SRC_DIV(9) }, // PLLA_out0 (120MHz) / 9 -> 13.33MHz
+	{ CLK_NOT_USED, CLK_NOT_USED, CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S2, CLK_NOT_USED, 0, CLK_SRC_DIV(9) }, // PLLA_out0 (120MHz) / 9 -> 13.33MHz
+	{ CLK_NOT_USED, CLK_NOT_USED, CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S3, CLK_NOT_USED, 0, CLK_SRC_DIV(9) }, // PLLA_out0 (120MHz) / 9 -> 13.33MHz
+	{ CLK_NOT_USED, CLK_NOT_USED, CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S4, CLK_NOT_USED, 0, CLK_SRC_DIV(9) }, // PLLA_out0 (120MHz) / 9 -> 13.33MHz
+	{ CLK_NOT_USED, CLK_NOT_USED, CLK_RST_CONTROLLER_AUDIO_SYNC_CLK_I2S5, CLK_NOT_USED, 0, CLK_SRC_DIV(9) }, // PLLA_out0 (120MHz) / 9 -> 13.33MHz
+};
+
 static clk_rst_t _clock_se = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_SE,          CLK_V_SE,          0, CLK_SRC_DIV(1)   // 408MHz. Default: 408MHz. Max: 627.2 MHz.
 };
@@ -114,7 +130,7 @@ static clk_rst_t _clock_actmon = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_ACTMON,      CLK_V_ACTMON,      6, CLK_SRC_DIV(1)   // 19.2MHz.
 };
 static clk_rst_t _clock_extperiph1 = {
-	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH1,  CLK_V_EXTPERIPH1,  0, CLK_SRC_DIV(1)
+	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH1,  CLK_V_EXTPERIPH1,  2, CLK_SRC_DIV(17) // 24MHz
 };
 static clk_rst_t _clock_extperiph2 = {
 	CLK_RST_CONTROLLER_RST_DEVICES_V, CLK_RST_CONTROLLER_CLK_OUT_ENB_V, CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH2,  CLK_V_EXTPERIPH2,  2, CLK_SRC_DIV(102) // 4.0MHz
@@ -123,26 +139,32 @@ static clk_rst_t _clock_extperiph2 = {
 void clock_enable(const clk_rst_t *clk)
 {
 	// Put clock into reset.
-	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~BIT(clk->index)) | BIT(clk->index);
+	if (clk->reset)
+		CLOCK(clk->reset) = (CLOCK(clk->reset) & ~BIT(clk->index)) | BIT(clk->index);
 	// Disable.
-	CLOCK(clk->enable) &= ~BIT(clk->index);
+	if (clk->enable)
+		CLOCK(clk->enable) &= ~BIT(clk->index);
 	// Configure clock source if required.
 	if (clk->source)
 		CLOCK(clk->source) = clk->clk_div | (clk->clk_src << 29u);
 	// Enable.
-	CLOCK(clk->enable) = (CLOCK(clk->enable) & ~BIT(clk->index)) | BIT(clk->index);
+	if (clk->enable)
+		CLOCK(clk->enable) = (CLOCK(clk->enable) & ~BIT(clk->index)) | BIT(clk->index);
 	usleep(2);
 
 	// Take clock off reset.
-	CLOCK(clk->reset) &= ~BIT(clk->index);
+	if (clk->reset)
+		CLOCK(clk->reset) &= ~BIT(clk->index);
 }
 
 void clock_disable(const clk_rst_t *clk)
 {
 	// Put clock into reset.
-	CLOCK(clk->reset) = (CLOCK(clk->reset) & ~BIT(clk->index)) | BIT(clk->index);
+	if (clk->reset)
+		CLOCK(clk->reset) = (CLOCK(clk->reset) & ~BIT(clk->index)) | BIT(clk->index);
 	// Disable.
-	CLOCK(clk->enable) &= ~BIT(clk->index);
+	if (clk->enable)
+		CLOCK(clk->enable) &= ~BIT(clk->index);
 }
 
 void clock_enable_fuse(bool enable)
@@ -189,6 +211,73 @@ void clock_enable_i2c(u32 idx)
 void clock_disable_i2c(u32 idx)
 {
 	clock_disable(&_clock_i2c[idx]);
+}
+
+void clock_enable_i2s(u32 idx)
+{
+	clock_enable(&_clock_i2s[idx]);
+	//clock_enable(&_clock_audio_sync_clk_i2s[idx]);
+}
+
+void clock_disable_i2s(u32 idx)
+{
+	clock_disable(&_clock_i2s[idx]);
+	//clock_disable(&_clock_audio_sync_clk_i2s[idx]);
+}
+
+// TODO
+/* AHUB clock sources */
+#define AHUB_SRC_PLLA_OUT0 (0 << 29)
+#define AHUB_SRC_PLLP_OUT0 (4 << 29)
+
+#define SET_CLK_ENB_I2S1                 (BIT(30))
+#define SET_CLK_ENB_I2S3                 (BIT(18))
+#define SET_CLK_ENB_I2S2                 (BIT(11))
+#define SET_CLK_ENB_SPDIF                (BIT(10))
+
+#define CLR_I2S1_RST                     (BIT(30))
+#define CLR_I2S3_RST                     (BIT(18))
+#define CLR_I2S2_RST                     (BIT(11))
+#define CLR_SPDIF_RST                    (BIT(10))
+
+#define SET_CLK_ENB_EXTPERIPH1           (BIT(24))
+#define SET_CLK_ENB_APB2APE              (BIT(11))
+#define SET_CLK_ENB_AHUB                 (BIT(10))
+#define SET_CLK_ENB_I2S5                 (BIT(6))
+#define SET_CLK_ENB_I2S4                 (BIT(5))
+
+#define CLR_EXTPERIPH1_RST               (BIT(24))
+#define CLR_APB2APE_RST                  (BIT(11))
+#define CLR_AHUB_RST                     (BIT(10))
+#define CLR_I2S5_RST                     (BIT(6))
+#define CLR_I2S4_RST                     (BIT(5))
+
+#define EXTPERIPH1_SRC_PLLA_OUT0 (0 << 29)
+#define EXTPERIPH1_SRC_PLLP_OUT0 (2 << 29)
+
+void clock_enable_audio()
+{
+	clock_enable_plla();
+
+    CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_AHUB) = AHUB_SRC_PLLP_OUT0 | CLK_SRC_DIV(34); // AHUB @ 12MHz
+    CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HDA2CODEC_2X) = 0x8000001e;
+    //CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EXTPERIPH1) = EXTPERIPH1_SRC_PLLP_OUT0 | (((408/24)-1) * 2); // RT5677 MCLK @ 24MHz from 408MHz PLLP
+    clock_enable_extperiph1();
+    CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HDA) = 0xe;
+
+    // ?
+    CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(13);
+    usleep(2);
+    CLOCK(CLK_RST_CONTROLLER_RST_DEV_U_CLR) = BIT(13);
+
+    // From https://github.com/coreboot/coreboot/blob/master/src/soc/nvidia/tegra210/clock.c#L787:
+    CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = SET_CLK_ENB_I2S1 | SET_CLK_ENB_I2S3 | SET_CLK_ENB_I2S2 | SET_CLK_ENB_SPDIF;
+    CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_SET) = BIT(28) /*HDA*/ | SET_CLK_ENB_EXTPERIPH1 | SET_CLK_ENB_APB2APE | SET_CLK_ENB_AHUB | SET_CLK_ENB_I2S5 | SET_CLK_ENB_I2S4;
+
+    usleep(2);
+
+    CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = CLR_I2S1_RST | CLR_I2S3_RST | CLR_I2S2_RST | CLR_SPDIF_RST;
+    CLOCK(CLK_RST_CONTROLLER_RST_DEV_V_CLR) = BIT(28) /*HDA*/ | CLR_EXTPERIPH1_RST | CLR_APB2APE_RST | CLR_AHUB_RST | CLR_I2S5_RST | CLR_I2S4_RST;
 }
 
 void clock_enable_se()
@@ -387,6 +476,19 @@ void clock_disable_extperiph2()
 {
 	PMC(APBDEV_PMC_CLK_OUT_CNTRL) &= ~((PMC_CLK_OUT_CNTRL_CLK2_SRC_SEL(OSC_CAR)) | PMC_CLK_OUT_CNTRL_CLK2_FORCE_EN);
 	clock_disable(&_clock_extperiph2);
+}
+
+void clock_enable_plla()
+{
+	u32 divp = 1;
+	u32 divn = 200;
+	u32 plla_div = (divp << 20) | (divn << 11) | 8;
+
+	// PLLA @ 120MHz
+    CLOCK(CLK_RST_CONTROLLER_PLLA_BASE) = PLLCX_BASE_ENABLE | PLLCX_BASE_LOCK | plla_div; //p << 20, n << 8, m
+    CLOCK(CLK_RST_CONTROLLER_PLLA_OUT) = 0x3 | 2 << 8; // divide by an extra 2
+    CLOCK(CLK_RST_CONTROLLER_PLLA_MISC1) = 0x0000f000; // TODO what is this
+    CLOCK(CLK_RST_CONTROLLER_PLLA_MISC) = 0x12000000; // TODO what is this
 }
 
 void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)

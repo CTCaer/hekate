@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <soc/hw_init.h>
+#include <audio/rt5639.h>
 #include <display/di.h>
 #include <display/vic.h>
 #include <input/joycon.h>
@@ -413,6 +414,8 @@ void hw_init()
 
 	// Enable HOST1X used by every display module (DC, VIC, NVDEC, NVENC, TSEC, etc).
 	clock_enable_host1x();
+
+	rt5639_init();
 }
 
 void hw_reinit_workaround(bool coreboot, u32 bl_magic)

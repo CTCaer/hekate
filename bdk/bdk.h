@@ -19,6 +19,7 @@
 
 #include <memory_map.h>
 
+#include <audio/rt5639.h>
 #include <display/di.h>
 #include <display/vic.h>
 #include <input/als.h>

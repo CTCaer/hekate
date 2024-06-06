@@ -46,10 +46,17 @@
 #define PINMUX_AUX_CAM_I2C_SDA     0xD8
 #define PINMUX_AUX_UART2_TX        0xF4
 #define PINMUX_AUX_UART3_TX        0x104
+#define PINMUX_AUX_DAP1_FS         0x124
+#define PINMUX_AUX_DAP1_DIN        0x128
+#define PINMUX_AUX_DAP1_DOUT       0x12C
+#define PINMUX_AUX_DAP1_SCLK       0x130
 #define PINMUX_AUX_DAP4_DIN        0x148
 #define PINMUX_AUX_DAP4_DOUT       0x14C
 #define PINMUX_AUX_DAP4_SCLK       0x150
 #define PINMUX_AUX_CLK_32K_OUT     0x164
+#define PINMUX_AUX_AUD_MCLK        0x180
+#define PINMUX_AUX_DVFS_PWM        0x184
+#define PINMUX_AUX_DVFS_CLK        0x188
 #define PINMUX_AUX_GPIO_X1_AUD     0x18C
 #define PINMUX_AUX_GPIO_X3_AUD     0x190
 #define PINMUX_AUX_SPDIF_IN        0x1A4
@@ -81,6 +88,9 @@
 #define PINMUX_AUX_GPIO_PK3        0x260
 #define PINMUX_AUX_GPIO_PK7        0x270
 #define PINMUX_AUX_GPIO_PZ1        0x280
+#define PINMUX_AUX_GPIO_PZ3        0x288
+#define PINMUX_AUX_GPIO_PZ4        0x28C
+#define PINMUX_AUX_AUDIO_CODEC_RST PINMUX_AUX_GPIO_PZ4
 /* Only in T210B01 */
 #define PINMUX_AUX_SDMMC2_DAT0     0x294
 #define PINMUX_AUX_SDMMC2_DAT1     0x298
@@ -130,5 +140,6 @@
 
 void pinmux_config_uart(u32 idx);
 void pinmux_config_i2c(u32 idx);
+void pinmux_config_audio_codec(void);
 
 #endif

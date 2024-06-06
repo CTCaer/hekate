@@ -240,6 +240,8 @@
 #define APB_MISC_GP_DSI_PAD_CONTROL           0xAC0
 #define APB_MISC_GP_WIFI_EN_CFGPADCTRL        0xB64
 #define APB_MISC_GP_WIFI_RST_CFGPADCTRL       0xB68
+#define APB_MISC_DAS_DAP_CTRL_SEL             0xC00
+#define APB_MISC_DAS_DAC_INPUT_DATA_CLK_SEL   0xC40
 
 /*! Secure boot registers. */
 #define SB_CSR                       0x0

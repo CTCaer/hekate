@@ -30,3 +30,8 @@ void pinmux_config_i2c(u32 idx)
 	PINMUX_AUX(PINMUX_AUX_X_I2C_SCL(idx)) = PINMUX_INPUT_ENABLE;
 	PINMUX_AUX(PINMUX_AUX_X_I2C_SDA(idx)) = PINMUX_INPUT_ENABLE;
 }
+
+void pinmux_config_audio_codec(void)
+{
+	PINMUX_AUX(PINMUX_AUX_AUDIO_CODEC_RST) = (3 & PINMUX_FUNC_MASK) | PINMUX_PULL_DOWN; // codec RST
+}

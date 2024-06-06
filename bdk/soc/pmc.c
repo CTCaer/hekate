@@ -131,3 +131,19 @@ int pmc_enable_partition(pmc_power_rail_t part, u32 enable)
 
 	return 1;
 }
+
+bool pmc_get_partition_clamped(pmc_power_rail_t part)
+{
+    return PMC(APBDEV_PMC_CLAMP_STATUS) & BIT(part);
+}
+
+void pmc_unclamp_partition(pmc_power_rail_t part)
+{
+	u32 part_mask = BIT(part);
+
+    if (!pmc_get_partition_clamped(part)) return;
+
+    PMC(APBDEV_PMC_REMOVE_CLAMPING_CMD) = part_mask;
+
+    while (pmc_get_partition_clamped(part));
+}

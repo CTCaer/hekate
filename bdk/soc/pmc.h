@@ -36,7 +36,10 @@
 #define  PMC_CNTRL_FUSE_OVERRIDE           BIT(18)
 #define  PMC_CNTRL_SHUTDOWN_OE             BIT(22)
 #define APBDEV_PMC_SEC_DISABLE       0x4
+#define APBDEV_PMC_DPD_SAMPLE        0x20
+#define APBDEV_PMC_CLAMP_STATUS      0x2C
 #define APBDEV_PMC_PWRGATE_TOGGLE    0x30
+#define APBDEV_PMC_REMOVE_CLAMPING_CMD 0x034
 #define APBDEV_PMC_PWRGATE_STATUS    0x38
 #define APBDEV_PMC_NO_IOPOWER        0x44
 #define  PMC_NO_IOPOWER_SDMMC1_IO_EN       BIT(12)
@@ -53,6 +56,7 @@
 											PMC_SCRATCH0_MODE_BOOTLOADER | \
 											PMC_SCRATCH0_MODE_PAYLOAD)
 #define APBDEV_PMC_BLINK_TIMER       0x40
+#define APBDEV_PMC_PWR_DET           0x48
 #define  PMC_BLINK_ON(n)                   ((n & 0x7FFF))
 #define  PMC_BLINK_FORCE                   BIT(15)
 #define  PMC_BLINK_OFF(n)                  ((u32)(n & 0xFFFF) << 16)
@@ -99,7 +103,9 @@
 #define  PMC_RST_STATUS_LP0                4
 #define  PMC_RST_STATUS_AOTAG              5
 #define APBDEV_PMC_IO_DPD_REQ        0x1B8
-#define  PMC_IO_DPD_REQ_DPD_OFF            BIT(30)
+#define  PMC_IO_DPD_REQ_DPD_IDLE           0
+#define  PMC_IO_DPD_REQ_DPD_OFF            (1 << 30)
+#define  PMC_IO_DPD_REQ_DPD_ON             (2 << 30)
 #define APBDEV_PMC_IO_DPD2_REQ       0x1C0
 #define APBDEV_PMC_VDDP_SEL          0x1CC
 #define APBDEV_PMC_DDR_CFG           0x1D0
@@ -132,11 +138,13 @@
 #define  PMC_CNTRL2_SYSCLK_ORRIDE          BIT(10)
 #define  PMC_CNTRL2_HOLD_CKE_LOW_EN        BIT(12)
 #define  PMC_CNTRL2_ALLOW_PULSE_WAKE       BIT(14)
+#define APBDEV_PMC_IO_DPD_OFF_MASK   0x444
 #define APBDEV_PMC_FUSE_CONTROL      0x450
 #define  PMC_FUSE_CONTROL_PS18_LATCH_SET   BIT(8)
 #define  PMC_FUSE_CONTROL_PS18_LATCH_CLR   BIT(9)
 #define APBDEV_PMC_IO_DPD3_REQ       0x45C
 #define APBDEV_PMC_IO_DPD4_REQ       0x464
+#define APBDEV_PMC_IO_DPD2_OFF_MASK  0x480
 #define APBDEV_PMC_UTMIP_PAD_CFG1    0x4C4
 #define APBDEV_PMC_UTMIP_PAD_CFG3    0x4CC
 #define APBDEV_PMC_DDR_CNTRL         0x4E4
@@ -246,5 +254,7 @@ typedef enum _pmc_power_rail_t
 
 void pmc_scratch_lock(pmc_sec_lock_t lock_mask);
 int  pmc_enable_partition(pmc_power_rail_t part, u32 enable);
+bool pmc_get_partition_clamped(pmc_power_rail_t part);
+void pmc_unclamp_partition(pmc_power_rail_t part);
 
 #endif
