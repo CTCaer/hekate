@@ -24,6 +24,11 @@
 #define DSI_VIDEO_DISABLED 0
 #define DSI_VIDEO_ENABLED  1
 
+#define WINDOW_A 0
+#define WINDOW_B 1
+#define WINDOW_C 2
+#define WINDOW_D 3
+
 /*! Display registers. */
 #define _DIREG(reg) ((reg) * 4)
 
@@ -87,12 +92,14 @@
 
 #define DC_CMD_STATE_CONTROL 0x41
 #define  GENERAL_ACT_REQ BIT(0)
+#define  WIN_ACT_REQ     1
 #define  WIN_A_ACT_REQ   BIT(1)
 #define  WIN_B_ACT_REQ   BIT(2)
 #define  WIN_C_ACT_REQ   BIT(3)
 #define  WIN_D_ACT_REQ   BIT(4)
 #define  CURSOR_ACT_REQ  BIT(7)
 #define  GENERAL_UPDATE  BIT(8)
+#define  WIN_UPDATE      9
 #define  WIN_A_UPDATE    BIT(9)
 #define  WIN_B_UPDATE    BIT(10)
 #define  WIN_C_UPDATE    BIT(11)
@@ -101,6 +108,7 @@
 #define  NC_HOST_TRIG    BIT(24)
 
 #define DC_CMD_DISPLAY_WINDOW_HEADER 0x42
+#define  WINDOW_SELECT   4
 #define  WINDOW_A_SELECT BIT(4)
 #define  WINDOW_B_SELECT BIT(5)
 #define  WINDOW_C_SELECT BIT(6)
@@ -860,6 +868,12 @@ void display_wait_interrupt(u32 intr);
 u16  display_get_decoded_panel_id();
 void display_set_decoded_panel_id(u32 id);
 
+/*! MIPI DCS register management */
+int  display_dsi_read(u8 cmd, u32 len, void *data);
+int  display_dsi_vblank_read(u8 cmd, u32 len, void *data);
+void display_dsi_write(u8 cmd, u32 len, void *data);
+void display_dsi_vblank_write(u8 cmd, u32 len, void *data);
+
 /*! Show one single color on the display. */
 void display_color_screen(u32 color);
 
@@ -874,16 +888,16 @@ u32 *display_init_window_a_pitch_inv();
 u32 *display_init_window_a_block();
 u32 *display_init_window_d_console();
 
+void display_window_disable(u32 window);
+
+void display_set_framebuffer(u32 window,  void *fb);
+void display_move_framebuffer(u32 window, void *fb);
+
 void display_window_d_console_enable();
 void display_window_d_console_disable();
 
 void display_cursor_init(void *crs_fb, u32 size);
 void display_cursor_set_pos(u32 x, u32 y);
 void display_cursor_deinit();
-
-int  display_dsi_read(u8 cmd, u32 len, void *data);
-int  display_dsi_vblank_read(u8 cmd, u32 len, void *data);
-void display_dsi_write(u8 cmd, u32 len, void *data);
-void display_dsi_vblank_write(u8 cmd, u32 len, void *data);
 
 #endif

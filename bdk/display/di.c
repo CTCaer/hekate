@@ -902,6 +902,53 @@ u32 *display_init_window_d_console()
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 }
 
+void display_window_disable(u32 window)
+{
+	// Select window C.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
+
+	// Disable window C.
+	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+}
+
+void display_set_framebuffer(u32 window, void *fb)
+{
+	// Select window.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
+
+	// Set new fb address.
+	DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR)) = (u32)fb;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+}
+
+void display_move_framebuffer(u32 window, void *fb)
+{
+	// Select window.
+	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
+
+	// Get current framebuffer address.
+	void *fb_curr = (void *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	u32 win_size = DISPLAY_A(_DIREG(DC_WIN_PRESCALED_SIZE));
+	win_size = (win_size & 0x7FFF) * ((win_size >> 16) & 0x1FFF);
+
+	// Copy fb over.
+	memcpy(fb, fb_curr, win_size);
+
+	// Set new fb address.
+	DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR)) = (u32)fb;
+
+	// Arm and activate changes.
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+}
+
 void display_window_d_console_enable()
 {
 	// Only update active registers on vsync.
@@ -935,9 +982,6 @@ void display_window_d_console_enable()
 	// Arm and activate changes.
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
-
-	// Re-select window A.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT;
 }
 
 void display_window_d_console_disable()
@@ -964,9 +1008,6 @@ void display_window_d_console_disable()
 	// Arm and activate changes.
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
-
-	// Re-select window A.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_A_SELECT;
 }
 
 void display_cursor_init(void *crs_fb, u32 size)
