@@ -1319,15 +1319,8 @@ static void _update_status_bar(void *params)
 	max17050_get_property(MAX17050_Current, &batt_curr);
 
 	// Enable fan if more than 41 oC.
-	u32 soc_temp_dec = (soc_temp >> 8);
-	if (soc_temp_dec > 51)
-		set_fan_duty(102);
-	else if (soc_temp_dec > 46)
-		set_fan_duty(76);
-	else if (soc_temp_dec > 41)
-		set_fan_duty(51);
-	else if (soc_temp_dec < 40)
-		set_fan_duty(0);
+	u32 soc_temp_dec = soc_temp >> 8;
+	fan_set_from_temp(soc_temp_dec);
 
 	if (!label)
 		label = (char *)malloc(512);
