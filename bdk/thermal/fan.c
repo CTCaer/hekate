@@ -27,7 +27,7 @@
 #include <soc/timer.h>
 #include <soc/t210.h>
 
-void set_fan_duty(u32 duty)
+void fan_set_duty(u32 duty)
 {
 	static bool fan_init = false;
 	static u16  curr_duty = -1;
@@ -83,7 +83,7 @@ void set_fan_duty(u32 duty)
 	}
 }
 
-void get_fan_speed(u32 *duty, u32 *rpm)
+void fan_get_speed(u32 *duty, u32 *rpm)
 {
 	if (rpm)
 	{
@@ -113,4 +113,16 @@ void get_fan_speed(u32 *duty, u32 *rpm)
 
 	if (duty)
 		*duty = 236 - ((PWM(PWM_CONTROLLER_PWM_CSR_1) >> 16) & 0xFF);
+}
+
+void fan_set_from_temp(u32 temp)
+{
+	if (temp >= 52)
+		fan_set_duty(102);
+	else if (temp >= 47)
+		fan_set_duty(76);
+	else if (temp >= 42)
+		fan_set_duty(51);
+	else if (temp <= 39)
+		fan_set_duty(0);
 }

@@ -459,7 +459,7 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 	// Disable temperature sensor, touchscreen, 5V regulators, Joy-Con and VIC.
 	vic_end();
 	tmp451_end();
-	set_fan_duty(0);
+	fan_set_duty(0);
 	touch_power_off();
 	jc_deinit();
 	regulator_5v_disable(REGULATOR_5V_ALL);
