@@ -222,6 +222,9 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 	{
 		sdmmc->regs->autocalcfg &= ~SDHCI_TEGRA_AUTOCAL_ENABLE;
 		_sdmmc_pad_config_fallback(sdmmc, power);
+#ifdef ERROR_EXTRA_PRINTING
+		EPRINTFARGS("SDMMC%d: Comp Pad cal timeout!", sdmmc->id + 1);
+#endif
 	}
 
 	// Disable E_INPUT (SD) or enable E_PWRD (eMMC) to conserve power.
@@ -403,7 +406,7 @@ static void _sdmmc_card_clock_enable(sdmmc_t *sdmmc)
 	sdmmc->card_clock_enabled = 1;
 }
 
-static void _sdmmc_sd_clock_disable(sdmmc_t *sdmmc)
+static void _sdmmc_card_clock_disable(sdmmc_t *sdmmc)
 {
 	sdmmc->card_clock_enabled = 0;
 	sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
@@ -934,7 +937,7 @@ static u32 _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
 	if (norintsts & SDHCI_INT_ERROR)
 	{
 #ifdef ERROR_EXTRA_PRINTING
-		EPRINTFARGS("SDMMC%d: norintsts %08X, errintsts %08X\n", sdmmc->id + 1, norintsts, errintsts);
+		EPRINTFARGS("SDMMC%d: norintsts %08X, errintsts %08X", sdmmc->id + 1, norintsts, errintsts);
 #endif
 		sdmmc->regs->errintsts = errintsts;
 		return SDMMC_MASKINT_ERROR;
@@ -1403,7 +1406,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	// Disable clock if enabled.
 	if (clock_sdmmc_is_not_reset_and_enabled(id))
 	{
-		_sdmmc_sd_clock_disable(sdmmc);
+		_sdmmc_card_clock_disable(sdmmc);
 		_sdmmc_commit_changes(sdmmc);
 	}
 
@@ -1456,16 +1459,16 @@ void sdmmc1_disable_power()
 	// T210B01 WAR: Set pads to discharge state.
 	_sdmmc_config_sdmmc1_pads(true);
 
-	// Disable SD card IO power regulator.
+	// Disable SD card IO power.
 	max7762x_regulator_enable(REGULATOR_LDO2, false);
 	usleep(4000);
 
-	// Disable SD card IO power pin.
+	// Disable SD card power.
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_LOW);
 
 	// T210/T210B01 WAR: Set start timer for IO and Controller power discharge.
 	sd_power_cycle_time_start = get_tmr_ms();
-	usleep(1000); // To power cycle, min 1ms without power is needed.
+	usleep(10000); // To power cycle, min 1ms without power is needed.
 
 	// Disable SDMMC1 controller power.
 	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1_IO_EN;
@@ -1486,7 +1489,7 @@ void sdmmc_end(sdmmc_t *sdmmc)
 {
 	if (!sdmmc->clock_stopped)
 	{
-		_sdmmc_sd_clock_disable(sdmmc);
+		_sdmmc_card_clock_disable(sdmmc);
 		// Disable SDMMC power.
 		_sdmmc_set_io_power(sdmmc, SDMMC_POWER_OFF);
 		_sdmmc_commit_changes(sdmmc);

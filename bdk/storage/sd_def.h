@@ -46,7 +46,7 @@
 
 /* OCR bit definitions */
 #define SD_OCR_VDD_18       (1U << 7)     /* VDD voltage 1.8 */
-#define SD_VHD_27_36        (1U << 8)     /* VDD voltage 2.7 ~ 3.6 */
+#define SD_VHS_27_36        (1U << 8)     /* VDD voltage 2.7 ~ 3.6 */
 #define SD_OCR_VDD_32_33    (1U << 20)    /* VDD voltage 3.2 ~ 3.3 */
 #define SD_OCR_S18R         (1U << 24)    /* 1.8V switching request */
 #define SD_ROCR_S18A        SD_OCR_S18R   /* 1.8V switching accepted by card */

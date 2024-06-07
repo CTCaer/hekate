@@ -910,7 +910,7 @@ void _sd_storage_debug_print_ssr(u8 *raw_ssr)
 static int _sd_storage_send_if_cond(sdmmc_storage_t *storage, bool *is_sdsc)
 {
 	sdmmc_cmd_t cmdbuf;
-	u16 vhd_pattern = SD_VHD_27_36 | 0xAA;
+	u16 vhd_pattern = SD_VHS_27_36 | 0xAA;
 	sdmmc_init_cmd(&cmdbuf, SD_SEND_IF_COND, vhd_pattern, SDMMC_RSP_TYPE_5, 0);
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, NULL, NULL))
 	{
