@@ -233,6 +233,8 @@ static int _sdmmc_storage_readwrite_ex(sdmmc_storage_t *storage, u32 *blkcnt_out
 
 int sdmmc_storage_end(sdmmc_storage_t *storage)
 {
+	DPRINTF("[SDMMC%d] end\n", storage->sdmmc->id);
+
 	if (!_sdmmc_storage_go_idle_state(storage))
 		return 0;
 

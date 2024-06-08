@@ -1155,7 +1155,7 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 	int result = _sdmmc_wait_response(sdmmc);
 #ifdef ERROR_EXTRA_PRINTING
 	if (!result)
-		EPRINTFARGS("SDMMC%d: Transfer timeout!", sdmmc->id + 1);
+		EPRINTFARGS("SDMMC%d: Transfer error!", sdmmc->id + 1);
 #endif
 	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
 		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
@@ -1404,11 +1404,10 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	// Configure and enable selected clock.
 	clock_sdmmc_get_card_clock_div(&clock, &divisor, type);
 	clock_sdmmc_enable(id, clock);
+	sdmmc->clock_stopped = 0;
 
 	// Make sure all sdmmc registers are reset.
 	_sdmmc_reset_all(sdmmc);
-
-	sdmmc->clock_stopped = 0;
 
 	// Set default pad IO trimming configuration.
 	sdmmc->regs->iospare |= BIT(19);      // Enable 1 cycle delayed cmd_oen.
