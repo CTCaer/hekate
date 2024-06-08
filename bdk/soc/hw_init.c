@@ -494,7 +494,7 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
 
 		// Reinstate SD controller power.
-		PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
+		PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_SDMMC1;
 	}
 
 	// Seamless display or display power off.

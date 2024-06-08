@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -39,10 +39,12 @@
 #define APBDEV_PMC_PWRGATE_TOGGLE    0x30
 #define APBDEV_PMC_PWRGATE_STATUS    0x38
 #define APBDEV_PMC_NO_IOPOWER        0x44
-#define  PMC_NO_IOPOWER_SDMMC1_IO_EN       BIT(12)
-#define  PMC_NO_IOPOWER_SDMMC4_IO_EN       BIT(14)
+#define  PMC_NO_IOPOWER_MEM                BIT(7)
+#define  PMC_NO_IOPOWER_SDMMC1             BIT(12)
+#define  PMC_NO_IOPOWER_SDMMC4             BIT(14)
+#define  PMC_NO_IOPOWER_MEM_COMP           BIT(16)
 #define  PMC_NO_IOPOWER_AUDIO_HV           BIT(18)
-#define  PMC_NO_IOPOWER_GPIO_IO_EN         BIT(21)
+#define  PMC_NO_IOPOWER_GPIO               BIT(21)
 #define APBDEV_PMC_SCRATCH0          0x50
 #define  PMC_SCRATCH0_MODE_WARMBOOT        BIT(0)
 #define  PMC_SCRATCH0_MODE_RCM             BIT(1)
@@ -61,9 +63,9 @@
 #define APBDEV_PMC_SECURE_SCRATCH4   0xC0
 #define APBDEV_PMC_SECURE_SCRATCH5   0xC4
 #define APBDEV_PMC_PWR_DET_VAL       0xE4
-#define  PMC_PWR_DET_SDMMC1_IO_EN          BIT(12)
-#define  PMC_PWR_DET_AUDIO_HV              BIT(18)
-#define  PMC_PWR_DET_GPIO_IO_EN            BIT(21)
+#define  PMC_PWR_DET_33V_SDMMC1            BIT(12)
+#define  PMC_PWR_DET_33V_AUDIO_HV          BIT(18)
+#define  PMC_PWR_DET_33V_GPIO              BIT(21)
 #define APBDEV_PMC_DDR_PWR           0xE8
 #define APBDEV_PMC_USB_AO            0xF0
 #define APBDEV_PMC_CRYPTO_OP         0xF4

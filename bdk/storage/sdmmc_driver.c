@@ -1276,16 +1276,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	if (!sdmmc_get_sd_inserted())
 		return 0;
 
-	/*
-	* Pinmux config:
-	*  DRV_TYPE = DRIVE_2X (for 33 Ohm driver)
-	*  E_SCHMT  = ENABLE (for 1.8V),  DISABLE (for 3.3V)
-	*  E_INPUT  = ENABLE
-	*  TRISTATE = PASSTHROUGH
-	*  APB_MISC_GP_SDMMCx_CLK_LPBK_CONTROL = SDMMCx_CLK_PAD_E_LPBK for CLK
-	*/
-
-	// Enable deep loopback for SDMMC1 CLK pad.
+	// Enable deep loopback for SDMMC1 CLK pad so reads work.
 	APB_MISC(APB_MISC_GP_SDMMC1_CLK_LPBK_CONTROL) = 1;
 
 	// Configure SDMMC1 CLK pinmux, based on state and SoC type.
@@ -1305,18 +1296,18 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 		_sdmmc_config_sdmmc1_schmitt();
 
 	// Make sure the SDMMC1 controller is powered.
-	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1_IO_EN;
+	PMC(APBDEV_PMC_NO_IOPOWER) |=  PMC_NO_IOPOWER_SDMMC1;
 	usleep(1000);
-	PMC(APBDEV_PMC_NO_IOPOWER) &= ~(PMC_NO_IOPOWER_SDMMC1_IO_EN);
+	PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_SDMMC1;
 	(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
 
-	// Set enable SD card power.
+	// Enable SD card power. Powers LDO2 also.
 	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2;
 	gpio_direction_output(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
 	usleep(10000);
 
 	// Inform IO pads that voltage is gonna be 3.3V.
-	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
+	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_33V_SDMMC1;
 	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 	// Enable SD card IO power.
@@ -1471,11 +1462,11 @@ void sdmmc1_disable_power()
 	usleep(10000); // To power cycle, min 1ms without power is needed.
 
 	// Disable SDMMC1 controller power.
-	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1_IO_EN;
+	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1;
 	(void)PMC(APBDEV_PMC_NO_IOPOWER); // Commit write.
 
 	// Inform IO pads that next voltage might be 3.3V.
-	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_SDMMC1_IO_EN;
+	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_33V_SDMMC1;
 	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 	// T210B01 WAR: Restore pads to reset state.
@@ -1550,7 +1541,7 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 	usleep(150);
 
 	// Inform IO pads that we switched to 1.8V.
-	PMC(APBDEV_PMC_PWR_DET_VAL) &= ~(PMC_PWR_DET_SDMMC1_IO_EN);
+	PMC(APBDEV_PMC_PWR_DET_VAL) &= ~PMC_PWR_DET_33V_SDMMC1;
 	(void)PMC(APBDEV_PMC_PWR_DET_VAL); // Commit write.
 
 	// Enable schmitt trigger for better duty cycle and low jitter clock.
