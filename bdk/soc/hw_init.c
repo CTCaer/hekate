@@ -295,22 +295,27 @@ static void _config_regulators(bool tegra_t210, bool nx_hoag)
 	// Disable low battery shutdown monitor.
 	max77620_low_battery_monitor_config(false);
 
-	// Disable SDMMC1 IO/Core power.
+	// Make sure SDMMC1 IO/Core are powered off.
 	max7762x_regulator_enable(REGULATOR_LDO2, false);
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_LOW);
 	sd_power_cycle_time_start = get_tmr_ms();
 
+	// Power on all relevant rails in case we came out of warmboot. Only keep MEM/MEM_COMP and SDMMC1 states.
+	PMC(APBDEV_PMC_NO_IOPOWER) &= PMC_NO_IOPOWER_MEM_COMP | PMC_NO_IOPOWER_SDMMC1 | PMC_NO_IOPOWER_MEM;
+
 	// Disable DSI AVDD to make sure it's in a reset state.
 	max7762x_regulator_enable(REGULATOR_LDO0, false);
 
+	// Disable backup battery charger.
 	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CNFGBBC, MAX77620_CNFGBBC_RESISTOR_1K);
-	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1,
-		MAX77620_ONOFFCNFG1_RSVD | (3 << MAX77620_ONOFFCNFG1_MRT_SHIFT)); // PWR delay for forced shutdown off.
+
+	// Set PWR delay for forced shutdown off to 6s.
+	i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_ONOFFCNFG1, MAX77620_ONOFFCNFG1_RSVD | (3 << MAX77620_ONOFFCNFG1_MRT_SHIFT));
 
 	if (tegra_t210)
 	{
 		// Configure all Flexible Power Sequencers for MAX77620.
-		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG0, (7 << MAX77620_FPS_TIME_PERIOD_SHIFT));
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG0, (7 << MAX77620_FPS_TIME_PERIOD_SHIFT) | (0 << MAX77620_FPS_EN_SRC_SHIFT));
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG1, (7 << MAX77620_FPS_TIME_PERIOD_SHIFT) | (1 << MAX77620_FPS_EN_SRC_SHIFT));
 		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_CFG2, (7 << MAX77620_FPS_TIME_PERIOD_SHIFT));
 		max77620_regulator_config_fps(REGULATOR_LDO4);
@@ -319,13 +324,13 @@ static void _config_regulators(bool tegra_t210, bool nx_hoag)
 		max77620_regulator_config_fps(REGULATOR_SD1);
 		max77620_regulator_config_fps(REGULATOR_SD3);
 
-		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_GPIO3,
-			(4 << MAX77620_FPS_TIME_PERIOD_SHIFT) | (2 << MAX77620_FPS_PD_PERIOD_SHIFT)); // 3.x+
+		// Set GPIO3 to FPS0 for SYS 3V3 EN. Enabled when FPS0 is enabled.
+		i2c_send_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_FPS_GPIO3, (4 << MAX77620_FPS_PU_PERIOD_SHIFT) | (2 << MAX77620_FPS_PD_PERIOD_SHIFT));
 
 		// Set vdd_core voltage to 1.125V.
 		max7762x_regulator_set_voltage(REGULATOR_SD0, 1125000);
 
-		// Fix CPU/GPU after L4T warmboot.
+		// Power down CPU/GPU regulators after L4T warmboot.
 		max77620_config_gpio(5, MAX77620_GPIO_OUTPUT_DISABLE);
 		max77620_config_gpio(6, MAX77620_GPIO_OUTPUT_DISABLE);
 
