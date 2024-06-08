@@ -1504,10 +1504,10 @@ static void _sdram_init_t210()
 	PMC(APBDEV_PMC_DDR_PWR) = PMC(APBDEV_PMC_DDR_PWR); // Normally params->pmc_ddr_pwr.
 
 	// Turn on MEM IO Power.
-	PMC(APBDEV_PMC_NO_IOPOWER) = params->pmc_no_io_power;
-	PMC(APBDEV_PMC_REG_SHORT)  = params->pmc_reg_short;
+	PMC(APBDEV_PMC_NO_IOPOWER) &= PMC_NO_IOPOWER_SDMMC1; // Only keep SDMMC1 state. (Was params->pmc_no_io_power).
+	PMC(APBDEV_PMC_REG_SHORT)   = params->pmc_reg_short;
 
-	PMC(APBDEV_PMC_DDR_CNTRL)  = params->pmc_ddr_ctrl;
+	PMC(APBDEV_PMC_DDR_CNTRL)   = params->pmc_ddr_ctrl;
 
 	// Patch 1 using BCT spare variables
 	if (params->emc_bct_spare0)
@@ -1527,10 +1527,10 @@ static void _sdram_init_t210b01()
 	usleep(params->pmc_vddp_sel_wait);
 
 	// Turn on MEM IO Power.
-	PMC(APBDEV_PMC_NO_IOPOWER) = params->pmc_no_io_power;
-	PMC(APBDEV_PMC_REG_SHORT)  = params->pmc_reg_short;
+	PMC(APBDEV_PMC_NO_IOPOWER) &= PMC_NO_IOPOWER_SDMMC1; // Only keep SDMMC1 state. (Was params->pmc_no_io_power).
+	PMC(APBDEV_PMC_REG_SHORT)   = params->pmc_reg_short;
 
-	PMC(APBDEV_PMC_DDR_CNTRL)  = params->pmc_ddr_ctrl;
+	PMC(APBDEV_PMC_DDR_CNTRL)   = params->pmc_ddr_ctrl;
 
 	// Patch 1 using BCT spare variables
 	if (params->emc_bct_spare0)
