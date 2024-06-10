@@ -1134,17 +1134,20 @@ static void _sd_storage_set_power_limit(sdmmc_storage_t *storage, u16 power_limi
 	u32 pwr = SD_SET_POWER_LIMIT_0_72;
 
 	// If UHS-I only, anything above 1.44W defaults to 1.44W.
+	/*
 	if (power_limit & SD_MAX_POWER_2_88)
 		pwr = SD_SET_POWER_LIMIT_2_88;
 	else if (power_limit & SD_MAX_POWER_2_16)
 		pwr = SD_SET_POWER_LIMIT_2_16;
-	else if (power_limit & SD_MAX_POWER_1_44)
+	*/
+	if (power_limit & SD_MAX_POWER_1_44)
 		pwr = SD_SET_POWER_LIMIT_1_44;
 
 	_sd_storage_switch(storage, buf, SD_SWITCH_SET, SD_SWITCH_GRP_PWRLIM, pwr);
 
 	switch ((buf[15] >> 4) & 0x0F)
 	{
+	/*
 	case SD_SET_POWER_LIMIT_2_88:
 		DPRINTF("[SD] power limit raised to 2880 mW\n");
 		break;
@@ -1152,7 +1155,7 @@ static void _sd_storage_set_power_limit(sdmmc_storage_t *storage, u16 power_limi
 	case SD_SET_POWER_LIMIT_2_16:
 		DPRINTF("[SD] power limit raised to 2160 mW\n");
 		break;
-
+	*/
 	case SD_SET_POWER_LIMIT_1_44:
 		DPRINTF("[SD] power limit raised to 1440 mW\n");
 		break;
