@@ -46,44 +46,7 @@ const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver
 
 volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
 
-void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage)
-{
-	static char emmc_sn[9] = {0};
-
-	// Check if not valid S/N and get actual eMMC S/N.
-	if (!storage && !emmc_sn[0])
-	{
-		if (!emmc_initialize(false))
-			strcpy(emmc_sn, "00000000");
-		else
-		{
-			itoa(emmc_storage.cid.serial, emmc_sn, 16);
-			emmc_end();
-		}
-	}
-	else
-		itoa(storage->cid.serial, emmc_sn, 16);
-
-	// Create main folder.
-	strcpy(path, "backup");
-	f_mkdir(path);
-
-	// Create eMMC S/N folder.
-	strcat(path, "/");
-	strcat(path, emmc_sn);
-	f_mkdir(path);
-
-	// Create sub folder if defined. Dir slash must be included.
-	strcat(path, sub_dir);  // Can be a null-terminator.
-	if (strlen(sub_dir))
-		f_mkdir(path);
-
-	// Add filename.
-	strcat(path, "/");
-	strcat(path, filename); // Can be a null-terminator.
-}
-
-void check_power_off_from_hos()
+static void _check_power_off_from_hos()
 {
 	// Power off on alarm wakeup from HOS shutdown. For modchips/dongles.
 	u8 hos_wakeup = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_IRQTOP);
@@ -294,20 +257,18 @@ out:
 static void _launch_payloads()
 {
 	u8 max_entries = 61;
+	ment_t *ments  = NULL;
 	char *filelist = NULL;
 	char *file_sec = NULL;
 	char *dir = NULL;
-
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
 	if (!sd_mount())
-	{
-		free(ments);
 		goto failed_sd_mount;
-	}
+
+	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 
 	dir = (char *)malloc(256);
 	memcpy(dir, "bootloader/payloads", 20);
@@ -356,9 +317,6 @@ static void _launch_payloads()
 	else
 		EPRINTF("No payloads found.");
 
-	free(ments);
-	free(filelist);
-
 	if (file_sec)
 	{
 		memcpy(dir + strlen(dir), "/", 2);
@@ -368,8 +326,10 @@ static void _launch_payloads()
 	}
 
 failed_sd_mount:
-	sd_end();
 	free(dir);
+	free(ments);
+	free(filelist);
+	sd_end();
 
 	btn_wait();
 }
@@ -379,6 +339,7 @@ static void _launch_ini_list()
 	u8 max_entries = 61;
 	char *special_path = NULL;
 	char *emummc_path  = NULL;
+	ment_t *ments      = NULL;
 	ini_sec_t *cfg_sec = NULL;
 
 	LIST_INIT(ini_list_sections);
@@ -397,7 +358,7 @@ static void _launch_ini_list()
 	}
 
 	// Build configuration menu.
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
+	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
 	ments[0].type    = MENT_BACK;
 	ments[0].caption = "Back";
 
@@ -460,7 +421,6 @@ static void _launch_ini_list()
 	}
 	else
 		EPRINTF("No extra configs found.");
-	free(ments);
 
 parse_failed:
 	if (!cfg_sec)
@@ -496,6 +456,7 @@ wrong_emupath:
 	}
 
 out:
+	free(ments);
 
 	btn_wait();
 }
@@ -504,9 +465,11 @@ static void _launch_config()
 {
 	u8 max_entries = 61;
 	char *special_path = NULL;
-	char *emummc_path = NULL;
+	char *emummc_path  = NULL;
 
+	ment_t *ments      = NULL;
 	ini_sec_t *cfg_sec = NULL;
+
 	LIST_INIT(ini_sections);
 
 	gfx_clear_grey(0x1B);
@@ -522,7 +485,7 @@ static void _launch_config()
 	ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
 
 	// Build configuration menu.
-	ment_t *ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
+	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 6));
 	ments[0].type    = MENT_BACK;
 	ments[0].caption = "Back";
 
@@ -599,8 +562,6 @@ static void _launch_config()
 		return;
 	}
 
-	free(ments);
-
 parse_failed:
 	if (!cfg_sec)
 	{
@@ -639,6 +600,8 @@ wrong_emupath:
 
 out:
 	sd_end();
+
+	free(ments);
 
 	h_cfg.emummc_force_disable = false;
 
@@ -887,7 +850,7 @@ static void _auto_launch()
 	}
 
 	if (h_cfg.autohosoff && !(b_cfg.boot_cfg & BOOT_CFG_AUTOBOOT_EN))
-		check_power_off_from_hos();
+		_check_power_off_from_hos();
 
 	if (h_cfg.autoboot_list || (boot_from_id && !cfg_sec))
 	{
@@ -1334,7 +1297,7 @@ out:
 	max77620_low_battery_monitor_config(true);
 }
 
-static void _r2p_get_config_t210b01()
+static void _r2c_get_config_t210b01()
 {
 	rtc_reboot_reason_t rr;
 	if (!max77620_rtc_get_reboot_reason(&rr))
@@ -1548,9 +1511,9 @@ skip_lp0_minerva_config:
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
 
-	// Get R2P config from RTC.
+	// Get R2C config from RTC.
 	if (h_cfg.t210b01)
-		_r2p_get_config_t210b01();
+		_r2c_get_config_t210b01();
 
 	// Show exceptions, HOS errors, library errors and L4T kernel panics.
 	_show_errors();
