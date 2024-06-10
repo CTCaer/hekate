@@ -1398,7 +1398,7 @@ static int _sd_storage_enable_uhs_low_volt(sdmmc_storage_t *storage, u32 type, u
 	}
 
 	// Try to raise the power limit to let the card perform better.
-	if (hs_type != UHS_SDR25_BUS_SPEED)
+	if (hs_type != UHS_SDR25_BUS_SPEED) // Not applicable for SDR12/SDR25.
 		_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 
 	// Setup and set selected card and bus speed.
@@ -1425,9 +1425,6 @@ static int _sd_storage_enable_hs_high_volt(sdmmc_storage_t *storage, u8 *buf)
 		return 0;
 
 	DPRINTF("[SD] access: %02X, power: %02X\n", fmodes.access_mode, fmodes.power_limit);
-
-	// Try to raise the power limit to let the card perform better.
-	_sd_storage_set_power_limit(storage, fmodes.power_limit, buf);
 
 	if (!(fmodes.access_mode & SD_MODE_HIGH_SPEED))
 		return 1;
