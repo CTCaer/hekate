@@ -1166,6 +1166,7 @@ int hos_launch(ini_sec_t *cfg)
 
 	// Disable display. This must be executed before secmon to provide support for all fw versions.
 	display_end();
+	clock_disable_host1x();
 
 	// Override uCID if set.
 	EMC(EMC_SCRATCH0) = ctxt.ucid;
