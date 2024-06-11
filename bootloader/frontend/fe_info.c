@@ -26,7 +26,6 @@
 #include <libs/fatfs/ff.h>
 
 extern hekate_config h_cfg;
-extern void emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 
 #pragma GCC push_options
 #pragma GCC optimize ("Os")

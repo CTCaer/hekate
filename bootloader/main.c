@@ -1444,7 +1444,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate v6.1.1", 0, 0 };
+menu_t menu_top = { ment_top, "hekate v6.2.0", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
@@ -1470,7 +1470,7 @@ void ipl_main()
 	// Set bootloader's default configuration.
 	set_default_configuration();
 
-	// Prep RTC regs for read. Needed for T210B01 R2P.
+	// Prep RTC regs for read. Needed for T210B01 R2C.
 	max77620_rtc_prep_read();
 
 	// Initialize display.
