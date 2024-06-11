@@ -918,7 +918,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "#FFDD00 Error!#");
 
 		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %02X.%02X.%02X.%02X (",
-			(touch_fw.fw_id >> 24) & 0xFF, (touch_fw.fw_id >> 24) & 0xFF, (touch_fw.fw_id >> 24) & 0xFF, touch_fw.fw_id & 0xFF);
+			(touch_fw.fw_id >> 24) & 0xFF, (touch_fw.fw_id >> 16) & 0xFF, (touch_fw.fw_id >> 8) & 0xFF, touch_fw.fw_id & 0xFF);
 
 		// Check panel pair info.
 		switch (touch_fw.fw_id)
