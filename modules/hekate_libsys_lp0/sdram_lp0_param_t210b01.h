@@ -981,6 +981,7 @@ struct sdram_params_t210b01
 	/* Specifies the value for MC_MTS_CARVEOUT_REG_CTRL */
 	u32 mc_mts_carveout_reg_ctrl;
 
+	/* Specifies the clients that are allowed to access untranslated memory */
 	u32 mc_untranslated_region_check;
 
 	/* Just a place holder for special usage when there is no BCT for certain registers */
