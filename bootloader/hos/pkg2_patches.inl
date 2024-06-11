@@ -855,4 +855,6 @@ static const kip1_id_t _kip_ids[] =
 	{ "FS", "\xEE\x0F\x4B\xAC\x6D\x1F\xFC\x4B", _fs_patches_1700_exfat }, // FS 17.0.0 exFAT
 	{ "FS", "\x79\x5F\x5A\x5E\xB0\xC6\x77\x9E", _fs_patches_1800 },       // FS 18.0.0
 	{ "FS", "\x1E\x2C\x64\xB1\xCC\xE2\x78\x24", _fs_patches_1800_exfat }, // FS 18.0.0 exFAT
+	{ "FS", "\xA3\x39\xF0\x1C\x95\xBF\xA7\x68", _fs_patches_1800 },       // FS 18.1.0
+	{ "FS", "\x20\x4C\xBA\x86\xDE\x08\x44\x6A", _fs_patches_1800_exfat }, // FS 18.1.0 exFAT
 };
