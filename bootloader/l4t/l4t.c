@@ -35,10 +35,11 @@
  * 3: Arachne Register Cell v2. PTSA Rework support.
  * 4: Arachne Register Cell v3. DRAM OPT and DDR200 changes.
  * 5: Arachne Register Cell v4. DRAM FREQ and DDR200 changes.
+ * 6: Arachne Register Cell v5. Signal quality and performance changes. TZ param changes.
  */
 
-#define L4T_LOADER_API_REV 5
-#define L4T_FIRMWARE_REV   0x35524556 // REV5.
+#define L4T_LOADER_API_REV 6
+#define L4T_FIRMWARE_REV   0x36524556 // REV6.
 
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
@@ -52,16 +53,18 @@
 #endif
 
 #if CARVEOUT_NVDEC_TSEC_ENABLE
- #define TZ_SIZE  SZ_8M
+ #define TZDRAM_SIZE_CFG  SZ_8M
 #else
- #define TZ_SIZE  SZ_1M
+ #define TZDRAM_SIZE_CFG  SZ_1M
 #endif
 
 // TZDRAM addresses and sizes.
-#define TZDRAM_SIZE       TZ_SIZE                         // Secure Element.
-#define TZDRAM_BASE       (0xFFFFFFFF - TZDRAM_SIZE + 1)  // 0xFFF00000 or 0xFF800000.
+#define TZDRAM_SIZE       TZDRAM_SIZE_CFG                  // Secure Element.
+#define TZDRAM_BASE       (0xFFFFFFFF - TZDRAM_SIZE + 1)   // 0xFFF00000 or 0xFF800000.
 #define TZDRAM_COLD_ENTRY (TZDRAM_BASE)
 #define TZDRAM_WARM_ENTRY (TZDRAM_BASE + 0x200)
+#define TZ_PARAM_SIZE     SZ_4K
+#define TZ_PARAM_BASE     (0xFFFFFFFF - TZ_PARAM_SIZE + 1) // 0xFFFFF000.
 
 // Carveout sizes.
 #define CARVEOUT_NVDEC_SIZE  SZ_1M
@@ -76,8 +79,14 @@
 
 #define SC7ENTRY_HDR_SIZE 0x400
 
+// Always start 1MB below TZDRAM for Secure Firmware or NVDEC.
+#define GEN_CARVEOUT_TOP       (TZDRAM_BASE - SZ_1M)
+
+// NVDEC and SECFW bases.
+#define NVDFW_BASE             GEN_CARVEOUT_TOP // 0xFF700000.
+#define SECFW_BASE             GEN_CARVEOUT_TOP // 0xFFE00000.
+
 // Secure Elements addresses for T210.
-#define SECFW_BASE             (TZDRAM_BASE - SZ_1M)            // 0xFFE00000 or 0xFF700000.
 #define SC7ENTRY_HDR_BASE      (SECFW_BASE + 0)
 #define SC7ENTRY_BASE          (SECFW_BASE + SC7ENTRY_HDR_SIZE) // After header.
 #define SC7EXIT_BASE           (SECFW_BASE + SZ_64K)            //  64KB after SECFW_BASE.
@@ -214,7 +223,7 @@ typedef struct _bl_v1_params {
 	u64 bl32_image_info;
 	u64 bl33_ep_info;
 	u64 bl33_image_info;
-} bl_v1_params_t;
+} bl31_v1_params_t;
 
 typedef struct _plat_params_from_bl2 {
 	// TZDRAM.
@@ -243,7 +252,7 @@ typedef struct _plat_params_from_bl2 {
 	u64 r2p_payload_base;
 
 	u64 flags;                    // Platform flags.
-} plat_params_from_bl2_t;
+} bl31_plat_params_from_bl2_t;
 
 typedef struct _l4t_fw_t
 {
@@ -265,6 +274,10 @@ typedef struct _l4t_ctxt_t
 	u32   sc7entry_size;
 
 	emc_table_t *mtc_table;
+
+	bl31_v1_params_t            bl31_v1_params;
+	bl31_plat_params_from_bl2_t bl31_plat_params;
+	entry_point_info_t          bl33_ep_info;
 } l4t_ctxt_t;
 
 #define DRAM_VDD2_OC_MIN_VOLTAGE   1050
@@ -483,7 +496,7 @@ static void _l4t_mc_config_carveout(bool t210b01)
 	UPRINTF("TZD: TZDRAM Carveout: %08X - %08X\n", TZDRAM_BASE, TZDRAM_BASE - 1 + TZDRAM_SIZE);
 
 	// Configure generalized security carveouts.
-	u32 carveout_base = TZDRAM_BASE - SZ_1M; // Always leave space for Secure Firmware.
+	u32 carveout_base = GEN_CARVEOUT_TOP;
 
 #if CARVEOUT_NVDEC_TSEC_ENABLE
 
@@ -549,8 +562,10 @@ static void _l4t_mc_config_carveout(bool t210b01)
 	MC(MC_SECURITY_CARVEOUT1_CLIENT_FORCE_INTERNAL_ACCESS2) = 0;
 	MC(MC_SECURITY_CARVEOUT1_CLIENT_FORCE_INTERNAL_ACCESS3) = 0;
 	MC(MC_SECURITY_CARVEOUT1_CLIENT_FORCE_INTERNAL_ACCESS4) = 0;
-	MC(MC_SECURITY_CARVEOUT1_CFG0) = SEC_CARVEOUT_CFG_RD_NS |
-									 SEC_CARVEOUT_CFG_WR_NS |
+	MC(MC_SECURITY_CARVEOUT1_CFG0) = SEC_CARVEOUT_CFG_RD_NS  |
+									 SEC_CARVEOUT_CFG_RD_SEC |
+									 SEC_CARVEOUT_CFG_WR_NS  |
+									 SEC_CARVEOUT_CFG_WR_SEC |
 									 SEC_CARVEOUT_CFG_LOCKED;
 	UPRINTF("GSC1: SECFW Carveout: %08X - %08X\n",
 		MC(MC_SECURITY_CARVEOUT1_BOM), MC(MC_SECURITY_CARVEOUT1_BOM) + MC(MC_SECURITY_CARVEOUT1_SIZE_128KB) * SZ_128K);
@@ -910,7 +925,7 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 	_l4t_bl33_cfg_set_key(bl33_env, "autoboot_list", val);
 
 	val[0] = '0' + L4T_LOADER_API_REV;
-	_l4t_bl33_cfg_set_key(bl33_env, "loader_rev", val);
+	_l4t_bl33_cfg_set_key(bl33_env, "loader_rev",    val);
 
 	// Enable BL33 memory env import.
 	*(u32 *)(BL33_ENV_MAGIC_OFFSET) = BL33_ENV_MAGIC;
@@ -923,25 +938,23 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 
 void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b01)
 {
-	l4t_ctxt_t ctxt = {0};
-	bl_v1_params_t bl_v1_params        = {0};
-	plat_params_from_bl2_t plat_params = {0};
-	entry_point_info_t bl33_ep_info    = {0};
+	l4t_ctxt_t *ctxt = (l4t_ctxt_t *)TZ_PARAM_BASE;
+	memset(ctxt, 0, TZ_PARAM_SIZE);
 
 	gfx_con_setpos(0, 0);
 
 	// Parse config.
-	_l4t_set_config(&ctxt, ini_sec, entry_idx, is_list, t210b01);
+	_l4t_set_config(ctxt, ini_sec, entry_idx, is_list, t210b01);
 
-	if (!ctxt.path)
+	if (!ctxt->path)
 	{
 		_l4t_crit_error("Path missing", false);
 		return;
 	}
 
 	// Get MTC table.
-	ctxt.mtc_table = minerva_get_mtc_table();
-	if (!t210b01 && !ctxt.mtc_table)
+	ctxt->mtc_table = minerva_get_mtc_table();
+	if (!t210b01 && !ctxt->mtc_table)
 	{
 		_l4t_crit_error("Minerva missing", true);
 		return;
@@ -968,8 +981,8 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	if (!t210b01)
 	{
 		// Load SC7-Entry firmware.
-		ctxt.sc7entry_size = _l4t_sd_load(SC7ENTRY_FW);
-		if (!ctxt.sc7entry_size)
+		ctxt->sc7entry_size = _l4t_sd_load(SC7ENTRY_FW);
+		if (!ctxt->sc7entry_size)
 		{
 			_l4t_crit_error("loading SC7-Entry", true);
 			return;
@@ -1017,10 +1030,10 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	mc_disable_ahb_redirect();
 
 	// Enable debug port.
-	if (ctxt.serial_port)
+	if (ctxt->serial_port)
 	{
-		pinmux_config_uart(ctxt.serial_port - 1);
-		clock_enable_uart(ctxt.serial_port - 1);
+		pinmux_config_uart(ctxt->serial_port - 1);
+		clock_enable_uart(ctxt->serial_port - 1);
 	}
 
 	// Restore UARTB/C TX pins to SPIO.
@@ -1032,7 +1045,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	{
 		// Defaults are for UARTA.
 		char *bl33_serial_port = NULL;
-		switch (ctxt.serial_port)
+		switch (ctxt->serial_port)
 		{
 		case 0: // Disable.
 			break;
@@ -1051,41 +1064,41 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 		{
 			BL33_DTB_SET_STDOUT_PATH(bl33_serial_port);
 			BL33_DTB_SET_STDERR_PATH(bl33_serial_port);
-			BL33_DTB_SET_UART_STATUS(ctxt.serial_port);
+			BL33_DTB_SET_UART_STATUS(ctxt->serial_port);
 		}
 	}
 
 	// Set BL31 params.
-	bl_v1_params.hdr.type     = PARAM_BL31;
-	bl_v1_params.hdr.version  = VERSION_1;
-	bl_v1_params.hdr.size     = sizeof(bl_v1_params_t);
-	bl_v1_params.hdr.attr     = PARAM_EP_SECURE;
-	bl_v1_params.bl33_ep_info = (u64)(u32)&bl33_ep_info;
+	ctxt->bl31_v1_params.hdr.type     = PARAM_BL31;
+	ctxt->bl31_v1_params.hdr.version  = VERSION_1;
+	ctxt->bl31_v1_params.hdr.size     = sizeof(bl31_v1_params_t);
+	ctxt->bl31_v1_params.hdr.attr     = PARAM_EP_SECURE;
+	ctxt->bl31_v1_params.bl33_ep_info = (u64)(u32)&ctxt->bl33_ep_info;
 
 	// Set BL33 params.
-	bl33_ep_info.hdr.type    = PARAM_EP;
-	bl33_ep_info.hdr.version = VERSION_1;
-	bl33_ep_info.hdr.size    = sizeof(entry_point_info_t);
-	bl33_ep_info.hdr.attr    = PARAM_EP_NON_SECURE;
-	bl33_ep_info.pc          = BL33_LOAD_BASE;
-	bl33_ep_info.spsr        = SPSR_EL2T;
+	ctxt->bl33_ep_info.hdr.type    = PARAM_EP;
+	ctxt->bl33_ep_info.hdr.version = VERSION_1;
+	ctxt->bl33_ep_info.hdr.size    = sizeof(entry_point_info_t);
+	ctxt->bl33_ep_info.hdr.attr    = PARAM_EP_NON_SECURE;
+	ctxt->bl33_ep_info.pc          = BL33_LOAD_BASE;
+	ctxt->bl33_ep_info.spsr        = SPSR_EL2T;
 
 	// Set Platform parameters.
-	plat_params.tzdram_base = TZDRAM_BASE;
-	plat_params.tzdram_size = TZDRAM_SIZE;
+	ctxt->bl31_plat_params.tzdram_base = TZDRAM_BASE;
+	ctxt->bl31_plat_params.tzdram_size = TZDRAM_SIZE;
 #if DEBUG_LOG_ATF
-	plat_params.uart_id = ctxt.serial_port;
+	ctxt->bl31_plat_params.uart_id = ctxt->serial_port;
 #endif
 
 	if (!t210b01)
 	{
 		// Set SC7-Entry fw parameters. For now BPMP-FW is not used on T210.
-		plat_params.sc7entry_fw_base = SC7ENTRY_HDR_BASE;
-		plat_params.sc7entry_fw_size = ALIGN(ctxt.sc7entry_size + SC7ENTRY_HDR_SIZE, SZ_PAGE);
+		ctxt->bl31_plat_params.sc7entry_fw_base = SC7ENTRY_HDR_BASE;
+		ctxt->bl31_plat_params.sc7entry_fw_size = ALIGN(ctxt->sc7entry_size + SC7ENTRY_HDR_SIZE, SZ_PAGE);
 	}
 
 	// Enable below features.
-	plat_params.enable_extra_features = BL31_EXTRA_FEATURES_ENABLE;
+	ctxt->bl31_plat_params.enable_extra_features = BL31_EXTRA_FEATURES_ENABLE;
 
 	if (!t210b01)
 	{
@@ -1095,37 +1108,37 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 		memset((u8 *)R2P_PAYLOAD_BASE + 0x94, 0, sizeof(boot_cfg_t)); // Clear Boot Config Storage.
 
 		// Set R2P payload fw parameters.
-		plat_params.r2p_payload_base = R2P_PAYLOAD_BASE;
-		plat_params.r2p_payload_size = ALIGN(reloc->end - reloc->start, SZ_PAGE);
+		ctxt->bl31_plat_params.r2p_payload_base = R2P_PAYLOAD_BASE;
+		ctxt->bl31_plat_params.r2p_payload_size = ALIGN(reloc->end - reloc->start, SZ_PAGE);
 	}
 
 	// Set PMC access security. NS is mandatory for T210B01.
-	plat_params.flags  = FLAGS_PMC_NON_SECURE; // Unsecure it unconditionally to reduce SMC calls to a minimum.
+	ctxt->bl31_plat_params.flags  = FLAGS_PMC_NON_SECURE; // Unsecure it unconditionally to reduce SMC calls to a minimum.
 	// Lift SC7 placement restrictions. Disables TZDRAM increased carveout too.
-	plat_params.flags |= FLAGS_SC7_NO_BASE_RESTRICTION;
+	ctxt->bl31_plat_params.flags |= FLAGS_SC7_NO_BASE_RESTRICTION;
 
 	// Prepare EMC table.
-	if (ctxt.mtc_table)
+	if (ctxt->mtc_table)
 	{
 		// Set DRAM voltage.
-		if (ctxt.ram_oc_vdd2)
-			max7762x_regulator_set_voltage(REGULATOR_SD1, ctxt.ram_oc_vdd2 * 1000);
+		if (ctxt->ram_oc_vdd2)
+			max7762x_regulator_set_voltage(REGULATOR_SD1, ctxt->ram_oc_vdd2 * 1000);
 
 		// Train the rest of the table, apply FSP WAR, set RAM to 800 MHz.
-		minerva_prep_boot_l4t(ctxt.ram_oc_freq, ctxt.ram_oc_opt);
+		minerva_prep_boot_l4t(ctxt->ram_oc_freq, ctxt->ram_oc_opt);
 
 		// Set emc table parameters and copy it.
 		int table_entries = minerva_get_mtc_table_entries();
-		plat_params.emc_table_base = MTCTABLE_BASE;
-		plat_params.emc_table_size = sizeof(emc_table_t) * table_entries;
-		memcpy((u32 *)MTCTABLE_BASE, ctxt.mtc_table, sizeof(emc_table_t) * table_entries);
+		ctxt->bl31_plat_params.emc_table_base = MTCTABLE_BASE;
+		ctxt->bl31_plat_params.emc_table_size = sizeof(emc_table_t) * table_entries;
+		memcpy((u32 *)MTCTABLE_BASE, ctxt->mtc_table, sizeof(emc_table_t) * table_entries);
 	}
 
 	// Set and enable IRAM based BL31 config.
 	PMC(APBDEV_PMC_SECURE_SCRATCH112) = PMC(APBDEV_PMC_SECURE_SCRATCH108);
 	PMC(APBDEV_PMC_SECURE_SCRATCH114) = PMC(APBDEV_PMC_SECURE_SCRATCH109);
-	PMC(APBDEV_PMC_SECURE_SCRATCH108) = (u32)&bl_v1_params;
-	PMC(APBDEV_PMC_SECURE_SCRATCH109) = (u32)&plat_params;
+	PMC(APBDEV_PMC_SECURE_SCRATCH108) = (u32)&ctxt->bl31_v1_params;
+	PMC(APBDEV_PMC_SECURE_SCRATCH109) = (u32)&ctxt->bl31_plat_params;
 	PMC(APBDEV_PMC_SECURE_SCRATCH110) = BL31_IRAM_PARAMS;
 
 	// Set panel model.
@@ -1145,7 +1158,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 
 	// Set BPMP-FW parameters.
 	if (t210b01)
-		_l4t_bpmpfw_b01_config(&ctxt);
+		_l4t_bpmpfw_b01_config(ctxt);
 
 	// Set carveouts and save them to PMC for SC7 Exit.
 	_l4t_mc_config_carveout(t210b01);
