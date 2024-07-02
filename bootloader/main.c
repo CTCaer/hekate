@@ -138,8 +138,7 @@ bool is_ipl_updated(void *buf, char *path, bool force)
 	{
 		FIL fp;
 		reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
-		boot_cfg_t *tmp_cfg = malloc(sizeof(boot_cfg_t));
-		memset(tmp_cfg, 0, sizeof(boot_cfg_t));
+		boot_cfg_t *tmp_cfg = zalloc(sizeof(boot_cfg_t));
 
 		f_open(&fp, path, FA_WRITE | FA_CREATE_ALWAYS);
 		f_write(&fp, (u8 *)reloc->start, reloc->end - reloc->start, NULL);
@@ -1139,7 +1138,7 @@ static void _show_errors()
 
 		if (h_cfg.errors & ERR_L4T_KERNEL)
 		{
-			WPRINTF("Kernel panic occurred!\n");
+			WPRINTF("L4T Kernel panic occurred!\n");
 			if (!(h_cfg.errors & ERR_SD_BOOT_EN))
 			{
 				if (!sd_save_to_file((void *)PSTORE_ADDR, PSTORE_SZ, "L4T_panic.bin"))
@@ -1185,6 +1184,9 @@ static void _check_low_battery()
 	int enough_battery;
 	int batt_volt = 0;
 	int charge_status = 0;
+
+	// Enable charger in case it's disabled.
+	bq24193_enable_charger();
 
 	bq24193_get_property(BQ24193_ChargeStatus, &charge_status);
 	max17050_get_property(MAX17050_AvgVCELL,   &batt_volt);
