@@ -101,7 +101,9 @@
 #define  PMC_RST_STATUS_LP0                4
 #define  PMC_RST_STATUS_AOTAG              5
 #define APBDEV_PMC_IO_DPD_REQ        0x1B8
-#define  PMC_IO_DPD_REQ_DPD_OFF            BIT(30)
+#define  PMC_IO_DPD_REQ_DPD_IDLE           (0 << 30u)
+#define  PMC_IO_DPD_REQ_DPD_OFF            (1 << 30u)
+#define  PMC_IO_DPD_REQ_DPD_ON             (2 << 30u)
 #define APBDEV_PMC_IO_DPD2_REQ       0x1C0
 #define APBDEV_PMC_VDDP_SEL          0x1CC
 #define APBDEV_PMC_DDR_CFG           0x1D0
