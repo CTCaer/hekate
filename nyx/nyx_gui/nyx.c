@@ -35,7 +35,7 @@ hekate_config h_cfg;
 
 const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
 	.magic = NYX_MAGIC,
-	.version = (NYX_VER_MJ + '0') | ((NYX_VER_MN + '0') << 8) | ((NYX_VER_HF + '0') << 16),
+	.version = (NYX_VER_MJ + '0') | ((NYX_VER_MN + '0') << 8) | ((NYX_VER_HF + '0') << 16) | ((NYX_VER_RL) << 24),
 	.rsvd0 = 0,
 	.rsvd1 = 0
 };
