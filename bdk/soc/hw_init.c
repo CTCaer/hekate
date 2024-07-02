@@ -295,13 +295,15 @@ static void _config_regulators(bool tegra_t210, bool nx_hoag)
 	// Disable low battery shutdown monitor.
 	max77620_low_battery_monitor_config(false);
 
+	// Power on all relevant rails in case we came out of warmboot. Only keep MEM/MEM_COMP and SDMMC1 states.
+	PMC(APBDEV_PMC_NO_IOPOWER) &= PMC_NO_IOPOWER_MEM_COMP | PMC_NO_IOPOWER_SDMMC1 | PMC_NO_IOPOWER_MEM;
+
 	// Make sure SDMMC1 IO/Core are powered off.
 	max7762x_regulator_enable(REGULATOR_LDO2, false);
 	gpio_write(GPIO_PORT_E, GPIO_PIN_4, GPIO_LOW);
+	PMC(APBDEV_PMC_NO_IOPOWER) |= PMC_NO_IOPOWER_SDMMC1;
+	(void)PMC(APBDEV_PMC_NO_IOPOWER);
 	sd_power_cycle_time_start = get_tmr_ms();
-
-	// Power on all relevant rails in case we came out of warmboot. Only keep MEM/MEM_COMP and SDMMC1 states.
-	PMC(APBDEV_PMC_NO_IOPOWER) &= PMC_NO_IOPOWER_MEM_COMP | PMC_NO_IOPOWER_SDMMC1 | PMC_NO_IOPOWER_MEM;
 
 	// Disable DSI AVDD to make sure it's in a reset state.
 	max7762x_regulator_enable(REGULATOR_LDO0, false);
