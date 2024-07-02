@@ -366,8 +366,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_style(lb_desc, &monospace_text);
 
 	lv_label_set_static_text(lb_desc,
-		"SKU:\n"
-		"DRAM ID:\n"
+		"#FF8000 SoC:#\n"
+		"#FF8000 SKU:#\n"
+		"#FF8000 DRAM ID:#\n"
 		"#FF8000 Burnt Fuses (ODM 7/6):#\n"
 		"ODM Fields (4, 6, 7):\n"
 		"Secure Boot Key (SBK):\n"
@@ -391,8 +392,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"LOT Code 0:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
-		"Y Coordinate:\n"
-		"#FF8000 Chip ID Revision:#"
+		"Y Coordinate:"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
@@ -412,16 +412,16 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch (fuse_read_hw_type())
 	{
 	case FUSE_NX_HW_TYPE_ICOSA:
-		sku = "Icosa (Erista)";
+		sku = "Icosa - Odin";
 		break;
 	case FUSE_NX_HW_TYPE_IOWA:
-		sku = "Iowa (Mariko)";
+		sku = "Iowa - Modin";
 		break;
 	case FUSE_NX_HW_TYPE_HOAG:
-		sku = "Hoag (Mariko)";
+		sku = "Hoag - Vali";
 		break;
 	case FUSE_NX_HW_TYPE_AULA:
-		sku = "Aula (Mariko)";
+		sku = "Aula - Fric";
 		break;
 	default:
 		sku = "#FF8000 Unknown#";
@@ -611,10 +611,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
 	// Parse fuses and display them.
 	s_printf(txt_buf,
-		"%X - %s - %s\n%02d: %s\n%d - %d (HOS: %s)\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
+		"%02X - %s - M%d A%02d\n"
+		"%X - %s - %s\n%02d - %s\n%d | %d - HOS: %s\n%08X %08X %08X\n%08X%08X%08X%08X\n%08X\n%08X%08X%08X%08X\n%08X%08X%08X%08X\n%d\n"
 		"%s\n%d.%02d (0x%X)\n%d.%02d (0x%X)\n%d\n%d\n%d\n%d\n0x%X\n%d\n%d (%d)\n%d (%d)\n%d (%d)\n"
-		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d\n"
-		"ID: %02X, Major: %d, Minor: A%02d",
+		"%d\n%d\n%d (0x%X)\n%d\n%d\n%d",
+		(chip_id >> 8) & 0xFF,
+		hw_get_chip_id() == GP_HIDREV_MAJOR_T210 ? "T210 (Erista)" : "T210B01 (Mariko)",
+		(chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF,
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_man, burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
 		fuse_read_odm(4), fuse_read_odm(6), fuse_read_odm(7),
@@ -635,8 +638,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		FUSE(FUSE_SOC_IDDQ_CALIB), FUSE(FUSE_SOC_IDDQ_CALIB) * 4,
 		FUSE(FUSE_GPU_IDDQ_CALIB), FUSE(FUSE_GPU_IDDQ_CALIB) * 5,
 		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
-		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE),
-		(chip_id >> 8) & 0xFF, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF);
+		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE));
 
 	lv_label_set_text(lb_val, txt_buf);
 
