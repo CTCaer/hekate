@@ -64,7 +64,7 @@ static const reg_cfg_t _di_dc_setup_win_config[] = {
 };
 
 // DSI Init config.
-static const reg_cfg_t _di_dsi_init_config0[] = {
+static const reg_cfg_t _di_dsi_seq_pkt_reset_config0[] = {
 	{DSI_WR_DATA, 0},
 	{DSI_INT_ENABLE, 0},
 	{DSI_INT_STATUS, 0},
@@ -74,7 +74,7 @@ static const reg_cfg_t _di_dsi_init_config0[] = {
 	{DSI_INIT_SEQ_DATA_2, 0},
 	{DSI_INIT_SEQ_DATA_3, 0}
 };
-static const reg_cfg_t _di_dsi_init_config1[] = {
+static const reg_cfg_t _di_dsi_seq_pkt_reset_config1[] = {
 	{DSI_DCS_CMDS, 0},
 	{DSI_PKT_SEQ_0_LO, 0},
 	{DSI_PKT_SEQ_1_LO, 0},
@@ -99,37 +99,47 @@ static const reg_cfg_t _di_dsi_init_pads_t210b01[] = {
 	{DSI_PAD_CONTROL_6_B01, 0},
 	{DSI_PAD_CONTROL_7_B01, 0}
 };
-static const reg_cfg_t _di_dsi_init_config2[] = {
+static const reg_cfg_t _di_dsi_init_config[] = {
 	{DSI_PAD_CONTROL_CD, 0},
 	{DSI_SOL_DELAY,     24},
 	{DSI_MAX_THRESHOLD, 480},
 	{DSI_TRIGGER, 0},
 	{DSI_INIT_SEQ_CONTROL, 0},
+
 	{DSI_PKT_LEN_0_1, 0},
 	{DSI_PKT_LEN_2_3, 0},
 	{DSI_PKT_LEN_4_5, 0},
 	{DSI_PKT_LEN_6_7, 0},
+
 	{DSI_PAD_CONTROL_1, 0},
+
+	/* DSI PHY timings */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30109},
 	{DSI_BTA_TIMING,   0x190A14},
+	/* DSI timeout */
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
 	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x765)   | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
+
 	{DSI_PAD_CONTROL_0, DSI_PAD_CONTROL_VS1_PULLDN(0) | DSI_PAD_CONTROL_VS1_PDIO(0)}, // Power up.
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, 0},
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0},
+
+	/* DSI PHY timings */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
 	{DSI_BTA_TIMING,   0x190A14},
+	/* DSI timeout */
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
 	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
+
 	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CRC_RESET | DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
 	{DSI_CONTROL, DSI_CONTROL_LANES(3) | DSI_CONTROL_HOST_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
@@ -188,15 +198,19 @@ static const reg_cfg_t _di_dsi_panel_init_config_jdi[] = {
 };
 
 // DSI packet config.
-static const reg_cfg_t _di_dsi_init_seq_pkt_final_config[] = {
+static const reg_cfg_t _di_dsi_seq_pkt_video_non_burst_no_eot_config[] = {
 	{DSI_PAD_CONTROL_1, 0},
+
+	/* DSI PHY timings */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30172},
 	{DSI_BTA_TIMING,   0x190A14},
+	/* DSI timeout */
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xA40)},
 	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x5A2F)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
+
 	{DSI_PKT_SEQ_0_LO, 0x40000208},
 	{DSI_PKT_SEQ_2_LO, 0x40000308},
 	{DSI_PKT_SEQ_4_LO, 0x40000308},
@@ -213,7 +227,7 @@ static const reg_cfg_t _di_dsi_init_seq_pkt_final_config[] = {
 };
 
 // DSI mode config.
-static const reg_cfg_t _di_dsi_mode_config[] = {
+static const reg_cfg_t _di_dsi_host_mode_config[] = {
 	{DSI_TRIGGER, 0},
 	{DSI_CONTROL, 0},
 	{DSI_SOL_DELAY, 6},
@@ -304,6 +318,7 @@ static const reg_cfg_t _di_dc_video_enable_config[] = {
 	{DC_CMD_GENERAL_INCR_SYNCPT, SYNCPT_GENERAL_COND(COND_REG_WR_SAFE) | SYNCPT_GENERAL_INDX(1)},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
+
 	{DC_DISP_DISP_CLOCK_CONTROL, PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4)}, // 4: div3.
 };
 
@@ -334,13 +349,17 @@ static const reg_cfg_t _di_dc_video_disable_config[] = {
 static const reg_cfg_t _di_dsi_timing_deinit_config[] = {
 	{DSI_POWER_CONTROL, 0},
 	{DSI_PAD_CONTROL_1, 0},
+
+	/* DSI PHY timings */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
 	{DSI_BTA_TIMING,   0x190A14},
+	/* DSI timeout */
 	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
 	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
+
 	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CRC_RESET | DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
 	{DSI_CONTROL, DSI_CONTROL_LANES(3) | DSI_CONTROL_HOST_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},

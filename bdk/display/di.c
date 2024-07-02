@@ -384,7 +384,7 @@ void display_init()
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_DISP1);
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = BIT(CLK_X_UART_FST_MIPI_CAL);
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_UART_FST_MIPI_CAL) = CLK_SRC_DIV(6); // Set PLLP_OUT3 and div 6 (17MHz).
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_UART_FST_MIPI_CAL) = CLK_SRC_DIV(6); // Set PLLP_OUT3 and div 6 (68MHz).
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = BIT(CLK_W_DSIA_LP);
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = CLK_SRC_DIV(6);           // Set PLLP_OUT  and div 6 (68MHz).
@@ -437,16 +437,16 @@ void display_init()
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, ARRAY_SIZE(_di_dc_setup_win_config));
 
 	// Setup dsi init sequence packets.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_init_config0,  ARRAY_SIZE(_di_dsi_init_config0));
+	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config0,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config0));
 	DSI(_DSIREG(tegra_t210 ? DSI_INIT_SEQ_DATA_15 : DSI_INIT_SEQ_DATA_15_B01)) = 0;
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_init_config1,  ARRAY_SIZE(_di_dsi_init_config1));
+	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config1,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config1));
 
 	// Reset pad trimmers for T210B01.
 	if (!tegra_t210)
 		reg_write_array((u32 *)DSI_BASE, _di_dsi_init_pads_t210b01, ARRAY_SIZE(_di_dsi_init_pads_t210b01));
 
-	// Setup init sequence packets, timings and power on DSI.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_init_config2, ARRAY_SIZE(_di_dsi_init_config2));
+	// Setup init seq packet lengths, timings and power on DSI.
+	reg_write_array((u32 *)DSI_BASE, _di_dsi_init_config, ARRAY_SIZE(_di_dsi_init_config));
 	usleep(10000);
 
 	// Enable LCD Reset.
@@ -557,13 +557,13 @@ void display_init()
 	clock_enable_plld(1, 24, false, tegra_t210);
 
 	// Finalize DSI init packet sequence configuration.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_init_seq_pkt_final_config, ARRAY_SIZE(_di_dsi_init_seq_pkt_final_config));
+	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
 	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
 
-	// Set DSI mode.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_mode_config, ARRAY_SIZE(_di_dsi_mode_config));
+	// Set DSI mode to HOST.
+	reg_write_array((u32 *)DSI_BASE, _di_dsi_host_mode_config, ARRAY_SIZE(_di_dsi_host_mode_config));
 	usleep(10000);
 
 	/*
@@ -734,6 +734,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 	case PANEL_AUO_A062TAN01:
 		reg_write_array((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_auo, ARRAY_SIZE(_di_dsi_panel_deinit_config_auo));
+		usleep(5000);
 		break;
 
 	case PANEL_INL_2J055IA_27A:
