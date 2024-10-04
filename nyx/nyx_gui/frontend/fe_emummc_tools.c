@@ -779,7 +779,7 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 	// Generate BIS keys.
 	hos_bis_keygen();
 
-	u8 *cal0_buf = malloc(SZ_64K);
+	u8 *cal0_buff = malloc(SZ_64K);
 
 	// Read and decrypt CAL0 for validation of working BIS keys.
 	emmc_set_partition(EMMC_GPP);
@@ -787,11 +787,11 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 	emmc_gpt_parse(&gpt);
 	emmc_part_t *cal0_part = emmc_part_find(&gpt, "PRODINFO"); // check if null
 	nx_emmc_bis_init(cal0_part, false, 0);
-	nx_emmc_bis_read(0, 0x40, cal0_buf);
+	nx_emmc_bis_read(0, 0x40, cal0_buff);
 	nx_emmc_bis_end();
 	emmc_gpt_free(&gpt);
 
-	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
+	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buff;
 
 	// Check keys validity.
 	if (memcmp(&cal0->magic, "CAL0", 4))
@@ -803,7 +803,7 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 		error = true;
 	}
 
-	free(cal0_buf);
+	free(cal0_buff);
 
 	if (error)
 	{
