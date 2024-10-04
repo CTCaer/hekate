@@ -174,14 +174,14 @@ void uart_empty_fifo(u32 idx, u32 which)
 	(void)uart->UART_SPR;
 	usleep(96);
 
-	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | UART_IIR_FCR_TX_CLR | UART_IIR_FCR_RX_CLR;
+	uart->UART_IIR_FCR = UART_IIR_FCR_EN_FIFO | which;
 	(void)uart->UART_SPR;
 	usleep(18);
 	u32 tries = 0;
 
 	if (UART_IIR_FCR_TX_CLR & which)
 	{
-		while (tries < 10 && uart->UART_LSR & UART_LSR_TMTY)
+		while (tries < 10 && !(uart->UART_LSR & UART_LSR_TMTY))
 		{
 			tries++;
 			usleep(100);
@@ -191,7 +191,7 @@ void uart_empty_fifo(u32 idx, u32 which)
 
 	if (UART_IIR_FCR_RX_CLR & which)
 	{
-		while (tries < 10 && !uart->UART_LSR & UART_LSR_RDR)
+		while (tries < 10 && (uart->UART_LSR & UART_LSR_RDR))
 		{
 			tries++;
 			usleep(100);
