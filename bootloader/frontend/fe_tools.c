@@ -155,6 +155,8 @@ void menu_autorcm()
 	tui_do_menu(&menu);
 
 	emmc_end();
+
+	free(ments);
 }
 
 #pragma GCC pop_options
