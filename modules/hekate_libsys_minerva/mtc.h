@@ -85,7 +85,7 @@ typedef struct
 	bool emc_2X_clk_src_is_pllmb;
 	bool fsp_for_src_freq;
 	bool train_ram_patterns;
-	bool init_done;
+	u32  init_done;
 } mtc_config_t;
 
 enum train_mode_t
