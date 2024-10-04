@@ -363,7 +363,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt)
 	_hos_eks_get();
 
 	// Use tsec keygen for old firmware or if EKS keys does not exist for newer.
-	if (kb <= HOS_KB_VERSION_620 || !h_cfg.eks || (h_cfg.eks && h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
+	if (kb <= HOS_KB_VERSION_620 || !h_cfg.eks || (h_cfg.eks->enabled != HOS_EKS_TSEC_VER))
 		use_tsec = true;
 
 	if (kb <= HOS_KB_VERSION_600)
