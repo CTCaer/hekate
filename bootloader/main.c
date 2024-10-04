@@ -120,7 +120,7 @@ static void _reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 	}
 }
 
-bool is_ipl_updated(void *buf, char *path, bool force)
+bool is_ipl_updated(void *buf, const char *path, bool force)
 {
 	ipl_ver_meta_t *update_ft = (ipl_ver_meta_t *)(buf + PATCHED_RELOC_SZ + sizeof(boot_cfg_t));
 

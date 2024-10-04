@@ -143,7 +143,7 @@ void update_emummc_base_folder(char *outFilename, u32 sdPathLen, u32 currPartIdx
 		itoa(currPartIdx, &outFilename[sdPathLen], 10);
 }
 
-static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t *storage, emmc_part_t *part)
+static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_storage_t *storage, const emmc_part_t *part)
 {
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
 	static const u32 SECTORS_TO_MIB_COEFF = 11;

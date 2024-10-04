@@ -170,7 +170,7 @@ static void parse_external_kip_patches()
 	ext_patches_parsed = true;
 }
 
-const pkg2_kernel_id_t *pkg2_identify(u8 *hash)
+const pkg2_kernel_id_t *pkg2_identify(const u8 *hash)
 {
 	for (u32 i = 0; i < ARRAY_SIZE(_pkg2_kernel_ids); i++)
 	{

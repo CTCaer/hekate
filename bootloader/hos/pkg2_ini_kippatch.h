@@ -37,6 +37,6 @@ typedef struct _ini_kip_sec_t
 	link_t link;
 } ini_kip_sec_t;
 
-int ini_patch_parse(link_t *dst, char *ini_path);
+int ini_patch_parse(link_t *dst, const char *ini_path);
 
 #endif

@@ -851,7 +851,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 	return 1;
 }
 
-static void _l4t_bl33_cfg_set_key(char *env, char *key, char *val)
+static void _l4t_bl33_cfg_set_key(char *env, const char *key, const char *val)
 {
 	strcat(env, key);
 	strcat(env, "=");

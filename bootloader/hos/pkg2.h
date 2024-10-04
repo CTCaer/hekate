@@ -159,7 +159,7 @@ void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_get_ids(kip1_id_t **ids, u32 *entries);
 const char *pkg2_patch_kips(link_t *info, char *patch_names);
 
-const pkg2_kernel_id_t *pkg2_identify(u8 *hash);
+const pkg2_kernel_id_t *pkg2_identify(const u8 *hash);
 pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo);
 void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo);
 

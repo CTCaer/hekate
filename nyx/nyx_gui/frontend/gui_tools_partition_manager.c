@@ -85,7 +85,7 @@ l4t_flasher_ctxt_t l4t_flash_ctxt;
 lv_obj_t *btn_flash_l4t;
 lv_obj_t *btn_flash_android;
 
-int _copy_file(const char *src, const char *dst, char *path)
+int _copy_file(const char *src, const char *dst, const char *path)
 {
 	FIL fp_src;
 	FIL fp_dst;
@@ -265,7 +265,7 @@ out:
 	return res;
 }
 
-static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u32 size_lba, char *name, int name_size)
+static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u32 size_lba, const char *name, int name_size)
 {
 	static const u8 linux_part_guid[] = { 0xAF, 0x3D, 0xC6, 0x0F,  0x83, 0x84,  0x72, 0x47,  0x8E, 0x79,  0x3D, 0x69, 0xD8, 0x47, 0x7D, 0xE4 };
 	u8 random_number[16];

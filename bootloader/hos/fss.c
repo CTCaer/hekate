@@ -31,7 +31,7 @@
 
 extern hekate_config h_cfg;
 
-extern bool is_ipl_updated(void *buf, char *path, bool force);
+extern bool is_ipl_updated(void *buf, const char *path, bool force);
 
 // FSS0 Magic and Meta header offset.
 #define FSS0_MAGIC 0x30535346

@@ -95,7 +95,7 @@ static ini_kip_sec_t *_ini_create_kip_section(link_t *dst, ini_kip_sec_t *ksec, 
 	return ksec;
 }
 
-int ini_patch_parse(link_t *dst, char *ini_path)
+int ini_patch_parse(link_t *dst, const char *ini_path)
 {
 	FIL fp;
 	u32 lblen;
@@ -154,15 +154,15 @@ int ini_patch_parse(link_t *dst, char *ini_path)
 				pt->length = strtol(&lbuf[pos], NULL, 16);
 				pos += str_start + 1;
 
-				u8 *buf = malloc(pt->length * 2);
+				u8 *data = malloc(pt->length * 2);
 
 				// Set patch source data.
 				str_start = _find_patch_section_name(&lbuf[pos], lblen - pos, ',');
-				pt->src_data = _htoa(NULL, &lbuf[pos], pt->length, buf);
+				pt->src_data = _htoa(NULL, &lbuf[pos], pt->length, data);
 				pos += str_start + 1;
 
 				// Set patch destination data.
-				pt->dst_data = _htoa(NULL, &lbuf[pos], pt->length, buf + pt->length);
+				pt->dst_data = _htoa(NULL, &lbuf[pos], pt->length, data + pt->length);
 			}
 
 			list_append(&ksec->pts, &pt->link);
