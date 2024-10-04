@@ -1440,15 +1440,15 @@ static lv_res_t _launch_more_cfg_action(lv_obj_t *btn)
 static lv_res_t _win_launch_close_action(lv_obj_t * btn)
 {
 	// Cleanup icons.
-	for (u32 i = 0; i < 8; i++)
+	for (u32 i = 0; i < (n_cfg.entries_5_col ? 10 : 8); i++)
 	{
-		lv_obj_t *btn = launch_ctxt.btn[i];
-		lv_btn_ext_t *ext = lv_obj_get_ext_attr(btn);
+		lv_obj_t *btns = launch_ctxt.btn[i];
+		lv_btn_ext_t *ext = lv_obj_get_ext_attr(btns);
 		if (ext->idx)
 		{
 			// This gets latest object, which is the button overlay. So iterate 2 times.
-			lv_obj_t * img = lv_obj_get_child(btn, NULL);
-			img = lv_obj_get_child(btn, img);
+			lv_obj_t * img = lv_obj_get_child(btns, NULL);
+			img = lv_obj_get_child(btns, img);
 
 			lv_img_dsc_t *src = (lv_img_dsc_t *)lv_img_get_src(img);
 
