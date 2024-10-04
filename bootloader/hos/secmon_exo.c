@@ -207,10 +207,10 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	// Parse exosphere.ini.
 	if (!ctxt->stock)
 	{
-		LIST_INIT(ini_sections);
-		if (ini_parse(&ini_sections, "exosphere.ini", false))
+		LIST_INIT(ini_exo_sections);
+		if (ini_parse(&ini_exo_sections, "exosphere.ini", false))
 		{
-			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_exo_sections, link)
 			{
 				// Only parse exosphere section.
 				if (!(ini_sec->type == INI_CHOICE) || strcmp(ini_sec->name, "exosphere"))
@@ -245,10 +245,10 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 			// Parse usb mtim settings. Avoid parsing if it's overridden.
 			if (!ctxt->exo_ctx.usb3_force)
 			{
-				LIST_INIT(ini_sections);
-				if (ini_parse(&ini_sections, "atmosphere/config/system_settings.ini", false))
+				LIST_INIT(ini_sys_sections);
+				if (ini_parse(&ini_sys_sections, "atmosphere/config/system_settings.ini", false))
 				{
-					LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
+					LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sys_sections, link)
 					{
 						// Only parse usb section.
 						if (!(ini_sec->type == INI_CHOICE) || strcmp(ini_sec->name, "usb"))
