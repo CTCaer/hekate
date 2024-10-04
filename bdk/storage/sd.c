@@ -274,7 +274,7 @@ void *sd_file_read(const char *path, u32 *fsize)
 	return buf;
 }
 
-int sd_save_to_file(void *buf, u32 size, const char *filename)
+int sd_save_to_file(const void *buf, u32 size, const char *filename)
 {
 	FIL fp;
 	u32 res = 0;

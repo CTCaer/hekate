@@ -935,7 +935,7 @@ void display_move_framebuffer(u32 window, void *fb)
 	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
 
 	// Get current framebuffer address.
-	void *fb_curr = (void *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	const void *fb_curr = (void *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
 	u32 win_size = DISPLAY_A(_DIREG(DC_WIN_PRESCALED_SIZE));
 	win_size = (win_size & 0x7FFF) * ((win_size >> 16) & 0x1FFF);
 

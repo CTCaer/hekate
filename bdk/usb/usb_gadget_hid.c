@@ -80,7 +80,7 @@ enum {
 static jc_cal_t jc_cal_ctx;
 static usb_ops_t usb_ops;
 
-static bool _jc_calibration(jc_gamepad_rpt_t *jc_pad)
+static bool _jc_calibration(const jc_gamepad_rpt_t *jc_pad)
 {
 	// Calibrate left stick.
 	if (jc_cal_ctx.cl_step != JC_CAL_MAX_STEPS)

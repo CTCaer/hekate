@@ -75,7 +75,7 @@ void bm92t36_get_sink_info(bool *inserted, usb_pd_objects_t *usb_pd)
 	{
 		memset(buf, 0, sizeof(buf));
 		_bm92t36_read_reg(buf, 2, STATUS1_REG);
-		*inserted = buf[0] & STATUS1_INSERT ? true : false;
+		*inserted = (buf[0] & STATUS1_INSERT) ? true : false;
 	}
 
 	if (usb_pd)

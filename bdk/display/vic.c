@@ -390,7 +390,7 @@ static int _vic_wait_idle()
 	return 0;
 }
 
-void vic_set_surface(vic_surface_t *sfc)
+void vic_set_surface(const vic_surface_t *sfc)
 {
 	u32 flip_x  = 0;
 	u32 flip_y  = 0;

@@ -194,7 +194,7 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	return res;
 }
 
-static void _se_aes_ctr_set(void *ctr)
+static void _se_aes_ctr_set(const void *ctr)
 {
 	u32 data[SE_AES_IV_SIZE / 4];
 	memcpy(data, ctr, SE_AES_IV_SIZE);
@@ -226,7 +226,7 @@ u32 se_key_acc_ctrl_get(u32 ks)
 	return SE(SE_CRYPTO_KEYTABLE_ACCESS_REG + 4 * ks);
 }
 
-void se_aes_key_set(u32 ks, void *key, u32 size)
+void se_aes_key_set(u32 ks, const void *key, u32 size)
 {
 	u32 data[SE_AES_MAX_KEY_SIZE / 4];
 	memcpy(data, key, size);
@@ -238,7 +238,7 @@ void se_aes_key_set(u32 ks, void *key, u32 size)
 	}
 }
 
-void se_aes_iv_set(u32 ks, void *iv)
+void se_aes_iv_set(u32 ks, const void *iv)
 {
 	u32 data[SE_AES_IV_SIZE / 4];
 	memcpy(data, iv, SE_AES_IV_SIZE);

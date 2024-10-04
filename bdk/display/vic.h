@@ -58,7 +58,7 @@ typedef struct _vic_surface_t
 	u32 rotation;
 } vic_surface_t;
 
-void vic_set_surface(vic_surface_t *sfc);
+void vic_set_surface(const vic_surface_t *sfc);
 int  vic_compose();
 int  vic_init();
 void vic_end();

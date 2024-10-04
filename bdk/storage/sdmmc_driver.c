@@ -575,7 +575,7 @@ static int _sdmmc_setup_read_small_block(sdmmc_t *sdmmc)
 	return 1;
 }
 
-static int _sdmmc_send_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, bool is_data_present)
+static int _sdmmc_send_cmd(sdmmc_t *sdmmc, const sdmmc_cmd_t *cmd, bool is_data_present)
 {
 	u16 cmdflags = 0;
 
@@ -1025,7 +1025,7 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 	return result;
 }
 
-static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, sdmmc_req_t *req)
+static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, const sdmmc_req_t *req)
 {
 	if (!req->blksize || !req->num_sectors)
 		return 0;

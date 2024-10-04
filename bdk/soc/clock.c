@@ -701,7 +701,7 @@ static void _clock_sdmmc_clear_enable(u32 id)
 
 static void _clock_sdmmc_config_legacy_tm()
 {
-	clk_rst_t *clk = &_clock_sdmmc_legacy_tm;
+	const clk_rst_t *clk = &_clock_sdmmc_legacy_tm;
 	if (!(CLOCK(clk->enable) & BIT(clk->index)))
 		clock_enable(clk);
 }

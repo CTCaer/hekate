@@ -96,7 +96,7 @@ static void _i2c_load_cfg_wait(vu32 *base)
 	}
 }
 
-static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, u8 *buf, u32 size)
+static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 {
 	if (size > 8)
 		return 0;
@@ -384,7 +384,7 @@ int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 	return _i2c_recv_pkt(i2c_idx, buf, size, dev_addr, reg);
 }
 
-int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, u8 *buf, u32 size)
+int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, const u8 *buf, u32 size)
 {
 	u8 tmp[8];
 

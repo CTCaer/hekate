@@ -53,7 +53,7 @@ ini_sec_t *_ini_create_section(link_t *dst, ini_sec_t *csec, char *name, u8 type
 	return csec;
 }
 
-int ini_parse(link_t *dst, char *ini_path, bool is_dir)
+int ini_parse(link_t *dst, const char *ini_path, bool is_dir)
 {
 	FIL fp;
 	u32 lblen;

@@ -33,7 +33,7 @@
 
 u32 sd_power_cycle_time_start;
 
-static inline u32 unstuff_bits(u32 *resp, u32 start, u32 size)
+static inline u32 unstuff_bits(const u32 *resp, u32 start, u32 size)
 {
 	const u32 mask = (size < 32 ? 1 << size : 0) - 1;
 	const u32 off  = 3 - ((start) / 32);
@@ -783,7 +783,7 @@ static int _sd_storage_execute_app_cmd_type1(sdmmc_storage_t *storage, u32 *resp
 }
 
 #ifdef SDMMC_DEBUG_PRINT_SD_REGS
-void _sd_storage_debug_print_cid(u32 *raw_cid)
+void _sd_storage_debug_print_cid(const u32 *raw_cid)
 {
 	gfx_printf("Card Identification\n");
 
@@ -799,7 +799,7 @@ void _sd_storage_debug_print_cid(u32 *raw_cid)
 	gfx_printf("--RSVD--               %X\n",   unstuff_bits(raw_cid, 20, 4));
 }
 
-void _sd_storage_debug_print_csd(u32 *raw_csd)
+void _sd_storage_debug_print_csd(const u32 *raw_csd)
 {
 	gfx_printf("\n");
 
@@ -836,7 +836,7 @@ void _sd_storage_debug_print_csd(u32 *raw_csd)
 		unstuff_bits(raw_csd, 16, 5),  unstuff_bits(raw_csd, 8, 2));
 }
 
-void _sd_storage_debug_print_scr(u32 *raw_scr)
+void _sd_storage_debug_print_scr(const u32 *raw_scr)
 {
 	u32 resp[4];
 	memcpy(&resp[2], raw_scr, 8);
@@ -857,7 +857,7 @@ void _sd_storage_debug_print_scr(u32 *raw_scr)
 	gfx_printf("--RSVD--               %X\n",   unstuff_bits(resp, 36, 2));
 }
 
-void _sd_storage_debug_print_ssr(u8 *raw_ssr)
+void _sd_storage_debug_print_ssr(const u8 *raw_ssr)
 {
 	u32 raw_ssr0[4]; // 511:384.
 	u32 raw_ssr1[4]; // 383:256.
