@@ -54,6 +54,16 @@ typedef enum
 	BPMP_CLK_MAX
 } bpmp_freq_t;
 
+typedef enum
+{
+	BPMP_STATE_STANDBY = 0, // 32KHz.
+	BPMP_STATE_IDLE    = 1,
+	BPMP_STATE_RUN     = 2,
+
+	BPMP_STATE_IRQ     = BIT(2),
+	BPMP_STATE_FIQ     = BIT(3),
+} bpmp_state_t;
+
 #define BPMP_CLK_LOWEST_BOOST  BPMP_CLK_HIGH2_BOOST
 #define BPMP_CLK_LOWER_BOOST   BPMP_CLK_SUPER_BOOST
 #define BPMP_CLK_DEFAULT_BOOST BPMP_CLK_HYPER_BOOST
@@ -65,6 +75,7 @@ void bpmp_mmu_disable();
 void bpmp_clk_rate_relaxed(bool enable);
 void bpmp_clk_rate_get();
 void bpmp_clk_rate_set(bpmp_freq_t fid);
+void bpmp_state_set(bpmp_state_t state);
 void bpmp_usleep(u32 us);
 void bpmp_msleep(u32 ms);
 void bpmp_halt();

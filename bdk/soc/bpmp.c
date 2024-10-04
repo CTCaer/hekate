@@ -237,6 +237,7 @@ void bpmp_clk_rate_relaxed(bool enable)
 // APB clock affects RTC, PWM, MEMFETCH, APE, USB, SOR PWM,
 // I2C host, DC/DSI/DISP. UART gives extra stress.
 // 92: 100% success ratio. 93-94: 595-602MHz has 99% success ratio. 95: 608MHz less.
+// APB clock max is supposed to be 204 MHz though.
 static const u8 pll_divn[] = {
 	0,   // BPMP_CLK_NORMAL:      408MHz  0% - 136MHz APB.
 	85,  // BPMP_CLK_HIGH_BOOST:  544MHz 33% - 136MHz APB.
@@ -298,6 +299,13 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 		// Disable PLLC to save power.
 		clock_disable_pllc();
 	}
+}
+
+// State is reset to RUN on any clock or source set via SW.
+void bpmp_state_set(bpmp_state_t state)
+{
+	u32 cfg = CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) & ~0xF0000000u;
+	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = cfg | (state << 28u);
 }
 
 // The following functions halt BPMP to reduce power while sleeping.
