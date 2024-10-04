@@ -124,8 +124,8 @@ static irq_status_t _irq_handle_source(u32 irq)
 		}
 	}
 
-	// Do not re-enable if not handled.
-	if (status == IRQ_NONE)
+	// Do not re-enable if not handled or error.
+	if (status != IRQ_HANDLED)
 		return status;
 
 	if (irqs[idx].flags & IRQ_FLAG_ONE_OFF)
