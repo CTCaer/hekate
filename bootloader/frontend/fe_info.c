@@ -313,23 +313,20 @@ void print_battery_charger_info()
 
 	gfx_printf("%k\n\nBattery Charger Info:\n%k", TXT_CLR_CYAN_L, TXT_CLR_DEFAULT);
 
-	bq24193_get_property(BQ24193_InputVoltageLimit, &value);
-	gfx_printf("Input voltage limit:       %4d mV\n", value);
-
 	bq24193_get_property(BQ24193_InputCurrentLimit, &value);
-	gfx_printf("Input current limit:       %4d mA\n", value);
+	gfx_printf("Input current limit:  %4d mA\n", value);
 
 	bq24193_get_property(BQ24193_SystemMinimumVoltage, &value);
-	gfx_printf("Min voltage limit:         %4d mV\n", value);
+	gfx_printf("System voltage limit: %4d mV\n", value);
 
 	bq24193_get_property(BQ24193_FastChargeCurrentLimit, &value);
-	gfx_printf("Fast charge current limit: %4d mA\n", value);
+	gfx_printf("Charge current limit: %4d mA\n", value);
 
 	bq24193_get_property(BQ24193_ChargeVoltageLimit, &value);
-	gfx_printf("Charge voltage limit:      %4d mV\n", value);
+	gfx_printf("Charge voltage limit: %4d mV\n", value);
 
 	bq24193_get_property(BQ24193_ChargeStatus, &value);
-	gfx_printf("Charge status:             ");
+	gfx_printf("Charge status:        ");
 	switch (value)
 	{
 	case 0:
@@ -349,7 +346,7 @@ void print_battery_charger_info()
 		break;
 	}
 	bq24193_get_property(BQ24193_TempStatus, &value);
-	gfx_printf("Temperature status:        ");
+	gfx_printf("Temperature status:   ");
 	switch (value)
 	{
 	case 0:
