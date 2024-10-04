@@ -2057,9 +2057,9 @@ static void _create_mbox_check_files_total_size()
 	bar_l4t_ind.body.main_color = LV_COLOR_HEX(0x00DDFF);
 	bar_l4t_ind.body.grad_color = bar_l4t_ind.body.main_color;
 
-	// Set Android bar style.
+	// Set GPT bar style.
 	lv_style_copy(&bar_and_ind, lv_theme_get_current()->bar.indic);
-	bar_and_ind.body.main_color = LV_COLOR_HEX(0xFF8000);
+	bar_and_ind.body.main_color = LV_COLOR_HEX(0xC000FF);
 	bar_and_ind.body.grad_color = bar_and_ind.body.main_color;
 
 	// Set separator styles.
@@ -2071,7 +2071,7 @@ static void _create_mbox_check_files_total_size()
 	sep_l4t_bg.body.main_color = LV_COLOR_HEX(0x00DDFF);
 	sep_l4t_bg.body.grad_color = sep_l4t_bg.body.main_color;
 	lv_style_copy(&sep_and_bg, &sep_emu_bg);
-	sep_and_bg.body.main_color = LV_COLOR_HEX(0xFF8000);
+	sep_and_bg.body.main_color = LV_COLOR_HEX(0xC000FF);
 	sep_and_bg.body.grad_color = sep_and_bg.body.main_color;
 
 	char *txt_buf = malloc(SZ_8K);
