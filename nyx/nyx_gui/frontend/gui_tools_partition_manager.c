@@ -813,7 +813,7 @@ static u32 _get_available_l4t_partition()
 	return size_sct;
 }
 
-static bool _get_available_android_partition()
+static int _get_available_android_partition()
 {
 	gpt_t *gpt = zalloc(sizeof(gpt_t));
 
@@ -827,11 +827,17 @@ static bool _get_available_android_partition()
 	// Find kernel partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (gpt->entries[i].lba_start && (!memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8)))
+		if (gpt->entries[i].lba_start)
 		{
-			free(gpt);
+			int found  = !memcmp(gpt->entries[i].name, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8) ? 2 : 0;
+				found |= !memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 },         6) ? 1 : 0;
 
-			return true;
+			if (found)
+			{
+				free(gpt);
+
+				return found;
+			}
 		}
 
 		if (i > 126)
@@ -882,7 +888,7 @@ static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
 
 	// Find an applicable partition for L4T.
 	u32 size_sct = _get_available_l4t_partition();
-	if (!l4t_flash_ctxt.offset_sct || !size_sct || size_sct < 0x800000)
+	if (!l4t_flash_ctxt.offset_sct || size_sct < 0x800000)
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Error:# No partition found!");
 		goto error;
@@ -2748,26 +2754,34 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	// Disable Flash Linux button if partition not found.
 	u32 size_sct = _get_available_l4t_partition();
-	if (!l4t_flash_ctxt.offset_sct || !size_sct || size_sct < 0x800000)
+	if (!l4t_flash_ctxt.offset_sct || size_sct < 0x800000)
 	{
 		lv_obj_set_click(btn_flash_l4t, false);
 		lv_btn_set_state(btn_flash_l4t, LV_BTN_STATE_INA);
 	}
 
+	int part_type_and = _get_available_android_partition();
+
 	// Create Flash Android button.
 	btn_flash_android = lv_btn_create(h1, NULL);
 	label_btn = lv_label_create(btn_flash_android, NULL);
 	lv_btn_set_fit(btn_flash_android, true, true);
-	lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android");
-	lv_obj_align(btn_flash_android, btn_flash_l4t, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
-	lv_btn_set_action(btn_flash_android, LV_BTN_ACTION_CLICK, _action_flash_android);
-
-	// Disable Flash Android button if partition not found.
-	if (!_get_available_android_partition())
+	switch (part_type_and)
 	{
+	case 0: // Disable Flash Android button if partition not found.
+		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android");
 		lv_obj_set_click(btn_flash_android, false);
 		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_INA);
+		break;
+	case 1: // Android 10/11.
+		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android 10/11");
+		break;
+	case 2: // Android 13+
+		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android 13+");
+		break;
 	}
+	lv_obj_align(btn_flash_android, btn_flash_l4t, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
+	lv_btn_set_action(btn_flash_android, LV_BTN_ACTION_CLICK, _action_flash_android);
 
 	// Create next step button.
 	btn1 = lv_btn_create(h1, NULL);
