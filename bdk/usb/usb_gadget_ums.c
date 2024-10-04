@@ -1936,7 +1936,9 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 
 		_handle_ep0_ctrl(&ums);
 
-		if (_parse_scsi_cmd(&ums, &ums.bulk_ctxt) || (ums.state > UMS_STATE_NORMAL))
+		_parse_scsi_cmd(&ums, &ums.bulk_ctxt);
+
+		if (ums.state > UMS_STATE_NORMAL)
 			continue;
 
 		_handle_ep0_ctrl(&ums);
