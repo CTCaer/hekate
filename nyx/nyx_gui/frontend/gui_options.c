@@ -954,8 +954,8 @@ save_data:
 					cal0->gyro_offset[0], cal0->gyro_offset[1], cal0->gyro_offset[2],
 					cal0->gyro_scale[0],  cal0->gyro_scale[1],  cal0->gyro_scale[2],
 					cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5]);
-				if (!error)
-					error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS) ? 4 : 0;
+
+				error = f_open(&fp, "switchroot/switch.cal", FA_WRITE | FA_CREATE_ALWAYS) ? 4 : 0;
 				if (!error)
 				{
 					f_puts(data, &fp);
