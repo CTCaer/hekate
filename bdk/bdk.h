@@ -49,6 +49,7 @@
 #include <soc/gpio.h>
 #include <soc/hw_init.h>
 #include <soc/i2c.h>
+#include <soc/irq.h>
 #include <soc/kfuse.h>
 #include <soc/pinmux.h>
 #include <soc/pmc.h>
