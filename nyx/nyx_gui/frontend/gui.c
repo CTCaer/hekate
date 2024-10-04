@@ -1832,7 +1832,7 @@ ini_parsing:
 		}
 
 		// Add button mask/radius and align icon.
-		lv_obj_t *btn = lv_btn_create(launch_ctxt.btn[curr_btn_idx], NULL);
+		lv_obj_t *btns = lv_btn_create(launch_ctxt.btn[curr_btn_idx], NULL);
 		u32 btn_width = 200;
 		u32 btn_height = 200;
 		if (img_noborder)
@@ -1848,25 +1848,25 @@ ini_parsing:
 			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_REL, &btn_home_noborder_rel);
 			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_PR, &btn_home_noborder_rel);
 		}
-		lv_obj_set_size(btn, btn_width, btn_height);
-		lv_btn_set_style(btn, LV_BTN_STYLE_REL, img_noborder ? &btn_home_noborder_rel : &btn_home_transp_rel);
-		lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_home_transp_pr);
+		lv_obj_set_size(btns, btn_width, btn_height);
+		lv_btn_set_style(btns, LV_BTN_STYLE_REL, img_noborder ? &btn_home_noborder_rel : &btn_home_transp_rel);
+		lv_btn_set_style(btns, LV_BTN_STYLE_PR, &btn_home_transp_pr);
 		if (img)
 			lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 		if (img_noborder)
-			lv_obj_align(btn, NULL, LV_ALIGN_CENTER, 0, 0);
+			lv_obj_align(btns, NULL, LV_ALIGN_CENTER, 0, 0);
 
 		// Set autoboot index.
-		ext = lv_obj_get_ext_attr(btn);
+		ext = lv_obj_get_ext_attr(btns);
 		ext->idx = entry_idx;
 		ext = lv_obj_get_ext_attr(launch_ctxt.btn[curr_btn_idx]); // Redundancy.
 		ext->idx = entry_idx;
 
 		// Set action.
 		if (!more_cfg)
-			lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_action);
+			lv_btn_set_action(btns, LV_BTN_ACTION_CLICK, _launch_action);
 		else
-			lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
+			lv_btn_set_action(btns, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
 
 		// Set button's label text.
 		lv_label_set_text(launch_ctxt.label[curr_btn_idx], ini_sec->name);
