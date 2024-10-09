@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 CTCaer
+ * Copyright (c) 2019-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -749,7 +749,7 @@ static lv_res_t _create_emummc_migrate_action(lv_obj_t * btns, const char * txt)
 
 typedef struct _emummc_images_t
 {
-	char *dirlist;
+	dirlist_t *dirlist;
 	u32 part_sector[3];
 	u32 part_type[3];
 	u32 part_end[3];
@@ -1009,9 +1009,9 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	FIL fp;
 
 	// Check for sd raw partitions, based on the folders in /emuMMC.
-	while (emummc_img->dirlist[emummc_idx * 256])
+	while (emummc_img->dirlist->name[emummc_idx])
 	{
-		s_printf(path, "emuMMC/%s/raw_based", &emummc_img->dirlist[emummc_idx * 256]);
+		s_printf(path, "emuMMC/%s/raw_based", emummc_img->dirlist->name[emummc_idx]);
 
 		if (!f_stat(path, NULL))
 		{
@@ -1024,21 +1024,21 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 			if ((curr_list_sector == 2) || (emummc_img->part_sector[0] && curr_list_sector >= emummc_img->part_sector[0] &&
 				curr_list_sector < emummc_img->part_end[0] && emummc_img->part_type[0] != 0x83))
 			{
-				s_printf(&emummc_img->part_path[0], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+				s_printf(&emummc_img->part_path[0], "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 				emummc_img->part_sector[0] = curr_list_sector;
 				emummc_img->part_end[0] = 0;
 			}
 			else if (emummc_img->part_sector[1] && curr_list_sector >= emummc_img->part_sector[1] &&
 				curr_list_sector < emummc_img->part_end[1] && emummc_img->part_type[1] != 0x83)
 			{
-				s_printf(&emummc_img->part_path[1 * 128], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+				s_printf(&emummc_img->part_path[1 * 128], "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 				emummc_img->part_sector[1] = curr_list_sector;
 				emummc_img->part_end[1] = 0;
 			}
 			else if (emummc_img->part_sector[2] && curr_list_sector >= emummc_img->part_sector[2] &&
 				curr_list_sector < emummc_img->part_end[2] && emummc_img->part_type[2] != 0x83)
 			{
-				s_printf(&emummc_img->part_path[2 * 128], "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+				s_printf(&emummc_img->part_path[2 * 128], "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 				emummc_img->part_sector[2] = curr_list_sector;
 				emummc_img->part_end[2] = 0;
 			}
@@ -1050,19 +1050,19 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	u32 file_based_idx = 0;
 
 	// Sanitize the directory list with sd file based ones.
-	while (emummc_img->dirlist[emummc_idx * 256])
+	while (emummc_img->dirlist->name[emummc_idx])
 	{
-		s_printf(path, "emuMMC/%s/file_based", &emummc_img->dirlist[emummc_idx * 256]);
+		s_printf(path, "emuMMC/%s/file_based", emummc_img->dirlist->name[emummc_idx]);
 
 		if (!f_stat(path, NULL))
 		{
-			char *tmp = &emummc_img->dirlist[emummc_idx * 256];
-			memcpy(&emummc_img->dirlist[file_based_idx * 256], tmp, strlen(tmp) + 1);
+			char *tmp = emummc_img->dirlist->name[emummc_idx];
+			memcpy(emummc_img->dirlist->name[file_based_idx], tmp, strlen(tmp) + 1);
 			file_based_idx++;
 		}
 		emummc_idx++;
 	}
-	emummc_img->dirlist[file_based_idx * 256] = 0;
+	emummc_img->dirlist->name[file_based_idx] = NULL;
 
 out0:;
 	static lv_style_t h_style;
@@ -1179,9 +1179,9 @@ out0:;
 	emummc_idx = 0;
 
 	// Add file based to the list.
-	while (emummc_img->dirlist[emummc_idx * 256])
+	while (emummc_img->dirlist->name[emummc_idx])
 	{
-		s_printf(path, "emuMMC/%s", &emummc_img->dirlist[emummc_idx * 256]);
+		s_printf(path, "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 
 		lv_list_add(list_sd_based, NULL, path, _save_file_emummc_cfg_action);
 

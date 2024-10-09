@@ -1394,7 +1394,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 		goto out_end;
 	}
 
-	char *filelist = dirlist("bootloader/payloads", NULL, false, false);
+	dirlist_t *filelist = dirlist("bootloader/payloads", NULL, false, false);
 	sd_unmount();
 
 	u32 i = 0;
@@ -1402,9 +1402,9 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 	{
 		while (true)
 		{
-			if (!filelist[i * 256])
+			if (!filelist->name[i])
 				break;
-			lv_list_add(list, NULL, &filelist[i * 256], launch_payload);
+			lv_list_add(list, NULL, filelist->name[i], launch_payload);
 			i++;
 		}
 		free(filelist);

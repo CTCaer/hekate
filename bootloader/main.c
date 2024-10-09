@@ -257,9 +257,9 @@ static void _launch_payloads()
 {
 	u8 max_entries = 61;
 	ment_t *ments  = NULL;
-	char *filelist = NULL;
 	char *file_sec = NULL;
 	char *dir = NULL;
+	dirlist_t *filelist = NULL;
 
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
@@ -286,11 +286,11 @@ static void _launch_payloads()
 
 		while (true)
 		{
-			if (i > max_entries || !filelist[i * 256])
+			if (i > max_entries || !filelist->name[i])
 				break;
 			ments[i + 2].type    = INI_CHOICE;
-			ments[i + 2].caption = &filelist[i * 256];
-			ments[i + 2].data    = &filelist[i * 256];
+			ments[i + 2].caption = filelist->name[i];
+			ments[i + 2].data    = filelist->name[i];
 
 			i++;
 		}
