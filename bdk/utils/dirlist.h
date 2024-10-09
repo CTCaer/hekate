@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -16,4 +16,12 @@
 
 #include <utils/types.h>
 
-char *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs);
+#define DIR_MAX_ENTRIES 64
+
+typedef struct _dirlist_t
+{
+	char *name[DIR_MAX_ENTRIES];
+	char  data[DIR_MAX_ENTRIES * 256];
+} dirlist_t;
+
+dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs);

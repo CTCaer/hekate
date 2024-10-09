@@ -17,21 +17,23 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "dirlist.h"
 #include <libs/fatfs/ff.h>
 #include <mem/heap.h>
 #include <utils/types.h>
 
-#define MAX_ENTRIES 64
-
-char *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs)
+dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs)
 {
 	int res = 0;
-	u32 i = 0, j = 0, k = 0;
+	u32 k = 0;
 	DIR dir;
 	FILINFO fno;
 
-	char *dir_entries = (char *)zalloc(MAX_ENTRIES * 256);
-	char *temp = (char *)zalloc(256);
+	dirlist_t *dir_entries = (dirlist_t *)malloc(sizeof(dirlist_t));
+
+	// Setup pointer tree.
+	for (u32 i = 0; i < DIR_MAX_ENTRIES; i++)
+		dir_entries->name[i] = &dir_entries->data[i * 256];
 
 	if (!pattern && !f_opendir(&dir, directory))
 	{
@@ -47,9 +49,8 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 			{
 				if ((fno.fname[0] != '.') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
 				{
-					strcpy(dir_entries + (k * 256), fno.fname);
-					k++;
-					if (k > (MAX_ENTRIES - 1))
+					strcpy(&dir_entries->data[k * 256], fno.fname);
+					if (++k >= DIR_MAX_ENTRIES)
 						break;
 				}
 			}
@@ -62,9 +63,8 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 		{
 			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != '.') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
 			{
-				strcpy(dir_entries + (k * 256), fno.fname);
-				k++;
-				if (k > (MAX_ENTRIES - 1))
+				strcpy(&dir_entries->data[k * 256], fno.fname);
+				if (++k >= DIR_MAX_ENTRIES)
 					break;
 			}
 			res = f_findnext(&dir, &fno);
@@ -74,27 +74,27 @@ char *dirlist(const char *directory, const char *pattern, bool includeHiddenFile
 
 	if (!k)
 	{
-		free(temp);
 		free(dir_entries);
 
 		return NULL;
 	}
 
+	// Terminate name list.
+	dir_entries->name[k] = NULL;
+
 	// Reorder ini files by ASCII ordering.
-	for (i = 0; i < k - 1 ; i++)
+	for (u32 i = 0; i < k - 1 ; i++)
 	{
-		for (j = i + 1; j < k; j++)
+		for (u32 j = i + 1; j < k; j++)
 		{
-			if (strcmp(&dir_entries[i * 256], &dir_entries[j * 256]) > 0)
+			if (strcmp(dir_entries->name[i], dir_entries->name[j]) > 0)
 			{
-				strcpy(temp, &dir_entries[i * 256]);
-				strcpy(&dir_entries[i * 256], &dir_entries[j * 256]);
-				strcpy(&dir_entries[j * 256], temp);
+				char *tmp = dir_entries->name[i];
+				dir_entries->name[i] = dir_entries->name[j];
+				dir_entries->name[j] = tmp;
 			}
 		}
 	}
-
-	free(temp);
 
 	return dir_entries;
 }

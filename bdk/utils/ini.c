@@ -62,7 +62,7 @@ int ini_parse(link_t *dst, const char *ini_path, bool is_dir)
 	ini_sec_t *csec = NULL;
 
 	char *lbuf     = NULL;
-	char *filelist = NULL;
+	dirlist_t *filelist = NULL;
 	char *filename = (char *)malloc(256);
 
 	strcpy(filename, ini_path);
@@ -85,9 +85,9 @@ int ini_parse(link_t *dst, const char *ini_path, bool is_dir)
 		// Copy ini filename in path string.
 		if (is_dir)
 		{
-			if (filelist[k * 256])
+			if (filelist->name[k])
 			{
-				strcpy(filename + pathlen, &filelist[k * 256]);
+				strcpy(filename + pathlen, filelist->name[k]);
 				k++;
 			}
 			else
