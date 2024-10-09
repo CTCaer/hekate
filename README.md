@@ -106,7 +106,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | emupath={FOLDER path}  | Forces emuMMC to use the selected one. (=emuMMC/RAW1, =emuMMC/SD00, etc). emuMMC must be created by hekate because it uses the raw_based/file_based files. |
 | emummcforce=1          | Forces the use of emuMMC. If emummc.ini is disabled or not found, then it causes an error. |
 | emummc_force_disable=1 | Disables emuMMC, if it's enabled.                           |
-| stock=1                | Disables unneeded kernel patching and CFW kips when running stock or semi-stock. `If emuMMC is enabled, emummc_force_disable=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
+| stock=1                | OFW via hekate bootloader. Disables unneeded kernel patching and CFW kips when running stock. `If emuMMC is enabled, emummc_force_disable=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
 | fullsvcperm=1          | Disables SVC verification (full services permission). Doesn't work with Mesosphere as kernel. |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1           | Enables Atmosphère patching. Not needed when `fss0` is used. |
