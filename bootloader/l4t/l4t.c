@@ -36,10 +36,11 @@
  * 4: Arachne Register Cell v3. DRAM OPT and DDR200 changes.
  * 5: Arachne Register Cell v4. DRAM FREQ and DDR200 changes.
  * 6: Arachne Register Cell v5. Signal quality and performance changes. TZ param changes.
+ * 7: Arachne Register Cell v6. Decouple of rd/wr latencies.
  */
 
-#define L4T_LOADER_API_REV 6
-#define L4T_FIRMWARE_REV   0x36524556 // REV6.
+#define L4T_LOADER_API_REV 7
+#define L4T_FIRMWARE_REV   0x37524556 // REV7.
 
 #ifdef DEBUG_UART_PORT
  #include <soc/uart.h>
