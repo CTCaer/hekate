@@ -29,8 +29,6 @@
 #include <storage/sd.h>
 #include <utils/util.h>
 
-#define USE_RTC_TIMER
-
 u8 bit_count(u32 val)
 {
 	u8 cnt = 0;

@@ -25,6 +25,8 @@
 #define EXCP_TYPE_ADDR 0x4003FFF8
 #define  EXCP_TYPE_WDT 0x544457 // "WDT".
 
+#define USE_RTC_TIMER
+
 u32 get_tmr_s()
 {
 	(void)RTC(APBDEV_RTC_MILLI_SECONDS);
