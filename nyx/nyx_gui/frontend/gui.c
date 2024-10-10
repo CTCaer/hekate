@@ -694,7 +694,7 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 		img_desc->header.always_zero = 0;
 		img_desc->header.w = bmpData.size_x;
 		img_desc->header.h = bmpData.size_y;
-		img_desc->header.cf = (bitmap[28] == 32) ? LV_IMG_CF_TRUE_COLOR_ALPHA : LV_IMG_CF_TRUE_COLOR;
+		img_desc->header.cf = (bitmap[28] == 32) ? LV_IMG_CF_TRUE_COLOR_ALPHA : LV_IMG_CF_TRUE_COLOR; // Only LV_IMG_CF_TRUE_COLOR_ALPHA is actually allowed.
 		img_desc->data_size = bmpData.size - bmpData.offset;
 		img_desc->data = (u8 *)offset_copy;
 
@@ -2461,9 +2461,12 @@ void nyx_load_and_run()
 	// Gui loop.
 	if (h_cfg.t210b01)
 	{
-		// Minerva not supported on T210B01 yet. No power saving.
+		// Minerva not supported on T210B01 yet. Slight power saving via spinlock.
 		while (true)
+		{
 			lv_task_handler();
+			usleep(400);
+		}
 	}
 	else
 	{
