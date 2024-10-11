@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2024 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -66,7 +66,8 @@ static const pkg1_id_t _pkg1_ids[] = {
 	{ "20220801", 14, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 15.0.0 - 15.0.1.
 	{ "20230111", 15, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 16.0.0 - 16.1.0.
 	{ "20230906", 16, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 17.0.0 - 17.0.1.
-	{ "20240207", 17, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 18.0.0+
+	{ "20240207", 17, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 18.0.0 - 18.1.0.
+	{ "20240808", 18, 0x0E00, 0x6FE0, 0x40030000, 0x4003E000 }, // 19.0.0+
 };
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
