@@ -1446,7 +1446,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate v6.2.1", 0, 0 };
+menu_t menu_top = { ment_top, "hekate v6.2.2", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
