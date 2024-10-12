@@ -1118,7 +1118,7 @@ multipart_not_allowed:
 			manual_system_maintenance(true);
 		}
 
-		return 0;
+		return -1;
 	}
 	else if (!use_multipart && (((u32)((u64)f_size(&fp) >> (u64)9)) != totalSectors)) // Check total restore size vs emmc size.
 	{
@@ -1475,10 +1475,13 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 			if (!res)
 				s_printf(txt_buf, "#FFDD00 Failed!#\n");
-			else
+			else if (res > 0)
 				s_printf(txt_buf, "Done!\n");
 
-			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+			if (res >= 0)
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+			else
+				res = 0;
 			manual_system_maintenance(true);
 		}
 	}
@@ -1508,10 +1511,13 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 			if (!res)
 				s_printf(txt_buf, "#FFDD00 Failed!#\n");
-			else
+			else if (res > 0)
 				s_printf(txt_buf, "Done!\n");
 
-			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+			if (res >= 0)
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+			else
+				res = 0;
 			manual_system_maintenance(true);
 		}
 		emmc_gpt_free(&gpt);
@@ -1544,10 +1550,13 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 			if (!res)
 				s_printf(txt_buf, "#FFDD00 Failed!#\n");
-			else
+			else if (res > 0)
 				s_printf(txt_buf, "Done!\n");
 
-			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+			if (res >= 0)
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+			else
+				res = 0;
 			manual_system_maintenance(true);
 		}
 	}
