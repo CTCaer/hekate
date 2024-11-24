@@ -27,6 +27,7 @@ OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
 	start.o exception_handlers.o \
 	nyx.o heap.o \
 	gfx.o \
+	konami.o \
 	gui.o gui_info.o gui_tools.o gui_options.o gui_emmc_tools.o gui_emummc_tools.o gui_tools_partition_manager.o \
 	fe_emummc_tools.o fe_emmc_tools.o \
 )

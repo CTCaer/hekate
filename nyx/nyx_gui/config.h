@@ -54,6 +54,7 @@ typedef struct _nyx_config
 	u32 jc_disable;
 	u32 jc_force_right;
 	u32 bpmp_clock;
+	u32 safeui;
 } nyx_config;
 
 void set_default_configuration();

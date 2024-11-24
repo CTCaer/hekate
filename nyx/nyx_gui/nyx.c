@@ -286,6 +286,8 @@ skip_main_cfg_parse:
 					n_cfg.jc_force_right = atoi(kv->val) == 1;
 				else if (!strcmp("bpmpclock",    kv->key))
 					n_cfg.bpmp_clock     = atoi(kv->val);
+				else if (!strcmp("safeui",       kv->key))
+					n_cfg.safeui         = atoi(kv->val) == 1;
 			}
 
 			break;

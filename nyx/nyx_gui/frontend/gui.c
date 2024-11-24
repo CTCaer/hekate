@@ -29,6 +29,7 @@
 
 #include "../config.h"
 #include <libs/fatfs/ff.h>
+#include "konami.h"
 
 extern hekate_config h_cfg;
 extern nyx_config n_cfg;
@@ -615,6 +616,8 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		close_btn = NULL;
 	}
 
+	check_konami_code(jc_pad);
+
 	return false; // No buffering so no more data read.
 }
 
@@ -777,6 +780,35 @@ lv_res_t mbox_action(lv_obj_t *btns, const char *txt)
 	lv_obj_del(dark_bg); // Deletes children also (mbox).
 
 	return LV_RES_INV;
+}
+
+lv_res_t mbox_konami_action(lv_obj_t *btns, const char *txt)
+{
+	lv_obj_t *mbox = lv_mbox_get_from_btn(btns);
+
+	// Do here some konami code related stuff
+	// put safeui to false and homescreen to 0
+	n_cfg.safeui = 0;
+	n_cfg.home_screen = 0;
+
+	//store nyx config
+	int res = !create_nyx_config_entry(true);
+
+	if(res){
+		lv_obj_t *dark_bg = lv_obj_get_parent(mbox);
+		lv_obj_del(dark_bg); // Deletes children also (mbox).
+		reload_nyx();
+		return LV_RES_INV;
+	}else {
+		static const char * mbox_btn_map[] = {"\251", "\222OK!", "\251", ""};
+		mbox = lv_mbox_create(lv_scr_act(), NULL);
+		lv_mbox_set_recolor_text(mbox, true);
+		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#FFDD00 Failed to save the configuration#\n#FFDD00 to sd card!#");
+		lv_mbox_add_btns(mbox, mbox_btn_map, NULL);
+		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+		lv_obj_set_top(mbox, true);
+		return LV_RES_OK;
+	}
 }
 
 bool nyx_emmc_check_battery_enough()
@@ -1508,7 +1540,10 @@ static lv_obj_t *create_window_launch(const char *win_title)
 
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 
-	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_launch_close_action);
+	if(!n_cfg.safeui)
+		close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", _win_launch_close_action);
+	else
+		close_btn = NULL;
 
 	return win;
 }
@@ -1519,6 +1554,12 @@ static lv_res_t _launch_action(lv_obj_t *btn)
 
 	_launch_hos(ext->idx, 0);
 
+	return LV_RES_OK;
+}
+
+static lv_res_t _launch_ofw_action(lv_obj_t *btn)
+{
+	power_set_state(REBOOT_BYPASS_FUSES);
 	return LV_RES_OK;
 }
 
@@ -1639,7 +1680,8 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	else
 		win = create_window_launch(SYMBOL_GPS" More Configurations");
 
-	lv_win_add_btn(win, NULL, SYMBOL_LIST" Logs #D0D0D0 OFF#", logs_onoff_toggle);
+	if(!n_cfg.safeui)
+		lv_win_add_btn(win, NULL, SYMBOL_LIST" Logs #D0D0D0 OFF#", logs_onoff_toggle);
 	launch_logs_enable = false;
 
 	lv_cont_set_fit(lv_page_get_scrl(lv_win_get_content(win)), false, false);
@@ -1733,6 +1775,7 @@ ini_parsing:
 
 		icon_path = NULL;
 		bool payload = false;
+		bool ofw = false;
 		bool img_colorize = false;
 		bool img_noborder = false;
 		lv_img_dsc_t *bmp = NULL;
@@ -1745,6 +1788,9 @@ ini_parsing:
 				icon_path = kv->val;
 			else if (!strcmp("payload", kv->key))
 				payload = true;
+			else if (!strcmp("ofw", kv->key))
+				if (kv->val[0] == '1')
+					ofw = true;
 		}
 
 		// If icon not found, check res folder for section_name.bmp.
@@ -1863,7 +1909,9 @@ ini_parsing:
 		ext->idx = entry_idx;
 
 		// Set action.
-		if (!more_cfg)
+		if(ofw)
+			lv_btn_set_action(btns, LV_BTN_ACTION_CLICK, _launch_ofw_action);
+		else if (!more_cfg)
 			lv_btn_set_action(btns, LV_BTN_ACTION_CLICK, _launch_action);
 		else
 			lv_btn_set_action(btns, LV_BTN_ACTION_CLICK, _launch_more_cfg_action);
@@ -2276,6 +2324,24 @@ void first_time_bpmp_clock(void *param)
 	create_nyx_config_entry(false);
 }
 
+static void _show_mbox_konami(){
+
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
+	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES * 5 / 9);
+
+	lv_mbox_set_text(mbox, "#FF8000 Konami Code#\n\n#96FF00 You found a secret!#");
+	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_konami_action);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+}
+
 static void _nyx_main_menu(lv_theme_t * th)
 {
 	static lv_style_t no_padding;
@@ -2445,6 +2511,9 @@ void nyx_load_and_run()
 
 	// Create main menu
 	_nyx_main_menu(th);
+
+	// Register konami code handler
+	register_konami_code_handler(_show_mbox_konami);
 
 	jc_drv_ctx.cursor = lv_img_create(lv_scr_act(), NULL);
 	lv_img_set_src(jc_drv_ctx.cursor, &touch_cursor);

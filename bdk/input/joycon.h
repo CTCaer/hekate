@@ -28,6 +28,32 @@
 
 #define JC_BTNS_ALL (JC_BTNS_PREV_NEXT | JC_BTNS_ENTER | JC_BTNS_DIRECTION_PAD | JC_BTNS_ESC)
 
+// Joy-Con buttons mask
+#define JC_BTNS_Y    	0x000001
+#define JC_BTNS_X    	0x000002
+#define JC_BTNS_B    	0x000004
+#define JC_BTNS_A    	0x000008
+#define JC_BTNS_SR_R   	0x000010
+#define JC_BTNS_SL_R   	0x000020
+#define JC_BTNS_R    	0x000040
+#define JC_BTNS_ZR   	0x000080
+#define JC_BTNS_MINUS   0x000100
+#define JC_BTNS_PLUS    0x000200
+#define JC_BTNS_R3   	0x000400
+#define JC_BTNS_L3   	0x000800
+#define JC_BTNS_HOME    0x001000
+#define JC_BTNS_CAPTURE 0x002000
+#define JC_BTNS_PAD     0x004000
+#define JC_BTNS_WIRED   0x008000
+#define JC_BTNS_DOWN    0x010000
+#define JC_BTNS_UP      0x020000
+#define JC_BTNS_RIGHT   0x040000
+#define JC_BTNS_LEFT    0x080000
+#define JC_BTNS_SR_L    0x100000
+#define JC_BTNS_SL_L    0x200000
+#define JC_BTNS_L    	0x400000
+#define JC_BTNS_ZL   	0x800000
+
 typedef struct _jc_bt_conn_t
 {
 	u8 type;
