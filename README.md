@@ -7,14 +7,16 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 
 
 
-- [Features](#features)
-- [Bootloader folders and files](#bootloader-folders-and-files)
-- [Bootloader configuration](#bootloader-configuration)
-  * [hekate global Configuration keys/values](#hekate-global-configuration-keysvalues-when-entry-is-config)
-  * [Boot entry key/value combinations](#boot-entry-keyvalue-combinations)
-  * [Boot entry key/value combinations for Exosphère](#boot-entry-keyvalue-combinations-for-exosphère)
-  * [Payload storage](#payload-storage)
-  * [Nyx Configuration keys/values](#nyx-configuration-keysvalues-nyxini)
+- [hekate - Nyx](#hekate---nyx)
+  - [Features](#features)
+  - [Bootloader folders and files](#bootloader-folders-and-files)
+  - [Bootloader configuration](#bootloader-configuration)
+    - [hekate Global Configuration keys/values (when entry is *\[config\]*):](#hekate-global-configuration-keysvalues-when-entry-is-config)
+    - [Boot entry key/value combinations:](#boot-entry-keyvalue-combinations)
+    - [Boot entry key/value combinations for Exosphère:](#boot-entry-keyvalue-combinations-for-exosphère)
+    - [Payload storage:](#payload-storage)
+    - [Nyx Configuration keys/values (nyx.ini):](#nyx-configuration-keysvalues-nyxini)
+      - [Extra](#extra)
 
 
 
@@ -107,6 +109,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | emummcforce=1          | Forces the use of emuMMC. If emummc.ini is disabled or not found, then it causes an error. |
 | emummc_force_disable=1 | Disables emuMMC, if it's enabled.                           |
 | stock=1                | OFW via hekate bootloader. Disables unneeded kernel patching and CFW kips when running stock. `If emuMMC is enabled, emummc_force_disable=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
+| ofw=1          | This is different than using `stock`. This executes the same action that Reboot > OFW. Its just a help to create OFW entry on launch menu. |
 | fullsvcperm=1          | Disables SVC verification (full services permission). Doesn't work with Mesosphere as kernel. |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
 | atmosphere=1           | Enables Atmosphère patching. Not needed when `fss0` is used. |
@@ -184,7 +187,10 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
 | jcforceright=0     | 1: Forces right joycon to be used as main mouse control.   |
 | bpmpclock=1        | 0: Auto, 1: Fastest, 2: Faster, 3: Fast. Use 2 or 3 if Nyx hangs or some functions like UMS/Backup Verification fail. |
+| safeui=0         | 1: With homescreen=2 (Launch menu), removes the close and Logs buttons from launch menu to avoid return to home menu and do something else. This option is usefull to people that just need to power on the console and select one boot option without worring about do something harmful. Special for kids or non-tech person.                     |
 
+#### Extra
+Konami code is supported in Nyx. It will show message box and on close it, restores the safeui=0 and homescreen=0 options. Useful for reenable full control over UI. The code is: `↑ ↑ ↓ ↓ ← → ← → B A`. (buttons only)
 
 ```
 hekate  (c) 2018,      naehrwert, st4rk.
