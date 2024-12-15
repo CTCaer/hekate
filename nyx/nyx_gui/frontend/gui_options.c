@@ -25,7 +25,7 @@
 #include <libs/lvgl/lvgl.h>
 
 #define CLOCK_MIN_YEAR 2024
-#define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
+#define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 50)
 #define CLOCK_YEARLIST "2024\n2025\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033\n2034"
 
 extern hekate_config h_cfg;
@@ -209,7 +209,7 @@ static void _create_autoboot_window()
 	lv_label_set_static_text(label_sep, "");
 
 	lv_obj_t *label_txt = lv_label_create(h1, NULL);
-	lv_label_set_static_text(label_txt, "Main configurations");
+	lv_label_set_static_text(label_txt, "Main configuration");
 	lv_obj_set_style(label_txt, lv_theme_get_current()->label.prim);
 	lv_obj_align(label_txt, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, -(LV_DPI / 4));
 
@@ -366,9 +366,9 @@ static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
 	nyx_changes_made = false;
 
 	if (res)
-		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
+		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#96FF00 The updated configuration has been saved to the microSD card!#");
 	else
-		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#FFDD00 Failed to save the configuration#\n#FFDD00 to sd card!#");
+		lv_mbox_set_text(mbox, "#FF8000 Nyx Configuration#\n\n#FFDD00 Failed to save the configuration#\n#FFDD00 to microSD card!#");
 	lv_mbox_add_btns(mbox, mbox_btn_map, NULL);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -618,10 +618,9 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	lv_obj_t *lbl_test = lv_label_create(h2, NULL);
 	lv_label_set_long_mode(lbl_test, LV_LABEL_LONG_BREAK);
 	lv_label_set_static_text(lbl_test,
-		"Lorem ipsum dolor sit amet, consectetur adipisicing elit, "
-		"sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-		"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris "
-		"nisi ut aliquip ex ea commodo consequat.");
+		"This is a test message to show text colors, "
+		"The quick brown fox jumped over the lazy dog. "
+		"123456789 !@#$%^&*()-_=+[]\;'./,{}|:"<>? ");
 	lv_obj_set_width(lbl_test, lv_obj_get_width(h2) - LV_DPI * 6 / 10);
 	lv_obj_align(lbl_test, lbl_sample, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
 	color_test.label = lbl_test;
@@ -745,7 +744,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time# for Nyx\nThis will not alter the actual HW clock!");
+	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time# for Nyx\nThis will not alter the clock outside of Nyx!");
 
 	// Get current time.
 	rtc_time_t time;
@@ -892,6 +891,7 @@ save_data:
 
 		if (!nx_hoag)
 		{
+			
 			// Save binary dump.
 			memcpy(data, &jc_pad->bt_conn_l, sizeof(jc_bt_conn_t));
 			memcpy(data + sizeof(jc_bt_conn_t), &jc_pad->bt_conn_r, sizeof(jc_bt_conn_t));
@@ -1049,7 +1049,7 @@ disabled_or_cal0_issue:;
 
 			// Check if pairing info was found.
 			if (joycon_found == 2)
-				strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found 2 out of 2 Joy-Con pairing data!#\n");
+				strcat(txt_buf, "#C7EA46 Success!#\n#C7EA46 Found Joy-Con pairing data!#\n");
 			else
 			{
 				s_printf(txt_buf + strlen(txt_buf), "#FF8000 Failed!#\n#FF8000 Warning:# Found #FFDD00 %d out of 2# pairing data!\n", joycon_found);
@@ -1061,24 +1061,24 @@ disabled_or_cal0_issue:;
 				strcat(txt_buf, "#C7EA46 Both pairing data are HOS based!#");
 			else if (!is_l_hos && is_r_hos)
 			{
-				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Left# pairing data is not HOS based!");
+				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Left# pairing data is not Horizon Os based! Re-pair Joy-Cons to fix");
 				success = false;
 			}
 			else if (is_l_hos && !is_r_hos)
 			{
-				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Right# pairing data is not HOS based!");
+				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 Right# pairing data is not Horizon OS based! Re-pair Joy-Cons to fix");
 				success = false;
 			}
 			else
 			{
-				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 No# pairing data is HOS based!");
+				strcat(txt_buf, "#FF8000 Warning:# #FFDD00 No# pairing data is Horizon OS based! Re-pair Joy-Cons to fix.");
 				success = false;
 			}
 
 			if (!success)
 				strcat(txt_buf,
-					"\n\n#FFDD00 Make sure that both Joy-Con are connected,#\n"
-					"#FFDD00 and that you paired them in HOS!#");
+					"\n\n#FFDD00 Make sure that both Joy-Cons are connected,#\n"
+					"#FFDD00 and that you have paired them in Horizon OS!#");
 
 			if (cal_error)
 				s_printf(txt_buf + strlen(txt_buf), "\n\n#FF8000 Warning: Failed (%d) to get IMU calibration!#", cal_error);
@@ -1276,9 +1276,9 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	label_txt2 = lv_label_create(sw_h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Sets the boot entries per line to 5. (Default is 4)\n"
-		"#C7EA46 This allows a total of 10 boot entries to be shown in Launch#\n"
-		"#C7EA46 and More Configs sections.#\n\n\n");
+		"Sets the boot entries visible per line to 5. (Default is 4)\n"
+		"#C7EA46 This allows a total of 10 boot entries to be shown in the Launch#\n"
+		"#C7EA46 and More Configs menus.#\n\n\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 12);
 
@@ -1325,7 +1325,7 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 
 	label_txt2 = lv_label_create(sw_h3, NULL);
 	lv_label_set_static_text(label_txt2, "Set the type of data verification done for backup and restore.\n"
-		"Can be canceled without losing the backup/restore.\n");
+		"Can be changed without losing the backup/restore.\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
 
@@ -1461,8 +1461,8 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(l_cont, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Set how long to show bootlogo when autoboot is enabled.\n"
-		"#C7EA46 You can press# #FF8000 VOL-# #C7EA46 during that time to enter hekate's menu.#\n");
+		"Sets how long to show bootlogo when autoboot is enabled.\n"
+		"#C7EA46 You can press# #FF8000 VOL-# #C7EA46 during that time to enter the hekate menu.#\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, label_txt, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
 
@@ -1477,8 +1477,8 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(sw_h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"It checks fuses and applies the patch automatically\n"
-		"if higher firmware. It is now a global config and set\n"
+		"This option checks fuses and applies the patch automatically\n"
+		"if a higher firmwareis present. It is now a global config and set\n"
 		"at auto by default. (ON: Auto)\n\n\n");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 12);
@@ -1493,7 +1493,7 @@ void create_tab_options(lv_theme_t *th, lv_obj_t *parent)
 
 	label_txt2 = lv_label_create(sw_h3, NULL);
 	lv_label_set_static_text(label_txt2,
-		"When Shutdown is used from HOS, the device wakes up after\n"
+		"When Shutdown is used from Horizon OS, the device wakes up after\n"
 		"15s. Enable this to automatically power off on the next\npayload injection.");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 12);
