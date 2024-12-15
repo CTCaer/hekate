@@ -255,7 +255,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	}
 	else if (cal0_res == 2)
 	{
-		lv_label_set_text(lb_desc, "#FFDD00 CAL0 is corrupt or wrong keys!#\n");
+		lv_label_set_text(lb_desc, "#FFDD00 CAL0 is corrupt or has the wrong keys!#\n");
 		goto out;
 	}
 
@@ -271,7 +271,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 		"#FF8000 WLAN MAC:#          %02X:%02X:%02X:%02X:%02X:%02X\n"
 		"#FF8000 Bluetooth MAC:#     %02X:%02X:%02X:%02X:%02X:%02X\n"
 		"#FF8000 Battery LOT:#       %s (%d)\n"
-		"#FF8000 LCD Vendor:#        ",
+		"#FF8000 Display Vendor:#        ",
 		cal0->version, cal0->update_cnt, cal0->serial_number,
 		cal0->wlan_mac[0], cal0->wlan_mac[1], cal0->wlan_mac[2], cal0->wlan_mac[3], cal0->wlan_mac[4], cal0->wlan_mac[5],
 		cal0->bd_mac[0], cal0->bd_mac[1], cal0->bd_mac[2], cal0->bd_mac[3], cal0->bd_mac[4], cal0->bd_mac[5],
@@ -384,12 +384,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		"SoC Speedo 0 (SoC Val):\n"
 		"SoC Speedo 1 (BROM rev):\n"
 		"SoC Speedo 2:\n"
-		"CPU IDDQ Val:\n"
-		"SoC IDDQ Val:\n"
-		"Gpu IDDQ Val:\n"
+		"CPU IDDQ Value:\n"
+		"SoC IDDQ Value:\n"
+		"GPU IDDQ Value:\n"
 		"Vendor Code:\n"
 		"FAB Code:\n"
-		"LOT Code 0:\n"
+		"LOT Code:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
 		"Y Coordinate:"
@@ -438,7 +438,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcpy(dram_man, "Samsung K4F6E304HB-MGCH 4GB");
 			break;
 		case LPDDR4_ICOSA_4GB_HYNIX_H9HCNNNBPUMLHR_NLE:
-			strcpy(dram_man, "Hynix H9HCNNNBPUMLHR-NLE 4GB");
+			strcpy(dram_man, "SK Hynix H9HCNNNBPUMLHR-NLE 4GB");
 			break;
 		case LPDDR4_ICOSA_4GB_MICRON_MT53B512M32D2NP_062_WTC:
 			strcpy(dram_man, "Micron MT53B512M32D2NP-062 WT:C");
@@ -469,7 +469,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
 		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLHR_NME:
-			strcpy(dram_man, "Hynix H9HCNNNBKMMLHR-NME 4GB");
+			strcpy(dram_man, "SK Hynix H9HCNNNBKMMLHR-NME 4GB");
 			break;
 		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D2NP_046_WTE: // 4266Mbps.
 		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D2NP_046_WTE: // 4266Mbps.
@@ -500,12 +500,12 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		case LPDDR4X_HOAG_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 		case LPDDR4X_AULA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
 		case LPDDR4X_IOWA_4GB_HYNIX_H9HCNNNBKMMLXR_NEE: // Replaced from Copper.
-			strcpy(dram_man, "Hynix H9HCNNNBKMMLXR-NEE 4GB");
+			strcpy(dram_man, "SK Hynix H9HCNNNBKMMLXR-NEE 4GB");
 			break;
 		case LPDDR4X_IOWA_4GB_HYNIX_H54G46CYRBX267:
 		case LPDDR4X_HOAG_4GB_HYNIX_H54G46CYRBX267:
 		case LPDDR4X_AULA_4GB_HYNIX_H54G46CYRBX267:
-			strcpy(dram_man, "Hynix H54G46CYRBX267 4GB");
+			strcpy(dram_man, "SK Hynix H54G46CYRBX267 4GB");
 			break;
 		case LPDDR4X_IOWA_4GB_MICRON_MT53E512M32D1NP_046_WTB:
 		case LPDDR4X_HOAG_4GB_MICRON_MT53E512M32D1NP_046_WTB:
@@ -675,7 +675,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		break;
 */
 	case 6:
-		strcat(txt_buf, "Hynix");
+		strcat(txt_buf, "SK Hynix");
 		break;
 /*
 	case 8:
@@ -819,7 +819,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "-???");
 			break;
 		default:
-			strcat(txt_buf, " #FFDD00 Contact me!#");
+			strcat(txt_buf, " #FFDD00 Open a GitHub issue!#");
 			break;
 		}
 		break;
@@ -846,7 +846,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "??");
 			break;
 		default:
-			strcat(txt_buf, " #FFDD00 Contact me!#");
+			strcat(txt_buf, " #FFDD00 Open a GitHub issue#");
 			break;
 		}
 		break;
@@ -891,7 +891,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcat(txt_buf, "Samsung ");
 			break;
 		}
-		strcat(txt_buf, "Unknown #FFDD00 Contact me!#");
+		strcat(txt_buf, "Unknown #FFDD00 Open an issue on GitHub!#");
 		break;
 	}
 
@@ -1190,7 +1190,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 		//"#FF8000 VD Recover Operations:# %d\n"
 		"#FF8000 Total Writes SLC:#      %d MB\n"
 		"#FF8000 Total Writes MLC:#      %d MB\n"
-		"#FF8000 BigFile limit status:#  %d\n"
+		"#FF8000 Big File limit status:#  %d\n"
 		"#FF8000 Average Erases Hybrid:# %d",
 
 		//rpt->avg_erase_cycles_sys,
@@ -1242,7 +1242,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 			"#FF8000 Uncorrectable ECC:#     %d\n"
 			"#FF8000 Temperature Now:#       %d oC\n"
 			//"#FF8000 Temperature Min:#       %d oC\n"
-			"#FF8000 Temperature Max:#       %d oC\n"
+			"#FF8000 Temperature Maximum:#       %d oC\n"
 			"#FF8000 Health Level EUDA:#     %d%%\n"
 			//"#FF8000 Health Level SYS:#      %d%%\n"
 			"#FF8000 Health Level MLC:#      %d%%",
@@ -1349,7 +1349,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 
 	if (res)
 	{
-		lv_mbox_set_text(mbox, "#FFDD00 Failed to init Storage!#");
+		lv_mbox_set_text(mbox, "#FFDD00 Failed to init Storage. This might be a hardware issue!#");
 		goto out;
 	}
 
@@ -1722,7 +1722,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		"Month/Year:\n\n"
 		"#00DDFF Ext CSD:#\n"
 		"Cmd Classes:\n"
-		"Max Rate:\n"
+		"Maximum Rate:\n"
 		"Current Rate:\n"
 		"Type Support:\n\n"
 		"Write Cache:\n"
@@ -1815,7 +1815,7 @@ out_error:
 
 		s_printf(txt_buf,
 			"#FF8000 eMMC Issue Detected#\n\n"
-			"#FFDD00 Your eMMC is initialized in a slower mode,#\n"
+			"#FFDD00 Your eMMC is initialized in a slow mode,#\n"
 			"#FFDD00 or an init/read/write error occurred!#\n"
 			"#FFDD00 This might be a hardware issue!#\n\n"
 			"#00DDFF Bus Speed:# %d MB/s\n\n"
@@ -2204,13 +2204,13 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	lv_label_set_static_text(lb_desc,
 		"#00DDFF Fuel Gauge IC Info:#\n"
-		"Capacity now:\n"
-		"Capacity full:\n"
+		"Current Capacity:\n"
+		"Full Capacity:\n"
 		"Capacity (design):\n"
 		"Current now:\n"
 		"Current average:\n"
-		"Voltage now:\n"
-		"Voltage open-circuit:\n"
+		"Current Voltade:\n"
+		"Open-circuit voltage:\n"
 		"Min voltage reached:\n"
 		"Max voltage reached:\n"
 		"Empty voltage:\n"
@@ -2641,8 +2641,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt6 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt6, true);
 	lv_label_set_static_text(label_txt6,
-		"View battery and battery charger related info.\n"
-		"You can also dump the battery charger registers.\n");
+		"View information related to the battery.\n"
+		"Also enables dumping the battery charger registers.\n");
 	lv_obj_set_style(label_txt6, &hint_small_style);
 	lv_obj_align(label_txt6, btn7, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
