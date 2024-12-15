@@ -249,7 +249,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	// Check result. Don't error if hash doesn't match.
 	if (cal0_res == 1)
 	{
-		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init the eMMC!#");
 
 		goto out;
 	}
@@ -424,7 +424,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		sku = "Aula - Fric";
 		break;
 	default:
-		sku = "#FF8000 Unknown#";
+		sku = "#FF8000 Unknown. This should not happen#";
 		break;
 	}
 
@@ -450,7 +450,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			strcpy(dram_man, "Samsung K4FBE3D4HM-MGXX 8GB");
 			break;
 		default:
-			strcpy(dram_man, "#FF8000 Unknown#");
+			strcpy(dram_man, "#FF8000 Unknown. This should not happen#");
 			break;
 		}
 	}
@@ -514,7 +514,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 			break;
 
 		default:
-			strcpy(dram_man, "#FF8000 Contact me!#");
+			strcpy(dram_man, "#FF8000 Open an issue on GitHub#");
 			break;
 		}
 	}
@@ -530,22 +530,22 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch (burnt_fuses_hos)
 	{
 	case 0:
-		strcpy(fuses_hos_version, "#96FF00 Golden sample#");
+		strcpy(fuses_hos_version, "#96FF00 Rare Sample Firmware#");
 		break;
 	case 1:
-		strcpy(fuses_hos_version, "1.0.0");
+		strcpy(fuses_hos_version, "1.0.0 - Exploitable");
 		break;
 	case 2:
-		strcpy(fuses_hos_version, "2.0.0 - 2.3.0");
+		strcpy(fuses_hos_version, "2.0.0 - 2.3.0 - Exploitable");
 		break;
 	case 3:
-		strcpy(fuses_hos_version, "3.0.0");
+		strcpy(fuses_hos_version, "3.0.0 - Exploitable");
 		break;
 	case 4:
-		strcpy(fuses_hos_version, "3.0.1 - 3.0.2");
+		strcpy(fuses_hos_version, "3.0.1 - 3.0.2 - Exploitable");
 		break;
 	case 5:
-		strcpy(fuses_hos_version, "4.0.0 - 4.1.0");
+		strcpy(fuses_hos_version, "4.0.0 - 4.1.0 - Exploitable");
 		break;
 	case 6:
 		strcpy(fuses_hos_version, "5.0.0 - 5.1.0");
@@ -593,10 +593,10 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "19.0.0+");
 		break;
 	case 255:
-		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
+		strcpy(fuses_hos_version, "#FFD000 Fuses overburnt#");
 		break;
 	default:
-		strcpy(fuses_hos_version, "#FF8000 Unknown#");
+		strcpy(fuses_hos_version, "#FF8000 Unknown. This should not happen#");
 		break;
 	}
 
@@ -732,7 +732,7 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Micron");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.chip1.rank0_ch0);
+		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown. This should not happen# (%d)", ram_vendor.chip1.rank0_ch0);
 		break;
 	}
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
@@ -740,19 +740,19 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch ((ram_density.chip0.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		strcat(txt_buf, " x 512MB");
+		strcat(txt_buf, " x 512MB. This should not happen");
 		break;
 	case 3:
-		strcat(txt_buf, " x 768MB");
+		strcat(txt_buf, " x 768MB. This should not happen");
 		break;
 	case 4:
 		strcat(txt_buf, " x 1GB");
 		break;
 	case 5:
-		strcat(txt_buf, " x 1.5GB");
+		strcat(txt_buf, " x 1.5GB. This should not happen");
 		break;
 	case 6:
-		strcat(txt_buf, " x 2GB");
+		strcat(txt_buf, " x 2GB. This should not happen");
 		break;
 	default:
 		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip0.rank0_ch0 & 0x3C) >> 2);
@@ -762,19 +762,19 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	switch ((ram_density.chip1.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		strcat(txt_buf, " x 512MB");
+		strcat(txt_buf, " x 512MB. This should not happen");
 		break;
 	case 3:
-		strcat(txt_buf, " x 768MB");
+		strcat(txt_buf, " x 768MB. This should not happen");
 		break;
 	case 4:
 		strcat(txt_buf, " x 1GB");
 		break;
 	case 5:
-		strcat(txt_buf, " x 1.5GB");
+		strcat(txt_buf, " x 1.5GB. This should not happen");
 		break;
 	case 6:
-		strcat(txt_buf, " x 2GB");
+		strcat(txt_buf, " x 2GB. This should not happen");
 		break;
 	default:
 		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip1.rank0_ch0 & 0x3C) >> 2);
@@ -864,13 +864,13 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Samsung AMS699VC01");
 		break;
 	case PANEL_OEM_CLONE_6_2:
-		strcat(txt_buf, "#FFDD00 OEM Clone 6.2\"#");
+		strcat(txt_buf, "#FFDD00 Clone Display 6.2in\"#");
 		break;
 	case PANEL_OEM_CLONE_5_5:
-		strcat(txt_buf, "#FFDD00 OEM Clone 5.5\"#");
+		strcat(txt_buf, "#FFDD00 Clone Display 5.5in\"#");
 		break;
 	case PANEL_OEM_CLONE:
-		strcat(txt_buf, "#FFDD00 OEM Clone#");
+		strcat(txt_buf, "#FFDD00 Clone Display#");
 		break;
 	case 0xCCCC:
 		strcat(txt_buf, "#FFDD00 Failed to get info!#");
@@ -988,9 +988,9 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	// Check if patched unit.
 	if (!fuse_check_patched_rcm())
-		strcat(txt_buf, "\n\n#96FF00 This unit is exploitable#\n#96FF00 to the RCM bug!#");
+		strcat(txt_buf, "\n\n#96FF00 This unit is exploitable#\n#96FF00 with the RCM bug!#");
 	else
-		strcat(txt_buf, "\n\n#FF8000 This unit is patched#\n#FF8000 to the RCM bug!#");
+		strcat(txt_buf, "\n\n#FF8000 This unit is patched#\n#FF8000 against the RCM bug!#");
 
 	lv_label_set_text(lb_desc2, txt_buf);
 
@@ -1044,7 +1044,7 @@ static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 
 	u32 res = fuse_read_ipatch(_ipatch_process);
 	if (res != 0)
-		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Failed to read ipatches. Error: %d#", res);
+		s_printf(txt_buf + strlen(txt_buf), "#FFDD00 Failed to read the ipatches. Error: %d#", res);
 
 	lv_label_set_text(lb_desc, txt_buf);
 
@@ -1087,7 +1087,7 @@ static lv_res_t _create_mbox_lockpick(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 
 	lv_mbox_set_text(mbox, "#FF8000 Lockpick RCM#\n\nThis will launch Lockpick RCM.\nDo you want to continue?\n\n"
-		"To return back from lockpick use\n#96FF00 Reboot to hekate#.");
+		"To return back from Lockpick use the \n#96FF00 Reboot to hekate# option.");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, _launch_lockpick_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
@@ -1594,7 +1594,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 	if (!emmc_initialize(false))
 	{
-		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
+		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC chip!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 		emmc_errors = emmc_get_error_count();
 
@@ -1622,8 +1622,11 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		strcat(txt_buf, "Samsung ");
 		break;
 	case 0x45: // Unofficial.
-		strcat(txt_buf, "SanDisk ");
+		strcat(txt_buf, "SanDisk (Unofficial) ");
 		lv_win_add_btn(win, NULL, SYMBOL_FILE_ALT" Device Report", _create_mbox_emmc_sandisk_report);
+		break;
+	case 0x89:
+		strcat(txt_buf, "Silicon Motion (Unofficial) ");
 		break;
 	case 0x90:
 		strcat(txt_buf, "SK Hynix ");
@@ -1787,7 +1790,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		idx++;
 	}
 	if (!idx)
-		strcat(txt_buf, "#FFDD00 Partition table is empty!#");
+		strcat(txt_buf, "#FFDD00 GPP Partition table is empty!#");
 
 	emmc_gpt_free(&gpt);
 
@@ -1811,10 +1814,10 @@ out_error:
 		lv_mbox_set_recolor_text(mbox, true);
 
 		s_printf(txt_buf,
-			"#FF8000 eMMC Issues Check#\n\n"
-			"#FFDD00 Your eMMC is initialized in slower mode,#\n"
-			"#FFDD00 or init/read/write errors occurred!#\n"
-			"#FFDD00 This might mean hardware issues!#\n\n"
+			"#FF8000 eMMC Issue Detected#\n\n"
+			"#FFDD00 Your eMMC is initialized in a slower mode,#\n"
+			"#FFDD00 or an init/read/write error occurred!#\n"
+			"#FFDD00 This might be a hardware issue!#\n\n"
 			"#00DDFF Bus Speed:# %d MB/s\n\n"
 			"#00DDFF SDMMC4 Errors:#\n"
 			"Init fails: %d\n"
@@ -1890,7 +1893,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	switch (sd_storage.cid.manfid)
 	{
 	case 0x00:
-		strcat(txt_buf, "Fake ");
+		strcat(txt_buf, "Fake SD Card");
 		break;
 	case 0x01:
 		strcat(txt_buf, "Panasonic ");
@@ -2309,9 +2312,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		"#00DDFF Battery Charger IC Info:#\n"
 		"Input current limit:\n"
 		"System voltage limit:\n"
-		"Charge current limit:\n"
-		"Charge voltage limit:\n"
-		"Charge status:\n"
+		"Charging current limit:\n"
+		"Charging voltage limit:\n"
+		"Charging status:\n"
 		"Temperature status:\n\n"
 		"#00DDFF USB-PD IC Info:#\n"
 		"Connection status:\n"
@@ -2353,7 +2356,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		strcat(txt_buf, "Fast charging\n");
 		break;
 	case 3:
-		strcat(txt_buf, "Charge terminated\n");
+		strcat(txt_buf, "Charging terminated\n");
 		break;
 	default:
 		s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)\n", value);
@@ -2524,8 +2527,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	if (lockpick_found)
 	{
 		lv_label_set_static_text(label_txt2,
-			"View Ipatches and dump the unpatched and patched versions\nof BootROM.\n"
-			"Or dump every single key via #C7EA46 Lockpick RCM#.\n");
+			"View the Ipatches and dump the unpatched and patched versions the \nof BootROM,\n"
+			"Or dump every single key with #C7EA46 Lockpick RCM#.\n");
 	}
 	else
 	{
@@ -2564,8 +2567,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
 		"View and dump the cached #C7EA46 Fuses# and #C7EA46 KFuses#.\n"
-		"Fuses contain info about the SoC/SKU and KFuses HDCP keys.\n"
-		"You can also see info about #C7EA46 DRAM#, #C7EA46 Screen# and #C7EA46 Touch panel#.");
+		"Fuses contain information about the SoC/SKU and KFuses HDCP keys.\n"
+		"You can also see information about #C7EA46 DRAM#, #C7EA46 Screen# and #C7EA46 Touch panel#.");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -2613,8 +2616,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt5 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt5, true);
 	lv_label_set_static_text(label_txt5,
-		"View info about the eMMC or microSD and their partition list.\n"
-		"Additionally you can benchmark read speeds.");
+		"View info about the eMMC chip or microSD cardand their partition list.\n"
+		"Additionally you can benchmark their speeds.");
 	lv_obj_set_style(label_txt5, &hint_small_style);
 	lv_obj_align(label_txt5, btn5, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -2639,7 +2642,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt6, true);
 	lv_label_set_static_text(label_txt6,
 		"View battery and battery charger related info.\n"
-		"Additionally you can dump battery charger's registers.\n");
+		"You can also dump the battery charger registers.\n");
 	lv_obj_set_style(label_txt6, &hint_small_style);
 	lv_obj_align(label_txt6, btn7, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
