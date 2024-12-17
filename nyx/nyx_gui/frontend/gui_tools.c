@@ -203,7 +203,7 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 
 	lv_obj_t *lbl_tip = lv_label_create(mbox, NULL);
 	lv_label_set_recolor(lbl_tip, true);
-	lv_label_set_static_text(lbl_tip, "Note: To end it, press #C7EA46 L3# + #C7EA46 HOME# or remove the cable.");
+	lv_label_set_static_text(lbl_tip, "Note: To end HID Emulation, press #C7EA46 L3# + #C7EA46 HOME# or remove the cable.");
 	lv_obj_set_style(lbl_tip, &hint_small_style);
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
@@ -282,20 +282,20 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 		if (usbs->type == MMC_SD)
 		{
 			lv_label_set_static_text(lbl_tip,
-				"Note: To end it, #C7EA46 safely eject# from inside the OS.\n"
+				"Note: To end UMS, #C7EA46 safely eject the device# from inside your OS.\n"
 				"       #FFDD00 DO NOT remove the cable!#");
 		}
 		else
 		{
 			lv_label_set_static_text(lbl_tip,
-				"Note: To end it, #C7EA46 safely eject# from inside the OS.\n"
+				"Note: To end UMS, #C7EA46 safely eject the devuce# from inside your OS.\n"
 				"       #FFDD00 If it's not mounted, you might need to remove the cable!#");
 		}
 	}
 	else
 	{
 		lv_label_set_static_text(lbl_tip,
-			"Note: To end it, #C7EA46 safely eject# from inside the OS\n"
+			"Note: To end it, #C7EA46 safely eject the device# from inside your OS\n"
 			"       or by removing the cable!#");
 	}
 	lv_obj_set_style(lbl_tip, &hint_small_style);
@@ -333,10 +333,10 @@ static lv_res_t _create_mbox_ums_error(int error)
 	switch (error)
 	{
 	case 1:
-		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 Error mounting SD Card!#");
+		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 Error mounting the SD Card!#");
 		break;
 	case 2:
-		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 No emuMMC found active!#");
+		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 No active emuMMC found!#");
 		break;
 	case 3:
 		lv_mbox_set_text(mbox, "#FF8000 USB Mass Storage#\n\n#FFFF00 Active emuMMC is not partition based!#");
@@ -982,8 +982,8 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 		// Check errors.
 		if (total[2] || total[3])
 		{
-			s_printf(txt_buf, "\n\n#FFDD00 Errors: folder accesses: %d, arc bit fixes: %d!#\n"
-					          "#FFDD00 Filesystem should be checked for errors.#",
+			s_printf(txt_buf, "\n\n#FFDD00 Errors: folder accesses: %d, archive bit fixes: %d!#\n"
+					          "#FFDD00 SD Card Filesystem should be checked for errors.#",
 					          total[2], total[3]);
 		}
 
@@ -1012,7 +1012,7 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	lv_mbox_set_recolor_text(mbox, true);
 
 	char *txt_buf = malloc(SZ_16K);
-	strcpy(txt_buf, "#FF8000 Don't touch the screen!#\n\nThe tuning process will start in ");
+	strcpy(txt_buf, "#FF8000 Don't touch the screen!#\n\nThe calibration process will start in ");
 	u32 text_idx = strlen(txt_buf);
 	lv_mbox_set_text(mbox, txt_buf);
 
@@ -1187,6 +1187,8 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	{
 		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#");
 		lv_label_set_text(lb_desc, txt_buf);
+		strcat(txt_buf, "#FFDD00 Try updating hekate or your CFW!#");
+		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
 		if (!res)
@@ -1218,7 +1220,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	{
 		if (!pkg1_decrypt(pkg1_id, pkg1))
 		{
-			strcat(txt_buf, "#FFDD00 Pkg1 decryption failed!#\n");
+			strcat(txt_buf, "#FFDD00 Package1 decryption failed!#\n");
 			if (h_cfg.t210b01)
 				strcat(txt_buf, "#FFDD00 Is BEK missing?#\n");
 			lv_label_set_text(lb_desc, txt_buf);
@@ -1233,10 +1235,10 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 		// Display info.
 		s_printf(txt_buf + strlen(txt_buf),
-			"#C7EA46 NX Bootloader size:  #0x%05X\n"
-			"#C7EA46 Secure monitor addr: #0x%05X\n"
+			"#C7EA46 Bootloader size:  #0x%05X\n"
+			"#C7EA46 Secure monitor address: #0x%05X\n"
 			"#C7EA46 Secure monitor size: #0x%05X\n"
-			"#C7EA46 Warmboot addr:       #0x%05X\n"
+			"#C7EA46 Warmboot adress:       #0x%05X\n"
 			"#C7EA46 Warmboot size:       #0x%05X\n\n",
 			hdr_pk11->ldr_size, pkg1_id->secmon_base, hdr_pk11->sm_size, pkg1_id->warmboot_base, hdr_pk11->wb_size);
 
@@ -1317,7 +1319,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);
 	if (!pkg2_hdr)
 	{
-		strcat(txt_buf, "#FFDD00 Pkg2 decryption failed!#");
+		strcat(txt_buf, "#FFDD00 Package2 decryption failed!#");
 		lv_label_set_text(lb_desc, txt_buf);
 		manual_system_maintenance(true);
 
@@ -1476,10 +1478,10 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to backup the eMMC partitions individually or as\n"
+		"Allows you to backup eMMC partitions individually or as\n"
 		"a whole raw image to the SD card.\n"
-		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
-		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
+		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up, with the #"
+		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46#Filesystems");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1493,10 +1495,10 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to restore the eMMC/emuMMC partitions individually\n"
+		"Allows you to restore eMMC/emuMMC partitions individually\n"
 		"or as a whole raw image from the SD card.\n"
-		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
-		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
+		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up, with the #"
+		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46#Filesystems");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1532,7 +1534,7 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt4, true);
 	lv_label_set_static_text(label_txt4,
 		"Allows you to partition the SD Card for using it with #C7EA46 emuMMC#,\n"
-		"#C7EA46 Android# and #C7EA46 Linux#. You can also flash Linux and Android.\n");
+		"#C7EA46 Android# and #C7EA46 Linux#. Also allows writing L4T Images.\n");
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1611,8 +1613,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to calibrate the touchscreen module.\n"
-		"#FF8000 This fixes any issues with touchscreen in Nyx and HOS.#");
+		"Allows you to calibrate the touchscreen.\n"
+		"#FF8000 This fixes issues with the touchscreen in Nyx and Horizon OS.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1666,11 +1668,11 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	s_printf(txt_buf,
 		"Allows you to enter RCM without using #C7EA46 VOL+# & #C7EA46 HOME# (jig).\n"
 		"#FF8000 It can restore all versions of AutoRCM whenever requested.#\n"
-		"#FF3C28 This corrupts the BCT and you can't boot without a custom#\n"
-		"#FF3C28 bootloader.#");
+		"#FF3C28 This corrupts the BCT, so you need to inject a custom bootloader to boot#\n"
+		"#FF3C28 A BOOT0 / BOOT1 Backup is recommended before enabling this.#");
 
 	if (h_cfg.rcm_patched)
-		strcat(txt_buf, " #FF8000 This is disabled because this unit is patched!#");
+		strcat(txt_buf, " #FF8000 This is disabled because this unit is patched, to prevent bricks!#");
 
 	lv_obj_t *label_txt4 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt4, true);
@@ -1694,8 +1696,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h2, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to dump and decrypt pkg1 and pkg2 and further\n"
-		"split it up into their individual parts. It also dumps the kip1.");
+		"Allows you to dump and decrypt Package1 and Package2 and further\n"
+		"split it up into their individual parts. It also dumps kip1.");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
@@ -1721,7 +1723,7 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 	lv_tabview_set_btns_pos(tv, LV_TABVIEW_BTNS_POS_BOTTOM);
 
 	lv_obj_t *tab1= lv_tabview_add_tab(tv, "eMMC "SYMBOL_DOT" SD Partitions "SYMBOL_DOT" USB");
-	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Arch bit "SYMBOL_DOT" RCM "SYMBOL_DOT" Touch "SYMBOL_DOT" Pkg1/2");
+	lv_obj_t *tab2 = lv_tabview_add_tab(tv, "Archive bit "SYMBOL_DOT" RCM "SYMBOL_DOT" Touch "SYMBOL_DOT" Pkg1/2");
 
 	lv_obj_t *line_sep = lv_line_create(tv, NULL);
 	static const lv_point_t line_pp[] = { {0, 0}, { 0, LV_DPI / 4} };
