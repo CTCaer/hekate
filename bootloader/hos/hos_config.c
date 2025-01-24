@@ -58,7 +58,7 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 {
 	u32 size;
 
-	if (!memcmp(value + strlen(value) - 1, "*", 1))
+	if (value[strlen(value) - 1] == '*')
 	{
 		char *dir = (char *)malloc(256);
 		strcpy(dir, value);
@@ -119,9 +119,6 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 
 int config_kip1patch(launch_ctxt_t *ctxt, const char *value)
 {
-	if (value == NULL)
-		return 0;
-
 	int len = strlen(value);
 	if (!len)
 		return 0;
@@ -313,10 +310,15 @@ static const cfg_handler_t _config_handlers[] = {
 
 int parse_boot_config(launch_ctxt_t *ctxt)
 {
+	if (!ctxt->cfg)
+		return 1;
+
+	// Check each config key.
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ctxt->cfg->kvs, link)
 	{
 		for (u32 i = 0; _config_handlers[i].key; i++)
 		{
+			// If key matches, call its handler.
 			if (!strcmp(_config_handlers[i].key, kv->key))
 			{
 				if (!_config_handlers[i].handler(ctxt, kv->val))
@@ -326,6 +328,8 @@ int parse_boot_config(launch_ctxt_t *ctxt)
 
 					return 0;
 				}
+
+				break;
 			}
 		}
 	}
