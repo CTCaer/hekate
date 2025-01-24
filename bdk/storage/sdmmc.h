@@ -178,6 +178,15 @@ typedef struct _sd_ssr
 	u32 protected_size;
 } sd_ssr_t;
 
+typedef struct _sd_ext_reg_t
+{
+	u8  cmdq;
+	u8  cmdq_ext;
+	u8  cache;
+	u8  cache_ext;
+	int valid;
+} sd_ext_reg_t;
+
 /*! SDMMC storage context. */
 typedef struct _sdmmc_storage_t
 {
@@ -198,6 +207,7 @@ typedef struct _sdmmc_storage_t
 	mmc_ext_csd_t ext_csd;
 	sd_scr_t      scr;
 	sd_ssr_t      ssr;
+	sd_ext_reg_t  ser;
 } sdmmc_storage_t;
 
 typedef struct _sd_func_modes_t
@@ -222,9 +232,13 @@ int  sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf);
 
 int  mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf);
 
+int  sd_storage_get_ext_reg(sdmmc_storage_t *storage, u8 fno, u8 page, u16 offset, u32 len, void *buf);
 int  sd_storage_get_fmodes(sdmmc_storage_t *storage, u8 *buf, sd_func_modes_t *functions);
 int  sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf);
 int  sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf);
 u32  sd_storage_get_ssr_au(sdmmc_storage_t *storage);
+
+void sd_storage_get_ext_regs(sdmmc_storage_t *storage, u8 *buf);
+int  sd_storage_parse_perf_enhance(sdmmc_storage_t *storage, u8 fno, u8 page, u16 offset, u8 *buf);
 
 #endif

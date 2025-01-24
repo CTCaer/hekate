@@ -31,6 +31,12 @@
 #define DPRINTF(...)
 
 //#define SDMMC_DEBUG_PRINT_SD_REGS
+#ifdef SDMMC_DEBUG_PRINT_SD_REGS
+#define DREGPRINTF(...) gfx_printf(__VA_ARGS__)
+#else
+#define DREGPRINTF(...)
+#endif
+
 #ifdef BDK_SDMMC_EXTRA_PRINT
 #define ERROR_EXTRA_PRINTING
 #endif
@@ -556,6 +562,34 @@ int mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf)
 	u32 tmp = 0;
 	sdmmc_get_cached_rsp(storage->sdmmc, &tmp, SDMMC_RSP_TYPE_1);
 	_mmc_storage_parse_ext_csd(storage, buf);
+
+	return _sdmmc_storage_check_card_status(tmp);
+}
+
+int sd_storage_get_ext_reg(sdmmc_storage_t *storage, u8 fno, u8 page, u16 address, u32 len, void *buf)
+{
+	if (!(storage->scr.cmds & BIT(2)))
+		return 0;
+
+	sdmmc_cmd_t cmdbuf;
+
+	u32 arg = fno << 27 | page << 18 | address << 9 | (len - 1);
+
+	sdmmc_init_cmd(&cmdbuf, SD_READ_EXTR_SINGLE, arg, SDMMC_RSP_TYPE_1, 0);
+
+	sdmmc_req_t reqbuf;
+	reqbuf.buf = buf;
+	reqbuf.blksize = SDMMC_DAT_BLOCKSIZE;
+	reqbuf.num_sectors = 1;
+	reqbuf.is_write = 0;
+	reqbuf.is_multi_block = 0;
+	reqbuf.is_auto_stop_trn = 0;
+
+	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, &reqbuf, NULL))
+		return 0;
+
+	u32 tmp = 0;
+	sdmmc_get_cached_rsp(storage->sdmmc, &tmp, SDMMC_RSP_TYPE_1);
 
 	return _sdmmc_storage_check_card_status(tmp);
 }
@@ -1556,6 +1590,86 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 	storage->ssr.uhs_au_size = unstuff_bits(raw_ssr1, 392, 4);
 
 	storage->ssr.perf_enhance = unstuff_bits(raw_ssr2, 328, 8);
+}
+
+int sd_storage_parse_perf_enhance(sdmmc_storage_t *storage, u8 fno, u8 page, u16 offset, u8 *buf)
+{
+	// Check status reg for support.
+	storage->ser.cache = (storage->ssr.perf_enhance >> 2) & BIT(0);
+	storage->ser.cmdq  = (storage->ssr.perf_enhance >> 3) & 0x1F;
+
+	if (!sd_storage_get_ext_reg(storage, fno, page, offset, 512, buf))
+	{
+		storage->ser.cache_ext = 0;
+		storage->ser.cmdq_ext  = 0;
+
+		return 0;
+	}
+
+	storage->ser.cache_ext = buf[4] & BIT(0);
+	storage->ser.cmdq_ext  = buf[6] & 0x1F;
+
+	return 1;
+}
+
+static void _sd_storage_parse_ext_reg(sdmmc_storage_t *storage, u8 *buf, u16 *addr_next)
+{
+	u16 addr = *addr_next;
+
+	// Address to the next extension.
+	*addr_next = (buf[addr + 41] << 8) | buf[addr + 40];
+
+	u16 sfc = (buf[addr + 1] << 8) | buf[addr];
+
+	u32 reg_sets = buf[addr + 42];
+
+#ifdef SDMMC_DEBUG_PRINT_SD_REGS
+	for (u32 i = 0; i < reg_sets; i++)
+	{
+		u32 reg_set_addr;
+		memcpy(&reg_set_addr, &buf[addr + 44 + 4 * i], 4);
+		u16 off = reg_set_addr & 0x1FF;
+		u8 page = reg_set_addr >> 9 & 0xFF;
+		u8 fno  = reg_set_addr >> 18 & 0xFF;
+		gfx_printf("Addr: %04X sfc:%02X - fno:%02X, page:%02X, off:%04X\n", addr, sfc, fno, page, off);
+	}
+#endif
+
+	// Parse Performance Enhance.
+	if (sfc == 2 && reg_sets == 1)
+	{
+		u32 reg_set0_addr;
+		memcpy(&reg_set0_addr, &buf[addr + 44], 4);
+		u16 off = reg_set0_addr & 0x1FF;
+		u8 page = reg_set0_addr >> 9 & 0xFF;
+		u8 fno  = reg_set0_addr >> 18 & 0xFF;
+
+		if (sd_storage_parse_perf_enhance(storage, fno, page, off, buf))
+			storage->ser.valid = 1;
+	}
+}
+
+void sd_storage_get_ext_regs(sdmmc_storage_t *storage, u8 *buf)
+{
+	DREGPRINTF("SD Extension Registers:\n\n");
+
+	if (!(storage->scr.cmds & BIT(2)))
+	{
+		DREGPRINTF("Not Supported!\n");
+		return;
+	}
+
+	if (!sd_storage_get_ext_reg(storage, 0, 0, 0, 512, buf))
+	{
+		DREGPRINTF("Failed to get general info!\n");
+		return;
+	}
+
+	u16 size = (buf[3] << 8) | buf[2];
+	u16 addr_next = 16;
+	u32 num_ext = buf[4];
+	for (u32 i = 0; i < num_ext && addr_next < size; i++)
+		_sd_storage_parse_ext_reg(storage, buf, &addr_next);
 }
 
 int sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
