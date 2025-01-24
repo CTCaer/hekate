@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -104,7 +104,7 @@ typedef struct _launch_ctxt_t
 	u32   kernel_size;
 
 	link_t kip1_list;
-	char*  kip1_patches;
+	char  *kip1_patches;
 
 	bool svcperm;
 	bool debugmode;
@@ -128,8 +128,6 @@ typedef struct _merge_kip_t
 	link_t link;
 } merge_kip_t;
 
-void hos_eks_clear(u32 kb);
-int  hos_launch(ini_sec_t *cfg);
-int  hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool is_exo);
+void hos_launch(ini_sec_t *cfg);
 
 #endif

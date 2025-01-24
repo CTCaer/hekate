@@ -444,8 +444,10 @@ parse_failed:
 			launch_l4t(cfg_sec, entry_idx, 1, h_cfg.t210b01);
 		}
 	}
-	else if (!hos_launch(cfg_sec))
+	else
 	{
+		hos_launch(cfg_sec);
+
 wrong_emupath:
 		if (emummc_path)
 		{
@@ -587,8 +589,10 @@ parse_failed:
 			launch_l4t(cfg_sec, entry_idx, 0, h_cfg.t210b01);
 		}
 	}
-	else if (!hos_launch(cfg_sec))
+	else
 	{
+		hos_launch(cfg_sec);
+
 wrong_emupath:
 		if (emummc_path)
 		{

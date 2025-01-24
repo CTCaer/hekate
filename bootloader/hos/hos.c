@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ static void _se_lock(bool lock_se)
 	gfx_hexdump(SE_BASE, (void *)SE_BASE, 0x400);*/
 }
 
-bool hos_eks_rw_try(u8 *buf, bool write)
+static bool _hos_eks_rw_try(u8 *buf, bool write)
 {
 	for (u32 i = 0; i < 3; i++)
 	{
@@ -224,7 +224,7 @@ static void _hos_eks_get()
 	{
 		// Read EKS blob.
 		u8 *mbr = zalloc(SD_BLOCKSIZE);
-		if (!hos_eks_rw_try(mbr, false))
+		if (!_hos_eks_rw_try(mbr, false))
 			goto out;
 
 		// Decrypt EKS blob.
@@ -262,7 +262,7 @@ static void _hos_eks_save()
 	{
 		// Read EKS blob.
 		u8 *mbr = zalloc(SD_BLOCKSIZE);
-		if (!hos_eks_rw_try(mbr, false))
+		if (!_hos_eks_rw_try(mbr, false))
 		{
 			if (new_eks)
 			{
@@ -294,7 +294,7 @@ static void _hos_eks_save()
 
 		// Write EKS blob to SD.
 		memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-		hos_eks_rw_try(mbr, true);
+		_hos_eks_rw_try(mbr, true);
 
 		free(eks);
 		free(keys);
@@ -303,7 +303,7 @@ out:
 	}
 }
 
-void hos_eks_clear(u32 kb)
+static void _hos_eks_clear(u32 kb)
 {
 	// Check if Erista based unit.
 	if (h_cfg.t210b01)
@@ -316,7 +316,7 @@ void hos_eks_clear(u32 kb)
 		{
 			// Read EKS blob.
 			u8 *mbr = zalloc(SD_BLOCKSIZE);
-			if (!hos_eks_rw_try(mbr, false))
+			if (!_hos_eks_rw_try(mbr, false))
 				goto out;
 
 			// Disable current Master key version.
@@ -329,7 +329,7 @@ void hos_eks_clear(u32 kb)
 
 			// Write EKS blob to SD.
 			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-			hos_eks_rw_try(mbr, true);
+			_hos_eks_rw_try(mbr, true);
 
 			free(eks);
 out:
@@ -338,24 +338,9 @@ out:
 	}
 }
 
-int hos_keygen_t210b01(u32 kb)
+static int _hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool is_exo)
 {
-	// Use SBK as Device key 4x unsealer and KEK for mkey in T210B01 units.
-	se_aes_unwrap_key(10, 14, console_keyseed_4xx);
-
-	// Derive master key.
-	se_aes_unwrap_key(7, 12, master_kekseed_t210b01[kb - HOS_KB_VERSION_600]);
-	se_aes_unwrap_key(7, 7,  master_keyseed_retail);
-
-	// Derive latest pkg2 key.
-	se_aes_unwrap_key(8, 7, package2_keyseed);
-
-	return 1;
-}
-
-int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool is_exo)
-{
-	static bool sbk_wiped = false;
+	static bool sbk_is_set = true;
 
 	u32 retries = 0;
 	bool use_tsec = false;
@@ -365,16 +350,29 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 	if (kb > HOS_KB_VERSION_MAX)
 		return 0;
 
+	// Do Mariko keygen.
 	if (h_cfg.t210b01)
-		return hos_keygen_t210b01(kb);
+	{
+		// Use SBK as Device key 4x unsealer and KEK for mkey in T210B01 units.
+		se_aes_unwrap_key(10, 14, console_keyseed_4xx);
+
+		// Derive master key.
+		se_aes_unwrap_key(7, 12, master_kekseed_t210b01[kb - HOS_KB_VERSION_600]);
+		se_aes_unwrap_key(7, 7,  master_keyseed_retail);
+
+		// Derive latest pkg2 key.
+		se_aes_unwrap_key(8, 7, package2_keyseed);
+
+		return 1;
+	}
 
 	// Do Erista keygen.
 
-	// SBK is wiped. Try to restore it from fuses.
-	if (sbk_wiped)
+	// Check if SBK is wiped and try to restore it from fuses.
+	if (!sbk_is_set)
 	{
 		if (fuse_set_sbk())
-			sbk_wiped = false;
+			sbk_is_set = true;
 		else
 			return 1; // Continue with current SE keys.
 	}
@@ -412,7 +410,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 		tsec_ctxt->fw = sd_file_read("bootloader/sys/thk.bin", NULL);
 		if (!tsec_ctxt->fw)
 		{
-			_hos_crit_error("\nFailed to load thk.bin");
+			_hos_crit_error("Failed to load thk.bin");
 			return 0;
 		}
 
@@ -436,7 +434,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 		// We rely on racing conditions, make sure we cover even the unluckiest cases.
 		if (retries > 15)
 		{
-			_hos_crit_error("\nFailed to get TSEC keys. Please try again.");
+			_hos_crit_error("Failed to get TSEC keys.");
 			return 0;
 		}
 	}
@@ -570,7 +568,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 				se_aes_unwrap_key(15, 15, console_keyseed);
 				se_aes_unwrap_key(14, 12, master_keyseed_4xx);
 				se_aes_unwrap_key(12, 12, master_keyseed_retail);
-				sbk_wiped = true;
+				sbk_is_set = false;
 				break;
 			case HOS_KB_VERSION_500:
 			case HOS_KB_VERSION_600:
@@ -578,7 +576,7 @@ int hos_keygen(void *keyblob, u32 kb, tsec_ctxt_t *tsec_ctxt, bool stock, bool i
 				se_aes_unwrap_key(15, 15, console_keyseed);
 				se_aes_unwrap_key(14, 12, master_keyseed_4xx);
 				se_aes_unwrap_key(12, 12, master_keyseed_retail);
-				sbk_wiped = true;
+				sbk_is_set = false;
 				break;
 			}
 		}
@@ -750,7 +748,7 @@ static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 	return true;
 }
 
-int hos_launch(ini_sec_t *cfg)
+void hos_launch(ini_sec_t *cfg)
 {
 	u8 kb;
 	u32 secmon_base;
@@ -758,7 +756,6 @@ int hos_launch(ini_sec_t *cfg)
 	bool is_exo = false;
 	launch_ctxt_t ctxt = {0};
 	tsec_ctxt_t tsec_ctxt = {0};
-	volatile secmon_mailbox_t *secmon_mailbox;
 
 	minerva_change_freq(FREQ_1600);
 	sdram_src_pllc(true);
@@ -776,10 +773,7 @@ int hos_launch(ini_sec_t *cfg)
 	int res = emummc_storage_init_mmc();
 	if (res)
 	{
-		if (res == 2)
-			_hos_crit_error("Failed to init eMMC.");
-		else
-			_hos_crit_error("Failed to init emuMMC.");
+		_hos_crit_error(res == 2 ? "Failed to init eMMC." : "Failed to init emuMMC.");
 
 		goto error;
 	}
@@ -787,12 +781,12 @@ int hos_launch(ini_sec_t *cfg)
 	// Check if SD Card is GPT.
 	if (sd_is_gpt())
 	{
-		_hos_crit_error("SD has GPT only!");
+		_hos_crit_error("SD has GPT only! Run Fix Hybrid MBR!");
 		goto error;
 	}
 
 	// Try to parse config if present.
-	if (ctxt.cfg && !parse_boot_config(&ctxt))
+	if (!parse_boot_config(&ctxt))
 	{
 		_hos_crit_error("Wrong ini cfg or missing/corrupt files!");
 		goto error;
@@ -880,7 +874,7 @@ int hos_launch(ini_sec_t *cfg)
 	tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
 
 	// Generate keys.
-	if (!hos_keygen(ctxt.keyblob, kb, &tsec_ctxt, ctxt.stock, is_exo))
+	if (!_hos_keygen(ctxt.keyblob, kb, &tsec_ctxt, ctxt.stock, is_exo))
 		goto error;
 	gfx_puts("Generated keys\n");
 
@@ -982,7 +976,7 @@ int hos_launch(ini_sec_t *cfg)
 		_hos_crit_error("Pkg2 decryption failed!\npkg1/pkg2 mismatch or old hekate!");
 
 		// Clear EKS slot, in case something went wrong with tsec keygen.
-		hos_eks_clear(kb);
+		_hos_eks_clear(kb);
 		goto error;
 	}
 
@@ -1151,6 +1145,7 @@ int hos_launch(ini_sec_t *cfg)
 	//pmc_scratch_lock(PMC_SEC_LOCK_LP0_PARAMS);
 
 	// Set secmon mailbox address and clear it.
+	volatile secmon_mailbox_t *secmon_mailbox;
 	if (kb >= HOS_KB_VERSION_700 || is_exo)
 	{
 		memset((void *)SECMON7_MAILBOX_ADDR, 0, 0x200);
@@ -1202,6 +1197,4 @@ error:
 	emmc_end();
 
 	EPRINTF("\nFailed to launch HOS!");
-
-	return 0;
 }
