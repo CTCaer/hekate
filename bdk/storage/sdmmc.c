@@ -27,9 +27,12 @@
 #include <memory_map.h>
 #include <gfx_utils.h>
 
-//#define SDMMC_DEBUG_PRINT_SD_REGS
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
+
+#ifdef BDK_SDMMC_EXTRA_PRINT
+#define ERROR_EXTRA_PRINTING
+#endif
 
 u32 sd_power_cycle_time_start;
 
@@ -255,6 +258,15 @@ static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 nu
 	// Exit if not initialized.
 	if (!storage->initialized)
 		return 0;
+
+	// Check if out of bounds.
+	if (((u64)sector + num_sectors) > storage->sec_cnt)
+	{
+#ifdef ERROR_EXTRA_PRINTING
+		EPRINTFARGS("SDMMC%d: Out of bounds!", storage->sdmmc->id + 1);
+#endif
+		return 0;
+	}
 
 	while (sct_total)
 	{
