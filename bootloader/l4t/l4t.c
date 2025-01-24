@@ -272,6 +272,8 @@ typedef struct _l4t_ctxt_t
 	int   ram_oc_opt;
 
 	u32   serial_port;
+	u32   sld_type;
+
 	u32   sc7entry_size;
 
 	emc_table_t *mtc_table;
@@ -850,6 +852,9 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 	bl33_env[0] = '\0';
 	char val[4] = {0};
 
+	// Set default SLD type.
+	ctxt->sld_type = BL_MAGIC_L4TLDR_SLD;
+
 	// Parse ini section and prepare BL33 env.
 	LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 	{
@@ -883,6 +888,8 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 			ctxt->ram_oc_opt  = atoi(kv->val);
 		else if (!strcmp("uart_port",   kv->key))
 			ctxt->serial_port = atoi(kv->val);
+		else if (!strcmp("sld_type",    kv->key))
+			ctxt->sld_type    = atoi(kv->val);
 
 		// Set key/val to BL33 env.
 		_l4t_bl33_cfg_set_key(bl33_env, kv->key, kv->val);
@@ -1149,7 +1156,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	_l4t_mc_config_carveout(t210b01);
 
 	// Deinit any unneeded HW.
-	hw_deinit(false, BL_MAGIC_L4TLDR_SLD);
+	hw_deinit(false, ctxt->sld_type);
 
 	// Do late hardware config.
 	_l4t_late_hw_config(t210b01);
