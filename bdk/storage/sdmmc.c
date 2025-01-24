@@ -30,6 +30,7 @@
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
+//#define SDMMC_DEBUG_PRINT_SD_REGS
 #ifdef BDK_SDMMC_EXTRA_PRINT
 #define ERROR_EXTRA_PRINTING
 #endif
@@ -233,6 +234,10 @@ static int _sdmmc_storage_readwrite_ex(sdmmc_storage_t *storage, u32 *blkcnt_out
 		return 0;
 	}
 
+	sdmmc_get_cached_rsp(storage->sdmmc, &tmp, SDMMC_RSP_TYPE_1);
+	if (!_sdmmc_storage_check_card_status(tmp))
+		return 0;
+
 	return 1;
 }
 
@@ -248,6 +253,43 @@ int sdmmc_storage_end(sdmmc_storage_t *storage)
 	storage->initialized = 0;
 
 	return 1;
+}
+
+static int _sdmmc_storage_handle_io_error(sdmmc_storage_t *storage, bool first_reinit)
+{
+	int res = 0;
+
+	if (storage->sdmmc->id == SDMMC_1 || storage->sdmmc->id == SDMMC_4)
+	{
+		if (storage->sdmmc->id == SDMMC_1)
+		{
+			sd_error_count_increment(SD_ERROR_RW_FAIL);
+
+			if (first_reinit)
+				res = sd_initialize(true);
+			else
+			{
+				res = sd_init_retry(true);
+				if (!res)
+					sd_error_count_increment(SD_ERROR_INIT_FAIL);
+			}
+		}
+		else if (storage->sdmmc->id == SDMMC_4)
+		{
+			emmc_error_count_increment(EMMC_ERROR_RW_FAIL);
+
+			if (first_reinit)
+				res = emmc_initialize(true);
+			else
+			{
+				res = emmc_init_retry(true);
+				if (!res)
+					emmc_error_count_increment(EMMC_ERROR_INIT_FAIL);
+			}
+		}
+	}
+
+	return res;
 }
 
 static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf, u32 is_write)
@@ -289,51 +331,18 @@ reinit_try:
 		} while (retries);
 
 		// Disk IO failure! Reinit SD/EMMC to a lower speed.
-		if (storage->sdmmc->id == SDMMC_1 || storage->sdmmc->id == SDMMC_4)
+		if (_sdmmc_storage_handle_io_error(storage, first_reinit))
 		{
-			int res = 0;
-
-			if (storage->sdmmc->id == SDMMC_1)
-			{
-				sd_error_count_increment(SD_ERROR_RW_FAIL);
-
-				if (first_reinit)
-					res = sd_initialize(true);
-				else
-				{
-					res = sd_init_retry(true);
-					if (!res)
-						sd_error_count_increment(SD_ERROR_INIT_FAIL);
-				}
-			}
-			else if (storage->sdmmc->id == SDMMC_4)
-			{
-				emmc_error_count_increment(EMMC_ERROR_RW_FAIL);
-
-				if (first_reinit)
-					res = emmc_initialize(true);
-				else
-				{
-					res = emmc_init_retry(true);
-					if (!res)
-						emmc_error_count_increment(EMMC_ERROR_INIT_FAIL);
-				}
-			}
-
 			// Reset values for a retry.
 			blkcnt = 0;
 			retries = 3;
 			first_reinit = false;
 
-			// If successful reinit, restart xfer.
-			if (res)
-			{
-				bbuf = (u8 *)buf;
-				sct_off = sector;
-				sct_total = num_sectors;
+			bbuf = (u8 *)buf;
+			sct_off = sector;
+			sct_total = num_sectors;
 
-				goto reinit_try;
-			}
+			goto reinit_try;
 		}
 
 		// Failed.
