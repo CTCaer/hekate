@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -37,6 +37,7 @@ extern const u8 package2_keyseed[];
 u32 pkg2_newkern_ini1_info;
 u32 pkg2_newkern_ini1_start;
 u32 pkg2_newkern_ini1_end;
+u32 pkg2_newkern_ini1_rela;
 
 enum kip_offset_section
 {
@@ -188,11 +189,12 @@ static u32 _pkg2_calc_kip1_size(pkg2_kip1_t *kip1)
 	return size;
 }
 
-void pkg2_get_newkern_info(u8 *kern_data)
+static void _pkg2_get_newkern_info(u8 *kern_data)
 {
-	u32 crt_start = 0;
+	u32 crt_start  = 0;
 	pkg2_newkern_ini1_info  = 0;
 	pkg2_newkern_ini1_start = 0;
+	pkg2_newkern_ini1_rela  = 0;
 
 	u32 first_op = *(u32 *)kern_data;
 	if ((first_op & 0xFE000000) == 0x14000000)
@@ -229,6 +231,7 @@ void pkg2_get_newkern_info(u8 *kern_data)
 	// On v2 kernel with dynamic crt, values are relative to value address.
 	if (crt_start)
 	{
+		pkg2_newkern_ini1_rela   = pkg2_newkern_ini1_info;
 		pkg2_newkern_ini1_start += pkg2_newkern_ini1_info;
 		pkg2_newkern_ini1_end   += pkg2_newkern_ini1_info + 0x8;
 	}
@@ -240,7 +243,7 @@ bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 	// Check for new pkg2 type.
 	if (!pkg2->sec_size[PKG2_SEC_INI1])
 	{
-		pkg2_get_newkern_info(pkg2->data);
+		_pkg2_get_newkern_info(pkg2->data);
 
 		if (!pkg2_newkern_ini1_start)
 			return false;
@@ -845,10 +848,15 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 
 		// Set new INI1 offset to kernel.
 		u32 meso_meta_offset = *(u32 *)(pdst + 8);
-		if (is_meso && (meso_magic & 0xF000000)) // MSS1.
+		if (is_meso && (meso_magic & 0x0F000000)) // MSS1.
 			*(u32 *)(pdst + meso_meta_offset) = kernel_size - meso_meta_offset;
 		else if (ini1_size)
-			*(u32 *)(pdst + (is_meso ? 8 : pkg2_newkern_ini1_info)) = kernel_size;
+		{
+			if (is_meso) // MSS0.
+				*(u32 *)(pdst + 8) = kernel_size;
+			else
+				*(u32 *)(pdst + pkg2_newkern_ini1_info) = kernel_size - pkg2_newkern_ini1_rela;
+		}
 
 		kernel_size += ini1_size;
 	}
@@ -865,13 +873,13 @@ DPRINTF("INI1 encrypted\n");
 
 	if (!is_exo) // Not needed on Exosphere 1.0.0 and up.
 	{
-		// Calculate SHA256 over encrypted Kernel and INI1.
+		// Calculate SHA256 over encrypted sections. Only 3 have valid hashes.
 		u8 *pk2_hash_data = (u8 *)dst + 0x100 + sizeof(pkg2_hdr_t);
-		se_calc_sha256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * PKG2_SEC_KERNEL],
-			(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_KERNEL]);
-		pk2_hash_data += hdr->sec_size[PKG2_SEC_KERNEL];
-		se_calc_sha256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * PKG2_SEC_INI1],
-			(void *)pk2_hash_data, hdr->sec_size[PKG2_SEC_INI1]);
+		for (u32 i = PKG2_SEC_KERNEL; i <= PKG2_SEC_UNUSED; i++)
+		{
+			se_calc_sha256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * i], (void *)pk2_hash_data, hdr->sec_size[i]);
+			pk2_hash_data += hdr->sec_size[i];
+		}
 	}
 
 	// Encrypt header.
