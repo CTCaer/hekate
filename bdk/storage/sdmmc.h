@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -174,6 +174,7 @@ typedef struct _sd_ssr
 	u8  app_class;
 	u8  au_size;
 	u8  uhs_au_size;
+	u8  perf_enhance;
 	u32 protected_size;
 } sd_ssr_t;
 

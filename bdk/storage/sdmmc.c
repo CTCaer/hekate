@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -38,6 +38,8 @@ u32 sd_power_cycle_time_start;
 
 static inline u32 unstuff_bits(const u32 *resp, u32 start, u32 size)
 {
+	start %= 128;
+
 	const u32 mask = (size < 32 ? 1 << size : 0) - 1;
 	const u32 off  = 3 - ((start) / 32);
 	const u32 shft = (start) & 31;
@@ -825,7 +827,7 @@ void _sd_storage_debug_print_csd(const u32 *raw_csd)
 	gfx_printf("WRITE_BLK_MISALIGN:    %X\n",   unstuff_bits(raw_csd, 78, 1));
 	gfx_printf("READ_BLK_MISALIGN:     %X\n",   unstuff_bits(raw_csd, 77, 1));
 	gfx_printf("DSR_IMP:               %X\n",   unstuff_bits(raw_csd, 76, 1));
-	gfx_printf("C_SIZE:                %06X\n", unstuff_bits(raw_csd, 48, 22));
+	gfx_printf("C_SIZE:                %06X\n", unstuff_bits(raw_csd, 48, 28)); // CSD 3 (SDUC).
 
 	gfx_printf("ERASE_BLK_LEN:         %X\n",   unstuff_bits(raw_csd, 46, 1));
 	gfx_printf("SECTOR_SIZE:           %02X\n", unstuff_bits(raw_csd, 39, 6));
@@ -842,8 +844,8 @@ void _sd_storage_debug_print_csd(const u32 *raw_csd)
 	gfx_printf("TMP_WRITE_PROTECT:     %X\n",   unstuff_bits(raw_csd, 12, 1));
 	gfx_printf("FILE_FORMAT:           %X\n",   unstuff_bits(raw_csd, 10, 2));
 
-	gfx_printf("--RSVD--               %02X %02X %X %X %02X %X\n",
-		unstuff_bits(raw_csd, 120, 6), unstuff_bits(raw_csd, 70, 6),
+	gfx_printf("--RSVD--               %02X %X %X %02X %X\n",
+		unstuff_bits(raw_csd, 120, 6),
 		unstuff_bits(raw_csd, 47, 1),  unstuff_bits(raw_csd, 29, 2),
 		unstuff_bits(raw_csd, 16, 5),  unstuff_bits(raw_csd, 8, 2));
 }
@@ -882,39 +884,39 @@ void _sd_storage_debug_print_ssr(const u8 *raw_ssr)
 
 	gfx_printf("\nSD Status:\n");
 
-	gfx_printf("DAT_BUS_WIDTH:         %X\n",   unstuff_bits(raw_ssr0, 510 - 384, 2));
-	gfx_printf("SECURED_MODE:          %X\n",   unstuff_bits(raw_ssr0, 509 - 384, 1));
-	gfx_printf("SECURITY_FUNCTIONS:    %02X\n", unstuff_bits(raw_ssr0, 502 - 384, 6));
-	gfx_printf("SD_CARD_TYPE:          %04X\n", unstuff_bits(raw_ssr0, 480 - 384, 16));
-	gfx_printf("SZ_OF_PROTECTED_AREA:  %08X\n", unstuff_bits(raw_ssr0, 448 - 384, 32));
-	gfx_printf("SPEED_CLASS:           %02X\n", unstuff_bits(raw_ssr0, 440 - 384, 8));
-	gfx_printf("PERFORMANCE_MOVE:      %02X\n", unstuff_bits(raw_ssr0, 432 - 384, 8));
-	gfx_printf("AU_SIZE:               %X\n",   unstuff_bits(raw_ssr0, 428 - 384, 4));
-	gfx_printf("ERAZE_SIZE:            %04X\n", unstuff_bits(raw_ssr0, 408 - 384, 16));
-	gfx_printf("ERASE_TIMEOUT:         %02X\n", unstuff_bits(raw_ssr0, 402 - 384, 6));
-	gfx_printf("ERASE_OFFSET:          %X\n",   unstuff_bits(raw_ssr0, 400 - 384, 2));
-	gfx_printf("UHS_SPEED_GRADE:       %X\n",   unstuff_bits(raw_ssr0, 396 - 384, 4));
-	gfx_printf("UHS_AU_SIZE:           %X\n",   unstuff_bits(raw_ssr0, 392 - 384, 4));
-	gfx_printf("VIDEO_SPEED_CLASS:     %02X\n", unstuff_bits(raw_ssr0, 384 - 384, 8));
+	gfx_printf("DAT_BUS_WIDTH:         %X\n",   unstuff_bits(raw_ssr0, 510, 2));
+	gfx_printf("SECURED_MODE:          %X\n",   unstuff_bits(raw_ssr0, 509, 1));
+	gfx_printf("SECURITY_FUNCTIONS:    %02X\n", unstuff_bits(raw_ssr0, 502, 6));
+	gfx_printf("SD_CARD_TYPE:          %04X\n", unstuff_bits(raw_ssr0, 480, 16));
+	gfx_printf("SZ_OF_PROTECTED_AREA:  %08X\n", unstuff_bits(raw_ssr0, 448, 32));
+	gfx_printf("SPEED_CLASS:           %02X\n", unstuff_bits(raw_ssr0, 440, 8));
+	gfx_printf("PERFORMANCE_MOVE:      %02X\n", unstuff_bits(raw_ssr0, 432, 8));
+	gfx_printf("AU_SIZE:               %X\n",   unstuff_bits(raw_ssr0, 428, 4));
+	gfx_printf("ERAZE_SIZE:            %04X\n", unstuff_bits(raw_ssr0, 408, 16));
+	gfx_printf("ERASE_TIMEOUT:         %02X\n", unstuff_bits(raw_ssr0, 402, 6));
+	gfx_printf("ERASE_OFFSET:          %X\n",   unstuff_bits(raw_ssr0, 400, 2));
+	gfx_printf("UHS_SPEED_GRADE:       %X\n",   unstuff_bits(raw_ssr0, 396, 4));
+	gfx_printf("UHS_AU_SIZE:           %X\n",   unstuff_bits(raw_ssr0, 392, 4));
+	gfx_printf("VIDEO_SPEED_CLASS:     %02X\n", unstuff_bits(raw_ssr0, 384, 8));
 
-	gfx_printf("VSC_AU_SIZE:           %03X\n", unstuff_bits(raw_ssr1, 368 - 256, 10));
-	gfx_printf("SUS_ADDR:              %06X\n", unstuff_bits(raw_ssr1, 346 - 256, 22));
-	gfx_printf("APP_PERF_CLASS:        %X\n",   unstuff_bits(raw_ssr1, 336 - 256, 4));
-	gfx_printf("PERFORMANCE_ENHANCE:   %02X\n", unstuff_bits(raw_ssr1, 328 - 256, 8));
-	gfx_printf("DISCARD_SUPPORT:       %X\n",   unstuff_bits(raw_ssr1, 313 - 256, 1));
-	gfx_printf("FULE_SUPPORT:          %X\n",   unstuff_bits(raw_ssr1, 312 - 256, 1));
+	gfx_printf("VSC_AU_SIZE:           %03X\n", unstuff_bits(raw_ssr1, 368, 10));
+	gfx_printf("SUS_ADDR:              %06X\n", unstuff_bits(raw_ssr1, 346, 22));
+	gfx_printf("APP_PERF_CLASS:        %X\n",   unstuff_bits(raw_ssr1, 336, 4));
+	gfx_printf("PERFORMANCE_ENHANCE:   %02X\n", unstuff_bits(raw_ssr1, 328, 8));
+	gfx_printf("DISCARD_SUPPORT:       %X\n",   unstuff_bits(raw_ssr1, 313, 1));
+	gfx_printf("FULE_SUPPORT:          %X\n",   unstuff_bits(raw_ssr1, 312, 1));
 
 	gfx_printf("--RSVD--               %02X %X %02X %02X %04X\n",
-		unstuff_bits(raw_ssr0, 496 - 384, 6),   unstuff_bits(raw_ssr0, 424 - 384, 4),
-		unstuff_bits(raw_ssr1, 378 - 256, 6),   unstuff_bits(raw_ssr1, 340 - 256, 6),
-		unstuff_bits(raw_ssr1, 314 - 256, 14));
+		unstuff_bits(raw_ssr0, 496, 6),   unstuff_bits(raw_ssr0, 424, 4),
+		unstuff_bits(raw_ssr1, 378, 6),   unstuff_bits(raw_ssr1, 340, 6),
+		unstuff_bits(raw_ssr1, 314, 14));
 
 	gfx_printf("VENDOR_1: %06X   %08X\n",
-		unstuff_bits(raw_ssr1, 288 - 256, 24),  unstuff_bits(raw_ssr1, 256 - 256, 32));
+		unstuff_bits(raw_ssr1, 288, 24),  unstuff_bits(raw_ssr1, 256, 32));
 
 	gfx_printf("VENDOR_2: %08X %08X %08X %08X\n",
-		unstuff_bits(raw_ssr2, 224 - 128, 32),  unstuff_bits(raw_ssr2, 192 - 128, 32),
-		unstuff_bits(raw_ssr2, 160 - 128, 32),  unstuff_bits(raw_ssr2, 128 - 128, 32));
+		unstuff_bits(raw_ssr2, 224, 32),  unstuff_bits(raw_ssr2, 192, 32),
+		unstuff_bits(raw_ssr2, 160, 32),  unstuff_bits(raw_ssr2, 128, 32));
 	gfx_printf("VENDOR_3: %08X %08X %08X %08X\n",
 		unstuff_bits(raw_ssr3, 96 - 0, 32),     unstuff_bits(raw_ssr3, 64, 32),
 		unstuff_bits(raw_ssr3, 32 - 0, 32),     unstuff_bits(raw_ssr3, 0, 32));
@@ -1062,7 +1064,13 @@ static void _sd_storage_parse_scr(sdmmc_storage_t *storage)
 	if (storage->scr.sda_vsn == SCR_SPEC_VER_2)
 		storage->scr.sda_spec3 = unstuff_bits(resp, 47, 1);
 	if (storage->scr.sda_spec3)
-		storage->scr.cmds = unstuff_bits(resp, 32, 2);
+	{
+		u8 sda_spec4 = unstuff_bits(resp, 42, 1);
+		if (sda_spec4)
+			storage->scr.cmds = unstuff_bits(resp, 32, 4);
+		else
+			storage->scr.cmds = unstuff_bits(resp, 32, 2);
+	}
 }
 
 int sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf)
@@ -1504,10 +1512,10 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 	_sd_storage_debug_print_ssr(storage->raw_ssr);
 #endif
 
-	storage->ssr.bus_width = (unstuff_bits(raw_ssr1, 510 - 384, 2) & SD_BUS_WIDTH_4) ? 4 : 1;
-	storage->ssr.protected_size = unstuff_bits(raw_ssr1, 448 - 384, 32);
+	storage->ssr.bus_width = (unstuff_bits(raw_ssr1, 510, 2) & SD_BUS_WIDTH_4) ? 4 : 1;
+	storage->ssr.protected_size = unstuff_bits(raw_ssr1, 448, 32);
 
-	u32 speed_class = unstuff_bits(raw_ssr1, 440 - 384, 8);
+	u32 speed_class = unstuff_bits(raw_ssr1, 440, 8);
 	switch(speed_class)
 	{
 	case 0:
@@ -1525,12 +1533,14 @@ static void _sd_storage_parse_ssr(sdmmc_storage_t *storage)
 		storage->ssr.speed_class = speed_class;
 		break;
 	}
-	storage->ssr.uhs_grade   = unstuff_bits(raw_ssr1, 396 - 384, 4);
-	storage->ssr.video_class = unstuff_bits(raw_ssr1, 384 - 384, 8);
-	storage->ssr.app_class   = unstuff_bits(raw_ssr2, 336 - 256, 4);
+	storage->ssr.uhs_grade   = unstuff_bits(raw_ssr1, 396, 4);
+	storage->ssr.video_class = unstuff_bits(raw_ssr1, 384, 8);
+	storage->ssr.app_class   = unstuff_bits(raw_ssr2, 336, 4);
 
-	storage->ssr.au_size     = unstuff_bits(raw_ssr1, 428 - 384, 4);
-	storage->ssr.uhs_au_size = unstuff_bits(raw_ssr1, 392 - 384, 4);
+	storage->ssr.au_size     = unstuff_bits(raw_ssr1, 428, 4);
+	storage->ssr.uhs_au_size = unstuff_bits(raw_ssr1, 392, 4);
+
+	storage->ssr.perf_enhance = unstuff_bits(raw_ssr2, 328, 8);
 }
 
 int sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf)
