@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -182,7 +182,7 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	if (!src || !dst)
 		return 0;
 
-	u8 *block = (u8 *)zalloc(SE_AES_BLOCK_SIZE);
+	u32 block[SE_AES_BLOCK_SIZE / sizeof(u32)] = {0};
 
 	SE(SE_CRYPTO_BLOCK_COUNT_REG) = 1 - 1;
 
@@ -190,7 +190,6 @@ static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *sr
 	int res = _se_execute_oneshot(op, block, SE_AES_BLOCK_SIZE, block, SE_AES_BLOCK_SIZE);
 	memcpy(dst, block, dst_size);
 
-	free(block);
 	return res;
 }
 
@@ -389,7 +388,8 @@ int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_s
 int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, u32 enc, u64 sec, void *dst, void *src, u32 secsize)
 {
 	int res = 0;
-	u8 *tweak = (u8 *)malloc(SE_AES_BLOCK_SIZE);
+	u32 tmp[SE_AES_BLOCK_SIZE / sizeof(u32)];
+	u8 *tweak = (u8 *)tmp;
 	u8 *pdst = (u8 *)dst;
 	u8 *psrc = (u8 *)src;
 
@@ -418,8 +418,7 @@ int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, u32 enc, u64 sec, void *dst
 
 	res = 1;
 
-out:;
-	free(tweak);
+out:
 	return res;
 }
 
@@ -657,8 +656,11 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 int se_aes_cmac_128(u32 ks, void *dst, const void *src, u32 src_size)
 {
 	int res = 0;
-	u8 *key = (u8 *)zalloc(SE_KEY_128_SIZE);
-	u8 *last_block = (u8 *)zalloc(SE_AES_BLOCK_SIZE);
+
+	u32 tmp1[SE_KEY_128_SIZE / sizeof(u32)] = {0};
+	u32 tmp2[SE_AES_BLOCK_SIZE / sizeof(u32)] = {0};
+	u8 *key = (u8 *)tmp1;
+	u8 *last_block = (u8 *)tmp2;
 
 	se_aes_iv_clear(ks);
 	se_aes_iv_updated_clear(ks);
@@ -707,8 +709,6 @@ int se_aes_cmac_128(u32 ks, void *dst, const void *src, u32 src_size)
 	for (u32 i = 0; i < (SE_KEY_128_SIZE / 4); i++)
 		dst32[i] = SE(SE_HASH_RESULT_REG + (i * 4));
 
-out:;
-	free(key);
-	free(last_block);
+out:
 	return res;
 }
