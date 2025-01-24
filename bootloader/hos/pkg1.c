@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern hekate_config h_cfg;
 #define SM_100_ADR 0x4002B020 // Original: 0x40014020.
 PATCHSET_DEF(_secmon_1_patchset,
 	// Patch the relocator to be able to run from SM_100_ADR.
-	{ 0x1E0, _ADRP(0, 0x7C013000 - _PAGEOFF(SM_100_ADR)) },
+	{ 0x1E0, _ADRP(0, TZRAM_BASE + 0x3000 - _PAGEOFF(SM_100_ADR)) },
 	// Patch package2 signature/hash checks.
 	{ 0x9F0 + 0xADC, _NOP() }
 );
@@ -143,7 +143,7 @@ static const u8 sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTIO
 static const u8 sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
 static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
 
-	// ID (Timestamp), KB, Fuses, TSEC, PK11,   SECMON,     Warmboot.
+	// Timestamp  KB  FU   TSEC    PK11     SECMON     Warmboot
 static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121",  0,  1, 0x1900, 0x3FE0, SM_100_ADR, 0x8000D000, _secmon_1_patchset }, // 1.0.0 (Patched relocator).
 	{ "20170210",  0,  2, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_2_patchset }, // 2.0.0 - 2.3.0.

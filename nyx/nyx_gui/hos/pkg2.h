@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,16 +20,17 @@
 
 #include <bdk.h>
 
-#define PKG2_MAGIC 0x31324B50
-#define PKG2_SEC_BASE 0x80000000
+#define PKG2_MAGIC      0x31324B50
+#define PKG2_SEC_BASE   0x80000000
 #define PKG2_SEC_KERNEL 0
-#define PKG2_SEC_INI1 1
+#define PKG2_SEC_INI1   1
+#define PKG2_SEC_UNUSED 2
 
 #define INI1_MAGIC 0x31494E49
 
 //! TODO: Update on kernel change if needed.
 // Offset of OP + 12 is the INI1 offset. On v2 with dynamic crt0 it's + 16.
-#define PKG2_NEWKERN_GET_INI1_HEURISTIC 0xD2800015
+#define PKG2_NEWKERN_GET_INI1_HEURISTIC 0xD2800015 // MOV X21, #0.
 #define PKG2_NEWKERN_START 0x800
 
 extern u32 pkg2_newkern_ini1_start;

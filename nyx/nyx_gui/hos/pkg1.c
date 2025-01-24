@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ static const u8 sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTIO
 static const u8 sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
 static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
 
-	// ID (Timestamp),  KB, TSEC,   PK11,   SECMON,     Warmboot.
+	// Timestamp  KB   TSEC    PK11     SECMON     Warmboot
 static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121",  0, 0x1900, 0x3FE0, 0x40014020, 0x8000D000 }, //  1.0.0.
 	{ "20170210",  0, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000 }, //  2.0.0 - 2.3.0.
@@ -124,7 +124,7 @@ const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t
 	// Get correct header mapping.
 	if (id->kb == HOS_KB_VERSION_100 && !memcmp(id->id, "20161121", 8))
 		sec_map = sec_map_100;
-	else if (id->kb >= HOS_KB_VERSION_100 && id->kb <= HOS_KB_VERSION_301)
+	else if (id->kb <= HOS_KB_VERSION_301)
 		sec_map = sec_map_2xx;
 	else
 		sec_map = sec_map_4xx;
