@@ -24,6 +24,8 @@
 #include "../hos/pkg1.h"
 #include <libs/fatfs/ff.h>
 
+#include <stdlib.h>
+
 #define SECTORS_TO_MIB_COEFF 11
 
 extern hekate_config h_cfg;
@@ -2187,15 +2189,64 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	else
 		bus_speed = "SDR12";
 
+	char *cpe = NULL;
+	if (sd_storage.ssr.app_class == 2)
+	{
+		u8 *buf = zalloc(512);
+
+		// Directly get and parse ext reg for performance enhance.
+		sd_storage_parse_perf_enhance(&sd_storage, 2, 0, 0, buf);
+
+		bool has_perf_enhance = sd_storage.ser.cache &&
+							sd_storage.ser.cmdq  &&
+							sd_storage.ser.cache == sd_storage.ser.cache_ext &&
+							sd_storage.ser.cmdq  == sd_storage.ser.cmdq_ext;
+		if (has_perf_enhance)
+			cpe = "#FFDD00 "; // CMDQ/CACHE support via a quirk.
+		else
+			cpe = "#FF3C28 "; // Broken.
+
+		// Get and parse ext reg for performance enhance in spec.
+		sd_storage_get_ext_regs(&sd_storage, buf);
+
+		if (sd_storage.ser.valid)
+		{
+			has_perf_enhance = sd_storage.ser.cache &&
+							   sd_storage.ser.cmdq  &&
+							   sd_storage.ser.cache == sd_storage.ser.cache_ext &&
+							   sd_storage.ser.cmdq  == sd_storage.ser.cmdq_ext;
+
+			if (has_perf_enhance)
+				cpe = NULL; // CMDQ/CACHE support in spec.
+			else
+				cpe = "#FF3C28 "; // Broken.
+		}
+
+		free(buf);
+	}
+
 	s_printf(txt_buf,
-		"#00DDFF v%d.0#\n%02X\n%d MiB\n%X (CP %X)\n%d\n%d MB/s (%d MHz)\n%d (AU: %d %s\nU%d V%d A%d\n%s\n\n%s",
-		sd_storage.csd.structure + 1, sd_storage.csd.cmdclass,
-		sd_storage.sec_cnt >> 11, sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
-		sd_storage.ssr.bus_width, sd_storage.csd.busspeed,
+		"#00DDFF v%d.0#\n"
+		"%02X\n"
+		"%d MiB\n"
+		"%X (CP %X)\n"
+		"%d\n"
+		"%d MB/s (%d MHz)\n"
+		"%d (AU: %d %s\n"
+		"U%d V%d %sA%d%s\n"
+		"%s\n\n"
+		"%s",
+		sd_storage.csd.structure + 1,
+		sd_storage.csd.cmdclass,
+		sd_storage.sec_cnt >> 11,
+		sd_storage.sec_cnt, sd_storage.ssr.protected_size >> 9,
+		sd_storage.ssr.bus_width,
+		sd_storage.csd.busspeed,
 		(sd_storage.csd.busspeed > 10) ? (sd_storage.csd.busspeed * 2) : 50,
 		sd_storage.ssr.speed_class, uhs_au_size, uhs_au_mb ? "MiB)" : "KiB)",
-		sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class, sd_storage.ssr.app_class,
-		bus_speed, wp_info);
+		sd_storage.ssr.uhs_grade, sd_storage.ssr.video_class, cpe ? cpe : "", sd_storage.ssr.app_class, cpe ? "#" : "",
+		bus_speed,
+		wp_info);
 
 	lv_label_set_text(lb_val2, txt_buf);
 
