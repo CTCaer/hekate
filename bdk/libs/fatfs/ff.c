@@ -4698,13 +4698,20 @@ FRESULT f_lseek (
 
 DWORD *f_expand_cltbl (
 	FIL* fp,		/* Pointer to the file object */
-	UINT tblsz,		/* Size of table */
+	UINT tblsz,		/* Size of table (2 DWORDs + 2 DWORDs per fragment) */
 	FSIZE_t ofs		/* File pointer from top of file */
 )
 {
+	/*
+	 * Cluster table structure:
+	 * Size (DWORD)
+	 * Padding (DWORD)
+	 * (Cluster Offset (DWORD) + Sequential clusters (DWORD)) * Fragments
+	 */
 	if (fp->flag & FA_WRITE) f_lseek(fp, ofs);	/* Expand file if write is enabled */
 	if (!fp->cltbl) {	/* Allocate memory for cluster link table */
 		fp->cltbl = (DWORD *)ff_memalloc(tblsz);
+		if (!fp->cltbl) return (void *)0;
 		fp->cltbl[0] = tblsz;
 	}
 	if (f_lseek(fp, CREATE_LINKMAP)) {	/* Create cluster link table */
