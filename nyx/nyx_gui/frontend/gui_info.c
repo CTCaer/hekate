@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -351,9 +351,21 @@ out:
 	return LV_RES_OK;
 }
 
-static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
+static lv_obj_t *hw_info_ver = NULL;
+static lv_res_t _action_win_hw_info_status_close(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" HW & Fuses Info");
+	if (hw_info_ver)
+	{
+		lv_obj_del(hw_info_ver);
+		hw_info_ver = NULL;
+	}
+
+	return nyx_win_close_action_custom(btn);
+}
+
+static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
+{
+	lv_obj_t *win = nyx_create_window_custom_close_btn(SYMBOL_CHIP" HW & Fuses Info", _action_win_hw_info_status_close);
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump fuses", _fuse_dump_window_action);
 	lv_win_add_btn(win, NULL, SYMBOL_INFO" CAL0 Info", _create_mbox_cal0);
 
@@ -364,6 +376,14 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 	lv_label_set_style(lb_desc, &monospace_text);
+
+	char version[32];
+	s_printf(version, "%s%d.%d.%d%c", NYX_VER_RL ? "v" : "", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF, NYX_VER_RL > 'A' ? NYX_VER_RL : 0);
+	lv_obj_t * lbl_ver = lv_label_create(lv_scr_act(), NULL);
+	lv_label_set_style(lbl_ver, &hint_small_style_white);
+	lv_label_set_text(lbl_ver, version);
+	lv_obj_align(lbl_ver, status_bar.bar_bg, LV_ALIGN_OUT_TOP_RIGHT, -LV_DPI * 9 / 23, -LV_DPI * 2 / 13);
+	hw_info_ver = lbl_ver;
 
 	lv_label_set_static_text(lb_desc,
 		"#FF8000 SoC:#\n"
@@ -2551,7 +2571,7 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	lv_btn_set_fit(btn3, true, true);
 	lv_label_set_static_text(label_btn, SYMBOL_CIRCUIT"  HW & Fuses");
 	lv_obj_align(btn3, line_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 2);
-	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_window_fuses_info_status);
+	lv_btn_set_action(btn3, LV_BTN_ACTION_CLICK, _create_window_hw_info_status);
 
 	// Create KFuses button.
 	lv_obj_t *btn4 = lv_btn_create(h1, btn);

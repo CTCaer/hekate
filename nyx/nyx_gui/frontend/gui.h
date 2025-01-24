@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -36,6 +36,7 @@ typedef struct _emmc_tool_gui_t
 
 typedef struct _gui_status_bar_ctx
 {
+	lv_obj_t *bar_bg;
 	lv_obj_t *mid;
 	lv_obj_t *time_temp;
 	lv_obj_t *temp_symbol;
@@ -72,6 +73,7 @@ void reload_nyx();
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);
 lv_res_t mbox_action(lv_obj_t * btns, const char * txt);
 bool nyx_emmc_check_battery_enough();
+lv_res_t nyx_win_close_action_custom(lv_obj_t * btn);
 void nyx_window_toggle_buttons(lv_obj_t *win, bool disable);
 lv_obj_t *nyx_create_standard_window(const char *win_title);
 lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t rel_action);

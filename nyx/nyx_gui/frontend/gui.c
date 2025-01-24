@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -866,7 +866,7 @@ void nyx_window_toggle_buttons(lv_obj_t *win, bool disable)
 	}
 }
 
-lv_res_t lv_win_close_action_custom(lv_obj_t * btn)
+lv_res_t nyx_win_close_action_custom(lv_obj_t * btn)
 {
 	close_btn = NULL;
 
@@ -886,7 +886,7 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", lv_win_close_action_custom);
+	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", nyx_win_close_action_custom);
 
 	return win;
 }
@@ -2079,6 +2079,7 @@ static void _create_status_bar(lv_theme_t * th)
 {
 	static lv_obj_t *status_bar_bg;
 	status_bar_bg = lv_cont_create(lv_layer_top(), NULL);
+	status_bar.bar_bg = status_bar_bg;
 
 	static lv_style_t status_bar_style;
 	lv_style_copy(&status_bar_style, &lv_style_plain_color);
@@ -2131,9 +2132,9 @@ static void _create_status_bar(lv_theme_t * th)
 	lv_obj_set_size(btn_mid, LV_DPI * 5 / 2, LV_DPI / 2);
 	lv_obj_align(btn_mid, NULL, LV_ALIGN_CENTER, 0, 0);
 	status_bar.mid = btn_mid;
-	lv_obj_set_opa_scale(status_bar.mid, LV_OPA_0);
-	lv_obj_set_opa_scale_enable(status_bar.mid, true);
-	lv_obj_set_click(status_bar.mid, false);
+	lv_obj_set_opa_scale(btn_mid, LV_OPA_0);
+	lv_obj_set_opa_scale_enable(btn_mid, true);
+	lv_obj_set_click(btn_mid, false);
 	lv_btn_set_action(btn_mid, LV_BTN_ACTION_CLICK, _save_options_action);
 }
 
