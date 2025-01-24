@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -39,10 +39,7 @@ typedef struct _t210_sdmmc_t
 /*  0x08 */ vu32 argument;
 /*  0x0C */ vu16 trnmod;
 /*  0x0E */ vu16 cmdreg;
-/*  0x10 */ vu32 rspreg0;
-/*  0x14 */ vu32 rspreg1;
-/*  0x18 */ vu32 rspreg2;
-/*  0x1C */ vu32 rspreg3;
+/*  0x10 */ vu32 rspreg[4];
 /*  0x20 */ vu32 bdata; // Buffer data port.
 /*  0x24 */ vu32 prnsts;
 /*  0x28 */ vu8  hostctl;

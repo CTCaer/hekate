@@ -181,13 +181,13 @@ typedef struct _sd_ssr
 typedef struct _sdmmc_storage_t
 {
 	sdmmc_t *sdmmc;
-	u32 rca;
-	int has_sector_access;
-	u32 sec_cnt;
-	int is_low_voltage;
-	u32 partition;
 	int initialized;
-	u32 card_power_limit;
+	int is_low_voltage;
+	int has_sector_access;
+	u32 rca;
+	u32 sec_cnt;
+	u32 partition;
+	u32 max_power;
 	u8  raw_cid[0x10];
 	u8  raw_csd[0x10];
 	u8  raw_scr[8];

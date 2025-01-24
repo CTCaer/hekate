@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -212,7 +212,7 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 	// Use 0x1F mask for all.
 	u8 autocal_pu_status = sdmmc->regs->autocalsts & 0x1F;
 	if (!autocal_pu_status)
-		EPRINTFARGS("SDMMC%d: Comp Pad open!", sdmmc->id + 1);
+		EPRINTFARGS("SDMMC%d: Comp Pad open!", sdmmc->id + 1); // Or resistance is extreme.
 	else if (autocal_pu_status == 0x1F)
 		EPRINTFARGS("SDMMC%d: Comp Pad short to gnd!", sdmmc->id + 1);
 #endif
@@ -394,8 +394,8 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 
 static void _sdmmc_card_clock_enable(sdmmc_t *sdmmc)
 {
-	// Recalibrate conditionally.
-	if (sdmmc->manual_cal && !sdmmc->powersave_enabled)
+	// Recalibrate periodically if needed.
+	if (sdmmc->periodic_calibration && !sdmmc->powersave_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	if (!sdmmc->powersave_enabled)
@@ -414,8 +414,8 @@ static void _sdmmc_card_clock_disable(sdmmc_t *sdmmc)
 
 void sdmmc_card_clock_powersave(sdmmc_t *sdmmc, int powersave_enable)
 {
-	// Recalibrate periodically for SDMMC1.
-	if (sdmmc->manual_cal && !powersave_enable && sdmmc->card_clock_enabled)
+	// Recalibrate periodically if needed.
+	if (sdmmc->periodic_calibration && !powersave_enable && sdmmc->card_clock_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	sdmmc->powersave_enabled = powersave_enable;
@@ -431,7 +431,7 @@ void sdmmc_card_clock_powersave(sdmmc_t *sdmmc, int powersave_enable)
 			sdmmc->regs->clkcon |= SDHCI_CLOCK_CARD_EN;
 }
 
-static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
+static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 {
 	switch (type)
 	{
@@ -439,33 +439,14 @@ static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
 	case SDMMC_RSP_TYPE_3:
 	case SDMMC_RSP_TYPE_4:
 	case SDMMC_RSP_TYPE_5:
-		if (size < 4)
-			return 0;
-		rsp[0] = sdmmc->regs->rspreg0;
+		rsp[0] = sdmmc->regs->rspreg[0];
 		break;
 
 	case SDMMC_RSP_TYPE_2:
-		if (size < 0x10)
-			return 0;
 		// CRC is stripped, so shifting is needed.
-		u32 tempreg;
-		for (int i = 0; i < 4; i++)
+		for (u32 i = 0; i < 4; i++)
 		{
-			switch(i)
-			{
-			case 0:
-				tempreg = sdmmc->regs->rspreg3;
-				break;
-			case 1:
-				tempreg = sdmmc->regs->rspreg2;
-				break;
-			case 2:
-				tempreg = sdmmc->regs->rspreg1;
-				break;
-			case 3:
-				tempreg = sdmmc->regs->rspreg0;
-				break;
-			}
+			u32 tempreg = sdmmc->regs->rspreg[3 - i];
 			rsp[i] = tempreg << 8;
 
 			if (i != 0)
@@ -480,7 +461,7 @@ static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
 	return 1;
 }
 
-int sdmmc_get_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
+int sdmmc_get_cached_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 {
 	if (!rsp || sdmmc->expected_rsp_type != type)
 		return 0;
@@ -491,18 +472,12 @@ int sdmmc_get_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 size, u32 type)
 	case SDMMC_RSP_TYPE_3:
 	case SDMMC_RSP_TYPE_4:
 	case SDMMC_RSP_TYPE_5:
-		if (size < 4)
-			return 0;
 		rsp[0] = sdmmc->rsp[0];
 		break;
 
 	case SDMMC_RSP_TYPE_2:
-		if (size < 16)
-			return 0;
-		rsp[0] = sdmmc->rsp[0];
-		rsp[1] = sdmmc->rsp[1];
-		rsp[2] = sdmmc->rsp[2];
-		rsp[3] = sdmmc->rsp[3];
+		for (u32 i = 0; i < 4; i++)
+			rsp[i] = sdmmc->rsp[i];
 		break;
 
 	default:
@@ -915,6 +890,7 @@ static void _sdmmc_enable_interrupts(sdmmc_t *sdmmc)
 	sdmmc->regs->errintstsen |= SDHCI_ERR_INT_ALL_EXCEPT_ADMA_BUSPWR;
 	sdmmc->regs->norintsts = sdmmc->regs->norintsts;
 	sdmmc->regs->errintsts = sdmmc->regs->errintsts;
+	sdmmc->error_sts = 0;
 }
 
 static void _sdmmc_mask_interrupts(sdmmc_t *sdmmc)
@@ -937,8 +913,9 @@ static u32 _sdmmc_check_mask_interrupt(sdmmc_t *sdmmc, u16 *pout, u16 mask)
 	if (norintsts & SDHCI_INT_ERROR)
 	{
 #ifdef ERROR_EXTRA_PRINTING
-		EPRINTFARGS("SDMMC%d: norintsts %08X, errintsts %08X", sdmmc->id + 1, norintsts, errintsts);
+		EPRINTFARGS("SDMMC%d: intsts %08X, errintsts %08X", sdmmc->id + 1, norintsts, errintsts);
 #endif
+		sdmmc->error_sts = errintsts;
 		sdmmc->regs->errintsts = errintsts;
 		return SDMMC_MASKINT_ERROR;
 	}
@@ -993,7 +970,7 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 	if (!result)
 		return 0;
 
-	_sdmmc_cache_rsp(sdmmc, rsp, 4, SDMMC_RSP_TYPE_1);
+	_sdmmc_cache_rsp(sdmmc, rsp, SDMMC_RSP_TYPE_1);
 
 	return _sdmmc_wait_card_busy(sdmmc);
 }
@@ -1003,8 +980,8 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 	if (!sdmmc->card_clock_enabled)
 		return 0;
 
-	// Recalibrate periodically for SDMMC1.
-	if (sdmmc->manual_cal && sdmmc->powersave_enabled)
+	// Recalibrate periodically if needed.
+	if (sdmmc->periodic_calibration && sdmmc->powersave_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	bool should_disable_sd_clock = false;
@@ -1120,7 +1097,7 @@ static int _sdmmc_update_sdma(sdmmc_t *sdmmc)
 
 static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out)
 {
-	int has_req_or_check_busy = req || cmd->check_busy;
+	bool has_req_or_check_busy = req || cmd->check_busy;
 	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, has_req_or_check_busy))
 		return 0;
 
@@ -1158,13 +1135,13 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		EPRINTFARGS("SDMMC%d: Transfer error!", sdmmc->id + 1);
 #endif
 	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
-		sdmmc->regs->rspreg0, sdmmc->regs->rspreg1, sdmmc->regs->rspreg2, sdmmc->regs->rspreg3);
+		sdmmc->regs->rspreg[0], sdmmc->regs->rspreg[1], sdmmc->regs->rspreg[2], sdmmc->regs->rspreg[3]);
 	if (result)
 	{
 		if (cmd->rsp_type)
 		{
 			sdmmc->expected_rsp_type = cmd->rsp_type;
-			result = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, 0x10, cmd->rsp_type);
+			result = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, cmd->rsp_type);
 #ifdef ERROR_EXTRA_PRINTING
 			if (!result)
 				EPRINTFARGS("SDMMC%d: Unknown response type!", sdmmc->id + 1);
@@ -1193,10 +1170,10 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 				*blkcnt_out = blkcnt;
 
 			if (req->is_auto_stop_trn)
-				sdmmc->rsp3 = sdmmc->regs->rspreg3;
+				sdmmc->stop_trn_rsp = sdmmc->regs->rspreg[3];
 		}
 
-		if (cmd->check_busy || req)
+		if (has_req_or_check_busy)
 		{
 			result = _sdmmc_wait_card_busy(sdmmc);
 #ifdef ERROR_EXTRA_PRINTING
@@ -1248,7 +1225,7 @@ static void _sdmmc_config_sdmmc1_pads(bool discharge)
 	u32 level    = GPIO_LOW;
 	u32 output   = GPIO_OUTPUT_DISABLE;
 
-	// Set values for dicharging.
+	// Set values for discharging.
 	if (discharge)
 	{
 		function = GPIO_MODE_GPIO;
@@ -1304,7 +1281,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 	// Enable SD card power. Powers LDO2 also.
 	PINMUX_AUX(PINMUX_AUX_DMIC3_CLK) = PINMUX_PULL_DOWN | 2;
 	gpio_direction_output(GPIO_PORT_E, GPIO_PIN_4, GPIO_HIGH);
-	usleep(10000);
+	usleep(10000); // Minimum 3 to 10 ms.
 
 	// Inform IO pads that voltage is gonna be 3.3V.
 	PMC(APBDEV_PMC_PWR_DET_VAL) |= PMC_PWR_DET_33V_SDMMC1;
@@ -1385,7 +1362,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 		if (sdmmc->t210b01)
 			vref_sel = 0;
 		else
-			sdmmc->manual_cal = 1;
+			sdmmc->periodic_calibration = 1;
 		break;
 
 	case SDMMC_2:
@@ -1418,6 +1395,8 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	// Configure auto calibration values.
 	if (!_sdmmc_autocal_config_offset(sdmmc, power))
 		return 0;
+
+	_sdmmc_commit_changes(sdmmc);
 
 	// Calibrate pads.
 	_sdmmc_autocal_execute(sdmmc, power);
@@ -1506,8 +1485,8 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 	if (!sdmmc->card_clock_enabled)
 		return 0;
 
-	// Recalibrate periodically for SDMMC1.
-	if (sdmmc->manual_cal && sdmmc->powersave_enabled)
+	// Recalibrate periodically if needed.
+	if (sdmmc->periodic_calibration && sdmmc->powersave_enabled)
 		_sdmmc_autocal_execute(sdmmc, sdmmc_get_io_power(sdmmc));
 
 	int should_disable_sd_clock = 0;
