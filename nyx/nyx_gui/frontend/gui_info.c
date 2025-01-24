@@ -683,7 +683,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	u32 ranks    = EMC(EMC_ADR_CFG) + 1;
 	u32 channels = (EMC(EMC_FBIO_CFG7) >> 1) & 3;
 	channels = (channels & 1) + ((channels & 2) >> 1);
-	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Ch 0 | Ch 1):#\n#FF8000 Vendor:# ", h_cfg.t210b01 ? "LPDDR4X" : "LPDDR4");
+	s_printf(txt_buf, "#00DDFF %s SDRAM ##FF8000 (Module 0 | 1):#\n#FF8000 Vendor:# ", h_cfg.t210b01 ? "LPDDR4X" : "LPDDR4");
 	switch (ram_vendor.chip0.rank0_ch0)
 	{
 	case 1:
@@ -755,49 +755,76 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "#FF8000 Unknown# (%d)", ram_vendor.chip1.rank0_ch0);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# %d",
-		ram_rev0.chip0.rank0_ch0, ram_rev1.chip0.rank0_ch0, ram_rev0.chip1.rank0_ch0, ram_rev1.chip1.rank0_ch0, ranks * channels);
+
+	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 Rev ID:#  %X.%02X #FF8000 |# %X.%02X\n#FF8000 Density:# ",
+		ram_rev0.chip0.rank0_ch0, ram_rev1.chip0.rank0_ch0, ram_rev0.chip1.rank0_ch0, ram_rev1.chip1.rank0_ch0);
+
+	u32 actual_ranks = (ram_vendor.chip0.rank0_ch0 == ram_vendor.chip0.rank1_ch0 &&
+						ram_vendor.chip0.rank0_ch1 == ram_vendor.chip0.rank1_ch1 &&
+						ram_rev0.chip0.rank0_ch0 == ram_rev0.chip0.rank1_ch0 &&
+						ram_rev0.chip0.rank0_ch1 == ram_rev0.chip0.rank1_ch1 &&
+						ram_rev1.chip0.rank0_ch0 == ram_rev1.chip0.rank1_ch0 &&
+						ram_rev1.chip0.rank0_ch1 == ram_rev1.chip0.rank1_ch1 &&
+						ram_density.chip0.rank0_ch0 == ram_density.chip0.rank1_ch0 &&
+						ram_density.chip0.rank0_ch1 == ram_density.chip0.rank1_ch1)
+					   ? 2 : 1;
+	bool rank_bad = ranks != actual_ranks;
+	s_printf(txt_buf + strlen(txt_buf), "%s %d x %s", rank_bad ? "#FFDD00" : "", actual_ranks * channels, rank_bad ? "#" : "");
+
 	switch ((ram_density.chip0.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		strcat(txt_buf, " x 512MB");
+		strcat(txt_buf, "512MB");
 		break;
 	case 3:
-		strcat(txt_buf, " x 768MB");
+		strcat(txt_buf, "768MB");
 		break;
 	case 4:
-		strcat(txt_buf, " x 1GB");
+		strcat(txt_buf, "1GB");
 		break;
 	case 5:
-		strcat(txt_buf, " x 1.5GB");
+		strcat(txt_buf, "1.5GB");
 		break;
 	case 6:
-		strcat(txt_buf, " x 2GB");
+		strcat(txt_buf, "2GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip0.rank0_ch0 & 0x3C) >> 2);
+		s_printf(txt_buf + strlen(txt_buf), "Unk (%d)", (ram_density.chip0.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
-	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %d", ranks * channels);
+
+	actual_ranks = (ram_vendor.chip1.rank0_ch0 == ram_vendor.chip1.rank1_ch0 &&
+					ram_vendor.chip1.rank0_ch1 == ram_vendor.chip1.rank1_ch1 &&
+					ram_rev0.chip1.rank0_ch0 == ram_rev0.chip1.rank1_ch0 &&
+					ram_rev0.chip1.rank0_ch1 == ram_rev0.chip1.rank1_ch1 &&
+					ram_rev1.chip1.rank0_ch0 == ram_rev1.chip1.rank1_ch0 &&
+					ram_rev1.chip1.rank0_ch1 == ram_rev1.chip1.rank1_ch1 &&
+					ram_density.chip1.rank0_ch0 == ram_density.chip1.rank1_ch0 &&
+					ram_density.chip1.rank0_ch1 == ram_density.chip1.rank1_ch1)
+				   ? 2 : 1;
+	rank_bad = ranks != actual_ranks;
+
+	s_printf(txt_buf + strlen(txt_buf), " #FF8000 |# %s %d x %s", rank_bad ? "#FFDD00" : "", actual_ranks * channels, rank_bad ? "#" : "");
+
 	switch ((ram_density.chip1.rank0_ch0 & 0x3C) >> 2)
 	{
 	case 2:
-		strcat(txt_buf, " x 512MB");
+		strcat(txt_buf, "512MB");
 		break;
 	case 3:
-		strcat(txt_buf, " x 768MB");
+		strcat(txt_buf, "768MB");
 		break;
 	case 4:
-		strcat(txt_buf, " x 1GB");
+		strcat(txt_buf, "1GB");
 		break;
 	case 5:
-		strcat(txt_buf, " x 1.5GB");
+		strcat(txt_buf, "1.5GB");
 		break;
 	case 6:
-		strcat(txt_buf, " x 2GB");
+		strcat(txt_buf, "2GB");
 		break;
 	default:
-		s_printf(txt_buf + strlen(txt_buf), " x Unk (%d)", (ram_density.chip1.rank0_ch0 & 0x3C) >> 2);
+		s_printf(txt_buf + strlen(txt_buf), "Unk (%d)", (ram_density.chip1.rank0_ch0 & 0x3C) >> 2);
 		break;
 	}
 	strcat(txt_buf, "\n\n");
@@ -994,7 +1021,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 				panel_ic_paired = touch_panel->idx == 4; // Samsung BH2109.
 			break;
 		default:
-			strcat(txt_buf, "#FF8000 Unknown#");
+			strcat(txt_buf, "#FF8000 Contact me#");
 			break;
 		}
 
@@ -1018,9 +1045,6 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
 	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 4, 0);
-
-	if (!btn)
-		_create_mbox_cal0(NULL);
 
 	return LV_RES_OK;
 }
