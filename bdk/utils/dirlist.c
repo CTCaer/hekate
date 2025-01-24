@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -82,12 +82,12 @@ dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHidde
 	// Terminate name list.
 	dir_entries->name[k] = NULL;
 
-	// Reorder ini files by ASCII ordering.
+	// Reorder ini files Alphabetically.
 	for (u32 i = 0; i < k - 1 ; i++)
 	{
 		for (u32 j = i + 1; j < k; j++)
 		{
-			if (strcmp(dir_entries->name[i], dir_entries->name[j]) > 0)
+			if (strcasecmp(dir_entries->name[i], dir_entries->name[j]) > 0)
 			{
 				char *tmp = dir_entries->name[i];
 				dir_entries->name[i] = dir_entries->name[j];
