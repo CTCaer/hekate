@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -37,8 +37,8 @@
 extern volatile nyx_storage_t *nyx_str;
 
 static u32  _display_id = 0;
-static u32  _dsi_bl = -1;
-static bool _nx_aula = false;
+static u32  _dsi_bl     = -1;
+static bool _nx_aula    = false;
 
 static void _display_panel_and_hw_end(bool no_panel_deinit);
 
@@ -265,16 +265,9 @@ int display_dsi_vblank_read(u8 cmd, u32 len, void *data)
 
 void display_dsi_write(u8 cmd, u32 len, void *data)
 {
-	static u8  *fifo8  = NULL;
-	static u32 *fifo32 = NULL;
 	u32 host_control;
-
-	// Allocate fifo buffer.
-	if (!fifo32)
-	{
-		fifo32 = malloc(DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
-		fifo8 = (u8 *)fifo32;
-	}
+	u32 fifo32[DSI_STATUS_TX_FIFO_SIZE] = {0};
+	u8 *fifo8 = (u8 *)fifo32;
 
 	// Prepare data for long write.
 	if (len >= 2)
@@ -319,15 +312,8 @@ void display_dsi_write(u8 cmd, u32 len, void *data)
 
 void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 {
-	static u8  *fifo8  = NULL;
-	static u32 *fifo32 = NULL;
-
-	// Allocate fifo buffer.
-	if (!fifo32)
-	{
-		fifo32 = malloc(DSI_STATUS_RX_FIFO_SIZE * 8 * sizeof(u32));
-		fifo8 = (u8 *)fifo32;
-	}
+	u32 fifo32[DSI_STATUS_TX_FIFO_SIZE] = {0};
+	u8 *fifo8 = (u8 *)fifo32;
 
 	// Prepare data for long write.
 	if (len >= 2)
@@ -571,7 +557,7 @@ void display_init()
 	 * When switching to the 16ff pad brick, the clock lane termination control
 	 * is separated from data lane termination. This change of the mipi cal
 	 * brings in a bug that the DSI pad clock termination code can't be loaded
-	 * in one time calibration. Trigger calibration twice.
+	 * in one time calibration on T210B01. Trigger calibration twice.
 	 */
 	reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, ARRAY_SIZE(_di_mipi_pad_cal_config));
 	for (u32 i = 0; i < 2; i++)

@@ -520,6 +520,7 @@
 
 #define DSI_STATUS 0x15
 #define  DSI_STATUS_RX_FIFO_SIZE 0x1F
+#define  DSI_STATUS_TX_FIFO_SIZE 0x20 // Actual depth is 64.
 
 #define DSI_INIT_SEQ_CONTROL 0x1A
 #define DSI_INIT_SEQ_DATA_0 0x1B
