@@ -1343,12 +1343,11 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 	static const char * mbox_btn_map[] = { "\251", "\222OK", "\251", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
-	lv_obj_set_width(mbox, LV_HOR_RES / 7 * 4);
+	lv_obj_set_width(mbox, LV_HOR_RES * 3 / 7);
 
 	char *txt_buf = (char *)malloc(SZ_16K);
 
-	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[Raw Reads] Abort: VOL- & VOL+",
-		sd_bench ? "SD Card" : "eMMC");
+	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[Raw Reads] Abort: VOL- & VOL+", sd_bench ? "SD Card" : "eMMC");
 
 	lv_mbox_set_text(mbox, txt_buf);
 	txt_buf[0] = 0;
@@ -1397,11 +1396,41 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		goto out;
 	}
 
+	// Set benchmark parameters.
+	const u32 sct_blk_seq = 0x8000;   // 16MB.  A2 spec denotes 4MB, but using older big AU.
+	const u32 sct_blk_4kb = 8;        // 4KB.
+	const u32 sct_rem_seq = 0x200000; // 1GB.   A2 spec.
+	const u32 sct_rem_4kb = 0x80000;  // 256MB. A2 spec.
+	const u32 sct_num_1mb = 0x800;    // 1MB.
+	const u32 size_bytes_seq = sct_rem_seq * SDMMC_DAT_BLOCKSIZE;
+	const u32 size_bytes_4kb = sct_rem_4kb * SDMMC_DAT_BLOCKSIZE;
+
+	// Set calculation divider. 1000 or 1024. (Does not affect IOPS).
+	u32 mb_div = 1000; // Unfortunately most software uses fake MB.
+
+	char *mbs_text;
+	switch (mb_div)
+	{
+	case 1000:
+		mbs_text = "MB/s";
+		break;
+	case 1024:
+		mbs_text = "MiB/s";
+		break;
+	}
+
+	// Set actual div in MB/MiB.
+	mb_div *= mb_div;
+
 	int error = 0;
 	u32 iters = 3;
-	u32 offset_chunk_start = ALIGN_DOWN(storage->sec_cnt / 3, 0x8000); // Align to 16MB.
+	u32 offset_chunk_start = ALIGN_DOWN(storage->sec_cnt / 3, sct_blk_seq); // Align to block.
 	if (storage->sec_cnt < 0xC00000)
 		iters -= 2; // 4GB card.
+
+	u32  rnd_off_cnt    = sct_rem_4kb / sct_blk_4kb;
+	u32 *random_offsets = malloc(rnd_off_cnt * sizeof(u32));
+	u32 *times_taken_4k = malloc(rnd_off_cnt * sizeof(u32));
 
 	for (u32 iter_curr = 0; iter_curr < iters; iter_curr++)
 	{
@@ -1409,18 +1438,18 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		u32 prevPct = 200;
 		u32 timer = 0;
 		u32 lba_curr = 0;
-		u32 sector = offset_chunk_start * iter_curr;
-		u32 sector_num = 0x8000;       // 16MB chunks.
-		u32 data_remaining = 0x200000; // 1GB.
+		u32 sector_off = offset_chunk_start * iter_curr;
+		u32 sector_num = sct_blk_seq;
+		u32 data_remaining = sct_rem_seq;
 
-		s_printf(txt_buf + strlen(txt_buf), "#C7EA46 %d/3# - Sector Offset #C7EA46 %08X#:\n", iter_curr + 1, sector);
+		s_printf(txt_buf + strlen(txt_buf), "#C7EA46 %d/3# - Sector Offset #C7EA46 %08X#:\n", iter_curr + 1, sector_off);
 
 		u32 render_min_ms = 66;
 		u32 render_timer  = get_tmr_ms() + render_min_ms;
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = !sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 			timer += time_taken;
 
@@ -1428,7 +1457,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			data_remaining -= sector_num;
 			lba_curr += sector_num;
 
-			pct = (lba_curr * 100) / 0x200000;
+			pct = (lba_curr * 100) / sct_rem_seq;
 			if (pct != prevPct && render_timer < get_tmr_ms())
 			{
 				lv_bar_set_value(bar, pct);
@@ -1446,10 +1475,10 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		}
 		lv_bar_set_value(bar, 100);
 
-		u32 rate_1k = ((u64)1024 * 1000 * 1000 * 1000) / timer;
-		s_printf(txt_buf + strlen(txt_buf),
-			" Sequential 16MiB - Rate: #C7EA46 %3d.%02d MiB/s#\n",
-			rate_1k / 1000, (rate_1k % 1000) / 10);
+		// Calculate rate for transfer.
+		u32 rate_1k = (u64)size_bytes_seq * 1000 * 1000 * 1000 / mb_div / timer;
+		s_printf(txt_buf + strlen(txt_buf), " SEQ 16MB - Rate: #C7EA46 %3d.%02d %s#",
+			rate_1k / 1000, (rate_1k % 1000) / 10, mbs_text);
 		lv_label_set_text(lbl_status, txt_buf);
 		lv_obj_align(lbl_status, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -1459,22 +1488,25 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		prevPct = 200;
 		timer = 0;
 		lba_curr = 0;
-		sector_num = 8;            // 4KB chunks.
-		data_remaining = 0x100000; // 512MB.
+		sector_num = sct_blk_4kb;
+		data_remaining = sct_rem_4kb;
 
+		u32 loop_idx = 0;
 		render_timer = get_tmr_ms() + render_min_ms;
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = !sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
+
 			timer += time_taken;
+			times_taken_4k[loop_idx++] = time_taken;
 
 			manual_system_maintenance(false);
 			data_remaining -= sector_num;
 			lba_curr += sector_num;
 
-			pct = (lba_curr * 100) / 0x100000;
+			pct = (lba_curr * 100) / sct_rem_4kb;
 			if (pct != prevPct && render_timer < get_tmr_ms())
 			{
 				lv_bar_set_value(bar, pct);
@@ -1492,49 +1524,64 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		}
 		lv_bar_set_value(bar, 100);
 
-		rate_1k = ((u64)512 * 1000 * 1000 * 1000) / timer;
-		u32 iops_1k = ((u64)512 * 1024 * 1000 * 1000 * 1000) / (4096 / 1024) / timer / 1000;
-		s_printf(txt_buf + strlen(txt_buf),
-			" Sequential  4KiB - Rate: #C7EA46 %3d.%02d MiB/s#, IOPS: #C7EA46 %4d#\n",
-			rate_1k / 1000, (rate_1k % 1000) / 10, iops_1k);
+		qsort(times_taken_4k, loop_idx, sizeof(u32), qsort_compare_int); // Use int for faster compare. Value can't exceed 2s.
+
+		u32 pct95 = 0;
+		for (u32 i = 0; i < loop_idx * 95 / 100; i++)
+			pct95 += times_taken_4k[i];
+		pct95 /= loop_idx * 95 / 100;
+
+		u32 pct05 = 0;
+		for (u32 i = 0; i < loop_idx * 5 / 100; i++)
+			pct05 += times_taken_4k[loop_idx - 1 - i];
+		pct05 /= loop_idx * 5 / 100;
+
+		// Calculate rate and IOPS for transfer.
+		rate_1k = (u64)size_bytes_4kb * 1000 * 1000 * 1000 / mb_div / timer;
+		u32 iops = ((u64)(sct_rem_4kb / sct_num_1mb) * 1024 * 1000 * 1000 * 1000) / (4096 / 1024) / timer / 1000;
+		s_printf(txt_buf + strlen(txt_buf), "        AVG #C7EA46 95th#  #FF3C28 5th#\n");
+		s_printf(txt_buf + strlen(txt_buf), " SEQ  4KB - Rate: #C7EA46 %3d.%02d %s# IOPS: #C7EA46 %4d# %4d %4d \n",
+			rate_1k / 1000, (rate_1k % 1000) / 10, mbs_text, iops, 1000000 / pct95, 1000000 / pct05);
 		lv_label_set_text(lbl_status, txt_buf);
 		lv_obj_align(lbl_status, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		manual_system_maintenance(true);
 
 		u32 lba_idx = 0;
-		u32 *random_offsets = malloc(0x20000 * sizeof(u32));
-		u32  random_numbers[4];
-		for (u32 i = 0; i < 0x20000; i += 4)
+		u32 random_numbers[4];
+		for (u32 i = 0; i < rnd_off_cnt; i += 4)
 		{
 			// Generate new random numbers.
 			while (!se_gen_prng128(random_numbers))
 				;
-			// Clamp offsets to 512MB range.
-			random_offsets[i + 0] = random_numbers[0] % 0x100000;
-			random_offsets[i + 1] = random_numbers[1] % 0x100000;
-			random_offsets[i + 2] = random_numbers[2] % 0x100000;
-			random_offsets[i + 3] = random_numbers[3] % 0x100000;
+			// Clamp offsets to 256MB range.
+			random_offsets[i + 0] = random_numbers[0] % sct_rem_4kb;
+			random_offsets[i + 1] = random_numbers[1] % sct_rem_4kb;
+			random_offsets[i + 2] = random_numbers[2] % sct_rem_4kb;
+			random_offsets[i + 3] = random_numbers[3] % sct_rem_4kb;
 		}
 
 		pct = 0;
 		prevPct = 200;
 		timer = 0;
-		data_remaining = 0x100000; // 512MB.
+		data_remaining = sct_rem_4kb;
 
+		loop_idx = 0;
 		render_timer = get_tmr_ms() + render_min_ms;
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector + random_offsets[lba_idx], sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = !sdmmc_storage_read(storage, sector_off + random_offsets[lba_idx], sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
+
 			timer += time_taken;
+			times_taken_4k[loop_idx++] = time_taken;
 
 			manual_system_maintenance(false);
 			data_remaining -= sector_num;
 			lba_idx++;
 
-			pct = (lba_idx * 100) / 0x20000;
+			pct = (lba_idx * 100) / rnd_off_cnt;
 			if (pct != prevPct && render_timer < get_tmr_ms())
 			{
 				lv_bar_set_value(bar, pct);
@@ -1548,29 +1595,39 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 			}
 
 			if (error)
-			{
-				free(random_offsets);
 				goto error;
-			}
 		}
 		lv_bar_set_value(bar, 100);
 
-		// Calculate rate and IOPS for 512MB transfer.
-		rate_1k = ((u64)512 * 1000 * 1000 * 1000) / timer;
-		iops_1k = ((u64)512 * 1024 * 1000 * 1000 * 1000) / (4096 / 1024) / timer / 1000;
-		s_printf(txt_buf + strlen(txt_buf),
-			" Random      4KiB - Rate: #C7EA46 %3d.%02d MiB/s#, IOPS: #C7EA46 %4d#\n",
-			rate_1k / 1000, (rate_1k % 1000) / 10, iops_1k);
+		qsort(times_taken_4k, loop_idx, sizeof(u32), qsort_compare_int); // Use int for faster compare. Value can't exceed 2s.
+
+		pct95 = 0;
+		for (u32 i = 0; i < loop_idx * 95 / 100; i++)
+			pct95 += times_taken_4k[i];
+		pct95 /= loop_idx * 95 / 100;
+
+		pct05 = 0;
+		for (u32 i = 0; i < loop_idx * 5 / 100; i++)
+			pct05 += times_taken_4k[loop_idx - 1 - i];
+		pct05 /= loop_idx * 5 / 100;
+
+		// Calculate rate and IOPS for transfer.
+		rate_1k = (u64)size_bytes_4kb * 1000 * 1000 * 1000 / mb_div / timer;
+		iops = ((u64)(sct_rem_4kb / sct_num_1mb) * 1024 * 1000 * 1000 * 1000) / (4096 / 1024) / timer / 1000;
+		s_printf(txt_buf + strlen(txt_buf), " RND  4KB - Rate: #C7EA46 %3d.%02d %s# IOPS: #C7EA46 %4d# %4d %4d \n",
+			rate_1k / 1000, (rate_1k % 1000) / 10, mbs_text, iops, 1000000 / pct95, 1000000 / pct05);
 		if (iter_curr == iters - 1)
-			txt_buf[strlen(txt_buf) - 1] = 0; // Cut off last line change.
+			txt_buf[strlen(txt_buf) - 1] = 0; // Cut off last new line.
 		lv_label_set_text(lbl_status, txt_buf);
 		lv_obj_align(lbl_status, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		manual_system_maintenance(true);
-		free(random_offsets);
 	}
 
 error:
+	free(random_offsets);
+	free(times_taken_4k);
+
 	if (error)
 	{
 		if (error == -1)
@@ -1597,6 +1654,8 @@ error:
 		emmc_end();
 
 out:
+	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[Raw Reads]", sd_bench ? "SD Card" : "eMMC");
+	lv_mbox_set_text(mbox, txt_buf);
 	free(txt_buf);
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
@@ -1888,7 +1947,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	lv_win_add_btn(win, NULL, SYMBOL_SD" Benchmark", _create_mbox_sd_bench);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
-	lv_obj_set_size(desc, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+	lv_obj_set_size(desc, LV_HOR_RES / 2 / 6 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
@@ -1909,7 +1968,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	}
 
 	lv_label_set_text(lb_desc,
-		"#00DDFF Card IDentification:#\n"
+		"#00DDFF Card ID:#\n"
 		"Vendor ID:\n"
 		"Model:\n"
 		"OEM ID:\n"
@@ -1918,11 +1977,11 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"S/N:\n"
 		"Month/Year:\n\n"
 		"Max Power:\n"
-		"Bootloader bus:"
+		"Initial bus:"
 	);
 
 	lv_obj_t *val = lv_cont_create(win, NULL);
-	lv_obj_set_size(val, LV_HOR_RES / 9 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+	lv_obj_set_size(val, LV_HOR_RES / 12 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
 
@@ -2064,7 +2123,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 	lv_obj_t *desc2 = lv_cont_create(win, NULL);
-	lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+	lv_obj_set_size(desc2, LV_HOR_RES / 2 / 11 * 5, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 	lv_obj_t * lb_desc2 = lv_label_create(desc2, lb_desc);
 
@@ -2081,10 +2140,10 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"Write Protect:"
 	);
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
-	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 5 * 3, 0);
 
 	lv_obj_t *val2 = lv_cont_create(win, NULL);
-	lv_obj_set_size(val2, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
+	lv_obj_set_size(val2, LV_HOR_RES / 4, LV_VER_RES - (LV_DPI * 11 / 8) * 5 / 2);
 
 	lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
 
@@ -2163,17 +2222,17 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	f_getfree("", &sd_fs.free_clst, NULL);
 
 	lv_label_set_text(lb_desc3,
-		"#00DDFF Found FAT volume:#\n"
+		"#00DDFF Found FAT FS:#\n"
 		"Filesystem:\n"
 		"Cluster:\n"
 		"Size free/total:"
 	);
-	lv_obj_set_size(desc3, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+	lv_obj_set_size(desc3, LV_HOR_RES / 2 / 6 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 	lv_obj_set_width(lb_desc3, lv_obj_get_width(desc3));
 	lv_obj_align(desc3, desc, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
 
 	lv_obj_t *val3 = lv_cont_create(win, NULL);
-	lv_obj_set_size(val3, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+	lv_obj_set_size(val3, LV_HOR_RES / 12 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 
 	lv_obj_t * lb_val3 = lv_label_create(val3, lb_desc);
 
@@ -2202,12 +2261,12 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 		"Read/Write fails:\n"
 		"Read/Write errors:"
 	);
-	lv_obj_set_size(desc4, LV_HOR_RES / 2 / 5 * 2, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+	lv_obj_set_size(desc4, LV_HOR_RES / 2 / 11 * 5, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 	lv_obj_set_width(lb_desc4, lv_obj_get_width(desc4));
-	lv_obj_align(desc4, val3, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+	lv_obj_align(desc4, val3, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 5 * 3, 0);
 
 	lv_obj_t *val4 = lv_cont_create(win, NULL);
-	lv_obj_set_size(val4, LV_HOR_RES / 13 * 3, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
+	lv_obj_set_size(val4, LV_HOR_RES / 4, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 
 	lv_obj_t * lb_val4 = lv_label_create(val4, lb_desc);
 
@@ -2220,7 +2279,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	lv_label_set_text(lb_val4, txt_buf);
 
 	lv_obj_set_width(lb_val4, lv_obj_get_width(val4));
-	lv_obj_align(val4, desc4, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 2, 0);
+	lv_obj_align(val4, desc4, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 	free(txt_buf);
 	sd_unmount();
