@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -188,12 +188,12 @@ static int _config_emummc_forced(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
-static int _config_atmosphere(launch_ctxt_t *ctxt, const char *value)
+static int _config_kernel_proc_id(launch_ctxt_t *ctxt, const char *value)
 {
 	if (*value == '1')
 	{
-		DPRINTF("Enabled atmosphere patching\n");
-		ctxt->atmosphere = true;
+		DPRINTF("Enabled kernel process id send/recv patching\n");
+		ctxt->patch_krn_proc_id = true;
 	}
 	return 1;
 }
@@ -287,6 +287,7 @@ typedef struct _cfg_handler_t
 } cfg_handler_t;
 
 static const cfg_handler_t _config_handlers[] = {
+	{ "stock",            _config_stock },
 	{ "warmboot",         _config_warmboot },
 	{ "secmon",           _config_secmon },
 	{ "kernel",           _config_kernel },
@@ -294,9 +295,11 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "kip1patch",        config_kip1patch },
 	{ "fullsvcperm",      _config_svcperm },
 	{ "debugmode",        _config_debugmode },
-	{ "stock",            _config_stock },
-	{ "atmosphere",       _config_atmosphere },
+	{ "kernelprocid",     _config_kernel_proc_id },
+
+	// To override elements from PKG3, it should be set before others.
 	{ "fss0",             _config_fss },
+
 	{ "exofatal",         _config_exo_fatal_payload},
 	{ "emummcforce",      _config_emummc_forced },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },

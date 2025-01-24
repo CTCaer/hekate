@@ -143,7 +143,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 			fss_meta->version >> 24, (fss_meta->version >> 16) & 0xFF, (fss_meta->version >> 8) & 0xFF, fss_meta->git_rev,
 			fss_meta->hos_ver >> 24, (fss_meta->hos_ver >> 16) & 0xFF, (fss_meta->hos_ver >> 8) & 0xFF);
 
-		ctxt->atmosphere = true;
+		ctxt->patch_krn_proc_id = true;
 		ctxt->fss0_hosver = fss_meta->hos_ver;
 
 		// Parse FSS0 contents.

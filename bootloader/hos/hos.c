@@ -822,7 +822,7 @@ void hos_launch(ini_sec_t *cfg)
 			goto error;
 		}
 
-		ctxt.atmosphere = true; // Set atmosphere patching in case of no fss0.
+		ctxt.patch_krn_proc_id = true; // Set kernel process id patching in case of no pkg3.
 		config_kip1patch(&ctxt, "emummc");
 	}
 	else if (!emu_cfg.enabled && ctxt.emummc_forced)
@@ -995,7 +995,7 @@ void hos_launch(ini_sec_t *cfg)
 		ctxt.kernel = pkg2_hdr->data;
 		ctxt.kernel_size = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
 
-		if (!ctxt.stock && (ctxt.svcperm || ctxt.debugmode || ctxt.atmosphere))
+		if (!ctxt.stock && (ctxt.svcperm || ctxt.debugmode || ctxt.patch_krn_proc_id))
 		{
 			// Hash only Kernel when it embeds INI1.
 			u8 kernel_hash[0x20];
@@ -1022,10 +1022,10 @@ void hos_launch(ini_sec_t *cfg)
 				for (u32 i = 0; kernel_patchset[i].id != 0xFFFFFFFF; i++)
 				{
 					if ((ctxt.svcperm && kernel_patchset[i].id == SVC_VERIFY_DS)
-					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_MODE_EN && !(ctxt.atmosphere && ctxt.secmon))
-					|| (ctxt.atmosphere && kernel_patchset[i].id == ATM_GEN_PATCH))
+					|| (ctxt.debugmode && kernel_patchset[i].id == DEBUG_MODE_EN && !(ctxt.patch_krn_proc_id && ctxt.secmon))
+					|| (ctxt.patch_krn_proc_id && kernel_patchset[i].id == ATM_GEN_PATCH))
 						*(vu32 *)(ctxt.kernel + kernel_patchset[i].off) = kernel_patchset[i].val;
-					else if (ctxt.atmosphere && kernel_patchset[i].id == ATM_ARR_PATCH)
+					else if (ctxt.patch_krn_proc_id && kernel_patchset[i].id == ATM_ARR_PATCH)
 					{
 						temp = (u32 *)kernel_patchset[i].ptr;
 						for (u32 j = 0; j < kernel_patchset[i].val; j++)

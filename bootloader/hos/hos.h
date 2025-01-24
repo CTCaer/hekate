@@ -113,7 +113,7 @@ typedef struct _launch_ctxt_t
 
 	void *fss0;
 	u32   fss0_hosver;
-	bool  atmosphere;
+	bool  patch_krn_proc_id;
 
 	int ucid;
 

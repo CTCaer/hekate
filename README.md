@@ -109,7 +109,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | stock=1                | OFW via hekate bootloader. Disables unneeded kernel patching and CFW kips when running stock. `If emuMMC is enabled, emummc_force_disable=1` is required. emuMMC is not supported on stock. If additional KIPs are needed other than OFW's, you can define them with `kip1` key. No kip should be used that relies on Atmosphère patching, because it will hang. If `NOGC` is needed, use `kip1patch=nogc`. |
 | fullsvcperm=1          | Disables SVC verification (full services permission). Doesn't work with Mesosphere as kernel. |
 | debugmode=1            | Enables Debug mode. Obsolete when used with exosphere as secmon. |
-| atmosphere=1           | Enables Atmosphère patching. Not needed when `fss0` is used. |
+| kernelprocid=1         | Enables stock kernel process id send/recv patching. Not needed when `fss0` is used. |
 | ---------------------- | ---------------------------------------------------------- |
 | payload={FILE path}    | Payload launching. Tools, Android/Linux, CFW bootloaders, etc. Any key above when used with that, doesn't get into account. |
 | ---------------------- | ---------------------------------------------------------- |
