@@ -930,8 +930,14 @@ static int _sd_storage_send_if_cond(sdmmc_storage_t *storage, bool *is_sdsc)
 	sdmmc_init_cmd(&cmdbuf, SD_SEND_IF_COND, vhd_pattern, SDMMC_RSP_TYPE_5, 0);
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, NULL, NULL))
 	{
-		*is_sdsc = 1; // The SD Card is version 1.X
-		return 1;
+		// The SD Card is version 1.X (SDSC) if there is no response.
+		if (storage->sdmmc->error_sts == SDHCI_ERR_INT_CMD_TIMEOUT)
+		{
+			*is_sdsc = 1;
+			return 1;
+		}
+
+		return 0;
 	}
 
 	// For Card version >= 2.0, parse results.
