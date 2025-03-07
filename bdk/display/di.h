@@ -810,7 +810,8 @@
  * [30] 94 [10]: AUO A055TAN02 (59.05A30.002)
  * [30] 95 [10]: AUO A055TAN03 (59.05A30.003)
  * [40] 94 [10]: Sharp LQ055T1SW10 (Rev P)
- *
+ * [E0] 01 [10]: Retro Remake SUPER5 OLED (Rev 01)
+ * [E1] 01 [10]: Retro Remake SUPER5 OLED HD (Rev 01)
  *
  * 7.0" OLED panels for Aula SKU:
  * [50] 9B [20]: Samsung AMS699VC01-0 (Rev 2.5)
@@ -828,6 +829,8 @@
  * 30h: AU Optronics
  * 40h: Sharp
  * 50h: Samsung
+ * E0h: Retro Remake
+ * E1h: Retro Remake
  *
  * Boards, Panel Size:
  * 0Fh: Icosa/Iowa, 6.2"
@@ -846,6 +849,8 @@ enum
 	PANEL_AUO_A055TAN01   = 0x1030,
 	PANEL_SHP_LQ055T1SW10 = 0x1040,
 	PANEL_SAM_AMS699VC01  = 0x2050,
+	PANEL_RR_SUPER5_OLED_V1    = 0x10E0,
+	PANEL_RR_SUPER5_OLED_HD_V1  = 0x10E1,
 
 	// Found on 6/2" clones. Unknown markings. Quality seems JDI like. Has bad low backlight scaling. ID: [83] 94 [0F].
 	PANEL_OEM_CLONE_6_2   = 0x0F83,
