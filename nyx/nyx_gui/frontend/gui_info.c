@@ -790,6 +790,30 @@ static lv_res_t _create_window_fuses_info_status(lv_obj_t *btn)
 
 	switch (display_id)
 	{
+	case PANEL_RR_SUPER5_OLED_V1:
+		strcat(txt_buf, "RR SUPER5 OLED");
+		switch (display_rev)
+		{
+		case 0x01:
+			strcat(txt_buf, "-V1");
+			break;
+		default:
+			strcat(txt_buf, " #FFDD00 Contact me!#");
+			break;
+		}
+		break;
+	case PANEL_RR_SUPER5_OLED_HD_V1:
+		strcat(txt_buf, "RR SUPER5 OLED HD");
+		switch (display_rev)
+		{
+		case 0x01:
+			strcat(txt_buf, "-V1");
+			break;
+		default:
+			strcat(txt_buf, " #FFDD00 Contact me!#");
+			break;
+		}
+		break;
 	case PANEL_JDI_LAM062M109A:
 		strcat(txt_buf, "JDI LAM062M109A");
 		break;
