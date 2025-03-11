@@ -800,7 +800,10 @@
  * [30] 97 [0F]: AUO A062TAN02 (59.06A33.002) [From photo of assumed same panel]
  * [30] 98 [0F]: AUO A062TAN0? [UNCONFIRMED MODEL]
  * [30] XX [0F]: AUO A062TAN03 (59.06A33.003) [UNCONFIRMED ID]
- *
+ * [E0] 01 [0F]: Retro Remake SUPER7 IPS (Rev 01)
+ * [E1] 01 [0F]: Retro Remake SUPER7 IPS HD (Rev 01)
+ * [E0] 11 [0F]: Retro Remake SUPER7 OLED (Rev 01)
+ * [E1] 11 [0F]: Retro Remake SUPER7 OLED HD (Rev 01)
  *
  * 5.5" panels for Hoag SKU:
  * [20] 94 [10]: InnoLux 2J055IA-27A (Rev B1) (6203B001P4000)
@@ -815,6 +818,8 @@
  *
  * 7.0" OLED panels for Aula SKU:
  * [50] 9B [20]: Samsung AMS699VC01-0 (Rev 2.5)
+ * [E0] 01 [20]: Retro Remake SUPER7 OLED (Rev 01)
+ * [E1] 01 [20]: Retro Remake SUPER7 OLED HD (Rev 01)
  */
 
 /* Display ID Decoding:
@@ -849,8 +854,14 @@ enum
 	PANEL_AUO_A055TAN01   = 0x1030,
 	PANEL_SHP_LQ055T1SW10 = 0x1040,
 	PANEL_SAM_AMS699VC01  = 0x2050,
-	PANEL_RR_SUPER5_OLED_V1    = 0x10E0,
+	PANEL_RR_SUPER5_OLED_V1  = 0x10E0,
 	PANEL_RR_SUPER5_OLED_HD_V1  = 0x10E1,
+	PANEL_RR_SUPER7_IPS_V1  = 0x0FE0,
+	PANEL_RR_SUPER7_IPS_HD_V1  = 0x0FE1
+	PANEL_RR_SUPER7_OLED_V1  = 
+	PANEL_RR_SUPER7_OLED_HD_V1  =
+	PANEL_RR_SUPER7_OLED_7V1  = 0x20E0
+	PANEL_RR_SUPER7_OLED_HD_7V1  = 0x20E1
 
 	// Found on 6/2" clones. Unknown markings. Quality seems JDI like. Has bad low backlight scaling. ID: [83] 94 [0F].
 	PANEL_OEM_CLONE_6_2   = 0x0F83,
