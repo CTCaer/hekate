@@ -23,6 +23,7 @@
 #include "../config.h"
 #include <libs/lvgl/lv_themes/lv_theme_hekate.h>
 #include <libs/lvgl/lvgl.h>
+#include <libs/lvgl/lv_misc/lv_math.h>
 
 #define CLOCK_MIN_YEAR 2024
 #define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
@@ -1177,11 +1178,126 @@ static lv_res_t _action_win_nyx_options_close(lv_obj_t *btn)
 	return LV_RES_INV;
 }
 
+lv_obj_t *set_pw_area;
+static lv_res_t _set_passwd_ta_action(lv_obj_t *btnm, const char *txt)
+{
+	if (!txt) return LV_RES_OK;
+
+	u32 btnidx = lv_btnm_get_pressed(btnm);
+
+	// backspace
+	if (btnidx == 10)
+	{
+		lv_ta_del_char(set_pw_area);
+		return LV_RES_OK;
+	}
+
+	char buff[8];
+	lv_math_num_to_str(btnidx + 1, buff);
+	lv_ta_set_cursor_pos(set_pw_area, LV_TA_CURSOR_LAST);
+	lv_ta_add_text(set_pw_area, buff);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _set_passwd_action(lv_obj_t *btns, const char *txt)
+{
+	u32 btnidx = lv_btnm_get_pressed(btns);
+
+	switch (btnidx)
+	{
+	case 0:
+		// save password
+		const char *passwd = lv_ta_get_text(set_pw_area);
+		char *endptr;
+		u32 num = (u32)strtoul(passwd, &endptr, 10);
+		if (*endptr == '\0')
+		{
+			// conversion successful
+			if (num == 0)
+			{
+				return LV_RES_INV;
+			}
+
+			n_cfg.password = num;
+			nyx_changes_made = true;
+		}
+		else
+		{
+			// conversion failed - TODO: maybe better error handling
+			lv_ta_set_text(set_pw_area, "ERR");
+			return LV_RES_INV;
+		}
+		break;
+	case 1:
+		// disable, set password to 0
+		n_cfg.password = 0;
+		nyx_changes_made = true;
+		break;
+	case 2:
+		// cancel, do nothing just close
+		break;
+	}
+
+	return mbox_action(btns, txt);
+}
+
+static lv_res_t _action_win_nyx_options_passwd(lv_obj_t *btn)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\221Save", "\221Disable", "\221Cancel", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 2);
+
+	lv_mbox_set_text(mbox, "Set a (#FF8000 max 8 digit#) password\nto lock hekate on boot.\nThe password is stored in plain-text\non the microSD card!");
+
+	set_pw_area = lv_ta_create(mbox, NULL);
+	lv_ta_set_one_line(set_pw_area, true);
+	lv_ta_set_pwd_mode(set_pw_area, false);
+	// makes ta_add_... not work
+	// lv_ta_set_accepted_chars(pw_area, "0123456789");
+	lv_ta_set_accepted_chars(set_pw_area, NULL);
+	lv_ta_set_cursor_type(set_pw_area, LV_CURSOR_BLOCK | LV_CURSOR_HIDDEN);
+	lv_ta_set_max_length(set_pw_area, 8);
+	lv_obj_set_width(set_pw_area, LV_HOR_RES / 5);
+	if (n_cfg.password > 0)
+	{
+		char buff[8];
+		lv_math_num_to_str(n_cfg.password, buff);
+		lv_ta_set_text(set_pw_area, buff);
+	}
+	else
+	{
+		lv_ta_set_text(set_pw_area, "");
+	}
+
+	static const char * mbox_btnm_map[] = {
+		"1", "2", "3", "4", "5", "\n",
+		"6", "7", "8", "9", "0", "\n",
+	    "Delete", ""}; // "\202"SYMBOL_EDIT
+	lv_obj_t *btnm1 = lv_btnm_create(mbox, NULL);
+	lv_btnm_set_map(btnm1, mbox_btnm_map);
+	lv_btnm_set_action(btnm1, _set_passwd_ta_action);
+	lv_obj_set_size(btnm1, LV_HOR_RES / 3, LV_VER_RES / 4);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _set_passwd_action);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
 lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 {
 	lv_theme_t *th = lv_theme_get_current();
 
 	lv_obj_t *win = nyx_create_window_custom_close_btn(SYMBOL_HOME" Nyx Settings", _action_win_nyx_options_close);
+	lv_win_add_btn(win, NULL, SYMBOL_KEY" Password", _action_win_nyx_options_passwd);
 
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);

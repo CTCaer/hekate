@@ -25,6 +25,8 @@
 #include "gui_options.h"
 #include <libs/lvgl/lv_themes/lv_theme_hekate.h>
 #include <libs/lvgl/lvgl.h>
+#include <libs/lvgl/lv_misc/lv_math.h>
+#include "../gfx/gfx.h"
 #include "../gfx/logos-gui.h"
 
 #include "../config.h"
@@ -47,6 +49,7 @@ lv_style_t monospace_text;
 lv_obj_t *payload_list;
 lv_obj_t *autorcm_btn;
 lv_obj_t *close_btn;
+lv_obj_t *pw_area;
 
 lv_img_dsc_t *icon_switch;
 lv_img_dsc_t *icon_payload;
@@ -1064,6 +1067,57 @@ static lv_res_t _poweroff_action(lv_obj_t *btns, const char *txt)
 	return mbox_action(btns, txt);
 }
 
+static lv_res_t _unlock_action(lv_obj_t *btns, const char *txt)
+{
+	u32 btnidx = lv_btnm_get_pressed(btns);
+
+	switch (btnidx)
+	{
+	case 0:
+		// verify password
+		const char *passwd = lv_ta_get_text(pw_area);
+		char *endptr;
+		u32 num = (u32)strtoul(passwd, &endptr, 10);
+
+		if (*endptr == '\0' && num != n_cfg.password)
+		{
+			// clear password
+			lv_ta_set_text(pw_area, "");
+			return LV_RES_INV;
+		}
+
+		break;
+	case 1:
+		power_set_state(POWER_OFF_RESET);
+		break;
+	}
+
+	return mbox_action(btns, txt);
+}
+
+static lv_res_t _unlock_btnm_action(lv_obj_t *btnm, const char *txt)
+{
+	if (!txt) return LV_RES_OK;
+
+	u32 btnidx = lv_btnm_get_pressed(btnm);
+
+	// backspace
+	if (btnidx == 10)
+	{
+		lv_ta_del_char(pw_area);
+		return LV_RES_OK;
+	}
+
+	//const char * ta_buff = lv_ta_get_text(pw_area);
+	char buff[8];
+	lv_math_num_to_str(btnidx + 1, buff);
+	lv_ta_set_cursor_pos(pw_area, LV_TA_CURSOR_LAST);
+	lv_ta_add_text(pw_area, buff);
+	//lv_ta_set_text(pw_area, buff);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_reload(lv_obj_t *btn)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
@@ -1126,6 +1180,48 @@ static lv_res_t _create_mbox_poweroff(lv_obj_t *btn)
 	lv_mbox_set_text(mbox, "#FF8000 Do you really want#\n#FF8000 to power off?#");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, _poweroff_action);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_mbox_unlock(void)
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\221Unlock", "\221Power Off", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 2);
+
+	lv_mbox_set_text(mbox, "This switch is #96FF00 password locked#.\nTo unlock it, please enter the password.");
+
+	pw_area = lv_ta_create(mbox, NULL);
+	lv_ta_set_one_line(pw_area, true);
+	lv_ta_set_pwd_mode(pw_area, false);
+	// makes ta_add_... not work
+	// lv_ta_set_accepted_chars(pw_area, "0123456789");
+	lv_ta_set_accepted_chars(pw_area, NULL);
+	lv_ta_set_cursor_type(pw_area, LV_CURSOR_BLOCK | LV_CURSOR_HIDDEN);
+	lv_ta_set_max_length(pw_area, 8);
+	// lv_ta_set_max_length(pw_area, 64);
+	lv_obj_set_width(pw_area, LV_HOR_RES / 5);
+	lv_ta_set_text(pw_area, "");
+
+	static const char * mbox_btnm_map[] = {
+		"1", "2", "3", "4", "5", "\n",
+		"6", "7", "8", "9", "0", "\n",
+	    "Delete", ""}; // "\202"SYMBOL_EDIT
+	lv_obj_t *btnm1 = lv_btnm_create(mbox, NULL);
+	lv_btnm_set_map(btnm1, mbox_btnm_map);
+	lv_btnm_set_action(btnm1, _unlock_btnm_action);
+	lv_obj_set_size(btnm1, LV_HOR_RES / 3, LV_VER_RES / 4);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _unlock_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -2398,6 +2494,12 @@ static void _nyx_main_menu(lv_theme_t * th)
 
 	if (!n_cfg.bpmp_clock)
 		task_bpmp_clock = lv_task_create(first_time_bpmp_clock, 10000, LV_TASK_PRIO_LOWEST, NULL);
+
+    // check if a password is set
+	if (n_cfg.password > 0)
+	{
+		_create_mbox_unlock();
+	}
 }
 
 void nyx_load_and_run()

@@ -278,6 +278,8 @@ skip_main_cfg_parse:
 					n_cfg.home_screen    = atoi(kv->val);
 				else if (!strcmp("verification", kv->key))
 					n_cfg.verification   = atoi(kv->val);
+				else if (!strcmp("password", kv->key))
+					n_cfg.password       = atoi(kv->val);
 				else if (!strcmp("umsemmcrw",    kv->key))
 					n_cfg.ums_emmc_rw    = atoi(kv->val) == 1;
 				else if (!strcmp("jcdisable",    kv->key))
