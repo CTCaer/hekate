@@ -889,7 +889,7 @@ static void _l4t_set_config(l4t_ctxt_t *ctxt, const ini_sec_t *ini_sec, int entr
 		else if (!strcmp("uart_port",   kv->key))
 			ctxt->serial_port = atoi(kv->val);
 		else if (!strcmp("sld_type",    kv->key))
-			ctxt->sld_type    = atoi(kv->val);
+			ctxt->sld_type    = strtol(kv->val, NULL, 16);
 
 		// Set key/val to BL33 env.
 		_l4t_bl33_cfg_set_key(bl33_env, kv->key, kv->val);
