@@ -207,12 +207,18 @@ int parse_pkg3(launch_ctxt_t *ctxt, const char *path)
 				if (stock)
 					continue;
 
-				for (u32 k = 0; k < pkg3_kip1_skip_num; k++) {
-					if (!strcmp(curr_pkg3_cnt[i].name, pkg3_kip1_skip[k])) {
+				bool should_skip = false;
+				for (u32 k = 0; k < pkg3_kip1_skip_num; k++)
+				{
+					if (!strcmp(curr_pkg3_cnt[i].name, pkg3_kip1_skip[k]))
+					{
 						gfx_printf("Skipped %s.kip1 from PKG3\n", curr_pkg3_cnt[i].name);
-						continue;
+						should_skip = true;
+						break;
 					}
 				}
+				if (should_skip)
+					continue;
 
 				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
 				mkip1->kip1 = content;
