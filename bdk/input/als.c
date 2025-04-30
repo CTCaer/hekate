@@ -70,8 +70,6 @@ void set_als_cfg(als_ctxt_t *als_ctxt, u8 gain, u8 cycle)
 
 	if (!cycle)
 		cycle = 1;
-	else if (cycle > 255)
-		cycle = 255;
 
 	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_GAIN_REG),   gain);
 	i2c_send_byte(I2C_2, BH1730_I2C_ADDR, BH1730_ADDR(BH1730_TIMING_REG), (256 - cycle));
