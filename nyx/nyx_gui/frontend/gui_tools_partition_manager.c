@@ -2691,7 +2691,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	// Create Android size slider.
 	lv_obj_t *slider_and = lv_slider_create(h1, NULL);
 	lv_obj_set_size(slider_and, LV_DPI * 7, LV_DPI / 3);
-	lv_slider_set_range(slider_and, 0, (part_info.total_sct - extra_sct) / SECTORS_PER_GB - 4); // Subtract android reserved size.
+	lv_slider_set_range(slider_and, 0, (part_info.total_sct - extra_sct) / SECTORS_PER_GB - (ANDROID_SYSTEM_SIZE_MB / 1024)); // Subtract android reserved size.
 	lv_slider_set_value(slider_and, 0);
 	lv_slider_set_style(slider_and, LV_SLIDER_STYLE_BG, &bar_and_bg);
 	lv_slider_set_style(slider_and, LV_SLIDER_STYLE_INDIC, &bar_and_ind);
