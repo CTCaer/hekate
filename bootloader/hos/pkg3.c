@@ -93,9 +93,43 @@ static void _pkg3_update_r2p()
 	free(r2p_payload);
 }
 
+static int _pkg3_kip1_skip(char ***pkg3_kip1_skip, u32 *pkg3_kip1_skip_num, char *value)
+{
+	int len = strlen(value);
+	if (!len || (*pkg3_kip1_skip_num) >= PKG3_KIP_SKIP_MAX)
+		return 0;
+
+	// Allocate pointer list memory.
+	if (!(*pkg3_kip1_skip))
+		(*pkg3_kip1_skip) = calloc(PKG3_KIP_SKIP_MAX, sizeof(char *));
+
+	// Set first kip name.
+	(*pkg3_kip1_skip)[(*pkg3_kip1_skip_num)++] = value;
+
+	// Check if more names are set separated by comma.
+	for (char *c = value; *c != 0; c++)
+	{
+		if (*c == ',')
+		{
+			*c = 0; // Null termination.
+
+			// Set next kip name to the list.
+			(*pkg3_kip1_skip)[(*pkg3_kip1_skip_num)++] = c + 1;
+
+			if ((*pkg3_kip1_skip_num) >= PKG3_KIP_SKIP_MAX)
+				return 0;
+		}
+	}
+
+	return 1;
+}
+
 int parse_pkg3(launch_ctxt_t *ctxt, const char *path)
 {
 	FIL fp;
+
+	char **pkg3_kip1_skip = NULL;
+	u32    pkg3_kip1_skip_num = 0;
 
 	bool stock = false;
 	bool experimental = false;
@@ -113,6 +147,9 @@ int parse_pkg3(launch_ctxt_t *ctxt, const char *path)
 		if (!strcmp("pkg3ex", kv->key))
 			if (kv->val[0] == '1')
 				experimental = true;
+
+		if (!strcmp("pkg3kip1skip", kv->key))
+			_pkg3_kip1_skip(&pkg3_kip1_skip, &pkg3_kip1_skip_num, kv->val);
 	}
 
 #ifdef HOS_MARIKO_STOCK_SECMON
@@ -169,6 +206,14 @@ int parse_pkg3(launch_ctxt_t *ctxt, const char *path)
 			case CNT_TYPE_KIP:
 				if (stock)
 					continue;
+
+				for (u32 k = 0; k < pkg3_kip1_skip_num; k++) {
+					if (!strcmp(curr_pkg3_cnt[i].name, pkg3_kip1_skip[k])) {
+						gfx_printf("Skipped %s.kip1 from PKG3\n", curr_pkg3_cnt[i].name);
+						continue;
+					}
+				}
+
 				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
 				mkip1->kip1 = content;
 				list_append(&ctxt->kip1_list, &mkip1->link);
@@ -216,11 +261,15 @@ int parse_pkg3(launch_ctxt_t *ctxt, const char *path)
 		// Update r2p if needed.
 		_pkg3_update_r2p();
 
+		free(pkg3_kip1_skip);
+
 		return 1;
 	}
 
 	// Failed. Close and free all.
 	f_close(&fp);
+
+	free(pkg3_kip1_skip);
 	free(pkg3);
 
 	return 0;
