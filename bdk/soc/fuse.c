@@ -24,7 +24,9 @@
 #include <sec/se_t210.h>
 #include <soc/fuse.h>
 #include <soc/hw_init.h>
+#include <soc/pmc.h>
 #include <soc/t210.h>
+#include <soc/timer.h>
 #include <utils/types.h>
 
 static const u32 evp_thunk_template[] = {

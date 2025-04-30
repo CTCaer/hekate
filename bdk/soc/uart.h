@@ -70,6 +70,8 @@
 #define UART_MCR_CTS_EN BIT(5)
 #define UART_MCR_RTS_EN BIT(6)
 
+#define UART_FIFO_SIZE  36
+
 typedef struct _uart_t
 {
 	/* 0x00 */ vu32 UART_THR_DLAB;

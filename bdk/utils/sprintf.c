@@ -172,12 +172,12 @@ parse_padding_dec:
 					_s_putc(c);
 				break;
 
-			case 's':
-				_s_puts(va_arg(ap, char *), fill, fcnt);
-				break;
-
 			case 'd':
 				_s_putn(va_arg(ap, u32), 10, fill, fcnt);
+				break;
+
+			case 's':
+				_s_puts(va_arg(ap, char *), fill, fcnt);
 				break;
 
 			case 'p':
@@ -261,12 +261,12 @@ parse_padding_dec:
 					_s_putc(c);
 				break;
 
-			case 's':
-				_s_puts(va_arg(ap, char *), fill, fcnt);
-				break;
-
 			case 'd':
 				_s_putn(va_arg(ap, u32), 10, fill, fcnt);
+				break;
+
+			case 's':
+				_s_puts(va_arg(ap, char *), fill, fcnt);
 				break;
 
 			case 'p':

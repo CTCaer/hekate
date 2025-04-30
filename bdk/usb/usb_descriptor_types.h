@@ -99,7 +99,7 @@ typedef struct _usb_cfg_descr_t
 	u8  bConfigurationValue; // Value of this configuration (1 based).
 	u8  iConfiguration;      // Index of String Descriptor describing the configuration.
 	u8  bmAttributes;        // Configuration characteristics.
-	u8  bMaxPower;           // Maximum power consumed by this configuration.
+	u8  bMaxPower;           // Maximum power consumed by this configuration. In 2mA (usb2) or 8mA (usb3).
 } __attribute__((packed)) usb_cfg_descr_t;
 
 /* Interface descriptor structure */

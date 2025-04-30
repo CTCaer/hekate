@@ -85,6 +85,7 @@
 #define AXBAR_BASE       0x702D0800
 #define I2S_BASE         0x702D1000
 #define ADMA_BASE        0x702E2000
+#define AMC_BASE         0x702EF000
 #define SE2_BASE         0x70412000
 #define SE_PKA1_BASE     0x70420000
 #define TZRAM_BASE       0x7C010000
@@ -151,6 +152,7 @@
 #define CL_DVFS(off)         MMIO_REG32(CL_DVFS_BASE, off)
 #define I2S(off)             MMIO_REG32(I2S_BASE, off)
 #define ADMA(off)            MMIO_REG32(ADMA_BASE, off)
+#define AMC(off)             MMIO_REG32(AMC_BASE, off)
 #define SE2(off)             MMIO_REG32(SE2_BASE, off)
 #define SE_PKA1(off)         MMIO_REG32(SE_PKA1_BASE, off)
 #define USB(off)             MMIO_REG32(USB_BASE, off)
@@ -199,7 +201,7 @@
 /*! AHB Gizmo registers. */
 #define AHB_ARBITRATION_PRIORITY_CTRL        0x8
 #define  PRIORITY_CTRL_WEIGHT(x)              (((x) & 7) << 29)
-#define  PRIORITY_SELECT_USB                  BIT(6)   // USB-OTG.
+#define  PRIORITY_SELECT_USB                  BIT(6)  // USB-OTG.
 #define  PRIORITY_SELECT_USB2                 BIT(18) // USB-HSIC.
 #define  PRIORITY_SELECT_USB3                 BIT(17) // XUSB.
 #define AHB_GIZMO_AHB_MEM                    0x10
@@ -210,7 +212,7 @@
 #define AHB_GIZMO_USB                        0x20
 #define AHB_GIZMO_SDMMC4                     0x48
 #define AHB_GIZMO_USB2                       0x7C
-#define AHB_GIZMO_USB3                       0x80
+#define AHB_GIZMO_USB3                       0x80 // Doesn't exist on T21x??
 #define  AHB_GIZMO_IMMEDIATE                  BIT(18)
 #define AHB_ARBITRATION_XBAR_CTRL            0xE0
 #define AHB_AHB_MEM_PREFETCH_CFG3            0xE4
@@ -219,9 +221,9 @@
 #define AHB_AHB_MEM_PREFETCH_CFG2            0xF4
 #define  MST_ID(x)                            (((x) & 0x1F) << 26)
 #define  MEM_PREFETCH_AHBDMA_MST_ID           MST_ID(5)
-#define  MEM_PREFETCH_USB_MST_ID              MST_ID(6)  // USB-OTG.
-#define  MEM_PREFETCH_USB2_MST_ID             MST_ID(18) // USB-HSIC.
-#define  MEM_PREFETCH_USB3_MST_ID             MST_ID(17) // XUSB.
+#define  MEM_PREFETCH_USB_MST_ID              MST_ID(6)  // USB-OTG.  Doesn't exist on T210B01.
+#define  MEM_PREFETCH_USB2_MST_ID             MST_ID(18) // USB-HSIC. Doesn't exist on T210B01.
+#define  MEM_PREFETCH_USB3_MST_ID             MST_ID(17) // XUSB.     Doesn't exist on T210B01.
 #define  MEM_PREFETCH_ADDR_BNDRY(x)           (((x) & 0xF) << 21)
 #define  MEM_PREFETCH_ENABLE                  BIT(31)
 #define AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID 0xFC

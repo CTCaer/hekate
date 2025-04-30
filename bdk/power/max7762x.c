@@ -327,7 +327,7 @@ void max77620_config_default()
 		return;
 
 	// Set default voltages and enable regulators.
-	for (u32 i = 1; i <= REGULATOR_LDO8; i++)
+	for (u32 i = REGULATOR_SD1; i <= REGULATOR_LDO8; i++)
 	{
 		max77620_regulator_config_fps(i);
 		max7762x_regulator_set_voltage(i, _pmic_regulators[i].uv_default);
