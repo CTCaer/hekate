@@ -53,19 +53,19 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 		*sector_start = mbr->partitions[i].start_sct;
 		u8 type = mbr->partitions[i].type;
 		u32 sector_size_safe = backup ? 0x400000 : (*sector_size) + 0x8000; // 2GB min safe size for backup.
-		if ((curr_part_size >= sector_size_safe) && *sector_start && type != 0x83 && (!backup || type == 0xE0))
+		if ((curr_part_size >= sector_size_safe) && (*sector_start) && type != 0x83 && (!backup || type == 0xE0))
 		{
 			if (backup)
 			{
 				u8 gpt_check[SD_BLOCKSIZE] = { 0 };
-				sdmmc_storage_read(&sd_storage, *sector_start + 0xC001, 1, gpt_check);
+				sdmmc_storage_read(&sd_storage, (*sector_start) + 0xC001, 1, gpt_check);
 				if (!memcmp(gpt_check, "EFI PART", 8))
 				{
 					*sector_size = curr_part_size;
-					*sector_start = *sector_start + 0x8000;
+					*sector_start = (*sector_start) + 0x8000;
 					break;
 				}
-				sdmmc_storage_read(&sd_storage, *sector_start + 0x4001, 1, gpt_check);
+				sdmmc_storage_read(&sd_storage, (*sector_start) + 0x4001, 1, gpt_check);
 				if (!memcmp(gpt_check, "EFI PART", 8))
 				{
 					*sector_size = curr_part_size;
@@ -91,7 +91,7 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 	if (backup && *part_idx && *sector_size)
 	{
 		gpt_t *gpt = (gpt_t *)zalloc(sizeof(gpt_t));
-		sdmmc_storage_read(&sd_storage, *sector_start + 0x4001, 1, gpt);
+		sdmmc_storage_read(&sd_storage, (*sector_start) + 0x4001, 1, gpt);
 
 		u32 new_size = gpt->header.alt_lba + 1;
 		if (*sector_size > new_size)
@@ -102,7 +102,7 @@ static void _get_valid_partition(u32 *sector_start, u32 *sector_size, u32 *part_
 		free(gpt);
 	}
 	else if (!backup && *part_idx)
-		*sector_start = *sector_start + 0x8000;
+		*sector_start = (*sector_start) + 0x8000;
 }
 
 static lv_obj_t *create_mbox_text(const char *text, bool button_ok)
@@ -622,10 +622,20 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 
 		while (res_read)
 		{
-			s_printf(gui->txt_buf,
-				"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
-				"#FFDD00 from eMMC (try %d). #",
-				num, lba_curr, ++retryCount);
+			if (!gui->raw_emummc)
+			{
+				s_printf(gui->txt_buf,
+					"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
+					"#FFDD00 from eMMC (try %d). #",
+					num, lba_curr, ++retryCount);
+			}
+			else
+			{
+				s_printf(gui->txt_buf,
+					"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
+					"#FFDD00 from emuMMC @ %08X (try %d). #",
+					num, lba_curr + sd_sector_off, lba_curr, ++retryCount);
+			}
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 			manual_system_maintenance(true);
 
