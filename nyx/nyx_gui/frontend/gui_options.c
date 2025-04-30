@@ -1168,13 +1168,11 @@ static lv_res_t _action_win_nyx_options_close(lv_obj_t *btn)
 	lv_obj_set_opa_scale(status_bar.mid, LV_OPA_0);
 	lv_obj_set_click(status_bar.mid, false);
 
-	lv_win_close_action(btn);
-
-	close_btn = NULL;
+	lv_res_t res = nyx_win_close_action_custom(btn);
 
 	_check_nyx_changes();
 
-	return LV_RES_INV;
+	return res;
 }
 
 lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
