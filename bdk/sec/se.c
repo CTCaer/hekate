@@ -19,7 +19,6 @@
 
 #include "se.h"
 #include <memory_map.h>
-#include <mem/heap.h>
 #include <soc/bpmp.h>
 #include <soc/hw_init.h>
 #include <soc/pmc.h>
