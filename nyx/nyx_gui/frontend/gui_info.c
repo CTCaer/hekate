@@ -612,7 +612,10 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "17.0.0 - 18.1.0");
 		break;
 	case 20:
-		strcpy(fuses_hos_version, "19.0.0+");
+		strcpy(fuses_hos_version, "19.0.0 - 19.0.1");
+		break;
+	case 21:
+		strcpy(fuses_hos_version, "20.0.0+");
 		break;
 	case 255:
 		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
