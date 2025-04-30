@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <mem/heap.h>
+#include <mem/mc.h>
 #include <soc/timer.h>
 #include <storage/emmc.h>
 #include <storage/sdmmc.h>
