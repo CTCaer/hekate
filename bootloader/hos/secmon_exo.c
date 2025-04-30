@@ -269,8 +269,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		}
 	}
 
-	// To avoid problems, make private debug mode always on if not semi-stock.
-	if (!ctxt->stock || (emu_cfg.enabled && !h_cfg.emummc_force_disable))
+	// Private debug mode always on for CFW mode.
+	if (!ctxt->stock)
 		exo_flags |= EXO_FLAG_DBG_PRIV;
 
 	// Enable user debug.
