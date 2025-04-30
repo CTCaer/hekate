@@ -101,6 +101,7 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | pkg3={FILE path}       | Takes an Atmosphere `package3` binary and `extracts` all needed parts from it. kips, exosphere, warmboot and mesophere. |
 | fss0={FILE path}       | Same as above. Deprecated! |
 | pkg3ex=1               | Enables loading of experimental content from a PKG3/FSS0 storage |
+| pkg3kip1skip={KIP name} | Skips loading a kip from `pkg3`/`fss0`. Specify with multiple lines and/or in one line with `,` as separator. |
 | exofatal={FILE path}   | Replaces the exosphere fatal binary for Mariko             |
 | ---------------------- | ---------------------------------------------------------- |
 | kip1patch=patchname    | Enables a kip1 patch. Specify with multiple lines and/or in one line with `,` as separator. If actual patch is not found, a warning will show up |
