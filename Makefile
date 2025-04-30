@@ -101,15 +101,14 @@ TOOLS := $(TOOLSLZ) $(TOOLSB2C)
 all: $(TARGET).bin $(LDRDIR)
 	@printf ICTC49 >> $(OUTPUTDIR)/$(TARGET).bin
 	@echo "--------------------------------------"
-	@echo -n "Uncompr size: "
+	@echo "$(TARGET) size:"
+	@echo -n "Uncompr:  "
 	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET)_unc.bin))
 	@echo $(BIN_SIZE)" Bytes"
-	@echo "Uncompr Max:  140288 Bytes + 3 KiB BSS"
 	@if [ ${BIN_SIZE} -gt 140288 ]; then echo "\e[1;33mUncompr size exceeds limit!\e[0m"; fi
-	@echo -n "Payload size: "
+	@echo -n "Payload:  "
 	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET).bin))
 	@echo $(BIN_SIZE)" Bytes"
-	@echo "Payload Max:  126296 Bytes"
 	@if [ ${BIN_SIZE} -gt 126296 ]; then echo "\e[1;33mPayload size exceeds limit!\e[0m"; fi
 	@echo "--------------------------------------"
 
@@ -126,7 +125,7 @@ $(NYXDIR):
 
 $(LDRDIR): $(TARGET).bin
 	@$(TOOLSLZ)/lz77 $(OUTPUTDIR)/$(TARGET).bin
-	mv $(OUTPUTDIR)/$(TARGET).bin $(OUTPUTDIR)/$(TARGET)_unc.bin
+	@mv $(OUTPUTDIR)/$(TARGET).bin $(OUTPUTDIR)/$(TARGET)_unc.bin
 	@mv $(OUTPUTDIR)/$(TARGET).bin.00.lz payload_00
 	@mv $(OUTPUTDIR)/$(TARGET).bin.01.lz payload_01
 	@$(TOOLSB2C)/bin2c payload_00 > $(LDRDIR)/payload_00.h
@@ -139,11 +138,11 @@ $(TOOLS):
 	@$(MAKE) --no-print-directory -C $@ $(MAKECMDGOALS) -$(MAKEFLAGS)
 
 $(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf $(MODULEDIRS) $(NYXDIR) $(TOOLS)
-	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
+	@$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
 
 $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 	@$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
-	@echo "hekate was built with the following flags:\nCFLAGS:  "$(CFLAGS)"\nLDFLAGS: "$(LDFLAGS)
+	@printf "$(TARGET) was built with the following flags:\nCFLAGS:  $(CFLAGS)\nLDFLAGS: $(LDFLAGS)\n"
 
 $(BUILDDIR)/$(TARGET)/%.o: %.c
 	@echo Building $@

@@ -107,7 +107,7 @@ LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defs
 
 all: $(TARGET).bin
 	@echo "--------------------------------------"
-	@echo -n "Nyx size:     "
+	@echo -n "Nyx size: "
 	$(eval BIN_SIZE = $(shell wc -c < $(OUTPUTDIR)/$(TARGET).bin))
 	@echo $(BIN_SIZE)" Bytes"
 	@echo "--------------------------------------"
@@ -118,11 +118,11 @@ clean:
 	@rm -rf $(OUTPUTDIR)
 
 $(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf
-	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
+	@$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$@
 
 $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 	@$(CC) $(LDFLAGS) -T $(SOURCEDIR)/link.ld $^ -o $@
-	@echo "Nyx was built with the following flags:\nCFLAGS:  "$(CFLAGS)"\nLDFLAGS: "$(LDFLAGS)
+	@printf "$(TARGET) was built with the following flags:\nCFLAGS:  $(CFLAGS)\nLDFLAGS: $(LDFLAGS)\n"
 
 $(BUILDDIR)/$(TARGET)/%.o: %.c
 	@echo Building $@

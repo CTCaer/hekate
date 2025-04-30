@@ -46,7 +46,7 @@ clean:
 	@rm -rf $(OBJS)
 
 $(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf
-	$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$(PAYLOAD_NAME).bin
+	@$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$(PAYLOAD_NAME).bin
 
 $(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
 	@$(CC) $(LDFLAGS) -T link.ld $^ -o $@
