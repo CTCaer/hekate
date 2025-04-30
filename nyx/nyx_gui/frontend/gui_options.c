@@ -432,7 +432,7 @@ static lv_res_t _save_theme_color_action(lv_obj_t *btn)
 	// Save nyx config.
 	create_nyx_config_entry(true);
 
-	reload_nyx();
+	reload_nyx(NULL, false);
 
 	return LV_RES_OK;
 }

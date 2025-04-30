@@ -402,7 +402,7 @@ error_occured:
 		msleep(1000);
 		btn_wait();
 
-		reload_nyx();
+		reload_nyx(NULL, true);
 	}
 }
 

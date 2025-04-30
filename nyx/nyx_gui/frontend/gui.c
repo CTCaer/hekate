@@ -38,7 +38,7 @@ extern volatile nyx_storage_t *nyx_str;
 extern lv_res_t launch_payload(lv_obj_t *list);
 
 static bool disp_init_done = false;
-static bool do_reload = false;
+static bool do_auto_reload = false;
 
 lv_style_t hint_small_style;
 lv_style_t hint_small_style_white;
@@ -200,8 +200,8 @@ static void _save_fb_to_bmp()
 	if (get_tmr_ms() < timer)
 		return;
 
-	if (do_reload)
-		return;
+	if (do_auto_reload)
+		goto exit;
 
 	// Invalidate data.
 	bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
@@ -304,6 +304,7 @@ static void _save_fb_to_bmp()
 	manual_system_maintenance(true);
 	lv_mbox_start_auto_close(mbox, 4000);
 
+exit:
 	// Set timer to 2s.
 	timer = get_tmr_ms() + 2000;
 }
@@ -928,8 +929,27 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 	(*main_ptr)();
 }
 
-void reload_nyx()
+void reload_nyx(lv_obj_t *obj, bool force)
 {
+	if (!force)
+	{
+		sd_mount();
+
+		// Check that Nyx still exists.
+		if (f_stat("bootloader/sys/nyx.bin", NULL))
+		{
+			sd_unmount();
+
+			// Remove lvgl object in case of being invoked from a window.
+			if (obj)
+				lv_obj_del(obj);
+
+			do_auto_reload = false;
+
+			return;
+		}
+	}
+
 	b_cfg->boot_cfg = BOOT_CFG_AUTOBOOT_EN;
 	b_cfg->autoboot = 0;
 	b_cfg->autoboot_list = 0;
@@ -947,7 +967,7 @@ void reload_nyx()
 static lv_res_t reload_action(lv_obj_t *btns, const char *txt)
 {
 	if (!lv_btnm_get_pressed(btns))
-		reload_nyx();
+		reload_nyx(NULL, false);
 
 	return mbox_action(btns, txt);
 }
@@ -969,7 +989,7 @@ static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
 		break;
 	case 2:
 		sd_end();
-		do_reload = false;
+		do_auto_reload = false;
 		break;
 	}
 
@@ -978,12 +998,14 @@ static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
 
 static void _check_sd_card_removed(void *params)
 {
+	static lv_obj_t *dark_bg = NULL;
+
 	// The following checks if SDMMC_1 is initialized.
 	// If yes and card was removed, shows a message box,
 	// that will reload Nyx, when the card is inserted again.
-	if (!do_reload && sd_get_card_removed())
+	if (!do_auto_reload && sd_get_card_removed())
 	{
-		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+		dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
@@ -999,12 +1021,12 @@ static void _check_sd_card_removed(void *params)
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
 
-		do_reload = true;
+		do_auto_reload = true;
 	}
 
 	// If in reload state and card was inserted, reload nyx.
-	if (do_reload && !sd_get_card_removed())
-		reload_nyx();
+	if (do_auto_reload && !sd_get_card_removed())
+		reload_nyx(dark_bg, false);
 }
 
 lv_task_t *task_emmc_errors;
