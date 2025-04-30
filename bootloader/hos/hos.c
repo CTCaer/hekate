@@ -698,7 +698,7 @@ out:
 static void _free_launch_components(launch_ctxt_t *ctxt)
 {
 	// Free the malloc'ed guaranteed addresses.
-	free(ctxt->fss0);
+	free(ctxt->pkg3);
 	free(ctxt->keyblob);
 	free(ctxt->pkg1);
 	free(ctxt->pkg2);

@@ -1,7 +1,7 @@
 /*
- * Atmosphère Fusée Secondary Storage (Package3) parser.
+ * Atmosphère Package 3 parser.
  *
- * Copyright (c) 2019-2024 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,7 +20,7 @@
 
 #include <bdk.h>
 
-#include "fss.h"
+#include "pkg3.h"
 #include "hos.h"
 #include "../config.h"
 #include <libs/fatfs/ff.h>
@@ -33,12 +33,14 @@ extern hekate_config h_cfg;
 
 extern bool is_ipl_updated(void *buf, const char *path, bool force);
 
-// FSS0 Magic and Meta header offset.
-#define FSS0_MAGIC 0x30535346
-#define FSS0_META_OFFSET 0x4
-#define FSS0_VERSION_0_17_0 0x110000
+#define PKG3_KIP_SKIP_MAX 16
 
-// FSS0 Content Types.
+// PKG3 Magic and Meta header offset.
+#define PKG3_MAGIC 0x30535346 // FSS0.
+#define PKG3_META_OFFSET 0x4
+#define PKG3_VERSION_0_17_0 0x110000
+
+// PKG3 Content Types.
 #define CNT_TYPE_FSP 0
 #define CNT_TYPE_EXO 1  // Exosphere (Secure Monitor).
 #define CNT_TYPE_WBT 2  // Warmboot (SC7Exit fw).
@@ -53,11 +55,11 @@ extern bool is_ipl_updated(void *buf, const char *path, bool force);
 #define CNT_TYPE_EXF 11 // Exosphere Mariko fatal payload.
 #define CNT_TYPE_TKG 12 // Tsec Keygen.
 
-// FSS0 Content Flags.
+// PKG3 Content Flags.
 #define CNT_FLAG0_EXPERIMENTAL BIT(0)
 
-// FSS0 Meta Header.
-typedef struct _fss_meta_t
+// PKG3 Meta Header.
+typedef struct _pkg3_meta_t
 {
 	u32 magic;
 	u32 size;
@@ -67,10 +69,10 @@ typedef struct _fss_meta_t
 	u32 hos_ver;
 	u32 version;
 	u32 git_rev;
-} fss_meta_t;
+} pkg3_meta_t;
 
-// FSS0 Content Header.
-typedef struct _fss_content_t
+// PKG3 Content Header.
+typedef struct _pkg3_content_t
 {
 	u32 offset;
 	u32 size;
@@ -80,9 +82,9 @@ typedef struct _fss_content_t
 	u8 flags2;
 	u32 rsvd1;
 	char name[0x10];
-} fss_content_t;
+} pkg3_content_t;
 
-static void _fss_update_r2p()
+static void _pkg3_update_r2p()
 {
 	u8 *r2p_payload = sd_file_read("atmosphere/reboot_payload.bin", NULL);
 
@@ -91,7 +93,7 @@ static void _fss_update_r2p()
 	free(r2p_payload);
 }
 
-int parse_fss(launch_ctxt_t *ctxt, const char *path)
+int parse_pkg3(launch_ctxt_t *ctxt, const char *path)
 {
 	FIL fp;
 
@@ -108,7 +110,7 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 			if (kv->val[0] == '1')
 				stock = true;
 
-		if (!strcmp("fss0experimental", kv->key))
+		if (!strcmp("pkg3ex", kv->key))
 			if (kv->val[0] == '1')
 				experimental = true;
 	}
@@ -121,48 +123,48 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 		return 1;
 #endif
 
-	// Try to open FSS0.
+	// Try to open PKG3.
 	if (f_open(&fp, path, FA_READ) != FR_OK)
 		return 0;
 
-	void *fss = malloc(f_size(&fp));
+	void *pkg3 = malloc(f_size(&fp));
 
-	// Read first 1024 bytes of the FSS0 file.
-	f_read(&fp, fss, 1024, NULL);
+	// Read first 1024 bytes of the PKG3 file.
+	f_read(&fp, pkg3, 1024, NULL);
 
-	// Get FSS0 Meta header offset.
-	u32 fss_meta_addr = *(u32 *)(fss + FSS0_META_OFFSET);
-	fss_meta_t *fss_meta = (fss_meta_t *)(fss + fss_meta_addr);
+	// Get PKG3 Meta header offset.
+	u32 pkg3_meta_addr = *(u32 *)(pkg3 + PKG3_META_OFFSET);
+	pkg3_meta_t *pkg3_meta = (pkg3_meta_t *)(pkg3 + pkg3_meta_addr);
 
-	// Check if valid FSS0 and parse it.
-	if (fss_meta->magic == FSS0_MAGIC)
+	// Check if valid PKG3 and parse it.
+	if (pkg3_meta->magic == PKG3_MAGIC)
 	{
-		gfx_printf("Atmosphere %d.%d.%d-%08x via FSS0/PKG3\n"
+		gfx_printf("Atmosphere %d.%d.%d-%08x via PKG3\n"
 			"Max HOS: %d.%d.%d\n"
 			"Unpacking..  ",
-			fss_meta->version >> 24, (fss_meta->version >> 16) & 0xFF, (fss_meta->version >> 8) & 0xFF, fss_meta->git_rev,
-			fss_meta->hos_ver >> 24, (fss_meta->hos_ver >> 16) & 0xFF, (fss_meta->hos_ver >> 8) & 0xFF);
+			pkg3_meta->version >> 24, (pkg3_meta->version >> 16) & 0xFF, (pkg3_meta->version >> 8) & 0xFF, pkg3_meta->git_rev,
+			pkg3_meta->hos_ver >> 24, (pkg3_meta->hos_ver >> 16) & 0xFF, (pkg3_meta->hos_ver >> 8) & 0xFF);
 
 		ctxt->patch_krn_proc_id = true;
-		ctxt->fss0_hosver = fss_meta->hos_ver;
+		ctxt->pkg3_hosver = pkg3_meta->hos_ver;
 
-		// Parse FSS0 contents.
-		fss_content_t *curr_fss_cnt = (fss_content_t *)(fss + fss_meta->cnt_off);
+		// Parse PKG3 contents.
+		pkg3_content_t *curr_pkg3_cnt = (pkg3_content_t *)(pkg3 + pkg3_meta->cnt_off);
 		void *content;
-		for (u32 i = 0; i < fss_meta->cnt_count; i++)
+		for (u32 i = 0; i < pkg3_meta->cnt_count; i++)
 		{
-			content = (void *)(fss + curr_fss_cnt[i].offset);
+			content = (void *)(pkg3 + curr_pkg3_cnt[i].offset);
 
 			// Check if offset is inside limits.
-			if ((curr_fss_cnt[i].offset + curr_fss_cnt[i].size) > fss_meta->size)
+			if ((curr_pkg3_cnt[i].offset + curr_pkg3_cnt[i].size) > pkg3_meta->size)
 				continue;
 
 			// If content is experimental and experimental config is not enabled, skip it.
-			if ((curr_fss_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !experimental)
+			if ((curr_pkg3_cnt[i].flags0 & CNT_FLAG0_EXPERIMENTAL) && !experimental)
 				continue;
 
 			// Prepare content.
-			switch (curr_fss_cnt[i].type)
+			switch (curr_pkg3_cnt[i].type)
 			{
 			case CNT_TYPE_KIP:
 				if (stock)
@@ -170,30 +172,30 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 				merge_kip_t *mkip1 = (merge_kip_t *)malloc(sizeof(merge_kip_t));
 				mkip1->kip1 = content;
 				list_append(&ctxt->kip1_list, &mkip1->link);
-				DPRINTF("Loaded %s.kip1 from FSS0 (size %08X)\n", curr_fss_cnt[i].name, curr_fss_cnt[i].size);
+				DPRINTF("Loaded %s.kip1 from PKG3 (size %08X)\n", curr_pkg3_cnt[i].name, curr_pkg3_cnt[i].size);
 				break;
 
 			case CNT_TYPE_KRN:
 				if (stock)
 					continue;
-				ctxt->kernel_size = curr_fss_cnt[i].size;
+				ctxt->kernel_size = curr_pkg3_cnt[i].size;
 				ctxt->kernel = content;
 				break;
 
 			case CNT_TYPE_EXO:
-				ctxt->secmon_size = curr_fss_cnt[i].size;
+				ctxt->secmon_size = curr_pkg3_cnt[i].size;
 				ctxt->secmon = content;
 				break;
 
 			case CNT_TYPE_EXF:
-				ctxt->exofatal_size = curr_fss_cnt[i].size;
+				ctxt->exofatal_size = curr_pkg3_cnt[i].size;
 				ctxt->exofatal = content;
 				break;
 
 			case CNT_TYPE_WBT:
 				if (h_cfg.t210b01)
 					continue;
-				ctxt->warmboot_size = curr_fss_cnt[i].size;
+				ctxt->warmboot_size = curr_pkg3_cnt[i].size;
 				ctxt->warmboot = content;
 				break;
 
@@ -202,23 +204,24 @@ int parse_fss(launch_ctxt_t *ctxt, const char *path)
 			}
 
 			// Load content to launch context.
-			f_lseek(&fp, curr_fss_cnt[i].offset);
-			f_read(&fp, content, curr_fss_cnt[i].size, NULL);
+			f_lseek(&fp, curr_pkg3_cnt[i].offset);
+			f_read(&fp, content, curr_pkg3_cnt[i].size, NULL);
 		}
 
 		gfx_printf("Done!\n");
 		f_close(&fp);
 
-		ctxt->fss0 = fss;
+		ctxt->pkg3 = pkg3;
 
 		// Update r2p if needed.
-		_fss_update_r2p();
+		_pkg3_update_r2p();
 
 		return 1;
 	}
 
+	// Failed. Close and free all.
 	f_close(&fp);
-	free(fss);
+	free(pkg3);
 
 	return 0;
 }

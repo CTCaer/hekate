@@ -21,7 +21,7 @@
 
 #include "hos.h"
 #include "hos_config.h"
-#include "fss.h"
+#include "pkg3.h"
 #include <libs/fatfs/ff.h>
 
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
@@ -255,9 +255,9 @@ static int _config_exo_cal0_writes_enable(launch_ctxt_t *ctxt, const char *value
 	return 1;
 }
 
-static int _config_fss(launch_ctxt_t *ctxt, const char *value)
+static int _config_pkg3(launch_ctxt_t *ctxt, const char *value)
 {
-	return parse_fss(ctxt, value);
+	return parse_pkg3(ctxt, value);
 }
 
 static int _config_exo_fatal_payload(launch_ctxt_t *ctxt, const char *value)
@@ -295,7 +295,8 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "kernelprocid",     _config_kernel_proc_id },
 
 	// To override elements from PKG3, it should be set before others.
-	{ "fss0",             _config_fss },
+	{ "pkg3",             _config_pkg3 },
+	{ "fss0",             _config_pkg3 },
 
 	{ "exofatal",         _config_exo_fatal_payload},
 	{ "emummcforce",      _config_emummc_forced },

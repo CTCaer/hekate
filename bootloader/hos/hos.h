@@ -111,8 +111,8 @@ typedef struct _launch_ctxt_t
 	bool stock;
 	bool emummc_forced;
 
-	void *fss0;
-	u32   fss0_hosver;
+	void *pkg3;
+	u32   pkg3_hosver;
 	bool  patch_krn_proc_id;
 
 	int ucid;

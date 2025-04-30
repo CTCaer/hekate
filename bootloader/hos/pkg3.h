@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FSS_H_
-#define _FSS_H_
+#ifndef _PKG3_H_
+#define _PKG3_H_
 
 #include "hos.h"
 
-int parse_fss(launch_ctxt_t *ctxt, const char *path);
+int parse_pkg3(launch_ctxt_t *ctxt, const char *path);
 
 #endif
