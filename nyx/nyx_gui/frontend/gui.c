@@ -816,7 +816,7 @@ bool nyx_emmc_check_battery_enough()
 	return true;
 }
 
-static void _nyx_sd_card_issues(void *param)
+static void _nyx_sd_card_issues_warning(void *param)
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -827,7 +827,7 @@ static void _nyx_sd_card_issues(void *param)
 	lv_mbox_set_recolor_text(mbox, true);
 
 	lv_mbox_set_text(mbox,
-		"#FF8000 SD Card Issues Check#\n\n"
+		"#FF8000 SD Card Issues Warning#\n\n"
 		"#FFDD00 The SD Card is initialized in 1-bit mode!#\n"
 		"#FFDD00 This might mean detached or broken connector!#\n\n"
 		"You might want to check\n#C7EA46 Console Info# -> #C7EA46 microSD#");
@@ -1030,7 +1030,7 @@ static void _check_sd_card_removed(void *params)
 }
 
 lv_task_t *task_emmc_errors;
-static void _nyx_emmc_issues(void *params)
+static void _nyx_emmc_issues_warning(void *params)
 {
 	if (emmc_get_mode() < EMMC_MMC_HS400)
 	{
@@ -1046,8 +1046,8 @@ static void _nyx_emmc_issues(void *params)
 		lv_mbox_set_recolor_text(mbox, true);
 
 		lv_mbox_set_text(mbox,
-			"#FF8000 eMMC Issues Check#\n\n"
-			"#FFDD00 Your eMMC is initialized in slower mode!#\n"
+			"#FF8000 eMMC Issues Warning#\n\n"
+			"#FFDD00 Your eMMC is initialized in a slower mode!#\n"
 			"#FFDD00 This might mean hardware issues!#\n\n"
 			"You might want to check\n#C7EA46 Console Info# -> #C7EA46 eMMC#");
 
@@ -2377,7 +2377,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 
 	lv_task_create(_check_sd_card_removed, 2000, LV_TASK_PRIO_LOWEST, NULL);
 
-	task_emmc_errors = lv_task_create(_nyx_emmc_issues, 2000, LV_TASK_PRIO_LOWEST, NULL);
+	task_emmc_errors = lv_task_create(_nyx_emmc_issues_warning, 2000, LV_TASK_PRIO_LOWEST, NULL);
 	lv_task_ready(task_emmc_errors);
 
 	// Create top level global line separators.
@@ -2477,7 +2477,7 @@ void nyx_load_and_run()
 	// Check if sd card issues.
 	if (sd_get_mode() == SD_1BIT_HS25)
 	{
-		lv_task_t *task_run_sd_errors = lv_task_create(_nyx_sd_card_issues, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
+		lv_task_t *task_run_sd_errors = lv_task_create(_nyx_sd_card_issues_warning, LV_TASK_ONESHOT, LV_TASK_PRIO_LOWEST, NULL);
 		lv_task_once(task_run_sd_errors);
 	}
 

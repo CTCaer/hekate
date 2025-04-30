@@ -1916,8 +1916,8 @@ out_error:
 		lv_mbox_set_recolor_text(mbox, true);
 
 		s_printf(txt_buf,
-			"#FF8000 eMMC Issues Check#\n\n"
-			"#FFDD00 Your eMMC is initialized in slower mode,#\n"
+			"#FF8000 eMMC Issues Warning#\n\n"
+			"#FFDD00 Your eMMC is initialized in a slower mode,#\n"
 			"#FFDD00 or init/read/write errors occurred!#\n"
 			"#FFDD00 This might mean hardware issues!#\n\n"
 			"#00DDFF Bus Speed:# %d MB/s\n\n"
