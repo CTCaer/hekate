@@ -686,6 +686,10 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 			return patches[i];
 	}
 
+	// Check if emuMMC was applied.
+	if (emummc_patch_selected)
+		return "emummc";
+
 	return NULL;
 }
 
