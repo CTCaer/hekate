@@ -909,4 +909,6 @@ static const kip1_id_t _kip_ids[] =
 	{ "FS", "\xED\xA8\x78\x68\xA4\x49\x07\x50", _fs_patches_1900_exfat }, // FS 19.0.0 exFAT
 	{ "FS", "\x63\x54\x96\x9E\x60\xA7\x97\x7B", _fs_patches_2000 },       // FS 20.0.0
 	{ "FS", "\x47\x41\x07\x10\x65\x4F\xA4\x3F", _fs_patches_2000_exfat }, // FS 20.0.0 exFAT
+	{ "FS", "\xED\x34\xB4\x50\x58\x4A\x5B\x43", _fs_patches_2000 },       // FS 20.1.0
+	{ "FS", "\xA5\x1A\xA4\x92\x6C\x41\x87\x59", _fs_patches_2000_exfat }, // FS 20.1.0 exFAT
 };
