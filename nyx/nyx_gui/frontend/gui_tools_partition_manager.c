@@ -1880,8 +1880,8 @@ static void _update_partition_bar()
 
 static lv_res_t _action_slider_emu(lv_obj_t *slider)
 {
-	#define EMUMMC_32GB_FULL 29856
-	#define EMUMMC_64GB_FULL (59664 + 1) // 1MB extra for backup GPT.
+	#define EMUMMC_32GB_FULL 29856 // Actual: 29820 MB.
+	#define EMUMMC_64GB_FULL 59680 // Actual: 59640 MB.
 
 	static const u32 rsvd_mb = 4 + 4 + 16 + 8; // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
 	u32 size;
