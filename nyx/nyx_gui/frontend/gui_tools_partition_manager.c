@@ -71,6 +71,8 @@ typedef struct _partition_ctxt_t
 	lv_obj_t *lbl_emu;
 	lv_obj_t *lbl_l4t;
 	lv_obj_t *lbl_and;
+
+	lv_obj_t *partition_button;
 } partition_ctxt_t;
 
 typedef struct _l4t_flasher_ctxt_t
@@ -519,7 +521,7 @@ static void _prepare_and_flash_mbr_gpt()
 
 static lv_res_t _action_part_manager_ums_sd(lv_obj_t *btn)
 {
-	action_ums_sd(btn);
+	action_ums_sd(NULL);
 
 	// Close and reopen partition manager.
 	lv_action_t close_btn_action = lv_btn_get_action(close_btn, LV_BTN_ACTION_CLICK);
@@ -1315,14 +1317,14 @@ static lv_res_t _action_part_manager_flash_options0(lv_obj_t *btns, const char *
 	switch (btn_idx)
 	{
 	case 0:
-		action_ums_sd(btns);
+		action_ums_sd(NULL);
 		lv_obj_del(ums_mbox);
 		break;
 	case 1:
-		_action_check_flash_linux(btns);
+		_action_check_flash_linux(NULL);
 		break;
 	case 2:
-		_action_flash_android(btns);
+		_action_flash_android(NULL);
 		break;
 	case 3:
 		mbox_action(btns, txt);
@@ -1339,7 +1341,7 @@ static lv_res_t _action_part_manager_flash_options1(lv_obj_t *btns, const char *
 	switch (btn_idx)
 	{
 	case 0:
-		action_ums_sd(btns);
+		action_ums_sd(NULL);
 		lv_obj_del(ums_mbox);
 		break;
 	case 1:
@@ -1361,7 +1363,7 @@ static lv_res_t _action_part_manager_flash_options2(lv_obj_t *btns, const char *
 	switch (btn_idx)
 	{
 	case 0:
-		action_ums_sd(btns);
+		action_ums_sd(NULL);
 		lv_obj_del(ums_mbox);
 		break;
 	case 1:
@@ -1428,7 +1430,7 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 	return res;
 }
 
-static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
+static lv_res_t _create_mbox_start_partitioning()
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -1689,8 +1691,8 @@ exit:
 	lv_obj_set_top(mbox, true);
 
 	// Disable partitioning button.
-	if (btn)
-		lv_btn_set_state(btn, LV_BTN_STATE_INA);
+	if (part_info.partition_button)
+		lv_btn_set_state(part_info.partition_button, LV_BTN_STATE_INA);
 
 	return LV_RES_OK;
 }
@@ -1702,11 +1704,11 @@ static lv_res_t _create_mbox_partitioning_option0(lv_obj_t *btns, const char *tx
 	switch (btn_idx)
 	{
 	case 0:
-		action_ums_sd(btns);
+		action_ums_sd(NULL);
 		return LV_RES_OK;
 	case 1:
 		mbox_action(btns, txt);
-		_create_mbox_start_partitioning(NULL);
+		_create_mbox_start_partitioning();
 		break;
 	case 2:
 		mbox_action(btns, txt);
@@ -1725,14 +1727,14 @@ static lv_res_t _create_mbox_partitioning_option1(lv_obj_t *btns, const char *tx
 	if (!btn_idx)
 	{
 		mbox_action(btns, txt);
-		_create_mbox_start_partitioning(NULL);
+		_create_mbox_start_partitioning();
 		return LV_RES_INV;
 	}
 
 	return LV_RES_OK;
 }
 
-static lv_res_t _create_mbox_partitioning_warn(lv_obj_t *btn)
+static lv_res_t _create_mbox_partitioning_warn()
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -1786,12 +1788,12 @@ static lv_res_t _create_mbox_partitioning_android(lv_obj_t *btns, const char *tx
 	mbox_action(btns, txt);
 
 	part_info.and_dynamic = !btn_idx;
-	_create_mbox_partitioning_warn(NULL);
+	_create_mbox_partitioning_warn();
 
 	return LV_RES_INV;
 }
 
-static lv_res_t _create_mbox_partitioning_andr_part(lv_obj_t *btn)
+static lv_res_t _create_mbox_partitioning_andr_part()
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -1821,9 +1823,9 @@ static lv_res_t _create_mbox_partitioning_andr_part(lv_obj_t *btn)
 
 static lv_res_t _create_mbox_partitioning_next(lv_obj_t *btn) {
 	if (part_info.and_size)
-		return _create_mbox_partitioning_andr_part(NULL);
+		return _create_mbox_partitioning_andr_part();
 	else
-		return _create_mbox_partitioning_warn(NULL);
+		return _create_mbox_partitioning_warn();
 }
 
 static void _update_partition_bar()
@@ -2802,6 +2804,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_label_set_static_text(label_btn, SYMBOL_SD"  Next Step");
 	lv_obj_align(btn1, h1, LV_ALIGN_IN_TOP_RIGHT, 0, LV_DPI * 5);
 	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _create_mbox_partitioning_next);
+	part_info.partition_button = btn1;
 
 	free(txt_buf);
 
