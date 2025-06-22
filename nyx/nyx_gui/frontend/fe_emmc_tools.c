@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1390,12 +1390,18 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 
 	manual_system_maintenance(true);
 
-	s_printf(txt_buf,
-		"#FFDD00 This may render the device inoperative!#\n\n"
-		"#FFDD00 Are you really sure?#");
+	if (!gui->raw_emummc)
+		s_printf(txt_buf, "#FFDD00 This may render the device inoperative!#\n\n");
+	else
+		s_printf(txt_buf, "#FFDD00 This may render the emuMMC inoperative!#\n\n");
+	strcat(txt_buf, "\n\n#FFDD00 Are you really sure?#");
+
+	if (gui->raw_emummc)
+		strcat(txt_buf, "\n\nOnly the 1st emuMMC found can be restored!");
+
 	if ((restoreType & PART_BOOT) || (restoreType & PART_GP_ALL))
 	{
-		s_printf(txt_buf + strlen(txt_buf),
+		strcat(txt_buf,
 			"\n\nThe mode you selected will only restore\nthe partitions that it can find.\n"
 			"If it is not found, it will be skipped\nand continue with the next.");
 	}
