@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -224,8 +224,8 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 				f_close(&fp_src);
 			}
 
-			// If total is > 1GB exit.
-			if (*total_size > (RAM_DISK_SZ - SZ_16M)) // 0x2400000.
+			// If total is > 1.2GB exit.
+			if (*total_size > (RAM_DISK_SZ - SZ_16M)) // Account for alignment.
 			{
 				// Skip next folders and return.
 				res = -1;
@@ -270,6 +270,9 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 	static const u8 linux_part_guid[] = { 0xAF, 0x3D, 0xC6, 0x0F,  0x83, 0x84,  0x72, 0x47,  0x8E, 0x79,  0x3D, 0x69, 0xD8, 0x47, 0x7D, 0xE4 };
 	u8 random_number[16];
 
+	// Reset partition.
+	memset(&gpt->entries[*gpt_idx], 0, sizeof(gpt_entry_t));
+
 	// Create GPT partition.
 	memcpy(gpt->entries[*gpt_idx].type_guid, linux_part_guid, 16);
 
@@ -282,7 +285,11 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 	gpt->entries[*gpt_idx].lba_end = *curr_part_lba + size_lba - 1;
 
 	// Set name.
-	memcpy(gpt->entries[*gpt_idx].name, name, name_size);
+	u16 name_utf16[36] = {0};
+	u32 name_lenth = strlen(name);
+	for (u32 i = 0; i < name_lenth; i++)
+		name_utf16[i] = name[i];
+	memcpy(gpt->entries[*gpt_idx].name, name_utf16, name_lenth * sizeof(u16));
 
 	// Wipe the first 1MB to sanitize it as raw-empty partition.
 	sdmmc_storage_write(&sd_storage, *curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER);
@@ -379,7 +386,7 @@ static void _prepare_and_flash_mbr_gpt()
 
 		gpt->entries[0].lba_start = mbr.partitions[0].start_sct;
 		gpt->entries[0].lba_end = mbr.partitions[0].start_sct + mbr.partitions[0].size_sct - 1;
-		memcpy(gpt->entries[0].name, (char[]) { 'h', 0, 'o', 0, 's', 0, '_', 0, 'd', 0, 'a', 0, 't', 0, 'a', 0 }, 16);
+		memcpy(gpt->entries[0].name, (u16[]) { 'h', 'o', 's', '_', 'd', 'a', 't', 'a' }, 16);
 
 		// Set the rest of GPT partitions.
 		u8  gpt_idx = 1;
@@ -387,67 +394,67 @@ static void _prepare_and_flash_mbr_gpt()
 
 		// L4T partition.
 		if (part_info.l4t_size)
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, part_info.l4t_size << 11, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, part_info.l4t_size << 11, "l4t", 6);
 
 		if (part_info.and_dynamic)
 		{
 			// Android Linux Kernel partition. 64MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, "boot", 8);
 
 			// Android Recovery partition. 64MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, "recovery", 16);
 
 			// Android Device Tree Reference partition. 1MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, (char[]) { 'd', 0, 't', 0, 'b', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, "dtb", 6);
 
 			// Android Misc partition. 3MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, (char[]) { 'm', 0, 'i', 0, 's', 0, 'c', 0 }, 8);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, "misc", 8);
 
 			// Android Cache partition. 60MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x1E000, (char[]) { 'c', 0, 'a', 0, 'c', 0, 'h', 0, 'e', 0 }, 10);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x1E000, "cache", 10);
 
 			// Android Super dynamic partition. 5922MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0xB91000, (char[]) { 's', 0, 'u', 0, 'p', 0, 'e', 0, 'r', 0 }, 10);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0xB91000, "super", 10);
 
 			// Android Userdata partition.
 			u32 uda_size = (part_info.and_size << 11) - 0xC00000; // Subtract the other partitions (6144MB).
 			if (!part_info.emu_size)
 				uda_size -= 0x800; // Reserve 1MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, (char[]) { 'u', 0, 's', 0, 'e', 0, 'r', 0, 'd', 0, 'a', 0, 't', 0, 'a', 0 }, 16);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, "userdata", 16);
 		}
 		else
 		{
 			// Android Vendor partition. 1GB
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x200000, (char[]) { 'v', 0, 'e', 0, 'n', 0, 'd', 0, 'o', 0, 'r', 0 }, 12);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x200000, "vendor", 12);
 
 			// Android System partition. 3GB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x600000, (char[]) { 'A', 0, 'P', 0, 'P', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x600000, "APP", 6);
 
 			// Android Linux Kernel partition. 32MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x10000, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x10000, "LNX", 6);
 
 			// Android Recovery partition. 64MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, "SOS", 6);
 
 			// Android Device Tree Reference partition. 1MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, "DTB", 6);
 
 			// Android Encryption partition. 16MB.
 			// Note: 16MB size is for aligning UDA. If any other tiny partition must be added, it should split the MDA one.
 			sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear the whole of it.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, (char[]) { 'M', 0, 'D', 0, 'A', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, "MDA", 6);
 
 			// Android Cache partition. 700MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x15E000, (char[]) { 'C', 0, 'A', 0, 'C', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x15E000, "CAC", 6);
 
 			// Android Misc partition. 3MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, (char[]) { 'M', 0, 'S', 0, 'C', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, "MSC", 6);
 
 			// Android Userdata partition.
 			u32 uda_size = (part_info.and_size << 11) - 0x998000; // Subtract the other partitions (4912MB).
 			if (!part_info.emu_size)
 				uda_size -= 0x800; // Reserve 1MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, (char[]) { 'U', 0, 'D', 0, 'A', 0 }, 6);
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, "UDA", 6);
 		}
 
 		// Handle emuMMC partitions manually.
@@ -463,7 +470,7 @@ static void _prepare_and_flash_mbr_gpt()
 				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 11) - 0x800 - 1; // Reserve 1MB.
 			else
 				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 1;
-			memcpy(gpt->entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0 }, 12);
+			memcpy(gpt->entries[gpt_idx].name, (u16[]) { 'e', 'm', 'u', 'm', 'm', 'c' }, 12);
 			gpt_idx++;
 
 			// Set 2nd emuMMC.
@@ -475,7 +482,7 @@ static void _prepare_and_flash_mbr_gpt()
 				memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
 				gpt->entries[gpt_idx].lba_start = curr_part_lba;
 				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 0x800 - 1; // Reserve 1MB.
-				memcpy(gpt->entries[gpt_idx].name, (char[]) { 'e', 0, 'm', 0, 'u', 0, 'm', 0, 'm', 0, 'c', 0, '2', 0 }, 14);
+				memcpy(gpt->entries[gpt_idx].name, (u16[]) { 'e', 'm', 'u', 'm', 'm', 'c', '2' }, 14);
 				gpt_idx++;
 			}
 		}
@@ -784,7 +791,7 @@ static u32 _get_available_l4t_partition()
 	{
 		for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 		{
-			if (!memcmp(gpt->entries[i].name, (char[]) { 'l', 0, '4', 0, 't', 0 }, 6))
+			if (!memcmp(gpt->entries[i].name, (u16[]) { 'l', '4', 't' }, 6))
 			{
 				l4t_flash_ctxt.offset_sct = gpt->entries[i].lba_start;
 				size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -829,8 +836,8 @@ static int _get_available_android_partition()
 	{
 		if (gpt->entries[i].lba_start)
 		{
-			int found  = !memcmp(gpt->entries[i].name, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8) ? 2 : 0;
-				found |= !memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 },         6) ? 1 : 0;
+			int found  = !memcmp(gpt->entries[i].name, (u16[]) { 'b', 'o', 'o', 't' }, 8) ? 2 : 0;
+				found |= !memcmp(gpt->entries[i].name, (u16[]) { 'L', 'N', 'X' },      6) ? 1 : 0;
 
 			if (found)
 			{
@@ -1063,7 +1070,8 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 	// Find Kernel partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'L', 0, 'N', 0, 'X', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'b', 0, 'o', 0, 'o', 0, 't', 0 }, 8))
+		if (!memcmp(gpt->entries[i].name, (u16[]) { 'L', 'N', 'X' },      6) ||
+			!memcmp(gpt->entries[i].name, (u16[]) { 'b', 'o', 'o', 't' }, 8))
 		{
 			offset_sct = gpt->entries[i].lba_start;
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -1127,7 +1135,8 @@ boot_img_not_found:
 	// Find Recovery partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16))
+		if (!memcmp(gpt->entries[i].name, (u16[]) { 'S', 'O', 'S' },                           6) ||
+			!memcmp(gpt->entries[i].name, (u16[]) { 'r', 'e', 'c', 'o', 'v', 'e', 'r', 'y' }, 16))
 		{
 			offset_sct = gpt->entries[i].lba_start;
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -1189,7 +1198,8 @@ recovery_not_found:
 	// Find Device Tree partition.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'D', 0, 'T', 0, 'B', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'd', 0, 't', 0, 'b', 0 }, 6))
+		if (!memcmp(gpt->entries[i].name, (u16[]) { 'D', 'T', 'B' }, 6) ||
+			!memcmp(gpt->entries[i].name, (u16[]) { 'd', 't', 'b' }, 6))
 		{
 			offset_sct = gpt->entries[i].lba_start;
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
@@ -1235,7 +1245,8 @@ dtb_not_found:
 	// Check if Recovery is flashed unconditionally.
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
-		if (!memcmp(gpt->entries[i].name, (char[]) { 'S', 0, 'O', 0, 'S', 0 }, 6) || !memcmp(gpt->entries[i].name, (char[]) { 'r', 0, 'e', 0, 'c', 0, 'o', 0, 'v', 0, 'e', 0, 'r', 0, 'y', 0 }, 16))
+		if (!memcmp(gpt->entries[i].name, (u16[]) { 'S', 'O', 'S' },                           6) ||
+			!memcmp(gpt->entries[i].name, (u16[]) { 'r', 'e', 'c', 'o', 'v', 'e', 'r', 'y' }, 16))
 		{
 			u8 *buf = malloc(SD_BLOCKSIZE);
 			sdmmc_storage_read(&sd_storage, gpt->entries[i].lba_start, 1, buf);
@@ -1290,7 +1301,7 @@ static lv_res_t _action_flash_android(lv_obj_t *btn)
 		"These will be deleted after a successful flash.\n"
 		"Do you want to continue?");
 
-	lv_mbox_add_btns(mbox, mbox_btn_map,  _action_flash_android_data);
+	lv_mbox_add_btns(mbox, mbox_btn_map, _action_flash_android_data);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
@@ -1517,12 +1528,12 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 		if (part_info.backup_possible)
 			lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to back up files!");
 		else
-			lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to back up files!\nBootloader folder exceeds 1GB or corrupt!");
+			lv_label_set_text(lbl_status, "#FFDD00 Error:# Failed to back up files!\nBootloader folder exceeds 1.2GB or corrupt!");
 
 		goto error;
 	}
 
-	f_mount(NULL, "sd:", 1); // Unmount SD card.
+	f_unmount("sd:"); // Unmount SD card.
 
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Formatting FAT32 partition...");
 	lv_label_set_text(lbl_paths[0], "Please wait...");
@@ -1584,7 +1595,7 @@ static lv_res_t _create_mbox_start_partitioning(lv_obj_t *btn)
 		}
 
 		lv_label_set_text(lbl_status, "#00DDFF Status:# Restored files but the operation failed!");
-		f_mount(NULL, "ram:", 1); // Unmount ramdisk.
+		f_unmount("ram:");
 		free(buf);
 		goto error;
 	}
@@ -1609,7 +1620,8 @@ mkfs_no_error:
 		}
 	}
 
-	f_mount(NULL, "ram:", 1); // Unmount ramdisk.
+	 // Unmount ramdisk.
+	f_unmount("ram:");
 	f_chdrive("sd:");
 
 	// Set Volume label.
@@ -1875,7 +1887,7 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		part_info.emu_double = true;
 	}
 
-	// Handle special cases. 2nd value is for 64GB Aula.
+	// Handle special cases. 2nd value is for 64GB Aula. Values already include reserved space.
 	if (slide_val == 10)
 		size = max_emmc_size;
 	else if (slide_val == 20)
@@ -2100,8 +2112,8 @@ static void _create_mbox_check_files_total_size()
 	// Check total size of files.
 	int res = _stat_and_copy_files("sd:", NULL, path, &total_files, &total_size, NULL);
 
-	// Not more than 1.0GB.
-	part_info.backup_possible = !res && !(total_size > (RAM_DISK_SZ - SZ_16M));
+	// Not more than 1.2GB.
+	part_info.backup_possible = !res && !(total_size > (RAM_DISK_SZ - SZ_16M)); // Account for alignment.
 
 	if (part_info.backup_possible)
 	{
