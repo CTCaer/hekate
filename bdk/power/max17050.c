@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2011 Samsung Electronics
  * MyungJoo Ham <myungjoo.ham@samsung.com>
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,6 +58,18 @@ static u16 max17050_get_reg(u8 reg)
 	i2c_recv_buf_small((u8 *)&data, 2, I2C_1, MAXIM17050_I2C_ADDR, reg);
 
 	return data;
+}
+
+int max17050_get_version(u32 *value)
+{
+	u16 data = max17050_get_reg(MAX17050_DevName);
+	if (value)
+		*value = data;
+
+	if (data == 0x00AC)
+		return 0;
+	else
+		return -1;
 }
 
 int max17050_get_property(enum MAX17050_reg reg, int *value)
