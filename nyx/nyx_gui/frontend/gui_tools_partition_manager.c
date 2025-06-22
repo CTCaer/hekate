@@ -314,7 +314,9 @@ static void _prepare_and_flash_mbr_gpt()
 
 	// Copy over metadata if they exist.
 	if (*(u32 *)&part_info.mbr_old.bootstrap[0x80])
-		memcpy(&mbr.bootstrap[0x80], &part_info.mbr_old.bootstrap[0x80], 304);
+		memcpy(&mbr.bootstrap[0x80], &part_info.mbr_old.bootstrap[0x80], 64);
+	if (*(u32 *)&part_info.mbr_old.bootstrap[0xE0])
+		memcpy(&mbr.bootstrap[0xE0], &part_info.mbr_old.bootstrap[0xE0], 208);
 
 	// Clear the first 16MB.
 	memset((void *)SDMMC_UPPER_BUFFER, 0, AU_ALIGN_BYTES);
