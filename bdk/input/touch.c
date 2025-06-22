@@ -1,5 +1,5 @@
 /*
- * Touch driver for Nintendo Switch's STM FingerTip S (4CD60D) touch controller
+ * Touch driver for Nintendo Switch's STM FingerTip S (FTM4CD60DA1BE/FTM4CD50TA1BE) touch controller
  *
  * Copyright (c) 2018 langerhans
  * Copyright (c) 2018-2023 CTCaer

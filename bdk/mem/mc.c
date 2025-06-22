@@ -74,6 +74,7 @@ void mc_config_carveout()
 									 SEC_CARVEOUT_CFG_WR_NS;
 }
 
+// SDMMC, TSEC, XUSB and probably more need it to access < DRAM_START.
 void mc_enable_ahb_redirect()
 {
 	// Enable ARC_CLK_OVR_ON.

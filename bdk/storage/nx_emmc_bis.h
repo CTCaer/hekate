@@ -21,6 +21,8 @@
 #include <storage/emmc.h>
 #include <storage/sdmmc.h>
 
+#define NAND_PATROL_SECTOR   0xC20
+
 typedef struct _nx_emmc_cal0_spk_t
 {
 	u16 unk0;
@@ -65,13 +67,18 @@ typedef struct _nx_emmc_cal0_spk_t
 
 typedef struct _nx_emmc_cal0_t
 {
+	// Header.
 	u32  magic; // 'CAL0'.
 	u32  version;
 	u32  body_size;
 	u16  model;
 	u16  update_cnt;
-	u8   pad_crc16_0[0x10];
+	u8   pad_crc16_hdr[0x10];
+
+	// SHA256 for body.
 	u8   body_sha256[0x20];
+
+	// Body.
 	char cfg_id1[0x1E];
 	u8   crc16_pad1[2];
 	u8   rsvd0[0x20];
@@ -225,6 +232,7 @@ typedef struct _nx_emmc_cal0_t
 
 	// 10.0.0 and up.
 	u8   console_6axis_sensor_mount_type;
+	u8   crc16_pad61[0xF];
 } __attribute__((packed)) nx_emmc_cal0_t;
 
 int  nx_emmc_bis_read(u32 sector, u32 count, void *buff);

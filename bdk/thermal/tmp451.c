@@ -21,6 +21,7 @@
 #include <soc/t210.h>
 #include <thermal/tmp451.h>
 
+// Remote Sensor.
 u16 tmp451_get_soc_temp(bool intenger)
 {
 	u8 val;
@@ -37,6 +38,7 @@ u16 tmp451_get_soc_temp(bool intenger)
 	return temp;
 }
 
+// Local Sensor.
 u16 tmp451_get_pcb_temp(bool intenger)
 {
 	u8 val;
@@ -72,7 +74,7 @@ void tmp451_init()
 		i2c_send_byte(I2C_1, TMP451_I2C_ADDR, TMP451_SOC_TMP_OFL_REG, 0x80); // + 0.5 oC.
 	}
 
-	// Set conversion rate to 32/s and make a read to update the reg.
+	// Set conversion rate to 31 ms and make a read to update the reg.
 	i2c_send_byte(I2C_1, TMP451_I2C_ADDR, TMP451_CNV_RATE_REG, 9);
 	tmp451_get_soc_temp(false);
 

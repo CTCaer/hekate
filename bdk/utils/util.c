@@ -287,7 +287,7 @@ void power_set_state(power_state_t state)
 		break;
 
 	case REBOOT_BYPASS_FUSES:
-		panic(0x21); // Bypass fuse programming in package1.
+		panic(PMC_NX_PANIC_BYPASS_FUSES); // Bypass fuse programming in package1.
 		break;
 
 	case POWER_OFF:

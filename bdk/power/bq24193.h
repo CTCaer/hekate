@@ -19,6 +19,8 @@
 #ifndef __BQ24193_H_
 #define __BQ24193_H_
 
+#include <utils/types.h>
+
 #define BQ24193_I2C_ADDR 0x6B
 
 // REG 0 masks.

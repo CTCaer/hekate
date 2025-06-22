@@ -266,6 +266,9 @@ static void _config_se_brom()
 	// Try to set SBK from fuses. If patched, skip.
 	fuse_set_sbk();
 
+	// Make SBK unreadable.
+	//FUSE(FUSE_PRIVATEKEYDISABLE) = FUSE_PRIVKEY_TZ_STICKY_BIT | FUSE_PRIVKEY_DISABLE;
+
 	// Lock SSK (although it's not set and unused anyways).
 	// se_key_acc_ctrl(15, SE_KEY_TBL_DIS_KEYREAD_FLAG);
 
@@ -365,9 +368,8 @@ void hw_init()
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 	bool nx_hoag = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
 
-	// Bootrom stuff we skipped by going through rcm.
+	// Bootrom stuff we might skipped by going through rcm.
 	_config_se_brom();
-	//FUSE(FUSE_PRIVATEKEYDISABLE) = 0x11;
 
 	// Unset APB2JTAG_OVERRIDE_EN and OBS_OVERRIDE_EN.
 	SYSREG(AHB_AHB_SPARE_REG) &= 0xFFFFFF9F;
@@ -422,9 +424,10 @@ void hw_init()
 	// Set BPMP/SCLK to PLLP_OUT (408MHz).
 	CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003333;
 
-	// Power on T210B01 shadow TZRAM and lock the reg.
+	// Disable T210B01 TZRAM power-gating and lock the reg.
 	if (!tegra_t210)
 	{
+		// This is not actually needed since it's done by bootrom. The read locks are extra.
 		PMC(APBDEV_PMC_TZRAM_PWR_CNTRL)      &= ~PMC_TZRAM_PWR_CNTRL_SD;
 		PMC(APBDEV_PMC_TZRAM_NON_SEC_DISABLE) = PMC_TZRAM_DISABLE_REG_WRITE | PMC_TZRAM_DISABLE_REG_READ;
 		PMC(APBDEV_PMC_TZRAM_SEC_DISABLE)     = PMC_TZRAM_DISABLE_REG_WRITE | PMC_TZRAM_DISABLE_REG_READ;

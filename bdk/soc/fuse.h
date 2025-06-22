@@ -34,6 +34,8 @@
 #define FUSE_PRIV2INTFC                       0x20
 #define FUSE_FUSEBYPASS                       0x24
 #define FUSE_PRIVATEKEYDISABLE                0x28
+#define  FUSE_PRIVKEY_DISABLE                  BIT(0)
+#define  FUSE_PRIVKEY_TZ_STICKY_BIT            BIT(4)
 #define FUSE_DISABLEREGPROGRAM                0x2C
 #define FUSE_WRITE_ACCESS_SW                  0x30
 #define FUSE_PWR_GOOD_SW                      0x34
