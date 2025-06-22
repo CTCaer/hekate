@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 Rajko Stojadinovic
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -26,11 +26,11 @@
 #include "gui.h"
 #include "fe_emummc_tools.h"
 #include "../config.h"
+#include "../hos/hos.h"
 #include <libs/fatfs/diskio.h>
 #include <libs/fatfs/ff.h>
 
-#define OUT_FILENAME_SZ 128
-#define NAND_PATROL_SECTOR 0xC20
+#define OUT_FILENAME_SZ      128
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 
 extern hekate_config h_cfg;
@@ -674,11 +674,11 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		strcpy(user_part.name, "USER");
 		nx_emmc_bis_init(&user_part, true, sd_sector_off);
 
-		s_printf(gui->txt_buf, "Formatting USER... \n");
+		s_printf(gui->txt_buf, "Formatting USER... ");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 		manual_system_maintenance(true);
 
-		// Format USER partition.
+		// Format USER partition as FAT32 with 16KB cluster and PRF2SAFE.
 		u8 *buff = malloc(SZ_4M);
 		int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buff, SZ_4M);
 		free(buff);
@@ -727,7 +727,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		}
 
 		// Set new emuMMC size and USER size.
-		mbr.partitions[0].size_sct = resized_count;
+		mbr.partitions[0].size_sct = resized_count - 1; // Exclude MBR sector.
 		gpt->entries[gpt_entry_idx].lba_end = user_part.lba_end;
 
 		// Update Main GPT.
@@ -738,9 +738,10 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
 
 		// Update Backup GPT.
+		memcpy(&gpt_hdr_backup, &gpt->header, sizeof(gpt_header_t));
 		gpt_hdr_backup.my_lba = resized_count - 1;
+		gpt_hdr_backup.alt_lba = 1;
 		gpt_hdr_backup.part_ent_lba = resized_count - 33;
-		gpt_hdr_backup.part_ents_crc32 = gpt->header.part_ents_crc32;
 		gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
 		gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
 
