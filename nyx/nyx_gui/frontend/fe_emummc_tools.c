@@ -767,16 +767,8 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 	return 1;
 }
 
-static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
+int emummc_raw_derive_bis_keys()
 {
-	if (!resized_count)
-		return 1;
-
-	bool error = false;
-
-	char *txt_buf = (char *)malloc(SZ_16K);
-	txt_buf[0] = 0;
-
 	// Generate BIS keys.
 	hos_bis_keygen();
 
@@ -798,16 +790,8 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 	if (memcmp(&cal0->magic, "CAL0", 4))
 	{
 		// Clear EKS keys.
-		hos_eks_clear(HOS_KB_VERSION_MAX);
+		hos_eks_clear(HOS_MKEY_VER_MAX);
 
-		strcpy(txt_buf, "#FFDD00 BIS keys validation failed!#\n");
-		error = true;
-	}
-
-	free(cal0_buff);
-
-	if (error)
-	{
 		lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 		lv_obj_set_style(dark_bg, &mbox_darken);
 		lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -825,18 +809,17 @@ static int _emummc_raw_derive_bis_keys(emmc_tool_gui_t *gui, u32 resized_count)
 		lv_label_set_style(lb_desc, &monospace_text);
 		lv_obj_set_width(lb_desc, LV_HOR_RES / 9 * 4);
 
-		lv_label_set_text(lb_desc, txt_buf);
+		lv_label_set_text(lb_desc, "#FFDD00 BIS keys validation failed!#\n");
 		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
 
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
 
-		free(txt_buf);
-
+		free(cal0_buff);
 		return 0;
 	}
 
-	free(txt_buf);
+	free(cal0_buff);
 
 	return 1;
 }
@@ -867,7 +850,7 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 		goto out;
 	}
 
-	if (!_emummc_raw_derive_bis_keys(gui, resized_count))
+	if (resized_count && !emummc_raw_derive_bis_keys())
 	{
 		s_printf(gui->txt_buf, "#FFDD00 For formatting USER partition,#\n#FFDD00 BIS keys are needed!#\n");
 		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
