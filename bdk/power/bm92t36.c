@@ -1,7 +1,7 @@
 /*
  * USB-PD driver for Nintendo Switch's TI BM92T36
  *
- * Copyright (c) 2020-2023 CTCaer
+ * Copyright (c) 2020-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -54,6 +54,10 @@
 
 #define STATUS1_INSERT      BIT(7)  // Cable inserted.
 
+#define VER_36     0x36
+#define MAX_ROHM  0x4B5
+#define DEV_BM92T 0x3B0
+
 typedef struct _pd_object_t {
 	unsigned int amp:10;
 	unsigned int volt:10;
@@ -63,7 +67,27 @@ typedef struct _pd_object_t {
 
 static int _bm92t36_read_reg(u8 *buf, u32 size, u32 reg)
 {
+	memset(buf, 0, size);
 	return i2c_recv_buf_big(buf, size, I2C_1, BM92T36_I2C_ADDR, reg);
+}
+
+int bm92t36_get_version(u32 *value)
+{
+	u8 buf[2];
+	u16 version, man, dev;
+	_bm92t36_read_reg(buf, 2, FW_TYPE_REG);
+	version = (buf[0] << 4) | buf[1];
+	_bm92t36_read_reg(buf, 2, MAN_ID_REG);
+	man = (buf[1] << 8) | buf[0];
+	_bm92t36_read_reg(buf, 2, DEV_ID_REG);
+	dev = (buf[1] << 8) | buf[0];
+	if (value)
+		*value = (dev << 16) | version;
+
+	if (version == VER_36 && man == MAX_ROHM && dev == DEV_BM92T)
+	 	return 0;
+	else
+		return -1;
 }
 
 void bm92t36_get_sink_info(bool *inserted, usb_pd_objects_t *usb_pd)
@@ -73,14 +97,12 @@ void bm92t36_get_sink_info(bool *inserted, usb_pd_objects_t *usb_pd)
 
 	if (inserted)
 	{
-		memset(buf, 0, sizeof(buf));
 		_bm92t36_read_reg(buf, 2, STATUS1_REG);
 		*inserted = (buf[0] & STATUS1_INSERT) ? true : false;
 	}
 
 	if (usb_pd)
 	{
-		memset(buf, 0, sizeof(buf));
 		_bm92t36_read_reg(buf, 29, READ_PDOS_SRC_REG);
 		memcpy(pdos, &buf[1], 28);
 
