@@ -1,7 +1,7 @@
 /*
  * USB driver for Tegra X1
  *
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -409,10 +409,10 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 	.interface.bDescriptorType    = USB_DESCRIPTOR_INTERFACE,
 	.interface.bInterfaceNumber   = 0,
 	.interface.bAlternateSetting  = 0,
-	.interface.bNumEndpoints      = 2,
+	.interface.bNumEndpoints      = 1,
 	.interface.bInterfaceClass    = 0x03, // Human Interface Device Class.
-	.interface.bInterfaceSubClass = 0x00, // SCSI Transparent Command Set.
-	.interface.bInterfaceProtocol = 0x00, // Bulk-Only Transport.
+	.interface.bInterfaceSubClass = 0x00, // No Subclass.
+	.interface.bInterfaceProtocol = 0x00, // None.
 	.interface.iInterface         = 0x00,
 
 	.hid.bLength                  = 9,
@@ -430,14 +430,6 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_jc =
 	.endpoint[0].bmAttributes     = USB_EP_TYPE_INTR,
 	.endpoint[0].wMaxPacketSize   = 0x200,
 	.endpoint[0].bInterval        = 4,   // 8ms on HS.
-
-	/* Endpoint descriptor structure EP1 OUT */
-	.endpoint[1].bLength          = 7,
-	.endpoint[1].bDescriptorType  = USB_DESCRIPTOR_ENDPOINT,
-	.endpoint[1].bEndpointAddress = 0x01, // USB_EP_ADDR_BULK_OUT.
-	.endpoint[1].bmAttributes     = USB_EP_TYPE_INTR,
-	.endpoint[1].wMaxPacketSize   = 0x200,
-	.endpoint[1].bInterval        = 4    // 8ms on HS.
 };
 
 static u8 usb_vendor_string_descriptor_hid[22] =
@@ -478,10 +470,10 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_touch =
 	.interface.bDescriptorType    = USB_DESCRIPTOR_INTERFACE,
 	.interface.bInterfaceNumber   = 0,
 	.interface.bAlternateSetting  = 0,
-	.interface.bNumEndpoints      = 2,
+	.interface.bNumEndpoints      = 1,
 	.interface.bInterfaceClass    = 0x03, // Human Interface Device Class.
-	.interface.bInterfaceSubClass = 0x00, // SCSI Transparent Command Set.
-	.interface.bInterfaceProtocol = 0x00, // Bulk-Only Transport.
+	.interface.bInterfaceSubClass = 0x00, // No Subclass.
+	.interface.bInterfaceProtocol = 0x00, // None.
 	.interface.iInterface         = 0x00,
 
 	.hid.bLength                  = 9,
@@ -499,14 +491,6 @@ static usb_cfg_hid_descr_t usb_configuration_descriptor_hid_touch =
 	.endpoint[0].bmAttributes     = USB_EP_TYPE_INTR,
 	.endpoint[0].wMaxPacketSize   = 0x200,
 	.endpoint[0].bInterval        = 3,   // 4ms on HS.
-
-	/* Endpoint descriptor structure EP1 OUT */
-	.endpoint[1].bLength          = 7,
-	.endpoint[1].bDescriptorType  = USB_DESCRIPTOR_ENDPOINT,
-	.endpoint[1].bEndpointAddress = 0x01, // USB_EP_ADDR_BULK_OUT.
-	.endpoint[1].bmAttributes     = USB_EP_TYPE_INTR,
-	.endpoint[1].wMaxPacketSize   = 0x200,
-	.endpoint[1].bInterval        = 3    // 4ms on HS.
 };
 
 usb_desc_t usb_gadget_ums_descriptors =

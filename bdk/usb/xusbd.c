@@ -1,7 +1,7 @@
 /*
  * eXtensible USB Device driver (XDCI) for Tegra X1
  *
- * Copyright (c) 2020-2024 CTCaer
+ * Copyright (c) 2020-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1522,13 +1522,13 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 		{
 			if (usbd_xotg->port_speed == XUSB_HIGH_SPEED) // High speed. 512 bytes.
 			{
-				usbd_xotg->desc->cfg->endpoint[0].wMaxPacketSize = 0x200; // No burst.
-				usbd_xotg->desc->cfg->endpoint[1].wMaxPacketSize = 0x200; // No burst.
+				for (u32 i = 0; i < usbd_xotg->desc->cfg->interface.bNumEndpoints; i++)
+					usbd_xotg->desc->cfg->endpoint[i].wMaxPacketSize = 0x200; // No burst.
 			}
 			else // Full speed. 64 bytes.
 			{
-				usbd_xotg->desc->cfg->endpoint[0].wMaxPacketSize = 0x40;
-				usbd_xotg->desc->cfg->endpoint[1].wMaxPacketSize = 0x40;
+				for (u32 i = 0; i < usbd_xotg->desc->cfg->interface.bNumEndpoints; i++)
+					usbd_xotg->desc->cfg->endpoint[i].wMaxPacketSize = 0x40;
 			}
 		}
 		else
@@ -1536,17 +1536,19 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 			usb_cfg_hid_descr_t *tmp = (usb_cfg_hid_descr_t *)usbd_xotg->desc->cfg;
 			if (usbd_xotg->port_speed == XUSB_HIGH_SPEED) // High speed. 512 bytes.
 			{
-				tmp->endpoint[0].wMaxPacketSize = 0x200;
-				tmp->endpoint[1].wMaxPacketSize = 0x200;
-				tmp->endpoint[0].bInterval = usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD ? 4 : 3; // 8ms : 4ms.
-				tmp->endpoint[1].bInterval = usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD ? 4 : 3; // 8ms : 4ms.
+				for (u32 i = 0; i < tmp->interface.bNumEndpoints; i++)
+				{
+					tmp->endpoint[i].wMaxPacketSize = 0x200;
+					tmp->endpoint[i].bInterval = usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD ? 4 : 3; // 8ms : 4ms.
+				}
 			}
 			else // Full speed. 64 bytes.
 			{
-				tmp->endpoint[0].wMaxPacketSize = 0x40;
-				tmp->endpoint[1].wMaxPacketSize = 0x40;
-				tmp->endpoint[0].bInterval = usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD ? 8 : 4; // 8ms : 4ms.
-				tmp->endpoint[1].bInterval = usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD ? 8 : 4; // 8ms : 4ms.
+				for (u32 i = 0; i < tmp->interface.bNumEndpoints; i++)
+				{
+					tmp->endpoint[i].wMaxPacketSize = 0x40;
+					tmp->endpoint[i].bInterval = usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD ? 8 : 4; // 8ms : 4ms.
+				}
 			}
 		}
 		descriptor = usbd_xotg->desc->cfg;
@@ -1595,13 +1597,13 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 		}
 		if (usbd_xotg->port_speed == XUSB_HIGH_SPEED)
 		{
-			usbd_xotg->desc->cfg_other->endpoint[0].wMaxPacketSize = 0x40;
-			usbd_xotg->desc->cfg_other->endpoint[1].wMaxPacketSize = 0x40;
+			for (u32 i = 0; i < usbd_xotg->desc->cfg_other->interface.bNumEndpoints; i++)
+				usbd_xotg->desc->cfg_other->endpoint[i].wMaxPacketSize = 0x40;
 		}
 		else
 		{
-			usbd_xotg->desc->cfg_other->endpoint[0].wMaxPacketSize = 0x200;
-			usbd_xotg->desc->cfg_other->endpoint[1].wMaxPacketSize = 0x200;
+			for (u32 i = 0; i < usbd_xotg->desc->cfg_other->interface.bNumEndpoints; i++)
+				usbd_xotg->desc->cfg_other->endpoint[i].wMaxPacketSize = 0x200;
 		}
 		descriptor = usbd_xotg->desc->cfg_other;
 		size = usbd_xotg->desc->cfg_other->config.wTotalLength;

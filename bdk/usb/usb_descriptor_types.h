@@ -1,7 +1,7 @@
 /*
  * USB driver for Tegra X1
  *
- * Copyright (c) 2019-2020 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -151,7 +151,7 @@ typedef struct _usb_cfg_hid_descr_t
 	usb_cfg_descr_t   config;
 	usb_inter_descr_t interface;
 	usb_hid_descr_t   hid;
-	usb_ep_descr_t    endpoint[2];
+	usb_ep_descr_t    endpoint[1];
 } __attribute__((packed)) usb_cfg_hid_descr_t;
 
 typedef struct _usb_dev_bot_t
