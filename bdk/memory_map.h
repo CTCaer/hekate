@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -47,28 +47,26 @@
 #define  NYX_SZ_MAX        SZ_16M
 /* --- Gap: 0x82000000 - 0x82FFFFFF --- */
 
-/* Stack theoretical max: 33MB */
-#define IPL_STACK_TOP  0x83100000
-#define IPL_HEAP_START 0x84000000
-#define  IPL_HEAP_SZ     (SZ_512M - SZ_64M)
+// Heap buffer.
+#define IPL_HEAP_START 0x82000000
+#define  IPL_HEAP_SZ     (SZ_256M)
 
-#define SMMU_HEAP_ADDR 0xA0000000
-/* --- Gap: 1040MB 0xA4000000 - 0xE4FFFFFF --- */
+#define SMMU_HEAP_ADDR 0x92000000
+/* --- Gap: 1280MB 0x96000000 - 0xE4FFFFFF --- */
 
 // Virtual disk / Chainloader buffers.
-#define RAM_DISK_ADDR 0xA4000000
-#define  RAM_DISK_SZ  0x41000000 // 1040MB.
-#define  RAM_DISK2_SZ 0x21000000 //  528MB.
-
-// NX BIS driver sector cache.
-#define NX_BIS_CACHE_ADDR  0xC5000000
-#define  NX_BIS_CACHE_SZ   0x10020000 // 256MB.
-#define NX_BIS_LOOKUP_ADDR 0xD6000000
-#define  NX_BIS_LOOKUP_SZ   0xF000000 // 240MB.
+#define RAM_DISK_ADDR 0x95000000
+#define  RAM_DISK_SZ  0x50000000 // 1280MB.
 
 // L4T Kernel Panic Storage (PSTORE).
 #define PSTORE_ADDR   0xB0000000
 #define  PSTORE_SZ         SZ_2M
+
+// NX BIS driver sector cache.
+#define NX_BIS_CACHE_ADDR  0xC7000000
+#define  NX_BIS_CACHE_SZ   0x10020000 // 256MB.
+#define NX_BIS_LOOKUP_ADDR 0xD8000000
+#define  NX_BIS_LOOKUP_SZ   0x8000000 // 128MB. 512GB eMMC partition max.
 
 //#define DRAM_LIB_ADDR    0xE0000000
 /* --- Chnldr: 252MB 0xC03C0000 - 0xCFFFFFFF --- */ //! Only used when chainloading.
@@ -77,7 +75,7 @@
 #define SDMMC_UPPER_BUFFER 0xE5000000
 #define  SDMMC_UP_BUF_SZ      SZ_128M
 
-// Nyx buffers.
+// Nyx buffers. !Do not change!
 #define NYX_STORAGE_ADDR 0xED000000
 #define NYX_RES_ADDR     0xEE000000
 #define  NYX_RES_SZ          SZ_16M
@@ -94,7 +92,7 @@
 #define NYX_LV_MEM_ADR   0xF1400000
 #define  NYX_LV_MEM_SZ    0x6600000 // 70MB.
 
-// Framebuffer addresses.
+// Framebuffer addresses. !Do not change!
 #define IPL_FB_ADDRESS   0xF5A00000
 #define  IPL_FB_SZ         0x384000 // 720 x 1280 x 4.
 #define LOG_FB_ADDRESS   0xF5E00000
@@ -102,12 +100,6 @@
 #define NYX_FB_ADDRESS   0xF6200000
 #define NYX_FB2_ADDRESS  0xF6600000
 #define  NYX_FB_SZ         0x384000 // 1280 x 720 x 4.
-
-/* OBSOLETE: Very old hwinit based payloads were setting a carveout here. */
-#define DRAM_MEM_HOLE_ADR 0xF6A00000
-#define DRAM_MEM_HOLE_SZ   0x8140000
-/* ---   Hole: 129MB 0xF6A00000 - 0xFEB3FFFF --- */
-#define DRAM_START2       0xFEB40000
 
 // USB buffers.
 #define USBD_ADDR                 0xFEF00000
