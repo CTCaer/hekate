@@ -1495,7 +1495,7 @@ stall:
 static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 {
 	u32 size;
-	void *descriptor;
+	void *desc;
 
 	u32 wLength = ctrl_setup->wLength;
 
@@ -1513,7 +1513,7 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 		usb_device_descriptor.bcdDevice  = (soc_rev >> 16) & 0xF; // MINORREV.
 		usb_device_descriptor.bcdDevice |= ((soc_rev >> 4) & 0xF) << 8; // MAJORREV.
 */
-		descriptor = usbd_xotg->desc->dev;
+		desc = usbd_xotg->desc->dev;
 		size = usbd_xotg->desc->dev->bLength;
 		break;
 	case USB_DESCRIPTOR_CONFIGURATION:
@@ -1551,30 +1551,30 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 				}
 			}
 		}
-		descriptor = usbd_xotg->desc->cfg;
+		desc = usbd_xotg->desc->cfg;
 		size = usbd_xotg->desc->cfg->config.wTotalLength;
 		break;
 	case USB_DESCRIPTOR_STRING:
 		switch (descriptor_subtype)
 		{
 		case 1:
-			descriptor = usbd_xotg->desc->vendor;
+			desc = usbd_xotg->desc->vendor;
 			size = usbd_xotg->desc->vendor[0];
 			break;
 		case 2:
-			descriptor = usbd_xotg->desc->product;
+			desc = usbd_xotg->desc->product;
 			size = usbd_xotg->desc->product[0];
 			break;
 		case 3:
-			descriptor = usbd_xotg->desc->serial;
+			desc = usbd_xotg->desc->serial;
 			size = usbd_xotg->desc->serial[0];
 			break;
 		case 0xEE:
-			descriptor = usbd_xotg->desc->ms_os;
+			desc = usbd_xotg->desc->ms_os;
 			size = usbd_xotg->desc->ms_os->bLength;
 			break;
 		default:
-			descriptor = usbd_xotg->desc->lang_id;
+			desc = usbd_xotg->desc->lang_id;
 			size = 4;
 			break;
 		}
@@ -1586,7 +1586,7 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 			return USB_RES_OK;
 		}
 		usbd_xotg->desc->dev_qual->bNumOtherConfigs = 0;
-		descriptor = usbd_xotg->desc->dev_qual;
+		desc = usbd_xotg->desc->dev_qual;
 		size = usbd_xotg->desc->dev_qual->bLength;
 		break;
 	case USB_DESCRIPTOR_OTHER_SPEED_CONFIGURATION:
@@ -1605,11 +1605,11 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 			for (u32 i = 0; i < usbd_xotg->desc->cfg_other->interface.bNumEndpoints; i++)
 				usbd_xotg->desc->cfg_other->endpoint[i].wMaxPacketSize = 0x200;
 		}
-		descriptor = usbd_xotg->desc->cfg_other;
+		desc = usbd_xotg->desc->cfg_other;
 		size = usbd_xotg->desc->cfg_other->config.wTotalLength;
 		break;
 	case USB_DESCRIPTOR_DEVICE_BINARY_OBJECT:
-		descriptor = usbd_xotg->desc->dev_bot;
+		desc = usbd_xotg->desc->dev_bot;
 		size = usbd_xotg->desc->dev_bot->wTotalLength;
 		break;
 	default:
@@ -1620,7 +1620,7 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 	if (wLength < size)
 		size = wLength;
 
-	return _xusb_issue_data_trb(descriptor, size, USB_DIR_IN);
+	return _xusb_issue_data_trb(desc, size, USB_DIR_IN);
 }
 
 static void _xusb_handle_set_request_dev_address(const usb_ctrl_setup_t *ctrl_setup)
@@ -1690,18 +1690,18 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 
 	switch (_bmRequestType)
 	{
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):    // 0x00.
 		if (_bRequest == USB_REQUEST_SET_ADDRESS)
 			_xusb_handle_set_request_dev_address(ctrl_setup);
 		else if (_bRequest == USB_REQUEST_SET_CONFIGURATION)
 			_xusb_handle_set_request_configuration(ctrl_setup);
 		return USB_RES_OK; // What about others.
 
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE): // 0x01.
 		usbd_xotg->interface_num = _wValue;
 		return _xusb_issue_status_trb(USB_DIR_IN);
 
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT):  // 0x02.
 		if ((_wValue & 0xFF) == USB_FEATURE_ENDPOINT_HALT)
 		{
 			if (_bRequest == USB_REQUEST_CLEAR_FEATURE || _bRequest == USB_REQUEST_SET_FEATURE)
@@ -1737,10 +1737,10 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 		ep_stall = true;
 		break;
 
-	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE):
+	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE): // 0x21.
 		return _xusb_handle_get_class_request(ctrl_setup);
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE):    // 0x80.
 		switch (_bRequest)
 		{
 		case USB_REQUEST_GET_STATUS:
@@ -1762,7 +1762,7 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 		}
 		break;
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE): // 0x81.
 		if (_bRequest == USB_REQUEST_GET_INTERFACE)
 		{
 			desc = xusb_interface_descriptor;
@@ -1776,7 +1776,7 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 			size = sizeof(xusb_status_descriptor);
 			transmit_data = true;
 		}
-		else if (_bRequest == USB_REQUEST_GET_DESCRIPTOR && (_wValue >> 8) == USB_DESCRIPTOR_HID_REPORT && usbd_xotg->gadget > USB_GADGET_UMS)
+		else if (_bRequest == USB_REQUEST_GET_DESCRIPTOR && (_wValue >> 8) == USB_DESCRIPTOR_HID_REPORT && usbd_xotg->gadget >= USB_GADGET_HID_GAMEPAD)
 		{
 			if (usbd_xotg->gadget == USB_GADGET_HID_GAMEPAD)
 			{
@@ -1795,7 +1795,7 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 			ep_stall = true;
 		break;
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_ENDPOINT):  // 0x82.
 		if (_bRequest == USB_REQUEST_GET_STATUS)
 		{
 			u32 ep = 0;
@@ -1823,11 +1823,11 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 		ep_stall = true;
 		break;
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_CLASS    | USB_SETUP_RECIPIENT_INTERFACE): // 0xA1.
 		return _xusb_handle_get_class_request(ctrl_setup);
 
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_INTERFACE):
-	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_DEVICE):
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_DEVICE):    // 0xC0.
+	case (USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR   | USB_SETUP_RECIPIENT_INTERFACE): // 0xC1.
 		if (_bRequest == USB_REQUEST_GET_MS_DESCRIPTOR)
 		{
 			switch (_wIndex)
