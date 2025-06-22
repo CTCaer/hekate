@@ -285,7 +285,7 @@ static void raise_exception(usbd_gadget_ums_t *ums, enum ums_state new_state)
 
 static void _handle_ep0_ctrl(usbd_gadget_ums_t *ums)
 {
-	if (usb_ops.usbd_handle_ep0_ctrl_setup())
+	if (usb_ops.usbd_handle_ep0_ctrl_setup(NULL))
 		raise_exception(ums, UMS_STATE_PROTOCOL_RESET);
 }
 

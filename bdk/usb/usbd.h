@@ -1,7 +1,7 @@
 /*
  * Enhanced & eXtensible USB Device (EDCI & XDCI) driver for Tegra X1
  *
- * Copyright (c) 2019-2021 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -31,11 +31,11 @@
 #define USB_EP_BUFFER_ALIGN     (USB_TD_BUFFER_PAGE_SIZE)
 
 #define USB_XFER_START        0
-#define USB_XFER_SYNCED_ENUM  1000000
-#define USB_XFER_SYNCED_CMD   1000000
-#define USB_XFER_SYNCED_DATA  2000000
-#define USB_XFER_SYNCED_CLASS 5000000
-#define USB_XFER_SYNCED       -1
+#define USB_XFER_SYNCED_ENUM  1000000 // ~2s.
+#define USB_XFER_SYNCED_CMD   1000000 // ~2s.
+#define USB_XFER_SYNCED_DATA  2000000 // ~4s.
+#define USB_XFER_SYNCED_CLASS 5000000 // ~10s.
+#define USB_XFER_SYNCED       -1      // Max.
 
 typedef enum _usb_hid_type
 {
@@ -122,6 +122,9 @@ typedef enum {
 
 	USB_REQUEST_GET_MS_DESCRIPTOR = 0x99,
 
+	USB_REQUEST_INTR_GET_REPORT   = 1,
+	USB_REQUEST_INTR_SET_IDLE     = 10,
+
 	USB_REQUEST_BULK_GET_MAX_LUN  = 0xFE,
 	USB_REQUEST_BULK_RESET        = 0xFF
 } usb_standard_req_t;
@@ -167,12 +170,13 @@ typedef struct _usb_ops_t
 {
 	int  (*usbd_flush_endpoint)(u32);
 	int  (*usbd_set_ep_stall)(u32, int);
-	int  (*usbd_handle_ep0_ctrl_setup)();
+	int  (*usbd_handle_ep0_ctrl_setup)(u32 *);
 	void (*usbd_end)(bool, bool);
 	int  (*usb_device_init)();
-	int  (*usb_device_enumerate)(usb_gadget_type gadget);
+	int  (*usb_device_enumerate)(usb_gadget_type);
+
 	int  (*usb_device_class_send_max_lun)(u8);
-	int  (*usb_device_class_send_hid_report)();
+	int  (*usb_device_class_send_hid_report)(void *, u32);
 
 	int  (*usb_device_ep1_out_read)(u8 *, u32, u32 *, u32);
 	int  (*usb_device_ep1_out_read_big)(u8 *, u32, u32 *);
@@ -186,10 +190,17 @@ typedef struct _usb_ops_t
 typedef struct _usb_ctxt_t
 {
 	u32 type;
+
+	// UMS.
 	u32 partition;
 	u32 offset;
 	u32 sectors;
 	u32 ro;
+
+	// HID.
+	u32 idle;
+
+	// System.
 	void (*system_maintenance)(bool);
 	void *label;
 	void (*set_text)(void *, const char *);

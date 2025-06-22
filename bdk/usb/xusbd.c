@@ -381,6 +381,10 @@ typedef struct _xusbd_controller_t
 
 	u8 max_lun;
 	bool max_lun_set;
+	void *hid_rpt_buffer;
+	u32  hid_rpt_size;
+	u32  intr_idle_rate;
+	bool intr_idle_req;
 	bool bulk_reset_req;
 } xusbd_controller_t;
 
@@ -1469,20 +1473,39 @@ static int _xusb_handle_get_class_request(const usb_ctrl_setup_t *ctrl_setup)
 	u16 _wLength = ctrl_setup->wLength;
 
 	bool valid_interface = _wIndex == usbd_xotg->interface_num;
-	bool valid_len = (_bRequest == USB_REQUEST_BULK_GET_MAX_LUN) ? 1 : 0;
+	bool valid_val = (_bRequest >= USB_REQUEST_BULK_GET_MAX_LUN) ? (!_wValue) : true;
 
-	if (!valid_interface || _wValue != 0 || _wLength != valid_len)
+	if (!valid_interface || !valid_val)
 		goto stall;
 
 	switch (_bRequest)
 	{
+	case USB_REQUEST_INTR_GET_REPORT:
+		if (usbd_xotg->hid_rpt_size != _wLength)
+			goto stall;
+
+		// _wValue unused as there's only one report type and id.
+		return _xusb_issue_data_trb(usbd_xotg->hid_rpt_buffer, usbd_xotg->hid_rpt_size, USB_DIR_IN);
+
+	case USB_REQUEST_INTR_SET_IDLE:
+		if (_wLength)
+			goto stall;
+
+		usbd_xotg->intr_idle_rate = (_wValue & 0xFF) * 4 * 1000; // Only one interface so upper byte ignored.
+		usbd_xotg->intr_idle_req  = true;
+		return _xusb_issue_status_trb(USB_DIR_IN); // DELAYED_STATUS;
+
 	case USB_REQUEST_BULK_RESET:
+		if (_wLength)
+			goto stall;
+
 		usbd_xotg->bulk_reset_req = true;
 		return _xusb_issue_status_trb(USB_DIR_IN); // DELAYED_STATUS;
 
 	case USB_REQUEST_BULK_GET_MAX_LUN:
-		if (!usbd_xotg->max_lun_set)
+		if (_wLength != 1 || !usbd_xotg->max_lun_set)
 			goto stall;
+
 		usbd_xotg->device_state = XUSB_LUN_CONFIGURED_STS_WAIT;
 		return _xusb_issue_data_trb(&usbd_xotg->max_lun, 1, USB_DIR_IN);
 	}
@@ -2019,12 +2042,24 @@ void xusb_end(bool reset_ep, bool only_controller)
 	_xusb_device_power_down();
 }
 
-int xusb_handle_ep0_ctrl_setup()
+int xusb_handle_ep0_ctrl_setup(u32 *data)
 {
 	/*
 	 * EP0 Control handling is done by normal ep operation in XUSB.
-	 * Here we handle the bulk reset only.
+	 * Here we handle the interface only, except if HID.
 	 */
+	if (usbd_xotg->gadget >= USB_GADGET_HID_GAMEPAD)
+		_xusb_ep_operation(1);
+
+	if (usbd_xotg->intr_idle_req)
+	{
+		if (data)
+			*data = usbd_xotg->intr_idle_rate;
+
+		usbd_xotg->intr_idle_req = false;
+		return USB_RES_OK;
+	}
+
 	if (usbd_xotg->bulk_reset_req)
 	{
 		usbd_xotg->bulk_reset_req = false;
@@ -2178,8 +2213,12 @@ bool xusb_device_class_send_max_lun(u8 max_lun)
 	return false;
 }
 
-bool xusb_device_class_send_hid_report()
+bool xusb_device_class_send_hid_report(void *rpt_buffer, u32 rpt_size)
 {
+	// Set buffers.
+	usbd_xotg->hid_rpt_buffer = rpt_buffer;
+	usbd_xotg->hid_rpt_size   = rpt_size;
+
 	// Timeout if get GET_HID_REPORT request doesn't happen in 10s.
 	u32 timer = get_tmr_ms() + 10000;
 

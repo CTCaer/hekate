@@ -1,7 +1,7 @@
 /*
  * USB Gadget HID driver for Tegra X1
  *
- * Copyright (c) 2019-2022 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -79,6 +79,8 @@ enum {
 
 static jc_cal_t jc_cal_ctx;
 static usb_ops_t usb_ops;
+
+static void *rpt_buffer = (u8 *)USB_EP_BULK_IN_BUF_ADDR;
 
 static bool _jc_calibration(const jc_gamepad_rpt_t *jc_pad)
 {
@@ -347,7 +349,7 @@ static bool _fts_touch_read(touchpad_report_t *rpt)
 
 static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 {
-	u8 status = usb_ops.usb_device_ep1_in_write((u8 *)USB_EP_BULK_IN_BUF_ADDR, len, NULL, USB_XFER_SYNCED_CMD);
+	u8 status = usb_ops.usb_device_ep1_in_write(rpt_buffer, len, NULL, USB_XFER_SYNCED_CMD);
 	if (status == USB_ERROR_XFER_ERROR)
 	{
 		usbs->set_text(usbs->label, "#FFDD00 Error:# EP IN transfer!");
@@ -364,12 +366,12 @@ static u8 _hid_transfer_start(usb_ctxt_t *usbs, u32 len)
 
 static bool _hid_poll_jc(usb_ctxt_t *usbs)
 {
-	int res = _jc_poll((gamepad_report_t *)USB_EP_BULK_IN_BUF_ADDR);
+	int res = _jc_poll(rpt_buffer);
 	if (res == INPUT_POLL_EXIT)
 		return true;
 
 	// Send HID report.
-	if (res == INPUT_POLL_HAS_PACKET)
+	if (res == INPUT_POLL_HAS_PACKET || usbs->idle)
 		if (_hid_transfer_start(usbs, sizeof(gamepad_report_t)))
 			return true; // EP Error.
 
@@ -378,7 +380,7 @@ static bool _hid_poll_jc(usb_ctxt_t *usbs)
 
 static bool _hid_poll_touch(usb_ctxt_t *usbs)
 {
-	_fts_touch_read((touchpad_report_t *)USB_EP_BULK_IN_BUF_ADDR);
+	_fts_touch_read(rpt_buffer);
 
 	// Send HID report.
 	if (_hid_transfer_start(usbs, sizeof(touchpad_report_t)))
@@ -398,6 +400,10 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 		usb_device_get_ops(&usb_ops);
 	else
 		xusb_device_get_ops(&usb_ops);
+
+	// Always push packets by default.
+	//! TODO: For now only per polling rate or on change is supported.
+	usbs->idle = 1;
 
 	if (usbs->type == USB_HID_GAMEPAD)
 	{
@@ -426,7 +432,8 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Waiting for HID report request");
 
-	if (usb_ops.usb_device_class_send_hid_report())
+	u32 rpt_size = usbs->type == USB_HID_GAMEPAD ? sizeof(gamepad_report_t) : sizeof(touchpad_report_t);
+	if (usb_ops.usb_device_class_send_hid_report(rpt_buffer, rpt_size))
 		goto error;
 
 	usbs->set_text(usbs->label, "#C7EA46 Status:# Started HID emulation");
@@ -435,6 +442,13 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 	while (true)
 	{
 		u32 timer = get_tmr_us();
+
+		// Check for suspended USB in case the cable was pulled.
+		if (usb_ops.usb_device_get_suspended())
+			break; // Disconnected.
+
+		// Handle control endpoint.
+		usb_ops.usbd_handle_ep0_ctrl_setup(&usbs->idle);
 
 		// Parse input device.
 		if (usbs->type == USB_HID_GAMEPAD)
@@ -447,13 +461,6 @@ int usb_device_gadget_hid(usb_ctxt_t *usbs)
 			if (_hid_poll_touch(usbs))
 				break;
 		}
-
-		// Check for suspended USB in case the cable was pulled.
-		if (usb_ops.usb_device_get_suspended())
-			break; // Disconnected.
-
-		// Handle control endpoint.
-		usb_ops.usbd_handle_ep0_ctrl_setup();
 
 		// Wait max gadget timing.
 		timer = get_tmr_us() - timer;

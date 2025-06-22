@@ -101,7 +101,11 @@ typedef struct _usbd_controller_t
 	bool configuration_set;
 	bool max_lun_set;
 	bool bulk_reset_req;
+	u32  intr_idle_rate;
+	bool intr_idle_req;
 	bool hid_report_sent;
+	void *hid_rpt_buffer;
+	u32  hid_rpt_size;
 	u32 charger_detect;
 } usbd_controller_t;
 
@@ -889,9 +893,9 @@ static void _usbd_handle_get_class_request(bool *transmit_data, u8 *desc, int *s
 	u16 _wLength = usbd_otg->control_setup.wLength;
 
 	bool valid_interface = _wIndex == usbd_otg->interface_num;
-	bool valid_len = (_bRequest == USB_REQUEST_BULK_GET_MAX_LUN) ? 1 : 0;
+	bool valid_val = (_bRequest >= USB_REQUEST_BULK_GET_MAX_LUN) ? (!_wValue) : true;
 
-	if (!valid_interface || _wValue != 0 || _wLength != valid_len)
+	if (!valid_interface || !valid_val)
 	{
 		*ep_stall = true;
 		return;
@@ -899,20 +903,48 @@ static void _usbd_handle_get_class_request(bool *transmit_data, u8 *desc, int *s
 
 	switch (_bRequest)
 	{
+	case USB_REQUEST_INTR_GET_REPORT:
+		if (usbd_otg->hid_rpt_size != _wLength)
+			break;
+
+		// _wValue unused as there's only one report type and id.
+		*transmit_data = true;
+		*size = usbd_otg->hid_rpt_size;
+		memcpy(desc, usbd_otg->hid_rpt_buffer, usbd_otg->hid_rpt_size);
+		return;
+
+	case USB_REQUEST_INTR_SET_IDLE:
+		if (_wLength)
+			break;
+
+		usbd_otg->intr_idle_rate = (_wValue & 0xFF) * 4 * 1000; // Only one interface so upper byte ignored.
+		usbd_otg->intr_idle_req  = true;
+		_usbd_ep_ack(USB_EP_CTRL_IN);
+		return; // DELAYED_STATUS;
+
 	case USB_REQUEST_BULK_RESET:
+		if (_wLength)
+			break;
+
 		_usbd_ep_ack(USB_EP_CTRL_IN);
 		usbd_otg->bulk_reset_req = true;
-		break; // DELAYED_STATUS;
+		return; // DELAYED_STATUS;
+
 	case USB_REQUEST_BULK_GET_MAX_LUN:
+		if (_wLength != 1)
+			break;
+
 		*transmit_data = true;
 		*size = 1;
 		desc[0] = usbd_otg->max_lun; // Set 0 LUN for 1 drive supported.
 		usbd_otg->max_lun_set = true;
-		break;
+		return;
+
 	default:
-		*ep_stall = true;
 		break;
 	}
+
+	*ep_stall = true;
 }
 
 static void _usbd_handle_get_descriptor(bool *transmit_data, void **desc, int *size, bool *ep_stall)
@@ -1395,7 +1427,7 @@ int usb_device_enumerate(usb_gadget_type gadget)
 	return _usbd_ep0_initialize();
 }
 
-int usbd_handle_ep0_ctrl_setup()
+int usbd_handle_ep0_ctrl_setup(u32 *data)
 {
 	// Acknowledge setup request for EP0 and copy its configuration.
 	u32 ep0_setup_req = usbd_otg->regs->endptsetupstat;
@@ -1405,6 +1437,15 @@ int usbd_handle_ep0_ctrl_setup()
 		memcpy(&usbd_otg->control_setup, (void *)usbdaemon->qhs->setup, 8);
 		_usbd_handle_ep0_control_transfer();
 		memset(usb_ep0_ctrl_buf, 0, USB_TD_BUFFER_PAGE_SIZE);
+	}
+
+	if (usbd_otg->intr_idle_req)
+	{
+		if (data)
+			*data = usbd_otg->intr_idle_rate;
+
+		usbd_otg->intr_idle_req = false;
+		return USB_RES_OK;
 	}
 
 	// Only return error if bulk reset was requested.
@@ -1489,7 +1530,7 @@ int usb_device_ep1_out_reading_finish(u32 *pending_bytes, u32 sync_timeout)
 		if ((ep_status == USB_EP_STATUS_IDLE) || (ep_status == USB_EP_STATUS_DISABLED))
 			break;
 
-		usbd_handle_ep0_ctrl_setup();
+		usbd_handle_ep0_ctrl_setup(NULL);
 	}
 	while ((ep_status == USB_EP_STATUS_ACTIVE) || (ep_status == USB_EP_STATUS_STALLED));
 
@@ -1538,7 +1579,7 @@ int usb_device_ep1_in_writing_finish(u32 *pending_bytes, u32 sync_timeout)
 		if ((ep_status == USB_EP_STATUS_IDLE) || (ep_status == USB_EP_STATUS_DISABLED))
 			break;
 
-		usbd_handle_ep0_ctrl_setup();
+		usbd_handle_ep0_ctrl_setup(NULL);
 	}
 	while ((ep_status == USB_EP_STATUS_ACTIVE) || (ep_status == USB_EP_STATUS_STALLED));
 
@@ -1574,7 +1615,7 @@ int usb_device_class_send_max_lun(u8 max_lun)
 
 	while (!usbd_otg->max_lun_set)
 	{
-		usbd_handle_ep0_ctrl_setup();
+		usbd_handle_ep0_ctrl_setup(NULL);
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			return USB_ERROR_USER_ABORT;
 	}
@@ -1582,15 +1623,19 @@ int usb_device_class_send_max_lun(u8 max_lun)
 	return USB_RES_OK;
 }
 
-int usb_device_class_send_hid_report()
+int usb_device_class_send_hid_report(void *rpt_buffer, u32 rpt_size)
 {
+	// Set buffers.
+	usbd_otg->hid_rpt_buffer = rpt_buffer;
+	usbd_otg->hid_rpt_size   = rpt_size;
+
 	// Timeout if get GET_HID_REPORT request doesn't happen in 10s.
 	u32 timer = get_tmr_ms() + 10000;
 
 	// Wait for request and transfer start.
 	while (!usbd_otg->hid_report_sent)
 	{
-		usbd_handle_ep0_ctrl_setup();
+		usbd_handle_ep0_ctrl_setup(NULL);
 		if (timer < get_tmr_ms() || btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 			return USB_ERROR_USER_ABORT;
 	}
