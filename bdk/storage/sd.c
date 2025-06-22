@@ -227,7 +227,7 @@ static void _sd_deinit(bool deinit)
 	if (sd_init_done)
 	{
 		if (sd_mounted)
-			f_mount(NULL, "0:", 1); // Volume 0 is SD.
+			f_unmount("0:"); // Volume 0 is SD.
 
 		if (deinit)
 		{
