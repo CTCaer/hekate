@@ -29,7 +29,7 @@
 
 #define SECTORS_PER_GB   0x200000
 
-#define HOS_MIN_SIZE_MB        2048
+#define HOS_FAT_MIN_SIZE_MB    2048
 #define ANDROID_SYSTEM_SIZE_MB 6144 // 6 GB. Fits both Legacy (4912MB) and Dynamic (6144MB) partition schemes.
 
 extern volatile boot_cfg_t *b_cfg;
@@ -37,9 +37,13 @@ extern volatile nyx_storage_t *nyx_str;
 
 typedef struct _partition_ctxt_t
 {
+	sdmmc_storage_t *storage;
+
 	u32 total_sct;
 	u32 alignment;
 	int backup_possible;
+
+	s32 hos_min_size;
 
 	s32 hos_size;
 	u32 emu_size;
@@ -294,7 +298,7 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 	memcpy(gpt->entries[*gpt_idx].name, name_utf16, name_lenth * sizeof(u16));
 
 	// Wipe the first 1MB to sanitize it as raw-empty partition.
-	sdmmc_storage_write(&sd_storage, *curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER);
+	sdmmc_storage_write(part_info.storage, *curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER);
 
 	// Prepare for next.
 	(*curr_part_lba) += size_lba;
@@ -317,9 +321,12 @@ static void _prepare_and_flash_mbr_gpt()
 	memset((void *)SDMMC_UPPER_BUFFER, 0, AU_ALIGN_BYTES);
 	sdmmc_storage_write(&sd_storage, 0, AU_ALIGN_SECTORS, (void *)SDMMC_UPPER_BUFFER);
 
-	u8 mbr_idx = 1;
+	// Set disk signature.
 	se_gen_prng128(random_number);
 	memcpy(&mbr.signature, random_number, 4);
+
+	// FAT partition as first.
+	u8 mbr_idx = 1;
 
 	// Apply L4T Linux second to MBR if no Android.
 	if (part_info.l4t_size && !part_info.and_size)
@@ -710,7 +717,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 		}
 
 		// Write data block to L4T partition.
-		res = !sdmmc_storage_write(&sd_storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
+		res = !sdmmc_storage_write(part_info.storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
 
 		manual_system_maintenance(false);
 
@@ -730,7 +737,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 				goto exit;
 			}
 
-			res = !sdmmc_storage_write(&sd_storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
+			res = !sdmmc_storage_write(part_info.storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
 			manual_system_maintenance(false);
 		}
 
@@ -782,10 +789,10 @@ static u32 _get_available_l4t_partition()
 	memset(&l4t_flash_ctxt, 0, sizeof(l4t_flasher_ctxt_t));
 
 	// Read MBR.
-	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
+	sdmmc_storage_read(part_info.storage, 0, 1, &mbr);
 
 	// Read main GPT.
-	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
+	sdmmc_storage_read(part_info.storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	// Search for a suitable partition.
 	u32 size_sct = 0;
@@ -827,7 +834,7 @@ static int _get_available_android_partition()
 	gpt_t *gpt = zalloc(sizeof(gpt_t));
 
 	// Read main GPT.
-	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
+	sdmmc_storage_read(part_info.storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	// Check if GPT.
 	if (memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
@@ -1049,7 +1056,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 	sd_mount();
 
 	// Read main GPT.
-	sdmmc_storage_read(&sd_storage, 1, sizeof(gpt_t) >> 9, gpt);
+	sdmmc_storage_read(part_info.storage, 1, sizeof(gpt_t) >> 9, gpt);
 
 	// Validate GPT header.
 	if (memcmp(&gpt->header.signature, "EFI PART", 8) || gpt->header.num_part_ents > 128)
@@ -1103,7 +1110,7 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 			s_printf(txt_buf, "#FF8000 Warning:# Kernel image too big!\n");
 		else
 		{
-			sdmmc_storage_write(&sd_storage, offset_sct, file_size >> 9, buf);
+			sdmmc_storage_write(part_info.storage, offset_sct, file_size >> 9, buf);
 
 			s_printf(txt_buf, "#C7EA46 Success:# Kernel image flashed!\n");
 			f_unlink(path);
@@ -1168,7 +1175,7 @@ boot_img_not_found:
 			strcat(txt_buf, "#FF8000 Warning:# Recovery image too big!\n");
 		else
 		{
-			sdmmc_storage_write(&sd_storage, offset_sct, file_size >> 9, buf);
+			sdmmc_storage_write(part_info.storage, offset_sct, file_size >> 9, buf);
 			strcat(txt_buf, "#C7EA46 Success:# Recovery image flashed!\n");
 			f_unlink(path);
 		}
@@ -1231,7 +1238,7 @@ recovery_not_found:
 			strcat(txt_buf, "#FF8000 Warning:# DTB image too big!");
 		else
 		{
-			sdmmc_storage_write(&sd_storage, offset_sct, file_size >> 9, buf);
+			sdmmc_storage_write(part_info.storage, offset_sct, file_size >> 9, buf);
 			strcat(txt_buf, "#C7EA46 Success:# DTB image flashed!");
 			f_unlink(path);
 		}
@@ -1251,7 +1258,7 @@ dtb_not_found:
 			!memcmp(gpt->entries[i].name, (u16[]) { 'r', 'e', 'c', 'o', 'v', 'e', 'r', 'y' }, 16))
 		{
 			u8 *buf = malloc(SD_BLOCKSIZE);
-			sdmmc_storage_read(&sd_storage, gpt->entries[i].lba_start, 1, buf);
+			sdmmc_storage_read(part_info.storage, gpt->entries[i].lba_start, 1, buf);
 			if (!memcmp(buf, "ANDROID", 7))
 				boot_recovery = true;
 			free(buf);
@@ -1507,7 +1514,7 @@ static lv_res_t _create_mbox_start_partitioning()
 	FATFS ram_fs;
 
 	// Read current MBR.
-	sdmmc_storage_read(&sd_storage, 0, 1, &part_info.mbr_old);
+	sdmmc_storage_read(part_info.storage, 0, 1, &part_info.mbr_old);
 
 	lv_label_set_text(lbl_status, "#00DDFF Status:# Initializing Ramdisk...");
 	lv_label_set_text(lbl_paths[0], "Please wait...");
@@ -1897,7 +1904,7 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 
 	// Sanitize sizes based on new HOS size.
 	s32 hos_size = (part_info.total_sct >> 11) - 16 - size - part_info.l4t_size - part_info.and_size;
-	if (hos_size > HOS_MIN_SIZE_MB)
+	if (hos_size > part_info.hos_min_size)
 	{
 		part_info.emu_size = size;
 		part_info.hos_size = hos_size;
@@ -1961,7 +1968,7 @@ static lv_res_t _action_slider_l4t(lv_obj_t *slider)
 	s32 hos_size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - size - part_info.and_size;
 
 	// Sanitize sizes based on new HOS size.
-	if (hos_size > HOS_MIN_SIZE_MB)
+	if (hos_size > part_info.hos_min_size)
 	{
 		if (size <= 8192)
 			lv_slider_set_value(slider, size >> 10);
@@ -1970,7 +1977,7 @@ static lv_res_t _action_slider_l4t(lv_obj_t *slider)
 	{
 		size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - part_info.and_size - 2048;
 		hos_size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - part_info.and_size - size;
-		if (hos_size < HOS_MIN_SIZE_MB || size < 8192)
+		if (hos_size < part_info.hos_min_size || size < 8192)
 		{
 			lv_slider_set_value(slider, part_info.l4t_size >> 10);
 			goto out;
@@ -2007,7 +2014,7 @@ static lv_res_t _action_slider_and(lv_obj_t *slider)
 	s32 hos_size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - part_info.l4t_size - and_size;
 
 	// Sanitize sizes based on new HOS size.
-	if (hos_size > HOS_MIN_SIZE_MB)
+	if (hos_size > part_info.hos_min_size)
 	{
 		if (user_size <= 4096)
 			lv_slider_set_value(slider, user_size >> 10);
@@ -2016,7 +2023,7 @@ static lv_res_t _action_slider_and(lv_obj_t *slider)
 	{
 		and_size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - part_info.l4t_size - 2048;
 		hos_size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - part_info.l4t_size - and_size;
-		if (hos_size < HOS_MIN_SIZE_MB || and_size < 8192)
+		if (hos_size < part_info.hos_min_size || and_size < 8192)
 		{
 			lv_slider_set_value(slider, part_info.and_size >> 10);
 			goto out;
@@ -2573,10 +2580,11 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	char *txt_buf = malloc(SZ_8K);
 
+	part_info.storage   = &sd_storage;
 	part_info.total_sct = sd_storage.sec_cnt;
 
 	// Align down total size to ensure alignment of all partitions after HOS one.
-	part_info.alignment = part_info.total_sct - ALIGN_DOWN(part_info.total_sct, AU_ALIGN_SECTORS);
+	part_info.alignment  = part_info.total_sct - ALIGN_DOWN(part_info.total_sct, AU_ALIGN_SECTORS);
 	part_info.total_sct -= part_info.alignment;
 
 	u32 extra_sct = AU_ALIGN_SECTORS + 0x400000; // Reserved 16MB alignment for FAT partition + 2GB.
@@ -2586,6 +2594,9 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	// Check if eMMC should be 64GB (Aula).
 	part_info.emmc_is_64gb = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
+
+	// Set HOS FAT minimum size.
+	part_info.hos_min_size = HOS_FAT_MIN_SIZE_MB;
 
 	// Read current MBR.
 	mbr_t mbr = { 0 };
