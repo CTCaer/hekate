@@ -423,8 +423,8 @@ static void _prepare_and_flash_mbr_gpt()
 			// Android Cache partition. 60MB.
 			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x1E000, "cache", 10);
 
-			// Android Super dynamic partition. 5922MB.
-			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0xB91000, "super", 10);
+			// Android Super dynamic partition. 5952MB.
+			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0xBA0000, "super", 10);
 
 			// Android Userdata partition.
 			u32 uda_size = (part_info.and_size << 11) - 0xC00000; // Subtract the other partitions (6144MB).
