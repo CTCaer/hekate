@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 balika011
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -54,10 +54,12 @@
 #define SMMU_PDN_TO_ADDR(pdn)  ((pdn)  << SMMU_PDN_SHIFT)
 #define SMMU_PTB(page, attr) (((attr) << 29u) | ((page) >> SMMU_PAGE_SHIFT))
 
-static void *smmu_heap = (void *)SMMU_HEAP_ADDR;
+#define SMMU_PAYLOAD_EN_SHIFT 4
+#define SMMU_PAYLOAD_EN_SET   0x20
+#define SMMU_PAYLOAD_EN_UNSET 0x00
 
 // Enabling SMMU requires a TZ (EL3) secure write. MC(MC_SMMU_CONFIG) = 1;
-static const u8 smmu_enable_payload[] = {
+static u8 smmu_enable_payload[] = {
 	0xC1, 0x00, 0x00, 0x18, // 0x00: LDR  W1, =0x70019010
 	0x20, 0x00, 0x80, 0xD2, // 0x04: MOV  X0, #0x1
 	0x20, 0x00, 0x00, 0xB9, // 0x08: STR  W0, [X1]
@@ -66,6 +68,9 @@ static const u8 smmu_enable_payload[] = {
 	0xFE, 0xFF, 0xFF, 0x17, // 0x14: B    loop
 	0x10, 0x90, 0x01, 0x70, // 0x18: MC_SMMU_CONFIG
 };
+
+static void *smmu_heap    = (void *)SMMU_HEAP_ADDR;
+static bool  smmu_enabled = false;
 
 void *smmu_page_zalloc(u32 num)
 {
@@ -95,7 +100,6 @@ static void _smmu_flush_regs()
 
 void smmu_flush_all()
 {
-
 	// Flush the entire page table cache.
 	MC(MC_SMMU_PTC_FLUSH) = 0;
 	_smmu_flush_regs();
@@ -117,9 +121,7 @@ void smmu_init()
 
 void smmu_enable()
 {
-	static bool enabled = false;
-
-	if (enabled)
+	if (smmu_enabled)
 		return;
 
 	// Launch payload on CCPLEX in order to set SMMU enable bit.
@@ -129,7 +131,31 @@ void smmu_enable()
 
 	smmu_flush_all();
 
-	enabled = true;
+	smmu_enabled = true;
+}
+
+void smmu_disable()
+{
+	if (!smmu_enabled)
+		return;
+
+	// Set payload to disable SMMU.
+	smmu_enable_payload[SMMU_PAYLOAD_EN_SHIFT] = SMMU_PAYLOAD_EN_UNSET;
+
+	smmu_flush_all();
+	bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLN_INV_WAY, false);
+
+	// Launch payload on CCPLEX in order to set SMMU enable bit.
+	ccplex_boot_cpu0((u32)smmu_enable_payload, false);
+	msleep(100);
+	ccplex_powergate_cpu0();
+
+	smmu_flush_all();
+
+	// Restore payload to SMMU enable.
+	smmu_enable_payload[SMMU_PAYLOAD_EN_SHIFT] = SMMU_PAYLOAD_EN_SET;
+
+	smmu_enabled = false;
 }
 
 void smmu_reset_heap()

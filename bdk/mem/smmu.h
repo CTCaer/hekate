@@ -63,6 +63,7 @@ void *smmu_page_zalloc(u32 num);
 void  smmu_flush_all();
 void  smmu_init();
 void  smmu_enable();
+void  smmu_disable();
 void  smmu_reset_heap();
 void *smmu_init_domain(u32 dev_base, u32 asid);
 void  smmu_deinit_domain(u32 dev_base, u32 asid);
