@@ -20,7 +20,9 @@
 
 #include "gui.h"
 #include "gui_tools.h"
+#include "fe_emummc_tools.h"
 #include "gui_tools_partition_manager.h"
+#include "../hos/hos.h"
 #include <libs/fatfs/diskio.h>
 #include <libs/lvgl/lvgl.h>
 
@@ -29,7 +31,9 @@
 
 #define SECTORS_PER_GB   0x200000
 
+#define HOS_USER_SECTOR        0x53C000
 #define HOS_FAT_MIN_SIZE_MB    2048
+#define HOS_USER_MIN_SIZE_MB   1024
 #define ANDROID_SYSTEM_SIZE_MB 6144 // 6 GB. Fits both Legacy (4912MB) and Dynamic (6144MB) partition schemes.
 
 extern volatile boot_cfg_t *b_cfg;
@@ -37,6 +41,7 @@ extern volatile nyx_storage_t *nyx_str;
 
 typedef struct _partition_ctxt_t
 {
+	bool emmc;
 	sdmmc_storage_t *storage;
 
 	u32 total_sct;
@@ -304,7 +309,7 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 	(*gpt_idx)++;
 }
 
-static void _prepare_and_flash_mbr_gpt()
+static void _sd_prepare_and_flash_mbr_gpt()
 {
 	mbr_t mbr;
 	u8 random_number[16];
@@ -527,6 +532,151 @@ static void _prepare_and_flash_mbr_gpt()
 	sdmmc_storage_write(&sd_storage, 0, 1, &mbr);
 }
 
+static int _emmc_prepare_and_flash_mbr_gpt()
+{
+	gpt_t *gpt = zalloc(sizeof(gpt_t));
+	gpt_header_t gpt_hdr_backup = { 0 };
+
+	// Read main GPT.
+	sdmmc_storage_read(&emmc_storage, 1, sizeof(gpt_t) >> 9, gpt);
+
+	// Set GPT header.
+	gpt->header.alt_lba = emmc_storage.sec_cnt - 1;
+	gpt->header.last_use_lba = emmc_storage.sec_cnt - 0x800 - 1; // emmc_storage.sec_cnt - 33 is start of backup gpt partition entries.
+
+	// Calculate HOS USER partition
+	u32 part_rsvd_size = (part_info.l4t_size << 11) + (part_info.and_size << 11);
+	part_rsvd_size += part_rsvd_size ? part_info.alignment : 0x800; // Only reserve 1MB if no extra partitions.
+	u32 hos_user_size = emmc_storage.sec_cnt - HOS_USER_SECTOR - part_rsvd_size;
+
+	// Get HOS USER partition index.
+	LIST_INIT(gpt_emmc);
+	emmc_gpt_parse(&gpt_emmc);
+	emmc_part_t *user_part = emmc_part_find(&gpt_emmc, "USER");
+	if (!user_part)
+	{
+		emmc_gpt_free(&gpt_emmc);
+		free(gpt);
+
+		return 1;
+	}
+	u8 gpt_idx = user_part->index;
+	emmc_gpt_free(&gpt_emmc);
+
+	// HOS USER partition.
+	u32 curr_part_lba = gpt->entries[gpt_idx].lba_start;
+	gpt->entries[gpt_idx].lba_end = curr_part_lba + hos_user_size - 1;
+
+	curr_part_lba += hos_user_size;
+	gpt_idx++;
+
+	// L4T partition.
+	if (part_info.l4t_size)
+	{
+		u32 l4t_size = part_info.l4t_size << 11;
+		if (!part_info.and_size)
+			l4t_size -= 0x800; // Reserve 1MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, l4t_size, "l4t", 6);
+	}
+
+	if (part_info.and_size && part_info.and_dynamic)
+	{
+		// Android Linux Kernel partition. 64MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, "boot", 8);
+
+		// Android Recovery partition. 64MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, "recovery", 16);
+
+		// Android Device Tree Reference partition. 1MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, "dtb", 6);
+
+		// Android Misc partition. 3MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, "misc", 8);
+
+		// Android Cache partition. 60MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x1E000, "cache", 10);
+
+		// Android Super dynamic partition. 5952MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0xBA0000, "super", 10);
+
+		// Android Userdata partition.
+		u32 uda_size = (part_info.and_size << 11) - 0xC00000; // Subtract the other partitions (6144MB).
+		uda_size -= 0x800; // Reserve 1MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, "userdata", 16);
+	}
+	else if (part_info.and_size)
+	{
+		// Android Vendor partition. 1GB
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x200000, "vendor", 12);
+
+		// Android System partition. 3GB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x600000, "APP", 6);
+
+		// Android Linux Kernel partition. 32MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x10000, "LNX", 6);
+
+		// Android Recovery partition. 64MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,  0x20000, "SOS", 6);
+
+		// Android Device Tree Reference partition. 1MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,    0x800, "DTB", 6);
+
+		// Android Encryption partition. 16MB.
+		// Note: 16MB size is for aligning UDA. If any other tiny partition must be added, it should split the MDA one.
+		sdmmc_storage_write(&emmc_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear the whole of it.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, "MDA", 6);
+
+		// Android Cache partition. 700MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, 0x15E000, "CAC", 6);
+
+		// Android Misc partition. 3MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x1800, "MSC", 6);
+
+		// Android Userdata partition.
+		u32 uda_size = (part_info.and_size << 11) - 0x998000; // Subtract the other partitions (4912MB).
+		uda_size -= 0x800; // Reserve 1MB.
+		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba, uda_size, "UDA", 6);
+	}
+
+	// Clear the rest of GPT partition table.
+	for (u32 i = gpt_idx; i < 128; i++)
+		memset(&gpt->entries[i], 0, sizeof(gpt_entry_t));
+
+	// Set final GPT header parameters.
+	gpt->header.num_part_ents = gpt_idx;
+	gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, sizeof(gpt_entry_t) * gpt->header.num_part_ents);
+	gpt->header.crc32 = 0; // Set to 0 for calculation.
+	gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
+
+	// Set final backup GPT header parameters.
+	memcpy(&gpt_hdr_backup, &gpt->header, sizeof(gpt_header_t));
+	gpt_hdr_backup.my_lba = emmc_storage.sec_cnt - 1;
+	gpt_hdr_backup.alt_lba = 1;
+	gpt_hdr_backup.part_ent_lba = emmc_storage.sec_cnt - 33;
+	gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
+	gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
+
+	// Write main GPT.
+	sdmmc_storage_write(&emmc_storage, gpt->header.my_lba, sizeof(gpt_t) >> 9, gpt);
+
+	// Write backup GPT partition table.
+	sdmmc_storage_write(&emmc_storage, gpt_hdr_backup.part_ent_lba, ((sizeof(gpt_entry_t) * 128) >> 9), gpt->entries);
+
+	// Write backup GPT header.
+	sdmmc_storage_write(&emmc_storage, gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
+
+	// Clear nand patrol.
+	u8 *buf = (u8 *)gpt;
+	memset(buf, 0, EMMC_BLOCKSIZE);
+	emmc_set_partition(EMMC_BOOT0);
+	sdmmc_storage_write(&emmc_storage, NAND_PATROL_SECTOR, 1, buf);
+	emmc_set_partition(EMMC_GPP);
+
+	free(gpt);
+
+	return 0;
+}
+
 static lv_res_t _action_part_manager_ums_sd(lv_obj_t *btn)
 {
 	action_ums_sd(NULL);
@@ -535,7 +685,7 @@ static lv_res_t _action_part_manager_ums_sd(lv_obj_t *btn)
 	lv_action_t close_btn_action = lv_btn_get_action(close_btn, LV_BTN_ACTION_CLICK);
 	close_btn_action(close_btn);
 	lv_obj_del(ums_mbox);
-	create_window_partition_manager(NULL);
+	create_window_sd_partition_manager(NULL);
 
 	return LV_RES_INV;
 }
@@ -634,6 +784,8 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 	lv_obj_set_top(mbox, true);
 
 	sd_mount();
+	if (part_info.emmc)
+		emmc_initialize(false);
 
 	int res = 0;
 	char *path = malloc(1024);
@@ -778,6 +930,8 @@ exit:
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	sd_unmount();
+	if (part_info.emmc)
+		emmc_end();
 
 	return LV_RES_INV;
 }
@@ -894,6 +1048,8 @@ static lv_res_t _action_check_flash_linux(lv_obj_t *btn)
 	manual_system_maintenance(true);
 
 	sd_mount();
+	if (part_info.emmc)
+		emmc_initialize(false);
 
 	// Check if L4T image exists.
 	strcpy(path, "switchroot/install/l4t.00");
@@ -982,6 +1138,8 @@ exit:
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	sd_unmount();
+	if (part_info.emmc)
+		emmc_end();
 
 	return LV_RES_OK;
 }
@@ -1055,6 +1213,8 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 	manual_system_maintenance(true);
 
 	sd_mount();
+	if (part_info.emmc)
+		emmc_initialize(false);
 
 	// Read main GPT.
 	sdmmc_storage_read(part_info.storage, 1, sizeof(gpt_t) >> 9, gpt);
@@ -1287,6 +1447,8 @@ error:
 	free(gpt);
 
 	sd_unmount();
+	if (part_info.emmc)
+		emmc_end();
 
 	return LV_RES_INV;
 }
@@ -1438,7 +1600,7 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 	return res;
 }
 
-static lv_res_t _create_mbox_start_partitioning()
+static lv_res_t _sd_create_mbox_start_partitioning()
 {
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
@@ -1643,7 +1805,7 @@ mkfs_no_error:
 	manual_system_maintenance(true);
 
 	// Prepare MBR and GPT header and partition entries and flash them.
-	_prepare_and_flash_mbr_gpt();
+	_sd_prepare_and_flash_mbr_gpt();
 
 	// Enable/Disable buttons depending on partition layout.
 	if (part_info.l4t_size)
@@ -1705,6 +1867,206 @@ exit:
 	return LV_RES_OK;
 }
 
+static lv_res_t _emmc_create_mbox_start_partitioning()
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] =  { "\251", "\222OK", "\251", "" };
+	static const char *mbox_btn_map1[] = { "\251", "\222Flash Linux", "\222Flash Android", "\221OK", "" };
+	static const char *mbox_btn_map2[] = { "\251", "\222Flash Linux", "\221OK", "" };
+	static const char *mbox_btn_map3[] = { "\251", "\222Flash Android", "\221OK", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
+
+	lv_mbox_set_text(mbox, "#FF8000 eMMC Partition Manager#");
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	bool buttons_set = false;
+
+	// Use safety wait if backup is not possible.
+	char *txt_buf = malloc(SZ_4K);
+	strcpy(txt_buf, "#FF8000 eMMC Partition Manager#\n\nSafety wait ends in ");
+	lv_mbox_set_text(mbox, txt_buf);
+
+	u32 seconds = 5;
+	u32 text_idx = strlen(txt_buf);
+	while (seconds)
+	{
+		s_printf(txt_buf + text_idx, "%d seconds...", seconds);
+		lv_mbox_set_text(mbox, txt_buf);
+		manual_system_maintenance(true);
+		msleep(1000);
+		seconds--;
+	}
+
+	lv_mbox_set_text(mbox,
+		"#FF8000 eMMC Partition Manager#\n\n"
+		"#FFDD00 Warning: Do you really want to continue?!#\n\n"
+		"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.");
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	manual_system_maintenance(true);
+
+	if (!(btn_wait() & BTN_POWER))
+		goto exit;
+
+	// Start partitioning.
+	lv_mbox_set_text(mbox, "#FF8000 eMMC Partition Manager#");
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	manual_system_maintenance(true);
+
+	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(lbl_status, true);
+
+	lv_obj_t *lbl_extra = lv_label_create(mbox, NULL);
+	lv_label_set_long_mode(lbl_extra, LV_LABEL_LONG_DOT);
+	lv_cont_set_fit(lbl_extra, false, true);
+	lv_obj_set_width(lbl_extra, (LV_HOR_RES / 9 * 6) - LV_DPI / 2);
+	lv_label_set_align(lbl_extra, LV_LABEL_ALIGN_CENTER);
+
+	lv_label_set_text(lbl_status, "#00DDFF Status:# Initializing...");
+	lv_label_set_text(lbl_extra, "Please wait...");
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	manual_system_maintenance(true);
+
+	if (!emmc_initialize(false))
+	{
+		lv_label_set_text(lbl_extra, "#FFDD00 Failed to init eMMC!#");
+		goto exit;
+	}
+
+	emmc_set_partition(EMMC_GPP);
+
+	if (!emummc_raw_derive_bis_keys())
+	{
+		lv_label_set_text(lbl_extra, "#FFDD00 For formatting USER partition,#\n#FFDD00 BIS keys are needed!#");
+		emmc_end();
+		goto exit;
+	}
+
+	lv_label_set_text(lbl_status, "#00DDFF Status:# Flashing partition table...");
+	lv_label_set_text(lbl_extra, "Please wait...");
+	manual_system_maintenance(true);
+
+	// Prepare MBR and GPT header and partition entries and flash them.
+	if (_emmc_prepare_and_flash_mbr_gpt())
+		goto no_hos_user_part;
+
+	lv_label_set_text(lbl_status, "#00DDFF Status:# Formatting USER partition...");
+	lv_label_set_text(lbl_extra, "Please wait...");
+	manual_system_maintenance(true);
+
+	// Get USER partition and configure BIS and FatFS.
+	LIST_INIT(gpt);
+	emmc_gpt_parse(&gpt);
+	emmc_part_t *user_part = emmc_part_find(&gpt, "USER");
+
+	if (!user_part)
+	{
+no_hos_user_part:
+		s_printf(txt_buf, "#FF0000 HOS USER partition doesn't exist!#\nRestore HOS backup first...");
+		lv_label_set_text(lbl_extra, txt_buf);
+
+		emmc_gpt_free(&gpt);
+		emmc_end();
+
+		goto exit;
+	}
+
+	// Initialize BIS for eMMC. BIS keys should be already in place.
+	nx_emmc_bis_init(user_part, true, 0);
+
+	// Set BIS size for FatFS.
+	u32 user_sectors = user_part->lba_end - user_part->lba_start + 1;
+	disk_set_info(DRIVE_BIS, SET_SECTOR_COUNT,  &user_sectors);
+
+	// Enable writing.
+	bool allow_writes = true;
+	disk_set_info(DRIVE_BIS, SET_WRITE_PROTECT, &allow_writes);
+
+	// Format USER partition as FAT32 with 16KB cluster and PRF2SAFE.
+	u8 *buff = malloc(SZ_4M);
+	int mkfs_error = f_mkfs("bis:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buff, SZ_4M);
+
+	if (mkfs_error)
+	{
+		s_printf(txt_buf, "#FF0000 Failed (%d)!#\nPlease try again...\n", mkfs_error);
+		lv_label_set_text(lbl_extra, txt_buf);
+
+		free(buff);
+		emmc_end();
+
+		goto exit;
+	}
+
+	// Disable writes to BIS.
+	allow_writes = false;
+	disk_set_info(DRIVE_BIS, SET_WRITE_PROTECT, &allow_writes);
+
+	// Flush BIS cache, deinit, clear BIS keys slots and reinstate SBK.
+	nx_emmc_bis_end();
+	hos_bis_keys_clear();
+	emmc_gpt_free(&gpt);
+	emmc_end();
+
+	// Enable/Disable buttons depending on partition layout.
+	if (part_info.l4t_size)
+	{
+		lv_obj_set_click(btn_flash_l4t, true);
+		lv_btn_set_state(btn_flash_l4t, LV_BTN_STATE_REL);
+	}
+	else
+	{
+		lv_obj_set_click(btn_flash_l4t, false);
+		lv_btn_set_state(btn_flash_l4t, LV_BTN_STATE_INA);
+	}
+
+	// Enable/Disable buttons depending on partition layout.
+	if (part_info.and_size)
+	{
+		lv_obj_set_click(btn_flash_android, true);
+		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_REL);
+	}
+	else
+	{
+		lv_obj_set_click(btn_flash_android, false);
+		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_INA);
+	}
+
+	lv_label_set_text(lbl_status, "#00DDFF Status:# Done!");
+	manual_system_maintenance(true);
+
+	// Set buttons depending on what user chose to create.
+	if (part_info.l4t_size && part_info.and_size)
+		lv_mbox_add_btns(mbox, mbox_btn_map1, _action_part_manager_flash_options0);
+	else if (part_info.l4t_size)
+		lv_mbox_add_btns(mbox, mbox_btn_map2, _action_part_manager_flash_options1);
+	else if (part_info.and_size)
+		lv_mbox_add_btns(mbox, mbox_btn_map3, _action_part_manager_flash_options2);
+
+	if (part_info.l4t_size || part_info.and_size)
+		buttons_set = true;
+
+	lv_obj_del(lbl_extra);
+
+exit:
+	free(txt_buf);
+
+	if (!buttons_set)
+		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	// Disable partitioning button.
+	if (part_info.partition_button)
+		lv_btn_set_state(part_info.partition_button, LV_BTN_STATE_INA);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_partitioning_option0(lv_obj_t *btns, const char *txt)
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
@@ -1716,7 +2078,7 @@ static lv_res_t _create_mbox_partitioning_option0(lv_obj_t *btns, const char *tx
 		return LV_RES_OK;
 	case 1:
 		mbox_action(btns, txt);
-		_create_mbox_start_partitioning();
+		_sd_create_mbox_start_partitioning();
 		break;
 	case 2:
 		mbox_action(btns, txt);
@@ -1735,7 +2097,10 @@ static lv_res_t _create_mbox_partitioning_option1(lv_obj_t *btns, const char *tx
 	if (!btn_idx)
 	{
 		mbox_action(btns, txt);
-		_create_mbox_start_partitioning();
+		if (!part_info.emmc)
+			_sd_create_mbox_start_partitioning();
+		else
+			_emmc_create_mbox_start_partitioning();
 		return LV_RES_INV;
 	}
 
@@ -1760,26 +2125,36 @@ static lv_res_t _create_mbox_partitioning_warn()
 	lv_obj_t *lbl_status = lv_label_create(mbox, NULL);
 	lv_label_set_recolor(lbl_status, true);
 
-	s_printf(txt_buf, "#FFDD00 Warning: This will partition the SD Card!#\n\n");
-
-	if (part_info.backup_possible)
+	if (!part_info.emmc)
 	{
-		strcat(txt_buf, "#C7EA46 Your files will be backed up and restored!#\n"
-			"#FFDD00 Any other partition will be wiped!#");
+		s_printf(txt_buf, "#FFDD00 Warning: This will partition the SD Card!#\n\n");
+
+		if (part_info.backup_possible)
+		{
+			strcat(txt_buf, "#C7EA46 Your files will be backed up and restored!#\n"
+				"#FFDD00 Any other partition will be wiped!#");
+		}
+		else
+		{
+			strcat(txt_buf, "#FFDD00 Your files will be wiped!#\n"
+				"#FFDD00 Any other partition will be also wiped!#\n"
+				"#FFDD00 Use USB UMS to copy them over!#");
+		}
+
+		lv_label_set_text(lbl_status, txt_buf);
+
+		if (part_info.backup_possible)
+			lv_mbox_add_btns(mbox, mbox_btn_map2, _create_mbox_partitioning_option1);
+		else
+			lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_partitioning_option0);
 	}
 	else
 	{
-		strcat(txt_buf, "#FFDD00 Your files will be wiped!#\n"
-			"#FFDD00 Any other partition will be also wiped!#\n"
-			"#FFDD00 Use USB UMS to copy them over!#");
-	}
-
-	lv_label_set_text(lbl_status, txt_buf);
-
-	if (part_info.backup_possible)
+		s_printf(txt_buf, "#FFDD00 Warning: This will partition the eMMC!#\n\n"
+						  "#FFDD00 The USER partition will also be formatted!#");
+		lv_label_set_text(lbl_status, txt_buf);
 		lv_mbox_add_btns(mbox, mbox_btn_map2, _create_mbox_partitioning_option1);
-	else
-		lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_partitioning_option0);
+	}
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -2502,11 +2877,17 @@ out:
 	return LV_RES_OK;
 }
 
-lv_res_t create_window_partition_manager(lv_obj_t *btn)
+lv_res_t create_window_partition_manager(bool emmc)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SD" SD Partition Manager");
+	lv_obj_t *win;
 
-	lv_win_add_btn(win, NULL, SYMBOL_MODULES_ALT" Fix Hybrid MBR", _action_fix_mbr);
+	if (!emmc)
+	{
+		win = nyx_create_standard_window(SYMBOL_SD" SD Partition Manager");
+		lv_win_add_btn(win, NULL, SYMBOL_MODULES_ALT" Fix Hybrid MBR", _action_fix_mbr);
+	}
+	else
+		win = nyx_create_standard_window(SYMBOL_CHIP" eMMC Partition Manager");
 
 	static lv_style_t bar_hos_bg, bar_emu_bg, bar_l4t_bg, bar_and_bg;
 	static lv_style_t bar_hos_ind, bar_emu_ind, bar_l4t_ind, bar_and_ind;
@@ -2572,21 +2953,39 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_obj_t *h1 = lv_cont_create(win, NULL);
 	lv_obj_set_size(h1, LV_HOR_RES - (LV_DPI * 8 / 10), LV_VER_RES - LV_DPI);
 
-	if (!sd_mount())
+	if (!emmc)
 	{
-		lv_obj_t *lbl = lv_label_create(h1, NULL);
-		lv_label_set_recolor(lbl, true);
-		lv_label_set_text(lbl, "#FFDD00 Failed to init SD!#");
-		return LV_RES_OK;
+		if (!sd_mount())
+		{
+			lv_obj_t *lbl = lv_label_create(h1, NULL);
+			lv_label_set_recolor(lbl, true);
+			lv_label_set_text(lbl, "#FFDD00 Failed to init SD!#");
+			return LV_RES_OK;
+		}
+	}
+	else
+	{
+		if (!emmc_initialize(false))
+		{
+			lv_obj_t *lbl = lv_label_create(h1, NULL);
+			lv_label_set_recolor(lbl, true);
+			lv_label_set_text(lbl, "#FFDD00 Failed to init eMMC!#");
+			return LV_RES_OK;
+		}
+		emmc_set_partition(EMMC_GPP);
 	}
 
 	memset(&part_info, 0, sizeof(partition_ctxt_t));
-	_create_mbox_check_files_total_size();
+	if (!emmc)
+		_create_mbox_check_files_total_size();
 
 	char *txt_buf = malloc(SZ_8K);
 
-	part_info.storage   = &sd_storage;
-	part_info.total_sct = sd_storage.sec_cnt;
+	part_info.emmc      = emmc;
+	part_info.storage   = !emmc ? &sd_storage : &emmc_storage;
+	part_info.total_sct = part_info.storage->sec_cnt;
+	if (emmc)
+		part_info.total_sct -= HOS_USER_SECTOR; // Reserved HOS partitions.
 
 	// Align down total size to ensure alignment of all partitions after HOS one.
 	part_info.alignment  = part_info.total_sct - ALIGN_DOWN(part_info.total_sct, AU_ALIGN_SECTORS);
@@ -2600,12 +2999,12 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	// Check if eMMC should be 64GB (Aula).
 	part_info.emmc_is_64gb = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
 
-	// Set HOS FAT minimum size.
-	part_info.hos_min_size = HOS_FAT_MIN_SIZE_MB;
+	// Set HOS FAT or USER minimum size.
+	part_info.hos_min_size = !emmc? HOS_FAT_MIN_SIZE_MB : HOS_USER_MIN_SIZE_MB;
 
 	// Read current MBR.
 	mbr_t mbr = { 0 };
-	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
+	sdmmc_storage_read(part_info.storage, 0, 1, &mbr);
 
 	u32 bar_hos_size = lv_obj_get_width(h1);
 	u32 bar_emu_size = 0;
@@ -2672,12 +3071,17 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_obj_set_width(cont_lbl_hos, LV_DPI * 17 / 7);
 	lv_obj_t *lbl_hos = lv_label_create(cont_lbl_hos, NULL);
 	lv_label_set_recolor(lbl_hos, true);
-	lv_label_set_static_text(lbl_hos, "#96FF00 "SYMBOL_DOT" HOS (FAT32):#");
+	lv_label_set_static_text(lbl_hos, !emmc ? "#96FF00 "SYMBOL_DOT" HOS (FAT32):#" :
+											  "#96FF00 "SYMBOL_DOT" eMMC (USER):#");
 	lv_obj_align(lbl_hos, bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
 
-	lv_obj_t *lbl_emu = lv_label_create(h1, lbl_hos);
-	lv_label_set_static_text(lbl_emu, "#FF3C28 "SYMBOL_DOT" emuMMC (RAW):#");
-	lv_obj_align(lbl_emu, lbl_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+	lv_obj_t *lbl_emu = lbl_hos;
+	if (!emmc)
+	{
+		lbl_emu = lv_label_create(h1, lbl_hos);
+		lv_label_set_static_text(lbl_emu, "#FF3C28 "SYMBOL_DOT" emuMMC (RAW):#");
+		lv_obj_align(lbl_emu, lbl_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+	}
 
 	lv_obj_t *lbl_l4t = lv_label_create(h1, lbl_hos);
 	lv_label_set_static_text(lbl_l4t, "#00DDFF "SYMBOL_DOT" Linux (EXT4):#");
@@ -2697,16 +3101,20 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_obj_align(slider_bar_hos, cont_lbl_hos, LV_ALIGN_OUT_RIGHT_MID, LV_DPI, 0);
 	part_info.slider_bar_hos = slider_bar_hos;
 
-	// Create emuMMC size slider.
-	lv_obj_t *slider_emu = lv_slider_create(h1, NULL);
-	lv_obj_set_size(slider_emu, LV_DPI * 7, LV_DPI / 3);
-	lv_slider_set_range(slider_emu, 0, 20);
-	lv_slider_set_value(slider_emu, 0);
-	lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_BG, &bar_emu_bg);
-	lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_INDIC, &bar_emu_ind);
-	lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_KNOB, &bar_emu_btn);
-	lv_obj_align(slider_emu, slider_bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 + 5);
-	lv_slider_set_action(slider_emu, _action_slider_emu);
+	lv_obj_t *slider_emu = slider_bar_hos;
+	if (!emmc)
+	{
+		// Create emuMMC size slider.
+		slider_emu = lv_slider_create(h1, NULL);
+		lv_obj_set_size(slider_emu, LV_DPI * 7, LV_DPI / 3);
+		lv_slider_set_range(slider_emu, 0, 20);
+		lv_slider_set_value(slider_emu, 0);
+		lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_BG, &bar_emu_bg);
+		lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_INDIC, &bar_emu_ind);
+		lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_KNOB, &bar_emu_btn);
+		lv_obj_align(slider_emu, slider_bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 + 5);
+		lv_slider_set_action(slider_emu, _action_slider_emu);
+	}
 
 	// Create L4T size slider.
 	lv_obj_t *slider_l4t = lv_slider_create(h1, NULL);
@@ -2716,7 +3124,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_slider_set_style(slider_l4t, LV_SLIDER_STYLE_BG, &bar_l4t_bg);
 	lv_slider_set_style(slider_l4t, LV_SLIDER_STYLE_INDIC, &bar_l4t_ind);
 	lv_slider_set_style(slider_l4t, LV_SLIDER_STYLE_KNOB, &bar_l4t_btn);
-	lv_obj_align(slider_l4t, slider_emu, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 - 3);
+	lv_obj_align(slider_l4t, slider_emu, LV_ALIGN_OUT_BOTTOM_LEFT, 0, !emmc ? (LV_DPI / 3 - 3) : (LV_DPI / 3 + 5));
 	lv_slider_set_action(slider_l4t, _action_slider_l4t);
 
 	// Create Android size slider.
@@ -2746,10 +3154,14 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	part_info.lbl_hos = lbl_sl_hos;
 
 	// Create emuMMC size label.
-	lv_obj_t *lbl_sl_emu = lv_label_create(h1, lbl_sl_hos);
-	lv_label_set_text(lbl_sl_emu, "#FF3C28 0 GiB#");
-	lv_obj_align(lbl_sl_emu, lbl_sl_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
-	part_info.lbl_emu = lbl_sl_emu;
+	part_info.lbl_emu = lbl_sl_hos;
+	if (!emmc)
+	{
+		lv_obj_t *lbl_sl_emu = lv_label_create(cont_lbl, lbl_sl_hos);
+		lv_label_set_text(lbl_sl_emu, "#FF3C28    0 GiB#");
+		lv_obj_align(lbl_sl_emu, lbl_sl_hos, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, LV_DPI / 3);
+		part_info.lbl_emu = lbl_sl_emu;
+	}
 
 	// Create L4T size label.
 	lv_obj_t *lbl_sl_l4t = lv_label_create(cont_lbl, lbl_sl_hos);
@@ -2769,26 +3181,45 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_obj_t *lbl_notes = lv_label_create(h1, NULL);
 	lv_label_set_recolor(lbl_notes, true);
 	lv_label_set_style(lbl_notes, &hint_small_style);
-	lv_label_set_static_text(lbl_notes,
-		"Note 1: Only up to #C7EA46 1.2GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
-		"Note 2: Resized emuMMC formats the USER partition. A save data manager can be used to move them over.\n"
-		"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n");
-	lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 6 * 2);
+	if (!emmc)
+	{
+		lv_label_set_static_text(lbl_notes,
+			"Note 1: Only up to #C7EA46 1.2GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
+			"Note 2: Resized emuMMC formats the USER partition. A save data manager can be used to move them over.\n"
+			"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n");
+		lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 6 * 2);
+	}
+	else
+	{
+		lv_label_set_static_text(lbl_notes,
+			"Note 1: Any partition existing after the selected ones gets removed from the table.\n"
+			"Note 2: The HOS USER partition gets formatted. A save data manager can be used to move them over.\n"
+			"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n");
+		lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 6 * 4);
+	}
 
-	// Create UMS button.
-	lv_obj_t *btn1 = lv_btn_create(h1, NULL);
-	lv_obj_t *label_btn = lv_label_create(btn1, NULL);
-	lv_btn_set_fit(btn1, true, true);
-	lv_label_set_static_text(label_btn, SYMBOL_USB"  SD UMS");
-	lv_obj_align(btn1, h1, LV_ALIGN_IN_TOP_LEFT, 0, LV_DPI * 5);
-	lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _action_part_manager_ums_sd);
+	lv_obj_t *btn1 = NULL;
+	lv_obj_t *label_btn = NULL;
+	if (!emmc)
+	{
+		// Create UMS button.
+		btn1 = lv_btn_create(h1, NULL);
+		lv_obj_t *label_btn = lv_label_create(btn1, NULL);
+		lv_btn_set_fit(btn1, true, true);
+		lv_label_set_static_text(label_btn, SYMBOL_USB"  SD UMS");
+		lv_obj_align(btn1, h1, LV_ALIGN_IN_TOP_LEFT, 0, LV_DPI * 5);
+		lv_btn_set_action(btn1, LV_BTN_ACTION_CLICK, _action_part_manager_ums_sd);
+	}
 
 	// Create Flash Linux button.
 	btn_flash_l4t = lv_btn_create(h1, NULL);
-	lv_obj_t *label_btn2 = lv_label_create(btn_flash_l4t, NULL);
+	label_btn = lv_label_create(btn_flash_l4t, NULL);
 	lv_btn_set_fit(btn_flash_l4t, true, true);
-	lv_label_set_static_text(label_btn2, SYMBOL_DOWNLOAD"  Flash Linux");
-	lv_obj_align(btn_flash_l4t, btn1, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
+	lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Linux");
+	if (!emmc)
+		lv_obj_align(btn_flash_l4t, btn1, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 3, 0);
+	else
+		lv_obj_align(btn_flash_l4t, h1, LV_ALIGN_IN_TOP_LEFT, 0, LV_DPI * 5);
 	lv_btn_set_action(btn_flash_l4t, LV_BTN_ACTION_CLICK, _action_check_flash_linux);
 
 	// Disable Flash Linux button if partition not found.
@@ -2833,7 +3264,13 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 
 	free(txt_buf);
 
-	sd_unmount();
+	if (!emmc)
+		sd_unmount();
+	else
+		emmc_end();
 
 	return LV_RES_OK;
 }
+
+lv_res_t create_window_sd_partition_manager(lv_obj_t *btn)   { return create_window_partition_manager(false); }
+lv_res_t create_window_emmc_partition_manager(lv_obj_t *btn) { return create_window_partition_manager(true);  }
