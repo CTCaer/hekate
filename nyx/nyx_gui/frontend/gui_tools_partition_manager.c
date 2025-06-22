@@ -67,9 +67,8 @@ typedef struct _partition_ctxt_t
 	lv_obj_t *sep_and;
 
 	lv_obj_t *slider_bar_hos;
-	lv_obj_t *slider_emu;
-	lv_obj_t *slider_l4t;
-	lv_obj_t *slider_and;
+
+	lv_obj_t *cont_lbl;
 
 	lv_obj_t *lbl_hos;
 	lv_obj_t *lbl_emu;
@@ -1451,7 +1450,7 @@ static lv_res_t _create_mbox_start_partitioning()
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	lv_mbox_set_text(mbox, "#FF8000 Partition Manager#");
+	lv_mbox_set_text(mbox, "#FF8000 SD Partition Manager#");
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
@@ -1459,7 +1458,7 @@ static lv_res_t _create_mbox_start_partitioning()
 
 	// Use safety wait if backup is not possible.
 	char *txt_buf = malloc(SZ_4K);
-	strcpy(txt_buf, "#FF8000 Partition Manager#\n\nSafety wait ends in ");
+	strcpy(txt_buf, "#FF8000 SD Partition Manager#\n\nSafety wait ends in ");
 	lv_mbox_set_text(mbox, txt_buf);
 
 	u32 seconds = 5;
@@ -1474,7 +1473,7 @@ static lv_res_t _create_mbox_start_partitioning()
 	}
 
 	lv_mbox_set_text(mbox,
-		"#FF8000 Partition Manager#\n\n"
+		"#FF8000 SD Partition Manager#\n\n"
 		"#FFDD00 Warning: Do you really want to continue?!#\n\n"
 		"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.");
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -1486,7 +1485,7 @@ static lv_res_t _create_mbox_start_partitioning()
 		goto exit;
 
 	// Start partitioning.
-	lv_mbox_set_text(mbox, "#FF8000 Partition Manager#");
+	lv_mbox_set_text(mbox, "#FF8000 SD Partition Manager#");
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	manual_system_maintenance(true);
 
@@ -1847,27 +1846,34 @@ static void _update_partition_bar()
 	u32 bar_and_size = lv_obj_get_width(h1) * (part_info.and_size >> 10) / total_size;
 
 	// Update bar widths.
-	lv_obj_set_size(part_info.bar_hos, bar_hos_size, LV_DPI / 2);
-	lv_obj_set_size(part_info.bar_emu, bar_emu_size, LV_DPI / 2);
-	lv_obj_set_size(part_info.bar_l4t, bar_l4t_size, LV_DPI / 2);
-	lv_obj_set_size(part_info.bar_and, bar_and_size, LV_DPI / 2);
+	lv_obj_set_width(part_info.bar_hos, bar_hos_size);
+	lv_obj_set_width(part_info.bar_emu, bar_emu_size);
+	lv_obj_set_width(part_info.bar_l4t, bar_l4t_size);
+	lv_obj_set_width(part_info.bar_and, bar_and_size);
 
 	// Re-align bars.
-	lv_obj_align(part_info.bar_emu, part_info.bar_hos, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-	lv_obj_align(part_info.bar_l4t, part_info.bar_emu, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-	lv_obj_align(part_info.bar_and, part_info.bar_l4t, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	lv_obj_realign(part_info.bar_emu);
+	lv_obj_realign(part_info.bar_l4t);
+	lv_obj_realign(part_info.bar_and);
 
 	// Set emuMMC blending separator sizes and realign.
-	lv_obj_set_size(part_info.sep_emu, bar_emu_size ? 8 : 0, LV_DPI / 2);
-	lv_obj_align(part_info.sep_emu, part_info.bar_hos, LV_ALIGN_OUT_RIGHT_MID, -4, 0);
+	lv_obj_set_width(part_info.sep_emu, bar_emu_size ? 8 : 0);
+	lv_obj_realign(part_info.sep_emu);
 
 	// Set L4T blending separator sizes and realign.
-	lv_obj_set_size(part_info.sep_l4t, bar_l4t_size ? 8 : 0, LV_DPI / 2);
-	lv_obj_align(part_info.sep_l4t, part_info.bar_emu, LV_ALIGN_OUT_RIGHT_MID, -4, 0);
+	lv_obj_set_width(part_info.sep_l4t, bar_l4t_size ? 8 : 0);
+	lv_obj_realign(part_info.sep_l4t);
 
 	// Set Android blending separator sizes and realign.
-	lv_obj_set_size(part_info.sep_and, bar_and_size ? 8 : 0, LV_DPI / 2);
-	lv_obj_align(part_info.sep_and, part_info.bar_l4t, LV_ALIGN_OUT_RIGHT_MID, -4, 0);
+	lv_obj_set_width(part_info.sep_and, bar_and_size ? 8 : 0);
+	lv_obj_realign(part_info.sep_and);
+
+	// Re-align size labels.
+	lv_obj_realign(part_info.lbl_hos);
+	lv_obj_realign(part_info.lbl_emu);
+	lv_obj_realign(part_info.lbl_l4t);
+	lv_obj_realign(part_info.lbl_and);
+	lv_obj_align(part_info.cont_lbl, part_info.bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 11 - LV_DPI / 2, LV_DPI * 9 / 23);
 }
 
 static lv_res_t _action_slider_emu(lv_obj_t *slider)
@@ -1909,19 +1915,19 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		part_info.emu_size = size;
 		part_info.hos_size = hos_size;
 
-		s_printf(lbl_text, "#96FF00 %d GiB#", hos_size >> 10);
+		s_printf(lbl_text, "#96FF00 %4d GiB#", hos_size >> 10);
 		lv_label_set_text(part_info.lbl_hos, lbl_text);
 		lv_bar_set_value(part_info.slider_bar_hos, hos_size >> 10);
 
 		if (!part_info.emu_double)
 		{
 			if (slide_val != 10)
-				s_printf(lbl_text, "#FF3C28 %d GiB#", size >> 10);
+				s_printf(lbl_text, "#FF3C28 %4d GiB#", size >> 10);
 			else
 				s_printf(lbl_text, "#FF3C28 %d FULL#", size >> 10);
 		}
 		else
-			s_printf(lbl_text, "#FFDD00 2x##FF3C28 %d#", size >> 11);
+			s_printf(lbl_text, "#FFDD00 2x##FF3C28 %d GiB#", size >> 11);
 		lv_label_set_text(part_info.lbl_emu, lbl_text);
 	}
 	else
@@ -1988,10 +1994,10 @@ static lv_res_t _action_slider_l4t(lv_obj_t *slider)
 	part_info.l4t_size = size;
 	part_info.hos_size = hos_size;
 
-	s_printf(lbl_text, "#96FF00 %d GiB#", hos_size >> 10);
+	s_printf(lbl_text, "#96FF00 %4d GiB#", hos_size >> 10);
 	lv_label_set_text(part_info.lbl_hos, lbl_text);
 	lv_bar_set_value(part_info.slider_bar_hos, hos_size >> 10);
-	s_printf(lbl_text, "#00DDFF %d GiB#", size >> 10);
+	s_printf(lbl_text, "#00DDFF %4d GiB#", size >> 10);
 	lv_label_set_text(part_info.lbl_l4t, lbl_text);
 
 	_update_partition_bar();
@@ -2035,10 +2041,10 @@ static lv_res_t _action_slider_and(lv_obj_t *slider)
 	part_info.and_size = and_size;
 	part_info.hos_size = hos_size;
 
-	s_printf(lbl_text, "#96FF00 %d GiB#", hos_size >> 10);
+	s_printf(lbl_text, "#96FF00 %4d GiB#", hos_size >> 10);
 	lv_label_set_text(part_info.lbl_hos, lbl_text);
 	lv_bar_set_value(part_info.slider_bar_hos, hos_size >> 10);
-	s_printf(lbl_text, "#FF8000 %d GiB#", user_size >> 10);
+	s_printf(lbl_text, "#FF8000 %4d GiB#", user_size >> 10);
 	lv_label_set_text(part_info.lbl_and, lbl_text);
 
 	_update_partition_bar();
@@ -2496,13 +2502,13 @@ out:
 
 lv_res_t create_window_partition_manager(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SD" Partition Manager");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SD" SD Partition Manager");
 
 	lv_win_add_btn(win, NULL, SYMBOL_MODULES_ALT" Fix Hybrid MBR", _action_fix_mbr);
 
 	static lv_style_t bar_hos_bg, bar_emu_bg, bar_l4t_bg, bar_and_bg;
 	static lv_style_t bar_hos_ind, bar_emu_ind, bar_l4t_ind, bar_and_ind;
-	static lv_style_t bar_hos_btn, bar_emu_btn, bar_l4t_btn, bar_and_btn;
+	static lv_style_t bar_emu_btn, bar_l4t_btn, bar_and_btn;
 	static lv_style_t sep_emu_bg, sep_l4t_bg, sep_and_bg;
 
 	// Set HOS bar styles.
@@ -2512,9 +2518,6 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_style_copy(&bar_hos_ind, lv_theme_get_current()->bar.indic);
 	bar_hos_ind.body.main_color = LV_COLOR_HEX(0x96FF00);
 	bar_hos_ind.body.grad_color = bar_hos_ind.body.main_color;
-	lv_style_copy(&bar_hos_btn, lv_theme_get_current()->slider.knob);
-	bar_hos_btn.body.main_color = LV_COLOR_HEX(0x77CC00);
-	bar_hos_btn.body.grad_color = bar_hos_btn.body.main_color;
 
 	// Set eMUMMC bar styles.
 	lv_style_copy(&bar_emu_bg, lv_theme_get_current()->bar.bg);
@@ -2662,7 +2665,10 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	part_info.sep_and = sep_and;
 
 	// Create slider type labels.
-	lv_obj_t *lbl_hos = lv_label_create(h1, NULL);
+	lv_obj_t *cont_lbl_hos = lv_cont_create(h1, NULL);
+	lv_cont_set_fit(cont_lbl_hos, false, true);
+	lv_obj_set_width(cont_lbl_hos, LV_DPI * 17 / 7);
+	lv_obj_t *lbl_hos = lv_label_create(cont_lbl_hos, NULL);
 	lv_label_set_recolor(lbl_hos, true);
 	lv_label_set_static_text(lbl_hos, "#96FF00 "SYMBOL_DOT" HOS (FAT32):#");
 	lv_obj_align(lbl_hos, bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 2);
@@ -2686,7 +2692,7 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_bar_set_value(slider_bar_hos, (part_info.total_sct - AU_ALIGN_SECTORS) / SECTORS_PER_GB);
 	lv_bar_set_style(slider_bar_hos, LV_SLIDER_STYLE_BG, &bar_hos_bg);
 	lv_bar_set_style(slider_bar_hos, LV_SLIDER_STYLE_INDIC, &bar_hos_ind);
-	lv_obj_align(slider_bar_hos, lbl_hos, LV_ALIGN_OUT_RIGHT_MID, LV_DPI * 6 / 4, 0);
+	lv_obj_align(slider_bar_hos, cont_lbl_hos, LV_ALIGN_OUT_RIGHT_MID, LV_DPI, 0);
 	part_info.slider_bar_hos = slider_bar_hos;
 
 	// Create emuMMC size slider.
@@ -2699,7 +2705,6 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_KNOB, &bar_emu_btn);
 	lv_obj_align(slider_emu, slider_bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 + 5);
 	lv_slider_set_action(slider_emu, _action_slider_emu);
-	part_info.slider_emu = slider_bar_hos;
 
 	// Create L4T size slider.
 	lv_obj_t *slider_l4t = lv_slider_create(h1, NULL);
@@ -2711,7 +2716,6 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_slider_set_style(slider_l4t, LV_SLIDER_STYLE_KNOB, &bar_l4t_btn);
 	lv_obj_align(slider_l4t, slider_emu, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 - 3);
 	lv_slider_set_action(slider_l4t, _action_slider_l4t);
-	part_info.slider_l4t = slider_l4t;
 
 	// Create Android size slider.
 	lv_obj_t *slider_and = lv_slider_create(h1, NULL);
@@ -2723,14 +2727,20 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	lv_slider_set_style(slider_and, LV_SLIDER_STYLE_KNOB, &bar_and_btn);
 	lv_obj_align(slider_and, slider_l4t, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3 - 3);
 	lv_slider_set_action(slider_and, _action_slider_and);
-	part_info.slider_and = slider_and;
+
+	// Create container for the labels.
+	lv_obj_t *cont_lbl = lv_cont_create(h1, NULL);
+	lv_cont_set_fit(cont_lbl, false, true);
+	lv_obj_set_width(cont_lbl, LV_DPI * 3 / 2);
+	part_info.cont_lbl = cont_lbl;
 
 	// Create HOS size label.
-	lv_obj_t *lbl_sl_hos = lv_label_create(h1, NULL);
+	lv_obj_t *lbl_sl_hos = lv_label_create(cont_lbl, NULL);
 	lv_label_set_recolor(lbl_sl_hos, true);
-	s_printf(txt_buf, "#96FF00 %d GiB#", (part_info.total_sct - AU_ALIGN_SECTORS) >> 11 >> 10);
+	lv_label_set_align(lbl_sl_hos, LV_LABEL_ALIGN_RIGHT);
+	s_printf(txt_buf, "#96FF00 %4d GiB#", (part_info.total_sct - AU_ALIGN_SECTORS) >> 11 >> 10);
 	lv_label_set_text(lbl_sl_hos, txt_buf);
-	lv_obj_align(lbl_sl_hos, slider_bar_hos, LV_ALIGN_OUT_RIGHT_MID, LV_DPI * 4 / 7, 0);
+	lv_obj_align(lbl_sl_hos, cont_lbl, LV_ALIGN_IN_TOP_RIGHT, 0, 0);
 	part_info.lbl_hos = lbl_sl_hos;
 
 	// Create emuMMC size label.
@@ -2740,26 +2750,28 @@ lv_res_t create_window_partition_manager(lv_obj_t *btn)
 	part_info.lbl_emu = lbl_sl_emu;
 
 	// Create L4T size label.
-	lv_obj_t *lbl_sl_l4t = lv_label_create(h1, lbl_sl_hos);
-	lv_label_set_text(lbl_sl_l4t, "#00DDFF 0 GiB#");
-	lv_obj_align(lbl_sl_l4t, lbl_sl_emu, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+	lv_obj_t *lbl_sl_l4t = lv_label_create(cont_lbl, lbl_sl_hos);
+	lv_label_set_text(lbl_sl_l4t, "#00DDFF    0 GiB#");
+	lv_obj_align(lbl_sl_l4t, part_info.lbl_emu, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, LV_DPI / 3);
 	part_info.lbl_l4t = lbl_sl_l4t;
 
 	// Create Android size label.
-	lv_obj_t *lbl_sl_and = lv_label_create(h1, lbl_sl_hos);
-	lv_label_set_text(lbl_sl_and, "#FF8000 0 GiB#");
-	lv_obj_align(lbl_sl_and, lbl_sl_l4t, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
+	lv_obj_t *lbl_sl_and = lv_label_create(cont_lbl, lbl_sl_hos);
+	lv_label_set_text(lbl_sl_and, "#FF8000    0 GiB#");
+	lv_obj_align(lbl_sl_and, lbl_sl_l4t, LV_ALIGN_OUT_BOTTOM_RIGHT, 0, LV_DPI / 3);
 	part_info.lbl_and = lbl_sl_and;
+
+	lv_obj_align(cont_lbl, bar_hos, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI * 11 - LV_DPI / 2, LV_DPI * 9 / 23);
 
 	// Set partition manager notes.
 	lv_obj_t *lbl_notes = lv_label_create(h1, NULL);
 	lv_label_set_recolor(lbl_notes, true);
+	lv_label_set_style(lbl_notes, &hint_small_style);
 	lv_label_set_static_text(lbl_notes,
-		"Note 1: Only up to #C7EA46 1GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
+		"Note 1: Only up to #C7EA46 1.2GB# can be backed up. If more, you will be asked to back them manually at the next step.\n"
 		"Note 2: Resized emuMMC formats the USER partition. A save data manager can be used to move them over.\n"
 		"Note 3: The #C7EA46 Flash Linux# and #C7EA46 Flash Android# will flash files if suitable partitions and installer files are found.\n");
-	lv_label_set_style(lbl_notes, &hint_small_style);
-	lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
+	lv_obj_align(lbl_notes, lbl_and, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 6 * 2);
 
 	// Create UMS button.
 	lv_obj_t *btn1 = lv_btn_create(h1, NULL);
