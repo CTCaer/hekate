@@ -1,7 +1,7 @@
 /*
  * Battery charger driver for Nintendo Switch's TI BQ24193
  *
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -23,6 +23,18 @@
 static u8 bq24193_get_reg(u8 reg)
 {
 	return i2c_recv_byte(I2C_1, BQ24193_I2C_ADDR, reg);
+}
+
+int bq24193_get_version(u32 *value)
+{
+	u16 data = bq24193_get_reg(BQ24193_VendorPart);
+	if (value)
+		*value = data;
+
+	if (data == 0x2F)
+		return 0;
+	else
+		return -1;
 }
 
 int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
