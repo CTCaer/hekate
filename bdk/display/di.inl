@@ -20,7 +20,7 @@ static const reg_cfg_t _di_dc_setup_win_config[] = {
 	{DC_CMD_STATE_ACCESS, READ_MUX_ASSEMBLY | WRITE_MUX_ASSEMBLY},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
-	{DC_CMD_REG_ACT_CONTROL, WIN_A_ACT_HCNTR_SEL | WIN_B_ACT_HCNTR_SEL | WIN_C_ACT_HCNTR_SEL},
+	{DC_CMD_REG_ACT_CONTROL, WIN_A_ACT_HCNTR_SEL | WIN_B_ACT_HCNTR_SEL | WIN_C_ACT_HCNTR_SEL | WIN_D_ACT_HCNTR_SEL},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
 	{DC_DISP_DC_MCCIF_FIFOCTRL, 0},
@@ -197,7 +197,7 @@ static const reg_cfg_t _di_dsi_panel_init_config_jdi[] = {
 	{DSI_TRIGGER, DSI_TRIGGER_HOST}
 };
 
-// DSI packet config.
+// DSI HS packet config.
 static const reg_cfg_t _di_dsi_seq_pkt_video_non_burst_no_eot_config[] = {
 	{DSI_PAD_CONTROL_1, 0},
 
@@ -211,6 +211,7 @@ static const reg_cfg_t _di_dsi_seq_pkt_video_non_burst_no_eot_config[] = {
 	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x5A2F)  | DSI_TIMEOUT_TA(0x2000)},
 	{DSI_TO_TALLY, 0},
 
+	/* DSI packet sequence */
 	{DSI_PKT_SEQ_0_LO, 0x40000208},
 	{DSI_PKT_SEQ_2_LO, 0x40000308},
 	{DSI_PKT_SEQ_4_LO, 0x40000308},

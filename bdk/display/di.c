@@ -20,7 +20,6 @@
 #include "di.h"
 #include <power/max77620.h>
 #include <power/max7762x.h>
-#include <mem/heap.h>
 #include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/gpio.h>
@@ -132,7 +131,6 @@ static void _display_dsi_read_rx_fifo(u32 *data)
 
 int display_dsi_read(u8 cmd, u32 len, void *data)
 {
-	int res = 0;
 	u32 fifo[DSI_STATUS_RX_FIFO_SIZE] = {0};
 
 	// Drain RX FIFO.
@@ -181,14 +179,13 @@ int display_dsi_read(u8 cmd, u32 len, void *data)
 
 		case ACK_ERROR_RES:
 		default:
-			res = 1;
-			break;
+			return 1;
 		}
 	}
 	else
-		res = 1;
+		return 1;
 
-	return res;
+	return 0;
 }
 
 int display_dsi_vblank_read(u8 cmd, u32 len, void *data)
@@ -375,7 +372,7 @@ void display_init()
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = BIT(CLK_W_DSIA_LP);
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = CLK_SRC_DIV(6);           // Set PLLP_OUT  and div 6 (68MHz).
 
-	// Bring every IO rail out of deep power down.
+	// Bring every IO rail out of deep power down. (Though no rail bit is set.)
 	PMC(APBDEV_PMC_IO_DPD_REQ)  = PMC_IO_DPD_REQ_DPD_OFF;
 	PMC(APBDEV_PMC_IO_DPD2_REQ) = PMC_IO_DPD_REQ_DPD_OFF;
 
@@ -414,9 +411,9 @@ void display_init()
 		APB_MISC(APB_MISC_GP_DSI_PAD_CONTROL) = 0;
 	}
 
-	// Set DISP1 clock source, parent clock and DSI/PCLK to low power mode.
-	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-PCLK): 50.0 MHz. (PCLK: 16.66 MHz)
-	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-PCLK): 48.9 MHz. (PCLK: 16.30 MHz)
+	// Set DISP1 clock source, parent clock and DSI/PCLK to command mode.
+	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-BCLK): 50.0 MHz. (PCLK: 16.66 MHz)
+	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-BCLK): 48.9 MHz. (PCLK: 16.30 MHz)
 	clock_enable_plld(3, 20, true, tegra_t210);
 
 	// Setup Display Interface initial window configuration.
@@ -538,11 +535,11 @@ void display_init()
 	// Unblank display.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
-	// Setup final dsi clock.
-	// DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 468.0 MHz, PLLD_OUT0 (DSI): 234.0 MHz.
+	// Switch to DSI HS mode.
+	// DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 468.0 MHz, PLLD_OUT0 (DSI-BCLK): 234.0 MHz. (PCLK: 78 MHz)
 	clock_enable_plld(1, 24, false, tegra_t210);
 
-	// Finalize DSI init packet sequence configuration.
+	// Set HS PHY timing and finalize DSI packet sequence configuration.
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
@@ -569,8 +566,8 @@ void display_init()
 		// Set pad trimmers and set MIPI DSI cal offsets.
 		if (tegra_t210)
 		{
-			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,       ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
-			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210, ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210));
+			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
+			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210,    ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210));
 		}
 		else
 		{
@@ -700,9 +697,9 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// De-initialize video controller.
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, ARRAY_SIZE(_di_dc_video_disable_config));
 
-	// Set DISP1 clock source, parent clock and DSI/PCLK to low power mode.
-	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-PCLK): 50.0 MHz. (PCLK: 16.66 MHz)
-	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-PCLK): 48.9 MHz. (PCLK: 16.30 MHz)
+	// Set DISP1 clock source, parent clock and DSI/PCLK to command mode.
+	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-BCLK): 50.0 MHz. (PCLK: 16.66 MHz)
+	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-BCLK): 48.9 MHz. (PCLK: 16.30 MHz)
 	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210);
 
 	// Set timings for lowpower clocks.
