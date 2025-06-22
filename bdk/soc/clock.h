@@ -172,17 +172,13 @@
 #define CLK_NOT_USED  0x0
 
 /*! PLL control and status bits */
-#define PLLX_BASE_LOCK       BIT(27)
-#define PLLX_BASE_REF_DIS    BIT(29)
-#define PLLX_BASE_ENABLE     BIT(30)
-#define PLLX_BASE_BYPASS     BIT(31)
+#define PLL_BASE_LOCK        BIT(27)
+#define PLL_BASE_REF_DIS     BIT(29)
+#define PLL_BASE_ENABLE      BIT(30)
+#define PLL_BASE_BYPASS      BIT(31)
+
 #define PLLX_MISC_LOCK_EN    BIT(18)
 #define PLLX_MISC3_IDDQ      BIT(3)
-
-#define PLLCX_BASE_LOCK      BIT(27)
-#define PLLCX_BASE_REF_DIS   BIT(29)
-#define PLLCX_BASE_ENABLE    BIT(30)
-#define PLLCX_BASE_BYPASS    BIT(31)
 
 #define PLLA_OUT0_RSTN_CLR   BIT(0)
 #define PLLA_OUT0_CLKEN      BIT(1)

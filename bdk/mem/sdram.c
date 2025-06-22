@@ -260,7 +260,7 @@ static void _sdram_config_t210(const sdram_params_t210_t *params)
 
 	u32 pllm_div = (params->pllm_feedback_divider << 8) | params->pllm_input_divider | ((params->pllm_post_divider & 0xFFFF) << 20);
 	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = pllm_div;
-	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = pllm_div | PLLCX_BASE_ENABLE;
+	CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) = pllm_div | PLL_BASE_ENABLE;
 
 	u32 wait_end = get_tmr_us() + 300;
 	while (!(CLOCK(CLK_RST_CONTROLLER_PLLM_BASE) & BIT(27)))
