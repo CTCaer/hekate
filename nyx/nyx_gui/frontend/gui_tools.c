@@ -28,6 +28,7 @@
 #include "../hos/pkg1.h"
 #include "../hos/pkg2.h"
 #include "../hos/hos.h"
+#include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
 
 extern volatile boot_cfg_t *b_cfg;
@@ -1127,11 +1128,20 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	lv_obj_t *desc = lv_cont_create(win, NULL);
 	lv_obj_set_size(desc, LV_HOR_RES * 10 / 11, LV_VER_RES - (LV_DPI * 12 / 7));
 
-	lv_obj_t * lb_desc = lv_label_create(desc, NULL);
+	lv_obj_t *lb_desc = lv_label_create(desc, NULL);
 	lv_obj_set_style(lb_desc, &monospace_text);
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
-	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
+	lv_obj_set_width(lb_desc, lv_obj_get_width(desc) / 2);
+
+	lv_obj_t *lb_desc2 = lv_label_create(desc, NULL);
+	lv_obj_set_style(lb_desc2, &monospace_text);
+	lv_label_set_long_mode(lb_desc2, LV_LABEL_LONG_BREAK);
+	lv_label_set_recolor(lb_desc2, true);
+	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc) / 2);
+	lv_label_set_text(lb_desc2, " ");
+
+	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
 	if (!sd_mount())
 	{
@@ -1147,7 +1157,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	u8 *warmboot = (u8 *)zalloc(SZ_256K);
 	u8 *secmon = (u8 *)zalloc(SZ_256K);
 	u8 *loader = (u8 *)zalloc(SZ_256K);
-	u8 *pkg2 = NULL;
+	u8 *pkg2   = (u8 *)zalloc(SZ_8M);
 
 	char *txt_buf  = (char *)malloc(SZ_16K);
 
@@ -1158,266 +1168,332 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		goto out_free;
 	}
 
-	emmc_set_partition(EMMC_BOOT0);
+	char *bct_paths[2] = {
+		"/pkg/main",
+		"/pkg/safe"
+	};
 
-	// Read package1.
-	static const u32 BOOTLOADER_SIZE          = SZ_256K;
-	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	static const u32 HOS_EKS_OFFSET           = 0x180000;
+	char *pkg1_paths[2] = {
+		"/pkg/main/pkg1",
+		"/pkg/safe/pkg1"
+	};
 
-	char *build_date = malloc(32);
-	u32 pk1_offset =  h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
-	sdmmc_storage_read(&emmc_storage, BOOTLOADER_MAIN_OFFSET / EMMC_BLOCKSIZE, BOOTLOADER_SIZE / EMMC_BLOCKSIZE, pkg1);
+	char *pkg2_partitions[2] = {
+		"BCPKG2-1-Normal-Main",
+		"BCPKG2-3-SafeMode-Main"
+	};
 
-	const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
+	char *pkg2_paths[2] = {
+		"/pkg/main/pkg2",
+		"/pkg/safe/pkg2"
+	};
 
-	s_printf(txt_buf, "#00DDFF Found pkg1 ('%s')#\n\n", build_date);
-	free(build_date);
-	lv_label_set_text(lb_desc, txt_buf);
-	manual_system_maintenance(true);
+	char *pkg2ini_paths[2] = {
+		"/pkg/main/pkg2/ini",
+		"/pkg/safe/pkg2/ini"
+	};
 
-	// Dump package1 in its encrypted state.
-	emmcsn_path_impl(path, "/pkg1", "pkg1_enc.bin", &emmc_storage);
-	bool res = sd_save_to_file(pkg1, BOOTLOADER_SIZE, path);
+	// Create main directories.
+	emmcsn_path_impl(path, "/pkg", "", &emmc_storage);
+	emmcsn_path_impl(path, "/pkg/main", "", &emmc_storage);
+	emmcsn_path_impl(path, "/pkg/safe", "", &emmc_storage);
 
-	// Exit if unknown.
-	if (!pkg1_id)
-	{
-		strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#");
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
-
-		if (!res)
-		{
-			strcat(txt_buf, "\nEncrypted pkg1 dumped to pkg1_enc.bin");
-			lv_label_set_text(lb_desc, txt_buf);
-			manual_system_maintenance(true);
-		}
-
-		goto out_free;
-	}
-
-	mkey = pkg1_id->mkey;
-
-	tsec_ctxt_t tsec_ctxt = {0};
-	tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
-	tsec_ctxt.pkg1 = (void *)pkg1;
-	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
-
-	// Read the correct eks for older HOS versions.
-	const u32 eks_size = sizeof(pkg1_eks_t);
-	pkg1_eks_t *eks = (pkg1_eks_t *)malloc(eks_size);
-	emmc_set_partition(EMMC_BOOT0);
-	sdmmc_storage_read(&emmc_storage, HOS_EKS_OFFSET + (mkey * eks_size) / EMMC_BLOCKSIZE,
-									  eks_size / EMMC_BLOCKSIZE, eks);
-
-	// Generate keys.
-	hos_keygen(eks, mkey, &tsec_ctxt);
-	free(eks);
-
-	if (h_cfg.t210b01 || mkey <= HOS_MKEY_VER_600)
-	{
-		if (!pkg1_decrypt(pkg1_id, pkg1))
-		{
-			strcat(txt_buf, "#FFDD00 Pkg1 decryption failed!#\n");
-			if (h_cfg.t210b01)
-				strcat(txt_buf, "#FFDD00 Is BEK missing?#\n");
-			lv_label_set_text(lb_desc, txt_buf);
-			goto out_free;
-		}
-	}
-
-	if (h_cfg.t210b01 || mkey <= HOS_MKEY_VER_620)
-	{
-		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
-		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pk1_offset + pkg1_id->pkg11_off + 0x20);
-
-		// Display info.
-		s_printf(txt_buf + strlen(txt_buf),
-			"#C7EA46 NX Bootloader size:  #0x%05X\n"
-			"#C7EA46 Secure monitor addr: #0x%05X\n"
-			"#C7EA46 Secure monitor size: #0x%05X\n"
-			"#C7EA46 Warmboot addr:       #0x%05X\n"
-			"#C7EA46 Warmboot size:       #0x%05X\n\n",
-			hdr_pk11->ldr_size, pkg1_id->secmon_base, hdr_pk11->sm_size, pkg1_id->warmboot_base, hdr_pk11->wb_size);
-
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
-
-		// Dump package1.1.
-		emmcsn_path_impl(path, "/pkg1", "pkg1_decr.bin", &emmc_storage);
-		if (sd_save_to_file(pkg1, SZ_256K, path))
-			goto out_free;
-		strcat(txt_buf, "pkg1 dumped to pkg1_decr.bin\n");
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
-
-		// Dump nxbootloader.
-		emmcsn_path_impl(path, "/pkg1", "nxloader.bin", &emmc_storage);
-		if (sd_save_to_file(loader, hdr_pk11->ldr_size, path))
-			goto out_free;
-		strcat(txt_buf, "NX Bootloader dumped to nxloader.bin\n");
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
-
-		// Dump secmon.
-		emmcsn_path_impl(path, "/pkg1", "secmon.bin", &emmc_storage);
-		if (sd_save_to_file(secmon, hdr_pk11->sm_size, path))
-			goto out_free;
-		strcat(txt_buf, "Secure Monitor dumped to secmon.bin\n");
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
-
-		// Dump warmboot.
-		emmcsn_path_impl(path, "/pkg1", "warmboot.bin", &emmc_storage);
-		if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
-			goto out_free;
-		// If T210B01, save a copy of decrypted warmboot binary also.
-		if (h_cfg.t210b01)
-		{
-
-			se_aes_iv_clear(13);
-			se_aes_crypt_cbc(13, DECRYPT, warmboot + 0x330, hdr_pk11->wb_size - 0x330,
-				warmboot + 0x330, hdr_pk11->wb_size - 0x330);
-			emmcsn_path_impl(path, "/pkg1", "warmboot_dec.bin", &emmc_storage);
-			if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
-				goto out_free;
-		}
-		strcat(txt_buf, "Warmboot dumped to warmboot.bin\n\n");
-		lv_label_set_text(lb_desc, txt_buf);
-		manual_system_maintenance(true);
-	}
-
-	// Dump package2.1.
-	emmc_set_partition(EMMC_GPP);
 	// Parse eMMC GPT.
+	emmc_set_partition(EMMC_GPP);
 	LIST_INIT(gpt);
 	emmc_gpt_parse(&gpt);
-	// Find package2 partition.
-	emmc_part_t *pkg2_part = emmc_part_find(&gpt, "BCPKG2-1-Normal-Main");
-	if (!pkg2_part)
-		goto out;
 
-	// Read in package2 header and get package2 real size.
-	u8 *tmp = (u8 *)malloc(EMMC_BLOCKSIZE);
-	emmc_part_read(pkg2_part, 0x4000 / EMMC_BLOCKSIZE, 1, tmp);
-	u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
-	u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
-	free(tmp);
-	// Read in package2.
-	u32 pkg2_size_aligned = ALIGN(pkg2_size, EMMC_BLOCKSIZE);
-	pkg2 = malloc(pkg2_size_aligned);
-	emmc_part_read(pkg2_part, 0x4000 / EMMC_BLOCKSIZE,
-		pkg2_size_aligned / EMMC_BLOCKSIZE, pkg2);
-
-	// Dump encrypted package2.
-	emmcsn_path_impl(path, "/pkg2", "pkg2_encr.bin", &emmc_storage);
-	res = sd_save_to_file(pkg2, pkg2_size, path);
-
-	// Decrypt package2 and parse KIP1 blobs in INI1 section.
-	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, mkey);
-	if (!pkg2_hdr)
+	lv_obj_t *lb_log = lb_desc;
+	for (u32 idx = 0; idx < 2; idx++)
 	{
-		strcat(txt_buf, "#FFDD00 Pkg2 decryption failed!#");
-		lv_label_set_text(lb_desc, txt_buf);
+		if (idx)
+			lb_log = lb_desc2;
+
+		// Read package1.
+		char *build_date = malloc(32);
+		u32   pk1_offset = h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
+		emmc_set_partition(!idx ? EMMC_BOOT0 : EMMC_BOOT1);
+		sdmmc_storage_read(&emmc_storage,
+			!idx ? PKG1_BOOTLOADER_MAIN_OFFSET : PKG1_BOOTLOADER_SAFE_OFFSET, PKG1_BOOTLOADER_SIZE / EMMC_BLOCKSIZE, pkg1);
+
+		const pkg1_id_t *pkg1_id = pkg1_identify(pkg1 + pk1_offset, build_date);
+
+		s_printf(txt_buf, "#00DDFF Found %s pkg1 ('%s')#\n\n", !idx ? "Main" : "Safe", build_date);
+		lv_label_set_text(lb_log, txt_buf);
 		manual_system_maintenance(true);
+		free(build_date);
 
-		if (!res)
+		// Dump package1 in its encrypted state.
+		emmcsn_path_impl(path, pkg1_paths[idx], "pkg1_enc.bin", &emmc_storage);
+		bool res = sd_save_to_file(pkg1, PKG1_BOOTLOADER_SIZE, path);
+
+		// Exit if unknown.
+		if (!pkg1_id)
 		{
-			strcat(txt_buf, "\npkg2 encrypted dumped to pkg2_encr.bin\n");
-			lv_label_set_text(lb_desc, txt_buf);
+			strcat(txt_buf, "#FFDD00 Unknown pkg1 version!#");
+			lv_label_set_text(lb_log, txt_buf);
 			manual_system_maintenance(true);
-		}
 
-		// Clear EKS slot, in case something went wrong with tsec keygen.
-		hos_eks_clear(mkey);
+			if (!res)
+			{
+				strcat(txt_buf, "\nEncrypted pkg1 extracted to pkg1_enc.bin");
+				lv_label_set_text(lb_log, txt_buf);
+				manual_system_maintenance(true);
+			}
 
-		goto out;
-	}
-
-	// Display info.
-	s_printf(txt_buf + strlen(txt_buf),
-		"#C7EA46 Kernel size:   #0x%05X\n"
-		"#C7EA46 INI1 size:     #0x%05X\n\n",
-		pkg2_hdr->sec_size[PKG2_SEC_KERNEL], pkg2_hdr->sec_size[PKG2_SEC_INI1]);
-
-	lv_label_set_text(lb_desc, txt_buf);
-	manual_system_maintenance(true);
-
-	// Dump pkg2.1.
-	emmcsn_path_impl(path, "/pkg2", "pkg2_decr.bin", &emmc_storage);
-	if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
-		goto out;
-	strcat(txt_buf, "pkg2 dumped to pkg2_decr.bin\n");
-	lv_label_set_text(lb_desc, txt_buf);
-	manual_system_maintenance(true);
-
-	// Dump kernel.
-	emmcsn_path_impl(path, "/pkg2", "kernel.bin", &emmc_storage);
-	if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
-		goto out;
-	strcat(txt_buf, "Kernel dumped to kernel.bin\n");
-	lv_label_set_text(lb_desc, txt_buf);
-	manual_system_maintenance(true);
-
-	// Dump INI1.
-	u32 ini1_off  = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
-	u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
-	if (!ini1_size)
-	{
-		pkg2_get_newkern_info(pkg2_hdr->data);
-		ini1_off  = pkg2_newkern_ini1_start;
-		ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
-	}
-
-	if (!ini1_off)
-	{
-		strcat(txt_buf, "#FFDD00 Failed to dump INI1 and kips!#\n");
-		goto out;
-	}
-
-	pkg2_ini1_t *ini1 = (pkg2_ini1_t *)(pkg2_hdr->data + ini1_off);
-	emmcsn_path_impl(path, "/pkg2", "ini1.bin", &emmc_storage);
-	if (sd_save_to_file(ini1, ini1_size, path))
-		goto out;
-
-	strcat(txt_buf, "INI1 dumped to ini1.bin\n\n");
-	lv_label_set_text(lb_desc, txt_buf);
-	manual_system_maintenance(true);
-
-	char filename[32];
-	u8 *ptr = (u8 *)ini1;
-	ptr += sizeof(pkg2_ini1_t);
-
-	// Dump all kips.
-	u8 *kip_buffer = (u8 *)malloc(SZ_4M);
-
-	for (u32 i = 0; i < ini1->num_procs; i++)
-	{
-		pkg2_kip1_t *kip1 = (pkg2_kip1_t *)ptr;
-		u32 kip1_size = pkg2_calc_kip1_size(kip1);
-
-		s_printf(filename, "%s.kip1", kip1->name);
-		if ((u32)kip1 % 8)
-		{
-			memcpy(kip_buffer, kip1, kip1_size);
-			kip1 = (pkg2_kip1_t *)kip_buffer;
-		}
-
-		emmcsn_path_impl(path, "/pkg2/ini1", filename, &emmc_storage);
-		if (sd_save_to_file(kip1, kip1_size, path))
-		{
-			free(kip_buffer);
 			goto out;
 		}
 
-		s_printf(txt_buf + strlen(txt_buf), "%s kip dumped to %s.kip1\n", kip1->name, kip1->name);
-		lv_label_set_text(lb_desc, txt_buf);
+		mkey = pkg1_id->mkey;
+
+		tsec_ctxt_t tsec_ctxt = {0};
+		tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
+		tsec_ctxt.pkg1 = (void *)pkg1;
+		tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
+
+		// Read the correct eks for older HOS versions.
+		const u32 eks_size = sizeof(pkg1_eks_t);
+		pkg1_eks_t *eks = (pkg1_eks_t *)malloc(eks_size);
+		emmc_set_partition(EMMC_BOOT0);
+		sdmmc_storage_read(&emmc_storage, PKG1_HOS_EKS_OFFSET + (mkey * eks_size) / EMMC_BLOCKSIZE,
+										  eks_size / EMMC_BLOCKSIZE, eks);
+
+		// Generate keys.
+		hos_keygen(eks, mkey, &tsec_ctxt);
+		free(eks);
+
+		// Decrypt.
+		if (h_cfg.t210b01 || mkey <= HOS_MKEY_VER_600)
+		{
+			if (!pkg1_decrypt(pkg1_id, pkg1))
+			{
+				strcat(txt_buf, "#FFDD00 Pkg1 decryption failed!#\n");
+				if (h_cfg.t210b01)
+					strcat(txt_buf, "#FFDD00 Is BEK missing?#\n");
+				lv_label_set_text(lb_log, txt_buf);
+				goto out;
+			}
+		}
+
+		// Dump the BCTs from blocks 2/3 (backup) which are normally valid.
+		static const u32 BCT_SIZE = 0x2800;
+		static const u32 BLK_SIZE = SZ_16K / EMMC_BLOCKSIZE;
+		u8 *bct = (u8 *)zalloc(BCT_SIZE);
+		sdmmc_storage_read(&emmc_storage, BLK_SIZE * 2 + BLK_SIZE * idx, BCT_SIZE / EMMC_BLOCKSIZE, bct);
+		emmcsn_path_impl(path, bct_paths[idx], "bct.bin", &emmc_storage);
+		if (sd_save_to_file(bct, 0x2800, path))
+			goto out;
+		if (h_cfg.t210b01)
+		{
+			se_aes_iv_clear(13);
+			se_aes_crypt_cbc(13, DECRYPT, bct + 0x480, BCT_SIZE - 0x480, bct + 0x480, BCT_SIZE - 0x480);
+			emmcsn_path_impl(path, bct_paths[idx], "bct_decr.bin", &emmc_storage);
+			if (sd_save_to_file(bct, 0x2800, path))
+				goto out;
+		}
+
+		// Dump package1.1 contents.
+		if (h_cfg.t210b01 || mkey <= HOS_MKEY_VER_620)
+		{
+			pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
+			pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pk1_offset + pkg1_id->pkg11_off + 0x20);
+
+			// Display info.
+			s_printf(txt_buf + strlen(txt_buf),
+				"#C7EA46 NX Bootloader size:  #0x%05X\n"
+				"#C7EA46 Secure monitor size: #0x%05X\n"
+				"#C7EA46 Warmboot size:       #0x%05X\n\n",
+				hdr_pk11->ldr_size, hdr_pk11->sm_size, hdr_pk11->wb_size);
+
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+
+			// Dump package1.1.
+			emmcsn_path_impl(path, pkg1_paths[idx], "pkg1_decr.bin", &emmc_storage);
+			if (sd_save_to_file(pkg1, SZ_256K, path))
+				goto out;
+			strcat(txt_buf, "Package1 extracted to pkg1_decr.bin\n");
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+
+			// Dump nxbootloader.
+			emmcsn_path_impl(path, pkg1_paths[idx], "nxloader.bin", &emmc_storage);
+			if (sd_save_to_file(loader, hdr_pk11->ldr_size, path))
+				goto out;
+			strcat(txt_buf, "NX Bootloader extracted to nxloader.bin\n");
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+
+			// Dump secmon.
+			emmcsn_path_impl(path, pkg1_paths[idx], "secmon.bin", &emmc_storage);
+			if (sd_save_to_file(secmon, hdr_pk11->sm_size, path))
+				goto out;
+			strcat(txt_buf, "Secure Monitor extracted to secmon.bin\n");
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+
+			// Dump warmboot.
+			emmcsn_path_impl(path, pkg1_paths[idx], "warmboot.bin", &emmc_storage);
+			if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
+				goto out;
+			// If T210B01, save a copy of decrypted warmboot binary also.
+			if (h_cfg.t210b01)
+			{
+
+				se_aes_iv_clear(13);
+				se_aes_crypt_cbc(13, DECRYPT, warmboot + 0x330, hdr_pk11->wb_size - 0x330,
+					warmboot + 0x330, hdr_pk11->wb_size - 0x330);
+				emmcsn_path_impl(path, pkg1_paths[idx], "warmboot_dec.bin", &emmc_storage);
+				if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
+					goto out;
+			}
+			strcat(txt_buf, "Warmboot extracted to warmboot.bin\n\n");
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+		}
+
+		// Find and dump package2 partition.
+		emmc_set_partition(EMMC_GPP);
+		emmc_part_t *pkg2_part = emmc_part_find(&gpt, pkg2_partitions[idx]);
+		if (!pkg2_part)
+			goto out;
+
+		// Read in package2 header and get package2 real size.
+		static const u32 PKG2_OFFSET = 0x4000;
+		u8 *tmp = (u8 *)malloc(EMMC_BLOCKSIZE);
+		emmc_part_read(pkg2_part, PKG2_OFFSET / EMMC_BLOCKSIZE, 1, tmp);
+		u32 *hdr_pkg2_raw = (u32 *)(tmp + 0x100);
+		u32 pkg2_size = hdr_pkg2_raw[0] ^ hdr_pkg2_raw[2] ^ hdr_pkg2_raw[3];
+		free(tmp);
+
+		// Read in package2.
+		u32 pkg2_size_aligned = ALIGN(pkg2_size, EMMC_BLOCKSIZE);
+		emmc_part_read(pkg2_part, PKG2_OFFSET / EMMC_BLOCKSIZE, pkg2_size_aligned / EMMC_BLOCKSIZE, pkg2);
+
+		// Dump encrypted package2.
+		emmcsn_path_impl(path, pkg2_paths[idx], "pkg2_encr.bin", &emmc_storage);
+		res = sd_save_to_file(pkg2, pkg2_size, path);
+
+		// Decrypt package2 and parse KIP1 blobs in INI1 section.
+		pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, mkey);
+		if (!pkg2_hdr)
+		{
+			strcat(txt_buf, "#FFDD00 Pkg2 decryption failed!#");
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+
+			if (!res)
+			{
+				strcat(txt_buf, "\npkg2 encrypted extracted to pkg2_encr.bin\n");
+				lv_label_set_text(lb_log, txt_buf);
+				manual_system_maintenance(true);
+			}
+
+			// Clear EKS slot, in case something went wrong with tsec keygen.
+			hos_eks_clear(mkey);
+
+			goto out;
+		}
+
+		// Display info.
+		s_printf(txt_buf + strlen(txt_buf),
+			"#C7EA46 Kernel size:   #0x%06X\n"
+			"#C7EA46 INI1 size:     #0x%06X\n\n",
+			pkg2_hdr->sec_size[PKG2_SEC_KERNEL], pkg2_hdr->sec_size[PKG2_SEC_INI1]);
+
+		lv_label_set_text(lb_log, txt_buf);
 		manual_system_maintenance(true);
 
-		ptr += kip1_size;
+		// Dump pkg2.1.
+		emmcsn_path_impl(path, pkg2_paths[idx], "pkg2_decr.bin", &emmc_storage);
+		if (sd_save_to_file(pkg2, pkg2_hdr->sec_size[PKG2_SEC_KERNEL] + pkg2_hdr->sec_size[PKG2_SEC_INI1], path))
+			goto out;
+		strcat(txt_buf, "Package2 extracted to pkg2_decr.bin\n");
+		lv_label_set_text(lb_log, txt_buf);
+		manual_system_maintenance(true);
+
+		// Dump kernel.
+		emmcsn_path_impl(path, pkg2_paths[idx], "kernel.bin", &emmc_storage);
+		if (sd_save_to_file(pkg2_hdr->data, pkg2_hdr->sec_size[PKG2_SEC_KERNEL], path))
+			goto out;
+		strcat(txt_buf, "Kernel extracted to kernel.bin\n");
+		lv_label_set_text(lb_log, txt_buf);
+		manual_system_maintenance(true);
+
+		// Dump INI1.
+		u32 ini1_off  = pkg2_hdr->sec_size[PKG2_SEC_KERNEL];
+		u32 ini1_size = pkg2_hdr->sec_size[PKG2_SEC_INI1];
+		if (!ini1_size)
+		{
+			pkg2_get_newkern_info(pkg2_hdr->data);
+			ini1_off  = pkg2_newkern_ini1_start;
+			ini1_size = pkg2_newkern_ini1_end - pkg2_newkern_ini1_start;
+		}
+
+		if (!ini1_off)
+		{
+			strcat(txt_buf, "#FFDD00 Failed to dump INI1 and kips!#\n");
+			goto out;
+		}
+
+		pkg2_ini1_t *ini1 = (pkg2_ini1_t *)(pkg2_hdr->data + ini1_off);
+		emmcsn_path_impl(path, pkg2_paths[idx], "ini1.bin", &emmc_storage);
+		if (sd_save_to_file(ini1, ini1_size, path))
+			goto out;
+
+		strcat(txt_buf, "INI1 extracted to ini1.bin\n");
+		lv_label_set_text(lb_log, txt_buf);
+		manual_system_maintenance(true);
+
+		char filename[32];
+		u8 *ptr = (u8 *)ini1;
+		ptr += sizeof(pkg2_ini1_t);
+
+		// Dump all kips.
+		for (u32 i = 0; i < ini1->num_procs; i++)
+		{
+			pkg2_kip1_t *kip1 = (pkg2_kip1_t *)ptr;
+			u32 kip1_size = pkg2_calc_kip1_size(kip1);
+			char *kip_name = kip1->name;
+
+			// Check if FS supports exFAT.
+			if (!strcmp("FS", kip_name))
+			{
+				u8 *ro_data = malloc(SZ_4M);
+				u32 offset      = (kip1->flags & BIT(KIP_TEXT)) ? kip1->sections[KIP_TEXT].size_comp :
+																  kip1->sections[KIP_TEXT].size_decomp;
+				u32 size_comp   = kip1->sections[KIP_RODATA].size_comp;
+				u32 size_decomp = kip1->sections[KIP_RODATA].size_decomp;
+				if (kip1->flags & BIT(KIP_RODATA))
+					blz_uncompress_srcdest(&kip1->data[offset], size_comp, ro_data, size_decomp);
+				else
+					memcpy(ro_data, &kip1->data[offset], size_decomp);
+
+				for (u32 i = 0; i < 0x100; i+= sizeof(u32))
+				{
+					// Check size and name of nss matches.
+					if (*(u32 *)&ro_data[i] == 8 && !memcmp("fs.exfat", &ro_data[i + 4], 8))
+					{
+						kip_name = "FS_exfat";
+						break;
+					}
+				}
+
+				free(ro_data);
+			}
+
+			s_printf(filename, "%s.kip1", kip_name);
+			emmcsn_path_impl(path, pkg2ini_paths[idx], filename, &emmc_storage);
+			if (sd_save_to_file(kip1, kip1_size, path))
+				goto out;
+
+			s_printf(txt_buf + strlen(txt_buf), "- Extracted %s.kip1\n", kip_name);
+			lv_label_set_text(lb_log, txt_buf);
+			manual_system_maintenance(true);
+
+			ptr += kip1_size;
+		}
 	}
-	free(kip_buffer);
 
 out:
 	emmc_gpt_free(&gpt);
