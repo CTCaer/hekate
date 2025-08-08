@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2022-2023 CTCaer
+ * Copyright (c) 2022-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -39,6 +39,21 @@ typedef struct _bl_hdr_t210b01_t
 /* 0x160 */	u8  rsvd[0x10];
 } bl_hdr_t210b01_t;
 
+typedef struct _eks_keys_t
+{
+	u8 master_kekseed[SE_KEY_128_SIZE];
+	u8 random_data[0x70];
+	u8 package1_key[SE_KEY_128_SIZE];
+} eks_keys_t;
+
+typedef struct _pkg1_eks_t
+{
+	u8 cmac[SE_KEY_128_SIZE];
+	u8 ctr[SE_AES_IV_SIZE];
+	eks_keys_t keys;
+	u8 padding[0x150];
+} pkg1_eks_t;
+
 typedef struct _pk1_hdr_t
 {
 /* 0x00 */	u32 si_sha256; // Secure Init.
@@ -53,8 +68,8 @@ typedef struct _pk1_hdr_t
 typedef struct _pkg1_id_t
 {
 	const char *id;
-	u32 kb;
-	u32 tsec_off;
+	u16 mkey;
+	u16 tsec_off;
 	u32 pkg11_off;
 	u32 secmon_base;
 	u32 warmboot_base;
@@ -62,14 +77,14 @@ typedef struct _pkg1_id_t
 
 typedef struct _pk11_hdr_t
 {
-	u32 magic;
-	u32 wb_size;
-	u32 wb_off;
-	u32 pad;
-	u32 ldr_size;
-	u32 ldr_off;
-	u32 sm_size;
-	u32 sm_off;
+/* 0x00 */	u32 magic;
+/* 0x04 */	u32 wb_size;
+/* 0x08 */	u32 wb_off;
+/* 0x0C */	u32 pad;
+/* 0x10 */	u32 ldr_size;
+/* 0x14 */	u32 ldr_off;
+/* 0x18 */	u32 sm_size;
+/* 0x1C */	u32 sm_off;
 } pk11_hdr_t;
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date);

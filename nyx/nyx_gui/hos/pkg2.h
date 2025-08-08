@@ -38,18 +38,18 @@ extern u32 pkg2_newkern_ini1_end;
 
 typedef struct _pkg2_hdr_t
 {
-	u8 ctr[0x10];
-	u8 sec_ctr[0x40];
-	u32 magic;
-	u32 base;
-	u32 pad0;
-	u8  pkg2_ver;
-	u8  bl_ver;
-	u16 pad1;
-	u32 sec_size[4];
-	u32 sec_off[4];
-	u8 sec_sha256[0x80];
-	u8 data[];
+/* 0x000 */	u8  ctr[0x10];
+/* 0x010 */	u8  sec_ctr[0x40];
+/* 0x050 */	u32 magic;
+/* 0x054 */	u32 base;
+/* 0x058 */	u32 pad0;
+/* 0x05C */	u8  pkg2_ver;
+/* 0x05D */	u8  bl_ver;
+/* 0x05E */	u16 pad1;
+/* 0x060 */	u32 sec_size[4];
+/* 0x070 */	u32 sec_off[4];
+/* 0x080 */	u8  sec_sha256[0x80];
+/* 0x100 */	u8  data[];
 } pkg2_hdr_t;
 
 typedef struct _pkg2_ini1_t
@@ -60,6 +60,18 @@ typedef struct _pkg2_ini1_t
 	u32 pad;
 } pkg2_ini1_t;
 
+enum kip_offset_section
+{
+	KIP_TEXT    = 0,
+	KIP_RODATA  = 1,
+	KIP_DATA    = 2,
+	KIP_BSS     = 3,
+	KIP_UNKSEC1 = 4,
+	KIP_UNKSEC2 = 5
+};
+
+#define KIP1_NUM_SECTIONS 6
+
 typedef struct _pkg2_kip1_sec_t
 {
 	u32 offset;
@@ -68,21 +80,19 @@ typedef struct _pkg2_kip1_sec_t
 	u32 attrib;
 } pkg2_kip1_sec_t;
 
-#define KIP1_NUM_SECTIONS 6
-
 typedef struct _pkg2_kip1_t
 {
-	u32 magic;
-	u8 name[12];
-	u64 tid;
-	u32 proc_cat;
-	u8 main_thrd_prio;
-	u8 def_cpu_core;
-	u8 res;
-	u8 flags;
-	pkg2_kip1_sec_t sections[KIP1_NUM_SECTIONS];
-	u32 caps[0x20];
-	u8 data[];
+/* 0x000 */	u32 magic;
+/* 0x004 */	char name[12];
+/* 0x010 */	u64 tid;
+/* 0x018 */	u32 proc_cat;
+/* 0x01C */	u8 main_thrd_prio;
+/* 0x01D */	u8 def_cpu_core;
+/* 0x01E */	u8 res;
+/* 0x01F */	u8 flags;
+/* 0x020 */	pkg2_kip1_sec_t sections[KIP1_NUM_SECTIONS];
+/* 0x080 */	u32 caps[0x20];
+/* 0x100 */	u8 data[];
 } pkg2_kip1_t;
 
 typedef struct _pkg2_kip1_info_t
@@ -95,6 +105,6 @@ typedef struct _pkg2_kip1_info_t
 void pkg2_get_newkern_info(u8 *kern_data);
 u32  pkg2_calc_kip1_size(pkg2_kip1_t *kip1);
 
-pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb);
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey);
 
 #endif

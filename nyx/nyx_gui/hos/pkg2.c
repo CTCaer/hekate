@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -90,7 +90,7 @@ void pkg2_get_newkern_info(u8 *kern_data)
 }
 
 //!TODO: Update on mkey changes.
-static const u8 mkey_vector_7xx[HOS_KB_VERSION_MAX - HOS_KB_VERSION_810 + 1][SE_KEY_128_SIZE] =
+static const u8 mkey_vector_7xx[HOS_MKEY_VER_MAX - HOS_MKEY_VER_810 + 1][SE_KEY_128_SIZE] =
 {
 	// Master key 7  encrypted with 8.  (7.0.0 with 8.1.0)
 	{ 0xEA, 0x60, 0xB3, 0xEA, 0xCE, 0x8F, 0x24, 0x46, 0x7D, 0x33, 0x9C, 0xD1, 0xBC, 0x24, 0x98, 0x29 },
@@ -133,7 +133,7 @@ static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 
 	return (tmp_test->magic == PKG2_MAGIC);
 }
 
-pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey)
 {
 	pkg2_hdr_t mkey_test;
 	u8 *pdata = (u8 *)data;
@@ -154,13 +154,13 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 		goto key_found;
 
 	// Decrypt older pkg2 via new mkeys.
-	if ((kb >= HOS_KB_VERSION_700) && (kb < HOS_KB_VERSION_MAX))
+	if ((mkey >= HOS_MKEY_VER_700) && (mkey < HOS_MKEY_VER_MAX))
 	{
 		u8 tmp_mkey[SE_KEY_128_SIZE];
 		u8 decr_slot = 7; // THK mkey or T210B01 mkey.
 		u8 mkey_seeds_cnt = sizeof(mkey_vector_7xx) / SE_KEY_128_SIZE;
 		u8 mkey_seeds_idx = mkey_seeds_cnt; // Real index + 1.
-		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (HOS_KB_VERSION_MAX - kb);
+		u8 mkey_seeds_min_idx = mkey_seeds_cnt - (HOS_MKEY_VER_MAX - mkey);
 
 		while (mkey_seeds_cnt)
 		{
@@ -196,11 +196,11 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb)
 key_found:
 	// Decrypt header.
 	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
-	//gfx_hexdump((u32)hdr, hdr, 0x100);
 
 	if (hdr->magic != PKG2_MAGIC)
 		return NULL;
 
+	// Decrypt sections.
 	for (u32 i = 0; i < 4; i++)
 	{
 DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
@@ -208,7 +208,6 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 			continue;
 
 		se_aes_crypt_ctr(pkg2_keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
-		//gfx_hexdump((u32)pdata, pdata, 0x100);
 
 		pdata += hdr->sec_size[i];
 	}

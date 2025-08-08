@@ -38,16 +38,6 @@ u32 pkg2_newkern_ini1_start;
 u32 pkg2_newkern_ini1_end;
 u32 pkg2_newkern_ini1_rela;
 
-enum kip_offset_section
-{
-	KIP_TEXT    = 0,
-	KIP_RODATA  = 1,
-	KIP_DATA    = 2,
-	KIP_BSS     = 3,
-	KIP_UNKSEC1 = 4,
-	KIP_UNKSEC2 = 5
-};
-
 #define KIP_PATCH_SECTION_SHIFT  (29)
 #define KIP_PATCH_SECTION_MASK   (7 << KIP_PATCH_SECTION_SHIFT)
 #define KIP_PATCH_OFFSET_MASK    (~KIP_PATCH_SECTION_MASK)
@@ -697,7 +687,7 @@ static const u8 mkey_vector_7xx[SE_KEY_128_SIZE] =
 	{ 0xEA, 0x60, 0xB3, 0xEA, 0xCE, 0x8F, 0x24, 0x46, 0x7D, 0x33, 0x9C, 0xD1, 0xBC, 0x24, 0x98, 0x29 };
 
 u8 pkg2_keyslot;
-pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo)
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey, bool is_exo)
 {
 	u8 *pdata = (u8 *)data;
 
@@ -713,7 +703,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo)
 	pkg2_keyslot = 8;
 
 	// Decrypt 7.0.0 pkg2 via 8.1.0 mkey on Erista.
-	if (!h_cfg.t210b01 && kb == HOS_KB_VERSION_700)
+	if (!h_cfg.t210b01 && mkey == HOS_MKEY_VER_700)
 	{
 		u8 tmp_mkey[SE_KEY_128_SIZE];
 
@@ -802,7 +792,7 @@ void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_ex
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
 	u32 meso_magic = *(u32 *)(ctxt->kernel + 4);
 	u32 kernel_size = ctxt->kernel_size;
-	u8 kb = ctxt->pkg1_id->kb;
+	u8 mkey = ctxt->pkg1_id->mkey;
 	u8 *pdst = (u8 *)dst;
 
 	// Force new Package2 if Mesosphere.
@@ -811,10 +801,10 @@ void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_ex
 		ctxt->new_pkg2 = true;
 
 	// Set key version. For Erista 7.0.0, use 8.1.0 because of a bug in Exo2?
-	u8 key_ver = kb ? kb + 1 : 0;
+	u8 key_ver = mkey ? mkey + 1 : 0;
 	if (pkg2_keyslot == 9)
 	{
-		key_ver = HOS_KB_VERSION_810 + 1;
+		key_ver = HOS_MKEY_VER_810 + 1;
 		pkg2_keyslot = 8;
 	}
 

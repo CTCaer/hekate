@@ -33,7 +33,6 @@
 #define OUT_FILENAME_SZ      128
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 
-extern hekate_config h_cfg;
 extern volatile boot_cfg_t *b_cfg;
 
 void load_emummc_cfg(emummc_cfg_t *emu_info)

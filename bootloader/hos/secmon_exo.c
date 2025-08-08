@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -155,8 +155,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	//! TODO: Replace current HOS version decoding (as it's bound to break in the future).
 
 	// Old exosphere target versioning.
-	if (ctxt->pkg1_id->kb >= HOS_KB_VERSION_1210)                     // 12.1.0+
-		exo_fw_no = ctxt->pkg1_id->kb + 4;
+	if (ctxt->pkg1_id->mkey >= HOS_MKEY_VER_1210)                     // 12.1.0+
+		exo_fw_no = ctxt->pkg1_id->mkey + 4;
 	else if (ctxt->pkg1_id->fuses <= 3 || ctxt->pkg1_id->fuses >= 10) // 1.0.0 - 3.0.0, 8.1.0 - 12.0.3.
 		exo_fw_no = ctxt->pkg1_id->fuses;
 	else
@@ -169,7 +169,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		exo_fw_no++;
 
 	// Set 12.1.0 specific revision.
-	if (ctxt->pkg1_id->kb == HOS_KB_VERSION_1210)
+	if (ctxt->pkg1_id->mkey == HOS_MKEY_VER_1210)
 		ctxt->exo_ctx.hos_revision = 1;
 
 	// Feed old exosphere target versioning to new.

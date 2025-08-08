@@ -141,7 +141,7 @@ static const u8 sec_map_100[3] = { PK11_SECTION_SM, PK11_SECTION_LD, PK11_SECTIO
 static const u8 sec_map_2xx[3] = { PK11_SECTION_WB, PK11_SECTION_LD, PK11_SECTION_SM };
 static const u8 sec_map_4xx[3] = { PK11_SECTION_LD, PK11_SECTION_SM, PK11_SECTION_WB };
 
-	// Timestamp  KB  FU   TSEC    PK11     SECMON     Warmboot
+	// Timestamp  MK  FU   TSEC    PK11     SECMON     Warmboot
 static const pkg1_id_t _pkg1_ids[] = {
 	{ "20161121",  0,  1, 0x1900, 0x3FE0, SM_100_ADR, 0x8000D000, _secmon_1_patchset }, // 1.0.0 (Patched relocator).
 	{ "20170210",  0,  2, 0x1900, 0x3FE0, 0x4002D000, 0x8000D000, _secmon_2_patchset }, // 2.0.0 - 2.3.0.
@@ -280,9 +280,9 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 	else if (t210b01)
 	{
 		// For T210B01 we patch 6.X.X as is. Otherwise we decompress the program payload.
-		if (ctxt->pkg1_id->kb == HOS_KB_VERSION_600)
+		if (ctxt->pkg1_id->mkey      == HOS_MKEY_VER_600)
 			secmon_patchset = _secmon_6_mariko_patchset;
-		else if (ctxt->pkg1_id->kb == HOS_KB_VERSION_620)
+		else if (ctxt->pkg1_id->mkey == HOS_MKEY_VER_620)
 			secmon_patchset = _secmon_620_mariko_patchset;
 		else
 		{
@@ -291,9 +291,9 @@ void pkg1_secmon_patch(void *hos_ctxt, u32 secmon_base, bool t210b01)
 			memset((void *)TZRAM_PROG_ADDR, 0, 0x38800);
 
 			// Get size of compressed program payload and set patch offset.
-			u32 idx = ctxt->pkg1_id->kb - HOS_KB_VERSION_700;
+			u32 idx = ctxt->pkg1_id->mkey - HOS_MKEY_VER_700;
 			u32 patch_offset = TZRAM_PROG_PK2_SIG_PATCH;
-			if (ctxt->pkg1_id->kb > HOS_KB_VERSION_910 || !memcmp(ctxt->pkg1_id->id, "20200303", 8)) //TODO: Add 11.0.0 support.
+			if (ctxt->pkg1_id->mkey >= HOS_MKEY_VER_1210 || !memcmp(ctxt->pkg1_id->id, "20200303", 8)) //TODO: Add 11.0.0 support.
 			{
 				idx++;
 				patch_offset = TZRAM_PROG_PK2_SIG_PATCH_1000;
@@ -323,7 +323,7 @@ void pkg1_warmboot_patch(void *hos_ctxt)
 	const patch_t *warmboot_patchset;
 
 	// Patch warmboot on T210 to allow downgrading.
-	switch (ctxt->pkg1_id->kb)
+	switch (ctxt->pkg1_id->mkey)
 	{
 	case 0:
 		warmboot_patchset = _warmboot_1_patchset;
@@ -352,7 +352,7 @@ static void _warmboot_filename(char *out, u32 fuses)
 	strcat(out, ".bin");
 }
 
-int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 kb)
+int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 mkey)
 {
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
 	int res = 1;
@@ -420,15 +420,16 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 kb)
 	}
 	else
 	{
-		// Set warmboot address in PMC if required.
-		if (kb <= HOS_KB_VERSION_301)
+		// Set Warmboot address in PMC if required.
+		if (mkey <= HOS_MKEY_VER_301)
 			PMC(APBDEV_PMC_SCRATCH1) = warmboot_base;
 
-		// Set Warmboot Physical Address ID for 3.0.0 - 3.0.2.
-		if (kb == HOS_KB_VERSION_300)
-			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA address id.
-		else if (kb == HOS_KB_VERSION_301)
-			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA address id.
+		// Set Warmboot Physical Address ID for 3.0.0 - 3.0.2. For 4.0.0 and up, secmon does it.
+		// The check is already patched so it's actually irrelevant.
+		if (mkey == HOS_MKEY_VER_300)
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0xE3;  // Warmboot 3.0.0 PA ID.
+		else if (mkey == HOS_MKEY_VER_301)
+			PMC(APBDEV_PMC_SECURE_SCRATCH32) = 0x104; // Warmboot 3.0.1/.2 PA ID.
 	}
 
 	return res;

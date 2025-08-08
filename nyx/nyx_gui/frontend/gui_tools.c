@@ -1142,7 +1142,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char path[128];
 
-	u8 kb = 0;
+	u8 mkey = 0;
 	u8 *pkg1 = (u8 *)zalloc(SZ_256K);
 	u8 *warmboot = (u8 *)zalloc(SZ_256K);
 	u8 *secmon = (u8 *)zalloc(SZ_256K);
@@ -1163,7 +1163,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	// Read package1.
 	static const u32 BOOTLOADER_SIZE          = SZ_256K;
 	static const u32 BOOTLOADER_MAIN_OFFSET   = 0x100000;
-	static const u32 HOS_KEYBLOBS_OFFSET      = 0x180000;
+	static const u32 HOS_EKS_OFFSET           = 0x180000;
 
 	char *build_date = malloc(32);
 	u32 pk1_offset =  h_cfg.t210b01 ? sizeof(bl_hdr_t210b01_t) : 0; // Skip T210B01 OEM header.
@@ -1197,22 +1197,25 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		goto out_free;
 	}
 
-	kb = pkg1_id->kb;
+	mkey = pkg1_id->mkey;
 
 	tsec_ctxt_t tsec_ctxt = {0};
 	tsec_ctxt.fw = (void *)(pkg1 + pkg1_id->tsec_off);
 	tsec_ctxt.pkg1 = (void *)pkg1;
 	tsec_ctxt.pkg11_off = pkg1_id->pkg11_off;
 
-	// Read keyblob.
-	u8 *keyblob = (u8 *)zalloc(EMMC_BLOCKSIZE);
-	sdmmc_storage_read(&emmc_storage, HOS_KEYBLOBS_OFFSET / EMMC_BLOCKSIZE + kb, 1, keyblob);
+	// Read the correct eks for older HOS versions.
+	const u32 eks_size = sizeof(pkg1_eks_t);
+	pkg1_eks_t *eks = (pkg1_eks_t *)malloc(eks_size);
+	emmc_set_partition(EMMC_BOOT0);
+	sdmmc_storage_read(&emmc_storage, HOS_EKS_OFFSET + (mkey * eks_size) / EMMC_BLOCKSIZE,
+									  eks_size / EMMC_BLOCKSIZE, eks);
 
-	// Decrypt.
-	hos_keygen(keyblob, kb, &tsec_ctxt);
-	free(keyblob);
+	// Generate keys.
+	hos_keygen(eks, mkey, &tsec_ctxt);
+	free(eks);
 
-	if (h_cfg.t210b01 || kb <= HOS_KB_VERSION_600)
+	if (h_cfg.t210b01 || mkey <= HOS_MKEY_VER_600)
 	{
 		if (!pkg1_decrypt(pkg1_id, pkg1))
 		{
@@ -1224,7 +1227,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		}
 	}
 
-	if (h_cfg.t210b01 || kb <= HOS_KB_VERSION_620)
+	if (h_cfg.t210b01 || mkey <= HOS_MKEY_VER_620)
 	{
 		pkg1_unpack(warmboot, secmon, loader, pkg1_id, pkg1 + pk1_offset);
 		pk11_hdr_t *hdr_pk11 = (pk11_hdr_t *)(pkg1 + pk1_offset + pkg1_id->pkg11_off + 0x20);
@@ -1312,7 +1315,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 	res = sd_save_to_file(pkg2, pkg2_size, path);
 
 	// Decrypt package2 and parse KIP1 blobs in INI1 section.
-	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, kb);
+	pkg2_hdr_t *pkg2_hdr = pkg2_decrypt(pkg2, mkey);
 	if (!pkg2_hdr)
 	{
 		strcat(txt_buf, "#FFDD00 Pkg2 decryption failed!#");
@@ -1327,7 +1330,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		}
 
 		// Clear EKS slot, in case something went wrong with tsec keygen.
-		hos_eks_clear(kb);
+		hos_eks_clear(mkey);
 
 		goto out;
 	}
@@ -1428,7 +1431,7 @@ out_free:
 	emmc_end();
 	sd_unmount();
 
-	if (kb >= HOS_KB_VERSION_620)
+	if (mkey >= HOS_MKEY_VER_620)
 		se_aes_key_clear(8);
 out_end:
 	// Enable buttons.

@@ -90,6 +90,18 @@ typedef struct _pkg2_ini1_t
 	u32 pad;
 } pkg2_ini1_t;
 
+enum kip_offset_section
+{
+	KIP_TEXT    = 0,
+	KIP_RODATA  = 1,
+	KIP_DATA    = 2,
+	KIP_BSS     = 3,
+	KIP_UNKSEC1 = 4,
+	KIP_UNKSEC2 = 5
+};
+
+#define KIP1_NUM_SECTIONS 6
+
 typedef struct _pkg2_kip1_sec_t
 {
 	u32 offset;
@@ -98,12 +110,10 @@ typedef struct _pkg2_kip1_sec_t
 	u32 attrib;
 } pkg2_kip1_sec_t;
 
-#define KIP1_NUM_SECTIONS 6
-
 typedef struct _pkg2_kip1_t
 {
 /* 0x000 */	u32 magic;
-/* 0x004 */	u8 name[12];
+/* 0x004 */	char name[12];
 /* 0x010 */	u64 tid;
 /* 0x018 */	u32 proc_cat;
 /* 0x01C */	u8 main_thrd_prio;
@@ -160,7 +170,7 @@ void pkg2_get_ids(kip1_id_t **ids, u32 *entries);
 const char *pkg2_patch_kips(link_t *info, char *patch_names);
 
 const pkg2_kernel_id_t *pkg2_identify(const u8 *hash);
-pkg2_hdr_t *pkg2_decrypt(void *data, u8 kb, bool is_exo);
+pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey, bool is_exo);
 void pkg2_build_encrypt(void *dst, void *hos_ctxt, link_t *kips_info, bool is_exo);
 
 #endif
