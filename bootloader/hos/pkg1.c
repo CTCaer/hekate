@@ -403,16 +403,11 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 mke
 				burnt_fuses = fuses_fw;
 		}
 
-		// Configure Warmboot parameters. Anything lower is not supported.
-		switch (burnt_fuses)
-		{
-		case 7 ... 8:
-			pa_id = 0x21 * (burnt_fuses - 3) + 3;
-			break;
-		default: // From 7.0.0 and up PA id is 0x21 multiplied with fuses.
-			pa_id = 0x21 * burnt_fuses;
-			break;
-		}
+		// Configure warmboot parameters. Anything lower than 6.0.0 is not supported.
+		// From 7.0.0 and up, it's not derived from PA segment but it's 0x21 * fuses.
+		pa_id = 0x21 * burnt_fuses;
+		if (burnt_fuses <= 8) // Old method.
+			pa_id -= 0x60;
 
 		// Set Warmboot Physical Address ID and lock SECURE_SCRATCH32 register.
 		PMC(APBDEV_PMC_SECURE_SCRATCH32) = pa_id;
