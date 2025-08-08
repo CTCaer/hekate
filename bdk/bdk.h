@@ -72,6 +72,8 @@
 #include <utils/ini.h>
 #include <utils/list.h>
 #include <utils/sprintf.h>
+#include <utils/tegra_bct.h>
+#include <utils/tegra_bit.h>
 #include <utils/types.h>
 #include <utils/util.h>
 
