@@ -25,6 +25,7 @@
 void set_default_configuration()
 {
 	h_cfg.t210b01 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01;
+	h_cfg.devmode = fuse_read_hw_state();
 
 	h_cfg.autoboot      = 0;
 	h_cfg.autoboot_list = 0;

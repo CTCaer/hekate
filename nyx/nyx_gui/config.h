@@ -35,6 +35,7 @@ typedef struct _hekate_config
 	u32 bootprotect;
 	// Global temporary config.
 	bool t210b01;
+	bool devmode;
 	bool emummc_force_disable;
 	bool rcm_patched;
 	bool autorcm_enabled;
