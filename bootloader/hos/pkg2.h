@@ -20,6 +20,8 @@
 
 #include <bdk.h>
 
+#define PKG2_LOAD_ADDR  0xA9800000
+
 #define PKG2_MAGIC      0x31324B50
 #define PKG2_SEC_BASE   0x80000000
 #define PKG2_SEC_KERNEL 0

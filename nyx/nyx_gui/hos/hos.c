@@ -198,7 +198,7 @@ static void _hos_eks_get()
 	if (!h_cfg.eks)
 	{
 		// Read EKS blob.
-		u8 *mbr = zalloc(SD_BLOCKSIZE);
+		u8 *mbr = malloc(SD_BLOCKSIZE);
 		if (!hos_eks_rw_try(mbr, false))
 			goto out;
 
@@ -228,7 +228,7 @@ static void _hos_eks_save()
 	bool new_eks = false;
 	if (!h_cfg.eks)
 	{
-		h_cfg.eks = zalloc(SD_BLOCKSIZE);
+		h_cfg.eks = zalloc(sizeof(hos_eks_mbr_t));
 		new_eks = true;
 	}
 
@@ -236,7 +236,7 @@ static void _hos_eks_save()
 	if (h_cfg.eks->enabled != HOS_EKS_TSEC_VER)
 	{
 		// Read EKS blob.
-		u8 *mbr = zalloc(SD_BLOCKSIZE);
+		u8 *mbr = malloc(SD_BLOCKSIZE);
 		if (!hos_eks_rw_try(mbr, false))
 		{
 			if (new_eks)
@@ -253,9 +253,9 @@ static void _hos_eks_save()
 		se_get_aes_keys(keys + SZ_4K, keys, SE_KEY_128_SIZE);
 
 		// Set magic and personalized info.
-		h_cfg.eks->magic = HOS_EKS_MAGIC;
+		h_cfg.eks->magic   = HOS_EKS_MAGIC;
 		h_cfg.eks->enabled = HOS_EKS_TSEC_VER;
-		h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
+		h_cfg.eks->lot0    = FUSE(FUSE_OPT_LOT_CODE_0);
 
 		// Copy new keys.
 		memcpy(h_cfg.eks->tsec,      keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
@@ -263,7 +263,7 @@ static void _hos_eks_save()
 		memcpy(h_cfg.eks->troot_dev, keys + 11 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 
 		// Encrypt EKS blob.
-		u8 *eks = zalloc(SD_BLOCKSIZE);
+		u8 *eks = malloc(sizeof(hos_eks_mbr_t));
 		memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 		se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
@@ -290,7 +290,7 @@ void hos_eks_clear(u32 mkey)
 		if (h_cfg.eks->enabled)
 		{
 			// Read EKS blob.
-			u8 *mbr = zalloc(SD_BLOCKSIZE);
+			u8 *mbr = malloc(SD_BLOCKSIZE);
 			if (!hos_eks_rw_try(mbr, false))
 				goto out;
 
@@ -298,7 +298,7 @@ void hos_eks_clear(u32 mkey)
 			h_cfg.eks->enabled = 0;
 
 			// Encrypt EKS blob.
-			u8 *eks = zalloc(SD_BLOCKSIZE);
+			u8 *eks = malloc(sizeof(hos_eks_mbr_t));
 			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 			se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 

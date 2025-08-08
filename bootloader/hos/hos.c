@@ -36,8 +36,6 @@
 	({  gfx_con.mute = false; \
 		gfx_printf("%k"text"%k\n", TXT_CLR_ERROR, args, TXT_CLR_DEFAULT); })
 
-#define PKG2_LOAD_ADDR 0xA9800000
-
 #define SECMON_BCT_CFG_ADDR  0x4003D000
 #define SECMON6_BCT_CFG_ADDR 0x4003F800
 
@@ -155,21 +153,8 @@ static void _se_lock(bool lock_se)
 		SE(SE_SE_SECURITY_REG) &= ~SE_PERKEY_SETTING; // Make access lock regs secure only.
 	}
 
-	memset((void *)IPATCH_BASE, 0, 14 * sizeof(u32));
+	memset((void *)IPATCH_BASE, 0, (IPATCH_CAM_ENTRIES + 1) * sizeof(u32));
 	SB(SB_CSR) = SB_CSR_PIROM_DISABLE;
-
-	// This is useful for documenting the bits in the SE config registers, so we can keep it around.
-	/*gfx_printf("SE(SE_SE_SECURITY_REG) = %08X\n", SE(SE_SE_SECURITY_REG));
-	gfx_printf("SE(0x4) = %08X\n", SE(0x4));
-	gfx_printf("SE(SE_CRYPTO_SECURITY_PERKEY_REG) = %08X\n", SE(SE_CRYPTO_SECURITY_PERKEY_REG));
-	gfx_printf("SE(SE_RSA_SECURITY_PERKEY_REG) = %08X\n", SE(SE_RSA_SECURITY_PERKEY_REG));
-	for (u32 i = 0; i < 16; i++)
-		gfx_printf("%02X ", SE(SE_CRYPTO_KEYTABLE_ACCESS_REG + i * 4) & 0xFF);
-	gfx_putc('\n');
-	for (u32 i = 0; i < 2; i++)
-		gfx_printf("%02X ", SE(SE_RSA_KEYTABLE_ACCESS_REG + i * 4) & 0xFF);
-	gfx_putc('\n');
-	gfx_hexdump(SE_BASE, (void *)SE_BASE, 0x400);*/
 }
 
 static bool _hos_eks_rw_try(u8 *buf, bool write)
@@ -201,7 +186,7 @@ static void _hos_eks_get()
 	if (!h_cfg.eks)
 	{
 		// Read EKS blob.
-		u8 *mbr = zalloc(SD_BLOCKSIZE);
+		u8 *mbr = malloc(SD_BLOCKSIZE);
 		if (!_hos_eks_rw_try(mbr, false))
 			goto out;
 
@@ -231,7 +216,7 @@ static void _hos_eks_save()
 	bool new_eks = false;
 	if (!h_cfg.eks)
 	{
-		h_cfg.eks = zalloc(SD_BLOCKSIZE);
+		h_cfg.eks = zalloc(sizeof(hos_eks_mbr_t));
 		new_eks = true;
 	}
 
@@ -239,7 +224,7 @@ static void _hos_eks_save()
 	if (h_cfg.eks->enabled != HOS_EKS_TSEC_VER)
 	{
 		// Read EKS blob.
-		u8 *mbr = zalloc(SD_BLOCKSIZE);
+		u8 *mbr = malloc(SD_BLOCKSIZE);
 		if (!_hos_eks_rw_try(mbr, false))
 		{
 			if (new_eks)
@@ -256,9 +241,9 @@ static void _hos_eks_save()
 		se_get_aes_keys(keys + SZ_4K, keys, SE_KEY_128_SIZE);
 
 		// Set magic and personalized info.
-		h_cfg.eks->magic = HOS_EKS_MAGIC;
+		h_cfg.eks->magic   = HOS_EKS_MAGIC;
 		h_cfg.eks->enabled = HOS_EKS_TSEC_VER;
-		h_cfg.eks->lot0 = FUSE(FUSE_OPT_LOT_CODE_0);
+		h_cfg.eks->lot0    = FUSE(FUSE_OPT_LOT_CODE_0);
 
 		// Copy new keys.
 		memcpy(h_cfg.eks->tsec,      keys + 12 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
@@ -266,7 +251,7 @@ static void _hos_eks_save()
 		memcpy(h_cfg.eks->troot_dev, keys + 11 * SE_KEY_128_SIZE, SE_KEY_128_SIZE);
 
 		// Encrypt EKS blob.
-		u8 *eks = zalloc(SD_BLOCKSIZE);
+		u8 *eks = malloc(sizeof(hos_eks_mbr_t));
 		memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 		se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
@@ -293,7 +278,7 @@ static void _hos_eks_clear(u32 mkey)
 		if (h_cfg.eks->enabled)
 		{
 			// Read EKS blob.
-			u8 *mbr = zalloc(SD_BLOCKSIZE);
+			u8 *mbr = malloc(SD_BLOCKSIZE);
 			if (!_hos_eks_rw_try(mbr, false))
 				goto out;
 
@@ -301,7 +286,7 @@ static void _hos_eks_clear(u32 mkey)
 			h_cfg.eks->enabled = 0;
 
 			// Encrypt EKS blob.
-			u8 *eks = zalloc(SD_BLOCKSIZE);
+			u8 *eks = malloc(sizeof(hos_eks_mbr_t));
 			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
 			se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
 
@@ -590,7 +575,7 @@ static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
 try_load:
 	// Read package1.
 	emummc_storage_set_mmc_partition(EMMC_BOOT0);
-	emummc_storage_read(bootloader_offset / EMMC_BLOCKSIZE, PKG1_BOOTLOADER_SIZE / EMMC_BLOCKSIZE, ctxt->pkg1);
+	emummc_storage_read(bootloader_offset, PKG1_BOOTLOADER_SIZE / EMMC_BLOCKSIZE, ctxt->pkg1);
 
 	ctxt->pkg1_id = pkg1_identify(ctxt->pkg1 + pk1_offset);
 	if (!ctxt->pkg1_id)
