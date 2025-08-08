@@ -28,9 +28,6 @@
 #define CLOCK_MAX_YEAR (CLOCK_MIN_YEAR + 10)
 #define CLOCK_YEARLIST "2025\n2026\n2027\n2028\n2029\n2030\n2031\n2032\n2033\n2034\n2035"
 
-extern hekate_config h_cfg;
-extern nyx_config n_cfg;
-
 static lv_obj_t *autoboot_btn;
 static bool autoboot_first_time = true;
 

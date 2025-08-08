@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,10 +20,7 @@
 #include <bdk.h>
 
 #include "config.h"
-#include "gfx/tui.h"
 #include <libs/fatfs/ff.h>
-
-extern hekate_config h_cfg;
 
 void set_default_configuration()
 {

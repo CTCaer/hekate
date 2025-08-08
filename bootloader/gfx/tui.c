@@ -20,8 +20,6 @@
 #include "tui.h"
 #include "../config.h"
 
-extern hekate_config h_cfg;
-
 void tui_sbar(bool force_update)
 {
 	u32 cx, cy;

@@ -25,8 +25,6 @@
 #include <libs/fatfs/ff.h>
 #include "../storage/emummc.h"
 
-extern hekate_config h_cfg;
-
 enum emuMMC_Type
 {
 	emuMMC_None = 0,

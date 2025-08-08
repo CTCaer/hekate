@@ -29,8 +29,6 @@
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
-extern hekate_config h_cfg;
-
 extern bool is_ipl_updated(void *buf, const char *path, bool force);
 
 #define PKG3_KIP_SKIP_MAX 16

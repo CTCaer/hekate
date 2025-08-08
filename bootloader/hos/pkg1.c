@@ -27,8 +27,6 @@
 #include "../config.h"
 #include <libs/compr/lz4.h>
 
-extern hekate_config h_cfg;
-
 // Secmon package2 signature/hash checks patches for Erista.
 #define SM_100_ADR 0x4002B020 // Original: 0x40014020.
 PATCHSET_DEF(_secmon_1_patchset,

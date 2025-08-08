@@ -29,8 +29,6 @@
 #include "../config.h"
 #include "../storage/emummc.h"
 
-extern hekate_config h_cfg;
-
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 

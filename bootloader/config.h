@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -40,6 +40,8 @@ typedef struct _hekate_config
 	u32  errors;
 	hos_eks_mbr_t *eks;
 } hekate_config;
+
+extern hekate_config h_cfg;
 
 void set_default_configuration();
 

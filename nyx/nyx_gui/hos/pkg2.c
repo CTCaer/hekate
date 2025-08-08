@@ -26,7 +26,6 @@
 #include <libs/fatfs/ff.h>
 #include <libs/compr/blz.h>
 
-extern hekate_config h_cfg;
 extern const u8 package2_keyseed[];
 
 u32 pkg2_newkern_ini1_start;

@@ -57,6 +57,9 @@ typedef struct _nyx_config
 	u32 bpmp_clock;
 } nyx_config;
 
+extern hekate_config h_cfg;
+extern nyx_config n_cfg;
+
 void set_default_configuration();
 void set_nyx_default_configuration();
 int create_config_entry();

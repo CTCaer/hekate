@@ -25,8 +25,6 @@
 #include "../hos/pkg1.h"
 #include <libs/fatfs/ff.h>
 
-extern hekate_config h_cfg;
-
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
 

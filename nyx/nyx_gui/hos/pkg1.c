@@ -25,8 +25,6 @@
 #include "pkg1.h"
 #include "../config.h"
 
-extern hekate_config h_cfg;
-
 /*
  * package1.1 header: <wb, ldr, sm>
  * package1.1 layout:

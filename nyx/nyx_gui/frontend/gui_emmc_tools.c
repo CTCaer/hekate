@@ -29,7 +29,6 @@
 #include <libs/fatfs/ff.h>
 
 extern boot_cfg_t b_cfg;
-extern hekate_config h_cfg;
 
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
 

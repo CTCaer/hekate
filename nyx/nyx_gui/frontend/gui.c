@@ -30,8 +30,6 @@
 #include "../config.h"
 #include <libs/fatfs/ff.h>
 
-extern hekate_config h_cfg;
-extern nyx_config n_cfg;
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 

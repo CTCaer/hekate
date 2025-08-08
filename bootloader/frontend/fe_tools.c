@@ -27,7 +27,6 @@
 #include <libs/fatfs/ff.h>
 
 extern boot_cfg_t b_cfg;
-extern hekate_config h_cfg;
 
 #pragma GCC push_options
 #pragma GCC optimize ("Os")
