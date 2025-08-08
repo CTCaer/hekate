@@ -2387,46 +2387,51 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 
 	char *txt_buf = (char *)malloc(SZ_16K);
 	int value = 0;
-	int cap_pct = 0;
 
 	// Fuel gauge IC info.
-	max17050_get_property(MAX17050_RepSOC, &cap_pct);
-	max17050_get_property(MAX17050_RepCap, &value);
-	s_printf(txt_buf, "\n%d mAh [%d %%]\n", value, cap_pct >> 8);
+	if (!max17050_get_version(NULL))
+	{
+		int cap_pct = 0;
+		max17050_get_property(MAX17050_RepSOC, &cap_pct);
+		max17050_get_property(MAX17050_RepCap, &value);
+		s_printf(txt_buf, "\n%d mAh [%d %%]\n", value, cap_pct >> 8);
 
-	max17050_get_property(MAX17050_FullCAP, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
+		max17050_get_property(MAX17050_FullCAP, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mAh\n", value);
 
-	max17050_get_property(MAX17050_DesignCap, &value);
-	bool design_cap_init = value == 1000;
-	s_printf(txt_buf + strlen(txt_buf), "%s%d mAh%s\n",
-		design_cap_init ? "#FF8000 " : "", value,  design_cap_init ? " - Init "SYMBOL_WARNING"#" : "");
+		max17050_get_property(MAX17050_DesignCap, &value);
+		bool design_cap_init = value == 1000;
+		s_printf(txt_buf + strlen(txt_buf), "%s%d mAh%s\n",
+			design_cap_init ? "#FF8000 " : "", value,  design_cap_init ? " - Init "SYMBOL_WARNING"#" : "");
 
-	max17050_get_property(MAX17050_Current, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
+		max17050_get_property(MAX17050_Current, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
 
-	max17050_get_property(MAX17050_AvgCurrent, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
+		max17050_get_property(MAX17050_AvgCurrent, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value / 1000);
 
-	max17050_get_property(MAX17050_VCELL, &value);
-	bool voltage_empty = value < 3200;
-	s_printf(txt_buf + strlen(txt_buf), "%s%d mV%s\n",
-		voltage_empty ? "#FF8000 " : "", value,  voltage_empty ? " - Low "SYMBOL_WARNING"#" : "");
+		max17050_get_property(MAX17050_VCELL, &value);
+		bool voltage_empty = value < 3200;
+		s_printf(txt_buf + strlen(txt_buf), "%s%d mV%s\n",
+			voltage_empty ? "#FF8000 " : "", value,  voltage_empty ? " - Low "SYMBOL_WARNING"#" : "");
 
-	max17050_get_property(MAX17050_OCVInternal, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+		max17050_get_property(MAX17050_OCVInternal, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
 
-	max17050_get_property(MAX17050_MinVolt, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+		max17050_get_property(MAX17050_MinVolt, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
 
-	max17050_get_property(MAX17050_MaxVolt, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+		max17050_get_property(MAX17050_MaxVolt, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
 
-	max17050_get_property(MAX17050_V_empty, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+		max17050_get_property(MAX17050_V_empty, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
 
-	max17050_get_property(MAX17050_TEMP, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, (value >= 0 ? value : (~value + 1)) % 10);
+		max17050_get_property(MAX17050_TEMP, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, (value >= 0 ? value : (~value + 1)) % 10);
+	}
+	else
+		strcpy(txt_buf, "\n#FF8000 "SYMBOL_WARNING" Error!#\n\n\n\n\n\n\n\n\n\n\n\n\n");
 
 	// Main Pmic IC info.
 	value = i2c_recv_byte(I2C_5, MAX77620_I2C_ADDR, MAX77620_REG_CID4);
@@ -2487,93 +2492,104 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 	lv_obj_set_size(val2, LV_HOR_RES / 2 / 3, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
 
 	lv_obj_t * lb_val2 = lv_label_create(val2, lb_desc);
+	int iinlim = 0;
 
 	// Charger IC info.
-	int iinlim = 0;
-	bq24193_get_property(BQ24193_InputCurrentLimit, &iinlim);
-	s_printf(txt_buf, "\n%d mA\n", iinlim);
-
-	bq24193_get_property(BQ24193_SystemMinimumVoltage, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
-
-	bq24193_get_property(BQ24193_FastChargeCurrentLimit, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value);
-
-	bq24193_get_property(BQ24193_ChargeVoltageLimit, &value);
-	s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
-
-	bq24193_get_property(BQ24193_ChargeStatus, &value);
-	switch (value)
+	if (!bq24193_get_version(NULL))
 	{
-	case 0:
-		strcat(txt_buf, "Not charging\n");
-		break;
-	case 1:
-		strcat(txt_buf, "Pre-charging\n");
-		break;
-	case 2:
-		strcat(txt_buf, "Fast charging\n");
-		break;
-	case 3:
-		strcat(txt_buf, "Charge terminated\n");
-		break;
-	default:
-		s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)\n", value);
-		break;
-	}
+		bq24193_get_property(BQ24193_InputCurrentLimit, &iinlim);
+		s_printf(txt_buf, "\n%d mA\n", iinlim);
 
-	bq24193_get_property(BQ24193_TempStatus, &value);
-	switch (value)
-	{
-	case 0:
-		strcat(txt_buf, "Normal");
-		break;
-	case 2:
-		strcat(txt_buf, "Warm");
-		break;
-	case 3:
-		strcat(txt_buf, "Cool");
-		break;
-	case 5:
-		strcat(txt_buf, "#FF8000 Cold#");
-		break;
-	case 6:
-		strcat(txt_buf, "#FF8000 Hot#");
-		break;
-	default:
-		s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)", value);
-		break;
+		bq24193_get_property(BQ24193_SystemMinimumVoltage, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+
+		bq24193_get_property(BQ24193_FastChargeCurrentLimit, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mA\n", value);
+
+		bq24193_get_property(BQ24193_ChargeVoltageLimit, &value);
+		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
+
+		bq24193_get_property(BQ24193_ChargeStatus, &value);
+		switch (value)
+		{
+		case 0:
+			strcat(txt_buf, "Not charging\n");
+			break;
+		case 1:
+			strcat(txt_buf, "Pre-charging\n");
+			break;
+		case 2:
+			strcat(txt_buf, "Fast charging\n");
+			break;
+		case 3:
+			strcat(txt_buf, "Charge terminated\n");
+			break;
+		default:
+			s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)\n", value);
+			break;
+		}
+
+		bq24193_get_property(BQ24193_TempStatus, &value);
+		switch (value)
+		{
+		case 0:
+			strcat(txt_buf, "Normal");
+			break;
+		case 2:
+			strcat(txt_buf, "Warm");
+			break;
+		case 3:
+			strcat(txt_buf, "Cool");
+			break;
+		case 5:
+			strcat(txt_buf, "#FF8000 Cold#");
+			break;
+		case 6:
+			strcat(txt_buf, "#FF8000 Hot#");
+			break;
+		default:
+			s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)", value);
+			break;
+		}
 	}
+	else
+		strcpy(txt_buf, "\n#FF8000 "SYMBOL_WARNING" Error!#\n\n\n\n\n");
+
+	strcat(txt_buf, "\n\n\n");
 
 	// USB-PD IC info.
-	bool inserted;
-	u32 wattage = 0;
-	usb_pd_objects_t usb_pd;
-	bm92t36_get_sink_info(&inserted, &usb_pd);
-	strcat(txt_buf, "\n\n\n");
-	strcat(txt_buf, inserted ? "Connected" : "Disconnected");
-
-	// Select 5V is no PD contract.
-	wattage = iinlim * (usb_pd.pdo_no ? usb_pd.selected_pdo.voltage : 5);
-
-	s_printf(txt_buf + strlen(txt_buf), "\n%d.%d W", wattage / 1000, (wattage % 1000) / 100);
-
-	if (!usb_pd.pdo_no)
-		strcat(txt_buf, "\nNon PD");
-
-	// Limit to 6 profiles so it can fit.
-	usb_pd.pdo_no = MIN(usb_pd.pdo_no, 6);
-
-	for (u32 i = 0; i < usb_pd.pdo_no; i++)
+	if (!bm92t36_get_version(NULL))
 	{
-		bool selected =
-			usb_pd.pdos[i].amperage == usb_pd.selected_pdo.amperage &&
-			usb_pd.pdos[i].voltage == usb_pd.selected_pdo.voltage;
-		s_printf(txt_buf + strlen(txt_buf), "\n%s%d mA, %2d V%s",
-			selected ? "#D4FF00 " : "",
-			usb_pd.pdos[i].amperage, usb_pd.pdos[i].voltage,
-			selected ? "#" : "");
+		bool inserted;
+		u32 wattage = 0;
+		usb_pd_objects_t usb_pd;
+		bm92t36_get_sink_info(&inserted, &usb_pd);
+		strcat(txt_buf, inserted ? "Connected" : "Disconnected");
+
+		// Select 5V is no PD contract.
+		wattage = iinlim * (usb_pd.pdo_no ? usb_pd.selected_pdo.voltage : 5);
+
+		s_printf(txt_buf + strlen(txt_buf), "\n%d.%d W", wattage / 1000, (wattage % 1000) / 100);
+
+		if (!usb_pd.pdo_no)
+			strcat(txt_buf, "\nNon PD");
+
+		// Limit to 6 profiles so it can fit.
+		usb_pd.pdo_no = MIN(usb_pd.pdo_no, 6);
+
+		for (u32 i = 0; i < usb_pd.pdo_no; i++)
+		{
+			bool selected =
+				usb_pd.pdos[i].amperage == usb_pd.selected_pdo.amperage &&
+				usb_pd.pdos[i].voltage == usb_pd.selected_pdo.voltage;
+			s_printf(txt_buf + strlen(txt_buf), "\n%s%d mA, %2d V%s",
+				selected ? "#D4FF00 " : "",
+				usb_pd.pdos[i].amperage, usb_pd.pdos[i].voltage,
+				selected ? "#" : "");
+		}
 	}
+	else
+		strcat(txt_buf, "#FF8000 "SYMBOL_WARNING" Error!#");
 
 	lv_label_set_text(lb_val2, txt_buf);
 
