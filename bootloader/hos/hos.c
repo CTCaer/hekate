@@ -36,34 +36,6 @@
 	({  gfx_con.mute = false; \
 		gfx_printf("%k"text"%k\n", TXT_CLR_ERROR, args, TXT_CLR_DEFAULT); })
 
-#define SECMON_BCT_CFG_ADDR  0x4003D000
-#define SECMON6_BCT_CFG_ADDR 0x4003F800
-
- // Secmon mailbox.
-#define SECMON_MAILBOX_ADDR  0x40002E00
-#define SECMON7_MAILBOX_ADDR 0x40000000
-#define  SECMON_STATE_OFFSET 0xF8
-
-typedef enum
-{
-	SECMON_STATE_NOT_READY    = 0,
-
-	PKG1_STATE_NOT_READY      = 0,
-	PKG1_STATE_BCT_COPIED     = 1,
-	PKG1_STATE_DRAM_READY     = 2,
-	PKG1_STATE_PKG2_READY_OLD = 3,
-	PKG1_STATE_PKG2_READY     = 4
-} pkg1_states_t;
-
-typedef struct _secmon_mailbox_t
-{
-	//  < 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM and pkg2 ready, 3: Continue boot.
-	// >= 4.0.0 Signals - 0: Not ready, 1: BCT ready, 2: DRAM ready, 4: pkg2 ready and continue boot.
-	u32 in;
-	// Non-zero: Secmon ready.
-	u32 out;
-} secmon_mailbox_t;
-
 static const u8 eks_keyseeds[HOS_MKEY_VER_600 - HOS_MKEY_VER_100 + 1][SE_KEY_128_SIZE] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
 	{ 0x0C, 0x25, 0x61, 0x5D, 0x68, 0x4C, 0xEB, 0x42, 0x1C, 0x23, 0x79, 0xEA, 0x82, 0x25, 0x12, 0xAC }, // 3.0.0.
@@ -630,7 +602,7 @@ try_load:
 
 static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
 {
-	u8 *bctBuf = NULL;
+	u8 *nx_bc = NULL;
 
 	emummc_storage_set_mmc_partition(EMMC_GPP);
 
@@ -644,27 +616,30 @@ DPRINTF("Parsed GPT\n");
 		goto out;
 
 	// Read in package2 header and get package2 real size.
-	static const u32 BCT_SIZE = SZ_16K;
-	bctBuf = (u8 *)malloc(BCT_SIZE);
-	emmc_part_read(pkg2_part, BCT_SIZE / EMMC_BLOCKSIZE, 1, bctBuf);
-	u32 *hdr = (u32 *)(bctBuf + 0x100);
+	static const u32 PKG2_OFFSET = SZ_16K;
+	nx_bc = (u8 *)malloc(sizeof(nx_bc_t));
+	emmc_part_read(pkg2_part, PKG2_OFFSET / EMMC_BLOCKSIZE, 1, nx_bc);
+	u32 *hdr = (u32 *)(nx_bc + 0x100);
 	u32 pkg2_size = hdr[0] ^ hdr[2] ^ hdr[3];
 DPRINTF("pkg2 size on emmc is %08X\n", pkg2_size);
 
-	// Read in Boot Config.
-	emmc_part_read(pkg2_part, 0, BCT_SIZE / EMMC_BLOCKSIZE, bctBuf);
+	// Check that size is valid.
+	if (!pkg2_size || pkg2_size > SZ_8M)
+		goto out;
+
+	// Read in NX Boot Config.
+	emmc_part_read(pkg2_part, 0, sizeof(nx_bc_t) / EMMC_BLOCKSIZE, nx_bc);
 
 	// Read in package2.
 	u32 pkg2_size_aligned = ALIGN(pkg2_size, EMMC_BLOCKSIZE);
 DPRINTF("pkg2 size aligned is %08X\n", pkg2_size_aligned);
 	ctxt->pkg2 = malloc(pkg2_size_aligned);
 	ctxt->pkg2_size = pkg2_size;
-	emmc_part_read(pkg2_part, BCT_SIZE / EMMC_BLOCKSIZE,
-		pkg2_size_aligned / EMMC_BLOCKSIZE, ctxt->pkg2);
+	emmc_part_read(pkg2_part, PKG2_OFFSET / EMMC_BLOCKSIZE, pkg2_size_aligned / EMMC_BLOCKSIZE, ctxt->pkg2);
 out:
 	emmc_gpt_free(&gpt);
 
-	return bctBuf;
+	return nx_bc;
 }
 
 static void _free_launch_components(launch_ctxt_t *ctxt)
@@ -932,8 +907,8 @@ void hos_launch(ini_sec_t *cfg)
 	gfx_puts("Loaded warmboot and secmon\n");
 
 	// Read package2.
-	u8 *bootConfigBuf = _read_emmc_pkg2(&ctxt);
-	if (!bootConfigBuf)
+	u8 *pkg2_nx_bc = _read_emmc_pkg2(&ctxt);
+	if (!pkg2_nx_bc)
 	{
 		_hos_crit_error("Pkg2 read failed!");
 		goto error;
@@ -1088,20 +1063,6 @@ void hos_launch(ini_sec_t *cfg)
 		break;
 	}
 
-	// Clear BCT area for retail units and copy it over if dev unit.
-	if (mkey <= HOS_MKEY_VER_500 && !is_exo)
-	{
-		memset((void *)SECMON_BCT_CFG_ADDR, 0, SZ_4K + SZ_8K);
-		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
-			memcpy((void *)SECMON_BCT_CFG_ADDR, bootConfigBuf, SZ_4K);
-	}
-	else
-	{
-		memset((void *)SECMON6_BCT_CFG_ADDR, 0, SZ_2K);
-		if (fuse_read_hw_state() == FUSE_NX_HW_STATE_DEV)
-			memcpy((void *)SECMON6_BCT_CFG_ADDR, bootConfigBuf, SZ_2K);
-	}
-
 	// Finalize MC carveout.
 	if (mkey <= HOS_MKEY_VER_301 && !is_exo)
 		mc_config_carveout();
@@ -1116,23 +1077,25 @@ void hos_launch(ini_sec_t *cfg)
 	// NX Bootloader locks LP0 Carveout secure scratch registers.
 	//pmc_scratch_lock(PMC_SEC_LOCK_LP0_PARAMS);
 
-	// Set secmon mailbox address and clear it.
-	volatile secmon_mailbox_t *secmon_mailbox;
-	if (mkey >= HOS_MKEY_VER_700 || is_exo)
-	{
-		memset((void *)SECMON7_MAILBOX_ADDR, 0, 0x200);
-		secmon_mailbox = (secmon_mailbox_t *)(SECMON7_MAILBOX_ADDR + SECMON_STATE_OFFSET);
-	}
-	else
-	{
-		if (mkey <= HOS_MKEY_VER_301)
-			memset((void *)SECMON_MAILBOX_ADDR, 0, 0x200);
-		secmon_mailbox = (secmon_mailbox_t *)(SECMON_MAILBOX_ADDR + SECMON_STATE_OFFSET);
-	}
+	// Copy the read NX BC to the correct address.
+	nx_bc_t *nxbc = (mkey >= HOS_MKEY_VER_600 || is_exo) ?
+					(nx_bc_t *)NX_BC6_ADDR :
+					(nx_bc_t *)NX_BC1_ADDR;
+	memcpy(nxbc, pkg2_nx_bc, sizeof(nx_bc_t)); // NX bootloader copies 4KB.
 
-	// Start directly from PKG2 ready signal and reset outgoing value.
-	secmon_mailbox->in  = pkg1_state_pkg2_ready;
-	secmon_mailbox->out = SECMON_STATE_NOT_READY;
+	// Set NX BIT mailbox address and clear it.
+	nx_bit_t *nxbit = (mkey >= HOS_MKEY_VER_700 || is_exo) ?
+					  (nx_bit_t *)NX_BIT7_MAILBOX_ADDR :
+					  (nx_bit_t *)NX_BIT1_MAILBOX_ADDR;
+	memset(nxbit, 0, sizeof(nx_bit_t));
+
+	// Set used NX BIT parameters.
+	nxbit->bl_attribute = 0;
+	nxbit->boot_type    = BIT_BOOT_TYPE_COLD;
+
+	// Start directly from PKG2 ready signal and reset secmon state.
+	nxbit->secldr_state = pkg1_state_pkg2_ready;
+	nxbit->secmon_state = SECMON_STATE_NOT_READY;
 
 	// Disable display.
 	display_end();

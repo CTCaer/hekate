@@ -163,6 +163,51 @@ typedef struct _kip1_id_t
 	const kip1_patchset_t *patchset;
 } kip1_id_t;
 
+/*
+ * NX NC - Package2 BOOT Configuration
+ *
+ * This is taken from the first 1KB of a Package2 partition.
+ * On retail, it's not zeroes, but on devkits it has actual data.
+ * The signed part is reserved for special in-house devkits.
+ */
+#define NX_BC1_ADDR 0x4003D000
+#define NX_BC6_ADDR 0x4003F800
+
+#define NX_BC_DBG_FLAG00_DEV_MODE  BIT(1)
+#define NX_BC_DBG_FLAG00_SERROR    BIT(2)
+#define NX_BC_DBG_FLAG00_ALL_FLAGS 0xFF
+
+#define NX_BC_HW_FLAG01_ALL_FLAGS  0xFF
+#define NX_BC_HW_FLAG03_MEM_MODE   0xFF
+#define NX_BC_HW_FLAG04_CNTCV_SET  BIT(0)
+
+#define NX_BC_PKG2_FLAG_DECRYPTED  BIT(0)
+#define NX_BC_PKG2_FLAG_UNSIGNED   BIT(1)
+
+#define NX_BC_NCA_FLAG_UNSIGNED    BIT(0)
+
+typedef struct _nx_bc_t {
+	/* Unsigned section */
+	u32 version;
+	u32 rsvd0[3];
+	u8  dbg_flags[0x10]; // Normally all are set to 0xFF if devkit.
+	u8  hw_flags[0x10];
+	u64 cntcv_value;
+	u8  padding0[0x1C8];
+
+	u8 rsa_pss_signature[0x100];
+
+	/* Signed section */
+	u32 version_signed;
+	u32 rsvd1;
+	u8  pkg2_flags;
+	u8  padding1[7];
+	u32 ecid[4];
+	u8  nca_flags[0x10];
+	u8  unk_flags[0x10];
+	u8  padding2[0xC0];
+} nx_bc_t;
+
 bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2);
 int  pkg2_has_kip(link_t *info, u64 tid);
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1);
