@@ -424,8 +424,14 @@ void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE)  = PLL_BASE_ENABLE | PLL_BASE_LOCK | plld_div;
 	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC1) = tegra_t210 ? 0x20 : 0; // Keep default PLLD_SETUP.
 
-	// Set PLLD_SDM_DIN and enable PLLD to DSI pads.
+	// Set PLLD_SDM_DIN and enable (T210) PLLD to DSI pads.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = misc;
+
+	// Wait for PLL to stabilize.
+	while (!(CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) & PLL_BASE_LOCK))
+		;
+
+	usleep(10);
 }
 
 void clock_enable_pllx()
@@ -452,6 +458,8 @@ void clock_enable_pllx()
 	// Wait for PLL to stabilize.
 	while (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & PLL_BASE_LOCK))
 		;
+
+	usleep(10);
 }
 
 void clock_enable_pllc(u32 divn)
