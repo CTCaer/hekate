@@ -46,7 +46,7 @@
 #define MAX77620_RTC_WEEKDAY_REG    0x0A
 #define MAX77620_RTC_MONTH_REG      0x0B
 #define MAX77620_RTC_YEAR_REG       0x0C
-#define MAX77620_RTC_DATE_REG       0x0D
+#define MAX77620_RTC_DAY_REG        0x0D
 
 #define MAX77620_ALARM1_SEC_REG     0x0E
 #define MAX77620_ALARM1_MIN_REG     0x0F
@@ -111,6 +111,7 @@ void max77620_rtc_prep_read();
 void max77620_rtc_get_time(rtc_time_t *time);
 void max77620_rtc_get_time_adjusted(rtc_time_t *time);
 void max77620_rtc_set_epoch_offset(int offset);
+void max77620_rtc_set_auto_dst(bool enable);
 void max77620_rtc_stop_alarm();
 void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time);
 u32  max77620_rtc_date_to_epoch(const rtc_time_t *time);

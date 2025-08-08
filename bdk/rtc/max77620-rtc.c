@@ -1,7 +1,7 @@
 /*
  * PMIC Real Time Clock driver for Nintendo Switch's MAX77620-RTC
  *
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  * Copyright (c) 2019 shchmue
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 #include <soc/timer.h>
 #include <soc/t210.h>
 
-int epoch_offset = 0;
+bool auto_dst     = false;
+int  epoch_offset = 0;
 
 void max77620_rtc_prep_read()
 {
@@ -39,20 +40,24 @@ void max77620_rtc_get_time(rtc_time_t *time)
 
 	// Get control reg config.
 	val = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_CONTROL_REG);
-	// TODO: Check for binary format also?
+	// TODO: Make also sure it's binary format?
 
 	// Get time.
-	time->sec  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_SEC_REG) & 0x7F;
-	time->min  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_MIN_REG) & 0x7F;
-	u8 hour    = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_HOUR_REG);
+	time->sec  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_SEC_REG)  & 0x7F;
+	time->min  = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_MIN_REG)  & 0x7F;
+	u8 hour    = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_HOUR_REG) & 0x1F;
 	time->hour = hour & 0x1F;
 
-	if (!(val & MAX77620_RTC_24H) && (hour & MAX77620_RTC_HOUR_PM_MASK))
-		time->hour = (time->hour & 0xF) + 12;
+	if (!(val & MAX77620_RTC_24H))
+	{
+		time->hour = hour & 0xF;
+		if (hour & MAX77620_RTC_HOUR_PM_MASK)
+			time->hour += 12;
+	}
 
 	// Get day of week. 1: Monday to 7: Sunday.
 	time->weekday = 0;
-	val = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_WEEKDAY_REG);
+	val = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_WEEKDAY_REG) & 0x7F;
 	for (int i = 0; i < 8; i++)
 	{
 		time->weekday++;
@@ -62,8 +67,9 @@ void max77620_rtc_get_time(rtc_time_t *time)
 	}
 
 	// Get date.
-	time->day   = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_DATE_REG) & 0x1f;
+	time->day   = i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_DAY_REG) & 0x1F;
 	time->month = (i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_MONTH_REG) & 0xF) - 1;
+	time->month++; // Normally minus 1, but everything else expects 1 as January.
 	time->year  = (i2c_recv_byte(I2C_5, MAX77620_RTC_I2C_ADDR, MAX77620_RTC_YEAR_REG) & 0x7F) + 2000;
 }
 
@@ -126,7 +132,7 @@ void max77620_rtc_epoch_to_date(u32 epoch, rtc_time_t *time)
 	time->day = day;
 
 	// Set weekday.
-	time->weekday = 0; //! TODO.
+	time->weekday = (day + 4) % 7;
 }
 
 u32 max77620_rtc_date_to_epoch(const rtc_time_t *time)
@@ -162,8 +168,19 @@ void max77620_rtc_get_time_adjusted(rtc_time_t *time)
 	if (epoch_offset)
 	{
 		u32 epoch = (u32)((s64)max77620_rtc_date_to_epoch(time) + epoch_offset);
+
+		// Adjust for DST between 28 march and 28 october. Good enough to cover all years as week info is not valid.
+		u16 md = (time->month << 8) | time->day;
+		if (auto_dst && md >= 0x31C && md < 0xA1C)
+			epoch += 3600;
+
 		max77620_rtc_epoch_to_date(epoch, time);
 	}
+}
+
+void max77620_rtc_set_auto_dst(bool enable)
+{
+	auto_dst = enable;
 }
 
 void max77620_rtc_set_epoch_offset(int offset)
