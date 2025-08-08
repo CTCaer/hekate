@@ -707,13 +707,20 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 		u32 new_epoch = max77620_rtc_date_to_epoch(&time);
 
 		// Stored in u32 and allow overflow for integer offset casting.
-		n_cfg.timeoff = new_epoch - epoch;
+		n_cfg.timeoffset = new_epoch - epoch;
 
 		// If canceled set 1 for invalidating first boot clock edit.
-		if (!n_cfg.timeoff)
-			n_cfg.timeoff = 1;
+		if (!n_cfg.timeoffset)
+			n_cfg.timeoffset = 1;
 		else
-			max77620_rtc_set_epoch_offset((int)n_cfg.timeoff);
+		{
+			// Adjust for DST between 28 march and 28 october.
+			// Good enough to cover all years as week info is not valid.
+			u16 md = (time.month << 8) | time.day;
+			if (n_cfg.timedst && md >= 0x31C && md < 0xA1C)
+				n_cfg.timeoffset -= 3600; // Store time in non DST.
+			max77620_rtc_set_epoch_offset((int)n_cfg.timeoffset);
+		}
 
 		nyx_changes_made = true;
 	}
@@ -734,18 +741,46 @@ static lv_res_t _action_clock_edit_save(lv_obj_t *btns, const char * txt)
 	return LV_RES_INV;
 }
 
+static lv_res_t _action_auto_dst_toggle(lv_obj_t *btn)
+{
+	n_cfg.timedst = !n_cfg.timedst;
+	max77620_rtc_set_auto_dst(n_cfg.timedst);
+
+	if (!n_cfg.timedst)
+		lv_btn_set_state(btn, LV_BTN_STATE_REL);
+	else
+		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
+
+	nyx_generic_onoff_toggle(btn);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 {
+	static lv_style_t mbox_style;
+	lv_theme_t *th = lv_theme_get_current();
+	lv_style_copy(&mbox_style, th->mbox.bg);
+	mbox_style.body.padding.inner = LV_DPI / 10;
+
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char *mbox_btn_map[] = { "\251", "\222Done", "\222Cancel", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_style(mbox, LV_MBOX_STYLE_BG, &mbox_style);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
 
-	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time# for Nyx\nThis will not alter the actual HW clock!");
+	lv_mbox_set_text(mbox, "Enter #C7EA46 Date# and #C7EA46 Time# for Nyx\n"
+						   "Used in all file operations and menu.\n"
+						   "This doesn't alter the actual HW clock!");
+
+	lv_obj_t *padding = lv_cont_create(mbox, NULL);
+	lv_cont_set_fit(padding, true, false);
+	lv_cont_set_style(padding, &lv_style_transp);
+	lv_obj_set_height(padding, LV_DPI / 10);
 
 	// Get current time.
 	rtc_time_t time;
@@ -823,6 +858,13 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_roller_set_selected(roller_minute, time.min, false);
 	lv_obj_align(roller_minute, roller_hour, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	clock_ctxt.min = roller_minute;
+
+	// Add DST option.
+	lv_obj_t *btn_dst = lv_btn_create(mbox, NULL);
+	nyx_create_onoff_button(th, h1, btn_dst, SYMBOL_BRIGHTNESS" Auto Daylight Saving Time", _action_auto_dst_toggle, true);
+	if (n_cfg.timedst)
+		lv_btn_set_state(btn_dst, LV_BTN_STATE_TGL_REL);
+	nyx_generic_onoff_toggle(btn_dst);
 
 	// If btn is empty, save options also because it was launched from boot.
 	lv_mbox_add_btns(mbox, mbox_btn_map, btn ? _action_clock_edit : _action_clock_edit_save);

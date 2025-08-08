@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -260,6 +260,7 @@ skip_main_cfg_parse:
 		// Only parse config section.
 		if (ini_sec->type == INI_CHOICE && !strcmp(ini_sec->name, "config"))
 		{
+			bool time_old_raw = false;
 			LIST_FOREACH_ENTRY(ini_kv_t, kv, &ini_sec->kvs, link)
 			{
 				if      (!strcmp("themebg",      kv->key))
@@ -268,12 +269,19 @@ skip_main_cfg_parse:
 					n_cfg.theme_color    = atoi(kv->val);
 				else if (!strcmp("entries5col",  kv->key))
 					n_cfg.entries_5_col  = atoi(kv->val) == 1;
+				else if (!strcmp("timeoffset",   kv->key))
+				{
+					n_cfg.timeoffset = strtol(kv->val, NULL, 16);
+					if (n_cfg.timeoffset != 1)
+						max77620_rtc_set_epoch_offset((int)n_cfg.timeoffset);
+				}
 				else if (!strcmp("timeoff",      kv->key))
 				{
-					n_cfg.timeoff        = strtol(kv->val, NULL, 16);
-					if (n_cfg.timeoff != 1)
-						max77620_rtc_set_epoch_offset((int)n_cfg.timeoff);
+					if (strtol(kv->val, NULL, 16) == 1)
+						time_old_raw = true;
 				}
+				else if (!strcmp("timedst",      kv->key))
+					n_cfg.timedst        = atoi(kv->val);
 				else if (!strcmp("homescreen",   kv->key))
 					n_cfg.home_screen    = atoi(kv->val);
 				else if (!strcmp("verification", kv->key))
@@ -288,9 +296,16 @@ skip_main_cfg_parse:
 					n_cfg.bpmp_clock     = atoi(kv->val);
 			}
 
+			// Check if user canceled time setting before.
+			if (time_old_raw && !n_cfg.timeoffset)
+				n_cfg.timeoffset = 1;
+
 			break;
 		}
 	}
+
+	// Set auto DST here in case it's missing.
+	max77620_rtc_set_auto_dst(n_cfg.timedst);
 
 	ini_free(&ini_nyx_sections);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -47,7 +47,8 @@ typedef struct _nyx_config
 	u32 theme_bg;
 	u32 theme_color;
 	u32 entries_5_col;
-	u32 timeoff;
+	u32 timeoffset;
+	u32 timedst;
 	u32 home_screen;
 	u32 verification;
 	u32 ums_emmc_rw;

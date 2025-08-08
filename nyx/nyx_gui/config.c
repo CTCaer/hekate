@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -32,7 +32,7 @@ void set_default_configuration()
 	h_cfg.autoboot      = 0;
 	h_cfg.autoboot_list = 0;
 	h_cfg.bootwait      = 3;
-	h_cfg.noticker      = 0;
+	h_cfg.noticker      = 0; //! TODO: Add GUI option.
 	h_cfg.backlight     = 100;
 	h_cfg.autohosoff    = h_cfg.t210b01 ? 1 : 0;
 	h_cfg.autonogc      = 1;
@@ -53,7 +53,8 @@ void set_nyx_default_configuration()
 	n_cfg.theme_bg       = 0x2D2D2D;
 	n_cfg.theme_color    = 167;
 	n_cfg.entries_5_col  = 0;
-	n_cfg.timeoff        = 0;
+	n_cfg.timeoffset     = 0;
+	n_cfg.timedst        = 1;
 	n_cfg.home_screen    = 0;
 	n_cfg.verification   = 1;
 	n_cfg.ums_emmc_rw    = 0;
@@ -214,8 +215,12 @@ int create_nyx_config_entry(bool force_unmount)
 	itoa(n_cfg.entries_5_col, lbuf, 10);
 	f_puts(lbuf, &fp);
 
-	f_puts("\ntimeoff=", &fp);
-	itoa(n_cfg.timeoff, lbuf, 16);
+	f_puts("\ntimeoffset=", &fp);
+	itoa(n_cfg.timeoffset, lbuf, 16);
+	f_puts(lbuf, &fp);
+
+	f_puts("\ntimedst=", &fp);
+	itoa(n_cfg.timedst, lbuf, 10);
 	f_puts(lbuf, &fp);
 
 	f_puts("\nhomescreen=", &fp);

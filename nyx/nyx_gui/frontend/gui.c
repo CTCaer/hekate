@@ -112,6 +112,7 @@ static void _nyx_disp_init()
 
 	// Enable logging on window D.
 	display_init_window_d_console();
+
 	// Switch back the backlight.
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 }
@@ -2413,7 +2414,7 @@ static void _nyx_main_menu(lv_theme_t * th)
 	else if (n_cfg.home_screen)
 		_create_window_home_launch(NULL);
 
-	if (!n_cfg.timeoff)
+	if (!n_cfg.timeoffset)
 	{
 		lv_task_t *task_run_clock = lv_task_create(first_time_clock_edit, LV_TASK_ONESHOT, LV_TASK_PRIO_MID, NULL);
 		lv_task_once(task_run_clock);
