@@ -1553,8 +1553,8 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to backup the eMMC partitions individually or as\n"
-		"a whole raw image to the SD card.\n"
+		"Allows you to backup eMMC/emuMMC partitions individually\n"
+		"or as a whole raw image to the SD card.\n"
 		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
 		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -1570,7 +1570,7 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to restore the eMMC/emuMMC partitions individually\n"
+		"Allows you to restore eMMC/emuMMC partitions individually\n"
 		"or as a whole raw image from the SD card.\n"
 		"#C7EA46 Supports SD cards from# #FF8000 4GB# #C7EA46 and up. #"
 		"#FF8000 FAT32# #C7EA46 and ##FF8000 exFAT##C7EA46 .#");
