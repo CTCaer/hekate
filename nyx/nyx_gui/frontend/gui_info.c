@@ -263,7 +263,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
 
 	u32 hash[8];
-	se_calc_sha256_oneshot(hash, (u8 *)cal0 + 0x40, cal0->body_size);
+	se_calc_sha256_oneshot(hash, (u8 *)&cal0->cfg_id1, cal0->body_size);
 
 	s_printf(txt_buf,
 		"#FF8000 CAL0 Version:#      %d\n"
@@ -1867,13 +1867,13 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 	u32 idx = 0;
 	int lines_left = 20;
-	s_printf(txt_buf + strlen(txt_buf), "#FFBA00 Idx Name                      Size        Offset     Sectors#\n");
+	s_printf(txt_buf + strlen(txt_buf), "#FFBA00 Idx Name                            Size     Offset    Sectors#\n");
 	LIST_FOREACH_ENTRY(emmc_part_t, part, &gpt, link)
 	{
 		int lines = strlen(part->name) > 25 ? 2 : 1;
 		if ((lines_left - lines) <= 0)
 		{
-			strcat(txt_buf, "#FFDD00 Table does not fit on screen!#");
+			strcat(txt_buf, "#FFDD00 Table does not fit on screen...#");
 			break;
 		}
 
@@ -1997,7 +1997,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	switch (sd_storage.cid.manfid)
 	{
 	case 0x00:
-		strcat(txt_buf, "Fake ");
+		strcat(txt_buf, "#FFDD00 Fake# ");
 		break;
 	case 0x01:
 		strcat(txt_buf, "Panasonic ");
