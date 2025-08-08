@@ -941,24 +941,18 @@ save_data:
 			error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin") ? 4 : 0;
 
 			// Save readable dump.
-			jc_bt_conn_t *bt = &jc_pad->bt_conn_l;
-			s_printf(data,
-				"[joycon_00]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
-				"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
-				"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n\n",
-				bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
-				bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
-				bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
-				bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
-			bt = &jc_pad->bt_conn_r;
-			s_printf(data + strlen(data),
-				"[joycon_01]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
-				"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
-				"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
-				bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
-				bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
-				bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
-				bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
+			for (u32 i = 0; i < 2; i++)
+			{
+				jc_bt_conn_t *bt = !i ? &jc_pad->bt_conn_l : &jc_pad->bt_conn_r;
+				s_printf(data,
+					"[joycon_0%d]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
+					"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
+					"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n\n",
+					i, bt->type, bt->mac[0], bt->mac[1], bt->mac[2], bt->mac[3], bt->mac[4], bt->mac[5],
+					bt->host_mac[0], bt->host_mac[1], bt->host_mac[2], bt->host_mac[3], bt->host_mac[4], bt->host_mac[5],
+					bt->ltk[0], bt->ltk[1], bt->ltk[2], bt->ltk[3], bt->ltk[4], bt->ltk[5], bt->ltk[6], bt->ltk[7],
+					bt->ltk[8], bt->ltk[9], bt->ltk[10], bt->ltk[11], bt->ltk[12], bt->ltk[13], bt->ltk[14], bt->ltk[15]);
+			}
 
 			if (!error)
 				error = f_open(&fp, "switchroot/joycon_mac.ini", FA_WRITE | FA_CREATE_ALWAYS) ? 4 : 0;
@@ -967,8 +961,6 @@ save_data:
 				f_puts(data, &fp);
 				f_close(&fp);
 			}
-
-			f_mkdir("switchroot");
 
 			// Save IMU Calibration data.
 			if (!error && !cal_error)
@@ -1012,6 +1004,7 @@ save_data:
 
 			// Save Lite Gamepad and IMU Calibration data.
 			// Actual max/min are right/left and up/down offsets.
+			// Sticks: 0x23: H1 (Hosiden), 0x25: H5 (Hosiden), 0x41: F1 (FIT), ?add missing?
 			s_printf(data,
 				"lite_cal_l_type=0x%X\n"
 				"lite_cal_lx_lof=0x%X\n"
