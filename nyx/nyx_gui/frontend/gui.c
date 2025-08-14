@@ -1188,7 +1188,7 @@ static lv_res_t _create_mbox_confirmlaunch(char *btn_name, u32 entry_idx, bool i
 
 	char confirm_message[256];
 	s_printf(confirm_message, 
-		"Are you sure you would like to launch\n#FF8000%s?#", 
+		"Are you sure you would like to launch\n#FF8000 %s#?", 
 		btn_name);
 	lv_mbox_set_text(mbox, confirm_message);
 	lv_mbox_add_btns(mbox, mbox_btn_map, _confirmlaunch_action);
