@@ -91,10 +91,10 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	if (type == TSEC_FW_TYPE_NEW)
 	{
 		// Disable all CCPLEX core rails.
-		pmc_enable_partition(POWER_RAIL_CE0, DISABLE);
-		pmc_enable_partition(POWER_RAIL_CE1, DISABLE);
-		pmc_enable_partition(POWER_RAIL_CE2, DISABLE);
-		pmc_enable_partition(POWER_RAIL_CE3, DISABLE);
+		pmc_domain_pwrgate_set(POWER_RAIL_CE0, DISABLE);
+		pmc_domain_pwrgate_set(POWER_RAIL_CE1, DISABLE);
+		pmc_domain_pwrgate_set(POWER_RAIL_CE2, DISABLE);
+		pmc_domain_pwrgate_set(POWER_RAIL_CE3, DISABLE);
 
 		// Enable AHB aperture and set it to full mmio.
 		mc_enable_ahb_redirect();

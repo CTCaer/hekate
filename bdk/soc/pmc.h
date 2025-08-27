@@ -37,6 +37,7 @@
 #define  PMC_CNTRL_SHUTDOWN_OE             BIT(22)
 #define APBDEV_PMC_SEC_DISABLE       0x4
 #define APBDEV_PMC_PWRGATE_TOGGLE    0x30
+#define  PMC_PWRGATE_TOGGLE_START          BIT(8)
 #define APBDEV_PMC_PWRGATE_STATUS    0x38
 #define APBDEV_PMC_NO_IOPOWER        0x44
 #define  PMC_NO_IOPOWER_MEM                BIT(7)
@@ -219,19 +220,14 @@ typedef enum _pmc_sec_lock_t
 typedef enum _pmc_power_rail_t
 {
 	POWER_RAIL_CRAIL = 0,
-	POWER_RAIL_3D0   = 1,
-	POWER_RAIL_VENC  = 2,
+	POWER_RAIL_VE    = 2,
 	POWER_RAIL_PCIE  = 3,
-	POWER_RAIL_VDEC  = 4,
-	POWER_RAIL_L2C   = 5,
-	POWER_RAIL_MPE   = 6,
-	POWER_RAIL_HEG   = 7,
+	POWER_RAIL_NVENC = 6,
 	POWER_RAIL_SATA  = 8,
 	POWER_RAIL_CE1   = 9,
 	POWER_RAIL_CE2   = 10,
 	POWER_RAIL_CE3   = 11,
 	POWER_RAIL_CELP  = 12,
-	POWER_RAIL_3D1   = 13,
 	POWER_RAIL_CE0   = 14,
 	POWER_RAIL_C0NC  = 15,
 	POWER_RAIL_C1NC  = 16,
@@ -251,6 +247,6 @@ typedef enum _pmc_power_rail_t
 } pmc_power_rail_t;
 
 void pmc_scratch_lock(pmc_sec_lock_t lock_mask);
-int  pmc_enable_partition(pmc_power_rail_t part, u32 enable);
+int  pmc_domain_pwrgate_set(pmc_power_rail_t part, u32 enable);
 
 #endif

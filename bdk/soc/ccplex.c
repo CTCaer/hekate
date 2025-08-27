@@ -90,11 +90,11 @@ void ccplex_boot_cpu0(u32 entry, bool lock)
 	CLOCK(CLK_RST_CONTROLLER_CPU_SOFTRST_CTRL2) &= 0xFFFFF000;
 
 	// Enable CPU main rail.
-	pmc_enable_partition(POWER_RAIL_CRAIL, ENABLE);
+	pmc_domain_pwrgate_set(POWER_RAIL_CRAIL, ENABLE);
 	// Enable cluster 0 non-CPU rail.
-	pmc_enable_partition(POWER_RAIL_C0NC,  ENABLE);
+	pmc_domain_pwrgate_set(POWER_RAIL_C0NC,  ENABLE);
 	// Enable CPU0 rail.
-	pmc_enable_partition(POWER_RAIL_CE0,   ENABLE);
+	pmc_domain_pwrgate_set(POWER_RAIL_CE0,   ENABLE);
 
 	// Request and wait for RAM repair. Needed for the Fast cluster.
 	FLOW_CTLR(FLOW_CTLR_RAM_REPAIR) = RAM_REPAIR_REQ;
@@ -150,11 +150,11 @@ void ccplex_powergate_cpu0()
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_V_SET) = BIT(CLK_V_MSELECT);
 
 	// Disable CE0.
-	pmc_enable_partition(POWER_RAIL_CE0,   DISABLE);
+	pmc_domain_pwrgate_set(POWER_RAIL_CE0,   DISABLE);
 	// Disable cluster 0 non-CPU.
-	pmc_enable_partition(POWER_RAIL_C0NC,  DISABLE);
+	pmc_domain_pwrgate_set(POWER_RAIL_C0NC,  DISABLE);
 	// Disable CPU rail.
-	pmc_enable_partition(POWER_RAIL_CRAIL, DISABLE);
+	pmc_domain_pwrgate_set(POWER_RAIL_CRAIL, DISABLE);
 
 	clock_disable_coresight();
 

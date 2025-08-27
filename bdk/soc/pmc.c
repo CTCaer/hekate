@@ -99,17 +99,26 @@ void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 	}
 }
 
-int pmc_enable_partition(pmc_power_rail_t part, u32 enable)
+/*
+ * !TODO: Non CCPLEX power domains power gating/ungating.
+ * Power gating: clock should be in reset if enabled and then
+ * pmc_domain_pwrgate_set is run.
+ * Power ungating: run pmc_domain_pwrgate_set, enable clocks and keep in
+ * reset, remove clamping, remove reset, run mbist war if T210 and then clocks
+ * can be disabled.
+ */
+
+int pmc_domain_pwrgate_set(pmc_power_rail_t part, u32 enable)
 {
 	u32 part_mask = BIT(part);
 	u32 desired_state = enable << part;
 
-	// Check if the partition has the state we want.
+	// Check if the power domain has the state we want.
 	if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
 		return 1;
 
 	u32 i = 5001;
-	while (PMC(APBDEV_PMC_PWRGATE_TOGGLE) & 0x100)
+	while (PMC(APBDEV_PMC_PWRGATE_TOGGLE) & PMC_PWRGATE_TOGGLE_START)
 	{
 		usleep(1);
 		i--;
@@ -118,7 +127,7 @@ int pmc_enable_partition(pmc_power_rail_t part, u32 enable)
 	}
 
 	// Toggle power gating.
-	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = part | 0x100;
+	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = part | PMC_PWRGATE_TOGGLE_START;
 
 	i = 5001;
 	while (i > 0)
