@@ -1065,7 +1065,7 @@ void hos_launch(ini_sec_t *cfg)
 
 	// Finalize MC carveout.
 	if (mkey <= HOS_MKEY_VER_301 && !is_exo)
-		mc_config_carveout();
+		mc_config_carveout_hos();
 
 	// Lock SE before starting secmon if < 6.2.0, otherwise lock bootrom and ipatches.
 	_se_lock(mkey <= HOS_MKEY_VER_600 && !is_exo);
