@@ -64,7 +64,7 @@ u32  minerva_init();
 void minerva_change_freq(minerva_freq_t freq);
 void minerva_sdmmc_la_program(void *table, bool t210b01);
 void minerva_prep_boot_freq();
-void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom);
+void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom, bool prg_sdmmc_la);
 void minerva_periodic_training();
 emc_table_t *minerva_get_mtc_table();
 int minerva_get_mtc_table_entries();

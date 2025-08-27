@@ -182,7 +182,7 @@ void minerva_prep_boot_freq()
 	minerva_change_freq(FREQ_800);
 }
 
-void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom)
+void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom, bool prg_sdmmc_la)
 {
 	if (!minerva_cfg)
 		return;
@@ -190,8 +190,9 @@ void minerva_prep_boot_l4t(u32 oc_freq, u32 opt_custom)
 	mtc_config_t *mtc_cfg = (mtc_config_t *)&nyx_str->mtc_cfg;
 
 	// Program SDMMC LA regs.
-	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
-		minerva_sdmmc_la_program(&mtc_cfg->mtc_table[i], false);
+	if (prg_sdmmc_la)
+		for (u32 i = 0; i < mtc_cfg->table_entries; i++)
+			minerva_sdmmc_la_program(&mtc_cfg->mtc_table[i], false);
 
 	// Add OC frequency.
 	if (oc_freq && mtc_cfg->mtc_table[mtc_cfg->table_entries - 1].rate_khz == FREQ_1600)
