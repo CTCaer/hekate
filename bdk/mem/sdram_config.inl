@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2020-2024 CTCaer
+ * Copyright (c) 2020-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -538,18 +538,32 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.mc_clken_override                               = 0x00008000,
 
 	.mc_stat_control                                 = 0x00000000,
+
+	/* VPR carveout configuration */
 	.mc_video_protect_bom                            = 0xFFF00000,
 	.mc_video_protect_bom_adr_hi                     = 0x00000000,
 	.mc_video_protect_size_mb                        = 0x00000000,
 
-	// AFI, BPMP, HC, ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1, SDMMC1A, SDMMC2A, SDMMC3A. Plus TSEC, NVENC.
-	.mc_video_protect_vpr_override                   = 0xE4FACB43, // Default: 0xE4BAC343. New: 0xE4FACB43. + TSEC,  NVENC.
-	// SDMMC4A, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus TSECB, TSEC1, TSECB1.
-	.mc_video_protect_vpr_override1                  = 0x0000FED3, // Default: 0x00001ED3. New: 0x0000FED3. + TSECB, TSEC1, TSECB1.
+	// Disable access:
+	//  AFI (PCIE), BPMP, HC (HOST1x), ISP2, CCPLEX, PPCS (AHB), SATA, VI, XUSB_HOST, XUSB_DEV, ADSP, PPCS1 (AHB), DC1 (WinT), SDMMC1/2/3. Plus TSEC, NVENC.
+	// Enable access:
+	//  DC, DCB, HDA, VIC.
+	.mc_video_protect_vpr_override                   = 0xE4FACB43, // Stock/Reset: 0xE4BAC343. HOS new: 0xE4FACB43. + TSEC, NVENC.
+	// Disable access:
+	//  SDMMC4, ISP2B, PPCS2 (AHB), APE, SE, HC1, SE1, AXIAP, ETR. Plus TSECB, TSEC1, TSECB1.
+	// Enable access:
+	//  GPU, GPUB, NVDEC, NVJPG, NVDEC1.
+	.mc_video_protect_vpr_override1                  = 0x0000FED3, // Stock/Reset: 0x00001ED3. HOS new: 0x0000FED3. + TSECB, TSEC1, TSECB1.
 
-	.mc_video_protect_gpu_override0                  = 0x2A800000, // Default: 0x00000000. Forced to 1 by HOS Secmon.
-	.mc_video_protect_gpu_override1                  = 0x00000002, // Default: 0x00000000. Forced to 0 by HOS Secmon.
+	// VPR CYA. L4T override (set PD, SCC, SKED, L1 as UNTRUSTED).
+	.mc_video_protect_gpu_override0                  = VPR_OVR0_CYA_TRUST_GCC(VPR_TRUST_GRAPHICS)    |
+													   VPR_OVR0_CYA_TRUST_RASTER(VPR_TRUST_GRAPHICS) |
+													   VPR_OVR0_CYA_TRUST_PE(VPR_TRUST_GRAPHICS)     |
+													   VPR_OVR0_CYA_TRUST_TEX(VPR_TRUST_GRAPHICS)    |
+													   VPR_OVR0_CYA_TRUST_OVERRIDE,                 // Stock: 0. HOS: VPR_OVR0_CYA_TRUST_DEFAULT.
+	.mc_video_protect_gpu_override1                  = VPR_OVR1_CYA_TRUST_PROP(VPR_TRUST_GRAPHICS), // Stock: 0. HOS: 0.
 
+	/* TZDRAM carveout configuration */
 	.mc_sec_carveout_bom                             = 0xFFF00000,
 	.mc_sec_carveout_adr_hi                          = 0x00000000,
 	.mc_sec_carveout_size_mb                         = 0x00000000,
@@ -642,6 +656,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	/* Specifies data for patched boot rom write */
 	.boot_rom_patch_data                             = 0x00000000,
 
+	/* CPU FW carveout configuration */
 	.mc_mts_carveout_bom                             = 0xFFF00000,
 	.mc_mts_carveout_adr_hi                          = 0x00000000,
 	.mc_mts_carveout_size_mb                         = 0x00000000,

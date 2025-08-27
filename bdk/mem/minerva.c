@@ -20,7 +20,7 @@
 #include "minerva.h"
 
 #include <ianos/ianos.h>
-#include <mem/emc.h>
+#include <mem/emc_t210.h>
 #include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/hw_init.h>
@@ -147,7 +147,6 @@ void minerva_change_freq(minerva_freq_t freq)
 
 void minerva_sdmmc_la_program(void *table, bool t210b01)
 {
-
 	u32 freq = *(u32 *)(table + TABLE_FREQ_KHZ_OFFSET);
 	u32 *la_scale_regs = (u32 *)(table + (t210b01 ? TABLE_LA_REGS_T210B01_OFFSET : TABLE_LA_REGS_T210_OFFSET));
 

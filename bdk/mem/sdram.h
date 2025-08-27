@@ -18,7 +18,7 @@
 #ifndef _SDRAM_H_
 #define _SDRAM_H_
 
-#include <mem/emc.h>
+#include <mem/emc_t210.h>
 
 /*
  * Tegra X1/X1+ EMC/DRAM Bandwidth Chart:

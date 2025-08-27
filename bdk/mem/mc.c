@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -21,6 +21,8 @@
 #include <soc/t210.h>
 #include <soc/clock.h>
 
+#define HOS_WPR1_BASE 0x80020000
+
 void mc_config_tzdram_carveout(u32 bom, u32 size1mb, bool lock)
 {
 	MC(MC_SEC_CARVEOUT_BOM) = bom;
@@ -32,8 +34,10 @@ void mc_config_tzdram_carveout(u32 bom, u32 size1mb, bool lock)
 void mc_config_carveout()
 {
 	// Enable ACR GSR3.
-	*(vu32 *)0x8005FFFC = 0xC0EDBBCC;
-	MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_0) = 1;
+	*(u32 *)(HOS_WPR1_BASE + SZ_256K - sizeof(u32)) = ACR_GSC3_ENABLE_MAGIC;
+
+	// Set VPR CYA TRUSTED DEFAULT.
+	MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_0) = VPR_OVR0_CYA_TRUST_DEFAULT;
 	MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_1) = 0;
 	MC(MC_VIDEO_PROTECT_BOM) = 0;
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = VPR_CTRL_LOCKED;
@@ -77,7 +81,7 @@ void mc_config_carveout()
 // SDMMC, TSEC, XUSB and probably more need it to access < DRAM_START.
 void mc_enable_ahb_redirect()
 {
-	// Enable ARC_CLK_OVR_ON.
+	// Bypass ARC clock gating.
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) |= BIT(19);
 	//MC(MC_IRAM_REG_CTRL) &= ~BIT(0);
 	MC(MC_IRAM_BOM) = IRAM_BASE;
@@ -90,7 +94,7 @@ void mc_disable_ahb_redirect()
 	MC(MC_IRAM_TOM) = 0;
 	// Disable IRAM_CFG_WRITE_ACCESS (sticky).
 	//MC(MC_IRAM_REG_CTRL) |= BIT(0);
-	// Disable ARC_CLK_OVR_ON.
+	// Set ARC clock gating to automatic.
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) &= ~BIT(19);
 }
 
@@ -110,6 +114,7 @@ void mc_enable()
 {
 	// Reset EMC source to PLLP.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) & 0x1FFFFFFF) | (2 << 29u);
+
 	// Enable and clear reset for memory clocks.
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_H_SET) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = BIT(CLK_X_EMC_DLL);

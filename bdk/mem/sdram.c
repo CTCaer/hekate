@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include <mem/mc.h>
-#include <mem/emc.h>
+#include <mem/emc_t210.h>
 #include <mem/sdram.h>
 #include <mem/sdram_param_t210.h>
 #include <mem/sdram_param_t210b01.h>
@@ -1012,26 +1012,26 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	EMC(EMC_PMACRO_TX_SEL_CLK_SRC_5) = params->emc_pmacro_tx_sel_clk_src5;
 
 	// Program per bit pad macros.
-	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_0) = params->emc_pmacro_perbit_fgcg_ctrl0;
-	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_1) = params->emc_pmacro_perbit_fgcg_ctrl1;
-	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_2) = params->emc_pmacro_perbit_fgcg_ctrl2;
-	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_3) = params->emc_pmacro_perbit_fgcg_ctrl3;
-	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_4) = params->emc_pmacro_perbit_fgcg_ctrl4;
-	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_5) = params->emc_pmacro_perbit_fgcg_ctrl5;
-	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_0)  = params->emc_pmacro_perbit_rfu_ctrl0;
-	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_1)  = params->emc_pmacro_perbit_rfu_ctrl1;
-	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_2)  = params->emc_pmacro_perbit_rfu_ctrl2;
-	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_3)  = params->emc_pmacro_perbit_rfu_ctrl3;
-	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_4)  = params->emc_pmacro_perbit_rfu_ctrl4;
-	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_5)  = params->emc_pmacro_perbit_rfu_ctrl5;
-	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_0) = params->emc_pmacro_perbit_rfu1_ctrl0;
-	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_1) = params->emc_pmacro_perbit_rfu1_ctrl1;
-	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_2) = params->emc_pmacro_perbit_rfu1_ctrl2;
-	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_3) = params->emc_pmacro_perbit_rfu1_ctrl3;
-	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_4) = params->emc_pmacro_perbit_rfu1_ctrl4;
-	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_5) = params->emc_pmacro_perbit_rfu1_ctrl5;
-	EMC(EMC_PMACRO_DATA_PI_CTRL)       = params->emc_pmacro_data_pi_ctrl;
-	EMC(EMC_PMACRO_CMD_PI_CTRL)        = params->emc_pmacro_cmd_pi_ctrl;
+	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_0_B01) = params->emc_pmacro_perbit_fgcg_ctrl0;
+	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_1_B01) = params->emc_pmacro_perbit_fgcg_ctrl1;
+	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_2_B01) = params->emc_pmacro_perbit_fgcg_ctrl2;
+	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_3_B01) = params->emc_pmacro_perbit_fgcg_ctrl3;
+	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_4_B01) = params->emc_pmacro_perbit_fgcg_ctrl4;
+	EMC(EMC_PMACRO_PERBIT_FGCG_CTRL_5_B01) = params->emc_pmacro_perbit_fgcg_ctrl5;
+	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_0_B01)  = params->emc_pmacro_perbit_rfu_ctrl0;
+	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_1_B01)  = params->emc_pmacro_perbit_rfu_ctrl1;
+	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_2_B01)  = params->emc_pmacro_perbit_rfu_ctrl2;
+	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_3_B01)  = params->emc_pmacro_perbit_rfu_ctrl3;
+	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_4_B01)  = params->emc_pmacro_perbit_rfu_ctrl4;
+	EMC(EMC_PMACRO_PERBIT_RFU_CTRL_5_B01)  = params->emc_pmacro_perbit_rfu_ctrl5;
+	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_0_B01) = params->emc_pmacro_perbit_rfu1_ctrl0;
+	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_1_B01) = params->emc_pmacro_perbit_rfu1_ctrl1;
+	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_2_B01) = params->emc_pmacro_perbit_rfu1_ctrl2;
+	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_3_B01) = params->emc_pmacro_perbit_rfu1_ctrl3;
+	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_4_B01) = params->emc_pmacro_perbit_rfu1_ctrl4;
+	EMC(EMC_PMACRO_PERBIT_RFU1_CTRL_5_B01) = params->emc_pmacro_perbit_rfu1_ctrl5;
+	EMC(EMC_PMACRO_DATA_PI_CTRL_B01)       = params->emc_pmacro_data_pi_ctrl;
+	EMC(EMC_PMACRO_CMD_PI_CTRL_B01)        = params->emc_pmacro_cmd_pi_ctrl;
 
 	EMC(EMC_PMACRO_DDLL_BYPASS)   = params->emc_pmacro_ddll_bypass;
 	EMC(EMC_PMACRO_DDLL_PWRD_0)   = params->emc_pmacro_ddll_pwrd0;
@@ -1220,7 +1220,7 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	if (params->emc_bct_spare8)
 		*(vu32 *)params->emc_bct_spare8 = params->emc_bct_spare9;
 
-	EMC(EMC_AUTO_CAL_CONFIG9) = params->emc_auto_cal_config9;
+	EMC(EMC_AUTO_CAL_CONFIG9_B01) = params->emc_auto_cal_config9;
 
 	// Program EMC timing configuration.
 	EMC(EMC_CFG_2)           = params->emc_cfg2;
@@ -1240,11 +1240,11 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	EMC(EMC_RAS)             = params->emc_ras;
 	EMC(EMC_RP)              = params->emc_rp;
 	EMC(EMC_TPPD)            = params->emc_tppd;
-	EMC(EMC_CTT)             = params->emc_trtm;
-	EMC(EMC_FBIO_TWTM)       = params->emc_twtm;
-	EMC(EMC_FBIO_TRATM)      = params->emc_tratm;
-	EMC(EMC_FBIO_TWATM)      = params->emc_twatm;
-	EMC(EMC_FBIO_TR2REF)     = params->emc_tr2ref;
+	EMC(EMC_TRTM_B01)        = params->emc_trtm;
+	EMC(EMC_TWTM_B01)        = params->emc_twtm;
+	EMC(EMC_TRATM_B01)       = params->emc_tratm;
+	EMC(EMC_TWATM_B01)       = params->emc_twatm;
+	EMC(EMC_TR2REF_B01)      = params->emc_tr2ref;
 	EMC(EMC_R2R)             = params->emc_r2r;
 	EMC(EMC_W2W)             = params->emc_w2w;
 	EMC(EMC_R2W)             = params->emc_r2w;
@@ -1321,7 +1321,7 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	EMC(EMC_PMC_SCRATCH3) = params->emc_pmc_scratch3;
 	EMC(EMC_ACPD_CONTROL) = params->emc_acpd_control;
 	EMC(EMC_TXDSRVTTGEN)  = params->emc_txdsrvttgen;
-	EMC(EMC_PMACRO_DSR_VTTGEN_CTRL0) = params->emc_pmacro_dsr_vttgen_ctrl0;
+	EMC(EMC_PMACRO_DSR_VTTGEN_CTRL_0_B01) = params->emc_pmacro_dsr_vttgen_ctrl0;
 
 	// Set pipe bypass enable bits before sending any DRAM commands.
 	EMC(EMC_CFG) = (params->emc_cfg & 0xE) | 0x3C00000;
@@ -1465,7 +1465,7 @@ static void _sdram_config_t210b01(const sdram_params_t210b01_t *params)
 	EMC(EMC_FDPD_CTRL_CMD_NO_RAMP) = params->emc_fdpd_ctrl_cmd_no_ramp;
 
 	// Set untranslated region requirements.
-	MC(MC_UNTRANSLATED_REGION_CHECK) = params->mc_untranslated_region_check;
+	MC(MC_UNTRANSLATED_REGION_CHECK_B01) = params->mc_untranslated_region_check;
 
 	// Lock carveouts per BCT cfg.
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = params->mc_video_protect_write_access;
