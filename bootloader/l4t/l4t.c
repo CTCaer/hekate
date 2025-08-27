@@ -172,7 +172,6 @@
 // Misc.
 #define DTB_MAGIC             0xEDFE0DD0 // D00DFEED.
 #define FALCON_DMA_PAGE_SIZE  0x100
-#define ACR_GSC3_ENABLE_MAGIC 0xC0EDBBCC
 #define SOC_ID_T210           0x210
 #define SOC_ID_T210B01        0x214
 #define SKU_NX                0x83
@@ -378,6 +377,10 @@ static void _l4t_sdram_lp0_save_params(bool t210b01)
 	// Only save changed carveout registers into PMC for SC7 Exit.
 
 	// VPR.
+#if CARVEOUT_NVDEC_TSEC_ENABLE
+	s32(MC_VIDEO_PROTECT_GPU_OVERRIDE_0, secure_scratch12);
+	s(MC_VIDEO_PROTECT_GPU_OVERRIDE_1, 15:0, secure_scratch49, 15:0);
+#endif
 	s(MC_VIDEO_PROTECT_BOM,     31:20, secure_scratch52, 26:15);
 	s(MC_VIDEO_PROTECT_SIZE_MB, 11:0,  secure_scratch53, 11:0);
 	if (!t210b01) {
@@ -489,13 +492,19 @@ static void _l4t_sdram_lp0_save_params(bool t210b01)
 
 static void _l4t_mc_config_carveout(bool t210b01)
 {
+#if CARVEOUT_NVDEC_TSEC_ENABLE
+	// Re-enable access for TSEC clients.
+	MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_0) &= ~BIT(22);
+	MC(MC_VIDEO_PROTECT_GPU_OVERRIDE_1) &= ~(BIT(15) | BIT(14) | BIT(13));
+#endif
+
 	// Disabled VPR carveout. DT decides if enabled or not.
-	MC(MC_VIDEO_PROTECT_BOM) = 0xFFF00000;
-	MC(MC_VIDEO_PROTECT_SIZE_MB) = 0;
+	MC(MC_VIDEO_PROTECT_BOM)      = 0;
+	MC(MC_VIDEO_PROTECT_SIZE_MB)  = 0;
 	MC(MC_VIDEO_PROTECT_REG_CTRL) = VPR_CTRL_TZ_SECURE | VPR_CTRL_LOCKED;
 
 	// Temporarily disable TZDRAM carveout. For launching coldboot TZ.
-	MC(MC_SEC_CARVEOUT_BOM)      = 0xFFF00000;
+	MC(MC_SEC_CARVEOUT_BOM)      = 0;
 	MC(MC_SEC_CARVEOUT_SIZE_MB)  = 0;
 	MC(MC_SEC_CARVEOUT_REG_CTRL) = 0;
 
@@ -647,20 +656,24 @@ static void _l4t_mc_config_carveout(bool t210b01)
 	 */
 	carveout_base -= CARVEOUT_NVDEC_TSEC_ENABLE ? ALIGN(CARVEOUT_TSEC_SIZE, SZ_1M) : 0;
 	MC(MC_SECURITY_CARVEOUT4_BOM)        = CARVEOUT_NVDEC_TSEC_ENABLE ? carveout_base : 0;
+	MC(MC_SECURITY_CARVEOUT4_BOM_HI)     = 0x0;
 	MC(MC_SECURITY_CARVEOUT4_SIZE_128KB) = CARVEOUT_NVDEC_TSEC_ENABLE ? CARVEOUT_TSEC_SIZE / SZ_128K : 0;
+	MC(MC_SECURITY_CARVEOUT4_CLIENT_ACCESS2) = SEC_CARVEOUT_CA2_R_TSEC  | SEC_CARVEOUT_CA2_W_TSEC;
+	MC(MC_SECURITY_CARVEOUT4_CLIENT_ACCESS4) = SEC_CARVEOUT_CA4_R_TSECB | SEC_CARVEOUT_CA4_W_TSECB;
 	MC(MC_SECURITY_CARVEOUT4_CFG0) = SEC_CARVEOUT_CFG_LOCKED         |
 									 SEC_CARVEOUT_CFG_RD_FALCON_HS   |
 									 SEC_CARVEOUT_CFG_WR_FALCON_HS   |
 									 SEC_CARVEOUT_CFG_APERTURE_ID(4) |
 									 SEC_CARVEOUT_CFG_FORCE_APERTURE_ID_MATCH;
-
 	UPRINTF("GSC4: TSEC1 Carveout: %08X - %08X\n",
 		MC(MC_SECURITY_CARVEOUT4_BOM), MC(MC_SECURITY_CARVEOUT4_BOM) + MC(MC_SECURITY_CARVEOUT4_SIZE_128KB) * SZ_128K);
 
 	// Set TSECA carveout. Only for NVDEC bl/prod and TSEC. Otherwise disabled.
 	carveout_base -= CARVEOUT_NVDEC_TSEC_ENABLE ? ALIGN(CARVEOUT_TSEC_SIZE, SZ_1M) : 0;
 	MC(MC_SECURITY_CARVEOUT5_BOM)        = CARVEOUT_NVDEC_TSEC_ENABLE ? carveout_base : 0;
+	MC(MC_SECURITY_CARVEOUT5_BOM_HI)     = 0x0;
 	MC(MC_SECURITY_CARVEOUT5_SIZE_128KB) = CARVEOUT_NVDEC_TSEC_ENABLE ? CARVEOUT_TSEC_SIZE / SZ_128K : 0;
+	MC(MC_SECURITY_CARVEOUT5_CLIENT_ACCESS2) = SEC_CARVEOUT_CA2_R_TSEC | SEC_CARVEOUT_CA2_W_TSEC;
 	MC(MC_SECURITY_CARVEOUT5_CFG0) = SEC_CARVEOUT_CFG_LOCKED         |
 									 SEC_CARVEOUT_CFG_RD_FALCON_HS   |
 									 SEC_CARVEOUT_CFG_WR_FALCON_HS   |
@@ -747,7 +760,8 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 	u32 mtc_idx = mtc_table_idx_t210b01[ram_id];
 	for (u32 i = 0; i < 3; i++)
 	{
-		minerva_sdmmc_la_program(BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), true);
+		if (true)
+			minerva_sdmmc_la_program(BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), true);
 		memcpy(BPMPFW_B01_DTB_EMC_TBL_OFFSET(i), BPMPFW_B01_MTC_TABLE_OFFSET(mtc_idx, i), BPMPFW_B01_MTC_FREQ_TABLE_SIZE);
 	}
 
@@ -1117,7 +1131,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 			max7762x_regulator_set_voltage(REGULATOR_SD1, ctxt->ram_oc_vdd2 * 1000);
 
 		// Train the rest of the table, apply FSP WAR, set RAM to 800 MHz.
-		minerva_prep_boot_l4t(ctxt->ram_oc_freq, ctxt->ram_oc_opt);
+		minerva_prep_boot_l4t(ctxt->ram_oc_freq, ctxt->ram_oc_opt, true);
 
 		// Set emc table parameters and copy it.
 		int table_entries = minerva_get_mtc_table_entries();
