@@ -70,7 +70,7 @@ int ini_parse(link_t *dst, const char *ini_path, bool is_dir)
 	// Get all ini filenames.
 	if (is_dir)
 	{
-		filelist = dirlist(filename, "*.ini", false, false);
+		filelist = dirlist(filename, "*.ini", DIR_ASCII_ORDER);
 		if (!filelist)
 		{
 			free(filename);
