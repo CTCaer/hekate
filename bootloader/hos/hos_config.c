@@ -65,7 +65,7 @@ static int _config_kip1(launch_ctxt_t *ctxt, const char *value)
 
 		u32 dirlen = 0;
 		dir[strlen(dir) - 2] = 0;
-		dirlist_t *filelist = dirlist(dir, "*.kip*", false, false);
+		dirlist_t *filelist = dirlist(dir, "*.kip*", 0);
 
 		strcat(dir, "/");
 		dirlen = strlen(dir);
@@ -169,7 +169,7 @@ static int _config_stock(launch_ctxt_t *ctxt, const char *value)
 {
 	if (*value == '1')
 	{
-		DPRINTF("Disabled all patching\n");
+		DPRINTF("Enabled stock mode\n");
 		ctxt->stock = true;
 	}
 	return 1;

@@ -1415,7 +1415,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 		goto out_end;
 	}
 
-	dirlist_t *filelist = dirlist("bootloader/payloads", NULL, false, false);
+	dirlist_t *filelist = dirlist("bootloader/payloads", NULL, 0);
 	sd_unmount();
 
 	u32 i = 0;

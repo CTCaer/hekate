@@ -272,7 +272,7 @@ static void _launch_payloads()
 	dir = (char *)malloc(256);
 	memcpy(dir, "bootloader/payloads", 20);
 
-	filelist = dirlist(dir, NULL, false, false);
+	filelist = dirlist(dir, NULL, 0);
 
 	u32 i = 0;
 
