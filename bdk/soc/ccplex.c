@@ -115,7 +115,7 @@ void ccplex_boot_cpu0(u32 entry, bool lock)
 	}
 
 	// Tighten up the security aperture.
-	// MC(MC_TZ_SECURITY_CTRL) = 1;
+	// MC(MC_TZ_SECURITY_CTRL) = TZ_SEC_CTRL_CPU_STRICT_TZ_APERTURE_CHECK;
 
 	// Clear MSELECT reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_V_CLR)      = BIT(CLK_V_MSELECT);

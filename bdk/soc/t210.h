@@ -299,8 +299,10 @@
 #define IPATCH_CAM_ENTRIES 12
 
 /*! I2S registers. */
-#define I2S1_CG   0x88
-#define I2S1_CTRL 0xA0
+#define I2S_CG    0x88
+#define I2S_CTRL  0xA0
+#define I2S1_CG   I2S_CG
+#define I2S1_CTRL I2S_CTRL
 #define I2S2_CG   0x188
 #define I2S2_CTRL 0x1A0
 #define I2S3_CG   0x288
@@ -309,8 +311,9 @@
 #define I2S4_CTRL 0x3A0
 #define I2S5_CG   0x488
 #define I2S5_CTRL 0x4A0
-#define  I2S_CG_SLCG_ENABLE BIT(0)
-#define  I2S_CTRL_MASTER_EN BIT(10)
+#define  I2S_CG_SLCG_DISABLE 0
+#define  I2S_CG_SLCG_ENABLE  BIT(0)
+#define  I2S_CTRL_MASTER_EN  BIT(10)
 
 /*! PWM registers. */
 #define PWM_CONTROLLER_PWM_CSR_0 0x00

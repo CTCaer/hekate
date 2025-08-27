@@ -155,16 +155,34 @@ static void _config_pmc_scratch()
 	PMC(APBDEV_PMC_SECURE_SCRATCH21) |= PMC_FUSE_PRIVATEKEYDISABLE_TZ_STICKY_BIT;
 }
 
-static void _mbist_workaround()
+static void _mbist_workaround_bl()
 {
-	// Make sure Audio clocks are enabled before accessing I2S.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
+	/*
+	 * DFT MBIST HW Errata for T210.
+	 * RAM Data corruption observed when MBIST_EN from DFT (Tegra X1 Si Errata)
+	 *
+	 * The MBIST_EN signals from the DFT logic can impact the functional logic of
+	 * internal rams after power-on since they are driven by non-resetable flops.
+	 * That can be worked around by enabling and then disabling the related clocks.
+	 *
+	 * The bootrom patches, already handle the LVL2 SLCG war by enabling all clocks
+	 * and all LVL2 CLK overrides (power saving disable).
+	 * The Bootloader then handles the IP block SLCG part and also restores the
+	 * state for the clocks/lvl2 slcg.
+	 * After these, per domain MBIST WAR is needed every time a domain gets
+	 * unpowergated if it was previously powergated.
+	 *
+	 * Affected power domains: all except IRAM and CCPLEX.
+	 */
 
-	// Set mux output to SOR1 clock switch.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) | 0x8000) & 0xFFFFBFFF;
-	// Enabled PLLD and set csi to PLLD for test pattern generation.
-	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) |= 0x40800000;
+	// Set mux output to SOR1 clock switch (for VI).
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1) & ~BIT(14)) | BIT(15);
+	// Enable PLLD and set csi to PLLD for test pattern generation (for VI).
+	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) |= PLL_BASE_ENABLE | BIT(23);
+
+	// Make sure Audio clocks are enabled before accessing I2S.
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_SET) = BIT(CLK_V_AHUB);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_Y_SET) = BIT(CLK_Y_APE);
 
 	// Clear per-clock resets for APE/VIC/HOST1X/DISP1.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_CLR) = BIT(CLK_Y_APE);
@@ -172,78 +190,73 @@ static void _mbist_workaround()
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_CLR) = BIT(CLK_L_HOST1X) | BIT(CLK_L_DISP1);
 	usleep(2);
 
-	// I2S channels to master and disable SLCG.
-	I2S(I2S1_CTRL) |= I2S_CTRL_MASTER_EN;
-	I2S(I2S1_CG)   &= ~I2S_CG_SLCG_ENABLE;
-	I2S(I2S2_CTRL) |= I2S_CTRL_MASTER_EN;
-	I2S(I2S2_CG)   &= ~I2S_CG_SLCG_ENABLE;
-	I2S(I2S3_CTRL) |= I2S_CTRL_MASTER_EN;
-	I2S(I2S3_CG)   &= ~I2S_CG_SLCG_ENABLE;
-	I2S(I2S4_CTRL) |= I2S_CTRL_MASTER_EN;
-	I2S(I2S4_CG)   &= ~I2S_CG_SLCG_ENABLE;
-	I2S(I2S5_CTRL) |= I2S_CTRL_MASTER_EN;
-	I2S(I2S5_CG)   &= ~I2S_CG_SLCG_ENABLE;
-
-	// Set SLCG overrides.
-	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= 4; // DSC_SLCG_OVERRIDE.
+	// Set I2S to master to enable clocks and set SLCG overrides.
+	for (u32 i2s_idx = 0; i2s_idx < 5; i2s_idx++)
+	{
+		I2S(I2S_CTRL + (i2s_idx << 8u)) |= I2S_CTRL_MASTER_EN;
+		I2S(I2S_CG   + (i2s_idx << 8u))  = I2S_CG_SLCG_DISABLE;
+	}
+	// Set SLCG overrides for DISPA and VIC.
+	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= BIT(2); // DSC_SLCG_OVERRIDE.
 	VIC(VIC_THI_SLCG_OVERRIDE_LOW_A) = 0xFFFFFFFF;
+
+	// Wait a bit for MBIST_EN to get unstuck (1 cycle min).
 	usleep(2);
+
+	// Reset SLCG to automatic mode.
+	// for (u32 i2s_idx = 0; i2s_idx < 5; i2s_idx++)
+	// 	I2S(I2S_CG   + (i2s_idx << 8u)) = I2S_CG_SLCG_ENABLE;
+	// DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) &= ~BIT(2); // DSC_SLCG_OVERRIDE.
+	// VIC(VIC_THI_SLCG_OVERRIDE_LOW_A) = 0;
 
 	// Set per-clock reset for APE/VIC/HOST1X/DISP1.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_Y_SET) = BIT(CLK_Y_APE);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_HOST1X) | BIT(CLK_L_DISP1);
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_X_SET) = BIT(CLK_X_VIC);
 
-	// Enable specific clocks and disable all others.
+	// Disable all unneeded clocks that were enabled in bootrom.
 	// CLK L Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) =
-		BIT(CLK_H_PMC) |
-		BIT(CLK_H_FUSE);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_H) = BIT(CLK_H_PMC) |
+											  BIT(CLK_H_FUSE);
 	// CLK H Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) =
-		BIT(CLK_L_RTC)  |
-		BIT(CLK_L_TMR)  |
-		BIT(CLK_L_GPIO) |
-		BIT(CLK_L_BPMP_CACHE_CTRL);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_L) = BIT(CLK_L_RTC)  |
+											  BIT(CLK_L_TMR)  |
+											  BIT(CLK_L_GPIO) |
+											  BIT(CLK_L_BPMP_CACHE_CTRL);
 	// CLK U Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_U) =
-		BIT(CLK_U_CSITE) |
-		BIT(CLK_U_IRAMA) |
-		BIT(CLK_U_IRAMB) |
-		BIT(CLK_U_IRAMC) |
-		BIT(CLK_U_IRAMD) |
-		BIT(CLK_U_BPMP_CACHE_RAM);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_U) = BIT(CLK_U_CSITE) |
+											  BIT(CLK_U_IRAMA) |
+											  BIT(CLK_U_IRAMB) |
+											  BIT(CLK_U_IRAMC) |
+											  BIT(CLK_U_IRAMD) |
+											  BIT(CLK_U_BPMP_CACHE_RAM);
 	// CLK V Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) =
-		BIT(CLK_V_MSELECT)       |
-		BIT(CLK_V_APB2APE)       |
-		BIT(CLK_V_SPDIF_DOUBLER) |
-		BIT(CLK_V_SE);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) = BIT(CLK_V_MSELECT)       |
+											  BIT(CLK_V_APB2APE)       |
+											  BIT(CLK_V_SPDIF_DOUBLER) |
+											  BIT(CLK_V_SE);
 	// CLK W Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_W) =
-		BIT(CLK_W_PCIERX0) |
-		BIT(CLK_W_PCIERX1) |
-		BIT(CLK_W_PCIERX2) |
-		BIT(CLK_W_PCIERX3) |
-		BIT(CLK_W_PCIERX4) |
-		BIT(CLK_W_PCIERX5) |
-		BIT(CLK_W_ENTROPY) |
-		BIT(CLK_W_MC1);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_W) = BIT(CLK_W_PCIERX0) |
+											  BIT(CLK_W_PCIERX1) |
+											  BIT(CLK_W_PCIERX2) |
+											  BIT(CLK_W_PCIERX3) |
+											  BIT(CLK_W_PCIERX4) |
+											  BIT(CLK_W_PCIERX5) |
+											  BIT(CLK_W_ENTROPY) |
+											  BIT(CLK_W_MC1);
 	// CLK X Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X) =
-		BIT(CLK_X_MC_CAPA)  |
-		BIT(CLK_X_MC_CBPA)  |
-		BIT(CLK_X_MC_CPU)   |
-		BIT(CLK_X_MC_BBC)   |
-		BIT(CLK_X_GPU)      |
-		BIT(CLK_X_DBGAPB)   |
-		BIT(CLK_X_PLLG_REF);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_X) = BIT(CLK_X_MC_CAPA)  |
+											  BIT(CLK_X_MC_CBPA)  |
+											  BIT(CLK_X_MC_CPU)   |
+											  BIT(CLK_X_MC_BBC)   |
+											  BIT(CLK_X_GPU)      |
+											  BIT(CLK_X_DBGAPB)   |
+											  BIT(CLK_X_PLLG_REF);
 	// CLK Y Devices.
-	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) =
-		BIT(CLK_Y_MC_CDPA) |
-		BIT(CLK_Y_MC_CCPA);
+	CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) = BIT(CLK_Y_MC_CDPA) |
+											  BIT(CLK_Y_MC_CCPA);
 
-	// Disable clock gate overrides.
+	// Reset clock gate overrides to automatic mode.
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRA) = 0;
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRB) = 0;
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRC) = 0;
@@ -252,10 +265,10 @@ static void _mbist_workaround()
 
 	// Set child clock sources.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE)        &= 0x1F7FFFFF; // Disable PLLD and set reference clock and csi clock.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1)  &= 0xFFFF3FFF; // Set SOR1 to automatic muxing of safe clock (24MHz) or SOR1 clk switch.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI)     = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI) & 0x1FFFFFFF)     | 0x80000000; // Set clock source to PLLP_OUT.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X) & 0x1FFFFFFF) | 0x80000000; // Set clock source to PLLP_OUT.
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC)  = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC) & 0x1FFFFFFF)  | 0x80000000; // Set clock source to PLLP_OUT.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_SOR1)  &= ~(BIT(15) | BIT(14)); // Set SOR1 to automatic muxing of safe clock (24MHz) or SOR1 clk switch.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI)     = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_VI)     & 0x1FFFFFFF) | (4 << 29u); // Set clock source to PLLP_OUT.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X) = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_HOST1X) & 0x1FFFFFFF) | (4 << 29u); // Set clock source to PLLP_OUT.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC)  = (CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_NVENC)  & 0x1FFFFFFF) | (4 << 29u); // Set clock source to PLLP_OUT.
 }
 
 static void _config_se_brom()
@@ -375,9 +388,9 @@ void hw_init()
 	SYSREG(AHB_AHB_SPARE_REG) &= 0xFFFFFF9F;
 	PMC(APBDEV_PMC_SCRATCH49) &= 0xFFFFFFFC;
 
-	// Perform Memory Built-In Self Test WAR if T210.
+	// Perform the bootloader part of the Memory Built-In Self Test WAR if T210.
 	if (tegra_t210)
-		_mbist_workaround();
+		_mbist_workaround_bl();
 
 	// Make sure PLLP_OUT3/4 is set to 408 MHz and enabled.
 	CLOCK(CLK_RST_CONTROLLER_PLLP_OUTB) = 0x30003;
@@ -485,11 +498,11 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 	// Reset arbiter.
 	hw_config_arbiter(true);
 
-	// Re-enable clocks to Audio Processing Engine as a workaround to hanging.
+	// Re-enable clocks to Audio Processing Engine as a workaround to rerunning mbist war.
 	if (tegra_t210)
 	{
-		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_V) |= BIT(CLK_V_AHUB);
-		CLOCK(CLK_RST_CONTROLLER_CLK_OUT_ENB_Y) |= BIT(CLK_Y_APE);
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_SET) = BIT(CLK_V_AHUB);
+		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_Y_SET) = BIT(CLK_Y_APE);
 	}
 
 	// Do coreboot mitigations.
