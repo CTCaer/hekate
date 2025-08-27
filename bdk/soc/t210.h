@@ -38,6 +38,7 @@
 #define SOR1_BASE        0x54580000
 #define GPU_BASE         0x57000000
 #define GPU_USER_BASE    0x58000000
+#define PG_BASE          0x60000000
 #define RES_SEMAPH_BASE  0x60001000
 #define ARB_SEMAPH_BASE  0x60002000
 #define ARB_PRI_BASE     0x60003000
@@ -114,6 +115,7 @@
 #define SOR1(off)            MMIO_REG32(SOR1_BASE, off)
 #define GPU(off)             MMIO_REG32(GPU_BASE, off)
 #define GPU_USER(off)        MMIO_REG32(GPU_USER_BASE, off)
+#define PG(off)              MMIO_REG32(PG_BASE, off)
 #define ARB_PRI(off)         MMIO_REG32(ARB_PRI_BASE, off)
 #define ICTLR(cidx, off)     MMIO_REG32(ICTLR_BASE + (0x100 * (cidx)), off)
 #define TMR(off)             MMIO_REG32(TMR_BASE, off)
@@ -376,4 +378,12 @@
 #define NVDEC_SA_KEYSLOT_OTF       0x210C
 #define NVDEC_SA_KEYSLOT_GLOBAL_RW 0x2118
 #define NVDEC_VPR_ALL_OTF_GOTO_VPR 0x211C
+
+/* PG registers */
+#define PG_UP_TAG 0x0 // Changes depending on what does the reg read request.
+#define  TAG_PID_CCPLEX 0x55555555
+#define  TAG_PID_BPMP   0xAAAAAAAA
+#define  TAG_PID_COP2   0x99999999
+#define  TAG_PID_OTHER  0xCCCCCCCC
+
 #endif

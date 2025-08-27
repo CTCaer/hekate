@@ -201,7 +201,7 @@
 #define FUSE_RESERVED_ODM29_B01               0x294
 
 #define FUSE_APB2JTAG_DISABLE                 0x298
-#define FUSE_ODM_INFO                         0x29C
+#define FUSE_ODM_INFO                         0x29C // Debug features disable.
 #define FUSE_ARM_CRYPT_DE_FEATURE             0x2A8
 
 #define FUSE_OPT_RAM_WTSEL_TSMCPDP_PO4SVT_B01 0x2B0
@@ -212,6 +212,9 @@
 #define FUSE_WOA_SKU_FLAG                     0x2C0
 #define FUSE_ECO_RESERVE_1                    0x2C4
 #define FUSE_GCPLEX_CONFIG_FUSE               0x2C8
+#define  FUSE_GPU_VPR_AUTO_FETCH_DIS          BIT(0)
+#define  FUSE_GPU_VPR_ENABLED                 BIT(1)
+#define  FUSE_GPU_WPR_ENABLED                 BIT(2)
 #define FUSE_PRODUCTION_MONTH                 0x2CC
 #define FUSE_RAM_REPAIR_INDICATOR             0x2D0
 #define FUSE_TSENSOR9_CALIB                   0x2D4
@@ -223,7 +226,7 @@
 #define FUSE_OPT_GPU_DISABLE_CP1              0x2F0
 #define FUSE_SPARE_ENDIS                      0x2F4
 #define FUSE_ECO_RESERVE_0                    0x2F8
-#define FUSE_RESERVED_CALIB0                  0x304
+#define FUSE_RESERVED_CALIB0                  0x304 // GPCPLL ADC Calibration.
 #define FUSE_RESERVED_CALIB1                  0x308
 #define FUSE_OPT_GPU_TPC0_DISABLE             0x30C
 #define FUSE_OPT_GPU_TPC0_DISABLE_CP1         0x310
