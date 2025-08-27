@@ -22,12 +22,15 @@
 #include <mem/heap.h>
 #include <utils/types.h>
 
-dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHiddenFiles, bool parse_dirs)
+dirlist_t *dirlist(const char *directory, const char *pattern, u32 flags)
 {
 	int res = 0;
 	u32 k = 0;
 	DIR dir;
 	FILINFO fno;
+	bool show_hidden = !!(flags & DIR_SHOW_HIDDEN);
+	bool show_dirs   = !!(flags & DIR_SHOW_DIRS);
+	bool ascii_order = !!(flags & DIR_ASCII_ORDER);
 
 	dirlist_t *dir_entries = (dirlist_t *)malloc(sizeof(dirlist_t));
 
@@ -43,11 +46,11 @@ dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHidde
 			if (res || !fno.fname[0])
 				break;
 
-			bool curr_parse = parse_dirs ? (fno.fattrib & AM_DIR) : !(fno.fattrib & AM_DIR);
+			bool curr_parse = show_dirs ? (fno.fattrib & AM_DIR) : !(fno.fattrib & AM_DIR);
 
 			if (curr_parse)
 			{
-				if ((fno.fname[0] != '.') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+				if ((fno.fname[0] != '.') && (show_hidden || !(fno.fattrib & AM_HID)))
 				{
 					strcpy(&dir_entries->data[k * 256], fno.fname);
 					if (++k >= DIR_MAX_ENTRIES)
@@ -61,7 +64,7 @@ dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHidde
 	{
 		do
 		{
-			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != '.') && (includeHiddenFiles || !(fno.fattrib & AM_HID)))
+			if (!(fno.fattrib & AM_DIR) && (fno.fname[0] != '.') && (show_hidden || !(fno.fattrib & AM_HID)))
 			{
 				strcpy(&dir_entries->data[k * 256], fno.fname);
 				if (++k >= DIR_MAX_ENTRIES)
@@ -82,12 +85,15 @@ dirlist_t *dirlist(const char *directory, const char *pattern, bool includeHidde
 	// Terminate name list.
 	dir_entries->name[k] = NULL;
 
+	// Choose list ordering.
+	int (*strcmpex)(const char* str1, const char* str2) = ascii_order ? strcmp : strcasecmp;
+
 	// Reorder ini files Alphabetically.
 	for (u32 i = 0; i < k - 1 ; i++)
 	{
 		for (u32 j = i + 1; j < k; j++)
 		{
-			if (strcasecmp(dir_entries->name[i], dir_entries->name[j]) > 0)
+			if (strcmpex(dir_entries->name[i], dir_entries->name[j]) > 0)
 			{
 				char *tmp = dir_entries->name[i];
 				dir_entries->name[i] = dir_entries->name[j];
