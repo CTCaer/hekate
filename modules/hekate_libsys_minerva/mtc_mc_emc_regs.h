@@ -2,7 +2,7 @@
  * Minerva Training Cell
  * DRAM Training for Tegra X1 SoC. Supports DDR2/3 and LPDDR3/4.
  *
- * Copyright (c) 2018 CTCaer  <ctcaer@gmail.com>
+ * Copyright (c) 2018-2025 CTCaer  <ctcaer@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -110,6 +110,13 @@
 #define  CLKCHANGE_COMPLETE_INT (1 << 4)
 
 #define EMC_DBG                       0x8
+#define  EMC_DBG_READ_MUX_ACTIVE        BIT(0)
+#define  EMC_DBG_WRITE_MUX_ACTIVE       BIT(1)
+#define  EMC_DBG_CFG_SWAP_ACTIVE_ONLY   (0 << 26u)
+#define  EMC_DBG_CFG_SWAP_SWAP          (1 << 26u)
+#define  EMC_DBG_CFG_SWAP_ASSEMBLY_ONLY (2 << 26u)
+#define  EMC_DBG_CFG_SWAP_MASK          (3 << 26u)
+#define  EMC_DBG_WRITE_ACTIVE_ONLY      BIT(30)
 #define EMC_CFG                       0xC
 #define EMC_PIN                       0x24
 #define EMC_TIMING_CONTROL            0x28

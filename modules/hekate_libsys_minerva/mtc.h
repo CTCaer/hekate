@@ -2,7 +2,7 @@
  * Minerva Training Cell
  * DRAM Training for Tegra X1 SoC. Supports DDR2/3 and LPDDR3/4.
  *
- * Copyright (c) 2018-2022 CTCaer  <ctcaer@gmail.com>
+ * Copyright (c) 2018-2025 CTCaer  <ctcaer@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -63,7 +63,7 @@
 #define NEEDS_TRAINING_SWAP_RANK       BIT(8)
 #define NEEDS_TRAINING_IN_SELF_REFRESH BIT(9)
 
-#define NEEDS_TRISTATE_TRAINING   (NEEDS_TRAINING_CA | NEEDS_TRAINING_CA_VREF | \
+#define NEEDS_TRAINING            (NEEDS_TRAINING_CA | NEEDS_TRAINING_CA_VREF | \
 								   NEEDS_TRAINING_QUSE | NEEDS_TRAINING_WR |    \
 								   NEEDS_TRAINING_WR_VREF | NEEDS_TRAINING_RD | \
 								   NEEDS_TRAINING_RD_VREF)
