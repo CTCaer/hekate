@@ -17,7 +17,7 @@
 
 #include <string.h>
 
-#include <storage/mmc.h>
+#include <storage/mmc_def.h>
 #include <storage/sdmmc.h>
 #include <gfx_utils.h>
 #include <power/max7762x.h>
@@ -115,7 +115,7 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 	u32 tap_val = 0;
 
 	if (type == SDHCI_TIMING_MMC_HS400)
-		sdmmc->regs->vencapover = (sdmmc->regs->vencapover & 0xFFFFC0FF) | (dqs_trim_val << 8);
+		sdmmc->regs->vencapover = (sdmmc->regs->vencapover & ~0x3F00) | (dqs_trim_val << 8);
 
 	sdmmc->regs->ventunctl0 &= ~SDHCI_TEGRA_TUNING_TAP_HW_UPDATED;
 
@@ -129,7 +129,7 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 	else
 		tap_val = sdmmc->t210b01 ? 11 : tap_values_t210[sdmmc->id];
 
-	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & 0xFF00FFFF) | (tap_val << 16);
+	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & ~0xFF0000) | (tap_val << 16);
 
 	return 1;
 }
@@ -437,8 +437,8 @@ static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 	{
 	case SDMMC_RSP_TYPE_1:
 	case SDMMC_RSP_TYPE_3:
-	case SDMMC_RSP_TYPE_4:
-	case SDMMC_RSP_TYPE_5:
+	case SDMMC_RSP_TYPE_6:
+	case SDMMC_RSP_TYPE_7:
 		rsp[0] = sdmmc->regs->rspreg[0];
 		break;
 
@@ -470,8 +470,8 @@ int sdmmc_get_cached_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 	{
 	case SDMMC_RSP_TYPE_1:
 	case SDMMC_RSP_TYPE_3:
-	case SDMMC_RSP_TYPE_4:
-	case SDMMC_RSP_TYPE_5:
+	case SDMMC_RSP_TYPE_6:
+	case SDMMC_RSP_TYPE_7:
 		rsp[0] = sdmmc->rsp[0];
 		break;
 
@@ -560,8 +560,8 @@ static int _sdmmc_send_cmd(sdmmc_t *sdmmc, const sdmmc_cmd_t *cmd, bool is_data_
 		break;
 
 	case SDMMC_RSP_TYPE_1:
-	case SDMMC_RSP_TYPE_4:
-	case SDMMC_RSP_TYPE_5:
+	case SDMMC_RSP_TYPE_6:
+	case SDMMC_RSP_TYPE_7:
 		if (cmd->check_busy)
 			cmdflags = SDHCI_CMD_RESP_LEN48_BUSY | SDHCI_CMD_INDEX | SDHCI_CMD_CRC;
 		else

@@ -37,8 +37,8 @@
 #define SDMMC_RSP_TYPE_1 1
 #define SDMMC_RSP_TYPE_2 2
 #define SDMMC_RSP_TYPE_3 3
-#define SDMMC_RSP_TYPE_4 4
-#define SDMMC_RSP_TYPE_5 5
+#define SDMMC_RSP_TYPE_6 4
+#define SDMMC_RSP_TYPE_7 5
 
 /*! SDMMC bus widths. */
 #define SDMMC_BUS_WIDTH_1 0

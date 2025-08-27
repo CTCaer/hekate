@@ -22,7 +22,7 @@
 #include <soc/timer.h>
 #include <storage/emmc.h>
 #include <storage/sdmmc.h>
-#include <storage/mmc.h>
+#include <storage/mmc_def.h>
 #include <storage/sd.h>
 #include <storage/sd_def.h>
 #include <memory_map.h>
@@ -971,7 +971,7 @@ static int _sd_storage_send_if_cond(sdmmc_storage_t *storage, bool *is_sdsc)
 {
 	sdmmc_cmd_t cmdbuf;
 	u16 vhd_pattern = SD_VHS_27_36 | 0xAA;
-	sdmmc_init_cmd(&cmdbuf, SD_SEND_IF_COND, vhd_pattern, SDMMC_RSP_TYPE_5, 0);
+	sdmmc_init_cmd(&cmdbuf, SD_SEND_IF_COND, vhd_pattern, SDMMC_RSP_TYPE_7, 0);
 	if (!sdmmc_execute_cmd(storage->sdmmc, &cmdbuf, NULL, NULL))
 	{
 		// The SD Card is version 1.X (SDSC) if there is no response.
@@ -986,7 +986,7 @@ static int _sd_storage_send_if_cond(sdmmc_storage_t *storage, bool *is_sdsc)
 
 	// For Card version >= 2.0, parse results.
 	u32 resp = 0;
-	sdmmc_get_cached_rsp(storage->sdmmc, &resp, SDMMC_RSP_TYPE_5);
+	sdmmc_get_cached_rsp(storage->sdmmc, &resp, SDMMC_RSP_TYPE_7);
 
 	// Check if VHD was accepted and pattern was properly returned.
 	if ((resp & 0xFFF) == vhd_pattern)
@@ -1069,7 +1069,7 @@ static int _sd_storage_get_op_cond(sdmmc_storage_t *storage, bool is_sdsc, int b
 static int _sd_storage_get_rca(sdmmc_storage_t *storage)
 {
 	sdmmc_cmd_t cmdbuf;
-	sdmmc_init_cmd(&cmdbuf, SD_SEND_RELATIVE_ADDR, 0, SDMMC_RSP_TYPE_4, 0);
+	sdmmc_init_cmd(&cmdbuf, SD_SEND_RELATIVE_ADDR, 0, SDMMC_RSP_TYPE_6, 0);
 
 	u32 timeout = get_tmr_ms() + 1500;
 
@@ -1079,7 +1079,7 @@ static int _sd_storage_get_rca(sdmmc_storage_t *storage)
 			break;
 
 		u32 resp = 0;
-		if (!sdmmc_get_cached_rsp(storage->sdmmc, &resp, SDMMC_RSP_TYPE_4))
+		if (!sdmmc_get_cached_rsp(storage->sdmmc, &resp, SDMMC_RSP_TYPE_6))
 			break;
 
 		if (resp >> 16)
