@@ -28,7 +28,10 @@ typedef struct _emmc_tool_gui_t
 	lv_obj_t *bar;
 	lv_style_t *bar_teal_bg;
 	lv_style_t *bar_teal_ind;
+	lv_style_t *bar_white_bg;
 	lv_style_t *bar_white_ind;
+	lv_style_t *bar_orange_bg;
+	lv_style_t *bar_orange_ind;
 	char *txt_buf;
 	char *base_path;
 	bool raw_emummc;

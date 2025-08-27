@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -101,7 +101,7 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 	lv_obj_align(label_info, label_sep, LV_ALIGN_OUT_BOTTOM_LEFT, LV_DPI / 4, LV_DPI / 10);
 	emmc_tool_gui_ctxt.label_info = label_info;
 
-	static lv_style_t bar_teal_bg, bar_teal_ind, bar_white_ind;
+	static lv_style_t bar_teal_bg, bar_teal_ind, bar_orange_bg, bar_orange_ind, bar_white_ind;
 
 	lv_style_copy(&bar_teal_bg, lv_theme_get_current()->bar.bg);
 	bar_teal_bg.body.main_color = LV_COLOR_HEX(0x005a47);
@@ -111,12 +111,23 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 	bar_teal_ind.body.main_color = LV_COLOR_HEX(0x00FFC9);
 	bar_teal_ind.body.grad_color = bar_teal_ind.body.main_color;
 
+	lv_style_copy(&bar_orange_bg, lv_theme_get_current()->bar.bg);
+	bar_orange_bg.body.main_color = LV_COLOR_HEX(0x755000);
+	bar_orange_bg.body.grad_color = bar_orange_bg.body.main_color;
+
+	lv_style_copy(&bar_orange_ind, lv_theme_get_current()->bar.indic);
+	bar_orange_ind.body.main_color = LV_COLOR_HEX(0xFFAE00);
+	bar_orange_ind.body.grad_color = bar_orange_ind.body.main_color;
+
 	lv_style_copy(&bar_white_ind, lv_theme_get_current()->bar.indic);
 	bar_white_ind.body.main_color = LV_COLOR_HEX(0xF0F0F0);
 	bar_white_ind.body.grad_color = bar_white_ind.body.main_color;
 
 	emmc_tool_gui_ctxt.bar_teal_bg = &bar_teal_bg;
 	emmc_tool_gui_ctxt.bar_teal_ind = &bar_teal_ind;
+	emmc_tool_gui_ctxt.bar_orange_bg = &bar_orange_bg;
+	emmc_tool_gui_ctxt.bar_orange_ind = &bar_orange_ind;
+	emmc_tool_gui_ctxt.bar_white_bg = lv_theme_get_current()->bar.bg;
 	emmc_tool_gui_ctxt.bar_white_ind = &bar_white_ind;
 
 	lv_obj_t *bar = lv_bar_create(h1, NULL);
