@@ -961,9 +961,6 @@ static u32 _get_available_l4t_partition()
 				size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 				break;
 			}
-
-			if (i > 126)
-				break;
 		}
 	}
 	else
@@ -1010,9 +1007,6 @@ static int _get_available_android_partition()
 				return found;
 			}
 		}
-
-		if (i > 126)
-			break;
 	}
 
 out:
@@ -1247,9 +1241,6 @@ static lv_res_t _action_flash_android_data(lv_obj_t * btns, const char * txt)
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 			break;
 		}
-
-		if (i > 126)
-			break;
 	}
 
 	// Flash Kernel.
@@ -1312,9 +1303,6 @@ boot_img_not_found:
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 			break;
 		}
-
-		if (i > 126)
-			break;
 	}
 
 	// Flash Recovery.
@@ -1375,9 +1363,6 @@ recovery_not_found:
 			size_sct = (gpt->entries[i].lba_end + 1) - gpt->entries[i].lba_start;
 			break;
 		}
-
-		if (i > 126)
-			break;
 	}
 
 	// Flash Device Tree.
@@ -1413,22 +1398,19 @@ dtb_not_found:
 	lv_label_set_text(lbl_status, txt_buf);
 
 	// Check if Recovery is flashed unconditionally.
+	u8 *rec = malloc(SD_BLOCKSIZE);
 	for (u32 i = 0; i < gpt->header.num_part_ents; i++)
 	{
 		if (!memcmp(gpt->entries[i].name, (u16[]) { 'S', 'O', 'S' },                           6) ||
 			!memcmp(gpt->entries[i].name, (u16[]) { 'r', 'e', 'c', 'o', 'v', 'e', 'r', 'y' }, 16))
 		{
-			u8 *buf = malloc(SD_BLOCKSIZE);
-			sdmmc_storage_read(part_info.storage, gpt->entries[i].lba_start, 1, buf);
-			if (!memcmp(buf, "ANDROID", 7))
+			sdmmc_storage_read(part_info.storage, gpt->entries[i].lba_start, 1, rec);
+			if (!memcmp(rec, "ANDROID", 7))
 				boot_recovery = true;
-			free(buf);
 			break;
 		}
-
-		if (i > 126)
-			break;
 	}
+	free(rec);
 
 error:
 	if (boot_recovery)
