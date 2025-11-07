@@ -26,15 +26,28 @@
 #include <libs/fatfs/diskio.h>
 #include <libs/lvgl/lvgl.h>
 
+#define SECTORS_PER_GB   0x200000
+
 #define AU_ALIGN_SECTORS 0x8000 // 16MB.
 #define AU_ALIGN_BYTES   (AU_ALIGN_SECTORS * SD_BLOCKSIZE)
 
-#define SECTORS_PER_GB   0x200000
+#define HOS_USER_SECTOR      0x53C000
+#define HOS_FAT_MIN_SIZE_MB  2048
+#define HOS_USER_MIN_SIZE_MB 1024
 
-#define HOS_USER_SECTOR        0x53C000
-#define HOS_FAT_MIN_SIZE_MB    2048
-#define HOS_USER_MIN_SIZE_MB   1024
-#define ANDROID_SYSTEM_SIZE_MB 6144 // 6 GB. Fits both Legacy (4912MB) and Dynamic (6144MB) partition schemes.
+#define EMU_SLIDER_MIN     0
+#define EMU_SLIDER_MAX     44 // 24 GB. Always an even number.
+#define EMU_SLIDER_1X_MAX  (EMU_SLIDER_MAX / 2)
+#define EMU_SLIDER_1X_FULL EMU_SLIDER_1X_MAX
+#define EMU_SLIDER_2X_MIN  (EMU_SLIDER_1X_MAX + 1)
+#define EMU_SLIDER_2X_FULL EMU_SLIDER_MAX
+#define EMU_SLIDER_OFFSET  3 // Min 4GB.
+#define EMU_RSVD_MB        (4 + 4 + 16 + 8) // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
+
+#define EMU_32GB_FULL      29856 // Actual: 29820 MB.
+#define EMU_64GB_FULL      59680 // Actual: 59640 MB.
+
+#define AND_SYS_SIZE_MB     6144 // 6 GB. Fits both Legacy (4912MB) and Dynamic (6144MB) partition schemes.
 
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
@@ -2237,34 +2250,30 @@ static void _update_partition_bar()
 
 static lv_res_t _action_slider_emu(lv_obj_t *slider)
 {
-	#define EMUMMC_32GB_FULL 29856 // Actual: 29820 MB.
-	#define EMUMMC_64GB_FULL 59680 // Actual: 59640 MB.
-
-	static const u32 rsvd_mb = 4 + 4 + 16 + 8; // BOOT0 + BOOT1 + 16MB offset + 8MB alignment.
 	u32 size;
 	char lbl_text[64];
 	bool prev_emu_double = part_info.emu_double;
 	int slide_val = lv_slider_get_value(slider);
-	u32 max_emmc_size = !part_info.emmc_is_64gb ? EMUMMC_32GB_FULL : EMUMMC_64GB_FULL;
 
 	part_info.emu_double = false;
 
-	size  = (slide_val > 10 ? (slide_val - 10) : slide_val) + 3; // Min 4GB.
-	size *= 1024;    // Convert to GB.
-	size += rsvd_mb; // Add reserved size.
+	size  = (slide_val > EMU_SLIDER_1X_MAX ? (slide_val - EMU_SLIDER_1X_MAX) : slide_val) + EMU_SLIDER_OFFSET;
+	size *= 1024;        // Convert to GB.
+	size += EMU_RSVD_MB; // Add reserved size.
 
-	if (!slide_val)
+	if (slide_val == EMU_SLIDER_MIN)
 		size = 0; // Reset if 0.
-	else if (slide_val >= 11)
+	else if (slide_val >= EMU_SLIDER_2X_MIN)
 	{
 		size *= 2;
 		part_info.emu_double = true;
 	}
 
 	// Handle special cases. 2nd value is for 64GB Aula. Values already include reserved space.
-	if (slide_val == 10)
+	u32 max_emmc_size = !part_info.emmc_is_64gb ? EMU_32GB_FULL : EMU_64GB_FULL;
+	if (slide_val == EMU_SLIDER_1X_FULL)
 		size = max_emmc_size;
-	else if (slide_val == 20)
+	else if (slide_val == EMU_SLIDER_2X_FULL)
 		size = 2 * max_emmc_size;
 
 	// Sanitize sizes based on new HOS size.
@@ -2280,7 +2289,7 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 
 		if (!part_info.emu_double)
 		{
-			if (slide_val != 10)
+			if (slide_val != EMU_SLIDER_1X_FULL)
 				s_printf(lbl_text, "#FF3C28 %4d GiB#", size >> 10);
 			else
 				s_printf(lbl_text, "#FF3C28 %d FULL#", size >> 10);
@@ -2294,19 +2303,19 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 		u32 emu_size = part_info.emu_size;
 
 		if (emu_size == max_emmc_size)
-			emu_size = 10;
+			emu_size = EMU_SLIDER_1X_FULL;
 		else if (emu_size == 2 * max_emmc_size)
-			emu_size = 20;
+			emu_size = EMU_SLIDER_2X_FULL;
 		else if (emu_size)
 		{
 			if (prev_emu_double)
 				emu_size /= 2;
-			emu_size -= rsvd_mb;
+			emu_size -= EMU_RSVD_MB;
 			emu_size /= 1024;
-			emu_size -= 3;
+			emu_size -= EMU_SLIDER_OFFSET;
 
 			if (prev_emu_double)
-				emu_size += 11;
+				emu_size += EMU_SLIDER_2X_MIN;
 		}
 
 		int new_slider_val = emu_size;
@@ -2375,7 +2384,7 @@ static lv_res_t _action_slider_and(lv_obj_t *slider)
 	else if (user_size < 4096)
 		user_size = 4096;
 
-	u32 and_size = user_size ? (user_size + ANDROID_SYSTEM_SIZE_MB) : 0;
+	u32 and_size = user_size ? (user_size + AND_SYS_SIZE_MB) : 0;
 	s32 hos_size = (part_info.total_sct >> 11) - 16 - part_info.emu_size - part_info.l4t_size - and_size;
 
 	// Sanitize sizes based on new HOS size.
@@ -2393,7 +2402,7 @@ static lv_res_t _action_slider_and(lv_obj_t *slider)
 			lv_slider_set_value(slider, part_info.and_size >> 10);
 			goto out;
 		}
-		user_size = and_size - ANDROID_SYSTEM_SIZE_MB;
+		user_size = and_size - AND_SYS_SIZE_MB;
 		lv_slider_set_value(slider, user_size >> 10);
 	}
 
@@ -3089,8 +3098,8 @@ lv_res_t create_window_partition_manager(bool emmc)
 		// Create emuMMC size slider.
 		slider_emu = lv_slider_create(h1, NULL);
 		lv_obj_set_size(slider_emu, LV_DPI * 7, LV_DPI / 3);
-		lv_slider_set_range(slider_emu, 0, 20);
-		lv_slider_set_value(slider_emu, 0);
+		lv_slider_set_range(slider_emu, EMU_SLIDER_MIN, EMU_SLIDER_MAX);
+		lv_slider_set_value(slider_emu, EMU_SLIDER_MIN);
 		lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_BG, &bar_emu_bg);
 		lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_INDIC, &bar_emu_ind);
 		lv_slider_set_style(slider_emu, LV_SLIDER_STYLE_KNOB, &bar_emu_btn);
@@ -3112,7 +3121,7 @@ lv_res_t create_window_partition_manager(bool emmc)
 	// Create Android size slider.
 	lv_obj_t *slider_and = lv_slider_create(h1, NULL);
 	lv_obj_set_size(slider_and, LV_DPI * 7, LV_DPI / 3);
-	lv_slider_set_range(slider_and, 0, (part_info.total_sct - extra_sct) / SECTORS_PER_GB - (ANDROID_SYSTEM_SIZE_MB / 1024)); // Subtract android reserved size.
+	lv_slider_set_range(slider_and, 0, (part_info.total_sct - extra_sct) / SECTORS_PER_GB - (AND_SYS_SIZE_MB / 1024)); // Subtract android reserved size.
 	lv_slider_set_value(slider_and, 0);
 	lv_slider_set_style(slider_and, LV_SLIDER_STYLE_BG, &bar_and_bg);
 	lv_slider_set_style(slider_and, LV_SLIDER_STYLE_INDIC, &bar_and_ind);
