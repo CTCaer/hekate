@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -900,9 +900,9 @@ static emummc_images_t *emummc_img;
 static lv_res_t _save_emummc_cfg_mbox_action(lv_obj_t *btns, const char *txt)
 {
 	// Free components, delete main emuMMC and popup windows and relaunch main emuMMC window.
-	free(emummc_img->dirlist);
 	lv_obj_del(emummc_img->win);
 	lv_obj_del(emummc_manage_window);
+	free(emummc_img->dirlist);
 	free(emummc_img);
 
 	mbox_action(btns, txt);
@@ -973,9 +973,17 @@ static lv_res_t _save_file_emummc_cfg_action(lv_obj_t *btn)
 	return LV_RES_INV;
 }
 
+static lv_res_t _action_win_change_emummc_close(lv_obj_t *btn)
+{
+	free(emummc_img->dirlist);
+	free(emummc_img);
+
+	return nyx_win_close_action_custom(btn);
+}
+
 static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SETTINGS"  Change emuMMC");
+	lv_obj_t *win = nyx_create_window_custom_close_btn(SYMBOL_SETTINGS"  Change emuMMC", _action_win_change_emummc_close);
 	lv_win_add_btn(win, NULL, SYMBOL_POWER"  Disable", _save_disable_emummc_cfg_action);
 
 	sd_mount();
@@ -993,8 +1001,8 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 	for (int i = 1; i < 4; i++)
 	{
 		emummc_img->part_sector[i - 1] = mbr->partitions[i].start_sct;
-		emummc_img->part_end[i - 1] = emummc_img->part_sector[i - 1] + mbr->partitions[i].size_sct - 1;
-		emummc_img->part_type[i - 1] = mbr->partitions[i].type;
+		emummc_img->part_end[i - 1]    = emummc_img->part_sector[i - 1] + mbr->partitions[i].size_sct - 1;
+		emummc_img->part_type[i - 1]   = mbr->partitions[i].type;
 	}
 	free(mbr);
 
@@ -1025,21 +1033,21 @@ static lv_res_t _create_change_emummc_window(lv_obj_t *btn_caller)
 			{
 				s_printf(&emummc_img->part_path[0], "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 				emummc_img->part_sector[0] = curr_list_sector;
-				emummc_img->part_end[0] = 0;
+				emummc_img->part_end[0]    = 0;
 			}
 			else if (emummc_img->part_sector[1] && curr_list_sector >= emummc_img->part_sector[1] &&
 				curr_list_sector < emummc_img->part_end[1] && emummc_img->part_type[1] != 0x83)
 			{
 				s_printf(&emummc_img->part_path[1 * 128], "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 				emummc_img->part_sector[1] = curr_list_sector;
-				emummc_img->part_end[1] = 0;
+				emummc_img->part_end[1]    = 0;
 			}
 			else if (emummc_img->part_sector[2] && curr_list_sector >= emummc_img->part_sector[2] &&
 				curr_list_sector < emummc_img->part_end[2] && emummc_img->part_type[2] != 0x83)
 			{
 				s_printf(&emummc_img->part_path[2 * 128], "emuMMC/%s", emummc_img->dirlist->name[emummc_idx]);
 				emummc_img->part_sector[2] = curr_list_sector;
-				emummc_img->part_end[2] = 0;
+				emummc_img->part_end[2]    = 0;
 			}
 		}
 		emummc_idx++;
