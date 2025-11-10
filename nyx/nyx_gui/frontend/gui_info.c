@@ -1369,6 +1369,8 @@ out:
 	return LV_RES_OK;
 }
 
+static lv_obj_t *bench_sd_err_label = NULL;
+
 static lv_res_t _create_mbox_benchmark(bool sd_bench)
 {
 	sdmmc_storage_t *storage;
@@ -1693,6 +1695,18 @@ error:
 out:
 	s_printf(txt_buf, "#FF8000 %s Benchmark#\n[Raw Reads]", sd_bench ? "SD Card" : "eMMC");
 	lv_mbox_set_text(mbox, txt_buf);
+
+	// Update SDMMC error info in case it changed.
+	if (sd_bench && bench_sd_err_label)
+	{
+		u16 *sd_errors = sd_get_error_count();
+		s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
+			sd_errors[SD_ERROR_INIT_FAIL], nyx_str->info.sd_errors[SD_ERROR_INIT_FAIL],
+			sd_errors[SD_ERROR_RW_FAIL],   nyx_str->info.sd_errors[SD_ERROR_RW_FAIL],
+			sd_errors[SD_ERROR_RW_RETRY],  nyx_str->info.sd_errors[SD_ERROR_RW_RETRY]);
+		lv_label_set_text(bench_sd_err_label, txt_buf);
+	}
+
 	free(txt_buf);
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
@@ -2211,7 +2225,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	sd_storage_get_fmodes(&sd_storage, NULL, &fmodes);
 
 	char *bus_speed;
-	if      (fmodes.cmd_system & SD_MODE_UHS_DDR200)
+	if      (fmodes.cmd_system  & SD_MODE_UHS_DDR200)
 		bus_speed = "DDR200";
 	else if (fmodes.access_mode & SD_MODE_UHS_SDR104)
 		bus_speed = "SDR104";
@@ -2336,7 +2350,8 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	lv_obj_t *val4 = lv_cont_create(win, NULL);
 	lv_obj_set_size(val4, LV_HOR_RES / 4, LV_VER_RES - (LV_DPI * 11 / 8) * 4);
 
-	lv_obj_t * lb_val4 = lv_label_create(val4, lb_desc);
+	lv_obj_t *lb_val4 = lv_label_create(val4, lb_desc);
+	bench_sd_err_label = lb_val4;
 
 	u16 *sd_errors = sd_get_error_count();
 	s_printf(txt_buf, "\n%d (%d)\n%d (%d)\n%d (%d)",
