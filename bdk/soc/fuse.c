@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -176,7 +176,8 @@ void fuse_wait_idle()
 u32 fuse_read(u32 addr)
 {
 	FUSE(FUSE_ADDR) = addr;
-	FUSE(FUSE_CTRL) = (FUSE(FUSE_ADDR) & ~FUSE_CMD_MASK) | FUSE_READ;
+	FUSE(FUSE_CTRL) = (FUSE(FUSE_CTRL) & ~FUSE_CMD_MASK) | FUSE_READ;
+
 	fuse_wait_idle();
 
 	return FUSE(FUSE_RDATA);
