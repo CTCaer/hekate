@@ -69,6 +69,8 @@
 #define ATOMICS_BASE     0x70016000
 #define MC_BASE          0x70019000
 #define EMC_BASE         0x7001B000
+#define MC0_BASE         0x7001C000
+#define MC1_BASE         0x7001D000
 #define EMC0_BASE        0x7001E000
 #define EMC1_BASE        0x7001F000
 #define XUSB_HOST_BASE   0x70090000
@@ -142,6 +144,8 @@
 #define SE(off)              MMIO_REG32(SE_BASE, off)
 #define MC(off)              MMIO_REG32(MC_BASE, off)
 #define EMC(off)             MMIO_REG32(EMC_BASE, off)
+#define MC_CH0(off)          MMIO_REG32(MC0_BASE, off)
+#define MC_CH1(off)          MMIO_REG32(MC1_BASE, off)
 #define EMC_CH0(off)         MMIO_REG32(EMC0_BASE, off)
 #define EMC_CH1(off)         MMIO_REG32(EMC1_BASE, off)
 #define XUSB_HOST(off)       MMIO_REG32(XUSB_HOST_BASE, off)
