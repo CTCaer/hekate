@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 shuffle2
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -32,6 +32,8 @@
 #define FUSE_TIME_PGM1                        0x18
 #define FUSE_TIME_PGM2                        0x1C
 #define FUSE_PRIV2INTFC                       0x20
+#define  FUSE_PRIV2INTFC_START_DATA            BIT(0)
+#define  FUSE_PRIV2INTFC_SKIP_RECORDS          BIT(1)
 #define FUSE_FUSEBYPASS                       0x24
 #define FUSE_PRIVATEKEYDISABLE                0x28
 #define  FUSE_PRIVKEY_DISABLE                  BIT(0)
@@ -115,14 +117,14 @@
 #define FUSE_PUBLIC_KEY5                      0x178
 #define FUSE_PUBLIC_KEY6                      0x17C
 #define FUSE_PUBLIC_KEY7                      0x180
-#define FUSE_TSENSOR1_CALIB                   0x184
-#define FUSE_TSENSOR2_CALIB                   0x188
+#define FUSE_TSENSOR1_CALIB                   0x184 // CPU1.
+#define FUSE_TSENSOR2_CALIB                   0x188 // CPU2.
 
 #define FUSE_OPT_SECURE_SCC_DIS_B01           0x18C
 
-#define FUSE_OPT_CP_REV                       0x190
+#define FUSE_OPT_CP_REV                       0x190 // FUSE style revision - ATE. 0x101 0x100
 #define FUSE_OPT_PFG                          0x194
-#define FUSE_TSENSOR0_CALIB                   0x198
+#define FUSE_TSENSOR0_CALIB                   0x198 // CPU0.
 #define FUSE_FIRST_BOOTROM_PATCH_SIZE         0x19C
 #define FUSE_SECURITY_MODE                    0x1A0
 #define FUSE_PRIVATE_KEY0                     0x1A4
@@ -166,22 +168,22 @@
 #define FUSE_SPARE_REGISTER_ODM_B01           0x224
 
 #define FUSE_GPU_IDDQ_CALIB	                  0x228
-#define FUSE_TSENSOR3_CALIB                   0x22C
+#define FUSE_TSENSOR3_CALIB                   0x22C // CPU3.
 #define FUSE_CLOCK_BONDOUT0                   0x230
 #define FUSE_CLOCK_BONDOUT1                   0x234
 
 #define FUSE_RESERVED_ODM26_B01               0x238
 #define FUSE_RESERVED_ODM27_B01               0x23C
-#define FUSE_RESERVED_ODM28_B01               0x240
+#define FUSE_RESERVED_ODM28_B01               0x240 // MAX77812 phase configuration.
 
 #define FUSE_OPT_SAMPLE_TYPE                  0x244
-#define FUSE_OPT_SUBREVISION                  0x248
+#define FUSE_OPT_SUBREVISION                  0x248 // "", "p", "q", "r". e.g: A01p.
 #define FUSE_OPT_SW_RESERVED_0                0x24C
 #define FUSE_OPT_SW_RESERVED_1                0x250
-#define FUSE_TSENSOR4_CALIB                   0x254
-#define FUSE_TSENSOR5_CALIB                   0x258
-#define FUSE_TSENSOR6_CALIB                   0x25C
-#define FUSE_TSENSOR7_CALIB                   0x260
+#define FUSE_TSENSOR4_CALIB                   0x254 // GPU.
+#define FUSE_TSENSOR5_CALIB                   0x258 // MEM0.
+#define FUSE_TSENSOR6_CALIB                   0x25C // MEM1.
+#define FUSE_TSENSOR7_CALIB                   0x260 // PLLX.
 #define FUSE_OPT_PRIV_SEC_DIS                 0x264
 #define FUSE_PKC_DISABLE                      0x268
 
@@ -217,7 +219,7 @@
 #define  FUSE_GPU_WPR_ENABLED                 BIT(2)
 #define FUSE_PRODUCTION_MONTH                 0x2CC
 #define FUSE_RAM_REPAIR_INDICATOR             0x2D0
-#define FUSE_TSENSOR9_CALIB                   0x2D4
+#define FUSE_TSENSOR9_CALIB                   0x2D4 // AOTAG.
 #define FUSE_VMIN_CALIBRATION                 0x2DC
 #define FUSE_AGING_SENSOR_CALIBRATION         0x2E0
 #define FUSE_DEBUG_AUTHENTICATION             0x2E4
@@ -225,7 +227,7 @@
 #define FUSE_SECURE_PROVISION_INFO            0x2EC
 #define FUSE_OPT_GPU_DISABLE_CP1              0x2F0
 #define FUSE_SPARE_ENDIS                      0x2F4
-#define FUSE_ECO_RESERVE_0                    0x2F8
+#define FUSE_ECO_RESERVE_0                    0x2F8 // AID.
 #define FUSE_RESERVED_CALIB0                  0x304 // GPCPLL ADC Calibration.
 #define FUSE_RESERVED_CALIB1                  0x308
 #define FUSE_OPT_GPU_TPC0_DISABLE             0x30C
@@ -244,7 +246,7 @@
 #define FUSE_OPT_RAM_RCT_TSMCDP_PO4HVT_B01    0x328
 #define FUSE_OPT_RAM_WCT_TSMCDP_PO4HVT_B01    0x32c
 #define FUSE_OPT_RAM_KP_TSMCDP_PO4HVT_B01     0x330
-#define FUSE_OPT_ROM_SVOP_SP_B01              0x334
+#define FUSE_OPT_RAM_SVOP_SP_B01              0x334
 
 #define FUSE_OPT_GPU_TPC0_DISABLE_CP2         0x338
 #define FUSE_OPT_GPU_TPC1_DISABLE             0x33C
@@ -253,7 +255,7 @@
 #define FUSE_OPT_CPU_DISABLE_CP2              0x348
 #define FUSE_OPT_GPU_DISABLE_CP2              0x34C
 #define FUSE_USB_CALIB_EXT                    0x350
-#define FUSE_RESERVED_FIELD                   0x354
+#define FUSE_RESERVED_FIELD                   0x354 // RMA.
 #define FUSE_SPARE_REALIGNMENT_REG            0x37C
 #define FUSE_SPARE_BIT_0                      0x380
 //...
@@ -267,24 +269,24 @@
 #define FUSE_CMD_MASK 0x3
 
 /*! Fuse status. */
-#define  FUSE_STATUS_RESET                   0
-#define  FUSE_STATUS_POST_RESET              1
-#define  FUSE_STATUS_LOAD_ROW0               2
-#define  FUSE_STATUS_LOAD_ROW1               3
-#define  FUSE_STATUS_IDLE                    4
-#define  FUSE_STATUS_READ_SETUP              5
-#define  FUSE_STATUS_READ_STROBE             6
-#define  FUSE_STATUS_SAMPLE_FUSES            7
-#define  FUSE_STATUS_READ_HOLD               8
-#define  FUSE_STATUS_FUSE_SRC_SETUP          9
-#define  FUSE_STATUS_WRITE_SETUP             10
-#define  FUSE_STATUS_WRITE_ADDR_SETUP        11
-#define  FUSE_STATUS_WRITE_PROGRAM           12
-#define  FUSE_STATUS_WRITE_ADDR_HOLD         13
-#define  FUSE_STATUS_FUSE_SRC_HOLD           14
-#define  FUSE_STATUS_LOAD_RIR                15
-#define  FUSE_STATUS_READ_BEFORE_WRITE_SETUP 16
-#define  FUSE_STATUS_READ_DEASSERT_PD        17
+#define FUSE_STATUS_RESET                   0
+#define FUSE_STATUS_POST_RESET              1
+#define FUSE_STATUS_LOAD_ROW0               2
+#define FUSE_STATUS_LOAD_ROW1               3
+#define FUSE_STATUS_IDLE                    4
+#define FUSE_STATUS_READ_SETUP              5
+#define FUSE_STATUS_READ_STROBE             6
+#define FUSE_STATUS_SAMPLE_FUSES            7
+#define FUSE_STATUS_READ_HOLD               8
+#define FUSE_STATUS_FUSE_SRC_SETUP          9
+#define FUSE_STATUS_WRITE_SETUP             10
+#define FUSE_STATUS_WRITE_ADDR_SETUP        11
+#define FUSE_STATUS_WRITE_PROGRAM           12
+#define FUSE_STATUS_WRITE_ADDR_HOLD         13
+#define FUSE_STATUS_FUSE_SRC_HOLD           14
+#define FUSE_STATUS_LOAD_RIR                15
+#define FUSE_STATUS_READ_BEFORE_WRITE_SETUP 16
+#define FUSE_STATUS_READ_DEASSERT_PD        17
 
 /*! Fuse cache registers. */
 #define FUSE_RESERVED_ODMX(x) (0x1C8 + 4 * (x))
