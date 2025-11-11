@@ -22,6 +22,7 @@
 #include <mem/heap.h>
 #include <sec/se.h>
 #include <sec/se_t210.h>
+#include <soc/clock.h>
 #include <soc/fuse.h>
 #include <soc/hw_init.h>
 #include <soc/pmc.h>
@@ -171,6 +172,25 @@ void fuse_wait_idle()
 {
 	while (((FUSE(FUSE_CTRL) >> 16) & 0x1F) != FUSE_STATUS_IDLE)
 		;
+}
+
+void fuse_sense()
+{
+	clock_enable_fuse(false);
+
+	FUSE(FUSE_CTRL) = (FUSE(FUSE_CTRL) & (~FUSE_CMD_MASK)) | FUSE_SENSE;
+	usleep(1);
+
+	fuse_wait_idle();
+
+	FUSE(FUSE_PRIV2INTFC) = FUSE_PRIV2INTFC_SKIP_RECORDS | FUSE_PRIV2INTFC_START_DATA;
+	usleep(1);
+
+	while (!(FUSE(FUSE_CTRL) & BIT(30)) || ((FUSE(FUSE_CTRL) >> 16) & 0x1F) != FUSE_STATUS_IDLE)
+		;
+
+
+  	clock_enable_fuse(true);
 }
 
 u32 fuse_read(u32 addr)

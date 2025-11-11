@@ -316,6 +316,8 @@ u32  fuse_read_hw_state();
 u32  fuse_read_hw_type();
 int  fuse_set_sbk();
 void fuse_wait_idle();
+void fuse_sense();
+u32  fuse_read(u32 addr);
 int  fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
 int  fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);
 void fuse_read_array(u32 *words);
