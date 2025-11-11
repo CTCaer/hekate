@@ -496,14 +496,20 @@ void nyx_init_load_res()
 	{
 	case 0:
 	case 1:
-		bpmp_clk_rate_set(BPMP_CLK_DEFAULT_BOOST);
+		bpmp_clk_rate_set(BPMP_CLK_BIN0_BOOST);
 		break;
 	case 2:
-		bpmp_clk_rate_set(BPMP_CLK_LOWER_BOOST);
+		bpmp_clk_rate_set(BPMP_CLK_BIN1_BOOST);
 		break;
 	case 3:
+		bpmp_clk_rate_set(BPMP_CLK_BIN2_BOOST);
+		break;
+	case 4:
+		bpmp_clk_rate_set(BPMP_CLK_BIN3_BOOST);
+		break;
+	case 5:
 	default:
-		bpmp_clk_rate_set(BPMP_CLK_LOWEST_BOOST);
+		bpmp_clk_rate_set(BPMP_CLK_NORMAL);
 		break;
 	}
 
