@@ -316,7 +316,8 @@ static bool lv_task_exec(lv_task_t * lv_task_p)
         lv_task_p->last_run = lv_tick_get();
         task_deleted = false;
         task_created = false;
-        lv_task_p->task(lv_task_p->param);
+		if (lv_task_p->task)
+			lv_task_p->task(lv_task_p->param);
 
         /*Delete if it was a one shot lv_task*/
         if(task_deleted == false) {			/*The task might be deleted by itself as well*/

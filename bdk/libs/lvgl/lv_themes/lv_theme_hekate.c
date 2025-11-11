@@ -36,7 +36,7 @@
 
 #define COLOR_BG_DARKER        LV_COLOR_HEX(theme_bg_color ? (theme_bg_color - 0x121212) : 0x0B0B0B) // 0x1B1B1B.
 #define COLOR_BG_DARK          LV_COLOR_HEX(theme_bg_color ? (theme_bg_color - 0x0B0B0B) : 0x121212) // 0x222222.
-#define COLOR_BG               LV_COLOR_HEX(theme_bg_color)                                // 0x2D2D2D.
+#define COLOR_BG               LV_COLOR_HEX(theme_bg_color)                                          // 0x2D2D2D.
 #define COLOR_BG_LIGHT         LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D) // 0x3D3D3D.
 #define COLOR_BG_LIGHTER       LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x191919) : 0x363636) // 0x464646.
 #define COLOR_LIGHT_BORDER     LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x202020) : 0x3D3D3D) // 0x4D4D4D.
