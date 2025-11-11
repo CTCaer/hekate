@@ -197,7 +197,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	case 12:
 		exo_fw_no = EXO_FW_VER(9, 1);
 		break;
-	case 13 ... 23: //!TODO: Update on API changes. 23: 20.0.0.
+	case 13 ... 24: //!TODO: Update on API changes. 24: 21.0.0.
 		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision);
 		break;
 	}
