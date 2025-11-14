@@ -59,6 +59,7 @@ typedef struct _partition_ctxt_t
 
 	u32 total_sct;
 	u32 alignment;
+	u32 emmc_size_mb;
 	int backup_possible;
 
 	s32 hos_min_size;
@@ -2254,8 +2255,34 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 	char lbl_text[64];
 	bool prev_emu_double = part_info.emu_double;
 	int slide_val = lv_slider_get_value(slider);
+	u32 max_emmc_size = !part_info.emmc_is_64gb ? EMU_32GB_FULL : EMU_64GB_FULL;
 
 	part_info.emu_double = false;
+
+	// Check that eMMC exists.
+	if (!part_info.emmc_size_mb)
+	{
+		lv_slider_set_value(slider, 0);
+		return LV_RES_OK;
+	}
+
+	// In case of upgraded eMMC, do not allow FULL sizes. Max size is always bigger than official eMMCs.
+	if (max_emmc_size < part_info.emmc_size_mb)
+	{
+		if (slide_val == EMU_SLIDER_1X_FULL)
+		{
+			if (prev_emu_double)
+				slide_val--;
+			else
+				slide_val++;
+			lv_slider_set_value(slider, slide_val);
+		}
+		else if (slide_val == EMU_SLIDER_2X_FULL)
+		{
+			slide_val--;
+			lv_slider_set_value(slider, slide_val);
+		}
+	}
 
 	size  = (slide_val > EMU_SLIDER_1X_MAX ? (slide_val - EMU_SLIDER_1X_MAX) : slide_val) + EMU_SLIDER_OFFSET;
 	size *= 1024;        // Convert to GB.
@@ -2270,7 +2297,6 @@ static lv_res_t _action_slider_emu(lv_obj_t *slider)
 	}
 
 	// Handle special cases. 2nd value is for 64GB Aula. Values already include reserved space.
-	u32 max_emmc_size = !part_info.emmc_is_64gb ? EMU_32GB_FULL : EMU_64GB_FULL;
 	if (slide_val == EMU_SLIDER_1X_FULL)
 		size = max_emmc_size;
 	else if (slide_val == EMU_SLIDER_2X_FULL)
@@ -3023,6 +3049,7 @@ lv_res_t create_window_partition_manager(bool emmc)
 	lv_obj_t *h1 = lv_cont_create(win, NULL);
 	lv_obj_set_size(h1, LV_HOR_RES - (LV_DPI * 8 / 10), LV_VER_RES - LV_DPI);
 
+	u32 emmc_size = 0;
 	if (!emmc)
 	{
 		if (!sd_mount())
@@ -3031,6 +3058,13 @@ lv_res_t create_window_partition_manager(bool emmc)
 			lv_label_set_recolor(lbl, true);
 			lv_label_set_text(lbl, "#FFDD00 Failed to init SD!#");
 			return LV_RES_OK;
+		}
+
+		if (emmc_initialize(false))
+		{
+			emmc_set_partition(EMMC_GPP);
+			emmc_size = emmc_storage.sec_cnt >> 11;
+			emmc_end();
 		}
 	}
 	else
@@ -3068,6 +3102,9 @@ lv_res_t create_window_partition_manager(bool emmc)
 
 	// Check if eMMC should be 64GB (Aula).
 	part_info.emmc_is_64gb = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
+
+	// Set actual eMMC size.
+	part_info.emmc_size_mb = emmc_size;
 
 	// Set HOS FAT or USER minimum size.
 	part_info.hos_min_size = !emmc? HOS_FAT_MIN_SIZE_MB : HOS_USER_MIN_SIZE_MB;
