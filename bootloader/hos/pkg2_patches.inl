@@ -447,6 +447,9 @@ static const pkg2_kernel_id_t _pkg2_kernel_ids[] =
 	//! TODO: Mesosphere is now mandatory. Missing patches: 13.0.0+
 };
 
+#define KIP1_FS_NOGC_PATCH_SDMMC3 "\x80" // Replace SDMMC2 with SDMMC3.
+#define KIP1_FS_NOGC_PATCH_NOINIT "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6"
+
 // All kip patch offsets are without the 0x100-sized header.
 static const kip1_patchset_t _fs_patches_100[] = {
 	{ "nogc",     NULL },
@@ -454,8 +457,8 @@ static const kip1_patchset_t _fs_patches_100[] = {
 };
 
 static const kip1_patch_t _fs_nogc_40x[] = {
-	{ KPS(KIP_TEXT) | 0xA3458, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x72" },
-	{ KPS(KIP_TEXT) | 0xAAB44, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0xA3459, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0xAAB44, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -465,8 +468,8 @@ static const kip1_patchset_t _fs_patches_40x[] = {
 };
 
 static const kip1_patch_t _fs_nogc_410[] = {
-	{ KPS(KIP_TEXT) | 0xA34BC, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x72" },
-	{ KPS(KIP_TEXT) | 0xAABA8, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0xA34BD, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0xAABA8, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -476,8 +479,8 @@ static const kip1_patchset_t _fs_patches_410[] = {
 };
 
 static const kip1_patch_t _fs_nogc_50x[] = {
-	{ KPS(KIP_TEXT) | 0xCF3C4, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0xD73A0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0xCF3C5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0xD73A0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -487,8 +490,8 @@ static const kip1_patchset_t _fs_patches_50x[] = {
 };
 
 static const kip1_patch_t _fs_nogc_510[] = {
-	{ KPS(KIP_TEXT) | 0xCF794, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0xD7770, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
+	{ KPS(KIP_TEXT) | 0xCF795, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0xD7770, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -498,14 +501,14 @@ static const kip1_patchset_t _fs_patches_510[] = {
 };
 
 static const kip1_patch_t _fs_nogc_600[] = {
-	{ KPS(KIP_TEXT) | 0x12CC20, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1538F4, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x12CC20, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1538F5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
 static const kip1_patch_t _fs_nogc_600_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x138320, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x15EFF4, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x138320, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x15EFF5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -520,14 +523,14 @@ static const kip1_patchset_t _fs_patches_600_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_700[] = {
-	{ KPS(KIP_TEXT) | 0x134160, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x15BF04, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x134160, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x15BF05, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
 static const kip1_patch_t _fs_nogc_700_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x13F710, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1674B4, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x13F710, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1674B5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -542,14 +545,14 @@ static const kip1_patchset_t _fs_patches_700_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_800[] = {
-	{ KPS(KIP_TEXT) | 0x136800, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x15EB94, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x136800, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x15EB95, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
 static const kip1_patch_t _fs_nogc_800_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x141DB0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x16A144, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x141DB0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x16A145, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -564,8 +567,8 @@ static const kip1_patchset_t _fs_patches_800_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_900[] = {
-	{ KPS(KIP_TEXT) | 0x129420, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x143268, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x129420, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x143269, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -575,8 +578,8 @@ static const kip1_patchset_t _fs_patches_900[] = {
 };
 
 static const kip1_patch_t _fs_nogc_910[] = {
-	{ KPS(KIP_TEXT) | 0x129430, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x143278, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x129430, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x143279, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -586,8 +589,8 @@ static const kip1_patchset_t _fs_patches_910[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1000[] = {
-	{ KPS(KIP_TEXT) | 0x13BE90, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x14DE08, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x13BE90, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x14DE09, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -597,8 +600,8 @@ static const kip1_patchset_t _fs_patches_1000[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1020[] = {
-	{ KPS(KIP_TEXT) | 0x13C2F0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x14E268, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x13C2F0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x14E269, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -608,8 +611,8 @@ static const kip1_patchset_t _fs_patches_1020[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1100[] = {
-	{ KPS(KIP_TEXT) | 0x1398B4, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x156EB8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x1398B4, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x156EB9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -619,8 +622,8 @@ static const kip1_patchset_t _fs_patches_1100[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1200[] = {
-	{ KPS(KIP_TEXT) | 0x13EA24, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x155368, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x13EA24, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x155369, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -630,8 +633,8 @@ static const kip1_patchset_t _fs_patches_1200[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1203[] = {
-	{ KPS(KIP_TEXT) | 0x13EB34, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x155478, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x13EB34, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x155479, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -641,8 +644,8 @@ static const kip1_patchset_t _fs_patches_1203[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1300[] = {
-	{ KPS(KIP_TEXT) | 0x1425D0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x159018, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x1425D0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x159019, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -652,8 +655,8 @@ static const kip1_patchset_t _fs_patches_1300[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1310[] = {
-	{ KPS(KIP_TEXT) | 0x142570, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x158FB8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x142570, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x158FB9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -663,8 +666,8 @@ static const kip1_patchset_t _fs_patches_1310[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1400[] = {
-	{ KPS(KIP_TEXT) | 0x164230, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x18A2E8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x164230, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x18A2E9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -674,8 +677,8 @@ static const kip1_patchset_t _fs_patches_1400[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1400_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x16F5B0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x195668, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x16F5B0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x195669, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -685,8 +688,8 @@ static const kip1_patchset_t _fs_patches_1400_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1500[] = {
-	{ KPS(KIP_TEXT) | 0x15ECE4, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x184158, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x15ECE4, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x184159, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -696,8 +699,8 @@ static const kip1_patchset_t _fs_patches_1500[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1500_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x169C74, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x18F0E8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x169C74, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x18F0E9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -707,8 +710,8 @@ static const kip1_patchset_t _fs_patches_1500_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1600[] = {
-	{ KPS(KIP_TEXT) | 0x160B70, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1865D8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x160B70, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1865D9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -718,8 +721,8 @@ static const kip1_patchset_t _fs_patches_1600[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1600_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x16B850, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1912B8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x16B850, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1912B9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -729,8 +732,8 @@ static const kip1_patchset_t _fs_patches_1600_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1603[] = {
-	{ KPS(KIP_TEXT) | 0x160BC0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x186628, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x160BC0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x186629, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -740,8 +743,8 @@ static const kip1_patchset_t _fs_patches_1603[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1603_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x16B8A0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x191308, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x16B8A0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x191309, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -751,8 +754,8 @@ static const kip1_patchset_t _fs_patches_1603_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1700[] = {
-	{ KPS(KIP_TEXT) | 0x165100, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x18B048, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x165100, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x18B049, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -762,8 +765,8 @@ static const kip1_patchset_t _fs_patches_1700[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1700_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x16FF60, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x195EA8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x16FF60, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x195EA9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -773,8 +776,8 @@ static const kip1_patchset_t _fs_patches_1700_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1800[] = {
-	{ KPS(KIP_TEXT) | 0x164A50, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x18AE48, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x164A50, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x18AE49, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -784,8 +787,8 @@ static const kip1_patchset_t _fs_patches_1800[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1800_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x16FAE0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x195ED8, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x16FAE0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x195ED9, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -795,9 +798,9 @@ static const kip1_patchset_t _fs_patches_1800_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1900[] = {
-	{ KPS(KIP_TEXT) | 0x16F070, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x195B74, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0x195D74, 4, KIP1_PATCH_SRC_NO_CHECK, "\x16\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x16F070, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x195B75, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x195D75, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -807,9 +810,9 @@ static const kip1_patchset_t _fs_patches_1900[] = {
 };
 
 static const kip1_patch_t _fs_nogc_1900_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x17A8A0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1A13A4, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0x1A15A4, 4, KIP1_PATCH_SRC_NO_CHECK, "\x16\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x17A8A0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1A13A5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1A15A5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -819,9 +822,9 @@ static const kip1_patchset_t _fs_patches_1900_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_2000[] = {
-	{ KPS(KIP_TEXT) | 0x17C150, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1A7D24, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0x1A7F24, 4, KIP1_PATCH_SRC_NO_CHECK, "\x16\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x17C150, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1A7D25, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1A7F25, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -831,9 +834,9 @@ static const kip1_patchset_t _fs_patches_2000[] = {
 };
 
 static const kip1_patch_t _fs_nogc_2000_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x187A70, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1B3644, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0x1B3844, 4, KIP1_PATCH_SRC_NO_CHECK, "\x16\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x187A70, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1B3645, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1B3845, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -843,9 +846,9 @@ static const kip1_patchset_t _fs_patches_2000_exfat[] = {
 };
 
 static const kip1_patch_t _fs_nogc_2100[] = {
-	{ KPS(KIP_TEXT) | 0x17FAE0, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1AC8EC, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0x1AC904, 4, KIP1_PATCH_SRC_NO_CHECK, "\x16\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x17FAE0, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1AC8ED, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1AC905, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
@@ -855,9 +858,9 @@ static const kip1_patchset_t _fs_patches_2100[] = {
 };
 
 static const kip1_patch_t _fs_nogc_2100_exfat[] = {
-	{ KPS(KIP_TEXT) | 0x18AC40, 8, KIP1_PATCH_SRC_NO_CHECK, "\xE0\x03\x1F\x2A\xC0\x03\x5F\xD6" },
-	{ KPS(KIP_TEXT) | 0x1B7A4C, 4, KIP1_PATCH_SRC_NO_CHECK, "\x14\x80\x80\x52" },
-	{ KPS(KIP_TEXT) | 0x1B7A64, 4, KIP1_PATCH_SRC_NO_CHECK, "\x16\x80\x80\x52" },
+	{ KPS(KIP_TEXT) | 0x18AC40, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1B7A4D, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1B7A65, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
 	{ 0, 0, NULL, NULL }
 };
 
