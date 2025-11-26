@@ -1372,7 +1372,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	}
 
 	// Disable clock if enabled.
-	if (clock_sdmmc_is_not_reset_and_enabled(id))
+	if (clock_sdmmc_is_active(id))
 	{
 		_sdmmc_card_clock_disable(sdmmc);
 		_sdmmc_commit_changes(sdmmc);

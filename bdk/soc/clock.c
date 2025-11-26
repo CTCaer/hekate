@@ -655,7 +655,7 @@ void clock_enable_utmipll()
 	}
 }
 
-static int _clock_sdmmc_is_reset(u32 id)
+static int _clock_sdmmc_in_reset(u32 id)
 {
 	const clk_rst_mgd_t *clk = &_clock_sdmmc[id];
 
@@ -669,7 +669,7 @@ static void _clock_sdmmc_set_reset(u32 id)
 	CLOCK(clk->reset) = BIT(clk->index);
 }
 
-static void _clock_sdmmc_clear_reset(u32 id)
+static void _clock_sdmmc_clr_reset(u32 id)
 {
 	const clk_rst_mgd_t *clk = &_clock_sdmmc[id];
 
@@ -690,7 +690,7 @@ static void _clock_sdmmc_set_enable(u32 id)
 	CLOCK(clk->enable) = BIT(clk->index);
 }
 
-static void _clock_sdmmc_clear_enable(u32 id)
+static void _clock_sdmmc_clr_enable(u32 id)
 {
 	const clk_rst_mgd_t *clk = &_clock_sdmmc[id];
 
@@ -817,7 +817,7 @@ void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 clock)
 	{
 		int is_enabled = _clock_sdmmc_is_enabled(id);
 		if (is_enabled)
-			_clock_sdmmc_clear_enable(id);
+			_clock_sdmmc_clr_enable(id);
 
 		_clock_sdmmc_config_clock_host(pclock, id, clock);
 
@@ -825,7 +825,7 @@ void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 clock)
 			_clock_sdmmc_set_enable(id);
 
 		// Commit changes.
-		_clock_sdmmc_is_reset(id);
+		_clock_sdmmc_in_reset(id);
 	}
 }
 
@@ -834,7 +834,7 @@ void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type)
 	// Get Card clock divisor.
 	switch (type)
 	{
-	case SDHCI_TIMING_MMC_ID: // Actual card clock: 386.36 KHz.
+	case SDHCI_TIMING_MMC_ID:     // Actual card clock: 386.36 KHz.
 		*pclock = 26000;
 		*pdivisor = 66;
 		break;
@@ -883,12 +883,12 @@ void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type)
 		*pdivisor = 1;
 		break;
 
-	case SDHCI_TIMING_UHS_DDR50: // Actual card clock: 40.80 MHz.
+	case SDHCI_TIMING_UHS_DDR50:  // Actual card clock: 40.80 MHz.
 		*pclock = 82000;
 		*pdivisor = 2;
 		break;
 
-	case SDHCI_TIMING_MMC_HS100: // Actual card clock: 99.84 MHz.
+	case SDHCI_TIMING_MMC_HS100:  // Actual card clock: 99.84 MHz.
 		*pclock = 200000;
 		*pdivisor = 2;
 		break;
@@ -902,31 +902,33 @@ void clock_sdmmc_get_card_clock_div(u32 *pclock, u16 *pdivisor, u32 type)
 	}
 }
 
-int clock_sdmmc_is_not_reset_and_enabled(u32 id)
+int clock_sdmmc_is_active(u32 id)
 {
-	return !_clock_sdmmc_is_reset(id) && _clock_sdmmc_is_enabled(id);
+	return !_clock_sdmmc_in_reset(id) && _clock_sdmmc_is_enabled(id);
 }
 
 void clock_sdmmc_enable(u32 id, u32 clock)
 {
-	_clock_sdmmc_clear_enable(id);
+	u32 pclock = 0;
+
+	_clock_sdmmc_clr_enable(id);
 	_clock_sdmmc_set_reset(id);
-	_clock_sdmmc_config_clock_host(&clock, id, clock);
+	_clock_sdmmc_config_clock_host(&pclock, id, clock);
 	_clock_sdmmc_set_enable(id);
 
-	// // Commit changes and wait 100 cycles for reset and for clocks to stabilize.
-	_clock_sdmmc_is_reset(id);
-	usleep((100 * 1000 + clock - 1) / clock);
+	// Commit changes and wait 100 cycles for reset and for clocks to stabilize.
+	_clock_sdmmc_in_reset(id);
+	usleep((100 * 1000 + pclock - 1) / pclock);
 
-	_clock_sdmmc_clear_reset(id);
-	_clock_sdmmc_is_reset(id);
+	_clock_sdmmc_clr_reset(id);
+	_clock_sdmmc_in_reset(id);
 }
 
 void clock_sdmmc_disable(u32 id)
 {
 	_clock_sdmmc_set_reset(id);
-	_clock_sdmmc_clear_enable(id);
-	_clock_sdmmc_is_reset(id);
+	_clock_sdmmc_clr_enable(id);
+	_clock_sdmmc_in_reset(id);
 	_clock_disable_pllc4(BIT(id));
 }
 
