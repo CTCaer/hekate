@@ -464,6 +464,18 @@ void clock_disable_extperiph2()
 	clock_disable(&_clock_extperiph2);
 }
 
+static void _clock_pll_wait_lock(u32 base, u32 max_delay)
+{
+	for (u32 i = 0; i < max_delay; i++)
+	{
+		if (CLOCK(base) & PLL_BASE_LOCK)
+			break;
+		usleep(1);
+	}
+
+	usleep(2);
+}
+
 void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)
 {
 	u32 plld_div = (divp << 20) | (divn << 11) | 1;
@@ -484,10 +496,7 @@ void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)
 	CLOCK(CLK_RST_CONTROLLER_PLLD_MISC) = misc;
 
 	// Wait for PLL to stabilize.
-	while (!(CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) & PLL_BASE_LOCK))
-		;
-
-	usleep(10);
+	_clock_pll_wait_lock(CLK_RST_CONTROLLER_PLLD_BASE, 1000);
 }
 
 void clock_enable_pllx()
@@ -512,10 +521,7 @@ void clock_enable_pllx()
 	}
 
 	// Wait for PLL to stabilize.
-	while (!(CLOCK(CLK_RST_CONTROLLER_PLLX_BASE) & PLL_BASE_LOCK))
-		;
-
-	usleep(10);
+	_clock_pll_wait_lock(CLK_RST_CONTROLLER_PLLX_BASE, 300);
 }
 
 void clock_enable_pllc(u32 divn)
@@ -545,8 +551,7 @@ void clock_enable_pllc(u32 divn)
 
 	// Enable PLLC and wait for Phase and Frequency lock.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLL_BASE_ENABLE;
-	while (!(CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLL_BASE_LOCK))
-		;
+	_clock_pll_wait_lock(CLK_RST_CONTROLLER_PLLC_BASE, 300);
 
 	// Disable PLLC_OUT1, enable reset and set div to 1.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) = 0;
@@ -580,7 +585,7 @@ static void _clock_enable_pllc4(u32 mask)
 		return;
 
 	// Enable Phase and Frequency lock detection.
-	//CLOCK(CLK_RST_CONTROLLER_PLLC4_MISC) = PLLC4_MISC_EN_LCKDET;
+	CLOCK(CLK_RST_CONTROLLER_PLLC4_MISC) = PLLC4_MISC_EN_LCKDET;
 
 	// Disable PLL and IDDQ in case they are on.
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLL_BASE_ENABLE;
@@ -592,10 +597,7 @@ static void _clock_enable_pllc4(u32 mask)
 
 	// Enable PLLC4 and wait for Phase and Frequency lock.
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLL_BASE_ENABLE;
-	while (!(CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) & PLL_BASE_LOCK))
-		;
-
-	msleep(1); // Wait a bit for PLL to stabilize.
+	_clock_pll_wait_lock(CLK_RST_CONTROLLER_PLLC4_BASE, 300 + 700);
 
 	pllc4_enabled |= PLLC4_ENABLED;
 }
@@ -609,7 +611,7 @@ static void _clock_disable_pllc4(u32 mask)
 		return;
 
 	// Disable PLLC4.
-	msleep(1); // Wait at least 1ms to prevent glitching.
+	usleep(100); // Wait at least 100us to prevent glitching.
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) &= ~PLL_BASE_ENABLE;
 	CLOCK(CLK_RST_CONTROLLER_PLLC4_BASE) |= PLLC4_BASE_IDDQ;
 	usleep(10);
@@ -626,11 +628,8 @@ void clock_enable_pllu()
 	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) = pllu_cfg | PLL_BASE_ENABLE; // Enable.
 
 	// Wait for PLL to stabilize.
-	u32 timeout = get_tmr_us() + 1300;
-	while (!(CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) & PLL_BASE_LOCK)) // PLL_LOCK.
-		if (get_tmr_us() > timeout)
-			break;
-	usleep(10);
+	_clock_pll_wait_lock(CLK_RST_CONTROLLER_PLLU_BASE, 1000);
+	usleep(8);
 
 	// Enable PLLU USB/HSIC/ICUSB/48M.
 	CLOCK(CLK_RST_CONTROLLER_PLLU_BASE) |= 0x2E00000;
