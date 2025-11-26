@@ -1,7 +1,7 @@
 /*
  * BPMP-Lite Cache/MMU and Frequency driver for Tegra X1
  *
- * Copyright (c) 2019-2024 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -222,14 +222,17 @@ void bpmp_clk_rate_relaxed(bool enable)
 	{
 		// Restore to PLLP source during PLLC configuration.
 		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003330; // PLLP_OUT.
+		(void)CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY);
 		usleep(100); // Wait a bit for clock source change.
-		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // PCLK = HCLK / (2 + 1). HCLK == SCLK.
+		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 2; // S1:H1:P3.
+		(void)CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE);
 	}
 	else if (bpmp_fid_current)
 	{
 		// Restore to PLLC_OUT1.
-		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // PCLK = HCLK / (3 + 1). HCLK == SCLK.
+		CLOCK(CLK_RST_CONTROLLER_CLK_SYSTEM_RATE) = 3; // S1:H1:P4.
 		CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY) = 0x20003310; // PLLC_OUT1 and CLKM for idle.
+		(void)CLOCK(CLK_RST_CONTROLLER_SCLK_BURST_POLICY);
 		usleep(100); // Wait a bit for clock source change.
 	}
 }
@@ -243,7 +246,7 @@ static const u8 pll_divn[] = {
 	85,  // BPMP_CLK_HIGH_BOOST:  544MHz 33% - 136MHz APB.
 	88,  // BPMP_CLK_HIGH2_BOOST: 563MHz 38% - 141MHz APB.
 	90,  // BPMP_CLK_SUPER_BOOST: 576MHz 41% - 144MHz APB.
-	92   // BPMP_CLK_HYPER_BOOST: 589MHz 44% - 147MHz APB.
+	92,  // BPMP_CLK_HYPER_BOOST: 589MHz 44% - 147MHz APB.
 	// Do not use for public releases!
 	//95   // BPMP_CLK_DEV_BOOST: 608MHz 49% - 152MHz APB.
 };
@@ -272,19 +275,19 @@ void bpmp_clk_rate_get()
 
 void bpmp_clk_rate_set(bpmp_freq_t fid)
 {
-	if (fid > (BPMP_CLK_MAX - 1))
-		fid = BPMP_CLK_MAX - 1;
+	if (fid >= BPMP_CLK_NUM)
+		fid = BPMP_CLK_NUM - 1;
 
 	if (bpmp_fid_current == fid)
 		return;
 
 	bpmp_fid_current = fid;
 
+	// Use default SCLK / HCLK / PCLK clocks.
+	bpmp_clk_rate_relaxed(true);
+
 	if (fid)
 	{
-		// Use default SCLK / HCLK / PCLK clocks.
-		bpmp_clk_rate_relaxed(true);
-
 		// Configure and enable PLLC.
 		clock_enable_pllc(pll_divn[fid]);
 
@@ -293,9 +296,6 @@ void bpmp_clk_rate_set(bpmp_freq_t fid)
 	}
 	else
 	{
-		// Use default SCLK / HCLK / PCLK clocks.
-		bpmp_clk_rate_relaxed(true);
-
 		// Disable PLLC to save power.
 		clock_disable_pllc();
 	}
