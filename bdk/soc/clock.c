@@ -520,16 +520,20 @@ void clock_enable_pllx()
 
 void clock_enable_pllc(u32 divn)
 {
+	u32 enabled = CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLL_BASE_ENABLE;
 	u8 pll_divn_curr = (CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) >> 10) & 0xFF;
 
 	// Check if already enabled and configured.
-	if ((CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLL_BASE_ENABLE) && (pll_divn_curr == divn))
+	if (enabled && (pll_divn_curr == divn))
 		return;
 
-	// Take PLLC out of reset and set basic misc parameters.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) =
-		((CLOCK(CLK_RST_CONTROLLER_PLLC_MISC) & 0xFFF0000F) & ~PLLC_MISC_RESET) | (0x8000 << 4); // PLLC_EXT_FRU.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF0 << 8; // PLLC_FLL_LD_MEM.
+	// WAR: Disable first to avoid HPLL overshoot.
+	if (enabled)
+		clock_disable_pllc();
+
+	// Take PLLC out of reset (misc) and set misc2 parameters.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC)    = (0x8000 << 4); // PLLC_EXT_FRU.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_MISC_2) |= 0xF << 8;      // PLLC_FLL_LD_MEM.
 
 	// Disable PLL and IDDQ in case they are on.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE)   &= ~PLL_BASE_ENABLE;
@@ -537,15 +541,15 @@ void clock_enable_pllc(u32 divn)
 	usleep(10);
 
 	// Set PLLC dividers.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = (divn << 10) | 4; // DIVM: 4, DIVP: 1.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) = (divn << 10) | 6; // DIVM: 6, DIVP: 1.
 
 	// Enable PLLC and wait for Phase and Frequency lock.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) |= PLL_BASE_ENABLE;
 	while (!(CLOCK(CLK_RST_CONTROLLER_PLLC_BASE) & PLL_BASE_LOCK))
 		;
 
-	// Disable PLLC_OUT1, enable reset and set div to 1.5.
-	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) = 1 << 8;
+	// Disable PLLC_OUT1, enable reset and set div to 1.
+	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) = 0;
 
 	// Enable PLLC_OUT1 and bring it out of reset.
 	CLOCK(CLK_RST_CONTROLLER_PLLC_OUT) |= PLLC_OUT1_CLKEN | PLLC_OUT1_RSTN_CLR;

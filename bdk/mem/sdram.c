@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 balika011
- * Copyright (c) 2019-2023 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -204,7 +204,7 @@ void sdram_src_pllc(bool enable)
 			return;
 
 		// Set source as PLLC_OUT0.
-		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = 0x20188004;
+		CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = 0x20188002;
 	}
 	else
 	{
