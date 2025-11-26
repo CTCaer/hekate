@@ -818,6 +818,10 @@ void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 clock)
 	}
 	else
 	{
+		// Ease the stress to APB.
+		if (id == SDMMC_1)
+			bpmp_clk_rate_relaxed(true);
+
 		int is_enabled = _clock_sdmmc_is_enabled(id);
 		if (is_enabled)
 			_clock_sdmmc_clr_enable(id);
@@ -829,6 +833,10 @@ void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 clock)
 
 		// Commit changes.
 		_clock_sdmmc_in_reset(id);
+
+		// Restore sys clock.
+		if (id == SDMMC_1)
+			bpmp_clk_rate_relaxed(false);
 	}
 }
 
@@ -914,6 +922,10 @@ void clock_sdmmc_enable(u32 id, u32 clock)
 {
 	u32 pclock = 0;
 
+	// Ease the stress to APB.
+	if (id == SDMMC_1)
+		bpmp_clk_rate_relaxed(true);
+
 	_clock_sdmmc_clr_enable(id);
 	_clock_sdmmc_set_reset(id);
 	_clock_sdmmc_config_clock_host(&pclock, id, clock);
@@ -925,6 +937,10 @@ void clock_sdmmc_enable(u32 id, u32 clock)
 
 	_clock_sdmmc_clr_reset(id);
 	_clock_sdmmc_in_reset(id);
+
+	// Restore sys clock.
+	if (id == SDMMC_1)
+		bpmp_clk_rate_relaxed(false);
 }
 
 void clock_sdmmc_disable(u32 id)
