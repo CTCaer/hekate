@@ -87,13 +87,20 @@ typedef struct _nyx_info_t
 	u32 errors;
 } nyx_info_t;
 
+typedef struct _nyx_info_ex_t
+{
+	u32 magic;
+	u32 rsvd_flags;
+} nyx_info_ex_t;
+
 typedef struct _nyx_storage_t
 {
 	u32 version;
 	u32 cfg;
-	u8  irama[0x8000];
+	u8  rsdv0[0x8000];
 	u8  hekate[0x30000];
-	u8  rsvd[SZ_8M - sizeof(nyx_info_t)];
+	nyx_info_ex_t info_ex;
+	u8  rsvd1[SZ_8M - sizeof(nyx_info_ex_t) - sizeof(nyx_info_t)];
 	nyx_info_t info;
 	minerva_str_t minerva;
 } nyx_storage_t;

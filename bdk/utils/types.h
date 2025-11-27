@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2022 CTCaer
+* Copyright (c) 2018-2025 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -149,12 +149,21 @@ typedef struct __attribute__((__packed__)) _boot_cfg_t
 
 static_assert(sizeof(boot_cfg_t) == 0x84, "Boot cfg storage size is wrong!");
 
+#define RSVD_FLAG_DRAM_8GB BIT(0)
+
+typedef struct __attribute__((__packed__)) _rsvd_cfg_t
+{
+	u16 rsvd0;
+	u8  rsvd_flags;
+	u8  bclk_t210:4;
+	u8  bclk_t210b01:4;
+} rsvd_cfg_t;
+
 typedef struct __attribute__((__packed__)) _ipl_ver_meta_t
 {
 	u32 magic;
 	u32 version;
-	u16 rsvd0;
-	u16 rsvd1;
+	rsvd_cfg_t rcfg;
 } ipl_ver_meta_t;
 
 typedef struct __attribute__((__packed__)) _reloc_meta_t

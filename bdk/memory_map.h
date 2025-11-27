@@ -77,6 +77,7 @@
 
 // Nyx buffers. !Do not change!
 #define NYX_STORAGE_ADDR 0xED000000
+#define  NYX_STR_SZ          SZ_16M
 #define NYX_RES_ADDR     0xEE000000
 #define  NYX_RES_SZ          SZ_16M
 
