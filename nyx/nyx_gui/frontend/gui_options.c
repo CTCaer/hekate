@@ -938,10 +938,11 @@ save_data:
 			error = sd_save_to_file((u8 *)data, sizeof(jc_bt_conn_t) * 2, "switchroot/joycon_mac.bin") ? 4 : 0;
 
 			// Save readable dump.
+			data[0] = 0;
 			for (u32 i = 0; i < 2; i++)
 			{
 				jc_bt_conn_t *bt = !i ? &jc_pad->bt_conn_l : &jc_pad->bt_conn_r;
-				s_printf(data,
+				s_printf(data + strlen(data),
 					"[joycon_0%d]\ntype=%d\nmac=%02X:%02X:%02X:%02X:%02X:%02X\n"
 					"host=%02X:%02X:%02X:%02X:%02X:%02X\n"
 					"ltk=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n\n",
