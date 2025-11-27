@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -41,6 +41,12 @@ typedef struct
 	u32  init_done;
 } mtc_config_t;
 
+typedef struct
+{
+	mtc_config_t mtc_cfg;
+	emc_table_t mtc_table[11]; // 10 + 1.
+} minerva_str_t;
+
 enum train_mode_t
 {
 	OP_SWITCH         = 0,
@@ -60,7 +66,7 @@ typedef enum
 } minerva_freq_t;
 
 extern void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
-u32  minerva_init();
+u32  minerva_init(minerva_str_t *mtc_str);
 void minerva_change_freq(minerva_freq_t freq);
 void minerva_sdmmc_la_program(void *table, bool t210b01);
 void minerva_prep_boot_freq();

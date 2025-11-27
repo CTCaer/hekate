@@ -21,8 +21,6 @@
 #include <utils/types.h>
 #include <mem/minerva.h>
 
-#define NYX_NEW_INFO 0x3058594E
-
 typedef enum
 {
 	REBOOT_RCM,          // PMC reset. Enter RCM mode.
@@ -33,51 +31,11 @@ typedef enum
 	POWER_OFF_REBOOT,    // Power off PMIC. Reset regulators. Power on.
 } power_state_t;
 
-typedef enum
-{
-	NYX_CFG_UMS  = BIT(6),
-
-	NYX_CFG_EXTRA = 0xFF << 24
-} nyx_cfg_t;
-
-typedef enum
-{
-	ERR_LIBSYS_LP0 = BIT(0),
-	ERR_SYSOLD_NYX = BIT(1),
-	ERR_LIBSYS_MTC = BIT(2),
-	ERR_SD_BOOT_EN = BIT(3),
-	ERR_PANIC_CODE = BIT(4),
-	ERR_L4T_KERNEL = BIT(24),
-	ERR_EXCEPTION  = BIT(31),
-} hekate_errors_t;
-
 typedef struct _reg_cfg_t
 {
 	u32 idx;
 	u32 val;
 } reg_cfg_t;
-
-typedef struct _nyx_info_t
-{
-	u32 magic;
-	u32 sd_init;
-	u32 sd_errors[3];
-	u8  rsvd[0x1000];
-	u32 disp_id;
-	u32 errors;
-} nyx_info_t;
-
-typedef struct _nyx_storage_t
-{
-	u32 version;
-	u32 cfg;
-	u8  irama[0x8000];
-	u8  hekate[0x30000];
-	u8  rsvd[SZ_8M - sizeof(nyx_info_t)];
-	nyx_info_t info;
-	mtc_config_t mtc_cfg;
-	emc_table_t mtc_table[11]; // 10 + 1.
-} nyx_storage_t;
 
 u8   bit_count(u32 val);
 u32  bit_count_mask(u8 bits);
@@ -97,5 +55,47 @@ void panic(u32 val);
 void power_set_state(power_state_t state);
 void power_set_state_ex(void *param);
 
+
+/*! hekate and Nyx common defines */
+#define NYX_NEW_INFO 0x3058594E
+
+typedef enum
+{
+	ERR_LIBSYS_LP0 = BIT(0),
+	ERR_SYSOLD_NYX = BIT(1),
+	ERR_LIBSYS_MTC = BIT(2),
+	ERR_SD_BOOT_EN = BIT(3),
+	ERR_PANIC_CODE = BIT(4),
+	ERR_L4T_KERNEL = BIT(24),
+	ERR_EXCEPTION  = BIT(31),
+} hekate_errors_t;
+
+typedef enum
+{
+	NYX_CFG_UMS  = BIT(6),
+
+	NYX_CFG_EXTRA = 0xFF << 24
+} nyx_cfg_t;
+
+typedef struct _nyx_info_t
+{
+	u32 magic;
+	u32 sd_init;
+	u32 sd_errors[3];
+	u8  rsvd[0x1000];
+	u32 disp_id;
+	u32 errors;
+} nyx_info_t;
+
+typedef struct _nyx_storage_t
+{
+	u32 version;
+	u32 cfg;
+	u8  irama[0x8000];
+	u8  hekate[0x30000];
+	u8  rsvd[SZ_8M - sizeof(nyx_info_t)];
+	nyx_info_t info;
+	minerva_str_t minerva;
+} nyx_storage_t;
 
 #endif
