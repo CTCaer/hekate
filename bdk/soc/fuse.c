@@ -89,6 +89,14 @@ u32 fuse_read_odm_keygen_rev()
 	return 0;
 }
 
+static bool _dramid_8gb = false;
+
+void fuse_force_8gb_dramid()
+{
+	// Override fuse DRAM ID with a 8GB ID.
+	_dramid_8gb = true;
+}
+
 u32 fuse_read_dramid(bool raw_id)
 {
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
@@ -107,11 +115,17 @@ u32 fuse_read_dramid(bool raw_id)
 	{
 		if (dramid > 7)
 			dramid = 0;
+
+		if (_dramid_8gb)
+			dramid = 7;
 	}
 	else
 	{
 		if (dramid > 34)
 			dramid = 8;
+
+		if (_dramid_8gb)
+			dramid = 28;
 	}
 
 	return dramid;

@@ -311,6 +311,7 @@ enum
 void fuse_disable_program();
 u32  fuse_read_odm(u32 idx);
 u32  fuse_read_odm_keygen_rev();
+void fuse_force_8gb_dramid();
 u32  fuse_read_dramid(bool raw_id);
 u32  fuse_read_hw_state();
 u32  fuse_read_hw_type();
