@@ -1469,6 +1469,10 @@ extern void pivot_stack(u32 stack_top);
 
 void ipl_main()
 {
+	// Override DRAM ID if needed.
+	if (ipl_ver.rcfg.rsvd_flags & RSVD_FLAG_DRAM_8GB)
+		fuse_force_8gb_dramid();
+
 	// Do initial HW configuration. This is compatible with consecutive reruns without a reset.
 	hw_init();
 

@@ -739,7 +739,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 	char *ram_oc_txt  = ctxt->ram_oc_txt;
 	u32   ram_oc_freq = ctxt->ram_oc_freq;
 	u32   ram_oc_opt  = ctxt->ram_oc_opt;
-	u32   ram_id      = fuse_read_dramid(true);
+	u32   ram_id      = fuse_read_dramid(false);
 
 	// Set default parameters.
 	*(u32 *)BPMPFW_B01_DTB_ADDR = 0;

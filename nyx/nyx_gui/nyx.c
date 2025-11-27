@@ -447,6 +447,10 @@ void nyx_init_load_res()
 	nyx_str->info.magic    = 0;
 	nyx_str->info_ex.magic = 0;
 
+	// Override DRAM ID if needed.
+	if (nyx_str->info_ex.rsvd_flags & RSVD_FLAG_DRAM_8GB)
+		fuse_force_8gb_dramid();
+
 	// Set display id from previous initialization.
 	display_set_decoded_panel_id(nyx_str->info.panel_id);
 
