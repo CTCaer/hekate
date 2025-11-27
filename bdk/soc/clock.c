@@ -240,7 +240,13 @@ int clock_uart_use_src_div(u32 idx, u32 baud)
 
 void clock_enable_i2c(u32 idx)
 {
+	// Ease the stress to APB.
+	bpmp_clk_rate_relaxed(true);
+
 	clock_enable(&_clock_i2c[idx]);
+
+	// Restore sys clock.
+	bpmp_clk_rate_relaxed(false);
 }
 
 void clock_disable_i2c(u32 idx)
