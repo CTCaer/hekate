@@ -871,6 +871,7 @@ void display_disable_interrupt(u32 intr);
 void display_wait_interrupt(u32 intr);
 
 /*! Get/Set Display panel ID. */
+u32  display_get_verbose_panel_id();
 u16  display_get_decoded_panel_id();
 void display_set_decoded_panel_id(u32 id);
 

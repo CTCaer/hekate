@@ -33,11 +33,10 @@
 
 #include "di.inl"
 
-extern volatile nyx_storage_t *nyx_str;
-
-static u32  _display_id = 0;
-static u32  _dsi_bl     = -1;
-static bool _nx_aula    = false;
+static u32  _panel_id_raw = 0;
+static u32  _panel_id      = 0;
+static u32  _dsi_bl        = -1;
+static bool _nx_aula       = false;
 
 static void _display_panel_and_hw_end(bool no_panel_deinit);
 
@@ -440,30 +439,27 @@ void display_init()
 	DSI(_DSIREG(DSI_BTA_TIMING)) = _nx_aula ? 0x40103 : 0x50204;
 
 	// Get Display ID.
-	_display_id = 0xCCCCCC;
+	_panel_id_raw = 0xCCCCCC;
 	for (u32 i = 0; i < 3; i++)
 	{
-		if (!display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_display_id))
+		if (!display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_panel_id_raw))
 			break;
 
 		usleep(10000);
 	}
 
-	// Save raw Display ID to Nyx storage.
-	nyx_str->info.disp_id = _display_id;
-
 	// Decode Display ID.
-	_display_id = ((_display_id >> 8) & 0xFF00) | (_display_id & 0xFF);
+	_panel_id = ((_panel_id_raw >> 8) & 0xFF00) | (_panel_id_raw & 0xFF);
 
-	if ((_display_id & 0xFF) == PANEL_JDI_XXX062M)
-		_display_id = PANEL_JDI_XXX062M;
+	if ((_panel_id & 0xFF) == PANEL_JDI_XXX062M)
+		_panel_id = PANEL_JDI_XXX062M;
 
 	// For Aula ensure that we have a compatible panel id.
-	if (_nx_aula && _display_id == 0xCCCC)
-		_display_id = PANEL_SAM_AMS699VC01;
+	if (_nx_aula && _panel_id == 0xCCCC)
+		_panel_id = PANEL_SAM_AMS699VC01;
 
 	// Initialize display panel.
-	switch (_display_id)
+	switch (_panel_id)
 	{
 	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
@@ -515,7 +511,7 @@ void display_init()
 
 		// Set Power control.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x739;          // MIPI_DSI_DCS_LONG_WRITE: 7 bytes.
-		if (_display_id == PANEL_INL_P062CCA_AZ1)
+		if (_panel_id == PANEL_INL_P062CCA_AZ1)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
 		else // PANEL_AUO_A062TAN01.
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
@@ -589,7 +585,7 @@ void display_init()
 
 void display_backlight_pwm_init()
 {
-	if (_display_id == PANEL_SAM_AMS699VC01)
+	if (_panel_id == PANEL_SAM_AMS699VC01)
 		return;
 
 	// Enable PWM clock.
@@ -659,7 +655,7 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 	if (brightness > 255)
 		brightness = 255;
 
-	if (_display_id != PANEL_SAM_AMS699VC01)
+	if (_panel_id != PANEL_SAM_AMS699VC01)
 		_display_pwm_backlight_brightness(brightness, step_delay);
 	else
 		_display_dsi_backlight_brightness(brightness);
@@ -667,7 +663,7 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 
 u32 display_get_backlight_brightness()
 {
-	if (_display_id != PANEL_SAM_AMS699VC01)
+	if (_panel_id != PANEL_SAM_AMS699VC01)
 		return ((PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF);
 	else
 		return _dsi_bl;
@@ -705,11 +701,11 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// Set timings for lowpower clocks.
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_timing_deinit_config, ARRAY_SIZE(_di_dsi_timing_deinit_config));
 
-	if (_display_id != PANEL_SAM_AMS699VC01)
+	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(10000);
 
 	// De-initialize display panel.
-	switch (_display_id)
+	switch (_panel_id)
 	{
 	case PANEL_JDI_XXX062M:
 		reg_write_array((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_jdi, ARRAY_SIZE(_di_dsi_panel_deinit_config_jdi));
@@ -731,13 +727,13 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 		// Set Power control.
 		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39;          // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
-		if (_display_id == PANEL_INL_2J055IA_27A)
+		if (_panel_id == PANEL_INL_2J055IA_27A)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
-		else if (_display_id == PANEL_AUO_A055TAN01)
+		else if (_panel_id == PANEL_AUO_A055TAN01)
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
 		else // PANEL_SHP_LQ055T1SW10.
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x731348B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT3 / XDK, VRH gamma volt adj 51 / x40).
-		if (_display_id == PANEL_INL_2J055IA_27A || _display_id == PANEL_AUO_A055TAN01)
+		if (_panel_id == PANEL_INL_2J055IA_27A || _panel_id == PANEL_AUO_A055TAN01)
 		{
 			// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
 			DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
@@ -761,7 +757,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 
 	// Blank - powerdown.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_ENTER_SLEEP_MODE,
-		(_display_id == PANEL_SAM_AMS699VC01) ? 120000 : 50000);
+		(_panel_id == PANEL_SAM_AMS699VC01) ? 120000 : 50000);
 
 skip_panel_deinit:
 	// Disable LCD power pins.
@@ -796,9 +792,14 @@ skip_panel_deinit:
 
 void display_end() { _display_panel_and_hw_end(false); };
 
+u32 display_get_verbose_panel_id()
+{
+	return _panel_id_raw;
+}
+
 u16 display_get_decoded_panel_id()
 {
-	return _display_id;
+	return _panel_id;
 }
 
 void display_set_decoded_panel_id(u32 id)
@@ -807,14 +808,14 @@ void display_set_decoded_panel_id(u32 id)
 	_nx_aula = fuse_read_hw_type() == FUSE_NX_HW_TYPE_AULA;
 
 	// Decode Display ID.
-	_display_id = ((id >> 8) & 0xFF00) | (id & 0xFF);
+	_panel_id = ((id >> 8) & 0xFF00) | (id & 0xFF);
 
-	if ((_display_id & 0xFF) == PANEL_JDI_XXX062M)
-		_display_id = PANEL_JDI_XXX062M;
+	if ((_panel_id & 0xFF) == PANEL_JDI_XXX062M)
+		_panel_id = PANEL_JDI_XXX062M;
 
 	// For Aula ensure that we have a compatible panel id.
-	if (_nx_aula && _display_id == 0xCCCC)
-		_display_id = PANEL_SAM_AMS699VC01;
+	if (_nx_aula && _panel_id == 0xCCCC)
+		_panel_id = PANEL_SAM_AMS699VC01;
 }
 
 void display_color_screen(u32 color)
@@ -830,7 +831,7 @@ void display_color_screen(u32 color)
 	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ | WIN_D_ACT_REQ;
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
-	if (_display_id != PANEL_SAM_AMS699VC01)
+	if (_panel_id != PANEL_SAM_AMS699VC01)
 		display_backlight(true);
 	else
 		display_backlight_brightness(150, 0);
@@ -851,10 +852,10 @@ u32 *display_init_window_a_pitch()
 u32 *display_init_window_a_pitch_vic()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	if (_display_id != PANEL_SAM_AMS699VC01)
+	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(8000); // Wait half frame for PWM to apply.
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch_vic, ARRAY_SIZE(_di_winA_pitch_vic));
-	if (_display_id != PANEL_SAM_AMS699VC01)
+	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(35000); // Wait 2 frames.
 
 	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
