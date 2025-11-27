@@ -425,7 +425,7 @@ void nyx_init_load_res()
 	bpmp_clk_rate_get();
 
 	// Set a modest clock for init. It will be restored later if possible.
-	bpmp_clk_rate_set(BPMP_CLK_LOWER_BOOST);
+	bpmp_clk_rate_set(BPMP_CLK_LOWEST_BOOST);
 
 	// Set bootloader's default configuration.
 	set_default_configuration();
