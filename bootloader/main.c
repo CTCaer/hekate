@@ -1534,12 +1534,12 @@ skip_lp0_minerva_config:
 	display_backlight_pwm_init();
 	//display_backlight_brightness(h_cfg.backlight, 1000);
 
+	// Show exceptions, HOS errors, library errors and L4T kernel panics.
+	_show_errors();
+
 	// Get R2C config from RTC.
 	if (h_cfg.t210b01)
 		_r2c_get_config_t210b01();
-
-	// Show exceptions, HOS errors, library errors and L4T kernel panics.
-	_show_errors();
 
 	// Load saved configuration and auto boot if enabled.
 	if (!(h_cfg.errors & ERR_SD_BOOT_EN))
