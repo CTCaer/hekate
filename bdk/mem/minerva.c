@@ -141,6 +141,15 @@ void minerva_change_freq(minerva_freq_t freq)
 	}
 }
 
+void minerva_deinit()
+{
+	if (!mtc_cfg)
+		return;
+
+	minerva_change_freq(FREQ_204);
+	mtc_cfg->init_done = 0;
+}
+
 void minerva_sdmmc_la_program(void *table, bool t210b01)
 {
 	u32 freq = *(u32 *)(table + TABLE_FREQ_KHZ_OFFSET);

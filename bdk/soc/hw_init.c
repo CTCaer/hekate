@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -46,9 +46,6 @@
 #include <thermal/fan.h>
 #include <thermal/tmp451.h>
 #include <utils/util.h>
-
-extern boot_cfg_t b_cfg;
-extern volatile nyx_storage_t *nyx_str;
 
 u32 hw_rst_status;
 u32 hw_rst_reason;
@@ -488,9 +485,8 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 	regulator_5v_disable(REGULATOR_5V_ALL);
 #endif
 
-	// set DRAM clock to 204MHz.
-	minerva_change_freq(FREQ_204);
-	nyx_str->mtc_cfg.init_done = 0;
+	// Set DRAM clock to 204MHz.
+	minerva_deinit();
 
 	// Flush/disable MMU cache.
 	bpmp_mmu_disable();
