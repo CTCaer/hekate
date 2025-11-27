@@ -445,7 +445,7 @@ void nyx_init_load_res()
 	nyx_str->info.magic = 0;
 
 	// Set display id from previous initialization.
-	display_set_decoded_panel_id(nyx_str->info.disp_id);
+	display_set_decoded_panel_id(nyx_str->info.panel_id);
 
 	// Initialize gfx console.
 	gfx_init_ctxt((u32 *)LOG_FB_ADDRESS, 1280, 656, 656);
@@ -466,7 +466,7 @@ void nyx_init_load_res()
 	}
 
 	// Train DRAM and switch to max frequency.
-	minerva_init();
+	minerva_init((minerva_str_t *)&nyx_str->minerva);
 
 	// Load hekate/Nyx configuration.
 	_load_saved_configuration();

@@ -870,8 +870,8 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	strcat(txt_buf, "\n\n");
 
 	// Prepare display info.
-	u8  display_rev = (nyx_str->info.disp_id >> 8) & 0xFF;
-	u32 display_id = ((nyx_str->info.disp_id >> 8) & 0xFF00) | (nyx_str->info.disp_id & 0xFF);
+	u8  display_rev = (nyx_str->info.panel_id >> 8) & 0xFF;
+	u32 display_id = ((nyx_str->info.panel_id >> 8) & 0xFF00) | (nyx_str->info.panel_id & 0xFF);
 
 	strcat(txt_buf, "#00DDFF Display Panel:#\n#FF8000 Model:# ");
 
@@ -983,7 +983,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	}
 
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# #96FF00 %02X# %02X #96FF00 %02X#",
-		nyx_str->info.disp_id & 0xFF, (nyx_str->info.disp_id >> 8) & 0xFF, (nyx_str->info.disp_id >> 16) & 0xFF);
+		nyx_str->info.panel_id & 0xFF, (nyx_str->info.panel_id >> 8) & 0xFF, (nyx_str->info.panel_id >> 16) & 0xFF);
 
 	touch_fw_info_t touch_fw;
 	touch_panel_info_t *touch_panel;

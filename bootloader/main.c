@@ -665,6 +665,9 @@ static void _nyx_load_run()
 	for (u32 i = 0; i < 3; i++)
 		nyx_str->info.sd_errors[i] = sd_errors[i];
 
+	// Set Display ID info.
+	nyx_str->info.panel_id = display_get_verbose_panel_id();
+
 	reloc_meta_t *reloc = (reloc_meta_t *)(IPL_LOAD_ADDR + RELOC_META_OFF);
 	memcpy((u8 *)nyx_str->hekate, (u8 *)reloc->start, reloc->end - reloc->start);
 
@@ -1506,7 +1509,7 @@ void ipl_main()
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
-	if (minerva_init()) //!TODO: Add Tegra210B01 support to minerva.
+	if (minerva_init((minerva_str_t *)&nyx_str->minerva)) //!TODO: Add Tegra210B01 support to minerva.
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
 	// Disable watchdog protection.
