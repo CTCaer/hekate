@@ -38,10 +38,11 @@
 hekate_config h_cfg;
 boot_cfg_t __attribute__((section ("._boot_cfg"))) b_cfg;
 const volatile ipl_ver_meta_t __attribute__((section ("._ipl_version"))) ipl_ver = {
-	.magic = BL_MAGIC,
-	.version = (BL_VER_MJ + '0') | ((BL_VER_MN + '0') << 8) | ((BL_VER_HF + '0') << 16) | ((BL_VER_RL) << 24),
-	.rsvd0 = 0,
-	.rsvd1 = 0
+	.magic             = BL_MAGIC,
+	.version           = (BL_VER_MJ + '0') | ((BL_VER_MN + '0') << 8) | ((BL_VER_HF + '0') << 16) | ((BL_VER_RL) << 24),
+	.rcfg.rsvd_flags   = 0,
+	.rcfg.bclk_t210    = BPMP_CLK_LOWER_BOOST,
+	.rcfg.bclk_t210b01 = BPMP_CLK_DEFAULT_BOOST
 };
 
 volatile nyx_storage_t *nyx_str = (nyx_storage_t *)NYX_STORAGE_ADDR;
@@ -656,11 +657,15 @@ static void _nyx_load_run()
 	// Set hekate version used to boot Nyx.
 	nyx_str->version = ipl_ver.version - 0x303030; // Convert ASCII to numbers.
 
-	// Set SD card initialization info.
-	nyx_str->info.magic   = NYX_NEW_INFO;
-	nyx_str->info.sd_init = sd_get_mode();
+	// Set [new] info validation magic.
+	nyx_str->info.magic    = NYX_NEW_INFO;
+	nyx_str->info_ex.magic = NYX_NEW_INFO;
 
-	// Set SD card error info.
+	// Set [new] reserved flags.
+	nyx_str->info_ex.rsvd_flags = ipl_ver.rcfg.rsvd_flags;
+
+	// Set [new] SD card initialization and error info.
+	nyx_str->info.sd_init = sd_get_mode();
 	u16 *sd_errors = sd_get_error_count();
 	for (u32 i = 0; i < 3; i++)
 		nyx_str->info.sd_errors[i] = sd_errors[i];
@@ -1491,7 +1496,7 @@ void ipl_main()
 	display_init();
 
 	// Overclock BPMP.
-	bpmp_clk_rate_set(h_cfg.t210b01 ? BPMP_CLK_DEFAULT_BOOST : BPMP_CLK_LOWER_BOOST);
+	bpmp_clk_rate_set(h_cfg.t210b01 ? ipl_ver.rcfg.bclk_t210b01 : ipl_ver.rcfg.bclk_t210);
 
 	// Mount SD Card.
 	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
