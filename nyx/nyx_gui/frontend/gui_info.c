@@ -428,7 +428,8 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	char *sku;
 	char dram_model[64];
 	char fuses_hos_version[64];
-	u8 dram_id = fuse_read_dramid(true);
+	u8 dram_id     = fuse_read_dramid(true);
+	u8 dram_id_adj = fuse_read_dramid(false);
 
 	switch (fuse_read_hw_type())
 	{
@@ -539,6 +540,13 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			break;
 		}
 	}
+
+	// Check if DRAM config is forced to 8GB.
+	if (dram_id != dram_id_adj &&
+		((!h_cfg.t210b01 && dram_id_adj == LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX) ||
+		 ( h_cfg.t210b01 && dram_id_adj == LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL))
+	   )
+		strcpy(dram_model, "#FF8000 Forced DRAM Config 8GB#");
 
 	// Count burnt fuses.
 	u8 burnt_fuses_7 = bit_count(fuse_read_odm(7));
