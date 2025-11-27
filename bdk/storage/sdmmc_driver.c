@@ -144,16 +144,16 @@ static void _sdmmc_pad_config_fallback(sdmmc_t *sdmmc, u32 power)
 	_sdmmc_commit_changes(sdmmc);
 	switch (sdmmc->id)
 	{
-	case SDMMC_1: // 33 Ohm 2X Driver.
+	case SDMMC_1: // 50 Ohm 2X Driver.
 		if (power == SDMMC_POWER_OFF)
 			break;
 		u32 sdmmc1_pad_cfg = APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) & 0xF8080FFF;
 		if (sdmmc->t210b01)
-			sdmmc1_pad_cfg |= (0x808 << 12); // Up:  8, Dn:  8. For 33 ohm.
+			sdmmc1_pad_cfg |= (0x808 << 12); // Up:  8, Dn:  8. For 50 ohm.
 		else if (power == SDMMC_POWER_1_8)
-			sdmmc1_pad_cfg |= (0xB0F << 12); // Up: 11, Dn: 15. For 33 ohm.
+			sdmmc1_pad_cfg |= (0xB0F << 12); // Up: 11, Dn: 15. For 50 ohm.
 		else if (power == SDMMC_POWER_3_3)
-			sdmmc1_pad_cfg |= (0xC0C << 12); // Up: 12, Dn: 12. For 33 ohm.
+			sdmmc1_pad_cfg |= (0xC0C << 12); // Up: 12, Dn: 12. For 50 ohm.
 		APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL) = sdmmc1_pad_cfg;
 		(void)APB_MISC(APB_MISC_GP_SDMMC1_PAD_CFGPADCTRL); // Commit write.
 		break;
