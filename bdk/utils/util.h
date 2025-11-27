@@ -83,7 +83,7 @@ typedef struct _nyx_info_t
 	u32 sd_init;
 	u32 sd_errors[3];
 	u8  rsvd[0x1000];
-	u32 disp_id;
+	u32 panel_id;
 	u32 errors;
 } nyx_info_t;
 
