@@ -672,7 +672,7 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 		max77620_rtc_get_time(&time);
 		u32 epoch = max77620_rtc_date_to_epoch(&time);
 
-		u32 year  = lv_roller_get_selected(clock_ctxt.year);
+		u32 year  = lv_roller_get_selected(clock_ctxt.year) + CLOCK_MIN_YEAR;
 		u32 month = lv_roller_get_selected(clock_ctxt.month) + 1;
 		u32 day   = lv_roller_get_selected(clock_ctxt.day) + 1;
 		u32 hour  = lv_roller_get_selected(clock_ctxt.hour);
@@ -695,7 +695,7 @@ static lv_res_t _action_clock_edit(lv_obj_t *btns, const char * txt)
 			break;
 		}
 
-		time.year  = year + CLOCK_MIN_YEAR;
+		time.year  = year;
 		time.month = month;
 		time.day   = day;
 		time.hour  = hour;
@@ -753,6 +753,25 @@ static lv_res_t _action_auto_dst_toggle(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static const u32 month_days[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+static lv_res_t _action_date_validation(lv_obj_t *roller)
+{
+	u32 year  = lv_roller_get_selected(clock_ctxt.year) + CLOCK_MIN_YEAR;
+	u32 month = lv_roller_get_selected(clock_ctxt.month) + 1;
+	u32 day   = lv_roller_get_selected(clock_ctxt.day) + 1;
+
+	// Adjust max day based on year and month.
+	u32 max_mon_day = month_days[month - 1];
+	u32 max_feb_day = !(year % 4) ? 29 : 28;
+	if (month == 2 && day > max_feb_day)
+		lv_roller_set_selected(clock_ctxt.day, max_feb_day - 1, false);
+	else if (day > max_mon_day)
+		lv_roller_set_selected(clock_ctxt.day, max_mon_day - 1, false);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 {
 	static lv_style_t mbox_style;
@@ -799,6 +818,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_roller_set_options(roller_year, CLOCK_YEARLIST);
 	lv_roller_set_selected(roller_year, time.year, false);
 	lv_roller_set_visible_row_count(roller_year, 3);
+	lv_roller_set_action(roller_year, _action_date_validation);
 	clock_ctxt.year = roller_year;
 
 	// Create month roller.
@@ -818,6 +838,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 		"December");
 	lv_roller_set_selected(roller_month, time.month - 1, false);
 	lv_obj_align(roller_month, roller_year, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	lv_roller_set_action(roller_month, _action_date_validation);
 	clock_ctxt.month = roller_month;
 
 	// Create day roller.
@@ -829,6 +850,7 @@ static lv_res_t _create_mbox_clock_edit(lv_obj_t *btn)
 	lv_obj_t *roller_day = lv_roller_create(h1, roller_year);
 	lv_roller_set_options(roller_day, days);
 	lv_roller_set_selected(roller_day, time.day - 1, false);
+	lv_roller_set_action(roller_day, _action_date_validation);
 	lv_obj_align(roller_day, roller_month, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	clock_ctxt.day = roller_day;
 
