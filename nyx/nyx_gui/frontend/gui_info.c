@@ -354,13 +354,155 @@ out:
 	return LV_RES_OK;
 }
 
-static lv_obj_t *hw_info_ver = NULL;
+u32 wafer16nm[] =
+{
+	0x0003F800, 0x001FFF00, 0x007FFFC0, 0x00FFFFE0,
+	0x01FFFFF0, 0x03FFFFF8, 0x07FFFFFC, 0x07FFFFFC,
+	0x0FFFFFFE, 0x0FFFFFFE, 0x0FFFFFFE, 0x1FFFFFFF,
+	0x1FFFFFFF, 0x1FFFFFFF, 0x1FFFFFFF, 0x1FFFFFFF,
+	0x1FFFFFFF, 0x1FFFFFFF, 0x0FFFFFFE, 0x0FFFFFFE,
+	0x0FFFFFFE, 0x07FFFFFC, 0x07FFFFFC, 0x03FFFFF8,
+	0x01FFFFF0, 0x00FFFFE0, 0x007FFFC0, 0x001FFF00,
+	0x00000000
+};
+
+u32 wafer20nm[] =
+{
+	0x0001FE00, 0x0007FF80, 0x001FFFE0, 0x003FFFF0,
+	0x007FFFF8, 0x00FFFFFC, 0x00FFFFFC, 0x01FFFFFE,
+	0x01FFFFFE, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF,
+	0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF,
+	0x03FFFFFF, 0x01FFFFFE, 0x01FFFFFE, 0x00FFFFFC,
+	0x00FFFFFC, 0x007FFFF8, 0x003FFFF0, 0x001FFFE0,
+	0x0007FF80,
+	0x00000000,
+};
+
+typedef struct _hw_info_t
+{
+	lv_obj_t *ver;
+	lv_obj_t *wafer_img;
+	lv_obj_t *wafer_txt;
+} hw_info_t;
+
+hw_info_t *hw_info = NULL;
+
+void _hw_info_wafer(int die_x, int die_y)
+{
+	static lv_img_dsc_t wafer_desc = { 0 };
+	int radius;
+
+	if (h_cfg.t210b01)
+	{
+		//! TODO: Limits based on known samples.
+		if (die_x < -11 || die_x > 17 || die_y > 27)
+			die_x = -12;
+
+		radius = 29;
+		die_x += 11;
+	}
+	else
+	{
+		//! TODO: Limits based on known samples.
+		if (die_x < -10 || die_x > 15 || die_y > 24)
+			die_x = -11;
+
+		radius = 26;
+		die_x += 10;
+	}
+
+	const u32 die_size = 2;
+	const u32 die_side = die_size + 1;
+	const u32 die_line = die_side * radius + 1;
+	const int align_off = (die_size - 2) * radius;
+	const u32 die_color = (die_x == -1) ? 0xFFFF0000 : 0x30FFFFFF; // Red for OOB.
+	const u32 str_color = 0x10FFFFFF;
+	const u32 hit_color = 0xFFFF8000;
+
+	u32 *wafer_map = calloc(1, die_line * die_line * sizeof(u32));
+
+	for (int y = 0; y < radius; y++)
+	{
+		u32 wafer_row_next = -1;
+		u32 wafer_row      = h_cfg.t210b01 ? wafer16nm[y] : wafer20nm[y];
+
+		if ((y + 1) < radius)
+			wafer_row_next = h_cfg.t210b01 ? wafer16nm[y + 1] : wafer20nm[y + 1];
+
+		// Paint the first row of dies.
+		int pos_y = y * die_line * die_side + die_line;
+		for (int x = 0; x < radius; x++)
+		{
+			bool die_found  = x == die_x && die_y == y;
+			bool in_wafer = wafer_row & (1u << x);
+			u32  die_column = x * die_side;
+
+			// Paint street rows;
+			if (in_wafer)
+				for (u32 i = 0; i < die_size + 2; i++)
+				{
+					wafer_map[pos_y - die_line + die_column + i] = str_color;
+					if (wafer_row > wafer_row_next)
+						wafer_map[pos_y - die_line + die_column + i + die_line * die_side] = str_color;
+				}
+
+			// Paint street column;
+			if (in_wafer)
+				wafer_map[pos_y + die_column] = str_color;
+
+			u32 color;
+			if (in_wafer && !die_found)
+				color = die_color;
+			else
+				color = !die_found ? 0 : hit_color;
+
+			// Paint die row0;
+			for (u32 i = 0; i < die_size; i++)
+				wafer_map[pos_y + die_column + 1 + i] = color;
+
+			// Paint street column;
+			if (in_wafer)
+				wafer_map[pos_y + die_column + 1 + die_size] = str_color;
+		}
+
+		// Paint the rest of die rows.
+		for (u32 i = 1; i < die_size; i++)
+			memcpy(&wafer_map[pos_y + die_line * i], &wafer_map[pos_y], die_line * sizeof(u32));
+	}
+
+	wafer_desc.header.always_zero = 0;
+	wafer_desc.header.w = die_line;
+	wafer_desc.header.h = die_line;
+	wafer_desc.header.cf = LV_IMG_CF_TRUE_COLOR_ALPHA;
+	wafer_desc.data_size = die_line * die_line * sizeof(u32);
+	wafer_desc.data = (u8 *)wafer_map;
+
+	lv_obj_t *wafer_img = lv_img_create(lv_scr_act(), NULL);
+	lv_img_set_src(wafer_img, &wafer_desc);
+	if (h_cfg.t210b01)
+		lv_obj_align(wafer_img, NULL, LV_ALIGN_IN_TOP_LEFT, LV_DPI * 58 / 11 - align_off, LV_DPI * 44 / 9 - align_off / 2);
+	else
+		lv_obj_align(wafer_img, NULL, LV_ALIGN_IN_TOP_LEFT, LV_DPI * 59 / 11 - align_off, LV_DPI * 74 / 15 - align_off / 2);
+	hw_info->wafer_img = wafer_img;
+
+	lv_obj_t *wafer_txt = lv_label_create(lv_scr_act(), NULL);
+	lv_label_set_style(wafer_txt, &monospace_text);
+	lv_label_set_static_text(wafer_txt, "Wafer");
+	lv_obj_align(wafer_txt, wafer_img, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+	hw_info->wafer_txt = wafer_txt;
+}
+
 static lv_res_t _action_win_hw_info_status_close(lv_obj_t *btn)
 {
-	if (hw_info_ver)
+	if (hw_info)
 	{
-		lv_obj_del(hw_info_ver);
-		hw_info_ver = NULL;
+		lv_img_dsc_t *wafer_dsc = (lv_img_dsc_t *)lv_img_get_src(hw_info->wafer_img);
+		lv_obj_del(hw_info->ver);
+		lv_obj_del(hw_info->wafer_img);
+		lv_obj_del(hw_info->wafer_txt);
+		free((u32 *)wafer_dsc->data);
+		free(hw_info);
+		hw_info = NULL;
 	}
 
 	return nyx_win_close_action_custom(btn);
@@ -388,7 +530,9 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	lv_label_set_style(lbl_ver, &hint_small_style_white);
 	lv_label_set_text(lbl_ver, version);
 	lv_obj_align(lbl_ver, status_bar.bar_bg, LV_ALIGN_OUT_TOP_RIGHT, -LV_DPI * 9 / 23, -LV_DPI * 2 / 13);
-	hw_info_ver = lbl_ver;
+
+	hw_info = zalloc(sizeof(hw_info_t));
+	hw_info->ver = lbl_ver;
 
 	lv_label_set_static_text(lb_desc,
 		"#FF8000 SoC:#\n"
@@ -692,6 +836,9 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 
 	// X Coordinate is 9-bit 2s complement.
 	die_x = (die_x & BIT(8)) ? (die_x - 512) : die_x;
+
+	// Render the wafer.
+	_hw_info_wafer(die_x, die_y);
 
 	// Parse fuses and display them.
 	s_printf(txt_buf,
