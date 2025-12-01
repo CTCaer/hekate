@@ -29,7 +29,7 @@
 //#define DPRINTF(...) gfx_printf(__VA_ARGS__)
 #define DPRINTF(...)
 
-extern bool is_ipl_updated(void *buf, const char *path, bool force);
+extern bool is_ipl_updated(void *buf, u32 size, const char *path, bool force);
 
 #define PKG3_KIP_SKIP_MAX 16
 
@@ -84,9 +84,10 @@ typedef struct _pkg3_content_t
 
 static void _pkg3_update_r2p()
 {
-	u8 *r2p_payload = sd_file_read("atmosphere/reboot_payload.bin", NULL);
+	u32 size = 0;
+	u8 *r2p_payload = sd_file_read("atmosphere/reboot_payload.bin", &size);
 
-	is_ipl_updated(r2p_payload, "atmosphere/reboot_payload.bin", h_cfg.updater2p ? true : false);
+	is_ipl_updated(r2p_payload, size, "atmosphere/reboot_payload.bin", h_cfg.updater2p ? true : false);
 
 	free(r2p_payload);
 }
