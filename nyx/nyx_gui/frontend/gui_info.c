@@ -28,6 +28,8 @@
 
 #define SECTORS_TO_MIB_COEFF 11
 
+static const char base36[37] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
@@ -366,6 +368,8 @@ static lv_res_t _action_win_hw_info_status_close(lv_obj_t *btn)
 
 static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 {
+	u32 uptime_s = get_tmr_s();
+
 	lv_obj_t *win = nyx_create_window_custom_close_btn(SYMBOL_CHIP" HW & Fuses Info", _action_win_hw_info_status_close);
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump fuses", _fuse_dump_window_action);
 	lv_win_add_btn(win, NULL, SYMBOL_INFO" CAL0 Info", _create_mbox_cal0);
@@ -391,30 +395,28 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		"#FF8000 SKU:#\n"
 		"#FF8000 DRAM ID:#\n"
 		"#FF8000 Burnt Fuses (ODM 7/6):#\n"
-		"ODM Fields (4, 6, 7):\n"
+		"ODM Fields (4/6/7):\n"
 		"Secure Boot Key (SBK):\n"
 		"Device Key (DK):\n"
 		"Public Key (PK SHA256):\n\n"
 		"HOS Keygen Revision:\n"
-		"USB Stack:\n"
+		"USB Controller (BROM):\n"
 		"Final Test Revision:\n"
 		"Chip Probing Revision:\n"
-		"CPU Speedo 0 (CPU Val):\n"
+		"BootROM Revision:\n\n"
+		"#FF8000 CPU/GPU/SoC Speedo:#\n"
+		"CPU/GPU/SoC IDDQ:\n"
 		"CPU Speedo 1:\n"
-		"CPU Speedo 2 (GPU Val):\n"
-		"SoC Speedo 0 (SoC Val):\n"
-		"SoC Speedo 1 (BROM rev):\n"
-		"SoC Speedo 2:\n"
-		"CPU IDDQ Val:\n"
-		"SoC IDDQ Val:\n"
-		"Gpu IDDQ Val:\n"
+		"SoC Speedo 2:\n\n"
+		"Product Code:\n"
 		"Vendor Code:\n"
-		"FAB Code:\n"
-		"LOT Code 0:\n"
+		"FAB/LOT Code:\n"
 		"Wafer ID:\n"
 		"X Coordinate:\n"
-		"Y Coordinate:"
+		"Y Coordinate:\n\n"
+		"Uptime:"
 	);
+
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
 	lv_obj_t *val = lv_cont_create(win, NULL);
@@ -635,15 +637,20 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		break;
 	}
 
-	// Calculate LOT.
-	u32 lot_code0 = (FUSE(FUSE_OPT_LOT_CODE_0) & 0xFFFFFFF) << 2;
-	u32 lot_bin = 0;
+	u32 fab = FUSE(FUSE_OPT_FAB_CODE);
+
+	// Convert LOT from base36 BCD to binary.
+	u32 lot_enc = FUSE(FUSE_OPT_LOT_CODE_0);
+	u32 lot_dec = 0;
+	char lot_bcd[6] = {0};
+
 	for (int i = 0; i < 5; ++i)
 	{
-		u32 digit = (lot_code0 & 0xFC000000) >> 26;
-		lot_bin *= 36;
-		lot_bin += digit;
-		lot_code0 <<= 6;
+		u32 digit  = (lot_enc & 0x3F000000) >> 24;
+		lot_dec   *= 36;
+		lot_dec   += digit;
+		lot_enc  <<= 6;
+		lot_bcd[i] = base36[digit];
 	}
 
 	char sbk_key[64];
@@ -666,7 +673,25 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	}
 
 	u32 chip_id = APB_MISC(APB_MISC_GP_HIDREV);
-	char *chip_name = hw_get_chip_id() == GP_HIDREV_MAJOR_T210 ? "T210 (Erista)" : "T210B01 (Mariko)";
+	u32 chip_major = (chip_id >>  4) & 0xF;
+	u32 chip_minor = (chip_id >> 16) & 0xF;
+	char *chip_name = !h_cfg.t210b01 ? "T210 (Erista)" : "T210B01 (Mariko)";
+
+	u32 brom_rev = FUSE(FUSE_SOC_SPEEDO_1_CALIB);
+	u32 prod_rev = !h_cfg.t210b01 ? (brom_rev < 0x7F ? 1 : 2) : 10;
+	char product_part[16];
+	s_printf(product_part, "ODNX%02d-A%d", prod_rev, chip_minor);
+
+	char iddq[3][8];
+	s_printf(iddq[0], "%d", FUSE(FUSE_CPU_IDDQ_CALIB) * 4);
+	s_printf(iddq[1], "%d", FUSE(FUSE_GPU_IDDQ_CALIB) * 5);
+	s_printf(iddq[2], "%d", FUSE(FUSE_SOC_IDDQ_CALIB) * 4);
+
+	int die_x = FUSE(FUSE_OPT_X_COORDINATE);
+	int die_y = FUSE(FUSE_OPT_Y_COORDINATE);
+
+	// X Coordinate is 9-bit 2s complement.
+	die_x = (die_x & BIT(8)) ? (die_x - 512) : die_x;
 
 	// Parse fuses and display them.
 	s_printf(txt_buf,
@@ -682,14 +707,14 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		"%s\n"
 		"%d.%02d (0x%X)\n"
 		"%d.%02d (0x%X)\n"
-		"%d\n%d\n%d\n"
-		"%d\n0x%X\n%d\n"
-		"%d (%d)\n"
-		"%d (%d)\n"
-		"%d (%d)\n"
-		"%d\n%d\n%d (0x%X)\n"
-		"%d\n%d\n%d",
-		(chip_id >> 8) & 0xFF, chip_name, (chip_id >> 4) & 0xF, (chip_id >> 16) & 0xF,
+		"0x%X\n\n"
+		"%4d %4d %4d\n"
+		"%.4s %.4s %.4s\n"
+		"%d\n%d\n\n"
+		"%s\n%d\n%c%s (%d/%d)\n"
+		"%d\n%d\n%d\n\n"
+		"%dh %02dm %02ds",
+		(chip_id >> 8) & 0xFF, chip_name, chip_major, chip_minor,
 		FUSE(FUSE_SKU_INFO), sku, fuse_read_hw_state() ? "Dev" : "Retail",
 		dram_id, dram_model,
 		burnt_fuses_7, burnt_fuses_6, fuses_hos_version,
@@ -703,13 +728,13 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		((FUSE(FUSE_RESERVED_SW) & 0x80) || h_cfg.t210b01) ? "XUSB" : "USB2",
 		(FUSE(FUSE_OPT_FT_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_FT_REV) & 0x1F, FUSE(FUSE_OPT_FT_REV),
 		(FUSE(FUSE_OPT_CP_REV)  >> 5) & 0x3F, FUSE(FUSE_OPT_CP_REV) & 0x1F, FUSE(FUSE_OPT_CP_REV),
-		FUSE(FUSE_CPU_SPEEDO_0_CALIB), FUSE(FUSE_CPU_SPEEDO_1_CALIB), FUSE(FUSE_CPU_SPEEDO_2_CALIB),
-		FUSE(FUSE_SOC_SPEEDO_0_CALIB), FUSE(FUSE_SOC_SPEEDO_1_CALIB), FUSE(FUSE_SOC_SPEEDO_2_CALIB),
-		FUSE(FUSE_CPU_IDDQ_CALIB) * 4, FUSE(FUSE_CPU_IDDQ_CALIB),
-		FUSE(FUSE_SOC_IDDQ_CALIB) * 4, FUSE(FUSE_SOC_IDDQ_CALIB),
-		FUSE(FUSE_GPU_IDDQ_CALIB) * 5, FUSE(FUSE_GPU_IDDQ_CALIB),
-		FUSE(FUSE_OPT_VENDOR_CODE), FUSE(FUSE_OPT_FAB_CODE), lot_bin, FUSE(FUSE_OPT_LOT_CODE_0),
-		FUSE(FUSE_OPT_WAFER_ID), FUSE(FUSE_OPT_X_COORDINATE), FUSE(FUSE_OPT_Y_COORDINATE));
+		brom_rev,
+		FUSE(FUSE_CPU_SPEEDO_0_CALIB), FUSE(FUSE_CPU_SPEEDO_2_CALIB), FUSE(FUSE_SOC_SPEEDO_0_CALIB),
+		iddq[0], iddq[1], iddq[2],
+		FUSE(FUSE_CPU_SPEEDO_1_CALIB),  FUSE(FUSE_SOC_SPEEDO_2_CALIB),
+		product_part, FUSE(FUSE_OPT_VENDOR_CODE), base36[fab], lot_bcd, fab, lot_dec,
+		FUSE(FUSE_OPT_WAFER_ID), die_x, die_y,
+		uptime_s / 3600, (uptime_s / 60) % 60, uptime_s % 60);
 
 	lv_label_set_text(lb_val, txt_buf);
 
