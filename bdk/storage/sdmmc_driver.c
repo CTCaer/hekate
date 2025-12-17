@@ -1008,8 +1008,8 @@ static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, const sdmmc_req_t
 		return 0;
 
 	u32 blkcnt = req->num_sectors;
-	if (blkcnt >= 0xFFFF)
-		blkcnt = 0xFFFF;
+	if (blkcnt >= SDMMC_HMAX_BLOCKNUM)
+		blkcnt = SDMMC_HMAX_BLOCKNUM;
 	u32 admaaddr = (u32)req->buf;
 
 	// Check alignment.

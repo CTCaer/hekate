@@ -327,7 +327,7 @@ static int _sdmmc_storage_readwrite(sdmmc_storage_t *storage, u32 sector, u32 nu
 		do
 		{
 reinit_try:
-			if (_sdmmc_storage_readwrite_ex(storage, &blkcnt, sct_off, MIN(sct_total, 0xFFFF), bbuf, is_write))
+			if (_sdmmc_storage_readwrite_ex(storage, &blkcnt, sct_off, MIN(sct_total, SDMMC_AMAX_BLOCKNUM), bbuf, is_write))
 				goto out;
 			else
 				retries--;

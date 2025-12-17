@@ -24,6 +24,8 @@
 
 #define SDMMC_CMD_BLOCKSIZE 64
 #define SDMMC_DAT_BLOCKSIZE 512
+#define SDMMC_HMAX_BLOCKNUM 0xFFFF // HW max.
+#define SDMMC_AMAX_BLOCKNUM 0xF000 // Aligned max.
 
 extern u32 sd_power_cycle_time_start;
 
