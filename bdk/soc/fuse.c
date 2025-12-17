@@ -217,13 +217,15 @@ u32 fuse_read(u32 addr)
 	return FUSE(FUSE_RDATA);
 }
 
-void fuse_read_array(u32 *words)
+u32 fuse_read_array(u32 *words)
 {
 	u32 array_size = (hw_get_chip_id() == GP_HIDREV_MAJOR_T210B01) ?
 					 FUSE_ARRAY_WORDS_NUM_B01 : FUSE_ARRAY_WORDS_NUM;
 
 	for (u32 i = 0; i < array_size; i++)
 		words[i] = fuse_read(i);
+
+	return array_size;
 }
 
 static u32 _parity32_even(const u32 *words, u32 count)

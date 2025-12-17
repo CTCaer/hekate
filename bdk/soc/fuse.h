@@ -53,20 +53,20 @@
 #define FUSE_PRIVATE_KEY4_NONZERO             0x90
 
 /*! Fuse Cached registers */
-#define FUSE_RESERVED_ODM8_B01                0x98
-#define FUSE_RESERVED_ODM9_B01                0x9C
-#define FUSE_RESERVED_ODM10_B01               0xA0
-#define FUSE_RESERVED_ODM11_B01               0xA4
-#define FUSE_RESERVED_ODM12_B01               0xA8
-#define FUSE_RESERVED_ODM13_B01               0xAC
-#define FUSE_RESERVED_ODM14_B01               0xB0
-#define FUSE_RESERVED_ODM15_B01               0xB4
-#define FUSE_RESERVED_ODM16_B01               0xB8
-#define FUSE_RESERVED_ODM17_B01               0xBC
-#define FUSE_RESERVED_ODM18_B01               0xC0
-#define FUSE_RESERVED_ODM19_B01               0xC4
-#define FUSE_RESERVED_ODM20_B01               0xC8
-#define FUSE_RESERVED_ODM21_B01               0xCC
+#define FUSE_RESERVED_ODM8_B01                0x98 // FUSE_READ_TZ Group 0.
+#define FUSE_RESERVED_ODM9_B01                0x9C // FUSE_READ_TZ Group 0.
+#define FUSE_RESERVED_ODM10_B01               0xA0 // FUSE_READ_TZ Group 0.
+#define FUSE_RESERVED_ODM11_B01               0xA4 // FUSE_READ_TZ Group 0.
+#define FUSE_RESERVED_ODM12_B01               0xA8 // FUSE_READ_TZ Group 1? Is value -1?
+#define FUSE_RESERVED_ODM13_B01               0xAC // FUSE_READ_TZ Group 1? Is value -1?
+#define FUSE_RESERVED_ODM14_B01               0xB0 // FUSE_READ_TZ Group 1? Is value -1?
+#define FUSE_RESERVED_ODM15_B01               0xB4 // FUSE_READ_TZ Group 1? Is value -1?
+#define FUSE_RESERVED_ODM16_B01               0xB8 // FUSE_READ_TZ Group 2? Is value -1?
+#define FUSE_RESERVED_ODM17_B01               0xBC // FUSE_READ_TZ Group 2? Is value -1?
+#define FUSE_RESERVED_ODM18_B01               0xC0 // FUSE_READ_TZ Group 2.
+#define FUSE_RESERVED_ODM19_B01               0xC4 // FUSE_READ_TZ Group 2.
+#define FUSE_RESERVED_ODM20_B01               0xC8 // FUSE_READ_TZ Group 3.
+#define FUSE_RESERVED_ODM21_B01               0xCC // FUSE_READ_TZ Group 3.
 #define FUSE_KEK00_B01                        0xD0
 #define FUSE_KEK01_B01                        0xD4
 #define FUSE_KEK02_B01                        0xD8
@@ -88,9 +88,9 @@
 #define FUSE_CPU_SPEEDO_0_CALIB               0x114
 #define FUSE_CPU_IDDQ_CALIB                   0x118
 
-#define FUSE_RESERVED_ODM22_B01               0x11C
-#define FUSE_RESERVED_ODM23_B01               0x120
-#define FUSE_RESERVED_ODM24_B01               0x124
+#define FUSE_RESERVED_ODM22_B01               0x11C // FUSE_READ_TZ Group 3.
+#define FUSE_RESERVED_ODM23_B01               0x120 // FUSE_READ_TZ Group 3.
+#define FUSE_RESERVED_ODM24_B01               0x124 // FUSE_READ_TZ Group 4.
 
 #define FUSE_OPT_FT_REV                       0x128
 #define FUSE_CPU_SPEEDO_1_CALIB               0x12C
@@ -100,7 +100,7 @@
 #define FUSE_SOC_SPEEDO_2_CALIB               0x13C
 #define FUSE_SOC_IDDQ_CALIB                   0x140
 
-#define FUSE_RESERVED_ODM25_B01               0x144
+#define FUSE_RESERVED_ODM25_B01               0x144 // FUSE_READ_TZ Group 4.
 
 #define FUSE_FA                               0x148
 #define FUSE_RESERVED_PRODUCTION              0x14C
@@ -153,7 +153,7 @@
 #define FUSE_USB_CALIB                        0x1F0
 #define FUSE_SKU_DIRECT_CONFIG                0x1F4
 #define FUSE_KFUSE_PRIVKEY_CTRL               0x1F8
-#define FUSE_PACKAGE_INFO                     0x1FC
+#define FUSE_PACKAGE_INFO                     0x1FC // 1: MID, 2: DSC.
 #define FUSE_OPT_VENDOR_CODE                  0x200
 #define FUSE_OPT_FAB_CODE                     0x204
 #define FUSE_OPT_LOT_CODE_0                   0x208
@@ -172,9 +172,9 @@
 #define FUSE_CLOCK_BONDOUT0                   0x230
 #define FUSE_CLOCK_BONDOUT1                   0x234
 
-#define FUSE_RESERVED_ODM26_B01               0x238
-#define FUSE_RESERVED_ODM27_B01               0x23C
-#define FUSE_RESERVED_ODM28_B01               0x240 // MAX77812 phase configuration.
+#define FUSE_RESERVED_ODM26_B01               0x238 // FUSE_READ_TZ Group 4.
+#define FUSE_RESERVED_ODM27_B01               0x23C // FUSE_READ_TZ Group 4.
+#define FUSE_RESERVED_ODM28_B01               0x240 // MAX77812 phase configuration. FUSE_READ_TZ Group 5.
 
 #define FUSE_OPT_SAMPLE_TYPE                  0x244
 #define FUSE_OPT_SUBREVISION                  0x248 // "", "p", "q", "r". e.g: A01p.
@@ -200,7 +200,7 @@
 #define FUSE_OPT_FT_BIN                       0x28C
 #define FUSE_OPT_DONE_MAP                     0x290
 
-#define FUSE_RESERVED_ODM29_B01               0x294
+#define FUSE_RESERVED_ODM29_B01               0x294 // FUSE_READ_TZ Group 5? Is value -1?
 
 #define FUSE_APB2JTAG_DISABLE                 0x298
 #define FUSE_ODM_INFO                         0x29C // Debug features disable.
@@ -321,7 +321,7 @@ void fuse_sense();
 u32  fuse_read(u32 addr);
 int  fuse_read_ipatch(void (*ipatch)(u32 offset, u32 value));
 int  fuse_read_evp_thunk(u32 *iram_evp_thunks, u32 *iram_evp_thunks_len);
-void fuse_read_array(u32 *words);
+u32  fuse_read_array(u32 *words);
 bool fuse_check_patched_rcm();
 
 #endif
