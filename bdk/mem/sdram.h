@@ -135,7 +135,6 @@ void sdram_init();
 void *sdram_get_params_patched();
 void *sdram_get_params_t210b01();
 void sdram_lp0_save_params(const void *params);
-void sdram_src_pllc(bool enable);
 emc_mr_data_t sdram_read_mrx(emc_mr_t mrx);
 
 #endif
