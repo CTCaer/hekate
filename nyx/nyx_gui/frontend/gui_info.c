@@ -157,10 +157,29 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 	return LV_RES_OK;
 }
 
+static u8 _ccplex_set_fuse_rd_tz[] = {
+	0xC1, 0x00, 0x00, 0x18, // 0x00: LDR  W1, =APB_MISC_PP_FUSE_READ_TZ
+	0xE0, 0x03, 0x80, 0xD2, // 0x04: MOV  X0, #0x1F
+	0x20, 0x00, 0x00, 0xB9, // 0x08: STR  W0, [X1]
+	0x1F, 0x71, 0x08, 0xD5, // 0x0C: IC   IALLUIS
+	0x9F, 0x3B, 0x03, 0xD5, // 0x10: DSB  ISH
+	0xFE, 0xFF, 0xFF, 0x17, // 0x14: B    loop
+	0xA4, 0x00, 0x00, 0x70, // 0x18: APB_MISC_PP_FUSE_READ_TZ/////////////////////check default value for sure
+};
+
+static void _unlock_reserved_odm_fuses(bool lock)
+{
+	_ccplex_set_fuse_rd_tz[4] = lock ? 0xE0 : 0x00;
+	_ccplex_set_fuse_rd_tz[5] = lock ? 0x03 : 0x00;
+
+	// Launch payload on CCPLEX EL3 in order to unlock reserved ODM8-29 fuses.
+	ccplex_boot_cpu0((u32)_ccplex_set_fuse_rd_tz, false);
+	msleep(100);
+	ccplex_powergate_cpu0();
+}
+
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	const u32 fuse_array_size = (h_cfg.t210b01 ? FUSE_ARRAY_WORDS_NUM_B01 : FUSE_ARRAY_WORDS_NUM) * sizeof(u32);
-
 	int error = !sd_mount();
 	if (!error)
 	{
@@ -169,25 +188,31 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 		{
 			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210.bin", NULL);
 			error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
+			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
 		}
 		else
 		{
+			// Unlock all reserved ODM fuses.
+			_unlock_reserved_odm_fuses(false);
+
 			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01_x898.bin", NULL);
 			error = sd_save_to_file((u8 *)0x7000F898, 0x68, path);
 			emmcsn_path_impl(path, "/dumps", "fuse_cached_t210b01_x900.bin", NULL);
 			if (!error)
 				error = sd_save_to_file((u8 *)0x7000F900, 0x300, path);
+			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210b01.bin", NULL);
 		}
 
-		u32 words[FUSE_ARRAY_WORDS_NUM_B01];
-		fuse_read_array(words);
-		if (!h_cfg.t210b01)
-			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210.bin", NULL);
-		else
-			emmcsn_path_impl(path, "/dumps", "fuse_array_raw_t210b01.bin", NULL);
-		int res = sd_save_to_file((u8 *)words, fuse_array_size, path);
 		if (!error)
-			error = res;
+		{
+			u32 words[FUSE_ARRAY_WORDS_NUM_B01];
+			u32 array_size = fuse_read_array(words);
+			error = sd_save_to_file((u8 *)words, array_size * sizeof(u32), path);
+		}
+
+		// Relock.
+		if (h_cfg.t210b01)
+			_unlock_reserved_odm_fuses(true);
 
 		sd_unmount();
 	}
