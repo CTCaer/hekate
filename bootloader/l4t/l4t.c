@@ -304,7 +304,6 @@ static const l4t_fw_t l4t_fw[] = {
 	{ BL33_LOAD_BASE,            "bl33.bin"        },
 	{ SC7ENTRY_BASE,             "sc7entry.bin"    },
 	{ SC7EXIT_BASE,              "sc7exit.bin"     },
-	{ SC7EXIT_B01_BASE,          "sc7exit_b01.bin" }, //!TODO: Update on fuse burns.
 	{ BPMPFW_BASE,               "bpmpfw.bin"      },
 	{ BPMPFW_B01_BASE,           "bpmpfw_b01.bin"  },
 	{ BPMPFW_B01_MTC_TABLE_BASE, "mtc_tbl_b01.bin" },
@@ -315,10 +314,9 @@ enum {
 	BL33_FW            = 1,
 	SC7ENTRY_FW        = 2,
 	SC7EXIT_FW         = 3,
-	SC7EXIT_B01_FW     = 4,
-	BPMPFW_FW          = 5,
-	BPMPFW_B01_FW      = 6,
-	BPMPFW_B01_MTC_TBL = 7
+	BPMPFW_FW          = 4,
+	BPMPFW_B01_FW      = 5,
+	BPMPFW_B01_MTC_TBL = 6
 };
 
 static void _l4t_crit_error(const char *text, bool needs_update)
@@ -334,9 +332,6 @@ static int _l4t_sd_load(u32 idx)
 {
 	FIL fp;
 	void *load_address = (void *)l4t_fw[idx].addr;
-
-	if (idx == SC7EXIT_B01_FW)
-		load_address -= sizeof(u32);
 
 	strcpy(sd_path + sd_path_len, l4t_fw[idx].name);
 
@@ -825,11 +820,9 @@ static int _l4t_sc7_exit_config(bool t210b01)
 	}
 	else
 	{
-		launch_ctxt_t hos_ctxt = {0};
-		u32 fw_fuses = *(u32 *)(SC7EXIT_B01_BASE - sizeof(u32)); // Fuses count in front of actual firmware.
-
 		// Get latest SC7-Exit if needed and setup PA id.
-		if (!pkg1_warmboot_config(&hos_ctxt, 0, fw_fuses, 0))
+		launch_ctxt_t hos_ctxt = {0};
+		if (!pkg1_warmboot_config(&hos_ctxt, 0, 0, 0))
 		{
 			gfx_con.mute = false;
 			gfx_wputs("\nFailed to match warmboot with fuses!\nIf you continue, sleep wont work!");
@@ -1000,6 +993,13 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 			_l4t_crit_error("loading BPMP-FW", true);
 			return;
 		}
+
+		// Load SC7-Exit firmware.
+		if (!_l4t_sd_load(SC7EXIT_FW))
+		{
+			_l4t_crit_error("loading SC7-Exit", true);
+			return;
+		}
 	}
 	else
 	{
@@ -1016,13 +1016,6 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 			_l4t_crit_error("loading BPMP-FW MTC", true);
 			return;
 		}
-	}
-
-	// Load SC7-Exit firmware.
-	if (!_l4t_sd_load(!t210b01 ? SC7EXIT_FW : SC7EXIT_B01_FW))
-	{
-		_l4t_crit_error("loading SC7-Exit", true);
-		return;
 	}
 
 	// Set SC7-Exit firmware address to PMC for bootrom and do further setup.

@@ -1557,7 +1557,6 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 
 	// Check if Mariko Warmboot Storage exists in source drive.
 	f_chdrive(src_drv);
-	bool backup_mws = !part_info.backup_possible && !f_stat("warmboot_mariko", NULL);
 	bool backup_pld = !part_info.backup_possible && !f_stat("payload.bin", NULL);
 
 	if (!part_info.backup_possible)
@@ -1568,8 +1567,6 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 		// Create hekate/Nyx/MWS folders in destination drive.
 		f_chdrive(dst_drv);
 		f_mkdir("bootloader");
-		if (backup_mws)
-			f_mkdir("warmboot_mariko");
 	}
 
 	// Copy all or hekate/Nyx files.
@@ -1578,12 +1575,6 @@ static int _backup_and_restore_files(bool backup, lv_obj_t **labels)
 	// If incomplete backup mode, copy MWS and payload.bin also.
 	if (!res)
 	{
-		if (backup_mws)
-		{
-			strcpy(path, "warmboot_mariko");
-			res = _stat_and_copy_files(src_drv, dst_drv, path, &total_files, &total_size, labels);
-		}
-
 		if (!res && backup_pld)
 		{
 			strcpy(path, "payload.bin");
