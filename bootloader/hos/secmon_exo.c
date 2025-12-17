@@ -383,8 +383,6 @@ static const char *get_error_desc(u32 error_desc)
 	}
 }
 
-#define HOS_PID_BOOT2 0x8
-
 void secmon_exo_check_panic()
 {
 	volatile atm_fatal_error_ctx *rpt = (atm_fatal_error_ctx *)ATM_FATAL_ERR_CTX_ADDR;
@@ -396,13 +394,9 @@ void secmon_exo_check_panic()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	WPRINTF("Panic occurred while running Atmosphere.\n\n");
+	WPRINTF("Atmosphere panic occurred!\n\n");
 	WPRINTFARGS("Title ID: %08X%08X", (u32)((u64)rpt->title_id >> 32), (u32)rpt->title_id);
 	WPRINTFARGS("Error:    %s (0x%x)\n", get_error_desc(rpt->error_desc), rpt->error_desc);
-
-	// Check if mixed atmosphere sysmodules.
-	if ((u32)rpt->title_id == HOS_PID_BOOT2)
-		WPRINTF("Mismatched Atmosphere files?\n");
 
 	// Save context to the SD card.
 	char filepath[0x40];
@@ -423,13 +417,11 @@ void secmon_exo_check_panic()
 	rpt->magic = 0;
 
 	gfx_printf("\n\nPress POWER to continue.\n");
+	gfx_con_setpos(0, 0);
 
-	display_backlight_brightness(100, 1000);
+	display_backlight_brightness(150, 1000);
 	msleep(1000);
 
 	while (!(btn_wait() & BTN_POWER))
 		;
-
-	display_backlight_brightness(0, 1000);
-	gfx_con_setpos(0, 0);
 }
