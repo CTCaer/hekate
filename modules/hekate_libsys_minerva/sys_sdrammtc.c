@@ -25,15 +25,11 @@
 #include "types.h"
 #include <module.h>
 
-#define DVFS_CLOCK_CHANGE_VERSION "Minerva Training Cell v1.5_lpddr4"
-#define EMC_PRELOCK_VERSION       2101
+#define DVFS_T21X_CC_VERSION "Minerva Training Cell v0.1_T21X"
+#define DVFS_T210_CC_VERSION "Minerva Training Cell v1.6_T210"
 
 #define EPRINTF(...)
 #define EPRINTFARGS(...)
-
-#define MAX_FREQ_T210     1600000
-//#define OVERCLOCK_FREQ    1862400
-//#define OVERCLOCK_VOLTAGE 1200000 // Default is 1100mV and in HOS 1125mV.
 
 bool train_ram_patterns;
 
@@ -1048,7 +1044,7 @@ static void _usleep(u32 microseconds)
 		;
 }
 
-static u32 div_o3(u32 a, u32 b)
+static u32 _div_o3(u32 a, u32 b)
 {
 	u32 result = a / b;
 
@@ -2564,7 +2560,7 @@ static void _save_train_results(emc_table_t *mtc_table_entry, u32 needs_training
 	}
 }
 
-static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u32 needs_training, u32 selected_clk_src_emc)
+static u32 _minerva_change_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, u32 needs_training, u32 selected_clk_src_emc)
 {
 	u32 emc_dbg_o;
 	u32 emc_pin_o;
@@ -2788,11 +2784,11 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 
 	u32 tRPST = (src_emc_entry->emc_mrw >> 7) & 1;
 
-	u32 deltaTWATM = div_o3(7500, src_clock_period);
+	u32 deltaTWATM = _div_o3(7500, src_clock_period);
 	if (deltaTWATM < 8)
 		deltaTWATM = 8;
 
-	u32 tRTM = src_emc_entry->dram_timings.rl + div_o3(3600, src_clock_period) + deltaTWATM + tRPST + nRTP + 1;
+	u32 tRTM = src_emc_entry->dram_timings.rl + _div_o3(3600, src_clock_period) + deltaTWATM + tRPST + nRTP + 1;
 
 	if (tRTM <= src_emc_entry->burst_regs.emc_rp + src_emc_entry->burst_regs.emc_r2p)
 	{
@@ -3153,7 +3149,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	if (!needs_ca_combo_training)
 	{
 		s32 zq_latch_dvfs_wait_time;
-		u32 T_PDEX_timing = div_o3(dst_emc_entry->dram_timings.t_pdex * 1000, dst_clock_period);
+		u32 T_PDEX_timing = _div_o3(dst_emc_entry->dram_timings.t_pdex * 1000, dst_clock_period);
 
 		if (dst_clock_period > 2000)
 			zq_latch_dvfs_wait_time = (s32)tZQCAL_lpddr4_fc_adj - (s32)T_PDEX_timing;
@@ -3393,7 +3389,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	{
 		(void)MC(MC_EMEM_ADR_CFG);
 		emc_dbg_val = EMC(EMC_DBG);
-		EMC(EMC_DBG) |= EMC_DBG_READ_MUX_ACTIVE;
+		EMC(EMC_DBG) |= EMC_DBG_READ_MUX_ASSEMBLY;
 
 		_save_train_results(dst_emc_entry, needs_training, dram_dev_num, channel1_enabled);
 
@@ -3472,7 +3468,7 @@ static u32 _minerva_set_clock(emc_table_t *src_emc_entry, emc_table_t *dst_emc_e
 	return 0;
 }
 
-static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, bool switch_rate, u32 selected_clk_src_emc)
+static void _minerva_train(emc_table_t *src_emc_entry, emc_table_t *dst_emc_entry, bool switch_rate, u32 selected_clk_src_emc)
 {
 	u32 needs_training_num = 0;
 	u32 emc_cfg_dig_dll_val = 0;
@@ -3519,7 +3515,7 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 
 		for (u32 i = 0; needs_training_num > i; i++) // Runs more than once for needs_training CA/QUSE/WR/RD.
 		{
-			_minerva_set_clock(src_emc_entry, dst_emc_entry, needs_training_emc_table[i], selected_clk_src_emc);
+			_minerva_change_clock(src_emc_entry, dst_emc_entry, needs_training_emc_table[i], selected_clk_src_emc);
 
 			bool dual_channel = (EMC(EMC_FBIO_CFG7) >> 1) & ((EMC(EMC_FBIO_CFG7) >> 2) & 1);
 
@@ -3555,11 +3551,14 @@ static void _minerva_train_patterns(emc_table_t *src_emc_entry, emc_table_t *dst
 	}
 
 	if (switch_rate)
-		_minerva_set_clock(src_emc_entry, dst_emc_entry, 0, selected_clk_src_emc);
+		_minerva_change_clock(src_emc_entry, dst_emc_entry, 0, selected_clk_src_emc);
 }
 
 void _minerva_do_over_temp_compensation(mtc_config_t *mtc_cfg)
 {
+	if (!mtc_cfg->current_emc_table)
+		return;
+
 	u32 dram_type = EMC(EMC_FBIO_CFG5) & 3;
 
 	// Only LPDDR chips are supported.
@@ -3685,10 +3684,162 @@ u32 _minerva_do_periodic_compensation(emc_table_t *mtc_table_entry)
 	return 0;
 }
 
-static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
+static int _minerva_set_ir_boost(mtc_config_t *mtc_cfg)
 {
-	u32 src_emc_entry_idx = 999;
-	u32 dst_emc_entry_idx = 999;
+	switch (mtc_cfg->train_mode)
+	{
+	case OP_SWITCH:
+		break;
+	case OP_TRAIN:
+		return 4;
+	case OP_TRAIN_SWITCH:
+		break;
+	default:
+		return 4;
+	}
+
+	EPRINTFARGS("Requested op %d from %d to %d.", OP_SWITCH, src_rate_khz, dst_rate_khz);
+
+	bool boost = mtc_cfg->rate_to > MTC_INIT_FREQUENCY;
+
+	u32 clk_new     = (PLLP_OUT0 << 29u) | 0x188000 | (boost ? 0 : 2);
+	u32 clk_cur     = CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
+	u32 clk_cur_src = clk_cur >> 29u;
+	if (clk_new == clk_cur || clk_cur_src != PLLP_OUT0)
+		return 3;
+
+	// Clear clock change interrupt.
+	EMC(EMC_INTSTATUS) = CLKCHANGE_COMPLETE_INT;
+
+	u32 emc_dbg_o = EMC(EMC_DBG);
+	u32 emc_dbg_c = emc_dbg_o & ~(EMC_DBG_WRITE_MUX_ACTIVE | EMC_DBG_READ_MUX_ASSEMBLY);
+	EMC(EMC_DBG)  = emc_dbg_c;
+	(void)EMC(EMC_DBG);
+
+	// Save registers.
+	u32 emc_cfg_o          = EMC(EMC_CFG);
+	u32 emc_auto_cal_cfg_o = EMC(EMC_AUTO_CAL_CONFIG);
+	u32 emc_sel_dpd_ctrl_o = EMC(EMC_SEL_DPD_CTRL);
+	u32 emc_cfg_pipe_clk_o = EMC(EMC_CFG_PIPE_CLK);
+	u32 emc_fdpd_ctl_cmd_o = EMC(EMC_FDPD_CTRL_CMD_NO_RAMP);
+
+	EMC(EMC_DBG) = emc_dbg_c | EMC_DBG_WRITE_MUX_ACTIVE;
+	(void)EMC(EMC_DBG);
+
+	// Disable autocal.
+	EMC(EMC_AUTO_CAL_CONFIG) = (emc_auto_cal_cfg_o & 0x7FFFF9FE) | 0x601;
+	(void)EMC(EMC_AUTO_CAL_CONFIG);
+
+	// Disable other power features.
+	EMC(EMC_CFG)          = emc_cfg_o & 0xFFFFFFF;
+	EMC(EMC_SEL_DPD_CTRL) = emc_sel_dpd_ctrl_o & 0xFFFFFEC3;
+	EMC(EMC_CFG_PIPE_CLK) = emc_cfg_pipe_clk_o | BIT(0);
+	EMC(EMC_FDPD_CTRL_CMD_NO_RAMP) = emc_fdpd_ctl_cmd_o & ~BIT(0);
+
+	EMC(EMC_DBG) = emc_dbg_c;
+	(void)EMC(EMC_DBG);
+	_usleep(5);
+
+	if (boost)
+	{
+		// Program arbiter regs.
+		MC(MC_EMEM_ARB_CFG)          = 0x1000003;
+		MC(MC_EMEM_ARB_TIMING_RP)    = 1;
+		MC(MC_EMEM_ARB_TIMING_RC)    = 6;
+		MC(MC_EMEM_ARB_TIMING_RAS)   = 3;
+		MC(MC_EMEM_ARB_TIMING_FAW)   = 4;
+		MC(MC_EMEM_ARB_TIMING_RFCPB) = 0xE;
+		MC(MC_EMEM_ARB_DA_COVERS)    = 0x30203;
+		MC(MC_EMEM_ARB_MISC0)        = 0x73C30507;
+
+		// Program base timings.
+		EMC(EMC_RP)      = 8;
+		EMC(EMC_TRPAB)   = 9;
+		EMC(EMC_RC)      = 25;
+		EMC(EMC_RAS)     = 18;
+		EMC(EMC_R2W)     = 15;
+		EMC(EMC_RD_RCD)  = 8;
+		EMC(EMC_WR_RCD)  = 8;
+		EMC(EMC_TFAW)    = 17; // 13 on 2133 MHz modules.
+
+		// ZQ calibration.
+		EMC(EMC_ZCAL_WAIT_CNT) = 0xE0198;
+
+		// Set refresh timings.
+		EMC(EMC_RFC)     = 115;
+		EMC(EMC_RFCPB)   = 58;
+		EMC(EMC_TREFBW)  = 0x18DD; // 0x638.
+		EMC(EMC_REFRESH) = 0x181E; // 0x607.
+		EMC(EMC_PRE_REFRESH_REQ_CNT) = 0x607; // 0x181.
+		EMC(EMC_DYN_SELF_REF_CONTROL) = (EMC(EMC_DYN_SELF_REF_CONTROL) & 0xFFFF0000) | 0xD22;
+	}
+	else
+	{
+		// Program arbiter regs.
+		MC(MC_EMEM_ARB_CFG)          = 0x8000001;
+		MC(MC_EMEM_ARB_TIMING_RP)    = 0;
+		MC(MC_EMEM_ARB_TIMING_RC)    = 3;
+		MC(MC_EMEM_ARB_TIMING_RAS)   = 1;
+		MC(MC_EMEM_ARB_TIMING_FAW)   = 2;
+		MC(MC_EMEM_ARB_TIMING_RFCPB) = 7;
+		MC(MC_EMEM_ARB_DA_COVERS)    = 0x30201;
+		MC(MC_EMEM_ARB_MISC0)        = 0x72A30504;
+
+		// Program base timings.
+		EMC(EMC_RP)     = 4;
+		EMC(EMC_TRPAB)  = 5;
+		EMC(EMC_RC)     = 13;
+		EMC(EMC_RAS)    = 9;
+		EMC(EMC_R2W)    = 11;
+		EMC(EMC_RD_RCD) = 6;
+		EMC(EMC_WR_RCD) = 6;
+		EMC(EMC_TFAW)   = 9; // 8 on 2133 MHz modules.
+
+		// Program ZQ calibration.
+		EMC(EMC_ZCAL_WAIT_CNT) = 0x900CC;
+
+		// Program refresh timings.
+		EMC(EMC_RFC)     = 58;
+		EMC(EMC_RFCPB)   = 29;
+		EMC(EMC_TREFBW)  = 0x31C;
+		EMC(EMC_REFRESH) = 0x304;
+		EMC(EMC_PRE_REFRESH_REQ_CNT) = 0xC1;
+		EMC(EMC_DYN_SELF_REF_CONTROL) = (EMC(EMC_DYN_SELF_REF_CONTROL) & 0xFFFF0000) | 0x713;
+	}
+
+	// Restore power features and pipe clock.
+	EMC(EMC_CFG) = emc_cfg_o & 0xEFFFFFFF;
+	EMC(EMC_CFG_PIPE_CLK) = emc_cfg_pipe_clk_o;
+	EMC(EMC_DBG) = emc_dbg_o;
+	(void)EMC(EMC_DBG);
+
+	// Do clock change.
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC) = clk_new;
+	(void)CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
+
+	// Clock change handshake.
+	_wait_emc_status(EMC_INTSTATUS, CLKCHANGE_COMPLETE_INT, true, 0);
+
+	// Restore regs.
+	EMC(EMC_CFG)             = emc_cfg_o;
+	EMC(EMC_FDPD_CTRL_CMD_NO_RAMP) = emc_fdpd_ctl_cmd_o;
+	EMC(EMC_SEL_DPD_CTRL)    = emc_sel_dpd_ctrl_o;
+	EMC(EMC_AUTO_CAL_CONFIG) = emc_auto_cal_cfg_o;
+
+	EMC(EMC_TIMING_CONTROL) = 1;
+
+	// Min 20us before next clock change.
+	_usleep(20);
+
+	mtc_cfg->rate_from = mtc_cfg->rate_to;
+
+	return 0;
+}
+
+static u32 _minerva_do_training_switch(mtc_config_t *mtc_cfg)
+{
+	u32 src_emc_entry_idx = 100;
+	u32 dst_emc_entry_idx = 100;
 	u32 selected_clk_src_emc;
 	u32 emc_clk_src;
 	bool freq_changed = false;
@@ -3696,22 +3847,25 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 	emc_table_t *src_emc_entry;
 	emc_table_t *dst_emc_entry;
 
-	if (mtc_cfg->table_entries > 900)
+	if (mtc_cfg->table_entries > 32)
 		return 4;
 
+	if (mtc_cfg->mtc_table[0].rev == MTC_IRB_MAGIC)
+		return _minerva_set_ir_boost(mtc_cfg);
+
+	// Find tables.
 	for (u32 i = 0; i < mtc_cfg->table_entries; i++)
 	{
 		u32 table_entry_rate = mtc_cfg->mtc_table[i].rate_khz;
 		if (mtc_cfg->rate_from == table_entry_rate)
 			src_emc_entry_idx = i;
-		if (mtc_cfg->rate_to == table_entry_rate)
+		if (mtc_cfg->rate_to   == table_entry_rate)
 			dst_emc_entry_idx = i;
 	}
 
-	if (src_emc_entry_idx >= mtc_cfg->table_entries)
-		return 4;
-
-	if (dst_emc_entry_idx >= mtc_cfg->table_entries)
+	// Check if tables were found.
+	if (src_emc_entry_idx >= mtc_cfg->table_entries ||
+		dst_emc_entry_idx >= mtc_cfg->table_entries)
 		return 4;
 
 	src_emc_entry = (emc_table_t *)&mtc_cfg->mtc_table[src_emc_entry_idx];
@@ -3759,17 +3913,17 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 	switch (mtc_cfg->train_mode)
 	{
 	case OP_SWITCH:
-		_minerva_set_clock(src_emc_entry, dst_emc_entry, 0, selected_clk_src_emc);
+		_minerva_change_clock(src_emc_entry, dst_emc_entry, 0, selected_clk_src_emc);
 		mtc_cfg->current_emc_table = dst_emc_entry;
 		mtc_cfg->rate_from = dst_emc_entry->rate_khz;
 		if (dst_emc_entry->periodic_training)
 			_minerva_do_periodic_compensation(dst_emc_entry);
 		return 0;
 	case OP_TRAIN:
-		_minerva_train_patterns(src_emc_entry, dst_emc_entry, false, selected_clk_src_emc);
+		_minerva_train(src_emc_entry, dst_emc_entry, false, selected_clk_src_emc);
 		return 0;
 	case OP_TRAIN_SWITCH:
-		_minerva_train_patterns(src_emc_entry, dst_emc_entry, true, selected_clk_src_emc);
+		_minerva_train(src_emc_entry, dst_emc_entry, true, selected_clk_src_emc);
 		mtc_cfg->current_emc_table = dst_emc_entry;
 		mtc_cfg->rate_from = dst_emc_entry->rate_khz;
 		if (dst_emc_entry->periodic_training)
@@ -3782,71 +3936,75 @@ static u32 _minerva_set_rate(mtc_config_t *mtc_cfg)
 
 static void _minerva_get_table(mtc_config_t *mtc_cfg)
 {
+	u32 hidrev  = APB_MISC(APB_MISC_GP_HIDREV);
+	u32 chip_id = (hidrev >> 8) & 0xFF;
+	u32 major   = (hidrev >> 4) & 0xF;
+
+	// Check that SoC is T210/T210B01.
+	if (chip_id != HIDREV_CHIPID_T210)
+		goto error;
+
+	// Check if SoC SKU is ODIN.
+	if (FUSE(FUSE_SKU_INFO) != SKU_ODIN)
+		goto error;
+
+	// Clear table storage.
+	memcpy(mtc_cfg->mtc_table, DVFS_T21X_CC_VERSION, sizeof(DVFS_T21X_CC_VERSION));
+	memcpy(mtc_cfg->mtc_table, DVFS_T210_CC_VERSION, sizeof(DVFS_T210_CC_VERSION));
 	memset(mtc_cfg->mtc_table, 0, EMC_TABLE_ENTRY_SIZE_R7 * 10);
+
+	// Check if init rate boost mode.
+	if (mtc_cfg->init_done == MTC_IRB_MAGIC)
+	{
+		mtc_cfg->mtc_table[0].rev = MTC_IRB_MAGIC;
+		mtc_cfg->table_entries = 1; // Avoid OOB.
+
+		goto init_cfg;
+	}
+
+	// Check if ODINX02.
+	if (major != HIDREV_MAJOR_T210)
+		goto error;
+
+	// ODINX02 table: 204, 408, 666, 800, 1066, 1333, 1600 MHz.
+	mtc_cfg->table_entries = EMC_TABLE_SIZE_ODINX02_R7 / EMC_TABLE_ENTRY_SIZE_R7;
 
 	switch (mtc_cfg->sdram_id)
 	{
 	case DRAM_4GB_HYNIX_H9HCNNNBPUMLHR_NLN:
-		memcpy(mtc_cfg->mtc_table, nx_abca2_2_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
+		memcpy(mtc_cfg->mtc_table, odinx02_a2_2_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_ODINX02_R7);
+		break;
+	case DRAM_8GB_SAMSUNG_K4FBE3D4HM_MGXX:
+		memcpy(mtc_cfg->mtc_table, odinx02_a2_7_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_ODINX02_R7);
 		break;
 	case DRAM_4GB_SAMSUNG_K4F6E304HB_MGCH:
 	case DRAM_4GB_MICRON_MT53B512M32D2NP_062_WT:
 	case DRAM_4GB_COPPER_SAMSUNG:
 	case DRAM_6GB_SAMSUNG_K4FHE3D4HM_MFCH:
-	case DRAM_8GB_SAMSUNG_K4FBE3D4HM_MGXX:
 	default:
-		memcpy(mtc_cfg->mtc_table, nx_abca2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_R7);
-		if (mtc_cfg->sdram_id == DRAM_8GB_SAMSUNG_K4FBE3D4HM_MGXX)
-		{
-			for (u32 i = 0; i < EMC_TABLE_SIZE_R7 / EMC_TABLE_ENTRY_SIZE_R7; i++)
-			{
-				emc_table_t *table = &mtc_cfg->mtc_table[i];
-				u32 period = 1000000000 / table->rate_khz;
-
-				table->burst_regs.emc_rfc = 280000 / period;
-				table->shadow_regs_ca_train.emc_rfc = 280000 / period;
-				table->shadow_regs_quse_train.emc_rfc = 280000 / period;
-				table->shadow_regs_rdwr_train.emc_rfc = 280000 / period;
-
-				table->burst_regs.emc_rfcpb = 140000 / period;
-				table->shadow_regs_ca_train.emc_rfcpb = 140000 / period;
-				table->shadow_regs_quse_train.emc_rfcpb = 140000 / period;
-				table->shadow_regs_rdwr_train.emc_rfcpb = 140000 / period;
-
-				table->burst_regs.emc_txsr = 287500 / period;
-				table->shadow_regs_ca_train.emc_txsr = 287500 / period;
-				table->shadow_regs_quse_train.emc_txsr = 287500 / period;
-				table->shadow_regs_rdwr_train.emc_txsr = 287500 / period;
-
-				table->burst_regs.emc_txsrdll = table->burst_regs.emc_txsr;
-				table->shadow_regs_ca_train.emc_txsrdll = table->shadow_regs_ca_train.emc_txsr;
-				table->shadow_regs_quse_train.emc_txsrdll = table->shadow_regs_quse_train.emc_txsr;
-				table->shadow_regs_rdwr_train.emc_txsrdll = table->shadow_regs_rdwr_train.emc_txsr;
-
-				table->burst_regs.emc_dyn_self_ref_control &= 0x7FFFFFFF;
-				table->shadow_regs_ca_train.emc_dyn_self_ref_control &= 0x7FFFFFFF;
-				table->shadow_regs_quse_train.emc_dyn_self_ref_control &= 0x7FFFFFFF;
-				table->shadow_regs_rdwr_train.emc_dyn_self_ref_control &= 0x7FFFFFFF;
-
-				table->dram_timings.t_rfc = 280;
-			}
-		}
+		memcpy(mtc_cfg->mtc_table, odinx02_a2_0_3_10NoCfgVersion_V9_8_7_V1_6, EMC_TABLE_SIZE_ODINX02_R7);
 		break;
 	}
 
-	mtc_cfg->table_entries = EMC_TABLE_SIZE_R7 / EMC_TABLE_ENTRY_SIZE_R7;
+init_cfg:
 	mtc_cfg->rate_to    = 0;
 	mtc_cfg->rate_from  = 0;
-	mtc_cfg->train_mode = 0;
+	mtc_cfg->train_mode = -1;
 	mtc_cfg->prev_temp  = 0;
 	mtc_cfg->current_emc_table = NULL;
 
 	// Important!
 	mtc_cfg->train_ram_patterns = true;
 	mtc_cfg->init_done = MTC_INIT_MAGIC;
+
+	return;
+
+error:
+	mtc_cfg->init_done = 0;
+	return;
 }
 
-void _minerva_init(mtc_config_t *mtc_cfg, bdkParams_t bp)
+void minerva_entry(mtc_config_t *mtc_cfg, bdkParams_t bp)
 {
 	EPRINTF("-- Minerva Training Cell --");
 
@@ -3854,42 +4012,26 @@ void _minerva_init(mtc_config_t *mtc_cfg, bdkParams_t bp)
 
 	if (mtc_cfg->init_done != MTC_INIT_MAGIC)
 	{
-		if (mtc_cfg->init_done == MTC_NEW_MAGIC)
-		{
+		if (mtc_cfg->init_done == MTC_NEW_MAGIC ||
+			mtc_cfg->init_done == MTC_IRB_MAGIC)
 			_minerva_get_table(mtc_cfg);
-#ifdef OVERCLOCK_VOLTAGE
-			// Set SD1 regulator voltage.
-			if ((bp->extension_magic & 0xF0FFFFFF) == IANOS_EXT0)
-				bp->reg_voltage_set(1, OVERCLOCK_VOLTAGE);
-#endif
-		}
+
 		return;
 	}
-
-#ifdef OVERCLOCK_FREQ
-	// Change max rate in table.
-	mtc_cfg->mtc_table[mtc_cfg->table_entries - 1].rate_khz = OVERCLOCK_FREQ;
-
-	// Change rates for OC RAM.
-	if (mtc_cfg->rate_from == MAX_FREQ_T210)
-		mtc_cfg->rate_from = OVERCLOCK_FREQ;
-	if (mtc_cfg->rate_to   == MAX_FREQ_T210)
-		mtc_cfg->rate_to   = OVERCLOCK_FREQ;
-#endif
 
 	switch (mtc_cfg->train_mode)
 	{
 	case OP_SWITCH:
 		EPRINTF("Switching..");
-		_minerva_set_rate(mtc_cfg);
+		_minerva_do_training_switch(mtc_cfg);
 		break;
 	case OP_TRAIN:
 		EPRINTF("Training..");
-		_minerva_set_rate(mtc_cfg);
+		_minerva_do_training_switch(mtc_cfg);
 		break;
 	case OP_TRAIN_SWITCH:
 		EPRINTF("Training and switching..");
-		_minerva_set_rate(mtc_cfg);
+		_minerva_do_training_switch(mtc_cfg);
 		break;
 	case OP_PERIODIC_TRAIN:
 		EPRINTF("Periodic training..");
@@ -3900,14 +4042,6 @@ void _minerva_init(mtc_config_t *mtc_cfg, bdkParams_t bp)
 		_minerva_do_over_temp_compensation(mtc_cfg);
 		break;
 	}
-
-#ifdef OVERCLOCK_FREQ
-	// Restore rates for OC RAM.
-	if (mtc_cfg->rate_from == OVERCLOCK_FREQ)
-		mtc_cfg->rate_from = MAX_FREQ_T210;
-	if (mtc_cfg->rate_to   == OVERCLOCK_FREQ)
-		mtc_cfg->rate_to   = MAX_FREQ_T210;
-#endif
 
 	mtc_cfg->train_ram_patterns = train_ram_patterns;
 }

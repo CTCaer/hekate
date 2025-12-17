@@ -1,6 +1,6 @@
 /*
  * Minerva Training Cell
- * DRAM Training for Tegra X1 SoC. Supports DDR2/3 and LPDDR3/4.
+ * DRAM Training for Tegra X1 SoC. Supports LPDDR4.
  *
  * Copyright (c) 2018-2025 CTCaer  <ctcaer@gmail.com>
  *
@@ -19,6 +19,16 @@
 
 #ifndef _MTC_MC_EMC_REGS_H_
 #define _MTC_MC_EMC_REGS_H_
+
+/* APB misc registers */
+#define APB_MISC_GP_HIDREV 0x804
+#define  HIDREV_MAJOR_T210    0x1
+#define  HIDREV_MAJOR_T210B01 0x2
+#define  HIDREV_CHIPID_T210   0x21
+
+/* Fuse registers */
+#define FUSE_SKU_INFO 0x110
+#define  SKU_ODIN 0x83
 
 /* Clock controller registers */
 #define CLK_RST_CONTROLLER_PLLM_BASE           0x90
@@ -110,7 +120,7 @@
 #define  CLKCHANGE_COMPLETE_INT (1 << 4)
 
 #define EMC_DBG                       0x8
-#define  EMC_DBG_READ_MUX_ACTIVE        BIT(0)
+#define  EMC_DBG_READ_MUX_ASSEMBLY      BIT(0)
 #define  EMC_DBG_WRITE_MUX_ACTIVE       BIT(1)
 #define  EMC_DBG_CFG_SWAP_ACTIVE_ONLY   (0 << 26u)
 #define  EMC_DBG_CFG_SWAP_SWAP          (1 << 26u)

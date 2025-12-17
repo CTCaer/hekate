@@ -26,7 +26,7 @@ $(BUILD)/%.o: ./%.c
 	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
 
 $(TARGET).bso: $(OBJS)
-	@$(CC) $(LDFLAGS) -e _minerva_init $^ -o $(OUTPUT)/$(TARGET).bso
+	@$(CC) $(LDFLAGS) -e minerva_entry $^ -o $(OUTPUT)/$(TARGET).bso
 	@$(STRIP) -g $(OUTPUT)/$(TARGET).bso
 	@echo  -e "-------------\nBuilt module: "$(TARGET)".bso\n-------------"
 

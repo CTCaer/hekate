@@ -1,6 +1,6 @@
 /*
  * Minerva Training Cell
- * DRAM Training for Tegra X1 SoC. Supports DDR2/3 and LPDDR3/4.
+ * DRAM Training for Tegra X1 SoC. Supports LPDDR4.
  *
  * Copyright (c) 2018-2025 CTCaer  <ctcaer@gmail.com>
  *
@@ -24,30 +24,38 @@
 #include "types.h"
 
 /* Address bases and access macros - Change these for mapped access */
-#define TMR_BASE   0x60005000
-#define CLOCK_BASE 0x60006000
-#define MC_BASE    0x70019000
-#define EMC_BASE   0x7001B000
-#define EMC0_BASE  0x7001E000
-#define EMC1_BASE  0x7001F000
+#define TMR_BASE      0x60005000
+#define CLOCK_BASE    0x60006000
+#define APB_MISC_BASE 0x70000000
+#define FUSE_BASE     0x7000F800
+#define MC_BASE       0x70019000
+#define EMC_BASE      0x7001B000
+#define EMC0_BASE     0x7001E000
+#define EMC1_BASE     0x7001F000
 
 #define MTC_INIT_MAGIC 0x3043544D
 #define MTC_NEW_MAGIC  0x5243544D
+#define MTC_IRB_MAGIC  0x4943544D
+
+#define MTC_INIT_FREQUENCY 204000
 
 #define _REG(base, off) *(vu32 *)((base) + (off))
 
-#define TMR(off) _REG(TMR_BASE, off)
-#define CLOCK(off) _REG(CLOCK_BASE, off)
-#define MC(off) _REG(MC_BASE, off)
-#define EMC(off) _REG(EMC_BASE, off)
-#define EMC_CH0(off) _REG(EMC0_BASE, off)
-#define EMC_CH1(off) _REG(EMC1_BASE, off)
+#define TMR(off)      _REG(TMR_BASE, off)
+#define CLOCK(off)    _REG(CLOCK_BASE, off)
+#define APB_MISC(off) _REG(APB_MISC_BASE, off)
+#define FUSE(off)     _REG(FUSE_BASE, off)
+#define MC(off)       _REG(MC_BASE, off)
+#define EMC(off)      _REG(EMC_BASE, off)
+#define EMC_CH0(off)  _REG(EMC0_BASE, off)
+#define EMC_CH1(off)  _REG(EMC1_BASE, off)
 /* End of addresses and access macros */
 
 #define EMC_TABLE_ENTRY_SIZE_R7   4928
 #define EMC_TABLE_ENTRY_SIZE_R3   4300
-#define EMC_TABLE_SIZE_R7         (EMC_TABLE_ENTRY_SIZE_R7 * 7)
-#define EMC_STATUS_UPDATE_TIMEOUT 1000
+#define EMC_TABLE_SIZE_ODINX02_R7 (EMC_TABLE_ENTRY_SIZE_R7 * 7)
+
+#define EMC_STATUS_UPDATE_TIMEOUT 2000
 #define EMC_PERIODIC_TRAIN_MS     100
 #define EMC_TEMP_COMP_MS          1000
 
