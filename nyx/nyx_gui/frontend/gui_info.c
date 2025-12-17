@@ -2316,6 +2316,9 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 	case 0xAD:
 		strcat(txt_buf, "Longsys ");
 		break;
+	case 0x6F:
+		strcat(txt_buf, "Netac ");
+		break;
 	default:
 		strcat(txt_buf, "Unknown ");
 		break;
