@@ -109,11 +109,11 @@ l4t_flasher_ctxt_t l4t_flash_ctxt;
 lv_obj_t *btn_flash_l4t;
 lv_obj_t *btn_flash_android;
 
-int _copy_file(const char *src, const char *dst, const char *path)
+static FRESULT _copy_file(const char *src, const char *dst, const char *path)
 {
 	FIL fp_src;
 	FIL fp_dst;
-	int res;
+	FRESULT res;
 
 	// Open file for reading.
 	f_chdrive(src);
@@ -151,8 +151,6 @@ int _copy_file(const char *src, const char *dst, const char *path)
 static int _stat_and_copy_files(const char *src, const char *dst, char *path, u32 *total_files, u32 *total_size, lv_obj_t **labels)
 {
 	FRESULT res;
-	FIL fp_src;
-	FIL fp_dst;
 	DIR dir;
 	u32 dirLength = 0;
 	static FILINFO fno;
@@ -214,6 +212,8 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 
 			if (dst)
 			{
+				FIL fp_src;
+				FIL fp_dst;
 				u32 file_bytes_left = fno.fsize;
 
 				// Open file for writing.
@@ -1861,9 +1861,9 @@ static lv_res_t _emmc_create_mbox_start_partitioning()
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
 	static const char *mbox_btn_map[] =  { "\251", "\222OK", "\251", "" };
-	static const char *mbox_btn_map1[] = { "\251", "\222Flash Linux", "\222Flash Android", "\221OK", "" };
-	static const char *mbox_btn_map2[] = { "\251", "\222Flash Linux", "\221OK", "" };
-	static const char *mbox_btn_map3[] = { "\251", "\222Flash Android", "\221OK", "" };
+	static const char *mbox_btn_map1[] = { "\222Flash Linux", "\222Flash Android", "\221OK", "" };
+	static const char *mbox_btn_map2[] = { "\222Flash Linux", "\221OK", "" };
+	static const char *mbox_btn_map3[] = { "\222Flash Android", "\221OK", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
