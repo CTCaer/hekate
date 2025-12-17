@@ -69,7 +69,7 @@ extern gfx_con_t gfx_con;
 
 void gfx_init_ctxt(u32 *fb, u32 width, u32 height, u32 stride);
 void gfx_clear_grey(u8 color);
-void gfx_clear_partial_grey(u8 color, u32 pos_x, u32 height);
+void gfx_clear_partial_grey(u8 color, u32 pos_y, u32 height);
 void gfx_clear_color(u32 color);
 void gfx_con_init();
 void gfx_con_setcol(u32 fgcol, int fillbg, u32 bgcol);

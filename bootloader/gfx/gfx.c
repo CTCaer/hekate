@@ -128,9 +128,9 @@ void gfx_clear_grey(u8 color)
 	memset(gfx_ctxt.fb, color, gfx_ctxt.width * gfx_ctxt.height * 4);
 }
 
-void gfx_clear_partial_grey(u8 color, u32 pos_x, u32 height)
+void gfx_clear_partial_grey(u8 color, u32 pos_y, u32 height)
 {
-	memset(gfx_ctxt.fb + pos_x * gfx_ctxt.stride, color, height * 4 * gfx_ctxt.stride);
+	memset(gfx_ctxt.fb + pos_y * gfx_ctxt.stride, color, height * 4 * gfx_ctxt.stride);
 }
 
 void gfx_clear_color(u32 color)
