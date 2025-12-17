@@ -707,7 +707,6 @@ void hos_launch(ini_sec_t *cfg)
 	tsec_ctxt_t tsec_ctxt = {0};
 
 	minerva_change_freq(FREQ_1600);
-	sdram_src_pllc(true);
 	list_init(&ctxt.kip1_list);
 
 	ctxt.cfg = cfg;
@@ -747,7 +746,6 @@ void hos_launch(ini_sec_t *cfg)
 		// Check if stock is enabled and device can boot in OFW.
 		if (ctxt.stock && (h_cfg.t210b01 || !tools_autorcm_enabled()))
 		{
-			sdram_src_pllc(false);
 			emmc_end();
 
 			WPRINTF("\nRebooting to OFW in 5s...");
@@ -1114,8 +1112,7 @@ void hos_launch(ini_sec_t *cfg)
 	hw_config_arbiter(true);
 
 	// Scale down RAM OC if enabled.
-	sdram_src_pllc(false);
-	minerva_prep_boot_freq();
+	minerva_prep_boot_hos();
 
 	// Flush cache and disable MMU.
 	bpmp_mmu_disable();
@@ -1130,7 +1127,6 @@ void hos_launch(ini_sec_t *cfg)
 
 error:
 	_free_launch_components(&ctxt);
-	sdram_src_pllc(false);
 	emmc_end();
 
 	EPRINTF("\nFailed to launch HOS!");
