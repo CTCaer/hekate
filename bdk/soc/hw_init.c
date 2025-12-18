@@ -194,7 +194,7 @@ static void _mbist_workaround_bl()
 		I2S(I2S_CG   + (i2s_idx << 8u))  = I2S_CG_SLCG_DISABLE;
 	}
 	// Set SLCG overrides for DISPA and VIC.
-	DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) |= BIT(2); // DSC_SLCG_OVERRIDE.
+	DISPLAY_A(DC_COM_DSC_TOP_CTL) |= BIT(2); // DSC_SLCG_OVERRIDE.
 	VIC(VIC_THI_SLCG_OVERRIDE_LOW_A) = 0xFFFFFFFF;
 
 	// Wait a bit for MBIST_EN to get unstuck (1 cycle min).
@@ -203,7 +203,7 @@ static void _mbist_workaround_bl()
 	// Reset SLCG to automatic mode.
 	// for (u32 i2s_idx = 0; i2s_idx < 5; i2s_idx++)
 	// 	I2S(I2S_CG   + (i2s_idx << 8u)) = I2S_CG_SLCG_ENABLE;
-	// DISPLAY_A(_DIREG(DC_COM_DSC_TOP_CTL)) &= ~BIT(2); // DSC_SLCG_OVERRIDE.
+	// DISPLAY_A(DC_COM_DSC_TOP_CTL) &= ~BIT(2); // DSC_SLCG_OVERRIDE.
 	// VIC(VIC_THI_SLCG_OVERRIDE_LOW_A) = 0;
 
 	// Set per-clock reset for APE/VIC/HOST1X/DISP1.

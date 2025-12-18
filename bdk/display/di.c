@@ -41,27 +41,27 @@ static void _display_panel_and_hw_end(bool no_panel_deinit);
 
 void display_enable_interrupt(u32 intr)
 {
-	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) |= intr;
+	DISPLAY_A(DC_CMD_INT_ENABLE) |= intr;
 }
 
 void display_disable_interrupt(u32 intr)
 {
-	DISPLAY_A(_DIREG(DC_CMD_INT_ENABLE)) &= ~intr;
-	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = intr;
+	DISPLAY_A(DC_CMD_INT_ENABLE) &= ~intr;
+	DISPLAY_A(DC_CMD_INT_STATUS) = intr;
 }
 
 void display_wait_interrupt(u32 intr)
 {
-	DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) = intr;
+	DISPLAY_A(DC_CMD_INT_STATUS) = intr;
 
 	// Interrupts are masked. Poll status register for checking if fired.
-	while (!(DISPLAY_A(_DIREG(DC_CMD_INT_STATUS)) & intr))
+	while (!(DISPLAY_A(DC_CMD_INT_STATUS) & intr))
 		;
 }
 
 static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 {
-	u32 end = get_tmr_us() + timeout;
+	u32 end = get_tmr_us() + timeout * 1000;
 	while (get_tmr_us() < end && DSI(off) & mask)
 		;
 	usleep(5);
@@ -69,8 +69,8 @@ static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 
 static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
 {
-	DSI(_DSIREG(DSI_WR_DATA)) = (param << 8) | cmd;
-	DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+	DSI(DSI_WR_DATA) = (param << 8) | cmd;
+	DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 
 	if (wait)
 		usleep(wait);
@@ -84,7 +84,7 @@ static void _display_dsi_wait_vblank(bool enable)
 		display_enable_interrupt(DC_CMD_INT_FRAME_END_INT);
 
 		// Use the 4th line to transmit the host cmd packet.
-		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE | DSI_DSI_LINE_TYPE(4);
+		DSI(DSI_VIDEO_MODE_CONTROL) = DSI_CMD_PKT_VID_ENABLE | DSI_DSI_LINE_TYPE(4);
 
 		// Wait for vblank before starting the transfer.
 		display_wait_interrupt(DC_CMD_INT_FRAME_END_INT);
@@ -96,15 +96,15 @@ static void _display_dsi_wait_vblank(bool enable)
 		usleep(14);
 
 		// Reset all states of syncpt block.
-		DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = DSI_INCR_SYNCPT_SOFT_RESET;
+		DSI(DSI_INCR_SYNCPT_CNTRL) = DSI_INCR_SYNCPT_SOFT_RESET;
 		usleep(300); // Stabilization delay.
 
 		// Clear syncpt block reset.
-		DSI(_DSIREG(DSI_INCR_SYNCPT_CNTRL)) = 0;
+		DSI(DSI_INCR_SYNCPT_CNTRL) = 0;
 		usleep(300); // Stabilization delay.
 
 		// Restore video mode and host control.
-		DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
+		DSI(DSI_VIDEO_MODE_CONTROL) = 0;
 
 		// Disable and clear vblank interrupt.
 		display_disable_interrupt(DC_CMD_INT_FRAME_END_INT);
@@ -113,17 +113,17 @@ static void _display_dsi_wait_vblank(bool enable)
 
 static void _display_dsi_read_rx_fifo(u32 *data)
 {
-	u32 fifo_count = DSI(_DSIREG(DSI_STATUS)) & DSI_STATUS_RX_FIFO_SIZE;
+	u32 fifo_count = DSI(DSI_STATUS) & DSI_STATUS_RX_FIFO_SIZE;
 	if (fifo_count)
-		DSI(_DSIREG(DSI_TRIGGER)) = 0;
+		DSI(DSI_TRIGGER) = 0;
 
 	for (u32 i = 0; i < fifo_count; i++)
 	{
 		// Read or Drain RX FIFO.
 		if (data)
-			data[i] = DSI(_DSIREG(DSI_RD_DATA));
+			data[i] = DSI(DSI_RD_DATA);
 		else
-			(void)DSI(_DSIREG(DSI_RD_DATA));
+			(void)DSI(DSI_RD_DATA);
 	}
 }
 
@@ -136,17 +136,17 @@ int display_dsi_read(u8 cmd, u32 len, void *data)
 
 	// Set reply size.
 	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, len, 0);
-	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+	_display_dsi_wait(250, DSI_TRIGGER, DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	// Request register read.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, cmd, 0);
-	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+	_display_dsi_wait(250, DSI_TRIGGER, DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	// Transfer bus control to device for transmitting the reply.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) |= DSI_HOST_CONTROL_IMM_BTA;
+	DSI(DSI_HOST_CONTROL) |= DSI_HOST_CONTROL_IMM_BTA;
 
 	// Wait for reply to complete. DSI_HOST_CONTROL_IMM_BTA bit acts as a DSI host read busy.
-	_display_dsi_wait(150000, _DSIREG(DSI_HOST_CONTROL), DSI_HOST_CONTROL_IMM_BTA);
+	_display_dsi_wait(150, DSI_HOST_CONTROL, DSI_HOST_CONTROL_IMM_BTA);
 
 	// Wait a bit for the reply.
 	usleep(5000);
@@ -196,25 +196,25 @@ int display_dsi_vblank_read(u8 cmd, u32 len, void *data)
 	_display_dsi_read_rx_fifo(NULL);
 
 	// Save host control and enable host cmd packets during video.
-	host_control = DSI(_DSIREG(DSI_HOST_CONTROL));
+	host_control = DSI(DSI_HOST_CONTROL);
 
 	_display_dsi_wait_vblank(true);
 
 	// Set reply size.
 	_display_dsi_send_cmd(MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, len, 0);
-	_display_dsi_wait(0, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+	_display_dsi_wait(0, DSI_TRIGGER, DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	// Request register read.
 	_display_dsi_send_cmd(MIPI_DSI_DCS_READ, cmd, 0);
-	_display_dsi_wait(0, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
+	_display_dsi_wait(0, DSI_TRIGGER, DSI_TRIGGER_HOST | DSI_TRIGGER_VIDEO);
 
 	_display_dsi_wait_vblank(false);
 
 	// Transfer bus control to device for transmitting the reply.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) |= DSI_HOST_CONTROL_IMM_BTA;
+	DSI(DSI_HOST_CONTROL) |= DSI_HOST_CONTROL_IMM_BTA;
 
 	// Wait for reply to complete. DSI_HOST_CONTROL_IMM_BTA bit acts as a DSI host read busy.
-	_display_dsi_wait(150000, _DSIREG(DSI_HOST_CONTROL), DSI_HOST_CONTROL_IMM_BTA);
+	_display_dsi_wait(150, DSI_HOST_CONTROL, DSI_HOST_CONTROL_IMM_BTA);
 
 	// Wait a bit for the reply.
 	usleep(5000);
@@ -253,7 +253,7 @@ int display_dsi_vblank_read(u8 cmd, u32 len, void *data)
 		res = 1;
 
 	// Restore host control.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control;
+	DSI(DSI_HOST_CONTROL) = host_control;
 
 	return res;
 }
@@ -273,10 +273,10 @@ void display_dsi_write(u8 cmd, u32 len, void *data)
 	}
 
 	// Save host control.
-	host_control = DSI(_DSIREG(DSI_HOST_CONTROL));
+	host_control = DSI(DSI_HOST_CONTROL);
 
 	// Enable host transfer trigger.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) = (host_control & ~(DSI_HOST_CONTROL_TX_TRIG_MASK)) | DSI_HOST_CONTROL_TX_TRIG_HOST;
+	DSI(DSI_HOST_CONTROL) = (host_control & ~(DSI_HOST_CONTROL_TX_TRIG_MASK)) | DSI_HOST_CONTROL_TX_TRIG_HOST;
 
 	switch (len)
 	{
@@ -293,16 +293,16 @@ void display_dsi_write(u8 cmd, u32 len, void *data)
 		fifo8[4] = cmd;
 		len += sizeof(u32); // Increase length by length word and DCS CMD.
 		for (u32 i = 0; i < (ALIGN(len, sizeof(u32)) / sizeof(u32)); i++)
-			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+			DSI(DSI_WR_DATA) = fifo32[i];
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 		break;
 	}
 
 	// Wait for the write to happen.
-	_display_dsi_wait(250000, _DSIREG(DSI_TRIGGER), DSI_TRIGGER_HOST);
+	_display_dsi_wait(250, DSI_TRIGGER, DSI_TRIGGER_HOST);
 
 	// Restore host control.
-	DSI(_DSIREG(DSI_HOST_CONTROL)) = host_control;
+	DSI(DSI_HOST_CONTROL) = host_control;
 }
 
 void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
@@ -323,11 +323,11 @@ void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 	switch (len)
 	{
 	case 0:
-		DSI(_DSIREG(DSI_WR_DATA)) = (cmd << 8) | MIPI_DSI_DCS_SHORT_WRITE;
+		DSI(DSI_WR_DATA) = (cmd << 8) | MIPI_DSI_DCS_SHORT_WRITE;
 		break;
 
 	case 1:
-		DSI(_DSIREG(DSI_WR_DATA)) = ((cmd | (*(u8 *)data << 8)) << 8) | MIPI_DSI_DCS_SHORT_WRITE_PARAM;
+		DSI(DSI_WR_DATA) = ((cmd | (*(u8 *)data << 8)) << 8) | MIPI_DSI_DCS_SHORT_WRITE_PARAM;
 		break;
 
 	default:
@@ -335,7 +335,7 @@ void display_dsi_vblank_write(u8 cmd, u32 len, void *data)
 		fifo8[4] = cmd;
 		len += sizeof(u32); // Increase length by length word and DCS CMD.
 		for (u32 i = 0; i < (ALIGN(len, sizeof(u32)) / sizeof(u32)); i++)
-			DSI(_DSIREG(DSI_WR_DATA)) = fifo32[i];
+			DSI(DSI_WR_DATA) = fifo32[i];
 		break;
 	}
 
@@ -401,11 +401,11 @@ void display_init()
 	gpio_direction_output(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);
 
 	// Power up supply regulator for display interface.
-	MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0;
+	MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG2) = 0;
 
 	if (!tegra_t210)
 	{
-		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG0)) = 0;
+		MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG0) = 0;
 		APB_MISC(APB_MISC_GP_DSI_PAD_CONTROL) = 0;
 	}
 
@@ -419,7 +419,7 @@ void display_init()
 
 	// Setup dsi init sequence packets.
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config0,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config0));
-	DSI(_DSIREG(tegra_t210 ? DSI_INIT_SEQ_DATA_15 : DSI_INIT_SEQ_DATA_15_B01)) = 0;
+	DSI(tegra_t210 ? DSI_INIT_SEQ_DATA_15 : DSI_INIT_SEQ_DATA_15_B01) = 0;
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config1,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config1));
 
 	// Reset pad trimmers for T210B01.
@@ -435,7 +435,7 @@ void display_init()
 	usleep(60000);
 
 	// Setup DSI device takeover timeout.
-	DSI(_DSIREG(DSI_BTA_TIMING)) = _nx_aula ? 0x40103 : 0x50204;
+	DSI(DSI_BTA_TIMING) = _nx_aula ? 0x40103 : 0x50204;
 
 	// Get Display ID.
 	_panel_id_raw = 0xCCCCCC;
@@ -470,25 +470,25 @@ void display_init()
 							  MIPI_DCS_SET_CONTROL_DISPLAY | ((DCS_CONTROL_DISPLAY_BRIGHTNESS_CTRL | DCS_CONTROL_DISPLAY_DIMMING_CTRL) << 8), 0);
 
 		// Unlock Level 2 registers.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x5A5A5AE2; // MIPI_DCS_PRIV_SM_SET_REGS_LOCK: Unlock Level 2 registers.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x5A;
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		DSI(DSI_WR_DATA) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
+		DSI(DSI_WR_DATA) = 0x5A5A5AE2; // MIPI_DCS_PRIV_SM_SET_REGS_LOCK: Unlock Level 2 registers.
+		DSI(DSI_WR_DATA) = 0x5A;
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 
 		// Set registers offset and set PWM transition to 6 frames (100ms).
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_REG_OFFSET | (7 << 8), 0);
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM, MIPI_DCS_PRIV_SM_SET_ELVSS      | (6 << 8), 0);
 
 		// Relock Level 2 registers.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0xA55A5AE2; // MIPI_DCS_PRIV_SM_SET_REGS_LOCK: Lock Level 2 registers.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0xA5;
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		DSI(DSI_WR_DATA) = 0x539;      // MIPI_DSI_DCS_LONG_WRITE: 5 bytes.
+		DSI(DSI_WR_DATA) = 0xA55A5AE2; // MIPI_DCS_PRIV_SM_SET_REGS_LOCK: Lock Level 2 registers.
+		DSI(DSI_WR_DATA) = 0xA5;
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 
 		// Set backlight to 0%.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x339;    // MIPI_DSI_DCS_LONG_WRITE: 3 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x000051; // MIPI_DCS_SET_BRIGHTNESS 0000: 0%. FF07: 100%.
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		DSI(DSI_WR_DATA) = 0x339;    // MIPI_DSI_DCS_LONG_WRITE: 3 bytes.
+		DSI(DSI_WR_DATA) = 0x000051; // MIPI_DCS_SET_BRIGHTNESS 0000: 0%. FF07: 100%.
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
 
@@ -502,19 +502,19 @@ void display_init()
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 
 		// Unlock extension cmds.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		DSI(DSI_WR_DATA) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+		DSI(DSI_WR_DATA) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 		usleep(5000);
 
 		// Set Power control.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x739;          // MIPI_DSI_DCS_LONG_WRITE: 7 bytes.
+		DSI(DSI_WR_DATA) = 0x739;          // MIPI_DSI_DCS_LONG_WRITE: 7 bytes.
 		if (_panel_id == PANEL_INL_P062CCA_AZ1)
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
+			DSI(DSI_WR_DATA) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
 		else // PANEL_AUO_A062TAN01.
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x143209;       // (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32).
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+			DSI(DSI_WR_DATA) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+		DSI(DSI_WR_DATA) = 0x143209;       // (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32).
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
 
@@ -537,7 +537,7 @@ void display_init()
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
-	DISPLAY_A(_DIREG(DC_DISP_DISP_CLOCK_CONTROL)) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
+	DISPLAY_A(DC_DISP_DISP_CLOCK_CONTROL) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
 
 	// Set DSI mode to HOST.
 	reg_write_array((u32 *)DSI_BASE, _di_dsi_host_mode_config, ARRAY_SIZE(_di_dsi_host_mode_config));
@@ -554,8 +554,8 @@ void display_init()
 	for (u32 i = 0; i < 2; i++)
 	{
 		// Set MIPI bias pad config.
-		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG2)) = 0x10010;
-		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_BIAS_PAD_CFG1)) = tegra_t210 ? 0x300 : 0;
+		MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG2) = 0x10010;
+		MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG1) = tegra_t210 ? 0x300 : 0;
 
 		// Set pad trimmers and set MIPI DSI cal offsets.
 		if (tegra_t210)
@@ -573,7 +573,7 @@ void display_init()
 		reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_unused_config, ARRAY_SIZE(_di_mipi_dsi_cal_unused_config));
 
 		// Set Prescale/filter and start calibration.
-		MIPI_CAL(_DSIREG(MIPI_CAL_MIPI_CAL_CTRL)) = 0x2A000001;
+		MIPI_CAL(MIPI_CAL_MIPI_CAL_CTRL) = 0x2A000001;
 	}
 	usleep(10000);
 
@@ -606,7 +606,7 @@ void display_backlight(bool enable)
 
 static void _display_dsi_backlight_brightness(u32 duty)
 {
-	if (DISPLAY_A(_DIREG(DC_DISP_BACKLIGHT_DUTY)) == duty)
+	if (DISPLAY_A(DC_DISP_BACKLIGHT_DUTY) == duty)
 		return;
 
 	// Convert duty to candela.
@@ -619,7 +619,7 @@ static void _display_dsi_backlight_brightness(u32 duty)
 	if (!duty)
 		usleep(100000);
 
-	DISPLAY_A(_DIREG(DC_DISP_BACKLIGHT_DUTY)) = duty;
+	DISPLAY_A(DC_DISP_BACKLIGHT_DUTY) = duty;
 }
 
 static void _display_pwm_backlight_brightness(u32 duty, u32 step_delay)
@@ -667,18 +667,18 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	display_backlight_brightness(0, 1000);
 
 	// Enable host cmd packets during video.
-	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = DSI_CMD_PKT_VID_ENABLE;
+	DSI(DSI_VIDEO_MODE_CONTROL) = DSI_CMD_PKT_VID_ENABLE;
 
 	// Blank display.
-	DSI(_DSIREG(DSI_WR_DATA)) = (MIPI_DCS_SET_DISPLAY_OFF << 8) | MIPI_DSI_DCS_SHORT_WRITE;
+	DSI(DSI_WR_DATA) = (MIPI_DCS_SET_DISPLAY_OFF << 8) | MIPI_DSI_DCS_SHORT_WRITE;
 
 	// Wait for 5 frames (HOST1X_CH0_SYNC_SYNCPT_9).
 	// Not here. Wait for 1 frame manually.
 	usleep(20000);
 
 	// Propagate changes to all register buffers and disable host cmd packets during video.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_ACCESS)) = READ_MUX_ACTIVE | WRITE_MUX_ACTIVE;
-	DSI(_DSIREG(DSI_VIDEO_MODE_CONTROL)) = 0;
+	DISPLAY_A(DC_CMD_STATE_ACCESS) = READ_MUX_ACTIVE | WRITE_MUX_ACTIVE;
+	DSI(DSI_VIDEO_MODE_CONTROL) = 0;
 
 	// De-initialize video controller.
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, ARRAY_SIZE(_di_dc_video_disable_config));
@@ -710,32 +710,32 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	case PANEL_AUO_A055TAN01:
 	case PANEL_SHP_LQ055T1SW10:
 		// Unlock extension cmds.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		DSI(DSI_WR_DATA) = 0x439;          // MIPI_DSI_DCS_LONG_WRITE: 4 bytes.
+		DSI(DSI_WR_DATA) = 0x9483FFB9;     // MIPI_DCS_PRIV_SET_EXTC. (Pass: FF 83 94).
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 		usleep(5000);
 
 		// Set Power control.
-		DSI(_DSIREG(DSI_WR_DATA)) = 0xB39;          // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
+		DSI(DSI_WR_DATA) = 0xB39;          // MIPI_DSI_DCS_LONG_WRITE: 11 bytes.
 		if (_panel_id == PANEL_INL_2J055IA_27A)
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
+			DSI(DSI_WR_DATA) = 0x751548B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT5 / XDK, VRH gamma volt adj 53 / x40).
 		else if (_panel_id == PANEL_AUO_A055TAN01)
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
+			DSI(DSI_WR_DATA) = 0x711148B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT1 / XDK, VRH gamma volt adj 49 / x40).
 		else // PANEL_SHP_LQ055T1SW10.
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x731348B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT3 / XDK, VRH gamma volt adj 51 / x40).
+			DSI(DSI_WR_DATA) = 0x731348B1; // MIPI_DCS_PRIV_SET_POWER_CONTROL. (Not deep standby, BT3 / XDK, VRH gamma volt adj 51 / x40).
 		if (_panel_id == PANEL_INL_2J055IA_27A || _panel_id == PANEL_AUO_A055TAN01)
 		{
 			// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/32, Enter standby / PON / VCOMG).
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x71143209;
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x114D31;   // (Unknown).
+			DSI(DSI_WR_DATA) = 0x71143209;
+			DSI(DSI_WR_DATA) = 0x114D31;   // (Unknown).
 		}
 		else // PANEL_SHP_LQ055T1SW10.
 		{
 			// (NVRH gamma volt adj 9, Amplifier current small / x30, FS0 freq Fosc/80 / FS1 freq Fosc/48, Enter standby / PON / VCOMG).
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x71243209;
-			DSI(_DSIREG(DSI_WR_DATA)) = 0x004C31;   // (Unknown).
+			DSI(DSI_WR_DATA) = 0x71243209;
+			DSI(DSI_WR_DATA) = 0x004C31;   // (Unknown).
 		}
-		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
+		DSI(DSI_TRIGGER) = DSI_TRIGGER_HOST;
 		usleep(5000);
 		break;
 
@@ -772,9 +772,9 @@ skip_panel_deinit:
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = BIT(CLK_L_DISP1);
 
 	// Power down pads.
-	DSI(_DSIREG(DSI_PAD_CONTROL_0)) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) |
-									  DSI_PAD_CONTROL_VS1_PDIO_CLK   | DSI_PAD_CONTROL_VS1_PDIO(0xF);
-	DSI(_DSIREG(DSI_POWER_CONTROL)) = 0;
+	DSI(DSI_PAD_CONTROL_0) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) |
+							 DSI_PAD_CONTROL_VS1_PDIO_CLK   | DSI_PAD_CONTROL_VS1_PDIO(0xF);
+	DSI(DSI_POWER_CONTROL) = 0;
 
 	// Disable DSI AVDD.
 	max7762x_regulator_enable(REGULATOR_LDO0, false);
@@ -814,11 +814,11 @@ void display_color_screen(u32 color)
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_win_one_color, ARRAY_SIZE(_di_win_one_color));
 
 	// Configure display to show single color.
-	DISPLAY_A(_DIREG(DC_DISP_BLEND_BACKGROUND_COLOR)) = color;
+	DISPLAY_A(DC_DISP_BLEND_BACKGROUND_COLOR) = color;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_A_UPDATE |  WIN_B_UPDATE  | WIN_C_UPDATE  | WIN_D_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ | WIN_D_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | WIN_A_UPDATE |  WIN_B_UPDATE  | WIN_C_UPDATE  | WIN_D_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ | WIN_D_ACT_REQ;
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	if (_panel_id != PANEL_SAM_AMS699VC01)
@@ -836,7 +836,7 @@ u32 *display_init_window_a_pitch()
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch, ARRAY_SIZE(_di_winA_pitch));
 	//usleep(35000); // Wait 2 frames. No need on Aula.
 
-	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
 }
 
 u32 *display_init_window_a_pitch_vic()
@@ -848,7 +848,7 @@ u32 *display_init_window_a_pitch_vic()
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(35000); // Wait 2 frames.
 
-	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
 }
 
 u32 *display_init_window_a_pitch_inv()
@@ -857,7 +857,7 @@ u32 *display_init_window_a_pitch_inv()
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch_inv, ARRAY_SIZE(_di_winA_pitch_inv));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
-	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
 }
 
 u32 *display_init_window_a_block()
@@ -866,7 +866,7 @@ u32 *display_init_window_a_block()
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_block, ARRAY_SIZE(_di_winA_block));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
-	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
 }
 
 u32 *display_init_window_d_console()
@@ -874,148 +874,148 @@ u32 *display_init_window_d_console()
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
 	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winD_log, ARRAY_SIZE(_di_winD_log));
 
-	return (u32 *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
+	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
 }
 
 void display_window_disable(u32 window)
 {
 	// Select window C.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
+	DISPLAY_A(DC_CMD_DISPLAY_WINDOW_HEADER) = BIT(WINDOW_SELECT + window);
 
 	// Disable window C.
-	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0;
+	DISPLAY_A(DC_WIN_WIN_OPTIONS) = 0;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
 }
 
 void display_set_framebuffer(u32 window, void *fb)
 {
 	// Select window.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
+	DISPLAY_A(DC_CMD_DISPLAY_WINDOW_HEADER) = BIT(WINDOW_SELECT + window);
 
 	// Set new fb address.
-	DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR)) = (u32)fb;
+	DISPLAY_A(DC_WINBUF_START_ADDR) = (u32)fb;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
 }
 
 void display_move_framebuffer(u32 window, void *fb)
 {
 	// Select window.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = BIT(WINDOW_SELECT + window);
+	DISPLAY_A(DC_CMD_DISPLAY_WINDOW_HEADER) = BIT(WINDOW_SELECT + window);
 
 	// Get current framebuffer address.
-	const void *fb_curr = (void *)DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR));
-	u32 win_size = DISPLAY_A(_DIREG(DC_WIN_PRESCALED_SIZE));
+	const void *fb_curr = (void *)DISPLAY_A(DC_WINBUF_START_ADDR);
+	u32 win_size = DISPLAY_A(DC_WIN_PRESCALED_SIZE);
 	win_size = (win_size & 0x7FFF) * ((win_size >> 16) & 0x1FFF);
 
 	// Copy fb over.
 	memcpy(fb, fb_curr, win_size);
 
 	// Set new fb address.
-	DISPLAY_A(_DIREG(DC_WINBUF_START_ADDR)) = (u32)fb;
+	DISPLAY_A(DC_WINBUF_START_ADDR) = (u32)fb;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
 }
 
 void display_window_d_console_enable()
 {
 	// Only update active registers on vsync.
-	DISPLAY_A(_DIREG(DC_CMD_REG_ACT_CONTROL)) = DISPLAY_A(_DIREG(DC_CMD_REG_ACT_CONTROL)) & ~WIN_D_ACT_HCNTR_SEL;
+	DISPLAY_A(DC_CMD_REG_ACT_CONTROL) = DISPLAY_A(DC_CMD_REG_ACT_CONTROL) & ~WIN_D_ACT_HCNTR_SEL;
 
 	// Select window D.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT;
+	DISPLAY_A(DC_CMD_DISPLAY_WINDOW_HEADER) = WINDOW_D_SELECT;
 
 	// Enable and setup window D.
-	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS))   = WIN_ENABLE;
-	DISPLAY_A(_DIREG(DC_WIN_POSITION))      = 0xFF80; // X: -128.
+	DISPLAY_A(DC_WIN_WIN_OPTIONS) = WIN_ENABLE;
+	DISPLAY_A(DC_WIN_POSITION)    = 0xFF80; // X: -128.
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | WIN_D_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 
 	// Pull-down effect.
 	for (u32 i = 0xFF80; i < 0x10000; i++)
 	{
 		// Set window position.
-		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
+		DISPLAY_A(DC_WIN_POSITION) = i & 0xFFFF;
 
 		// Arm and activate changes.
-		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
-		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+		DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | WIN_D_UPDATE;
+		DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 		usleep(1000);
 	}
 
-	DISPLAY_A(_DIREG(DC_WIN_POSITION)) = 0;
+	DISPLAY_A(DC_WIN_POSITION) = 0;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | WIN_D_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 }
 
 void display_window_d_console_disable()
 {
 	// Select window D.
-	DISPLAY_A(_DIREG(DC_CMD_DISPLAY_WINDOW_HEADER)) = WINDOW_D_SELECT;
+	DISPLAY_A(DC_CMD_DISPLAY_WINDOW_HEADER) = WINDOW_D_SELECT;
 
 	// Pull-up effect.
 	for (u32 i = 0xFFFF; i > 0xFF7F; i--)
 	{
 		// Set window position.
-		DISPLAY_A(_DIREG(DC_WIN_POSITION)) = i & 0xFFFF;
+		DISPLAY_A(DC_WIN_POSITION) = i & 0xFFFF;
 
 		// Arm and activate changes.
-		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
-		DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+		DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | WIN_D_UPDATE;
+		DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 		usleep(500);
 	}
 
 	// Disable window D.
-	DISPLAY_A(_DIREG(DC_WIN_POSITION))    = 0;
-	DISPLAY_A(_DIREG(DC_WIN_WIN_OPTIONS)) = 0;
+	DISPLAY_A(DC_WIN_POSITION)    = 0;
+	DISPLAY_A(DC_WIN_WIN_OPTIONS) = 0;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | WIN_D_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | WIN_D_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | WIN_D_ACT_REQ;
 }
 
 void display_cursor_init(void *crs_fb, u32 size)
 {
 	// Setup cursor.
-	DISPLAY_A(_DIREG(DC_DISP_CURSOR_START_ADDR))    = CURSOR_CLIPPING(CURSOR_CLIP_WIN_A) | size | ((u32)crs_fb >> 10);
-	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) = CURSOR_BLEND_R8G8B8A8                    |
-													  CURSOR_BLEND_DST_FACTOR(CURSOR_BLEND_K1) |
-													  CURSOR_BLEND_SRC_FACTOR(CURSOR_BLEND_K1) | 0xFF;
+	DISPLAY_A(DC_DISP_CURSOR_START_ADDR)    = CURSOR_CLIPPING(CURSOR_CLIP_WIN_A) | size | ((u32)crs_fb >> 10);
+	DISPLAY_A(DC_DISP_BLEND_CURSOR_CONTROL) = CURSOR_BLEND_R8G8B8A8                    |
+											  CURSOR_BLEND_DST_FACTOR(CURSOR_BLEND_K1) |
+											  CURSOR_BLEND_SRC_FACTOR(CURSOR_BLEND_K1) | 0xFF;
 
 	// Enable cursor window.
-	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) |= CURSOR_ENABLE;
+	DISPLAY_A(DC_DISP_DISP_WIN_OPTIONS) |= CURSOR_ENABLE;
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | CURSOR_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | CURSOR_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
 void display_cursor_set_pos(u32 x, u32 y)
 {
 	// Set cursor position.
-	DISPLAY_A(_DIREG(DC_DISP_CURSOR_POSITION)) = x | (y << 16);
+	DISPLAY_A(DC_DISP_CURSOR_POSITION) = x | (y << 16);
 
 	// Arm and activate changes.
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | CURSOR_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | CURSOR_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }
 
 void display_cursor_deinit()
 {
-	DISPLAY_A(_DIREG(DC_DISP_BLEND_CURSOR_CONTROL)) = 0;
-	DISPLAY_A(_DIREG(DC_DISP_DISP_WIN_OPTIONS)) &= ~CURSOR_ENABLE;
+	DISPLAY_A(DC_DISP_BLEND_CURSOR_CONTROL) = 0;
+	DISPLAY_A(DC_DISP_DISP_WIN_OPTIONS) &= ~CURSOR_ENABLE;
 
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_UPDATE  | CURSOR_UPDATE;
-	DISPLAY_A(_DIREG(DC_CMD_STATE_CONTROL)) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | CURSOR_UPDATE;
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | CURSOR_ACT_REQ;
 }

@@ -30,7 +30,7 @@
 #define WINDOW_D 3
 
 /*! Display registers. */
-#define _DIREG(reg) ((reg) * 4)
+// All Display/DSI/MIPI register defines and macros are index based (not offset).
 
 // Display controller scratch registers.
 #define DC_D_WINBUF_DD_SCRATCH_REGISTER_0 0xED
@@ -470,8 +470,6 @@
 #define DC_WINBUF_MEMFETCH_CONTROL 0x82B
 
 /*! Display serial interface registers. */
-#define _DSIREG(reg) ((reg) * 4)
-
 #define DSI_INCR_SYNCPT_CNTRL 0x1
 #define  DSI_INCR_SYNCPT_SOFT_RESET BIT(0)
 #define  DSI_INCR_SYNCPT_NO_STALL   BIT(8)
