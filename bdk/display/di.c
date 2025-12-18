@@ -606,7 +606,7 @@ void display_backlight(bool enable)
 
 static void _display_dsi_backlight_brightness(u32 duty)
 {
-	if (DISPLAY_A(DC_DISP_BACKLIGHT_DUTY) == duty)
+	if (DISPLAY_A(DC_DCS_BACKLIGHT_LEVEL) == duty)
 		return;
 
 	// Convert duty to candela.
@@ -619,7 +619,7 @@ static void _display_dsi_backlight_brightness(u32 duty)
 	if (!duty)
 		usleep(100000);
 
-	DISPLAY_A(DC_DISP_BACKLIGHT_DUTY) = duty;
+	DISPLAY_A(DC_DCS_BACKLIGHT_LEVEL) = duty;
 }
 
 static void _display_pwm_backlight_brightness(u32 duty, u32 step_delay)
