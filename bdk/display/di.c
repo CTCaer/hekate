@@ -415,19 +415,19 @@ void display_init()
 	clock_enable_plld(3, 20, true, tegra_t210);
 
 	// Setup Display Interface initial window configuration.
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, ARRAY_SIZE(_di_dc_setup_win_config));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, ARRAY_SIZE(_di_dc_setup_win_config));
 
 	// Setup dsi init sequence packets.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config0,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config0));
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config0,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config0));
 	DSI(tegra_t210 ? DSI_INIT_SEQ_DATA_15 : DSI_INIT_SEQ_DATA_15_B01) = 0;
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config1,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config1));
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config1,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config1));
 
 	// Reset pad trimmers for T210B01.
 	if (!tegra_t210)
-		reg_write_array((u32 *)DSI_BASE, _di_dsi_init_pads_t210b01, ARRAY_SIZE(_di_dsi_init_pads_t210b01));
+		reg_write_array((vu32 *)DSI_BASE, _di_dsi_init_pads_t210b01, ARRAY_SIZE(_di_dsi_init_pads_t210b01));
 
 	// Setup init seq packet lengths, timings and power on DSI.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_init_config, ARRAY_SIZE(_di_dsi_init_config));
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_init_config, ARRAY_SIZE(_di_dsi_init_config));
 	usleep(10000);
 
 	// Enable LCD Reset.
@@ -493,7 +493,7 @@ void display_init()
 		break;
 
 	case PANEL_JDI_XXX062M:
-		reg_write_array((u32 *)DSI_BASE, _di_dsi_panel_init_config_jdi, ARRAY_SIZE(_di_dsi_panel_init_config_jdi));
+		reg_write_array((vu32 *)DSI_BASE, _di_dsi_panel_init_config_jdi, ARRAY_SIZE(_di_dsi_panel_init_config_jdi));
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
 		break;
 
@@ -534,13 +534,13 @@ void display_init()
 	clock_enable_plld(1, 24, false, tegra_t210);
 
 	// Set HS PHY timing and finalize DSI packet sequence configuration.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
 	DISPLAY_A(DC_DISP_DISP_CLOCK_CONTROL) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
 
 	// Set DSI mode to HOST.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_host_mode_config, ARRAY_SIZE(_di_dsi_host_mode_config));
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_host_mode_config, ARRAY_SIZE(_di_dsi_host_mode_config));
 	usleep(10000);
 
 	/*
@@ -550,7 +550,7 @@ void display_init()
 	 * brings in a bug that the DSI pad clock termination code can't be loaded
 	 * in one time calibration on T210B01. Trigger calibration twice.
 	 */
-	reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, ARRAY_SIZE(_di_mipi_pad_cal_config));
+	reg_write_array((vu32 *)MIPI_CAL_BASE, _di_mipi_pad_cal_config, ARRAY_SIZE(_di_mipi_pad_cal_config));
 	for (u32 i = 0; i < 2; i++)
 	{
 		// Set MIPI bias pad config.
@@ -560,17 +560,17 @@ void display_init()
 		// Set pad trimmers and set MIPI DSI cal offsets.
 		if (tegra_t210)
 		{
-			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
-			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210,    ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210));
+			reg_write_array((vu32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210,          ARRAY_SIZE(_di_dsi_pad_cal_config_t210));
+			reg_write_array((vu32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210,    ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210));
 		}
 		else
 		{
-			reg_write_array((u32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,       ARRAY_SIZE(_di_dsi_pad_cal_config_t210b01));
-			reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210b01, ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210b01));
+			reg_write_array((vu32 *)DSI_BASE,      _di_dsi_pad_cal_config_t210b01,       ARRAY_SIZE(_di_dsi_pad_cal_config_t210b01));
+			reg_write_array((vu32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_prod_config_t210b01, ARRAY_SIZE(_di_mipi_dsi_cal_prod_config_t210b01));
 		}
 
 		// Reset all unused MIPI cal offsets.
-		reg_write_array((u32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_unused_config, ARRAY_SIZE(_di_mipi_dsi_cal_unused_config));
+		reg_write_array((vu32 *)MIPI_CAL_BASE, _di_mipi_dsi_cal_unused_config, ARRAY_SIZE(_di_mipi_dsi_cal_unused_config));
 
 		// Set Prescale/filter and start calibration.
 		MIPI_CAL(MIPI_CAL_MIPI_CAL_CTRL) = 0x2A000001;
@@ -578,7 +578,7 @@ void display_init()
 	usleep(10000);
 
 	// Enable video display controller.
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_dc_video_enable_config, ARRAY_SIZE(_di_dc_video_enable_config));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_enable_config, ARRAY_SIZE(_di_dc_video_enable_config));
 }
 
 void display_backlight_pwm_init()
@@ -681,7 +681,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	DSI(DSI_VIDEO_MODE_CONTROL) = 0;
 
 	// De-initialize video controller.
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, ARRAY_SIZE(_di_dc_video_disable_config));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_disable_config, ARRAY_SIZE(_di_dc_video_disable_config));
 
 	// Set DISP1 clock source, parent clock and DSI/PCLK to command mode.
 	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-BCLK): 50.0 MHz. (PCLK: 16.66 MHz)
@@ -689,7 +689,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210);
 
 	// Set timings for lowpower clocks.
-	reg_write_array((u32 *)DSI_BASE, _di_dsi_timing_deinit_config, ARRAY_SIZE(_di_dsi_timing_deinit_config));
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_timing_deinit_config, ARRAY_SIZE(_di_dsi_timing_deinit_config));
 
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(10000);
@@ -698,11 +698,11 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	switch (_panel_id)
 	{
 	case PANEL_JDI_XXX062M:
-		reg_write_array((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_jdi, ARRAY_SIZE(_di_dsi_panel_deinit_config_jdi));
+		reg_write_array((vu32 *)DSI_BASE, _di_dsi_panel_deinit_config_jdi, ARRAY_SIZE(_di_dsi_panel_deinit_config_jdi));
 		break;
 
 	case PANEL_AUO_A062TAN01:
-		reg_write_array((u32 *)DSI_BASE, _di_dsi_panel_deinit_config_auo, ARRAY_SIZE(_di_dsi_panel_deinit_config_auo));
+		reg_write_array((vu32 *)DSI_BASE, _di_dsi_panel_deinit_config_auo, ARRAY_SIZE(_di_dsi_panel_deinit_config_auo));
 		usleep(5000);
 		break;
 
@@ -811,7 +811,7 @@ void display_set_decoded_panel_id(u32 id)
 void display_color_screen(u32 color)
 {
 	// Disable all windows.
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_win_one_color, ARRAY_SIZE(_di_win_one_color));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_win_one_color, ARRAY_SIZE(_di_win_one_color));
 
 	// Configure display to show single color.
 	DISPLAY_A(DC_DISP_BLEND_BACKGROUND_COLOR) = color;
@@ -833,7 +833,7 @@ u32 *display_init_window_a_pitch()
 	memset((u32 *)IPL_FB_ADDRESS, 0, IPL_FB_SZ);
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch, ARRAY_SIZE(_di_winA_pitch));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_pitch, ARRAY_SIZE(_di_winA_pitch));
 	//usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -844,7 +844,7 @@ u32 *display_init_window_a_pitch_vic()
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(8000); // Wait half frame for PWM to apply.
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch_vic, ARRAY_SIZE(_di_winA_pitch_vic));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_pitch_vic, ARRAY_SIZE(_di_winA_pitch_vic));
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(35000); // Wait 2 frames.
 
@@ -854,7 +854,7 @@ u32 *display_init_window_a_pitch_vic()
 u32 *display_init_window_a_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_pitch_inv, ARRAY_SIZE(_di_winA_pitch_inv));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_pitch_inv, ARRAY_SIZE(_di_winA_pitch_inv));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -863,7 +863,7 @@ u32 *display_init_window_a_pitch_inv()
 u32 *display_init_window_a_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280.
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winA_block, ARRAY_SIZE(_di_winA_block));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_block, ARRAY_SIZE(_di_winA_block));
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -872,7 +872,7 @@ u32 *display_init_window_a_block()
 u32 *display_init_window_d_console()
 {
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
-	reg_write_array((u32 *)DISPLAY_A_BASE, _di_winD_log, ARRAY_SIZE(_di_winD_log));
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winD_log, ARRAY_SIZE(_di_winD_log));
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
 }

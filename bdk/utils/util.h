@@ -44,7 +44,7 @@ u64  sqrt64(u64 num);
 long strtol(const char *nptr, char **endptr, register int base);
 int  atoi(const char *nptr);
 
-void reg_write_array(u32 *base, const reg_cfg_t *cfg, u32 num_cfg);
+void reg_write_array(vu32 *base, const reg_cfg_t *cfg, u32 num_cfg);
 u32  crc32_calc(u32 crc, const u8 *buf, u32 len);
 
 int qsort_compare_int(const void *a, const void *b);

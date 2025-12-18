@@ -195,7 +195,7 @@ int atoi(const char *nptr)
   return (int)strtol(nptr, (char **)NULL, 10);
 }
 
-void reg_write_array(u32 *base, const reg_cfg_t *cfg, u32 num_cfg)
+void reg_write_array(vu32 *base, const reg_cfg_t *cfg, u32 num_cfg)
 {
 	// Expected register offset is a u32 array index.
 	for (u32 i = 0; i < num_cfg; i++)
