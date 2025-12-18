@@ -33,10 +33,9 @@
 
 #include "di.inl"
 
+static bool _nx_aula      = false;
+static u32  _panel_id     = 0;
 static u32  _panel_id_raw = 0;
-static u32  _panel_id      = 0;
-static u32  _dsi_bl        = -1;
-static bool _nx_aula       = false;
 
 static void _display_panel_and_hw_end(bool no_panel_deinit);
 
@@ -366,7 +365,7 @@ void display_init()
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_SET) = BIT(CLK_L_DISP1);
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_X_SET) = BIT(CLK_X_UART_FST_MIPI_CAL);
-	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_UART_FST_MIPI_CAL) = CLK_SRC_DIV(6); // Set PLLP_OUT3 and div 6 (68MHz).
+	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_UART_FST_MIPI_CAL) = CLK_SRC_DIV(6); // Set PLLP_OUT3 and div 6 (17MHz).
 
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_W_SET) = BIT(CLK_W_DSIA_LP);
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DSIA_LP) = CLK_SRC_DIV(6);           // Set PLLP_OUT  and div 6 (68MHz).
@@ -491,7 +490,6 @@ void display_init()
 		DSI(_DSIREG(DSI_WR_DATA)) = 0x000051; // MIPI_DCS_SET_BRIGHTNESS 0000: 0%. FF07: 100%.
 		DSI(_DSIREG(DSI_TRIGGER)) = DSI_TRIGGER_HOST;
 		usleep(5000);
-		_dsi_bl = 0;
 		break;
 
 	case PANEL_JDI_XXX062M:
@@ -608,7 +606,7 @@ void display_backlight(bool enable)
 
 static void _display_dsi_backlight_brightness(u32 duty)
 {
-	if (_dsi_bl == duty)
+	if (DISPLAY_A(_DIREG(DC_DISP_BACKLIGHT_DUTY)) == duty)
 		return;
 
 	// Convert duty to candela.
@@ -621,7 +619,7 @@ static void _display_dsi_backlight_brightness(u32 duty)
 	if (!duty)
 		usleep(100000);
 
-	_dsi_bl = duty;
+	DISPLAY_A(_DIREG(DC_DISP_BACKLIGHT_DUTY)) = duty;
 }
 
 static void _display_pwm_backlight_brightness(u32 duty, u32 step_delay)
@@ -659,14 +657,6 @@ void display_backlight_brightness(u32 brightness, u32 step_delay)
 		_display_pwm_backlight_brightness(brightness, step_delay);
 	else
 		_display_dsi_backlight_brightness(brightness);
-}
-
-u32 display_get_backlight_brightness()
-{
-	if (_panel_id != PANEL_SAM_AMS699VC01)
-		return ((PWM(PWM_CONTROLLER_PWM_CSR_0) >> 16) & 0xFF);
-	else
-		return _dsi_bl;
 }
 
 static void _display_panel_and_hw_end(bool no_panel_deinit)

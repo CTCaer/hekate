@@ -280,8 +280,8 @@
 #define DC_DISP_CURSOR_BACKGROUND    0x43D
 #define  CURSOR_COLOR(r,g,b) (((r) & 0xFF) | (((g) & 0xFF) << 8) | (((b) & 0xFF) << 16))
 
-#define DC_DISP_CURSOR_START_ADDR    0x43E
-#define DC_DISP_CURSOR_START_ADDR_NS 0x43F
+#define DC_DISP_CURSOR_START_ADDR       0x43E
+#define DC_DISP_CURSOR_START_ADDR_NS    0x43F
 #define  CURSOR_CLIPPING(w) ((w) << 28)
 #define   CURSOR_CLIP_WIN_A 1
 #define   CURSOR_CLIP_WIN_B 2
@@ -290,11 +290,10 @@
 #define  CURSOR_SIZE_64  (1 << 24)
 #define  CURSOR_SIZE_128 (2 << 24)
 #define  CURSOR_SIZE_256 (3 << 24)
-#define DC_DISP_CURSOR_POSITION      0x440
-#define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
-#define DC_DISP_CURSOR_START_ADDR_HI 0x4EC
+#define DC_DISP_CURSOR_POSITION         0x440
+#define DC_DISP_CURSOR_START_ADDR_HI    0x4EC
 #define DC_DISP_CURSOR_START_ADDR_HI_NS 0x4ED
-#define DC_DISP_BLEND_CURSOR_CONTROL 0x4F1
+#define DC_DISP_BLEND_CURSOR_CONTROL    0x4F1
 #define  CURSOR_BLEND_2BIT     (0 << 24)
 #define  CURSOR_BLEND_R8G8B8A8 (1 << 24)
 #define  CURSOR_BLEND_SRC_FACTOR(n) ((n) << 8)
@@ -304,10 +303,14 @@
 #define   CURSOR_BLEND_NK1 2
 // End of cursor cfg regs.
 
-#define DC_DISP_DC_MCCIF_FIFOCTRL 0x480
-#define DC_DISP_SD_BL_PARAMETERS 0x4D7
-#define DC_DISP_SD_BL_CONTROL 0x4DC
+#define DC_DISP_DC_MCCIF_FIFOCTRL      0x480
+#define DC_DISP_SD_BL_PARAMETERS       0x4D7
+#define DC_DISP_SD_BL_CONTROL          0x4DC
 #define DC_DISP_BLEND_BACKGROUND_COLOR 0x4E4
+
+#define DC_DISP_DISPLAY_SPARE0         0x4F7 // Used by SW.
+#define DC_DISP_DISPLAY_SPARE1         0x4F8
+#define DC_DISP_BACKLIGHT_DUTY         DC_DISP_DISPLAY_SPARE1
 
 #define DC_WINC_COLOR_PALETTE 0x500
 #define  COLOR_PALETTE_IDX(off) (DC_WINC_COLOR_PALETTE + (off))
@@ -884,10 +887,9 @@ void display_dsi_vblank_write(u8 cmd, u32 len, void *data);
 /*! Show one single color on the display. */
 void display_color_screen(u32 color);
 
-/*! Switches screen backlight ON/OFF. */
+/*! Screen backlight ON/OFF or set via duty and fading. */
 void display_backlight(bool enable);
 void display_backlight_brightness(u32 brightness, u32 step_delay);
-u32  display_get_backlight_brightness();
 
 u32 *display_init_window_a_pitch();
 u32 *display_init_window_a_pitch_vic();

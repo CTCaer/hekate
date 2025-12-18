@@ -520,11 +520,9 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 	switch (bl_magic)
 	{
 	case BL_MAGIC_CRBOOT_SLD:;
-		// Set pwm to 0%, switch to gpio mode and restore pwm duty.
-		u32 brightness = display_get_backlight_brightness();
+		// Set pwm to 0% and switch to gpio mode.
 		display_backlight_brightness(0, 1000);
 		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_GPIO);
-		display_backlight_brightness(brightness, 0);
 		break;
 	case BL_MAGIC_L4TLDR_SLD:
 		// Do not disable display or backlight at all.
