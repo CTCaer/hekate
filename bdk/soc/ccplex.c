@@ -146,8 +146,6 @@ void ccplex_powergate_cpu0()
 	CLOCK(CLK_RST_CONTROLLER_RST_CPUG_CMPLX_SET) = BIT(30) | BIT(24) | BIT(16) | BIT(0);
 	// Set NONCPU reset.
 	CLOCK(CLK_RST_CONTROLLER_RST_CPUG_CMPLX_SET) = BIT(29);
-	// Set MSELECT reset.
-	CLOCK(CLK_RST_CONTROLLER_RST_DEV_V_SET) = BIT(CLK_V_MSELECT);
 
 	// Disable CE0.
 	pmc_domain_pwrgate_set(POWER_RAIL_CE0,   DISABLE);
@@ -159,7 +157,7 @@ void ccplex_powergate_cpu0()
 	clock_disable_coresight();
 
 	// Clear out MSELECT and CPU clocks.
-	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_CLR) = BIT(CLK_V_MSELECT) | BIT(CLK_V_CPUG);
+	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_CLR) = BIT(CLK_V_CPUG);
 
 	_ccplex_disable_power();
 }
