@@ -456,7 +456,7 @@ void _hw_info_wafer(int die_x, int die_y)
 	const u32 str_color = 0x10FFFFFF;
 	const u32 hit_color = 0xFFFF8000;
 
-	u32 *wafer_map = calloc(1, die_line * die_line * sizeof(u32));
+	u32 *wafer_map = zalloc(die_line * die_line * sizeof(u32));
 
 	for (int y = 0; y < diameter; y++)
 	{

@@ -100,7 +100,7 @@ static int _pkg3_kip1_skip(char ***pkg3_kip1_skip, u32 *pkg3_kip1_skip_num, char
 
 	// Allocate pointer list memory.
 	if (!(*pkg3_kip1_skip))
-		(*pkg3_kip1_skip) = calloc(PKG3_KIP_SKIP_MAX, sizeof(char *));
+		(*pkg3_kip1_skip) = zalloc(PKG3_KIP_SKIP_MAX * sizeof(char *));
 
 	// Set first kip name.
 	(*pkg3_kip1_skip)[(*pkg3_kip1_skip_num)++] = value;
