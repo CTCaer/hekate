@@ -31,6 +31,7 @@
 
 /*! Display registers. */
 // All Display/DSI/MIPI register defines and macros are index based (not offset).
+// DC_CMD/DC_COM/WINC Non-shadowed. DC_DISP/DC_WIN/DC_WINBUF Shadowed.
 
 // Display controller scratch registers.
 #define DC_D_WINBUF_DD_SCRATCH_REGISTER_0 0xED

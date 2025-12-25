@@ -67,6 +67,15 @@ static void _display_dsi_wait(u32 timeout, u32 off, u32 mask)
 	usleep(5);
 }
 
+static void _display_dsi_soft_reset()
+{
+	// Disable DSI interface.
+	DSI(DSI_POWER_CONTROL) = 0;
+
+	// Settle time.
+	usleep(10);
+}
+
 static void _display_dsi_send_cmd(u8 cmd, u32 param, u32 wait)
 {
 	DSI(DSI_WR_DATA) = (param << 8) | cmd;
@@ -374,50 +383,48 @@ void display_init()
 	PMC(APBDEV_PMC_IO_DPD_REQ)  = PMC_IO_DPD_REQ_DPD_OFF;
 	PMC(APBDEV_PMC_IO_DPD2_REQ) = PMC_IO_DPD_REQ_DPD_OFF;
 
-	// Configure LCD/BL pins.
+	// Configure LCD/WLED driver pins.
 	if (!_nx_aula)
 	{
-		// Configure LCD pins.
+		// Configure LCD driver pins.
 		PINMUX_AUX(PINMUX_AUX_NFC_EN)     = PINMUX_PULL_DOWN;
 		PINMUX_AUX(PINMUX_AUX_NFC_INT)    = PINMUX_PULL_DOWN;
 
-		// Configure Backlight pins.
+		// Configure WLED driver pins.
 		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = PINMUX_PULL_DOWN;
 		PINMUX_AUX(PINMUX_AUX_LCD_BL_EN)  = PINMUX_PULL_DOWN;
 
-		// Enable LCD AVDD.
+		// Enable LCD driver AVDD channels (+5.4V CH2 EN, -5.4V CH1 EN).
 		gpio_direction_output(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_HIGH);
 		usleep(10000); // Wait minimum 4.2ms to stabilize.
 
-		// Configure Backlight PWM/EN pins (BL PWM, BL EN).
+		// Configure WLED driver PWM/EN pins.
 		gpio_direction_output(GPIO_PORT_V, GPIO_PIN_0 | GPIO_PIN_1, GPIO_LOW);
 
-		 // Enable Backlight power.
+		// Enable WLED driver.
 		gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH);
 	}
 
-	// Configure LCD RST pin.
+	// Configure Panel Reset pin.
 	PINMUX_AUX(PINMUX_AUX_LCD_RST) = PINMUX_PULL_DOWN;
 	gpio_direction_output(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);
 
 	// Power up supply regulator for display interface.
 	MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG2) = 0;
+	MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG0) = 0;
 
 	if (!tegra_t210)
-	{
-		MIPI_CAL(MIPI_CAL_MIPI_BIAS_PAD_CFG0) = 0;
 		APB_MISC(APB_MISC_GP_DSI_PAD_CONTROL) = 0;
-	}
 
 	// Set DISP1 clock source, parent clock and DSI/PCLK to command mode.
 	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-BCLK): 50.0 MHz. (PCLK: 16.66 MHz)
 	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-BCLK): 48.9 MHz. (PCLK: 16.30 MHz)
 	clock_enable_plld(3, 20, true, tegra_t210);
 
-	// Setup Display Interface initial window configuration.
-	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_setup_win_config, ARRAY_SIZE(_di_dc_setup_win_config));
+	// Setup Display Interface initial configuration.
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_init_config, ARRAY_SIZE(_di_dc_init_config));
 
-	// Setup dsi init sequence packets.
+	// Setup DSI init sequence packets.
 	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config0,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config0));
 	DSI(tegra_t210 ? DSI_INIT_SEQ_DATA_15 : DSI_INIT_SEQ_DATA_15_B01) = 0;
 	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_reset_config1,  ARRAY_SIZE(_di_dsi_seq_pkt_reset_config1));
@@ -428,9 +435,16 @@ void display_init()
 
 	// Setup init seq packet lengths, timings and power on DSI.
 	reg_write_array((vu32 *)DSI_BASE, _di_dsi_init_config, ARRAY_SIZE(_di_dsi_init_config));
+	usleep(10);
+
+	// DSI soft reset.
+	_display_dsi_soft_reset();
+
+	// Set DSI LP timings.
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_timing_lp_config, ARRAY_SIZE(_di_dsi_timing_lp_config));
 	usleep(10000);
 
-	// Enable LCD Reset.
+	// Enable Panel Reset.
 	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_HIGH);
 	usleep(60000);
 
@@ -444,7 +458,7 @@ void display_init()
 		if (!display_dsi_read(MIPI_DCS_GET_DISPLAY_ID, 3, &_panel_id_raw))
 			break;
 
-		usleep(10000);
+		usleep(5000);
 	}
 
 	// Decode Display ID.
@@ -454,7 +468,7 @@ void display_init()
 		_panel_id = PANEL_JDI_XXX062M;
 
 	// For Aula ensure that we have a compatible panel id.
-	if (_nx_aula && _panel_id == 0xCCCC)
+	if (_nx_aula)
 		_panel_id = PANEL_SAM_AMS699VC01;
 
 	// Initialize display panel.
@@ -537,7 +551,7 @@ void display_init()
 	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
 
 	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
-	DISPLAY_A(DC_DISP_DISP_CLOCK_CONTROL) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // 4: div3.
+	DISPLAY_A(DC_DISP_DISP_CLOCK_CONTROL) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // div3. Default: div4.
 
 	// Set DSI mode to HOST.
 	reg_write_array((vu32 *)DSI_BASE, _di_dsi_host_mode_config, ARRAY_SIZE(_di_dsi_host_mode_config));
@@ -577,8 +591,8 @@ void display_init()
 	}
 	usleep(10000);
 
-	// Enable video display controller.
-	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_enable_config, ARRAY_SIZE(_di_dc_video_enable_config));
+	// Setup video mode.
+	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_mode_config, ARRAY_SIZE(_di_dc_video_mode_config));
 }
 
 void display_backlight_pwm_init()
@@ -600,6 +614,9 @@ void display_backlight_pwm_init()
 
 void display_backlight(bool enable)
 {
+	if (_panel_id == PANEL_SAM_AMS699VC01)
+		return;
+
 	// Backlight PWM GPIO.
 	gpio_write(GPIO_PORT_V, GPIO_PIN_0, enable ? GPIO_HIGH : GPIO_LOW);
 }
@@ -630,7 +647,7 @@ static void _display_pwm_backlight_brightness(u32 duty, u32 step_delay)
 
 	if (old_value < duty)
 	{
-		for (u32 i = old_value; i < duty + 1; i++)
+		for (u32 i = old_value; i <= duty; i++)
 		{
 			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16);
 			usleep(step_delay);
@@ -638,14 +655,12 @@ static void _display_pwm_backlight_brightness(u32 duty, u32 step_delay)
 	}
 	else
 	{
-		for (u32 i = old_value; i > duty; i--)
+		for (int i = old_value; i >= (int)duty; i--)
 		{
 			PWM(PWM_CONTROLLER_PWM_CSR_0) = PWM_CSR_EN | (i << 16);
 			usleep(step_delay);
 		}
 	}
-	if (!duty)
-		PWM(PWM_CONTROLLER_PWM_CSR_0) = 0;
 }
 
 void display_backlight_brightness(u32 brightness, u32 step_delay)
@@ -688,8 +703,11 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-BCLK): 48.9 MHz. (PCLK: 16.30 MHz)
 	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210);
 
-	// Set timings for lowpower clocks.
-	reg_write_array((vu32 *)DSI_BASE, _di_dsi_timing_deinit_config, ARRAY_SIZE(_di_dsi_timing_deinit_config));
+	// DSI soft reset.
+	_display_dsi_soft_reset();
+
+	// Set DSI LP timings.
+	reg_write_array((vu32 *)DSI_BASE, _di_dsi_timing_lp_config, ARRAY_SIZE(_di_dsi_timing_lp_config));
 
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(10000);
@@ -750,16 +768,16 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 		(_panel_id == PANEL_SAM_AMS699VC01) ? 120000 : 50000);
 
 skip_panel_deinit:
-	// Disable LCD power pins.
-	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);     // LCD Reset disable.
+	// Disable Panel Reset.
+	gpio_write(GPIO_PORT_V, GPIO_PIN_2, GPIO_LOW);
 	usleep(10000);
 
 	if (!_nx_aula) // HOS uses panel id.
 	{
-		gpio_write(GPIO_PORT_I, GPIO_PIN_1, GPIO_LOW); // LCD AVDD -5.4V disable.
-		gpio_write(GPIO_PORT_I, GPIO_PIN_0, GPIO_LOW); // LCD AVDD +5.4V disable.
+		// Disable LCD driver AVDD channels.
+		gpio_write(GPIO_PORT_I, GPIO_PIN_0 | GPIO_PIN_1, GPIO_LOW);
 
-		// Make sure LCD PWM backlight pin is in PWM0 mode.
+		// Make sure LCD driver PWM pin is in PWM0 mode.
 		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_SPIO); // Backlight PWM.
 		PINMUX_AUX(PINMUX_AUX_LCD_BL_PWM) = PINMUX_TRISTATE | PINMUX_PULL_DOWN | 1; // Set PWM0 mode.
 	}
@@ -771,10 +789,10 @@ skip_panel_deinit:
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_L_SET) = BIT(CLK_L_DISP1);
 	CLOCK(CLK_RST_CONTROLLER_CLK_ENB_L_CLR) = BIT(CLK_L_DISP1);
 
-	// Power down pads.
+	// Power down.
 	DSI(DSI_PAD_CONTROL_0) = DSI_PAD_CONTROL_VS1_PULLDN_CLK | DSI_PAD_CONTROL_VS1_PULLDN(0xF) |
 							 DSI_PAD_CONTROL_VS1_PDIO_CLK   | DSI_PAD_CONTROL_VS1_PDIO(0xF);
-	DSI(DSI_POWER_CONTROL) = 0;
+	_display_dsi_soft_reset();
 
 	// Disable DSI AVDD.
 	max7762x_regulator_enable(REGULATOR_LDO0, false);

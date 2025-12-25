@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2018 naehrwert
-* Copyright (c) 2018-2024 CTCaer
+* Copyright (c) 2018-2025 CTCaer
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms and conditions of the GNU General Public License,
@@ -16,10 +16,9 @@
 */
 
 // Display A config.
-static const reg_cfg_t _di_dc_setup_win_config[] = {
+static const reg_cfg_t _di_dc_init_config[] = {
+	/* Display init */
 	{DC_CMD_STATE_ACCESS, READ_MUX_ASSEMBLY | WRITE_MUX_ASSEMBLY},
-	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
-	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
 	{DC_CMD_REG_ACT_CONTROL, WIN_A_ACT_HCNTR_SEL | WIN_B_ACT_HCNTR_SEL | WIN_C_ACT_HCNTR_SEL | WIN_D_ACT_HCNTR_SEL},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
@@ -32,10 +31,11 @@ static const reg_cfg_t _di_dc_setup_win_config[] = {
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE  | WIN_A_UPDATE  | WIN_B_UPDATE  | WIN_C_UPDATE  | WIN_D_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ | WIN_D_ACT_REQ},
 
-	/* Setup Windows A/B/C */
+	/* Disable A/B/C/D Windows */
 	{DC_CMD_DISPLAY_WINDOW_HEADER, WINDOW_A_SELECT | WINDOW_B_SELECT | WINDOW_C_SELECT | WINDOW_D_SELECT},
 	{DC_WIN_WIN_OPTIONS, 0},
 	{DC_WIN_DV_CONTROL,  0},
+
 	/* Setup default YUV colorspace conversion coefficients */
 	{DC_WINC_CSC_YOF,   0xF0},
 	{DC_WINC_CSC_KYRGB, 0x12A},
@@ -45,8 +45,8 @@ static const reg_cfg_t _di_dc_setup_win_config[] = {
 	{DC_WINC_CSC_KVG,   0x32F},
 	{DC_WINC_CSC_KUB,   0x204},
 	{DC_WINC_CSC_KVB,   0},
-	/* End of color coefficients */
 
+	/* Init color, format and background */
 	{DC_DISP_DISP_COLOR_CONTROL, BASE_COLOR_SIZE_888},
 	{DC_DISP_DISP_INTERFACE_CONTROL, DISP_DATA_FORMAT_DF1P1C},
 	{DC_COM_PIN_OUTPUT_POLARITY(1), LSC0_OUTPUT_POLARITY_LOW},
@@ -55,6 +55,8 @@ static const reg_cfg_t _di_dc_setup_win_config[] = {
 	{DC_COM_CRC_CONTROL, 0},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE  | WIN_A_UPDATE  | WIN_B_UPDATE  | WIN_C_UPDATE  | WIN_D_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ | WIN_A_ACT_REQ | WIN_B_ACT_REQ | WIN_C_ACT_REQ | WIN_D_ACT_REQ},
+
+	/* Stop display */
 	{DC_WINBUF_BLEND_LAYER_CONTROL, WIN_BLEND_BYPASS | WIN_BLEND_DEPTH(255)},
 	{DC_CMD_DISPLAY_COMMAND_OPTION0, 0},
 	{DC_DISP_DISP_WIN_OPTIONS, 0},
@@ -113,7 +115,7 @@ static const reg_cfg_t _di_dsi_init_config[] = {
 
 	{DSI_PAD_CONTROL_1, 0},
 
-	/* DSI PHY timings */
+	/* DSI PHY timings Init - 19.2 MHz */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30109},
@@ -125,12 +127,13 @@ static const reg_cfg_t _di_dsi_init_config[] = {
 
 	{DSI_PAD_CONTROL_0, DSI_PAD_CONTROL_VS1_PULLDN(0) | DSI_PAD_CONTROL_VS1_PDIO(0)}, // Power up.
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
-	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
-	{DSI_POWER_CONTROL, 0},
-	{DSI_POWER_CONTROL, 0},
+};
+
+// DSI LP config.
+static const reg_cfg_t _di_dsi_timing_lp_config[] = {
 	{DSI_PAD_CONTROL_1, 0},
 
-	/* DSI PHY timings */
+	/* DSI PHY timings LP - 50 MHz */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30118},
@@ -142,7 +145,6 @@ static const reg_cfg_t _di_dsi_init_config[] = {
 
 	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CRC_RESET | DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
 	{DSI_CONTROL, DSI_CONTROL_LANES(3) | DSI_CONTROL_HOST_ENABLE},
-	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
 	{DSI_MAX_THRESHOLD, 64},
 	{DSI_TRIGGER, 0},
@@ -201,7 +203,7 @@ static const reg_cfg_t _di_dsi_panel_init_config_jdi[] = {
 static const reg_cfg_t _di_dsi_seq_pkt_video_non_burst_no_eot_config[] = {
 	{DSI_PAD_CONTROL_1, 0},
 
-	/* DSI PHY timings */
+	/* DSI PHY timings HP - 234 MHz */
 	{DSI_PHY_TIMING_0, 0x6070603},
 	{DSI_PHY_TIMING_1, 0x40A0E05},
 	{DSI_PHY_TIMING_2, 0x30172},
@@ -294,7 +296,7 @@ static const reg_cfg_t _di_mipi_dsi_cal_unused_config[] = {
 };
 
 // Display A enable config.
-static const reg_cfg_t _di_dc_video_enable_config[] = {
+static const reg_cfg_t _di_dc_video_mode_config[] = {
 	/* Set panel timings */
 	{DC_DISP_DISP_TIMING_OPTIONS, VSYNC_H_POSITION(0)},
 	{DC_DISP_REF_TO_SYNC, V_REF_TO_SYNC(1)    | H_REF_TO_SYNC(0)},
@@ -307,7 +309,6 @@ static const reg_cfg_t _di_dc_video_enable_config[] = {
 	{DC_DISP_SHIFT_CLOCK_OPTIONS, SC1_H_QUALIFIER_NONE | SC0_H_QUALIFIER_NONE},
 	{DC_COM_PIN_OUTPUT_ENABLE(1), 0},
 	{DC_DISP_DATA_ENABLE_OPTIONS, DE_SELECT_ACTIVE | DE_CONTROL_NORMAL},
-	{DC_DISP_DISP_CLOCK_CONTROL, 0},
 
 	/* Start continuous display. */
 	{DC_CMD_DISPLAY_COMMAND, DISP_CTRL_MODE_C_DISPLAY},
@@ -319,8 +320,6 @@ static const reg_cfg_t _di_dc_video_enable_config[] = {
 	{DC_CMD_GENERAL_INCR_SYNCPT, SYNCPT_GENERAL_COND(COND_REG_WR_SAFE) | SYNCPT_GENERAL_INDX(1)},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
-
-	{DC_DISP_DISP_CLOCK_CONTROL, PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4)}, // 4: div3.
 };
 
 // Display A disable config.
@@ -344,30 +343,6 @@ static const reg_cfg_t _di_dc_video_disable_config[] = {
 	{DC_CMD_DISPLAY_POWER_CONTROL, 0},
 	{DC_CMD_STATE_CONTROL, GENERAL_UPDATE},
 	{DC_CMD_STATE_CONTROL, GENERAL_ACT_REQ},
-};
-
-// DSI deinit config.
-static const reg_cfg_t _di_dsi_timing_deinit_config[] = {
-	{DSI_POWER_CONTROL, 0},
-	{DSI_PAD_CONTROL_1, 0},
-
-	/* DSI PHY timings */
-	{DSI_PHY_TIMING_0, 0x6070603},
-	{DSI_PHY_TIMING_1, 0x40A0E05},
-	{DSI_PHY_TIMING_2, 0x30118},
-	{DSI_BTA_TIMING,   0x190A14},
-	/* DSI timeout */
-	{DSI_TIMEOUT_0, DSI_TIMEOUT_LRX(0x2000) | DSI_TIMEOUT_HTX(0xFFFF)},
-	{DSI_TIMEOUT_1, DSI_TIMEOUT_PR(0x1343)  | DSI_TIMEOUT_TA(0x2000)},
-	{DSI_TO_TALLY, 0},
-
-	{DSI_HOST_CONTROL, DSI_HOST_CONTROL_CRC_RESET | DSI_HOST_CONTROL_TX_TRIG_HOST | DSI_HOST_CONTROL_CS | DSI_HOST_CONTROL_ECC},
-	{DSI_CONTROL, DSI_CONTROL_LANES(3) | DSI_CONTROL_HOST_ENABLE},
-	{DSI_POWER_CONTROL, DSI_POWER_CONTROL_ENABLE},
-	{DSI_MAX_THRESHOLD, 64},
-	{DSI_TRIGGER, 0},
-	{DSI_TX_CRC, 0},
-	{DSI_INIT_SEQ_CONTROL, 0}
 };
 
 // DSI panel JDI deinit config.
