@@ -706,7 +706,7 @@ static void _l4t_late_hw_config(bool t210b01)
 
 	// Set spare reg to 0xE0000 and clear everything else.
 	if (t210b01 && (SYSREG(AHB_AHB_SPARE_REG) & 0xE0000000) != 0xE0000000)
-		SYSREG(AHB_AHB_SPARE_REG) = 0xE0000 << 12;
+		SYSREG(AHB_AHB_SPARE_REG) = 0xE0000 << 12u;
 
 	// HDA loopback disable on prod.
 	PMC(APBDEV_PMC_STICKY_BITS) = PMC_STICKY_BITS_HDA_LPBK_DIS;
@@ -714,6 +714,9 @@ static void _l4t_late_hw_config(bool t210b01)
 	// Clear any MC error.
 	MC(MC_INTSTATUS) = MC(MC_INTSTATUS);
 
+	// Enable Wrap burst for BPMP, GPU and PCIE.
+	MSELECT(MSELECT_CONFIG) = (MSELECT(MSELECT_CONFIG) & (~(MSELECT_CFG_ERR_RESP_EN_GPU | MSELECT_CFG_ERR_RESP_EN_PCIE))) |
+							  (MSELECT_CFG_WRAP_TO_INCR_GPU | MSELECT_CFG_WRAP_TO_INCR_PCIE | MSELECT_CFG_WRAP_TO_INCR_BPMP);
 
 #if LOCK_PMC_REGISTERS
 	// Lock LP0 parameters and misc secure registers. Always happens on warmboot.
@@ -1172,10 +1175,6 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	{
 		// Launch BL31.
 		ccplex_boot_cpu0(TZDRAM_COLD_ENTRY, true);
-
-		// Enable Wrap burst for BPMP, GPU and PCIE.
-		MSELECT(MSELECT_CONFIG) = (MSELECT(MSELECT_CONFIG) & (~(MSELECT_CFG_ERR_RESP_EN_GPU | MSELECT_CFG_ERR_RESP_EN_PCIE))) |
-								  (MSELECT_CFG_WRAP_TO_INCR_GPU | MSELECT_CFG_WRAP_TO_INCR_PCIE | MSELECT_CFG_WRAP_TO_INCR_BPMP);
 
 		// For T210B01, prep reset vector for SC7 save state and start BPMP-FW.
 		EXCP_VEC(EVP_COP_RESET_VECTOR) = BPMPFW_B01_ENTRYPOINT;
