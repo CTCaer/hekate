@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,6 +18,8 @@
 #include <string.h>
 #include "heap.h"
 #include <gfx_utils.h>
+
+#define HEAP_USED_MAGIC 0x50414548 // "HEAP".
 
 heap_t _heap;
 
@@ -40,7 +42,7 @@ static void *_heap_alloc(u32 size)
 	if (!_heap.first)
 	{
 		node = (hnode_t *)_heap.start;
-		node->used = 1;
+		node->used = HEAP_USED_MAGIC;
 		node->size = size;
 		node->prev = NULL;
 		node->next = NULL;
@@ -85,7 +87,7 @@ static void *_heap_alloc(u32 size)
 				size += new_size;
 
 			node->size = size;
-			node->used = 1;
+			node->used = HEAP_USED_MAGIC;
 
 			return (void *)node + sizeof(hnode_t);
 		}
@@ -100,7 +102,7 @@ static void *_heap_alloc(u32 size)
 
 	// No unused node found, create a new one.
 	new_node = (hnode_t *)((void *)node + sizeof(hnode_t) + node->size);
-	new_node->used = 1;
+	new_node->used = HEAP_USED_MAGIC;
 	new_node->size = size;
 	new_node->prev = node;
 	new_node->next = NULL;
@@ -114,6 +116,14 @@ static void *_heap_alloc(u32 size)
 static void _heap_free(void *addr)
 {
 	hnode_t *node = (hnode_t *)(addr - sizeof(hnode_t));
+
+	// Check if heap owns this node.
+	if (addr < _heap.start || node->used != HEAP_USED_MAGIC)
+	{
+		//! BUGPRINTF("free error: addr %08p, used %08X!\n");
+		return;
+	}
+
 	node->used = 0;
 	node = _heap.first;
 
@@ -152,24 +162,21 @@ void *malloc(u32 size)
 	return _heap_alloc(size);
 }
 
-void *calloc(u32 num, u32 size)
-{
-	void *res = (void *)_heap_alloc(num * size);
-	memset(res, 0, ALIGN(num * size, sizeof(hnode_t))); // Clear the aligned size.
-	return res;
-}
-
 void *zalloc(u32 size)
 {
-	void *res = (void *)_heap_alloc(size);
-	memset(res, 0, ALIGN(size, sizeof(hnode_t))); // Clear the aligned size.
-	return res;
+	void *buf = (void *)_heap_alloc(size);
+	memset(buf, 0, ALIGN(size, sizeof(hnode_t))); // Clear the aligned size.
+	return buf;
+}
+
+void *calloc(u32 num, u32 size)
+{
+	return zalloc(num * size);
 }
 
 void free(void *buf)
 {
-	if (buf >= _heap.start)
-		_heap_free(buf);
+	_heap_free(buf);
 }
 
 void heap_monitor(heap_monitor_t *mon, bool print_node_stats)
