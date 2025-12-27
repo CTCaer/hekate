@@ -134,6 +134,5 @@ int  max17050_get_version(u32 *value);
 int  max17050_get_property(enum MAX17050_reg reg, int *value);
 int  max17050_fix_configuration();
 void max17050_dump_regs(void *buf);
-u32  max17050_get_cached_batt_volt();
 
 #endif /* __MAX17050_H_ */

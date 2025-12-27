@@ -45,12 +45,6 @@
 
 #define MAX17050_VMAX_TOLERANCE 50 /* 50 mV */
 
-static u32 battery_voltage = 0;
-u32 max17050_get_cached_batt_volt()
-{
-	return battery_voltage;
-}
-
 static u16 max17050_get_reg(u8 reg)
 {
 	u16 data = 0;
@@ -100,7 +94,6 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 	case MAX17050_VCELL: // Voltage now.
 		data = max17050_get_reg(MAX17050_VCELL);
 		*value = (data >> 3) * 625 / 1000; /* Units of LSB = 0.625mV */
-		battery_voltage = *value;
 		break;
 	case MAX17050_AvgVCELL: // Voltage avg.
 		data = max17050_get_reg(MAX17050_AvgVCELL);
