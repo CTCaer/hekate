@@ -1,7 +1,7 @@
 /*
  * Joy-Con UART driver for Nintendo Switch
  *
- * Copyright (c) 2019-2024 CTCaer
+ * Copyright (c) 2019-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -65,6 +65,7 @@
 #define JC_HID_SUBCMD_SPI_READ   0x10
 #define  SPI_READ_OFFSET         0x20
 #define JC_HID_SUBCMD_RUMBLE_CTL 0x48
+#define JC_HID_SUBCMD_CHARGE_SET 0x51
 #define JC_HID_SUBCMD_SND_RUMBLE 0xFF
 
 #define JC_SIO_OUTPUT_RPT        0x91
@@ -102,11 +103,25 @@ enum
 
 enum
 {
-	JC_BATT_EMTPY = 0,
-	JC_BATT_CRIT  = 1,
-	JC_BATT_LOW   = 2,
-	JC_BATT_MID   = 3,
-	JC_BATT_FULL  = 4
+	JC_BATT_EMPTY = 0,
+	JC_BATT_CRIT  = 1, // 3300 - 3599 mV.
+	JC_BATT_LOW   = 2, // 3600 - 3759 mV.
+	JC_BATT_MID   = 3, // 3760 - 3899 mV.
+	JC_BATT_FULL  = 4  // 3900 - 4200 mV.
+};
+
+#define JC_CHRG_CFG_SUPL0 0x00 // 100 OFF.
+#define JC_CHRG_CFG_SUPL1 0x10 // EN2 OFF.
+#define JC_CHRG_CFG_100MA 0x04 // 100 ON.
+#define JC_CHRG_CFG_200MA 0x14 // EN2 ON.
+
+enum
+{
+	JC_CHRG_STATE_INIT = 0,
+	JC_CHRG_STATE_OFF  = 1, // Regulator OFF.
+	JC_CHRG_STATE_SUPL = 2, // JC_CHRG_CFG_SUPL0.
+	JC_CHRG_STATE_SLOW = 3, // JC_CHRG_CFG_100MA.
+	JC_CHRG_STATE_FAST = 4, // JC_CHRG_CFG_200MA.
 };
 
 static const u8 sio_init[] = {
@@ -146,7 +161,7 @@ static const u8 init_get_info[]  = {
 static const u8 init_switch_brate[]  = {
 	0x19, 0x01, 0x03, 0x0F, 0x00,         // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_SET_BRATE, // Wired cmd and subcmd.
-	0x08, 0x00, 0x00, 0xBD, 0xB1,         // Wired subcmd data, data crc and crc.
+	0x08, 0x00, 0x00, 0xBD, 0xB1,         // Wired subcmd data size, data crc and crc.
 	// Baudrate 3 megabaud.
 	0xC0, 0xC6, 0x2D, 0x00, 0x00, 0x00, 0x00, 0x00
 };
@@ -154,14 +169,14 @@ static const u8 init_switch_brate[]  = {
 static const u8 init_hid_disconnect[]  = {
 	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_HID_DISC, // Wired cmd and subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x0E         // Wired subcmd data and crc.
+	0x00, 0x00, 0x00, 0x00, 0x0E         // Wired subcmd data size and crc.
 };
 
 static const u8 init_set_hid_rate[]  = {
 	0x19, 0x01, 0x03, 0x0B, 0x00,           // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_SET_HIDRATE, // Wired cmd and subcmd.
-	0x04, 0x00, 0x00, 0x12, 0xA6,           // Wired subcmd data, data crc and crc.
-	// Output report rate 15 ms.
+	0x04, 0x00, 0x00, 0x12, 0xA6,           // Wired subcmd data size, data crc and crc.
+	// Output report rate 15 ms. (5 or 10 or 15 supported).
 	0x0F, 0x00, 0x00, 0x00
 
 	// 5 ms.
@@ -315,15 +330,17 @@ typedef struct _joycon_ctxt_t
 	u8  buf[0x100]; //FIXME: If heap is used, dumping breaks.
 	u8  uart;
 	u8  type;
+	u8  sio_mode;
 	u8  state;
 	u32 last_received_time;
 	u32 last_status_req_time;
+	u32 last_chrger_chk_time;
 	u8  mac[6];
 	u8  pkt_id;
 	u8  rumble_sent;
+	u8  charger_req;
 	u8  connected;
 	u8  detected;
-	u8  sio_mode;
 } joycon_ctxt_t;
 
 static joycon_ctxt_t jc_l = {0};
@@ -444,34 +461,32 @@ static void _jc_conn_check()
 	// Check if a Joy-Con was disconnected.
 	if (!jc_l.detected)
 	{
-		if (jc_l.connected)
-			_jc_power_supply(UART_C, false);
-
 		jc_l.pkt_id = 0;
 
 		jc_l.connected   = false;
 		jc_l.rumble_sent = false;
+		jc_l.charger_req = false;
 
 		jc_gamepad.conn_l = false;
 
 		jc_gamepad.batt_info_l    = 0;
+		jc_gamepad.batt_chrg_l    = 0;
 		jc_gamepad.bt_conn_l.type = 0;
 		jc_gamepad.buttons &= ~JC_BTN_MASK_L;
 	}
 
 	if (!jc_r.detected)
 	{
-		if (jc_r.connected)
-			_jc_power_supply(UART_B, false);
-
 		jc_r.pkt_id = 0;
 
 		jc_r.connected   = false;
 		jc_r.rumble_sent = false;
+		jc_r.charger_req = false;
 
 		jc_gamepad.conn_r = false;
 
 		jc_gamepad.batt_info_r    = 0;
+		jc_gamepad.batt_chrg_r    = 0;
 		jc_gamepad.bt_conn_r.type = 0;
 		jc_gamepad.buttons &= ~JC_BTN_MASK_R;
 	}
@@ -586,21 +601,36 @@ static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 s
 	}
 }
 
-static void _jc_charging_decider(u8 batt, u8 uart)
+static void _jc_parse_input(joycon_ctxt_t *jc, const jc_hid_in_rpt_t *hid_pkt)
 {
-	u32 system_batt_enough = max17050_get_cached_batt_volt() > 4000;
+	u32 btn_tmp;
+	btn_tmp = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
 
-	// Power supply control based on battery levels and charging.
-	if ((batt >> 1) < JC_BATT_LOW) // Level without checking charging.
-		_jc_power_supply(uart, true);
-	else if (batt > (system_batt_enough ? JC_BATT_FULL : JC_BATT_MID) << 1) // Addresses the charging bit.
-		_jc_power_supply(uart, false);
+	if (jc->type & JC_ID_L)
+	{
+		jc_gamepad.buttons &= ~JC_BTN_MASK_L;
+		jc_gamepad.buttons |= (btn_tmp & JC_BTN_MASK_L);
+
+		jc_gamepad.lstick_x = hid_pkt->stick_h_left | ((hid_pkt->stick_m_left & 0xF) << 8);
+		jc_gamepad.lstick_y = (hid_pkt->stick_m_left >> 4) | (hid_pkt->stick_v_left << 4);
+
+		jc_gamepad.batt_info_l = hid_pkt->batt_info;
+	}
+	else if (jc->type & JC_ID_R)
+	{
+		jc_gamepad.buttons &= ~JC_BTN_MASK_R;
+		jc_gamepad.buttons |= (btn_tmp & JC_BTN_MASK_R);
+
+		jc_gamepad.rstick_x = hid_pkt->stick_h_right | ((hid_pkt->stick_m_right & 0xF) << 8);
+		jc_gamepad.rstick_y = (hid_pkt->stick_m_right >> 4) | (hid_pkt->stick_v_right << 4);
+
+		jc_gamepad.batt_info_r = hid_pkt->batt_info;
+	}
 }
 
 static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
 {
-	u32 btn_tmp;
-	jc_hid_in_rpt_t *hid_pkt = (jc_hid_in_rpt_t *)packet;
+	const jc_hid_in_rpt_t *hid_pkt = (jc_hid_in_rpt_t *)packet;
 
 	switch (hid_pkt->cmd)
 	{
@@ -613,35 +643,12 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
 		if (size < 12)
 			break;
 
-		btn_tmp = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
-
-		if (jc->type & JC_ID_L)
-		{
-			jc_gamepad.buttons &= ~JC_BTN_MASK_L;
-			jc_gamepad.buttons |= (btn_tmp & JC_BTN_MASK_L);
-
-			jc_gamepad.lstick_x = hid_pkt->stick_h_left | ((hid_pkt->stick_m_left & 0xF) << 8);
-			jc_gamepad.lstick_y = (hid_pkt->stick_m_left >> 4) | (hid_pkt->stick_v_left << 4);
-
-			jc_gamepad.batt_info_l = hid_pkt->batt_info;
-		}
-		else if (jc->type & JC_ID_R)
-		{
-			jc_gamepad.buttons &= ~JC_BTN_MASK_R;
-			jc_gamepad.buttons |= (btn_tmp & JC_BTN_MASK_R);
-
-			jc_gamepad.rstick_x = hid_pkt->stick_h_right | ((hid_pkt->stick_m_right & 0xF) << 8);
-			jc_gamepad.rstick_y = (hid_pkt->stick_m_right >> 4) | (hid_pkt->stick_v_right << 4);
-
-			jc_gamepad.batt_info_r = hid_pkt->batt_info;
-		}
+		_jc_parse_input(jc, hid_pkt);
 
 		jc_gamepad.conn_l = jc_l.connected;
 		jc_gamepad.conn_r = jc_r.connected;
-
-		if (hid_pkt->cmd == JC_HID_INPUT_RPT)
-			_jc_charging_decider(hid_pkt->batt_info, jc->uart);
 		break;
+
 	case JC_HID_SUBMCD_RPT:
 		if (hid_pkt->subcmd == JC_HID_SUBCMD_SPI_READ)
 		{
@@ -666,7 +673,13 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
 					bt_conn->ltk[16 - i] = pair_data->ltk[i - 1];
 			}
 		}
+		else if (hid_pkt->subcmd == JC_HID_SUBCMD_CHARGE_SET)
+			jc->charger_req = false;
+
+		_jc_parse_input(jc, hid_pkt);
+
 		break;
+
 	default:
 		break;
 	}
@@ -686,12 +699,15 @@ static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8 *data, int size)
 		jc->type = data[6];
 		jc->connected = true;
 		break;
+
 	case JC_WIRED_CMD_SET_BRATE:
 		jc->state = JC_STATE_BRATE_CHANGED;
 		break;
+
 	case JC_WIRED_CMD_HID_DISC:
 		jc->state = JC_STATE_BRATE_OK;
 		break;
+
 	case JC_WIRED_CMD_HID_CONN:
 	case JC_WIRED_CMD_SET_HIDRATE:
 		// done.
@@ -708,12 +724,15 @@ static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int
 	case JC_WIRED_HID:
 		_jc_parse_wired_hid(jc, pkt->payload, size - sizeof(jc_wired_hdr_t));
 		break;
+
 	case JC_WIRED_INIT_REPLY:
 		_jc_parse_wired_init(jc, pkt->data, size - sizeof(jc_uart_hdr_t) - 1);
 		break;
+
 	case JC_INIT_HANDSHAKE:
 		jc->state = JC_STATE_HANDSHAKED;
 		break;
+
 	default:
 		break;
 	}
@@ -745,6 +764,7 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8 *payload, 
 		jc_gamepad.conn_l = jc_l.connected;
 		jc_gamepad.conn_r = jc_l.connected;
 		break;
+
 	default:
 		break;
 	}
@@ -761,14 +781,17 @@ static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt
 	case JC_SIO_CMD_INIT:
 		jc->connected = pkt->status == 0;
 		break;
+
 	case JC_SIO_CMD_VER_RPT:
 		if (jc->connected)
 			jc->connected = pkt->status == 0;
 		break;
+
 	case JC_SIO_CMD_IAP_VER:
 	case JC_SIO_CMD_STATUS:
 		_jc_sio_parse_payload(jc, cmd, pkt->payload, size - sizeof(jc_sio_in_rpt_t));
 		break;
+
 	case JC_SIO_CMD_UNK02:
 	case JC_SIO_CMD_UNK20:
 	case JC_SIO_CMD_UNK21:
@@ -809,10 +832,98 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	}
 }
 
+static bool _jc_handle_charging(joycon_ctxt_t *jc)
+{
+	if (jc->last_chrger_chk_time > get_tmr_ms())
+		return false;
+
+	jc->last_chrger_chk_time = get_tmr_ms() + 5000;
+
+	u8 old_mode, batt_now;
+	if (jc->uart == UART_B)
+	{
+		batt_now = jc_gamepad.batt_info_r;
+		old_mode = jc_gamepad.batt_chrg_r;
+	}
+	else
+	{
+		batt_now = jc_gamepad.batt_info_l;
+		old_mode = jc_gamepad.batt_chrg_l;
+	}
+
+	// Let battery level settle if init.
+	u8 new_mode = old_mode;
+	if (!old_mode)
+	{
+		new_mode = JC_CHRG_STATE_SUPL;
+		if ((batt_now >> 1) <= JC_BATT_LOW)
+			new_mode = JC_CHRG_STATE_SLOW;
+
+		goto set_mode;
+	}
+
+	// Resend if no reply.
+	if (jc->charger_req)
+		goto set_mode;
+
+	// Power supply control based on battery levels and charging.
+	switch (batt_now >> 1)
+	{
+	case JC_BATT_EMPTY:
+	case JC_BATT_CRIT:
+	case JC_BATT_LOW:
+		new_mode = JC_CHRG_STATE_SLOW;
+		break;
+
+	case JC_BATT_MID:
+		if (!(batt_now & 1))
+			new_mode = JC_CHRG_STATE_SUPL;
+		break;
+
+	case JC_BATT_FULL:
+		new_mode = JC_CHRG_STATE_OFF;
+		break;
+	}
+
+	// Check if already configured.
+	if (new_mode == old_mode)
+		return false;
+
+set_mode:
+	if (jc->uart == UART_B)
+		jc_gamepad.batt_chrg_r = new_mode;
+	else
+		jc_gamepad.batt_chrg_l = new_mode;
+
+	switch (new_mode)
+	{
+	case JC_CHRG_STATE_OFF:
+		_jc_power_supply(jc->uart, false);
+		new_mode = JC_CHRG_CFG_SUPL0;
+		break;
+	case JC_CHRG_STATE_SUPL:
+		_jc_power_supply(jc->uart, true);
+		new_mode = JC_CHRG_CFG_SUPL0;
+		break;
+	case JC_CHRG_STATE_SLOW:
+		_jc_power_supply(jc->uart, true);
+		new_mode = JC_CHRG_CFG_100MA;
+		break;
+	}
+
+	_jc_send_hid_cmd(jc, JC_HID_SUBCMD_CHARGE_SET, (u8 *)&new_mode, sizeof(new_mode));
+	jc->charger_req = true;
+
+	jc->last_status_req_time = get_tmr_ms() + 15;
+
+	return true;
+}
+
 static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
 {
 	// Send init rumble or request nx pad status report.
-	if ((jc_r.connected && !jc_r.rumble_sent) || (jc_l.connected && !jc_l.rumble_sent))
+	if ((jc_r.connected && !jc_r.rumble_sent) ||
+		(jc_l.connected && !jc_l.rumble_sent))
 	{
 		_jc_send_hid_cmd(jc, JC_HID_SUBCMD_SND_RUMBLE, NULL, 0);
 
@@ -821,13 +932,15 @@ static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
 		if (jc_r.connected)
 			jc_r.rumble_sent = true;
 
+		jc->last_chrger_chk_time = get_tmr_ms() + 5000;
+
 		return 1;
 	}
 
 	return 0;
 }
 
-static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
+static void _jc_req_status(joycon_ctxt_t *jc)
 {
 	if (!jc->detected)
 		return;
@@ -837,11 +950,13 @@ static void _jc_req_nx_pad_status(joycon_ctxt_t *jc)
 	if (jc->last_status_req_time > get_tmr_ms() || !jc->connected)
 		return;
 
+	// Init/maintenance for Joy-Con.
 	if (is_nxpad)
 	{
-		bool sent_rumble = _jc_send_init_rumble(jc);
+		if (_jc_send_init_rumble(jc))
+			return;
 
-		if (sent_rumble)
+		if (_jc_handle_charging(jc))
 			return;
 	}
 
@@ -1019,18 +1134,23 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 	if (!jc->detected)
 		return;
 
+	// Try to reinit if no input report.
+	// Actual connection timeout is 2000ms on official Joycon.
 	if (((u32)get_tmr_ms() - jc->last_received_time) > 1000)
 	{
-		_jc_power_supply(jc->uart, true);
+		if (!jc->sio_mode)
+			_jc_power_supply(jc->uart, true);
 
 		// Mask out buttons and set connected to false.
 		if (jc->uart == UART_B)
 		{
+			jc_gamepad.batt_chrg_r = 0;
 			jc_gamepad.buttons &= ~JC_BTN_MASK_R;
 			jc_gamepad.conn_r = false;
 		}
 		else
 		{
+			jc_gamepad.batt_chrg_l = 0;
 			jc_gamepad.buttons &= ~JC_BTN_MASK_L;
 			jc_gamepad.conn_l = false;
 		}
@@ -1040,6 +1160,7 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 
 		if (!jc->sio_mode)
 		{
+			jc_gamepad.buttons = 0;
 			jc->state = JC_STATE_START;
 
 			// Set TX and RTS inversion for Joycon.
@@ -1143,9 +1264,6 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 
 out:
 		jc->last_received_time = get_tmr_ms();
-
-		if (!jc->sio_mode && jc->connected && !(jc->type & JC_ID_HORI))
-			_jc_power_supply(jc->uart, false);
 	}
 }
 
@@ -1158,9 +1276,6 @@ void jc_init_hw()
 	jc_gamepad.sio_mode = jc_l.sio_mode;
 
 #if !defined(DEBUG_UART_PORT) || !(DEBUG_UART_PORT)
-	_jc_power_supply(UART_C, true);
-	_jc_power_supply(UART_B, true);
-
 	// Sio Initialization.
 	if (jc_gamepad.sio_mode)
 	{
@@ -1189,6 +1304,11 @@ void jc_init_hw()
 		// Configure Sio NPOR.
 		PINMUX_AUX(PINMUX_AUX_USB_VBUS_EN1) = PINMUX_IO_HV | PINMUX_LPDR | 1;
 		gpio_direction_output(GPIO_PORT_CC, GPIO_PIN_5, GPIO_LOW);
+	}
+	else
+	{
+		_jc_power_supply(UART_C, true);
+		_jc_power_supply(UART_B, true);
 	}
 
 #if 0 // Already set by hw init.
@@ -1220,12 +1340,12 @@ void jc_deinit()
 	if (!jc_init_done)
 		return;
 
-	// Disable power.
-	_jc_power_supply(UART_B, false);
-	_jc_power_supply(UART_C, false);
-
 	if (!jc_gamepad.sio_mode)
 	{
+		// Disable power.
+		_jc_power_supply(UART_B, false);
+		_jc_power_supply(UART_C, false);
+
 		// Send sleep command.
 		u8 data = HCI_STATE_SLEEP;
 		if (jc_r.connected && !(jc_r.type & JC_ID_HORI))
@@ -1264,8 +1384,8 @@ jc_gamepad_rpt_t *joycon_poll()
 	_jc_init_conn(&jc_r);
 	_jc_init_conn(&jc_l);
 
-	_jc_req_nx_pad_status(&jc_r);
-	_jc_req_nx_pad_status(&jc_l);
+	_jc_req_status(&jc_r);
+	_jc_req_status(&jc_l);
 
 	_jc_rcv_pkt(&jc_r);
 	_jc_rcv_pkt(&jc_l);

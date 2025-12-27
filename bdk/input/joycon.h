@@ -1,7 +1,7 @@
 /*
  * Ambient light sensor driver for Nintendo Switch's Rohm BH1730
  *
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2025 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -86,6 +86,8 @@ typedef struct _jc_gamepad_rpt_t
 	bool sio_mode;
 	u8 batt_info_l; // Also Sio Connected status.
 	u8 batt_info_r; // Also Sio IRQ.
+	u8 batt_chrg_l;
+	u8 batt_chrg_r;
 	jc_bt_conn_t bt_conn_l;
 	jc_bt_conn_t bt_conn_r;
 } jc_gamepad_rpt_t;
