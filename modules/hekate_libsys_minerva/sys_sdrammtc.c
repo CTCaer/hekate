@@ -3705,7 +3705,15 @@ static int _minerva_set_ir_boost(mtc_config_t *mtc_cfg)
 	u32 clk_new     = (PLLP_OUT0 << 29u) | 0x188000 | (boost ? 0 : 2);
 	u32 clk_cur     = CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_EMC);
 	u32 clk_cur_src = clk_cur >> 29u;
-	if (clk_new == clk_cur || clk_cur_src != PLLP_OUT0)
+
+	// Already at requested clock.
+	if (clk_new == clk_cur)
+	{
+		mtc_cfg->rate_from = mtc_cfg->rate_to;
+		return 0;
+	}
+
+	if (clk_cur_src != PLLP_OUT0)
 		return 3;
 
 	// Clear clock change interrupt.
