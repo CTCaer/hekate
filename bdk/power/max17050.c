@@ -26,7 +26,13 @@
 #include <soc/i2c.h>
 #include <soc/timer.h>
 
-#define BASE_SNS_UOHM 5000
+/* Board default values */
+#define BOARD_CGAIN       2 /* Actual: 1.99993 */
+#define BOARD_RSENSE_MOHM 5 /* 0.005 Ohm */
+#define ADJ_RSENSE_MOHM   (BOARD_RSENSE_MOHM * BOARD_CGAIN) /* 0.01 Ohm */
+
+/* Consider RepCap which is less then 10 units below FullCAP full */
+#define FULL_THRESHOLD 10
 
 /* Status register bits */
 #define STATUS_POR_BIT BIT(1)
@@ -108,15 +114,15 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 		break;
 	case MAX17050_DesignCap: // Charge full design.
 		data = max17050_get_reg(MAX17050_DesignCap);
-		*value = data * (BASE_SNS_UOHM / MAX17050_BOARD_SNS_RESISTOR_UOHM) / MAX17050_BOARD_CGAIN;
+		*value = (u32)data * 5 / ADJ_RSENSE_MOHM; /* Units of LSB = 5uVh / Rsense = 0.5mAh */
 		break;
 	case MAX17050_FullCAP: // Charge full.
 		data = max17050_get_reg(MAX17050_FullCAP);
-		*value = data * (BASE_SNS_UOHM / MAX17050_BOARD_SNS_RESISTOR_UOHM) / MAX17050_BOARD_CGAIN;
+		*value = (u32)data * 5 / ADJ_RSENSE_MOHM; /* Units of LSB = 5uVh / Rsense = 0.5mAh */
 		break;
 	case MAX17050_RepCap: // Charge now.
 		data = max17050_get_reg(MAX17050_RepCap);
-		*value = data * (BASE_SNS_UOHM / MAX17050_BOARD_SNS_RESISTOR_UOHM) / MAX17050_BOARD_CGAIN;
+		*value = (u32)data * 5 / ADJ_RSENSE_MOHM; /* Units of LSB = 5uVh / Rsense = 0.5mAh */
 		break;
 	case MAX17050_TEMP: // Temp.
 		data = max17050_get_reg(MAX17050_TEMP);
@@ -125,13 +131,11 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 		break;
 	case MAX17050_Current: // Current now.
 		data = max17050_get_reg(MAX17050_Current);
-		*value = (s16)data;
-		*value *= 1562500 / (MAX17050_BOARD_SNS_RESISTOR_UOHM * MAX17050_BOARD_CGAIN);
+		*value = (int)(s16)data * 15625 / ADJ_RSENSE_MOHM / 10; /* Units of LSB = 1.5625uV / Rsense = 156.25uA */
 		break;
 	case MAX17050_AvgCurrent: // Current avg.
 		data = max17050_get_reg(MAX17050_AvgCurrent);
-		*value = (s16)data;
-		*value *= 1562500 / (MAX17050_BOARD_SNS_RESISTOR_UOHM * MAX17050_BOARD_CGAIN);
+		*value = (int)(s16)data * 15625 / ADJ_RSENSE_MOHM / 10; /* Units of LSB = 1.5625uV / Rsense = 156.25uA */
 		break;
 	default:
 		return -1;
