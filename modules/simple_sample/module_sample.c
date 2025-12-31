@@ -6,7 +6,7 @@
 #include <module.h>
 #include <gfx_utils.h>
 
-void _modInit(void *moduleConfig, bdkParams_t bp)
+void mod_entry(void *moduleConfig, bdkParams_t bp)
 {
 	memcpy(&gfx_con, bp->gfxCon, sizeof(gfx_con_t));
 	memcpy(&gfx_ctxt, bp->gfxCtx, sizeof(gfx_ctxt_t));

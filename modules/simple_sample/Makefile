@@ -5,14 +5,18 @@ endif
 include $(DEVKITARM)/base_rules
 
 TARGET := module_sample
-BUILD := ../../build/$(TARGET)
-OUTPUT := ../../output
+BUILDDIR := ../../build/$(TARGET)
+OUTPUTDIR := ../../output
 SOURCEDIR = simple_sample
 BDKDIR := bdk
 BDKINC := -I../../$(BDKDIR)
 VPATH = $(dir ./) $(dir $(wildcard ./*/))
 
-OBJS = $(addprefix $(BUILD)/,\
+# Track compiler flags
+TRACK_CFLAGS = $(BUILDDIR)/.cflags
+TRACK_LDFLAGS = $(BUILDDIR)/.ldflags
+
+OBJS = $(addprefix $(BUILDDIR)/,\
 	module_sample.o \
 	gfx.o \
 )
@@ -22,20 +26,28 @@ GFX_INC   := '"../modules/$(SOURCEDIR)/gfx/gfx.h"'
 CUSTOMDEFINES := -DGFX_INC=$(GFX_INC)
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
-CFLAGS = $(ARCH) -O2 -nostdlib -fpie -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall $(CUSTOMDEFINES)
+CFLAGS = $(ARCH) -O2 -nostdlib -fpie -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall -Wsign-compare $(CUSTOMDEFINES)
 LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc
 
 .PHONY: clean all
 
 all: $(TARGET).bso
-$(BUILD)/%.o: ./%.c
-	@mkdir -p "$(BUILD)"
-	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
+$(BUILDDIR)/%.o: ./%.c $(TRACK_CFLAGS)
+	@mkdir -p "$(BUILDDIR)"
+	@$(CC) $(CFLAGS) $(BDKINC) -MMD -MP -c $< -o $@
 
-$(TARGET).bso: $(OBJS)
-	@$(CC) $(LDFLAGS) -e _modInit $^ -o $(OUTPUT)/$(TARGET).bso
-	@$(STRIP) -g $(OUTPUT)/$(TARGET).bso
-	@echo  -e "-------------\nBuilt module: "$(TARGET)".bso\n-------------"
+$(TARGET).bso: $(OBJS) $(TRACK_LDFLAGS)
+	@$(CC) $(LDFLAGS) -e mod_entry $(OBJS) -o $(OUTPUTDIR)/$(TARGET).bso
+	@$(STRIP) -g $(OUTPUTDIR)/$(TARGET).bso
+	@echo "Built module: "$(TARGET)".bso"
 
 clean:
-	@rm -rf $(OUTPUT)/$(TARGET).bso
+	@rm -rf $(BUILDDIR)/$(TARGET)
+	@rm -rf $(OUTPUTDIR)/$(TARGET).bso
+
+# Non objects change detectors.
+$(TRACK_CFLAGS): $(BUILDDIR)
+	@echo '$(CFLAGS)' | cmp -s - $@ || echo '$(CFLAGS)' > $@
+$(TRACK_LDFLAGS): $(BUILDDIR)
+	@echo '$(LDFLAGS)' | cmp -s - $@ || echo '$(LDFLAGS)' > $@
+-include $(OBJS:.o=.d)

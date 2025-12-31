@@ -13,14 +13,14 @@ include ../Versions.inc
 ################################################################################
 
 TARGET := loader
-BUILDDIR := ../build
+BUILDDIR := ../build/$(TARGET)
 OUTPUTDIR := ../output
 BDKDIR := bdk
 BDKINC := -I../$(BDKDIR)
 VPATH += $(dir $(wildcard ../$(BDKDIR)/*/)) $(dir $(wildcard ../$(BDKDIR)/*/*/))
 
 # Main and graphics.
-OBJS = $(addprefix $(BUILDDIR)/$(TARGET)/, \
+OBJS = $(addprefix $(BUILDDIR)/, \
 	start.o loader.o lz.o \
 )
 
@@ -43,23 +43,23 @@ LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defs
 all: $(TARGET).bin $(TOOLSLZ) $(TOOLSB2C)
 
 clean:
-	@rm -rf $(OBJS)
+	@rm -f payload_00.h
+	@rm -f payload_01.h
 
-$(TARGET).bin: $(BUILDDIR)/$(TARGET)/$(TARGET).elf
+$(TARGET).bin: $(BUILDDIR)/$(TARGET).elf
 	@$(OBJCOPY) -S -O binary $< $(OUTPUTDIR)/$(PAYLOAD_NAME).bin
 
-$(BUILDDIR)/$(TARGET)/$(TARGET).elf: $(OBJS)
+$(BUILDDIR)/$(TARGET).elf: $(OBJS)
 	@$(CC) $(LDFLAGS) -T link.ld $^ -o $@
 
-$(BUILDDIR)/$(TARGET)/%.o: %.c
+$(BUILDDIR)/%.o: %.c
 	@$(CC) $(CFLAGS) $(BDKINC) -c $< -o $@
 
-$(BUILDDIR)/$(TARGET)/%.o: %.S
+$(BUILDDIR)/%.o: %.S
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJS): $(BUILDDIR)/$(TARGET)
+$(OBJS): $(BUILDDIR)
 
-$(BUILDDIR)/$(TARGET):
+$(BUILDDIR):
 	@mkdir -p "$(BUILDDIR)"
-	@mkdir -p "$(BUILDDIR)/$(TARGET)"
 	@mkdir -p "$(OUTPUTDIR)"
