@@ -27,7 +27,7 @@ static void _heap_create(void *start)
 {
 	_heap.start = start;
 	_heap.first = NULL;
-	_heap.last = NULL;
+	_heap.last  = NULL;
 }
 
 // Node info is before node address.
@@ -72,8 +72,8 @@ static void *_heap_alloc(u32 size)
 			// create a new one and set the leftover size.
 			if (new_size >= (sizeof(hnode_t) << 2))
 			{
-				new_node->size = new_size - sizeof(hnode_t);
 				new_node->used = 0;
+				new_node->size = new_size - sizeof(hnode_t);
 				new_node->next = node->next;
 
 				// Check that we are not on first node.
@@ -117,7 +117,7 @@ static void _heap_free(void *addr)
 {
 	hnode_t *node = (hnode_t *)(addr - sizeof(hnode_t));
 
-	// Check if heap owns this node.
+	// Check if heap owns this address.
 	if (addr < _heap.start || node->used != HEAP_USED_MAGIC)
 	{
 		//! BUGPRINTF("free error: addr %08p, used %08X!\n");
@@ -125,24 +125,31 @@ static void _heap_free(void *addr)
 	}
 
 	node->used = 0;
-	node = _heap.first;
 
 #ifndef BDK_MALLOC_NO_DEFRAG
-	// Do simple defragmentation on next blocks.
-	while (node)
+	// Merge with previous node if empty.
+	hnode_t *prev = node->prev;
+	if (prev && !prev->used)
 	{
-		if (!node->used)
-		{
-			if (node->prev && !node->prev->used)
-			{
-				node->prev->size += node->size + sizeof(hnode_t);
-				node->prev->next = node->next;
+		prev->size += node->size + sizeof(hnode_t);
+		prev->next  = node->next;
 
-				if (node->next)
-					node->next->prev = node->prev;
-			}
-		}
-		node = node->next;
+		if (node->next)
+			node->next->prev = prev;
+
+		// Set node to resized one.
+		node = prev;
+	}
+
+	// Merge with next node if empty.
+	hnode_t *next = node->next;
+	if (next && !next->used)
+	{
+		node->size += next->size + sizeof(hnode_t);
+		node->next  = next->next;
+
+		if (next->next)
+			next->next->prev = node;
 	}
 #endif
 }
