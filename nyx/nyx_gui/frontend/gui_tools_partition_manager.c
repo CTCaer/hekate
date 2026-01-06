@@ -292,7 +292,6 @@ out:
 static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u32 size_lba, const char *name, int name_size)
 {
 	static const u8 linux_part_guid[] = { 0xAF, 0x3D, 0xC6, 0x0F,  0x83, 0x84,  0x72, 0x47,  0x8E, 0x79,  0x3D, 0x69, 0xD8, 0x47, 0x7D, 0xE4 };
-	u8 random_number[16];
 
 	// Reset partition.
 	memset(&gpt->entries[*gpt_idx], 0, sizeof(gpt_entry_t));
@@ -300,9 +299,10 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 	// Create GPT partition.
 	memcpy(gpt->entries[*gpt_idx].type_guid, linux_part_guid, 16);
 
-	// Set randomly created GUID
-	se_gen_prng128(random_number);
-	memcpy(gpt->entries[*gpt_idx].part_guid, random_number, 16);
+	// Set randomly created GUID.
+	u8 random_number[SE_RNG_BLOCK_SIZE];
+	se_rng_pseudo(random_number, SE_RNG_BLOCK_SIZE);
+	memcpy(gpt->entries[*gpt_idx].part_guid, random_number, SE_RNG_BLOCK_SIZE);
 
 	// Set partition start and end.
 	gpt->entries[*gpt_idx].lba_start = *curr_part_lba;
@@ -326,7 +326,7 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 static void _sd_prepare_and_flash_mbr_gpt()
 {
 	mbr_t mbr;
-	u8 random_number[16];
+	u8 random_number[SE_RNG_BLOCK_SIZE];
 
 	// Read current MBR.
 	sdmmc_storage_read(&sd_storage, 0, 1, &mbr);
@@ -342,8 +342,8 @@ static void _sd_prepare_and_flash_mbr_gpt()
 	sdmmc_storage_write(&sd_storage, 0, AU_ALIGN_SECTORS, (void *)SDMMC_UPPER_BUFFER);
 
 	// Set disk signature.
-	se_gen_prng128(random_number);
-	memcpy(&mbr.signature, random_number, 4);
+	se_rng_pseudo(random_number, sizeof(u32));
+	memcpy(&mbr.signature, random_number, sizeof(u32));
 
 	// FAT partition as first.
 	u8 mbr_idx = 1;
@@ -398,7 +398,7 @@ static void _sd_prepare_and_flash_mbr_gpt()
 		gpt->header.alt_lba = sd_storage.sec_cnt - 1;
 		gpt->header.first_use_lba = (sizeof(mbr_t) + sizeof(gpt_t)) >> 9;
 		gpt->header.last_use_lba = sd_storage.sec_cnt - 0x800 - 1; // sd_storage.sec_cnt - 33 is start of backup gpt partition entries.
-		se_gen_prng128(random_number);
+		se_rng_pseudo(random_number, SE_RNG_BLOCK_SIZE);
 		memcpy(gpt->header.disk_guid, random_number, 10);
 		memcpy(gpt->header.disk_guid + 10, "NYXGPT", 6);
 		gpt->header.part_ent_lba = 2;
@@ -407,8 +407,8 @@ static void _sd_prepare_and_flash_mbr_gpt()
 		// Set FAT GPT partition manually.
 		const u8 basic_part_guid[] = { 0xA2, 0xA0, 0xD0, 0xEB,  0xE5, 0xB9,  0x33, 0x44,  0x87, 0xC0,  0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7 };
 		memcpy(gpt->entries[0].type_guid, basic_part_guid, 16);
-		se_gen_prng128(random_number);
-		memcpy(gpt->entries[0].part_guid, random_number, 16);
+		se_rng_pseudo(random_number, SE_RNG_BLOCK_SIZE);
+		memcpy(gpt->entries[0].part_guid, random_number, SE_RNG_BLOCK_SIZE);
 
 		// Clear non-standard Windows MBR attributes. bit4: Read only, bit5: Shadow copy, bit6: Hidden, bit7: No drive letter.
 		gpt->entries[0].part_guid[7] = 0;
@@ -492,8 +492,8 @@ static void _sd_prepare_and_flash_mbr_gpt()
 			// Set 1st emuMMC.
 			u8 emu_part_guid[] = { 0x00, 0x7E, 0xCA, 0x11,  0x00, 0x00,  0x00, 0x00,  0x00, 0x00,  'e', 'm', 'u', 'M', 'M', 'C' };
 			memcpy(gpt->entries[gpt_idx].type_guid, emu_part_guid, 16);
-			se_gen_prng128(random_number);
-			memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+			se_rng_pseudo(random_number, SE_RNG_BLOCK_SIZE);
+			memcpy(gpt->entries[gpt_idx].part_guid, random_number, SE_RNG_BLOCK_SIZE);
 			gpt->entries[gpt_idx].lba_start = curr_part_lba;
 			if (!part_info.emu_double)
 				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 11) - 0x800 - 1; // Reserve 1MB.
@@ -507,8 +507,8 @@ static void _sd_prepare_and_flash_mbr_gpt()
 			{
 				curr_part_lba += (part_info.emu_size << 10);
 				memcpy(gpt->entries[gpt_idx].type_guid, emu_part_guid, 16);
-				se_gen_prng128(random_number);
-				memcpy(gpt->entries[gpt_idx].part_guid, random_number, 16);
+				se_rng_pseudo(random_number, SE_RNG_BLOCK_SIZE);
+				memcpy(gpt->entries[gpt_idx].part_guid, random_number, SE_RNG_BLOCK_SIZE);
 				gpt->entries[gpt_idx].lba_start = curr_part_lba;
 				gpt->entries[gpt_idx].lba_end = curr_part_lba + (part_info.emu_size << 10) - 0x800 - 1; // Reserve 1MB.
 				memcpy(gpt->entries[gpt_idx].name, (u16[]) { 'e', 'm', 'u', 'm', 'm', 'c', '2' }, 14);
