@@ -91,7 +91,7 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 	}
 
 	// Encrypt cluster.
-	if (!se_aes_xts_crypt_sec_nx(ks_tweak, ks_crypt, ENCRYPT, cluster, tweak, true, sector_in_cluster, bis_cache->dma_buff, buff, count * EMMC_BLOCKSIZE))
+	if (!se_aes_crypt_xts_sec_nx(ks_tweak, ks_crypt, ENCRYPT, cluster, tweak, true, sector_in_cluster, bis_cache->dma_buff, buff, count * EMMC_BLOCKSIZE))
 		return 1; // Encryption error.
 
 	// If not reading from cache, do a regular read and decrypt.
@@ -177,7 +177,7 @@ static int nx_emmc_bis_read_block_normal(u32 sector, u32 count, void *buff)
 		tweak_exp = sector_in_cluster;
 
 	// Maximum one cluster (1 XTS crypto block 16KB).
-	if (!se_aes_xts_crypt_sec_nx(ks_tweak, ks_crypt, DECRYPT, prev_cluster, tweak, regen_tweak, tweak_exp, buff, bis_cache->dma_buff, count * EMMC_BLOCKSIZE))
+	if (!se_aes_crypt_xts_sec_nx(ks_tweak, ks_crypt, DECRYPT, prev_cluster, tweak, regen_tweak, tweak_exp, buff, bis_cache->dma_buff, count * EMMC_BLOCKSIZE))
 		return 1; // R/W error.
 
 	prev_sector = sector + count - 1;
@@ -220,7 +220,7 @@ static int nx_emmc_bis_read_block_cached(u32 sector, u32 count, void *buff)
 		return 1; // R/W error.
 
 	// Decrypt cluster.
-	if (!se_aes_xts_crypt_sec_nx(ks_tweak, ks_crypt, DECRYPT, cluster, cache_tweak, true, 0, bis_cache->dma_buff, bis_cache->dma_buff, BIS_CLUSTER_SIZE))
+	if (!se_aes_crypt_xts_sec_nx(ks_tweak, ks_crypt, DECRYPT, cluster, cache_tweak, true, 0, bis_cache->dma_buff, bis_cache->dma_buff, BIS_CLUSTER_SIZE))
 		return 1; // Decryption error.
 
 	// Copy to cluster cache.

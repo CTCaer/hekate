@@ -373,7 +373,7 @@ int se_aes_crypt_ctr(u32 ks, void *dst, const void *src, u32 size, void *ctr)
 	return _se_execute_aes_oneshot(dst, src, size);
 }
 
-int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize)
+int se_aes_crypt_xts_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize)
 {
 	int res = 0;
 	u32 tmp[SE_AES_BLOCK_SIZE / sizeof(u32)];
@@ -410,7 +410,7 @@ out:
 	return res;
 }
 
-int se_aes_xts_crypt_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tweak, bool regen_tweak, u32 tweak_exp, void *dst, void *src, u32 sec_size)
+int se_aes_crypt_xts_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tweak, bool regen_tweak, u32 tweak_exp, void *dst, void *src, u32 sec_size)
 {
 	u32 *pdst = (u32 *)dst;
 	u32 *psrc = (u32 *)src;
@@ -462,13 +462,13 @@ int se_aes_xts_crypt_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tw
 	return 1;
 }
 
-int se_aes_xts_crypt(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize, u32 num_secs)
+int se_aes_crypt_xts(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize, u32 num_secs)
 {
 	u8 *pdst = (u8 *)dst;
 	u8 *psrc = (u8 *)src;
 
 	for (u32 i = 0; i < num_secs; i++)
-		if (!se_aes_xts_crypt_sec(tweak_ks, crypt_ks, enc, sec + i, pdst + secsize * i, psrc + secsize * i, secsize))
+		if (!se_aes_crypt_xts_sec(tweak_ks, crypt_ks, enc, sec + i, pdst + secsize * i, psrc + secsize * i, secsize))
 			return 0;
 
 	return 1;
