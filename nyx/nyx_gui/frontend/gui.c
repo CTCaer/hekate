@@ -440,7 +440,14 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 
 		if (jc_drv_ctx.calibration_step != JC_CAL_MAX_STEPS)
 		{
+			if (jc_pad->plus || jc_pad->minus)
+				goto handle_console;
+
+			if (console_enabled)
+				goto console;
+
 			data->state = LV_INDEV_STATE_REL;
+
 			return false;
 		}
 	}
@@ -460,6 +467,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 	// Enable console.
 	if (jc_pad->plus || jc_pad->minus)
 	{
+handle_console:
 		if (((u32)get_tmr_ms() - jc_drv_ctx.console_timeout) > 1000)
 		{
 			if (!console_enabled)
@@ -481,11 +489,13 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		}
 
 		data->state = LV_INDEV_STATE_REL;
+
 		return false;
 	}
 
 	if (console_enabled)
 	{
+console:
 		// Print input debugging in console.
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
 		gfx_con_setpos(32, 630, GFX_COL_AUTO);
@@ -498,6 +508,7 @@ static bool _jc_virt_mouse_read(lv_indev_data_t *data)
 		gfx_con.fntsz = 16;
 
 		data->state = LV_INDEV_STATE_REL;
+
 		return false;
 	}
 
