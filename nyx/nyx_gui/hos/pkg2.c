@@ -123,13 +123,13 @@ static const u8 mkey_vector_7xx[HOS_MKEY_VER_MAX - HOS_MKEY_VER_810 + 1][SE_KEY_
 static bool _pkg2_key_unwrap_validate(pkg2_hdr_t *tmp_test, pkg2_hdr_t *hdr, u8 src_slot, u8 *mkey, const u8 *key_seed)
 {
 	// Decrypt older encrypted mkey.
-	se_aes_crypt_ecb(src_slot, DECRYPT, mkey, SE_KEY_128_SIZE, key_seed, SE_KEY_128_SIZE);
+	se_aes_crypt_ecb(src_slot, DECRYPT, mkey, key_seed, SE_KEY_128_SIZE);
 	// Set and unwrap pkg2 key.
 	se_aes_key_set(9, mkey, SE_KEY_128_SIZE);
 	se_aes_unwrap_key(9, 9, package2_keyseed);
 
 	// Decrypt header.
-	se_aes_crypt_ctr(9, tmp_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(9, tmp_test, hdr, sizeof(pkg2_hdr_t), hdr);
 
 	// Return if header is valid.
 	return (tmp_test->magic == PKG2_MAGIC);
@@ -150,7 +150,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey)
 	pdata += sizeof(pkg2_hdr_t);
 
 	// Check if we need to decrypt with newer mkeys. Valid for THK for 7.0.0 and up.
-	se_aes_crypt_ctr(8, &mkey_test, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(8, &mkey_test, hdr, sizeof(pkg2_hdr_t), hdr);
 
 	if (mkey_test.magic == PKG2_MAGIC)
 		goto key_found;
@@ -197,7 +197,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey)
 
 key_found:
 	// Decrypt header.
-	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(pkg2_keyslot, hdr, hdr, sizeof(pkg2_hdr_t), hdr);
 
 	if (hdr->magic != PKG2_MAGIC)
 		return NULL;
@@ -209,7 +209,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(pkg2_keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
+		se_aes_crypt_ctr(pkg2_keyslot, pdata, pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
 
 		pdata += hdr->sec_size[i];
 	}

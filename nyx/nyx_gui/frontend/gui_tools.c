@@ -1286,7 +1286,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 		if (h_cfg.t210b01)
 		{
 			se_aes_iv_clear(13);
-			se_aes_crypt_cbc(13, DECRYPT, bct + 0x480, BCT_SIZE - 0x480, bct + 0x480, BCT_SIZE - 0x480);
+			se_aes_crypt_cbc(13, DECRYPT, bct + 0x480, bct + 0x480, BCT_SIZE - 0x480);
 			emmcsn_path_impl(path, bct_paths[idx], "bct_decr.bin", &emmc_storage);
 			if (sd_save_to_file(bct, 0x2800, path))
 				goto out;
@@ -1341,8 +1341,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 			{
 
 				se_aes_iv_clear(13);
-				se_aes_crypt_cbc(13, DECRYPT, warmboot + 0x330, hdr_pk11->wb_size - 0x330,
-					warmboot + 0x330, hdr_pk11->wb_size - 0x330);
+				se_aes_crypt_cbc(13, DECRYPT, warmboot + 0x330, warmboot + 0x330, hdr_pk11->wb_size - 0x330);
 				emmcsn_path_impl(path, pkg1_paths[idx], "warmboot_dec.bin", &emmc_storage);
 				if (sd_save_to_file(warmboot, hdr_pk11->wb_size, path))
 					goto out;

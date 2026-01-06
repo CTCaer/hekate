@@ -708,7 +708,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey, bool is_exo)
 		u8 tmp_mkey[SE_KEY_128_SIZE];
 
 		// Decrypt 7.0.0 encrypted mkey.
-		se_aes_crypt_ecb(!is_exo ? 7 : 13, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vector_7xx, SE_KEY_128_SIZE);
+		se_aes_crypt_ecb(!is_exo ? 7 : 13, DECRYPT, tmp_mkey, mkey_vector_7xx, SE_KEY_128_SIZE);
 
 		// Set and unwrap pkg2 key.
 		se_aes_key_set(9, tmp_mkey, SE_KEY_128_SIZE);
@@ -718,7 +718,7 @@ pkg2_hdr_t *pkg2_decrypt(void *data, u8 mkey, bool is_exo)
 	}
 
 	// Decrypt header.
-	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(pkg2_keyslot, hdr, hdr, sizeof(pkg2_hdr_t), hdr);
 
 	if (hdr->magic != PKG2_MAGIC)
 		return NULL;
@@ -730,7 +730,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(pkg2_keyslot, pdata, hdr->sec_size[i], pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
+		se_aes_crypt_ctr(pkg2_keyslot, pdata, pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
 
 		pdata += hdr->sec_size[i];
 	}
@@ -776,7 +776,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", (char *)ki->kip1->name, (u32)ki->kip
 	{
 		hdr->sec_size[PKG2_SEC_INI1] = ini1_size;
 		hdr->sec_off[PKG2_SEC_INI1] = 0x14080000;
-		se_aes_crypt_ctr(8, ini1, ini1_size, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * SE_AES_IV_SIZE]);
+		se_aes_crypt_ctr(8, ini1, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * SE_AES_IV_SIZE]);
 	}
 	else
 	{
@@ -854,7 +854,7 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 		kernel_size += ini1_size;
 	}
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
-	se_aes_crypt_ctr(pkg2_keyslot, pdst, kernel_size, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * SE_AES_IV_SIZE]);
+	se_aes_crypt_ctr(pkg2_keyslot, pdst, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * SE_AES_IV_SIZE]);
 	pdst += kernel_size;
 DPRINTF("kernel encrypted\n");
 
@@ -878,7 +878,7 @@ DPRINTF("INI1 encrypted\n");
 	// Encrypt header.
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;
-	se_aes_crypt_ctr(pkg2_keyslot, hdr, sizeof(pkg2_hdr_t), hdr, sizeof(pkg2_hdr_t), hdr);
+	se_aes_crypt_ctr(pkg2_keyslot, hdr, hdr, sizeof(pkg2_hdr_t), hdr);
 	memset(hdr->ctr, 0 , SE_AES_IV_SIZE);
 	*(u32 *)hdr->ctr = 0x100 + sizeof(pkg2_hdr_t) + kernel_size + ini1_size;
 	hdr->ctr[4] = key_ver;

@@ -208,7 +208,7 @@ static void _hos_eks_get()
 
 		// Decrypt EKS blob.
 		hos_eks_mbr_t *eks = (hos_eks_mbr_t *)(mbr + 0x80);
-		se_aes_crypt_ecb(14, DECRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+		se_aes_crypt_ecb(14, DECRYPT, eks, eks, sizeof(hos_eks_mbr_t));
 
 		// Check if valid and for this unit.
 		if (eks->magic == HOS_EKS_MAGIC && eks->lot0 == FUSE(FUSE_OPT_LOT_CODE_0))
@@ -269,7 +269,7 @@ static void _hos_eks_save()
 		// Encrypt EKS blob.
 		u8 *eks = malloc(sizeof(hos_eks_mbr_t));
 		memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
-		se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+		se_aes_crypt_ecb(14, ENCRYPT, eks, eks, sizeof(hos_eks_mbr_t));
 
 		// Write EKS blob to SD.
 		memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
@@ -304,7 +304,7 @@ void hos_eks_clear(u32 mkey)
 			// Encrypt EKS blob.
 			u8 *eks = malloc(sizeof(hos_eks_mbr_t));
 			memcpy(eks, h_cfg.eks, sizeof(hos_eks_mbr_t));
-			se_aes_crypt_ecb(14, ENCRYPT, eks, sizeof(hos_eks_mbr_t), eks, sizeof(hos_eks_mbr_t));
+			se_aes_crypt_ecb(14, ENCRYPT, eks, eks, sizeof(hos_eks_mbr_t));
 
 			// Write EKS blob to SD.
 			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
@@ -423,7 +423,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		}
 
 		// Decrypt eks and set keyslots.
-		se_aes_crypt_block_ecb(12, DECRYPT, tsec_keys.tmp, eks_keyseeds[0]);
+		se_aes_crypt_ecb(12, DECRYPT, tsec_keys.tmp, eks_keyseeds[0], SE_KEY_128_SIZE);
 		se_aes_unwrap_key(15, 14, tsec_keys.tmp);
 
 		// Derive device keys.
@@ -447,7 +447,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		se_aes_key_set(13, tsec_keys.tsec_root, SE_KEY_128_SIZE);
 
 		// Decrypt eks and set keyslots.
-		se_aes_crypt_block_ecb(12, DECRYPT, tsec_keys.tmp, eks_keyseeds[0]);
+		se_aes_crypt_ecb(12, DECRYPT, tsec_keys.tmp, eks_keyseeds[0], SE_KEY_128_SIZE);
 		se_aes_unwrap_key(15, 14, tsec_keys.tmp);
 
 		// Derive device keys.
@@ -469,30 +469,30 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		se_aes_key_set(13, tsec_keys.tsec, SE_KEY_128_SIZE);
 
 		// Derive eks keys from TSEC+SBK.
-		se_aes_crypt_block_ecb(13, DECRYPT, tsec_keys.tsec, eks_keyseeds[0]);
+		se_aes_crypt_ecb(13, DECRYPT, tsec_keys.tsec, eks_keyseeds[0], SE_KEY_128_SIZE);
 		se_aes_unwrap_key(15, 14, tsec_keys.tsec);
-		se_aes_crypt_block_ecb(13, DECRYPT, tsec_keys.tsec, eks_keyseeds[mkey]);
+		se_aes_crypt_ecb(13, DECRYPT, tsec_keys.tsec, eks_keyseeds[mkey], SE_KEY_128_SIZE);
 		se_aes_unwrap_key(13, 14, tsec_keys.tsec);
 
 /*
 		// Verify eks CMAC.
 		u8 cmac[SE_KEY_128_SIZE];
 		se_aes_unwrap_key(11, 13, cmac_keyseed);
-		se_aes_cmac(cmac, SE_KEY_128_SIZE, 11, (void *)eks->ctr, sizeof(eks->ctr) + sizeof(eks->keys));
+		se_aes_hash_cmac(cmac, SE_KEY_128_SIZE, 11, (void *)eks->ctr, sizeof(eks->ctr) + sizeof(eks->keys));
 		if (!memcmp(eks->cmac, cmac, SE_KEY_128_SIZE))
 			return 0;
 */
 
-		se_aes_crypt_block_ecb(13, DECRYPT, tsec_keys.tsec, cmac_keyseed);
+		se_aes_crypt_ecb(13, DECRYPT, tsec_keys.tsec, cmac_keyseed, SE_KEY_128_SIZE);
 		se_aes_unwrap_key(11, 13, cmac_keyseed);
 
 		// Decrypt eks and set keyslots.
-		se_aes_crypt_ctr(13, &eks->keys, sizeof(eks_keys_t), &eks->keys, sizeof(eks_keys_t), eks->ctr);
+		se_aes_crypt_ctr(13, &eks->keys, &eks->keys, sizeof(eks_keys_t), eks->ctr);
 		se_aes_key_set(11, eks->keys.package1_key,   SE_KEY_128_SIZE);
 		se_aes_key_set(12, eks->keys.master_kekseed, SE_KEY_128_SIZE);
 		se_aes_key_set(13, eks->keys.master_kekseed, SE_KEY_128_SIZE);
 
-		se_aes_crypt_block_ecb(12, DECRYPT, tsec_keys.tsec, master_keyseed_retail);
+		se_aes_crypt_ecb(12, DECRYPT, tsec_keys.tsec, master_keyseed_retail, SE_KEY_128_SIZE);
 
 		switch (mkey)
 		{
@@ -531,12 +531,11 @@ static void _hos_validate_mkey()
 	do
 	{
 		mkey_idx--;
-		se_aes_crypt_ecb(7, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
+		se_aes_crypt_ecb(7, DECRYPT, tmp_mkey, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
 		for (u32 idx = 0; idx < mkey_idx; idx++)
 		{
-			se_aes_key_clear(2);
 			se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
-			se_aes_crypt_ecb(2, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
+			se_aes_crypt_ecb(2, DECRYPT, tmp_mkey, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
 		}
 
 		if (!memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8))
@@ -593,19 +592,17 @@ int hos_bis_keygen()
 		do
 		{
 			mkey_idx--;
-			se_aes_crypt_ecb(7, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
+			se_aes_crypt_ecb(7, DECRYPT, tmp_mkey, mkey_vectors[mkey_idx], SE_KEY_128_SIZE);
 			for (u32 idx = 0; idx < mkey_idx; idx++)
 			{
-				se_aes_key_clear(2);
 				se_aes_key_set(2, tmp_mkey, SE_KEY_128_SIZE);
-				se_aes_crypt_ecb(2, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
+				se_aes_crypt_ecb(2, DECRYPT, tmp_mkey, mkey_vectors[mkey_idx - 1 - idx], SE_KEY_128_SIZE);
 			}
 		} while (memcmp(tmp_mkey, "\x00\x00\x00\x00\x00\x00\x00\x00", 8) != 0 && (mkey_idx - 1));
 
 		// Derive new device key.
-		se_aes_key_clear(1);
 		se_aes_unwrap_key(1, 10, new_console_keyseed[keygen_rev]); // Uses Device key 4x.
-		se_aes_crypt_ecb(10, DECRYPT, tmp_mkey, SE_KEY_128_SIZE, new_console_keyseed[keygen_rev], SE_KEY_128_SIZE); // Uses Device key 4x.
+		se_aes_crypt_ecb(10, DECRYPT, tmp_mkey, new_console_keyseed[keygen_rev], SE_KEY_128_SIZE); // Uses Device key 4x.
 		se_aes_unwrap_key(1, 2, new_console_kekseed[keygen_rev]); // Uses Master Key 0.
 		se_aes_unwrap_key(1, 1, tmp_mkey);
 
@@ -613,29 +610,27 @@ int hos_bis_keygen()
 	}
 
 	// Generate generic key.
-	se_aes_key_clear(2);
 	se_aes_unwrap_key(2, console_key_slot, gen_keyseed_retail);
 
 	// Clear bis keys storage.
 	memset(bis_keys, 0, SE_KEY_128_SIZE * 6);
 
 	// Generate BIS 0 Keys.
-	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (0 * SE_KEY_128_SIZE), bis_keyseed[0]);
-	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (1 * SE_KEY_128_SIZE), bis_keyseed[1]);
+	se_aes_crypt_ecb(2, DECRYPT, bis_keys + (0 * SE_KEY_128_SIZE), bis_keyseed[0], SE_KEY_128_SIZE);
+	se_aes_crypt_ecb(2, DECRYPT, bis_keys + (1 * SE_KEY_128_SIZE), bis_keyseed[1], SE_KEY_128_SIZE);
 
 	// Generate generic kek.
-	se_aes_key_clear(2);
 	se_aes_unwrap_key(2, console_key_slot, gen_kekseed);
 	se_aes_unwrap_key(2, 2, bis_kekseed);
 	se_aes_unwrap_key(2, 2, gen_keyseed);
 
 	// Generate BIS 1 Keys.
-	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (2 * SE_KEY_128_SIZE), bis_keyseed[2]);
-	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (3 * SE_KEY_128_SIZE), bis_keyseed[3]);
+	se_aes_crypt_ecb(2, DECRYPT, bis_keys + (2 * SE_KEY_128_SIZE), bis_keyseed[2], SE_KEY_128_SIZE);
+	se_aes_crypt_ecb(2, DECRYPT, bis_keys + (3 * SE_KEY_128_SIZE), bis_keyseed[3], SE_KEY_128_SIZE);
 
 	// Generate BIS 2/3 Keys.
-	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (4 * SE_KEY_128_SIZE), bis_keyseed[4]);
-	se_aes_crypt_block_ecb(2, DECRYPT, bis_keys + (5 * SE_KEY_128_SIZE), bis_keyseed[5]);
+	se_aes_crypt_ecb(2, DECRYPT, bis_keys + (4 * SE_KEY_128_SIZE), bis_keyseed[4], SE_KEY_128_SIZE);
+	se_aes_crypt_ecb(2, DECRYPT, bis_keys + (5 * SE_KEY_128_SIZE), bis_keyseed[5], SE_KEY_128_SIZE);
 
 	// Validate key because HOS_MKEY_VER_MAX.
 	if (!h_cfg.t210b01)

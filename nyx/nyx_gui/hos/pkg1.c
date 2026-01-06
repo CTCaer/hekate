@@ -96,7 +96,7 @@ int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 		u8 *pkg11 = pkg1 + id->pkg11_off;
 		u32 pkg11_size = *(u32 *)pkg11;
 		hdr = (pk11_hdr_t *)(pkg11 + 0x20);
-		se_aes_crypt_ctr(11, hdr, pkg11_size, hdr, pkg11_size, pkg11 + 0x10);
+		se_aes_crypt_ctr(11, hdr, hdr, pkg11_size, pkg11 + 0x10);
 	}
 	else
 	{
@@ -107,7 +107,7 @@ int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 		// Use BEK for T210B01.
 		// Additionally, skip 0x20 bytes from decryption to maintain the header.
 		se_aes_iv_clear(13);
-		se_aes_crypt_cbc(13, DECRYPT, pkg1 + 0x20, oem_hdr->size - 0x20, pkg1 + 0x20, oem_hdr->size - 0x20);
+		se_aes_crypt_cbc(13, DECRYPT, pkg1 + 0x20, pkg1 + 0x20, oem_hdr->size - 0x20);
 	}
 
 	// Return if header is valid.
