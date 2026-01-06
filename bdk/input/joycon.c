@@ -33,10 +33,12 @@
 // For disabling driver when logging is enabled.
 #include <libs/lv_conf.h>
 
+#define JC_WIRED_RPT_OUT         0x43
+#define JC_WIRED_RPT_IN          0x53
 #define JC_WIRED_CMD             0x91
 #define JC_WIRED_HID             0x92
 #define JC_WIRED_INIT_REPLY      0x94
-#define JC_INIT_HANDSHAKE        0xA5
+#define JC_INIT_HANDSHAKE        0xA5 // Enable Wired CMDs.
 
 #define JC_HORI_INPUT_RPT_CMD    0x9A
 #define JC_HORI_INPUT_RPT        0x00
@@ -44,12 +46,17 @@
 #define JC_WIRED_CMD_GET_INFO    0x01
 #define JC_WIRED_CMD_SET_CHARGER 0x02
 #define JC_WIRED_CMD_GET_CHARGER 0x03
+#define JC_WIRED_CMD_SET_ATTACH  0x04
+#define JC_WIRED_CMD_GET_ATTACH  0x05
 #define JC_WIRED_CMD_BATT_VOLT   0x06
 #define JC_WIRED_CMD_WAKE_REASON 0x07
 #define JC_WIRED_CMD_HID_CONN    0x10
 #define JC_WIRED_CMD_HID_DISC    0x11
 #define JC_WIRED_CMD_SET_HIDRATE 0x12 // Output report rate.
+#define JC_WIRED_CMD_GET_HIDRATE 0x13
+#define JC_WIRED_CMD_SET_PAIRING 0x18 // Manual pairing.
 #define JC_WIRED_CMD_SET_BRATE   0x20
+#define JC_WIRED_CMD_ECHO_TEST   0x40
 
 #define JC_HID_OUTPUT_RPT        0x01
 #define JC_HID_RUMBLE_RPT        0x10
@@ -66,7 +73,7 @@
 #define  SPI_READ_OFFSET         0x20
 #define JC_HID_SUBCMD_RUMBLE_CTL 0x48
 #define JC_HID_SUBCMD_CHARGE_SET 0x51
-#define JC_HID_SUBCMD_SND_RUMBLE 0xFF
+#define JC_HID_SUBCMD_SND_RUMBLE 0xFF // Custom.
 
 #define JC_SIO_OUTPUT_RPT        0x91
 #define JC_SIO_INPUT_RPT         0x92
@@ -218,6 +225,84 @@ typedef struct _jc_wired_hdr_t
 	u8 payload[];
 } jc_wired_hdr_t;
 
+// code: Channel code. vibc: Vibration code.
+typedef struct
+{
+	u32 rsvd   :20;
+	u32 code_hi:5;
+	u32 code_lo:5;
+	u32 fmt    :2; // Must be 1.
+} jc_rumble_fmt1_t;
+
+typedef struct
+{
+	u32 rsvd   :2;
+	u32 freq_hi:7;
+	u32 amp_hi :7;
+	u32 freq_lo:7;
+	u32 amp_lo :7;
+	u32 fmt    :2; // Must be 1.
+} jc_rumble_fmt1_28bit_t;
+
+typedef struct
+{
+	u32 rdvd   :10;
+	u32 vibc_hi:5;
+	u32 vibc_lo:5;
+	u32 code_hi:5;
+	u32 code_lo:5;
+	u32 fmt    :2; // Must be 2.
+} jc_rumble_fmt2_t;
+
+typedef struct
+{
+	u32 is_high :1;
+	u32 freq    :7;
+	u32 vibc_hi1:5;
+	u32 vibc_lo1:5;
+	u32 vibc_hi0:5; // vibc_lo0 if is_high.
+	u32 amp     :7;
+	u32 fmt     :2; // Must be 2.
+} jc_rumble_fmt2_14bit_t;
+
+typedef struct
+{
+	u32 vibc_hi1:5;
+	u32 vibc_lo1:5;
+	u32 vibc_hi0:5;
+	u32 vibc_lo0:5;
+	u32 code_hi :5;
+	u32 code_lo :5;
+	u32 fmt     :2; // Must be 3.
+} jc_rumble_fmt3_t;
+
+typedef struct
+{
+	u32 is_high:1;
+	u32 is_7bit:1;
+	u32 is_fm  :1;
+	u32 vibc_hi1:5;
+	u32 vibc_lo1:5;
+	u32 vibc_hi0:5;
+	u32 vibc_lo0:5;
+	u32 amfm    :7;
+	u32 fmt     :2; // Must be 1 (not 3).
+} jc_rumble_fmt3_7bit_t;
+
+typedef struct _jc_rumble_t
+{
+	union {
+		jc_rumble_fmt1_t       fmt1;
+		jc_rumble_fmt1_28bit_t fmt1_28b;
+		jc_rumble_fmt3_7bit_t  fmt3_7b;
+		jc_rumble_fmt2_t       fmt2;
+		jc_rumble_fmt2_14bit_t fmt2_14b;
+		jc_rumble_fmt3_t       fmt3;
+		u32 r32;
+		u8  r8[4];
+	};
+} jc_rumble_t;
+
 typedef struct _jc_hid_out_rpt_t
 {
 	u8 cmd;
@@ -349,6 +434,8 @@ static joycon_ctxt_t jc_r = {0};
 static bool jc_init_done = false;
 
 static jc_gamepad_rpt_t jc_gamepad;
+
+static void _jc_rcv_pkt(joycon_ctxt_t *jc);
 
 static u8 _jc_crc(const u8 *data, u16 len, u8 init)
 {
@@ -546,13 +633,13 @@ static void _jc_send_hid_output_rpt(joycon_ctxt_t *jc, jc_hid_out_rpt_t *hid_pkt
 
 static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 size)
 {
-	static const u8 rumble_neutral[8] = { 0x00, 0x01, 0x40, 0x40, 0x00, 0x01, 0x40, 0x40 };
-	static const u8 rumble_init[8]    = { 0xc2, 0xc8, 0x03, 0x72, 0xc2, 0xc8, 0x03, 0x72 };
+	static const u8 rumble_mute[8] = { 0x00, 0x01, 0x40, 0x40, 0x00, 0x01, 0x40, 0x40 };
+	static const u8 rumble_init[8] = { 0xc2, 0xc8, 0x03, 0x72, 0xc2, 0xc8, 0x03, 0x72 };
 
 	u8 temp[0x30] = {0};
 
 	jc_hid_out_rpt_t *hid_pkt = (jc_hid_out_rpt_t *)temp;
-	memcpy(hid_pkt->rumble, rumble_neutral, sizeof(rumble_neutral));
+	memcpy(hid_pkt->rumble, rumble_mute, sizeof(rumble_mute));
 
 	if (subcmd == JC_HID_SUBCMD_SND_RUMBLE)
 	{
@@ -568,6 +655,15 @@ static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 s
 		if (send_l_rumble)
 			_jc_send_hid_output_rpt(&jc_l, hid_pkt, 0x10, false);
 
+		if (send_r_rumble || send_l_rumble)
+		{
+			msleep(2);
+			if (send_r_rumble)
+				_jc_rcv_pkt(&jc_r);
+			if (send_l_rumble)
+				_jc_rcv_pkt(&jc_l);
+		}
+
 		// Send rumble.
 		hid_pkt->cmd = JC_HID_RUMBLE_RPT;
 		memcpy(hid_pkt->rumble, rumble_init, sizeof(rumble_init));
@@ -578,15 +674,13 @@ static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 s
 
 		msleep(15);
 
-		// Disable rumble.
-		hid_pkt->cmd    = JC_HID_OUTPUT_RPT;
-		hid_pkt->subcmd = JC_HID_SUBCMD_RUMBLE_CTL;
-		hid_pkt->subcmd_data[0] = 0;
-		memcpy(hid_pkt->rumble, rumble_neutral, sizeof(rumble_neutral));
+		// Mute rumble.
+		hid_pkt->cmd = JC_HID_RUMBLE_RPT;
+		memcpy(hid_pkt->rumble, rumble_mute, sizeof(rumble_mute));
 		if (send_r_rumble)
-			_jc_send_hid_output_rpt(&jc_r, hid_pkt, 0x10, false);
+			_jc_send_hid_output_rpt(&jc_r, hid_pkt, 10, false);
 		if (send_l_rumble)
-			_jc_send_hid_output_rpt(&jc_l, hid_pkt, 0x10, false);
+			_jc_send_hid_output_rpt(&jc_l, hid_pkt, 10, false);
 	}
 	else
 	{
@@ -919,7 +1013,7 @@ set_mode:
 	return true;
 }
 
-static bool _jc_send_init_rumble(joycon_ctxt_t *jc)
+static bool _jc_send_enable_rumble(joycon_ctxt_t *jc)
 {
 	// Send init rumble or request nx pad status report.
 	if ((jc_r.connected && !jc_r.rumble_sent) ||
@@ -953,7 +1047,7 @@ static void _jc_req_status(joycon_ctxt_t *jc)
 	// Init/maintenance for Joy-Con.
 	if (is_nxpad)
 	{
-		if (_jc_send_init_rumble(jc))
+		if (_jc_send_enable_rumble(jc))
 			return;
 
 		if (_jc_handle_charging(jc))
