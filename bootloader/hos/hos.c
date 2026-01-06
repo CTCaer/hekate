@@ -212,7 +212,7 @@ static void _hos_eks_save()
 
 		// Get keys.
 		u8 *keys = (u8 *)zalloc(SZ_8K);
-		se_get_aes_keys(keys + SZ_4K, keys, SE_KEY_128_SIZE);
+		se_aes_ctx_get_keys(keys + SZ_4K, keys, SE_KEY_128_SIZE);
 
 		// Set magic and personalized info.
 		h_cfg.eks->magic   = HOS_EKS_MAGIC;
