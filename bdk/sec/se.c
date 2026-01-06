@@ -569,19 +569,43 @@ int se_sha_hash_256_finalize(void *hash)
 	return res;
 }
 
-int se_gen_prng128(void *dst)
+int se_rng_pseudo(void *dst, u32 size)
 {
 	// Setup config for SP 800-90 PRNG.
 	SE(SE_CONFIG_REG)        = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_RNG)    | SE_CONFIG_DST(DST_MEMORY);
 	SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_XOR_POS(XOR_BYPASS)   | SE_CRYPTO_INPUT_SEL(INPUT_RANDOM);
 	SE(SE_RNG_CONFIG_REG)    = SE_RNG_CONFIG_SRC(SRC_ENTROPY)  | SE_RNG_CONFIG_MODE(MODE_NORMAL);
-	//SE(SE_RNG_SRC_CONFIG_REG) |= SE_RNG_SRC_CONFIG_ENTR_SRC(RO_ENTR_ENABLE); // DRBG. Depends on ENTROPY clock.
-	SE(SE_RNG_RESEED_INTERVAL_REG) = 1;
+	SE(SE_RNG_SRC_CONFIG_REG) |= SE_RNG_SRC_CONFIG_ENTR_SRC(RO_ENTR_ENABLE); // DRBG. Depends on ENTROPY clock.
+	SE(SE_RNG_RESEED_INTERVAL_REG) = 4096;
 
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = (16 >> 4) - 1;
+	u32 size_aligned = ALIGN_DOWN(size, SE_RNG_BLOCK_SIZE);
+	u32 size_residue = size % SE_RNG_BLOCK_SIZE;
+	int res = 0;
 
-	// Trigger the operation.
-	return _se_execute_oneshot(SE_OP_START, dst, 16, NULL, 0);
+	// Handle initial aligned message.
+	if (size_aligned)
+	{
+		SE(SE_CRYPTO_LAST_BLOCK_REG) = (size >> 4) - 1;
+
+		res = _se_execute_oneshot(SE_OP_START, dst, size_aligned, NULL, 0);
+	}
+
+	// Handle leftover partial message.
+	if (res && size_residue)
+	{
+		// Copy message to a block sized buffer in case it's partial.
+		u32 block[SE_RNG_BLOCK_SIZE / sizeof(u32)] = {0};
+
+		SE(SE_CRYPTO_LAST_BLOCK_REG) = (SE_AES_BLOCK_SIZE >> 4) - 1;
+
+		res = _se_execute_oneshot(SE_OP_START, block, SE_RNG_BLOCK_SIZE, NULL, 0);
+
+		// Copy result back.
+		if (res)
+			memcpy(dst + size_aligned, block, size_residue);
+	}
+
+	return res;
 }
 
 void se_aes_ctx_get_keys(u8 *buf, u8 *keys, u32 keysize)

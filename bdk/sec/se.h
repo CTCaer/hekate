@@ -50,6 +50,6 @@ int  se_sha_hash_256_partial_end(void *hash, u64 total_size, const void *src, u3
 int  se_sha_hash_256_finalize(void *hash);
 int  se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size);
 /*! Random Functions */
-int  se_gen_prng128(void *dst);
+int  se_rng_pseudo(void *dst, u32 size);
 
 #endif
