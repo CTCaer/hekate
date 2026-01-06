@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2021 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -26,7 +26,6 @@
 
 #define SE_AES_KEYSLOT_COUNT   16
 #define SE_RSA_KEYSLOT_COUNT   2
-#define SE_MAX_LAST_BLOCK_SIZE 0xFFFFF
 
 #define SE_AES_BLOCK_SIZE   16
 #define SE_AES_IV_SIZE      16
@@ -39,9 +38,10 @@
 #define SE_SHA_256_SIZE     32
 #define SE_SHA_384_SIZE     48
 #define SE_SHA_512_SIZE     64
-#define SE_RNG_IV_SIZE		16
-#define SE_RNG_DT_SIZE		16
-#define SE_RNG_KEY_SIZE		16
+#define SE_RNG_BLOCK_SIZE   16
+#define SE_RNG_IV_SIZE      16
+#define SE_RNG_DT_SIZE      16
+#define SE_RNG_KEY_SIZE     16
 #define SE_RNG_SEED_SIZE (SE_RNG_IV_SIZE + SE_RNG_KEY_SIZE + SE_RNG_DT_SIZE)
 
 #define SE_AES_CMAC_DIGEST_SIZE 16
@@ -49,6 +49,11 @@
 #define SE_RSA1024_DIGEST_SIZE  128
 #define SE_RSA1536_DIGEST_SIZE  192
 #define SE_RSA2048_DIGEST_SIZE  256
+
+#define SE_SHA2_MIN_BLOCK_SIZE 64
+#define SE_SHA2_MAX_BLOCK_SIZE 128
+
+#define SE_LL_MAX_SIZE ALIGN_DOWN(0xFFFFFF, SE_SHA2_MAX_BLOCK_SIZE)
 
 #define  DECRYPT   0
 #define  ENCRYPT   1
@@ -211,7 +216,7 @@
 #define SE_CRYPTO_LINEAR_CTR_REG 0x308
 #define  SE_CRYPTO_LINEAR_CTR_REG_COUNT 4
 
-#define SE_CRYPTO_BLOCK_COUNT_REG 0x318
+#define SE_CRYPTO_LAST_BLOCK_REG 0x318
 
 #define SE_CRYPTO_KEYTABLE_ADDR_REG 0x31C
 #define  SE_KEYTABLE_PKT(x)         ((x) << 0)
@@ -321,8 +326,6 @@
 #define  SE_CLK_OVR_ON          BIT(2)
 
 #define SE_SPARE_REG 0x80C
-#define  SE_ERRATA_FIX_DISABLE 0
-#define  SE_ERRATA_FIX_ENABLE  1
-#define  SE_ECO(x) ((x) << 0)
+#define  SE_INPUT_NONCE_LE BIT(0)
 
 #endif
