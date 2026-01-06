@@ -42,9 +42,12 @@ int  se_aes_crypt_xts_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *ds
 int  se_aes_crypt_xts_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tweak, bool regen_tweak, u32 tweak_exp, void *dst, void *src, u32 sec_size);
 int  se_aes_crypt_xts(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize, u32 num_secs);
 /*! Hashing Functions */
-int  se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64 total_size, u32 sha_cfg, bool is_oneshot);
-int  se_calc_sha256_oneshot(void *hash, const void *src, u32 src_size);
-int  se_calc_sha256_finalize(void *hash, u32 *msg_left);
+int  se_sha_hash_256_async(void *hash, const void *src, u32 size);
+int  se_sha_hash_256_oneshot(void *hash, const void *src, u32 size);
+int  se_sha_hash_256_partial_start(void *hash, const void *src, u32 size, bool is_oneshot);
+int  se_sha_hash_256_partial_update(void *hash, const void *src, u32 size, bool is_oneshot);
+int  se_sha_hash_256_partial_end(void *hash, u64 total_size, const void *src, u32 src_size, bool is_oneshot);
+int  se_sha_hash_256_finalize(void *hash);
 int  se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size);
 /*! Random Functions */
 int  se_gen_prng128(void *dst);

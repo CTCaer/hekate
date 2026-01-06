@@ -474,15 +474,8 @@ int se_aes_crypt_xts(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, vo
 	return 1;
 }
 
-static void se_calc_sha256_get_hash(void *hash, u32 *msg_left)
+static void _se_sha_hash_256_get_hash(void *hash)
 {
-	// Backup message left.
-	if (msg_left)
-	{
-		msg_left[0] = SE(SE_SHA_MSG_LEFT_0_REG);
-		msg_left[1] = SE(SE_SHA_MSG_LEFT_1_REG);
-	}
-
 	// Copy output hash.
 	u32 hash32[SE_SHA_256_SIZE / sizeof(u32)];
 	for (u32 i = 0; i < (SE_SHA_256_SIZE / sizeof(u32)); i++)
@@ -490,15 +483,8 @@ static void se_calc_sha256_get_hash(void *hash, u32 *msg_left)
 	memcpy(hash, hash32, SE_SHA_256_SIZE);
 }
 
-int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64 total_size, u32 sha_cfg, bool is_oneshot)
+static int _se_sha_hash_256(void *hash, u64 total_size, const void *src, u32 src_size, bool is_oneshot)
 {
-	int res;
-	u32 hash32[SE_SHA_256_SIZE / 4];
-
-	//! TODO: src_size must be 512 bit aligned if continuing and not last block for SHA256.
-	if (src_size > 0xFFFFFF || !hash) // Max 16MB - 1 chunks and aligned x4 hash buffer.
-		return 0;
-
 	// Src size of 0 is not supported, so return null string sha256.
 	if (!src_size)
 	{
@@ -510,59 +496,75 @@ int se_calc_sha256(void *hash, u32 *msg_left, const void *src, u32 src_size, u64
 		return 1;
 	}
 
+	// Increase leftover size if not last message. (Engine will always stop at src_size.)
+	u32 msg_left = src_size;
+	if (total_size < src_size)
+		msg_left++;
+
 	// Setup config for SHA256.
 	SE(SE_CONFIG_REG) = SE_CONFIG_ENC_MODE(MODE_SHA256) | SE_CONFIG_ENC_ALG(ALG_SHA) | SE_CONFIG_DST(DST_HASHREG);
-	SE(SE_SHA_CONFIG_REG) = sha_cfg;
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = 1 - 1;
 
-	// Set total size to current buffer size if empty.
-	if (!total_size)
-		total_size = src_size;
-
-	// Set total size: BITS(src_size), up to 2 EB.
+	// Set total size: BITS(total_size), up to 2 EB.
 	SE(SE_SHA_MSG_LENGTH_0_REG) = (u32)(total_size << 3);
 	SE(SE_SHA_MSG_LENGTH_1_REG) = (u32)(total_size >> 29);
-	SE(SE_SHA_MSG_LENGTH_2_REG) = 0;
-	SE(SE_SHA_MSG_LENGTH_3_REG) = 0;
 
-	// Set size left to hash.
-	SE(SE_SHA_MSG_LEFT_0_REG) = (u32)(total_size << 3);
-	SE(SE_SHA_MSG_LEFT_1_REG) = (u32)(total_size >> 29);
-	SE(SE_SHA_MSG_LEFT_2_REG) = 0;
-	SE(SE_SHA_MSG_LEFT_3_REG) = 0;
+	// Set leftover size: BITS(src_size).
+	SE(SE_SHA_MSG_LEFT_0_REG) = (u32)(msg_left << 3);
+	SE(SE_SHA_MSG_LEFT_1_REG) = (u32)(msg_left >> 29);
 
-	// If we hash in chunks, copy over the intermediate.
-	if (sha_cfg == SHA_CONTINUE && msg_left)
-	{
-		// Restore message left to process.
-		SE(SE_SHA_MSG_LEFT_0_REG) = msg_left[0];
-		SE(SE_SHA_MSG_LEFT_1_REG) = msg_left[1];
+	// Set config based on init or partial continuation.
+	if (total_size == src_size || !total_size)
+		SE(SE_SHA_CONFIG_REG) = SHA_INIT_HASH;
+	else
+		SE(SE_SHA_CONFIG_REG) = SHA_CONTINUE;
 
-		// Restore hash reg.
-		memcpy(hash32, hash, SE_SHA_256_SIZE);
-		for (u32 i = 0; i < (SE_SHA_256_SIZE / 4); i++)
-			SE(SE_HASH_RESULT_REG + (i * 4)) = byte_swap_32(hash32[i]);
-	}
+	// Trigger the operation. src vs total size decides if it's partial.
+	int res = _se_execute(SE_OP_START, NULL, 0, src, src_size, is_oneshot);
 
-	// Trigger the operation.
-	res = _se_execute(SE_OP_START, NULL, 0, src, src_size, is_oneshot);
-
-	if (is_oneshot)
-		se_calc_sha256_get_hash(hash, msg_left);
+	if (res && is_oneshot)
+		_se_sha_hash_256_get_hash(hash);
 
 	return res;
 }
 
-int se_calc_sha256_oneshot(void *hash, const void *src, u32 src_size)
+int se_sha_hash_256_async(void *hash, const void *src, u32 size)
 {
-	return se_calc_sha256(hash, NULL, src, src_size, 0, SHA_INIT_HASH, true);
+	return _se_sha_hash_256(hash, size, src, size, false);
 }
 
-int se_calc_sha256_finalize(void *hash, u32 *msg_left)
+int se_sha_hash_256_oneshot(void *hash, const void *src, u32 size)
+{
+	return _se_sha_hash_256(hash, size, src, size, true);
+}
+
+int se_sha_hash_256_partial_start(void *hash, const void *src, u32 size, bool is_oneshot)
+{
+	// Check if aligned SHA256 block size.
+	if (size % SE_SHA2_MIN_BLOCK_SIZE)
+		return 0;
+
+	return _se_sha_hash_256(hash, 0, src, size, is_oneshot);
+}
+
+int se_sha_hash_256_partial_update(void *hash, const void *src, u32 size, bool is_oneshot)
+{
+	// Check if aligned to SHA256 block size.
+	if (size % SE_SHA2_MIN_BLOCK_SIZE)
+		return 0;
+
+	return _se_sha_hash_256(hash, size - 1, src, size, is_oneshot);
+}
+
+int se_sha_hash_256_partial_end(void *hash, u64 total_size, const void *src, u32 src_size, bool is_oneshot)
+{
+	return _se_sha_hash_256(hash, total_size, src, src_size, is_oneshot);
+}
+
+int se_sha_hash_256_finalize(void *hash)
 {
 	int res = _se_execute_finalize();
 
-	se_calc_sha256_get_hash(hash, msg_left);
+	_se_sha_hash_256_get_hash(hash);
 
 	return res;
 }
