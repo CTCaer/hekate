@@ -314,7 +314,7 @@ int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *seed)
 	return _se_execute_oneshot(SE_OP_START, NULL, 0, seed, SE_KEY_128_SIZE);
 }
 
-int se_aes_crypt_ecb(u32 ks, int enc, void *dst, u32 dst_size, const void *src, u32 src_size)
+int se_aes_crypt_ecb(u32 ks, int enc, void *dst, const void *src, u32 size)
 {
 	if (enc)
 	{
@@ -329,10 +329,10 @@ int se_aes_crypt_ecb(u32 ks, int enc, void *dst, u32 dst_size, const void *src, 
 								   SE_CRYPTO_XOR_POS(XOR_BYPASS);
 	}
 
-	return _se_execute_aes_oneshot(dst, src, src_size);
+	return _se_execute_aes_oneshot(dst, src, size);
 }
 
-int se_aes_crypt_cbc(u32 ks, int enc, void *dst, u32 dst_size, const void *src, u32 src_size)
+int se_aes_crypt_cbc(u32 ks, int enc, void *dst, const void *src, u32 size)
 {
 	if (enc)
 	{
@@ -347,15 +347,10 @@ int se_aes_crypt_cbc(u32 ks, int enc, void *dst, u32 dst_size, const void *src, 
 								   SE_CRYPTO_CORE_SEL(CORE_DECRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM);
 	}
 
-	return _se_execute_aes_oneshot(dst, src, src_size);
+	return _se_execute_aes_oneshot(dst, src, size);
 }
 
-int se_aes_crypt_block_ecb(u32 ks, int enc, void *dst, const void *src)
-{
-	return se_aes_crypt_ecb(ks, enc, dst, SE_AES_BLOCK_SIZE, src, SE_AES_BLOCK_SIZE);
-}
-
-int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_size, void *ctr)
+int se_aes_crypt_ctr(u32 ks, void *dst, const void *src, u32 size, void *ctr)
 {
 	SE(SE_SPARE_REG)         = SE_INPUT_NONCE_LE;
 	SE(SE_CONFIG_REG)        = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_AES_ENC)     | SE_CONFIG_DST(DST_MEMORY);
@@ -365,7 +360,7 @@ int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_s
 
 	_se_aes_counter_set(ctr);
 
-	return _se_execute_aes_oneshot(dst, src, src_size);
+	return _se_execute_aes_oneshot(dst, src, size);
 }
 
 int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize)
@@ -382,7 +377,7 @@ int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst
 		tweak[i] = sec & 0xFF;
 		sec >>= 8;
 	}
-	if (!se_aes_crypt_block_ecb(tweak_ks, ENCRYPT, tweak, tweak))
+	if (!se_aes_crypt_ecb(tweak_ks, ENCRYPT, tweak, tweak, SE_AES_BLOCK_SIZE))
 		goto out;
 
 	// We are assuming a 0x10-aligned sector size in this implementation.
@@ -390,7 +385,7 @@ int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst
 	{
 		for (u32 j = 0; j < SE_AES_BLOCK_SIZE; j++)
 			pdst[j] = psrc[j] ^ tweak[j];
-		if (!se_aes_crypt_block_ecb(crypt_ks, enc, pdst, pdst))
+		if (!se_aes_crypt_ecb(crypt_ks, enc, pdst, pdst, SE_AES_BLOCK_SIZE))
 			goto out;
 		for (u32 j = 0; j < SE_AES_BLOCK_SIZE; j++)
 			pdst[j] = pdst[j] ^ tweak[j];
@@ -418,7 +413,7 @@ int se_aes_xts_crypt_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tw
 			tweak[i] = sec & 0xFF;
 			sec >>= 8;
 		}
-		if (!se_aes_crypt_block_ecb(tweak_ks, ENCRYPT, tweak, tweak))
+		if (!se_aes_crypt_ecb(tweak_ks, ENCRYPT, tweak, tweak, SE_AES_BLOCK_SIZE))
 			return 0;
 	}
 
@@ -440,7 +435,7 @@ int se_aes_xts_crypt_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tw
 		pdst += sizeof(u32);
 	}
 
-	if (!se_aes_crypt_ecb(crypt_ks, enc, dst, sec_size, dst, sec_size))
+	if (!se_aes_crypt_ecb(crypt_ks, enc, dst, dst, sec_size))
 		return 0;
 
 	pdst = (u32 *)dst;
@@ -629,7 +624,7 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 
 	// Decrypt context.
 	se_aes_key_set(3, srk, SE_KEY_128_SIZE);
-	se_aes_crypt_cbc(3, DECRYPT, keys, SE_AES_KEYSLOT_COUNT * keysize, keys, SE_AES_KEYSLOT_COUNT * keysize);
+	se_aes_crypt_cbc(3, DECRYPT, keys, keys, SE_AES_KEYSLOT_COUNT * keysize);
 	se_aes_key_clear(3);
 }
 
@@ -642,7 +637,7 @@ int se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size)
 
 	// Generate sub key (CBC with zeroed IV, basically ECB).
 	se_aes_iv_clear(ks);
-	if (!se_aes_crypt_cbc(ks, ENCRYPT, subkey, SE_KEY_128_SIZE, subkey, SE_KEY_128_SIZE))
+	if (!se_aes_crypt_cbc(ks, ENCRYPT, subkey, subkey, SE_KEY_128_SIZE))
 		return 0;
 
 	// Generate K1 subkey.
