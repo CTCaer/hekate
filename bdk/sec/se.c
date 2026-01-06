@@ -170,18 +170,41 @@ static int _se_execute_oneshot(u32 op, void *dst, u32 dst_size, const void *src,
 	return _se_execute(op, dst, dst_size, src, src_size, true);
 }
 
-static int _se_execute_one_block(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
+static int _se_execute_aes_oneshot(void *dst, const void *src, u32 size)
 {
-	if (!src || !dst)
-		return 0;
+	// Set optional memory interface.
+	if (dst >= (void *)DRAM_START && src >= (void *)DRAM_START)
+		SE(SE_CRYPTO_CONFIG_REG) |= SE_CRYPTO_MEMIF(MEMIF_MCCIF);
 
-	u32 block[SE_AES_BLOCK_SIZE / sizeof(u32)] = {0};
+	u32 size_aligned = ALIGN_DOWN(size, SE_AES_BLOCK_SIZE);
+	u32 size_residue = size % SE_AES_BLOCK_SIZE;
+	int res = 0;
 
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = 1 - 1;
+	// Handle initial aligned message.
+	if (size_aligned)
+	{
+		SE(SE_CRYPTO_LAST_BLOCK_REG) = (size >> 4) - 1;
 
-	memcpy(block, src, src_size);
-	int res = _se_execute_oneshot(op, block, SE_AES_BLOCK_SIZE, block, SE_AES_BLOCK_SIZE);
-	memcpy(dst, block, dst_size);
+		res = _se_execute_oneshot(SE_OP_START, dst, size_aligned, src, size_aligned);
+	}
+
+	// Handle leftover partial message.
+	if (res && size_residue)
+	{
+		// Copy message to a block sized buffer in case it's partial.
+		u32 block[SE_AES_BLOCK_SIZE / sizeof(u32)] = {0};
+		memcpy(block, src + size_aligned, size_residue);
+
+		// Use updated IV for CBC and OFB. Ignored on others.
+		SE(SE_CRYPTO_CONFIG_REG) |= SE_CRYPTO_IV_SEL(IV_UPDATED);
+
+		SE(SE_CRYPTO_LAST_BLOCK_REG) = (SE_AES_BLOCK_SIZE >> 4) - 1;
+
+		res = _se_execute_oneshot(SE_OP_START, block, SE_AES_BLOCK_SIZE, block, SE_AES_BLOCK_SIZE);
+
+		// Copy result back.
+		memcpy(dst + size_aligned, block, size_residue);
+	}
 
 	return res;
 }
@@ -329,8 +352,8 @@ int se_aes_crypt_ecb(u32 ks, int enc, void *dst, u32 dst_size, const void *src, 
 		SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks)         | SE_CRYPTO_CORE_SEL(CORE_DECRYPT) |
 								   SE_CRYPTO_XOR_POS(XOR_BYPASS);
 	}
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = (src_size >> 4) - 1;
-	return _se_execute_oneshot(SE_OP_START, dst, dst_size, src, src_size);
+
+	return _se_execute_aes_oneshot(dst, src, src_size);
 }
 
 int se_aes_crypt_cbc(u32 ks, int enc, void *dst, u32 dst_size, const void *src, u32 src_size)
@@ -347,8 +370,8 @@ int se_aes_crypt_cbc(u32 ks, int enc, void *dst, u32 dst_size, const void *src, 
 		SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks)          | SE_CRYPTO_VCTRAM_SEL(VCTRAM_PREVMEM) |
 								   SE_CRYPTO_CORE_SEL(CORE_DECRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM);
 	}
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = (src_size >> 4) - 1;
-	return _se_execute_oneshot(SE_OP_START, dst, dst_size, src, src_size);
+
+	return _se_execute_aes_oneshot(dst, src, src_size);
 }
 
 int se_aes_crypt_block_ecb(u32 ks, int enc, void *dst, const void *src)
@@ -366,22 +389,7 @@ int se_aes_crypt_ctr(u32 ks, void *dst, u32 dst_size, const void *src, u32 src_s
 
 	_se_aes_counter_set(ctr);
 
-	u32 src_size_aligned = src_size & 0xFFFFFFF0;
-	u32 src_size_delta = src_size & 0xF;
-
-	if (src_size_aligned)
-	{
-		SE(SE_CRYPTO_LAST_BLOCK_REG) = (src_size >> 4) - 1;
-		if (!_se_execute_oneshot(SE_OP_START, dst, dst_size, src, src_size_aligned))
-			return 0;
-	}
-
-	if (src_size - src_size_aligned && src_size_aligned < dst_size)
-		return _se_execute_one_block(SE_OP_START, dst + src_size_aligned,
-			MIN(src_size_delta, dst_size - src_size_aligned),
-			src + src_size_aligned, src_size_delta);
-
-	return 1;
+	return _se_execute_aes_oneshot(dst, src, src_size);
 }
 
 int se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize)
