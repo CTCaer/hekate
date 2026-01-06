@@ -228,7 +228,8 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 					return VERIF_STATUS_ERROR;
 				}
 				manual_system_maintenance(false);
-				se_calc_sha256(hashEm, NULL, bufEm, num << 9, 0, SHA_INIT_HASH, false);
+
+				se_sha_hash_256_async(hashEm, bufEm, num << 9);
 
 				f_lseek(&fp, (u64)sdFileSector << (u64)9);
 				if (f_read_fast(&fp, bufSd, num << 9))
@@ -248,8 +249,8 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 					return VERIF_STATUS_ERROR;
 				}
 				manual_system_maintenance(false);
-				se_calc_sha256_finalize(hashEm, NULL);
-				se_calc_sha256_oneshot(hashSd, bufSd, num << 9);
+				se_sha_hash_256_finalize(hashEm);
+				se_sha_hash_256_oneshot(hashSd, bufSd, num << 9);
 				res = memcmp(hashEm, hashSd, SE_SHA_256_SIZE / 2);
 
 				if (res)

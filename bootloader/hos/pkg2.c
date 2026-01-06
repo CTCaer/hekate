@@ -544,7 +544,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 
 			// Check if current KIP not hashed and hash it.
 			if (kip_hash[0] == 0)
-				if (!se_calc_sha256_oneshot(kip_hash, ki->kip1, ki->size))
+				if (!se_sha_hash_256_oneshot(kip_hash, ki->kip1, ki->size))
 					memset(kip_hash, 0, sizeof(kip_hash));
 
 			// Check if kip is the expected version.
@@ -870,7 +870,7 @@ DPRINTF("INI1 encrypted\n");
 		u8 *pk2_hash_data = (u8 *)dst + 0x100 + sizeof(pkg2_hdr_t);
 		for (u32 i = PKG2_SEC_KERNEL; i <= PKG2_SEC_UNUSED; i++)
 		{
-			se_calc_sha256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * i], (void *)pk2_hash_data, hdr->sec_size[i]);
+			se_sha_hash_256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * i], (void *)pk2_hash_data, hdr->sec_size[i]);
 			pk2_hash_data += hdr->sec_size[i];
 		}
 	}

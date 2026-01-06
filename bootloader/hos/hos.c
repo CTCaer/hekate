@@ -666,7 +666,7 @@ static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 		if (strcmp((char *)ki->kip1->name, "FS"))
 			continue;
 
-		if (!se_calc_sha256_oneshot(sha_buf, ki->kip1, ki->size))
+		if (!se_sha_hash_256_oneshot(sha_buf, ki->kip1, ki->size))
 			break;
 
 		pkg2_get_ids(&kip_ids, &fs_ids_cnt);
@@ -947,9 +947,9 @@ void hos_launch(ini_sec_t *cfg)
 			// Hash only Kernel when it embeds INI1.
 			u8 kernel_hash[0x20];
 			if (!ctxt.new_pkg2)
-				se_calc_sha256_oneshot(kernel_hash, ctxt.kernel, ctxt.kernel_size);
+				se_sha_hash_256_oneshot(kernel_hash, ctxt.kernel, ctxt.kernel_size);
 			else
-				se_calc_sha256_oneshot(kernel_hash, ctxt.kernel + PKG2_NEWKERN_START,
+				se_sha_hash_256_oneshot(kernel_hash, ctxt.kernel + PKG2_NEWKERN_START,
 					pkg2_newkern_ini1_start - PKG2_NEWKERN_START);
 
 			ctxt.pkg2_kernel_id = pkg2_identify(kernel_hash);
@@ -989,7 +989,7 @@ void hos_launch(ini_sec_t *cfg)
 	LIST_FOREACH_ENTRY(merge_kip_t, mki, &ctxt.kip1_list, link)
 		pkg2_merge_kip(&kip1_info, (pkg2_kip1_t *)mki->kip1);
 
-	// Check if FS is compatible with exFAT and if 5.1.0.
+	// Check if FS is compatible with exFAT and if 5.1.0 or 10.2.0.
 	if (!ctxt.stock && (sd_fs.fs_type == FS_EXFAT || mkey == HOS_MKEY_VER_500 || ctxt.pkg1_id->fuses == 13))
 	{
 		bool exfat_compat = _get_fs_exfat_compatible(&kip1_info, &ctxt.exo_ctx.hos_revision);

@@ -707,7 +707,7 @@ int hos_dump_cal0()
 	}
 
 	u32 hash[8];
-	se_calc_sha256_oneshot(hash, (u8 *)&cal0->cfg_id1, cal0->body_size);
+	se_sha_hash_256_oneshot(hash, (u8 *)&cal0->cfg_id1, cal0->body_size);
 	if (memcmp(hash, cal0->body_sha256, 0x20))
 		return 3;
 

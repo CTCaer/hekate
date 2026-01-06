@@ -290,7 +290,7 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	nx_emmc_cal0_t *cal0 = (nx_emmc_cal0_t *)cal0_buf;
 
 	u32 hash[8];
-	se_calc_sha256_oneshot(hash, (u8 *)&cal0->cfg_id1, cal0->body_size);
+	se_sha_hash_256_oneshot(hash, (u8 *)&cal0->cfg_id1, cal0->body_size);
 
 	s_printf(txt_buf,
 		"#FF8000 CAL0 Version:#      %d\n"
