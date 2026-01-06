@@ -906,6 +906,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	int cal_error = 0;
 	bool is_l_hos = false;
 	bool is_r_hos = false;
+	u32 joycon_found = 0;
 	bool nx_hoag = fuse_read_hw_type() == FUSE_NX_HW_TYPE_HOAG;
 	jc_gamepad_rpt_t *jc_pad = jc_get_bt_pairing_info(&is_l_hos, &is_r_hos);
 
@@ -934,7 +935,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 		goto save_data;
 
 	// Count valid joycon.
-	u32 joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
+	joycon_found = jc_pad->bt_conn_l.type ? 1 : 0;
 	if (jc_pad->bt_conn_r.type)
 		joycon_found++;
 
