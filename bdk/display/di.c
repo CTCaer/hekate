@@ -47,7 +47,7 @@ void display_enable_interrupt(u32 intr)
 void display_disable_interrupt(u32 intr)
 {
 	DISPLAY_A(DC_CMD_INT_ENABLE) &= ~intr;
-	DISPLAY_A(DC_CMD_INT_STATUS) = intr;
+	DISPLAY_A(DC_CMD_INT_STATUS)  =  intr;
 }
 
 void display_wait_interrupt(u32 intr)
@@ -404,6 +404,12 @@ void display_init()
 		// Enable WLED driver.
 		gpio_write(GPIO_PORT_V, GPIO_PIN_1, GPIO_HIGH);
 	}
+	// else
+	// {
+	// 	// Configure OLED status pin.
+	// 	PINMUX_AUX(PINMUX_AUX_WIFI_EN) = PINMUX_INPUT_ENABLE | PINMUX_TRISTATE;
+	// 	gpio_direction_input(GPIO_PORT_H, GPIO_PIN_0);
+	// }
 
 	// Configure Panel Reset pin.
 	PINMUX_AUX(PINMUX_AUX_LCD_RST) = PINMUX_PULL_DOWN;
@@ -476,7 +482,7 @@ void display_init()
 	{
 	case PANEL_SAM_AMS699VC01:
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 180000);
-		// Set color mode to basic (natural). Stock is Saturated (0x00). (Reset value is 0x20).
+		// Set color mode to basic (natural). Stock is Saturated (0x00). (POR/Exit value is 0x20/0x00).
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE_PARAM,
 							  MIPI_DCS_PRIV_SM_SET_COLOR_MODE | (DCS_SM_COLOR_MODE_BASIC << 8), 0);
 		// Enable backlight and smooth PWM.
