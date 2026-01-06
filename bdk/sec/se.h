@@ -27,11 +27,10 @@ u32  se_key_acc_ctrl_get(u32 ks);
 
 /*! AES Key Management Functions */
 void se_aes_key_set(u32 ks, const void *key, u32 size);
-void se_aes_iv_set(u32 ks, const void *iv);
+void se_aes_iv_set(u32 ks, const void *iv, u32 size);
 void se_aes_key_get(u32 ks, void *key, u32 size);
 void se_aes_key_clear(u32 ks);
 void se_aes_iv_clear(u32 ks);
-void se_aes_iv_updated_clear(u32 ks);
 int  se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *seed);
 void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize);
 /*! Encryption Functions */

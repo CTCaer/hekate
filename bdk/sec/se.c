@@ -131,6 +131,9 @@ static int _se_execute_finalize()
 
 static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size, bool is_oneshot)
 {
+	if (dst_size > SE_LL_MAX_SIZE || src_size > SE_LL_MAX_SIZE)
+		return 0;
+
 	ll_src_ptr = NULL;
 	ll_dst_ptr = NULL;
 
@@ -254,13 +257,14 @@ void se_aes_key_set(u32 ks, const void *key, u32 size)
 	}
 }
 
-void se_aes_iv_set(u32 ks, const void *iv)
+void se_aes_iv_set(u32 ks, const void *iv, u32 size)
 {
-	u32 data[SE_AES_IV_SIZE / sizeof(u32)];
-	memcpy(data, iv, SE_AES_IV_SIZE);
+	u32 data[SE_AES_MAX_KEY_SIZE / sizeof(u32)];
+	memcpy(data, iv, size);
 
-	for (u32 i = 0; i < (SE_AES_IV_SIZE / sizeof(u32)); i++)
+	for (u32 i = 0; i < (size / sizeof(u32)); i++)
 	{
+		// QUAD UPDATED_IV bit is automatically set by PKT macro.
 		SE(SE_CRYPTO_KEYTABLE_ADDR_REG) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(ORIGINAL_IV) | SE_KEYTABLE_PKT(i);
 		SE(SE_CRYPTO_KEYTABLE_DATA_REG) = data[i];
 	}
@@ -292,18 +296,10 @@ void se_aes_key_clear(u32 ks)
 
 void se_aes_iv_clear(u32 ks)
 {
-	for (u32 i = 0; i < (SE_AES_IV_SIZE / sizeof(u32)); i++)
+	for (u32 i = 0; i < (SE_AES_MAX_KEY_SIZE / sizeof(u32)); i++)
 	{
+		// QUAD UPDATED_IV bit is automatically set by PKT macro.
 		SE(SE_CRYPTO_KEYTABLE_ADDR_REG) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(ORIGINAL_IV) | SE_KEYTABLE_PKT(i);
-		SE(SE_CRYPTO_KEYTABLE_DATA_REG) = 0;
-	}
-}
-
-void se_aes_iv_updated_clear(u32 ks)
-{
-	for (u32 i = 0; i < (SE_AES_IV_SIZE / 4); i++)
-	{
-		SE(SE_CRYPTO_KEYTABLE_ADDR_REG) = SE_KEYTABLE_SLOT(ks) | SE_KEYTABLE_QUAD(UPDATED_IV) | SE_KEYTABLE_PKT(i);
 		SE(SE_CRYPTO_KEYTABLE_DATA_REG) = 0;
 	}
 }
@@ -652,7 +648,6 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 	srk[3] = PMC(APBDEV_PMC_SECURE_SCRATCH7);
 
 	// Decrypt context.
-	se_aes_key_clear(3);
 	se_aes_key_set(3, srk, SE_KEY_128_SIZE);
 	se_aes_crypt_cbc(3, DECRYPT, keys, SE_AES_KEYSLOT_COUNT * keysize, keys, SE_AES_KEYSLOT_COUNT * keysize);
 	se_aes_key_clear(3);
@@ -669,7 +664,6 @@ int se_aes_cmac_128(u32 ks, void *hash, const void *src, u32 size)
 
 	// Generate sub key (CBC with zeroed IV, basically ECB).
 	se_aes_iv_clear(ks);
-	se_aes_iv_updated_clear(ks);
 	if (!se_aes_crypt_hash(ks, ENCRYPT, subkey, SE_KEY_128_SIZE, subkey, SE_KEY_128_SIZE))
 		goto out;
 
@@ -682,8 +676,6 @@ int se_aes_cmac_128(u32 ks, void *hash, const void *src, u32 size)
 	SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_INPUT_SEL(INPUT_MEMORY) |
 		SE_CRYPTO_XOR_POS(XOR_TOP) | SE_CRYPTO_VCTRAM_SEL(VCTRAM_AESOUT) | SE_CRYPTO_HASH(HASH_ENABLE) |
 		SE_CRYPTO_CORE_SEL(CORE_ENCRYPT);
-	se_aes_iv_clear(ks);
-	se_aes_iv_updated_clear(ks);
 
 	u32 num_blocks = (size + 0xF) >> 4;
 	if (num_blocks > 1)
