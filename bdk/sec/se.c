@@ -314,26 +314,6 @@ int se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *seed)
 	return _se_execute_oneshot(SE_OP_START, NULL, 0, seed, SE_KEY_128_SIZE);
 }
 
-int se_aes_crypt_hash(u32 ks, int enc, void *dst, u32 dst_size, const void *src, u32 src_size)
-{
-	if (enc)
-	{
-		SE(SE_CONFIG_REG)        = SE_CONFIG_ENC_ALG(ALG_AES_ENC) | SE_CONFIG_DST(DST_MEMORY);
-		SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks)          | SE_CRYPTO_VCTRAM_SEL(VCTRAM_AESOUT) |
-								   SE_CRYPTO_CORE_SEL(CORE_ENCRYPT) | SE_CRYPTO_XOR_POS(XOR_TOP) |
-								   SE_CRYPTO_HASH(HASH_ENABLE);
-	}
-	else
-	{
-		SE(SE_CONFIG_REG)        = SE_CONFIG_DEC_ALG(ALG_AES_DEC) | SE_CONFIG_DST(DST_MEMORY);
-		SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks)          | SE_CRYPTO_VCTRAM_SEL(VCTRAM_PREVMEM) |
-								   SE_CRYPTO_CORE_SEL(CORE_DECRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM) |
-								   SE_CRYPTO_HASH(HASH_ENABLE);
-	}
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = (src_size >> 4) - 1;
-	return _se_execute_oneshot(SE_OP_START, dst, dst_size, src, src_size);
-}
-
 int se_aes_crypt_ecb(u32 ks, int enc, void *dst, u32 dst_size, const void *src, u32 src_size)
 {
 	if (enc)
@@ -653,10 +633,8 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
 	se_aes_key_clear(3);
 }
 
-int se_aes_cmac_128(u32 ks, void *hash, const void *src, u32 size)
+int se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size)
 {
-	int res = 0;
-
 	u32 tmp1[SE_KEY_128_SIZE / sizeof(u32)] = {0};
 	u32 tmp2[SE_AES_BLOCK_SIZE / sizeof(u32)] = {0};
 	u8 *subkey = (u8 *)tmp1;
@@ -664,49 +642,54 @@ int se_aes_cmac_128(u32 ks, void *hash, const void *src, u32 size)
 
 	// Generate sub key (CBC with zeroed IV, basically ECB).
 	se_aes_iv_clear(ks);
-	if (!se_aes_crypt_hash(ks, ENCRYPT, subkey, SE_KEY_128_SIZE, subkey, SE_KEY_128_SIZE))
-		goto out;
+	if (!se_aes_crypt_cbc(ks, ENCRYPT, subkey, SE_KEY_128_SIZE, subkey, SE_KEY_128_SIZE))
+		return 0;
 
 	// Generate K1 subkey.
 	_se_ls_1bit(subkey);
 	if (size & 0xF)
 		_se_ls_1bit(subkey); // Convert to K2.
 
-	SE(SE_CONFIG_REG) = SE_CONFIG_ENC_MODE(MODE_KEY128) | SE_CONFIG_ENC_ALG(ALG_AES_ENC) | SE_CONFIG_DST(DST_HASHREG);
-	SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks) | SE_CRYPTO_INPUT_SEL(INPUT_MEMORY) |
-		SE_CRYPTO_XOR_POS(XOR_TOP) | SE_CRYPTO_VCTRAM_SEL(VCTRAM_AESOUT) | SE_CRYPTO_HASH(HASH_ENABLE) |
-		SE_CRYPTO_CORE_SEL(CORE_ENCRYPT);
+	// Switch to hash register. The rest of the config is already set.
+	SE(SE_CONFIG_REG)        |= SE_CONFIG_DST(DST_HASHREG);
+	SE(SE_CRYPTO_CONFIG_REG) |= SE_CRYPTO_HASH(HASH_ENABLE);
 
+	// Initial blocks.
 	u32 num_blocks = (size + 0xF) >> 4;
 	if (num_blocks > 1)
 	{
 		SE(SE_CRYPTO_LAST_BLOCK_REG) = num_blocks - 2;
+
 		if (!_se_execute_oneshot(SE_OP_START, NULL, 0, src, size))
-			goto out;
+			return 0;
+
+		// Use updated IV for next OP as a continuation.
 		SE(SE_CRYPTO_CONFIG_REG) |= SE_CRYPTO_IV_SEL(IV_UPDATED);
 	}
 
+	// Last block.
 	if (size & 0xF)
 	{
-		memcpy(last_block, src + (size & ~0xF), size & 0xF);
+		memcpy(last_block, src + (size & (~0xF)), size & 0xF);
 		last_block[size & 0xF] = 0x80;
 	}
 	else if (size >= SE_AES_BLOCK_SIZE)
-	{
 		memcpy(last_block, src + size - SE_AES_BLOCK_SIZE, SE_AES_BLOCK_SIZE);
-	}
 
 	for (u32 i = 0; i < SE_KEY_128_SIZE; i++)
 		last_block[i] ^= subkey[i];
 
-	SE(SE_CRYPTO_LAST_BLOCK_REG) = 0;
+	SE(SE_CRYPTO_LAST_BLOCK_REG) = (SE_AES_BLOCK_SIZE >> 4) - 1;
 
-	res = _se_execute_oneshot(SE_OP_START, NULL, 0, last_block, SE_AES_BLOCK_SIZE);
+	int res = _se_execute_oneshot(SE_OP_START, NULL, 0, last_block, SE_AES_BLOCK_SIZE);
 
-	u32 *hash32 = (u32 *)hash;
-	for (u32 i = 0; i < (SE_AES_CMAC_DIGEST_SIZE / sizeof(u32)); i++)
-		hash32[i] = SE(SE_HASH_RESULT_REG + sizeof(u32) * i);
+	// Copy output hash.
+	if (res)
+	{
+		u32 *hash32 = (u32 *)hash;
+		for (u32 i = 0; i < (SE_AES_CMAC_DIGEST_SIZE / sizeof(u32)); i++)
+			hash32[i] = SE(SE_HASH_RESULT_REG + sizeof(u32) * i);
+	}
 
-out:
 	return res;
 }
