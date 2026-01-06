@@ -32,7 +32,7 @@ void se_aes_key_get(u32 ks, void *key, u32 size);
 void se_aes_key_clear(u32 ks);
 void se_aes_iv_clear(u32 ks);
 int  se_aes_unwrap_key(u32 ks_dst, u32 ks_src, const void *seed);
-void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize);
+void se_aes_ctx_get_keys(u8 *buf, u8 *keys, u32 keysize);
 /*! Encryption Functions */
 int  se_aes_crypt_ecb(u32 ks, int enc, void *dst, const void *src, u32 size);
 int  se_aes_crypt_cbc(u32 ks, int enc, void *dst, const void *src, u32 size);

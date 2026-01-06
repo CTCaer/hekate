@@ -584,7 +584,7 @@ int se_gen_prng128(void *dst)
 	return _se_execute_oneshot(SE_OP_START, dst, 16, NULL, 0);
 }
 
-void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize)
+void se_aes_ctx_get_keys(u8 *buf, u8 *keys, u32 keysize)
 {
 	u8 *aligned_buf = (u8 *)ALIGN((u32)buf, 0x40);
 
