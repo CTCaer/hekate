@@ -36,6 +36,7 @@ void se_get_aes_keys(u8 *buf, u8 *keys, u32 keysize);
 /*! Encryption Functions */
 int  se_aes_crypt_ecb(u32 ks, int enc, void *dst, const void *src, u32 size);
 int  se_aes_crypt_cbc(u32 ks, int enc, void *dst, const void *src, u32 size);
+int  se_aes_crypt_ofb(u32 ks, void *dst, const void *src, u32 size);
 int  se_aes_crypt_ctr(u32 ks, void *dst, const void *src, u32 size, void *ctr);
 int  se_aes_xts_crypt_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize);
 int  se_aes_xts_crypt_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tweak, bool regen_tweak, u32 tweak_exp, void *dst, void *src, u32 sec_size);

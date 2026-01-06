@@ -350,6 +350,16 @@ int se_aes_crypt_cbc(u32 ks, int enc, void *dst, const void *src, u32 size)
 	return _se_execute_aes_oneshot(dst, src, size);
 }
 
+int se_aes_crypt_ofb(u32 ks, void *dst, const void *src, u32 size)
+{
+	SE(SE_SPARE_REG)         = SE_INPUT_NONCE_LE;
+	SE(SE_CONFIG_REG)        = SE_CONFIG_ENC_MODE(MODE_KEY128)  | SE_CONFIG_ENC_ALG(ALG_AES_ENC)      | SE_CONFIG_DST(DST_MEMORY);
+	SE(SE_CRYPTO_CONFIG_REG) = SE_CRYPTO_KEY_INDEX(ks)          | SE_CRYPTO_INPUT_SEL(INPUT_AESOUT) |
+							   SE_CRYPTO_CORE_SEL(CORE_ENCRYPT) | SE_CRYPTO_XOR_POS(XOR_BOTTOM);
+
+	return _se_execute_aes_oneshot(dst, src, size);
+}
+
 int se_aes_crypt_ctr(u32 ks, void *dst, const void *src, u32 size, void *ctr)
 {
 	SE(SE_SPARE_REG)         = SE_INPUT_NONCE_LE;
