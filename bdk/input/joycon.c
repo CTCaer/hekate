@@ -1,7 +1,7 @@
 /*
  * Joy-Con UART driver for Nintendo Switch
  *
- * Copyright (c) 2019-2025 CTCaer
+ * Copyright (c) 2019-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -225,7 +225,7 @@ typedef struct _jc_wired_hdr_t
 	u8 data[5];
 	u8 crc;
 	u8 payload[];
-} jc_wired_hdr_t;
+} __attribute__((packed)) jc_wired_hdr_t;
 
 // code: Channel code. vibc: Vibration code.
 typedef struct
@@ -303,50 +303,47 @@ typedef struct _jc_rumble_t
 		u32 r32;
 		u8  r8[4];
 	};
-} jc_rumble_t;
+} __attribute__((packed)) jc_rumble_t;
 
 typedef struct _jc_hid_out_rpt_t
 {
 	u8 cmd;
 	u8 pkt_id;
-	u8 rumble[8];
+	jc_rumble_t rumble[2];
 	u8 subcmd;
 	u8 subcmd_data[];
-} jc_hid_out_rpt_t;
+} __attribute__((packed)) jc_hid_out_rpt_t;
 
 typedef struct _jc_hid_in_rpt_t
 {
 	u8 cmd;
-	u8 pkt_id;
+	u8 pkt_id;      // Latency timer. 5 ms lsb (every 4 x 1.25 ms).
 	u8 conn_info:4; // Connection detect.
 	u8 batt_info:4; // Power info.
-	u8 btn_right;
-	u8 btn_shared;
-	u8 btn_left;
-	u8 stick_h_left;
-	u8 stick_m_left;
-	u8 stick_v_left;
-	u8 stick_h_right;
-	u8 stick_m_right;
-	u8 stick_v_right;
+	u16 btn_right:12;
+	u16 btn_left:12;
+	u16 stick_left_x:12;
+	u16 stick_left_y:12;
+	u16 stick_right_x:12;
+	u16 stick_right_y:12;
 	u8 vib_decider; // right:4, left:4 (bit3 en, bit2-0 buffer avail).
 	u8 submcd_ack;
 	u8 subcmd;
 	u8 subcmd_data[];
-} jc_hid_in_rpt_t;
+} __attribute__((packed)) jc_hid_in_rpt_t;
 
 typedef struct _jc_hid_out_spi_read_t
 {
 	u32 addr;
 	u8  size;
-} jc_hid_out_spi_read_t;
+} __attribute__((packed)) jc_hid_out_spi_read_t;
 
 typedef struct _jc_hid_in_spi_read_t
 {
 	u32 addr;
 	u8  size;
 	u8  data[];
-} jc_hid_in_spi_read_t;
+} __attribute__((packed)) jc_hid_in_spi_read_t;
 
 typedef struct _jc_hid_in_pair_data_t
 {
@@ -358,7 +355,7 @@ typedef struct _jc_hid_in_pair_data_t
 	u8  pad0[10];
 	u8  bt_caps; // bit3: Secure conn supported host, bit5: Paired to TBFC supported host, bit6: iTBFC page supported
 	u8  pad1;
-} jc_hid_in_pair_data_t;
+} __attribute__((packed)) jc_hid_in_pair_data_t;
 
 typedef struct _jc_sio_out_rpt_t
 {
@@ -369,7 +366,7 @@ typedef struct _jc_sio_out_rpt_t
 	u8  crc_payload;
 	u8  crc_hdr;
 	u8  payload[];
-} jc_sio_out_rpt_t;
+} __attribute__((packed)) jc_sio_out_rpt_t;
 
 typedef struct _jc_sio_in_rpt_t
 {
@@ -381,7 +378,7 @@ typedef struct _jc_sio_in_rpt_t
 	u8  crc_payload;
 	u8  crc_hdr;
 	u8  payload[];
-} jc_sio_in_rpt_t;
+} __attribute__((packed)) jc_sio_in_rpt_t;
 
 typedef struct _jc_hid_in_sixaxis_rpt_t
 {
@@ -398,19 +395,16 @@ typedef struct _jc_sio_hid_in_rpt_t
 	u8 type;
 	u8 pkt_id;
 	u8 unk;
-	u8 btn_right;
-	u8 btn_shared;
-	u8 btn_left;
-	u8 stick_h_left;
-	u8 stick_m_left;
-	u8 stick_v_left;
-	u8 stick_h_right;
-	u8 stick_m_right;
-	u8 stick_v_right;
-	u8 siaxis_rpt; // bit0-3: report num. bit4-7: imu type.
+	u16 btn_right:12;
+	u16 btn_left:12;
+	u16 stick_left_x:12;
+	u16 stick_left_y:12;
+	u16 stick_right_x:12;
+	u16 stick_right_y:12;
+	u8 sixaxis_rpt; // bit0-3: report num. bit4-7: imu type.
 	// Each report is 800 us?
 	jc_hid_in_sixaxis_rpt_t sixaxis[15];
-} jc_sio_hid_in_rpt_t;
+} __attribute__((packed)) jc_sio_hid_in_rpt_t;
 
 typedef struct _joycon_ctxt_t
 {
@@ -695,15 +689,15 @@ static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 s
 static void _jc_parse_input(joycon_ctxt_t *jc, const jc_hid_in_rpt_t *hid_pkt)
 {
 	u32 btn_tmp;
-	btn_tmp = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
+	btn_tmp = hid_pkt->btn_right | hid_pkt->btn_left << 12;
 
 	if (jc->type & JC_ID_L)
 	{
 		jc_gamepad.buttons &= ~JC_BTN_MASK_L;
 		jc_gamepad.buttons |= (btn_tmp & JC_BTN_MASK_L);
 
-		jc_gamepad.lstick_x = hid_pkt->stick_h_left | ((hid_pkt->stick_m_left & 0xF) << 8);
-		jc_gamepad.lstick_y = (hid_pkt->stick_m_left >> 4) | (hid_pkt->stick_v_left << 4);
+		jc_gamepad.lstick_x = hid_pkt->stick_left_x;
+		jc_gamepad.lstick_y = hid_pkt->stick_left_y;
 
 		jc_gamepad.batt_info_l = hid_pkt->batt_info;
 	}
@@ -712,8 +706,8 @@ static void _jc_parse_input(joycon_ctxt_t *jc, const jc_hid_in_rpt_t *hid_pkt)
 		jc_gamepad.buttons &= ~JC_BTN_MASK_R;
 		jc_gamepad.buttons |= (btn_tmp & JC_BTN_MASK_R);
 
-		jc_gamepad.rstick_x = hid_pkt->stick_h_right | ((hid_pkt->stick_m_right & 0xF) << 8);
-		jc_gamepad.rstick_y = (hid_pkt->stick_m_right >> 4) | (hid_pkt->stick_v_right << 4);
+		jc_gamepad.rstick_x = hid_pkt->stick_right_x;
+		jc_gamepad.rstick_y = hid_pkt->stick_right_y;
 
 		jc_gamepad.batt_info_r = hid_pkt->batt_info;
 	}
@@ -841,13 +835,13 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8 *payload, 
 			break;
 
 		jc_sio_hid_in_rpt_t *hid_pkt = (jc_sio_hid_in_rpt_t *)payload;
-		jc_gamepad.buttons = hid_pkt->btn_right | hid_pkt->btn_shared << 8 | hid_pkt->btn_left << 16;
+		jc_gamepad.buttons = hid_pkt->btn_right | hid_pkt->btn_left << 12;
 		jc_gamepad.home    = !gpio_read(GPIO_PORT_V, GPIO_PIN_3);
 
-		jc_gamepad.lstick_x = hid_pkt->stick_h_left | ((hid_pkt->stick_m_left & 0xF) << 8);
-		jc_gamepad.lstick_y = (hid_pkt->stick_m_left >> 4) | (hid_pkt->stick_v_left << 4);
-		jc_gamepad.rstick_x = hid_pkt->stick_h_right | ((hid_pkt->stick_m_right & 0xF) << 8);
-		jc_gamepad.rstick_y = (hid_pkt->stick_m_right >> 4) | (hid_pkt->stick_v_right << 4);
+		jc_gamepad.lstick_x = hid_pkt->stick_left_x;
+		jc_gamepad.lstick_y = hid_pkt->stick_left_y;
+		jc_gamepad.rstick_x = hid_pkt->stick_right_x;
+		jc_gamepad.rstick_y = hid_pkt->stick_right_y;
 
 		jc_gamepad.batt_info_l = jc_l.connected;
 		jc_gamepad.batt_info_r = gpio_read(GPIO_PORT_E, GPIO_PIN_7); // Set IRQ status.
@@ -1105,11 +1099,11 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 		_jc_rcv_pkt(&jc_l);
 	}
 
-	jc_hid_in_spi_read_t subcmd_data_l;
+	jc_hid_out_spi_read_t subcmd_data_l;
 	subcmd_data_l.addr = 0x2000;
 	subcmd_data_l.size = 0x1A;
 
-	jc_hid_in_spi_read_t subcmd_data_r;
+	jc_hid_out_spi_read_t subcmd_data_r;
 	subcmd_data_r.addr = 0x2000;
 	subcmd_data_r.size = 0x1A;
 
@@ -1130,13 +1124,13 @@ retry:
 		{
 			if (!jc_l_found)
 			{
-				_jc_send_hid_cmd(&jc_l, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data_l, 5);
+				_jc_send_hid_cmd(&jc_l, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data_l, sizeof(jc_hid_out_spi_read_t));
 				jc_l.last_status_req_time = get_tmr_ms() + 15;
 			}
 
 			if (!jc_r_found)
 			{
-				_jc_send_hid_cmd(&jc_r, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data_r, 5);
+				_jc_send_hid_cmd(&jc_r, JC_HID_SUBCMD_SPI_READ, (u8 *)&subcmd_data_r, sizeof(jc_hid_out_spi_read_t));
 				jc_r.last_status_req_time = get_tmr_ms() + 15;
 			}
 
@@ -1157,7 +1151,7 @@ retry:
 				bool is_active = jc_l.buf[SPI_READ_OFFSET] == 0x95;
 
 				if (!is_active)
-					subcmd_data_l.addr += 0x26; // Get next slot.
+					subcmd_data_l.addr += sizeof(jc_hid_in_pair_data_t); // Get next slot.
 				else
 					jc_l_found = true; // Entry is active.
 
@@ -1177,7 +1171,7 @@ retry:
 				bool is_active = jc_r.buf[SPI_READ_OFFSET] == 0x95;
 
 				if (!is_active)
-					subcmd_data_r.addr += 0x26; // Get next slot.
+					subcmd_data_r.addr += sizeof(jc_hid_in_pair_data_t); // Get next slot.
 				else
 					jc_r_found = true; // Entry is active.
 
