@@ -33,8 +33,8 @@
 // For disabling driver when logging is enabled.
 #include <libs/lv_conf.h>
 
-#define JC_WIRED_SND_MAGIC "\x19\x01\x03"
-#define JC_WIRED_RCV_MAGIC "\x19\x81\x03"
+#define JC_WIRED_SND_MAGIC "\x19\x01\x03"  // Type, Destination, Group.
+#define JC_WIRED_RCV_MAGIC "\x19\x81\x03"  // Type, Destination, Group.
 
 #define JC_WIRED_RPT_OUT         0x43
 #define JC_WIRED_RPT_IN          0x53
@@ -214,10 +214,9 @@ static const u8 _jc_hori_pad_status[] = {
 
 typedef struct _jc_uart_hdr_t
 {
-	u8 magic[3];
-	u8 total_size_lsb;
-	u8 total_size_msb;
-} jc_uart_hdr_t;
+	u8  magic[3]; // Type, Destination, Group.
+	u16 total_size;
+} __attribute__((packed)) jc_uart_hdr_t;
 
 typedef struct _jc_wired_hdr_t
 {
@@ -592,16 +591,13 @@ static u16 _jc_packet_add_uart_hdr(jc_wired_hdr_t *rpt, u8 wired_cmd, const u8 *
 {
 	memcpy(rpt->uart_hdr.magic, JC_WIRED_SND_MAGIC, 3);
 
-	rpt->uart_hdr.total_size_lsb = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t);
-	rpt->uart_hdr.total_size_msb = 0;
+	rpt->uart_hdr.total_size = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t);
 	rpt->cmd = wired_cmd;
 
 	if (data)
 		memcpy(rpt->data, data, size);
 
-	rpt->crc = crc ? _jc_crc(&rpt->uart_hdr.total_size_msb,
-							 sizeof(rpt->uart_hdr.total_size_msb) +
-							 sizeof(rpt->cmd) + sizeof(rpt->data), 0) : 0;
+	rpt->crc = crc ? _jc_crc(&rpt->cmd, sizeof(rpt->cmd) + sizeof(rpt->data), 0) : 0;
 
 	return sizeof(jc_wired_hdr_t);
 }
@@ -611,9 +607,9 @@ static u16 _jc_hid_output_rpt_craft(jc_wired_hdr_t *rpt, const u8 *payload, u16 
 	u16 pkt_size = _jc_packet_add_uart_hdr(rpt, JC_WIRED_HID, NULL, 0, crc);
 	pkt_size += size;
 
-	rpt->uart_hdr.total_size_lsb += size;
-	rpt->data[0] = size >> 8;
-	rpt->data[1] = size & 0xFF;
+	rpt->uart_hdr.total_size += size;
+	rpt->data[1] = size >> 8;
+	rpt->data[2] = size & 0xFF;
 
 	if (payload)
 		memcpy(rpt->payload, payload, size);
