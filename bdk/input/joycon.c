@@ -33,12 +33,15 @@
 // For disabling driver when logging is enabled.
 #include <libs/lv_conf.h>
 
+#define JC_WIRED_SND_MAGIC "\x19\x01\x03"
+#define JC_WIRED_RCV_MAGIC "\x19\x81\x03"
+
 #define JC_WIRED_RPT_OUT         0x43
 #define JC_WIRED_RPT_IN          0x53
 #define JC_WIRED_CMD             0x91
 #define JC_WIRED_HID             0x92
 #define JC_WIRED_INIT_REPLY      0x94
-#define JC_INIT_HANDSHAKE        0xA5 // Enable Wired CMDs.
+#define JC_WIRED_HANDSHAKE       0xA5 // Enable Wired CMDs.
 
 #define JC_HORI_INPUT_RPT_CMD    0x9A
 #define JC_HORI_INPUT_RPT        0x00
@@ -131,12 +134,12 @@ enum
 	JC_CHRG_STATE_FAST = 4, // JC_CHRG_CFG_200MA.
 };
 
-static const u8 sio_init[] = {
+static const u8 _sio_init[] = {
 	JC_SIO_OUTPUT_RPT, JC_SIO_CMD_INIT,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x95
 };
 
-static const u8 sio_set_rpt_version[] = {
+static const u8 _sio_set_rpt_version[] = {
 	JC_SIO_OUTPUT_RPT, JC_SIO_CMD_VER_RPT,
 	// old fw:   0x00, 0x0D (0.13). New 3.4.
 	// force_update_en:      0x01
@@ -144,28 +147,28 @@ static const u8 sio_set_rpt_version[] = {
 };
 
 // Every 8ms.
-static const u8 sio_pad_status[] = {
+static const u8 _sio_pad_status[] = {
 	JC_SIO_OUTPUT_RPT, JC_SIO_CMD_STATUS,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0xB0
 };
 
-static const u8 init_wake[] = {
+static const u8 _jc_init_wake[] = {
 	0xA1, 0xA2, 0xA3, 0xA4
 };
 
-static const u8 init_handshake[] = {
+static const u8 _jc_init_handshake[] = {
 	0x19, 0x01, 0x03, 0x07, 0x00,      // Uart header.
-	JC_INIT_HANDSHAKE, 0x02,           // Wired cmd and wired subcmd.
+	JC_WIRED_HANDSHAKE, 0x02,          // Wired cmd and subcmd.
 	0x01, 0x7E, 0x00, 0x00, 0x00       // Wired subcmd data and crc.
 };
 
-static const u8 init_get_info[]  = {
+static const u8 _jc_init_get_info[]  = {
 	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_GET_INFO, // Wired cmd and subcmd.
 	0x00, 0x00, 0x00, 0x00, 0x24         // Wired subcmd data and crc.
 };
 
-static const u8 init_switch_brate[]  = {
+static const u8 _jc_init_switch_brate[]  = {
 	0x19, 0x01, 0x03, 0x0F, 0x00,         // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_SET_BRATE, // Wired cmd and subcmd.
 	0x08, 0x00, 0x00, 0xBD, 0xB1,         // Wired subcmd data size, data crc and crc.
@@ -173,17 +176,17 @@ static const u8 init_switch_brate[]  = {
 	0xC0, 0xC6, 0x2D, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static const u8 init_hid_disconnect[]  = {
+static const u8 _jc_init_hid_disconnect[]  = {
 	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_HID_DISC, // Wired cmd and subcmd.
 	0x00, 0x00, 0x00, 0x00, 0x0E         // Wired subcmd data size and crc.
 };
 
-static const u8 init_set_hid_rate[]  = {
+static const u8 _jc_init_set_hid_rate[]  = {
 	0x19, 0x01, 0x03, 0x0B, 0x00,           // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_SET_HIDRATE, // Wired cmd and subcmd.
 	0x04, 0x00, 0x00, 0x12, 0xA6,           // Wired subcmd data size, data crc and crc.
-	// Output report rate 15 ms. (5 or 10 or 15 supported).
+	// Output report rate 15 ms. (5/10/15 supported).
 	0x0F, 0x00, 0x00, 0x00
 
 	// 5 ms.
@@ -191,19 +194,19 @@ static const u8 init_set_hid_rate[]  = {
 	// 0x05, 0x00, 0x00, 0x00
 };
 
-static const u8 init_hid_connect[]  = {
+static const u8 _jc_init_hid_connect[]  = {
 	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
 	JC_WIRED_CMD, JC_WIRED_CMD_HID_CONN, // Wired cmd and subcmd.
 	0x00, 0x00, 0x00, 0x00, 0x3D         // Wired subcmd data and crc.
 };
 
-static const u8 nx_pad_status[]  = {
+static const u8 _jc_nx_pad_status[]  = {
 	0x19, 0x01, 0x03, 0x08, 0x00,      // Uart header.
 	JC_WIRED_HID, 0x00,                // Wired cmd and hid cmd.
 	0x01, 0x00, 0x00, 0x69, 0x2D, 0x1F // hid data, data crc and crc.
 };
 
-static const u8 hori_pad_status[] = {
+static const u8 _jc_hori_pad_status[] = {
 	0x19, 0x01, 0x03, 0x07, 0x00,      // Uart header.
 	JC_HORI_INPUT_RPT_CMD, 0x01,       // Hori cmd and hori subcmd.
 	0x00, 0x00, 0x00, 0x00, 0x48       // Hori cmd data and crc.
@@ -312,12 +315,6 @@ typedef struct _jc_hid_out_rpt_t
 	u8 subcmd_data[];
 } jc_hid_out_rpt_t;
 
-typedef struct _jc_hid_out_spi_read_t
-{
-	u32 addr;
-	u8  size;
-} jc_hid_out_spi_read_t;
-
 typedef struct _jc_hid_in_rpt_t
 {
 	u8 cmd;
@@ -338,6 +335,12 @@ typedef struct _jc_hid_in_rpt_t
 	u8 subcmd;
 	u8 subcmd_data[];
 } jc_hid_in_rpt_t;
+
+typedef struct _jc_hid_out_spi_read_t
+{
+	u32 addr;
+	u8  size;
+} jc_hid_out_spi_read_t;
 
 typedef struct _jc_hid_in_spi_read_t
 {
@@ -585,22 +588,20 @@ static void _joycon_send_raw(u8 uart_port, const u8 *buf, u16 size)
 	uart_wait_xfer(uart_port, UART_TX_IDLE);
 }
 
-static u16 _jc_packet_add_uart_hdr(jc_wired_hdr_t *out, u8 wired_cmd, const u8 *data, u16 size, bool crc)
+static u16 _jc_packet_add_uart_hdr(jc_wired_hdr_t *rpt, u8 wired_cmd, const u8 *data, u16 size, bool crc)
 {
-	out->uart_hdr.magic[0] = 0x19;
-	out->uart_hdr.magic[1] = 0x01;
-	out->uart_hdr.magic[2] = 0x3;
+	memcpy(rpt->uart_hdr.magic, JC_WIRED_SND_MAGIC, 3);
 
-	out->uart_hdr.total_size_lsb = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t);
-	out->uart_hdr.total_size_msb = 0;
-	out->cmd = wired_cmd;
+	rpt->uart_hdr.total_size_lsb = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t);
+	rpt->uart_hdr.total_size_msb = 0;
+	rpt->cmd = wired_cmd;
 
 	if (data)
-		memcpy(out->data, data, size);
+		memcpy(rpt->data, data, size);
 
-	out->crc = crc ? _jc_crc(&out->uart_hdr.total_size_msb,
-							 sizeof(out->uart_hdr.total_size_msb) +
-							 sizeof(out->cmd) + sizeof(out->data), 0) : 0;
+	rpt->crc = crc ? _jc_crc(&rpt->uart_hdr.total_size_msb,
+							 sizeof(rpt->uart_hdr.total_size_msb) +
+							 sizeof(rpt->cmd) + sizeof(rpt->data), 0) : 0;
 
 	return sizeof(jc_wired_hdr_t);
 }
@@ -823,7 +824,7 @@ static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int
 		_jc_parse_wired_init(jc, pkt->data, size - sizeof(jc_uart_hdr_t) - 1);
 		break;
 
-	case JC_INIT_HANDSHAKE:
+	case JC_WIRED_HANDSHAKE:
 		jc->state = JC_STATE_HANDSHAKED;
 		break;
 
@@ -909,7 +910,7 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 
 	// For Joycon, check uart reply magic.
 	jc_wired_hdr_t *jc_pkt = (jc_wired_hdr_t *)jc->buf;
-	if (!jc->sio_mode && !memcmp(jc_pkt->uart_hdr.magic, "\x19\x81\x03", 3))
+	if (!jc->sio_mode && !memcmp(jc_pkt->uart_hdr.magic, JC_WIRED_RCV_MAGIC, 3))
 	{
 		_jc_uart_pkt_parse(jc, jc_pkt, len);
 
@@ -1055,11 +1056,11 @@ static void _jc_req_status(joycon_ctxt_t *jc)
 	}
 
 	if (is_nxpad)
-		_joycon_send_raw(jc->uart, nx_pad_status,   sizeof(nx_pad_status));
+		_joycon_send_raw(jc->uart, _jc_nx_pad_status,   sizeof(_jc_nx_pad_status));
 	else if (jc->sio_mode)
-		_joycon_send_raw(jc->uart, sio_pad_status,  sizeof(sio_pad_status));
+		_joycon_send_raw(jc->uart, _sio_pad_status,     sizeof(_sio_pad_status));
 	else
-		_joycon_send_raw(jc->uart, hori_pad_status, sizeof(hori_pad_status));
+		_joycon_send_raw(jc->uart, _jc_hori_pad_status, sizeof(_jc_hori_pad_status));
 
 	jc->last_status_req_time = get_tmr_ms() + (!jc->sio_mode ? 15 : 7);
 }
@@ -1261,14 +1262,14 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 			uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
 
 			// Wake up the controller.
-			_joycon_send_raw(jc->uart, init_wake, sizeof(init_wake));
+			_joycon_send_raw(jc->uart, _jc_init_wake, sizeof(_jc_init_wake));
 			_jc_rcv_pkt(jc); // Clear RX FIFO.
 
 			// Do a handshake.
 			u32 retries = 10;
 			while (retries && jc->state != JC_STATE_HANDSHAKED)
 			{
-				_joycon_send_raw(jc->uart, init_handshake, sizeof(init_handshake));
+				_joycon_send_raw(jc->uart, _jc_init_handshake, sizeof(_jc_init_handshake));
 				msleep(5);
 				_jc_rcv_pkt(jc);
 				retries--;
@@ -1278,14 +1279,14 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 				goto out;
 
 			// Get info about the controller.
-			_joycon_send_raw(jc->uart, init_get_info, sizeof(init_get_info));
+			_joycon_send_raw(jc->uart, _jc_init_get_info, sizeof(_jc_init_get_info));
 			msleep(2);
 			_jc_rcv_pkt(jc);
 
 			if (!(jc->type & JC_ID_HORI))
 			{
 				// Request 3 megabaud change.
-				_joycon_send_raw(jc->uart, init_switch_brate, sizeof(init_switch_brate));
+				_joycon_send_raw(jc->uart, _jc_init_switch_brate, sizeof(_jc_init_switch_brate));
 				msleep(2);
 				_jc_rcv_pkt(jc);
 
@@ -1299,7 +1300,7 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 					retries = 10;
 					while (retries && jc->state != JC_STATE_BRATE_OK)
 					{
-						_joycon_send_raw(jc->uart, init_hid_disconnect, sizeof(init_hid_disconnect));
+						_joycon_send_raw(jc->uart, _jc_init_hid_disconnect, sizeof(_jc_init_hid_disconnect));
 						msleep(5);
 						_jc_rcv_pkt(jc);
 						retries--;
@@ -1310,12 +1311,12 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 				}
 
 				// Create HID connection with the new rate.
-				_joycon_send_raw(jc->uart, init_hid_connect, sizeof(init_hid_connect));
+				_joycon_send_raw(jc->uart, _jc_init_hid_connect, sizeof(_jc_init_hid_connect));
 				msleep(2);
 				_jc_rcv_pkt(jc);
 
 				// Set hid packet rate.
-				_joycon_send_raw(jc->uart, init_set_hid_rate, sizeof(init_set_hid_rate));
+				_joycon_send_raw(jc->uart, _jc_init_set_hid_rate, sizeof(_jc_init_set_hid_rate));
 				msleep(2);
 				_jc_rcv_pkt(jc);
 			}
@@ -1338,7 +1339,7 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 			u32 retries = 10;
 			while (!jc->connected && retries)
 			{
-				_joycon_send_raw(jc->uart, sio_init, sizeof(sio_init));
+				_joycon_send_raw(jc->uart, _sio_init, sizeof(_sio_init));
 				msleep(5);
 				_jc_rcv_pkt(jc);
 				retries--;
@@ -1348,7 +1349,7 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 				goto out;
 
 			// Set output report version.
-			_joycon_send_raw(jc->uart, sio_set_rpt_version, sizeof(sio_set_rpt_version));
+			_joycon_send_raw(jc->uart, _sio_set_rpt_version, sizeof(_sio_set_rpt_version));
 			msleep(5);
 			_jc_rcv_pkt(jc);
 		}
