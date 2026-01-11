@@ -557,6 +557,7 @@ static void _jc_conn_check()
 		jc_l.connected   = false;
 		jc_l.rumble_sent = false;
 		jc_l.charger_req = false;
+		jc_l.last_received_time = 0;
 
 		jc_gamepad.conn_l = false;
 
@@ -573,6 +574,7 @@ static void _jc_conn_check()
 		jc_r.connected   = false;
 		jc_r.rumble_sent = false;
 		jc_r.charger_req = false;
+		jc_r.last_received_time = 0;
 
 		jc_gamepad.conn_r = false;
 
@@ -1229,9 +1231,12 @@ static void _jc_init_conn(joycon_ctxt_t *jc)
 	if (!jc->detected)
 		return;
 
-	// Try to reinit if no input report.
-	// Actual connection timeout is 2000ms on official Joycon.
-	if (((u32)get_tmr_ms() - jc->last_received_time) > 1000)
+	/*
+	 * Try to reinit if no input report.
+	 * Actual connection timeout is 2000ms on official Joycon.
+	 * Based on last JC_WIRED_CMD_HID_CONN/JC_WIRED_HID sent.
+	 */
+	if (((u32)get_tmr_ms() - jc->last_received_time) > 1800)
 	{
 		if (!jc->sio_mode)
 			_jc_power_supply(jc->uart, true);
@@ -1434,6 +1439,8 @@ void jc_deinit()
 {
 	if (!jc_init_done)
 		return;
+
+	jc_init_done = false;
 
 	if (!jc_gamepad.sio_mode)
 	{
