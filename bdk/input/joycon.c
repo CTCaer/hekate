@@ -416,7 +416,7 @@ typedef struct _jc_sio_hid_in_rpt_t
 
 typedef struct _joycon_ctxt_t
 {
-	u8  buf[0x100]; //FIXME: If heap is used, dumping breaks.
+	u8  buf[0x100];
 	u8  uart;
 	u8  type;
 	u8  sio_mode;
@@ -591,34 +591,31 @@ static void _joycon_send_raw(u8 uart_port, const u8 *buf, u16 size)
 	uart_wait_xfer(uart_port, UART_TX_IDLE);
 }
 
-static u16 _jc_packet_add_uart_hdr(jc_wired_hdr_t *rpt, u8 wired_cmd, const u8 *data, u16 size, bool crc)
+static u16 _jc_packet_add_uart_hdr(jc_wired_hdr_t *rpt, u8 cmd, u8 subcmd, u16 payload_size, bool crc)
 {
-	memcpy(rpt->uart_hdr.magic, JC_WIRED_SND_MAGIC, 3);
+	memcpy(rpt->uart_hdr.magic, JC_WIRED_SND_MAGIC, sizeof(rpt->uart_hdr.magic));
 
-	rpt->uart_hdr.total_size = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t);
-	rpt->cmd = wired_cmd;
+	rpt->uart_hdr.total_size = sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t) + payload_size;
+	rpt->cmd = cmd;
+	rpt->subcmd = subcmd;
+	rpt->payload_size = payload_size; // Only used if JC_WIRED_CMD.
 
-	if (data)
-		memcpy(rpt->data, data, size);
+	// Only calculated if JC_WIRED_CMD/JC_WIRED_HID and result never checked?
+	// if (payload_size)
+	// 	rpt->crc_payload = crc ? _jc_crc(rpt->payload, payload_size) : 0;
 
-	rpt->crc = crc ? _jc_crc(&rpt->cmd, sizeof(rpt->cmd) + sizeof(rpt->data)) : 0;
+	// Only calculated if JC_WIRED_CMD/JC_WIRED_HID/JC_WIRED_HANDSHAKE and result only checked on HORI.
+	rpt->crc_hdr = crc ? _jc_crc(&rpt->cmd, sizeof(jc_wired_hdr_t) - sizeof(jc_uart_hdr_t) - 1) : 0;
 
-	return sizeof(jc_wired_hdr_t);
+	return (rpt->uart_hdr.total_size + sizeof(jc_uart_hdr_t));
 }
 
-static u16 _jc_hid_output_rpt_craft(jc_wired_hdr_t *rpt, const u8 *payload, u16 size, bool crc)
+static u16 _jc_hid_output_rpt_craft(jc_wired_hdr_t *rpt, const u8 *payload, u16 payload_size, bool crc)
 {
-	u16 pkt_size = _jc_packet_add_uart_hdr(rpt, JC_WIRED_HID, NULL, 0, crc);
-	pkt_size += size;
-
-	rpt->uart_hdr.total_size += size;
-	rpt->data[1] = size >> 8;
-	rpt->data[2] = size & 0xFF;
-
 	if (payload)
-		memcpy(rpt->payload, payload, size);
+		memcpy(rpt->payload, payload, payload_size);
 
-	return pkt_size;
+	return _jc_packet_add_uart_hdr(rpt, JC_WIRED_HID, 0, payload_size, crc);
 }
 
 static void _jc_send_hid_output_rpt(joycon_ctxt_t *jc, jc_hid_out_rpt_t *hid_pkt, u16 size, bool crc)
@@ -906,13 +903,13 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	if (!jc->detected)
 		return;
 
-	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, 0x100);
+	u32 len = uart_recv(jc->uart, (u8 *)jc->buf, sizeof(jc->buf));
 	if (len < 8)
 		return;
 
 	// For Joycon, check uart reply magic.
 	jc_wired_hdr_t *jc_pkt = (jc_wired_hdr_t *)jc->buf;
-	if (!jc->sio_mode && !memcmp(jc_pkt->uart_hdr.magic, JC_WIRED_RCV_MAGIC, 3))
+	if (!jc->sio_mode && !memcmp(jc_pkt->uart_hdr.magic, JC_WIRED_RCV_MAGIC, sizeof(jc_pkt->uart_hdr.magic)))
 	{
 		_jc_uart_pkt_parse(jc, jc_pkt, len);
 
