@@ -40,8 +40,9 @@
 #define JC_WIRED_RPT_IN          0x53
 #define JC_WIRED_CMD             0x91
 #define JC_WIRED_HID             0x92
+#define JC_WIRED_ECHO            0x93 // CMD OUT.
 #define JC_WIRED_INIT_REPLY      0x94
-#define JC_WIRED_HANDSHAKE       0xA5 // Enable Wired CMDs.
+#define JC_WIRED_HANDSHAKE       0xA5 // Enable Wired CMDs (JC_WIRED_CMD).
 
 #define JC_HORI_INPUT_RPT_CMD    0x9A
 #define JC_HORI_INPUT_RPT        0x00
@@ -53,7 +54,7 @@
 #define JC_WIRED_CMD_GET_ATTACH  0x05
 #define JC_WIRED_CMD_BATT_VOLT   0x06
 #define JC_WIRED_CMD_WAKE_REASON 0x07
-#define JC_WIRED_CMD_HID_CONN    0x10
+#define JC_WIRED_CMD_HID_CONN    0x10 // Enable HID CMDs (JC_WIRED_HID).
 #define JC_WIRED_CMD_HID_DISC    0x11
 #define JC_WIRED_CMD_SET_HIDRATE 0x12 // Output report rate.
 #define JC_WIRED_CMD_GET_HIDRATE 0x13
@@ -157,35 +158,35 @@ static const u8 _jc_init_wake[] = {
 };
 
 static const u8 _jc_init_handshake[] = {
-	0x19, 0x01, 0x03, 0x07, 0x00,      // Uart header.
-	JC_WIRED_HANDSHAKE, 0x02,          // Wired cmd and subcmd.
-	0x01, 0x7E, 0x00, 0x00, 0x00       // Wired subcmd data and crc.
+	0x19, 0x01, 0x03, 0x07, 0x00,           // Uart header.
+	JC_WIRED_HANDSHAKE, 0x02,               // Cmd and Replay echo.
+	0x01, 0x7E, 0x00, 0x00, 0x00            // Handshake magic.
 };
 
 static const u8 _jc_init_get_info[]  = {
-	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_GET_INFO, // Wired cmd and subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x24         // Wired subcmd data and crc.
+	0x19, 0x01, 0x03, 0x07, 0x00,           // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_GET_INFO,    // Cmd and subcmd.
+	0x00, 0x00, 0x00, 0x00,  0x24           // Hdr crc.
 };
 
 static const u8 _jc_init_switch_brate[]  = {
-	0x19, 0x01, 0x03, 0x0F, 0x00,         // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_SET_BRATE, // Wired cmd and subcmd.
-	0x08, 0x00, 0x00, 0xBD, 0xB1,         // Wired subcmd data size, data crc and crc.
+	0x19, 0x01, 0x03, 0x0F, 0x00,           // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_SET_BRATE,   // Cmd and subcmd.
+	0x08, 0x00, 0x00, 0xBD,  0xB1,          // Subcmd data size, data crc and hdr crc.
 	// Baudrate 3 megabaud.
 	0xC0, 0xC6, 0x2D, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 static const u8 _jc_init_hid_disconnect[]  = {
-	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_HID_DISC, // Wired cmd and subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x0E         // Wired subcmd data size and crc.
+	0x19, 0x01, 0x03, 0x07, 0x00,           // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_HID_DISC,    // Cmd and subcmd.
+	0x00, 0x00, 0x00, 0x00,  0x0E           // Hdr crc.
 };
 
 static const u8 _jc_init_set_hid_rate[]  = {
 	0x19, 0x01, 0x03, 0x0B, 0x00,           // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_SET_HIDRATE, // Wired cmd and subcmd.
-	0x04, 0x00, 0x00, 0x12, 0xA6,           // Wired subcmd data size, data crc and crc.
+	JC_WIRED_CMD, JC_WIRED_CMD_SET_HIDRATE, // Cmd and subcmd.
+	0x04, 0x00, 0x00, 0x12,  0xA6,          // Subcmd data size, data crc and hdr crc.
 	// Output report rate 15 ms. (5/10/15 supported).
 	0x0F, 0x00, 0x00, 0x00
 
@@ -195,37 +196,24 @@ static const u8 _jc_init_set_hid_rate[]  = {
 };
 
 static const u8 _jc_init_hid_connect[]  = {
-	0x19, 0x01, 0x03, 0x07, 0x00,        // Uart header.
-	JC_WIRED_CMD, JC_WIRED_CMD_HID_CONN, // Wired cmd and subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x3D         // Wired subcmd data and crc.
+	0x19, 0x01, 0x03, 0x07, 0x00,           // Uart header.
+	JC_WIRED_CMD, JC_WIRED_CMD_HID_CONN,    // Cmd and subcmd.
+	0x00, 0x00, 0x00, 0x00, 0x3D            // Hdr crc.
 };
 
 static const u8 _jc_nx_pad_status[]  = {
-	0x19, 0x01, 0x03, 0x08, 0x00,      // Uart header.
-	JC_WIRED_HID, 0x00,                // Wired cmd and hid cmd.
-	0x01, 0x00, 0x00, 0x69, 0x2D, 0x1F // hid data, data crc and crc.
+	0x19, 0x01, 0x03, 0x08, 0x00,           // Uart header.
+	JC_WIRED_HID, 0x00,                     // Cmd.
+	0x01, 0x00, 0x00, 0x69,  0x2D,          // Subcmd data size, data crc and hdr crc.
+	// Contents do not matter.
+	0x1F
 };
 
 static const u8 _jc_hori_pad_status[] = {
-	0x19, 0x01, 0x03, 0x07, 0x00,      // Uart header.
-	JC_HORI_INPUT_RPT_CMD, 0x01,       // Hori cmd and hori subcmd.
-	0x00, 0x00, 0x00, 0x00, 0x48       // Hori cmd data and crc.
+	0x19, 0x01, 0x03, 0x07, 0x00,           // Uart header.
+	JC_HORI_INPUT_RPT_CMD, 0x01,            // Hori cmd and hori subcmd.
+	0x00, 0x00, 0x00, 0x00, 0x48            // Hdr crc.
 };
-
-typedef struct _jc_uart_hdr_t
-{
-	u8  magic[3]; // Type, Destination, Group.
-	u16 total_size;
-} __attribute__((packed)) jc_uart_hdr_t;
-
-typedef struct _jc_wired_hdr_t
-{
-	jc_uart_hdr_t uart_hdr;
-	u8 cmd;
-	u8 data[5];
-	u8 crc;
-	u8 payload[];
-} __attribute__((packed)) jc_wired_hdr_t;
 
 // code: Channel code. vibc: Vibration code.
 typedef struct
@@ -305,6 +293,26 @@ typedef struct _jc_rumble_t
 	};
 } __attribute__((packed)) jc_rumble_t;
 
+typedef struct _jc_uart_hdr_t
+{
+	u8  magic[3]; // Type, Destination, Group.
+	u16 total_size;
+} __attribute__((packed)) jc_uart_hdr_t;
+
+typedef struct _jc_wired_hdr_t
+{
+	jc_uart_hdr_t uart_hdr;
+	u8 cmd;
+	u8 subcmd;
+	u16 payload_size;
+	// As out, cmd exists query. For JC_WIRED_CMD_SET_PAIRING: 1-4 pairing step.
+	// As in, 0xF: exists. For JC_WIRED_CMD_SET_HIDRATE: 1 wrong rate.
+	u8 status;
+	u8 crc_payload;
+	u8 crc_hdr;
+	u8 payload[];
+} __attribute__((packed)) jc_wired_hdr_t;
+
 typedef struct _jc_hid_out_rpt_t
 {
 	u8 cmd;
@@ -371,7 +379,7 @@ typedef struct _jc_sio_out_rpt_t
 typedef struct _jc_sio_in_rpt_t
 {
 	u8  cmd;
-	u8  ack;
+	u8  subcmd;
 	u16 payload_size;
 	u8  status;
 	u8  unk;
@@ -393,7 +401,7 @@ typedef struct _jc_hid_in_sixaxis_rpt_t
 typedef struct _jc_sio_hid_in_rpt_t
 {
 	u8 type;
-	u8 pkt_id;
+	u8 pkt_id; // Latency timer.
 	u8 unk;
 	u16 btn_right:12;
 	u16 btn_left:12;
@@ -413,7 +421,7 @@ typedef struct _joycon_ctxt_t
 	u8  type;
 	u8  sio_mode;
 	u8  state;
-	u32 last_received_time;
+	u32 last_received_time; // Reset with JC_WIRED_CMD_HID_CONN/JC_WIRED_HID. If exceeded HID mode disconnects.
 	u32 last_status_req_time;
 	u32 last_chrger_chk_time;
 	u8  mac[6];
@@ -433,9 +441,9 @@ static jc_gamepad_rpt_t jc_gamepad;
 
 static void _jc_rcv_pkt(joycon_ctxt_t *jc);
 
-static u8 _jc_crc(const u8 *data, u16 len, u8 init)
+static u8 _jc_crc(const u8 *data, u16 len)
 {
-	u8 crc = init;
+	u8 crc = 0;
 	for (u16 i = 0; i < len; i++)
 	{
 		crc ^= data[i];
@@ -591,7 +599,7 @@ static u16 _jc_packet_add_uart_hdr(jc_wired_hdr_t *rpt, u8 wired_cmd, const u8 *
 	if (data)
 		memcpy(rpt->data, data, size);
 
-	rpt->crc = crc ? _jc_crc(&rpt->cmd, sizeof(rpt->cmd) + sizeof(rpt->data), 0) : 0;
+	rpt->crc = crc ? _jc_crc(&rpt->cmd, sizeof(rpt->cmd) + sizeof(rpt->data)) : 0;
 
 	return sizeof(jc_wired_hdr_t);
 }
@@ -770,18 +778,20 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
 	}
 }
 
-static void _jc_parse_wired_init(joycon_ctxt_t *jc, const u8 *data, int size)
+static void _jc_parse_wired_init(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int size)
 {
 	// Discard empty packets.
 	if (size <= 0)
 		return;
 
-	switch (data[0])
+	const u8 *payload = pkt->payload;
+
+	switch (pkt->subcmd)
 	{
 	case JC_WIRED_CMD_GET_INFO:
-		for (int i = 12; i > 6; i--)
-			jc->mac[12 - i] = data[i];
-		jc->type = data[6];
+		for (int i = 6; i > 0; i--)
+			jc->mac[6 - i] = payload[i];
+		jc->type = payload[0];
 		jc->connected = true;
 		break;
 
@@ -811,7 +821,7 @@ static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int
 		break;
 
 	case JC_WIRED_INIT_REPLY:
-		_jc_parse_wired_init(jc, pkt->data, size - sizeof(jc_uart_hdr_t) - 1);
+		_jc_parse_wired_init(jc, pkt, size);
 		break;
 
 	case JC_WIRED_HANDSHAKE:
@@ -857,10 +867,10 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8 *payload, 
 
 static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt, int size)
 {
-	if (pkt->crc_hdr != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1, 0))
+	if (pkt->crc_hdr != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1))
 		return;
 
-	u8 cmd = pkt->ack & (~JC_SIO_CMD_ACK);
+	u8 cmd = pkt->subcmd & (~JC_SIO_CMD_ACK);
 	switch (cmd)
 	{
 	case JC_SIO_CMD_INIT:
@@ -909,7 +919,7 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 
 	// For Sio, check uart output report and command ack.
 	jc_sio_in_rpt_t *sio_pkt = (jc_sio_in_rpt_t *)(jc->buf);
-	if (jc->sio_mode && sio_pkt->cmd == JC_SIO_INPUT_RPT && (sio_pkt->ack & JC_SIO_CMD_ACK) == JC_SIO_CMD_ACK)
+	if (jc->sio_mode && sio_pkt->cmd == JC_SIO_INPUT_RPT && (sio_pkt->subcmd & JC_SIO_CMD_ACK) == JC_SIO_CMD_ACK)
 	{
 		_jc_sio_uart_pkt_parse(jc, sio_pkt, len);
 
