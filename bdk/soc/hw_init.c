@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -468,7 +468,7 @@ void hw_init()
 #endif
 }
 
-void hw_deinit(bool coreboot, u32 bl_magic)
+void hw_deinit(bool keep_display)
 {
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
 
@@ -501,33 +501,9 @@ void hw_deinit(bool coreboot, u32 bl_magic)
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_Y_SET) = BIT(CLK_Y_APE);
 	}
 
-	// Do coreboot mitigations.
-	if (coreboot)
-	{
-		msleep(10);
-
-		clock_disable_cl_dvfs();
-
-		// Disable Joy-con detect in order to restore UART TX.
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-
-		// Reinstate SD controller power.
-		PMC(APBDEV_PMC_NO_IOPOWER) &= ~PMC_NO_IOPOWER_SDMMC1;
-	}
-
 	// Seamless display or display power off.
-	switch (bl_magic)
+	if (!keep_display)
 	{
-	case BL_MAGIC_CRBOOT_SLD:;
-		// Set pwm to 0% and switch to gpio mode.
-		display_backlight_brightness(0, 1000);
-		gpio_config(GPIO_PORT_V, GPIO_PIN_0, GPIO_MODE_GPIO);
-		break;
-	case BL_MAGIC_L4TLDR_SLD:
-		// Do not disable display or backlight at all.
-		break;
-	default:
 		display_end();
 		clock_disable_host1x();
 	}

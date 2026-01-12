@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 CTCaer
+ * Copyright (c) 2019-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -112,6 +112,5 @@
 
 // #define EXT_PAYLOAD_ADDR    0xC0000000
 // #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
-// #define COREBOOT_ADDR       (0xD0000000 - rom_size)
 
 #endif

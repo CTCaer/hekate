@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,14 +20,11 @@
 
 #include <utils/types.h>
 
-#define BL_MAGIC_CRBOOT_SLD 0x30444C53 // SLD0, seamless display type 0.
-#define BL_MAGIC_L4TLDR_SLD 0x31444C53 // SLD1, seamless display type 1.
-
 extern u32 hw_rst_status;
 extern u32 hw_rst_reason;
 
 void hw_init();
-void hw_deinit(bool coreboot, u32 magic);
+void hw_deinit(bool keep_display);
 void hw_config_arbiter(bool reset);
 u32  hw_get_chip_id();
 
