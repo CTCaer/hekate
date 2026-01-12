@@ -302,15 +302,15 @@ typedef struct _jc_uart_hdr_t
 typedef struct _jc_wired_hdr_t
 {
 	jc_uart_hdr_t uart_hdr;
-	u8 cmd;
-	u8 subcmd;
+	u8  cmd;
+	u8  subcmd;
 	u16 payload_size;
 	// As out, cmd exists query. For JC_WIRED_CMD_SET_PAIRING: 1-4 pairing step.
 	// As in, 0xF: exists. For JC_WIRED_CMD_SET_HIDRATE: 1 wrong rate.
-	u8 status;
-	u8 crc_payload;
-	u8 crc_hdr;
-	u8 payload[];
+	u8  status;
+	u8  crc_payload;
+	u8  crc_hdr;
+	u8  payload[];
 } __attribute__((packed)) jc_wired_hdr_t;
 
 typedef struct _jc_hid_out_rpt_t
@@ -324,20 +324,20 @@ typedef struct _jc_hid_out_rpt_t
 
 typedef struct _jc_hid_in_rpt_t
 {
-	u8 cmd;
-	u8 pkt_id;      // Latency timer. 5 ms lsb (every 4 x 1.25 ms).
-	u8 conn_info:4; // Connection detect.
-	u8 batt_info:4; // Power info.
+	u8  cmd;
+	u8  pkt_id;      // Latency timer. 5 ms lsb (every 4 x 1.25 ms).
+	u8  conn_info:4; // Connection detect.
+	u8  batt_info:4; // Power info.
 	u16 btn_right:12;
 	u16 btn_left:12;
 	u16 stick_left_x:12;
 	u16 stick_left_y:12;
 	u16 stick_right_x:12;
 	u16 stick_right_y:12;
-	u8 vib_decider; // right:4, left:4 (bit3 en, bit2-0 buffer avail).
-	u8 submcd_ack;
-	u8 subcmd;
-	u8 subcmd_data[];
+	u8  vib_decider; // right:4, left:4 (bit3 en, bit2-0 buffer avail).
+	u8  submcd_ack;
+	u8  subcmd;
+	u8  subcmd_data[];
 } __attribute__((packed)) jc_hid_in_rpt_t;
 
 typedef struct _jc_hid_out_spi_read_t
@@ -400,46 +400,46 @@ typedef struct _jc_hid_in_sixaxis_rpt_t
 
 typedef struct _jc_sio_hid_in_rpt_t
 {
-	u8 type;
-	u8 pkt_id; // Latency timer.
-	u8 unk;
+	u8  type;
+	u8  pkt_id; // Latency timer.
+	u8  unk;
 	u16 btn_right:12;
 	u16 btn_left:12;
 	u16 stick_left_x:12;
 	u16 stick_left_y:12;
 	u16 stick_right_x:12;
 	u16 stick_right_y:12;
-	u8 sixaxis_rpt; // bit0-3: report num. bit4-7: imu type.
+	u8  sixaxis_rpt; // bit0-3: report num. bit4-7: imu type.
 	// Each report is 800 us?
 	jc_hid_in_sixaxis_rpt_t sixaxis[15];
 } __attribute__((packed)) jc_sio_hid_in_rpt_t;
 
-typedef struct _joycon_ctxt_t
+typedef struct _jc_dev_t
 {
-	u8  buf[0x100];
-	u8  uart;
-	u8  type;
-	u8  sio_mode;
-	u8  state;
-	u32 last_received_time; // Reset with JC_WIRED_CMD_HID_CONN/JC_WIRED_HID. If exceeded HID mode disconnects.
-	u32 last_status_req_time;
-	u32 last_chrger_chk_time;
-	u8  mac[6];
-	u8  pkt_id;
-	u8  rumble_sent;
-	u8  charger_req;
-	u8  connected;
-	u8  detected;
-} joycon_ctxt_t;
+	u8   buf[0x100];
+	u8   uart;
+	u8   type;
+	u8   state;
+	u8   pkt_id;
+	bool detected;
+	bool connected;
+	bool sio_mode;
+	bool rumble_sent;
+	bool charger_req;
+	u32  last_received_time; // Reset with JC_WIRED_CMD_HID_CONN/JC_WIRED_HID. If exceeded HID mode disconnects.
+	u32  last_status_req_time;
+	u32  last_chrger_chk_time;
+	u8   mac[6];
+} jc_dev_t;
 
-static joycon_ctxt_t jc_l = {0};
-static joycon_ctxt_t jc_r = {0};
+static jc_dev_t jc_l = {0};
+static jc_dev_t jc_r = {0};
 
 static bool jc_init_done = false;
 
 static jc_gamepad_rpt_t jc_gamepad;
 
-static void _jc_rcv_pkt(joycon_ctxt_t *jc);
+static void _jc_rcv_pkt(jc_dev_t *jc);
 
 static u8 _jc_crc(const u8 *data, u16 len)
 {
@@ -509,45 +509,42 @@ static void _jc_power_supply(u8 uart, bool enable)
 	}
 }
 
-static void _jc_detect()
+static void _jc_rail_detect()
 {
-	if (!jc_gamepad.sio_mode)
-	{
-		// Turn on Joy-Con detect. (UARTB/C TX). UART CTS also if HW flow control and irq is enabled.
-		PINMUX_AUX(PINMUX_AUX_UART2_TX) = PINMUX_INPUT_ENABLE;
-		PINMUX_AUX(PINMUX_AUX_UART3_TX) = PINMUX_INPUT_ENABLE;
-		gpio_direction_input(GPIO_PORT_G, GPIO_PIN_0);
-		gpio_direction_input(GPIO_PORT_D, GPIO_PIN_1);
-		usleep(20);
+	// Turn on Joy-Con detect. (UARTB/C TX). UART CTS also if HW flow control and irq is enabled.
+	PINMUX_AUX(PINMUX_AUX_UART2_TX) = PINMUX_INPUT_ENABLE;
+	PINMUX_AUX(PINMUX_AUX_UART3_TX) = PINMUX_INPUT_ENABLE;
+	gpio_direction_input(GPIO_PORT_G, GPIO_PIN_0);
+	gpio_direction_input(GPIO_PORT_D, GPIO_PIN_1);
+	usleep(20);
 
-		//! HW BUG: Unlatch gpio buffer.
-		(void)gpio_read(GPIO_PORT_H, GPIO_PIN_6);
-		(void)gpio_read(GPIO_PORT_E, GPIO_PIN_6);
+	//! HW BUG: Unlatch gpio buffer.
+	(void)gpio_read(GPIO_PORT_H, GPIO_PIN_6);
+	(void)gpio_read(GPIO_PORT_E, GPIO_PIN_6);
 
-		// Read H6/E6 which are shared with UART TX pins.
-		jc_r.detected = !gpio_read(GPIO_PORT_H, GPIO_PIN_6);
-		jc_l.detected = !gpio_read(GPIO_PORT_E, GPIO_PIN_6);
+	// Read H6/E6 which are shared with UART TX pins.
+	jc_r.detected = !gpio_read(GPIO_PORT_H, GPIO_PIN_6);
+	jc_l.detected = !gpio_read(GPIO_PORT_E, GPIO_PIN_6);
 
-		// Turn off Joy-Con detect. (UARTB/C TX).
-		PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
-		PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
-		gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
-		gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
-		usleep(20);
-	}
-	else
-	{
-		//! TODO: Is there a way to detect a broken Sio?
-		jc_l.detected = true;
-	}
+	// Turn off Joy-Con detect. (UARTB/C TX).
+	PINMUX_AUX(PINMUX_AUX_UART2_TX) = 0;
+	PINMUX_AUX(PINMUX_AUX_UART3_TX) = 0;
+	gpio_config(GPIO_PORT_G, GPIO_PIN_0, GPIO_MODE_SPIO);
+	gpio_config(GPIO_PORT_D, GPIO_PIN_1, GPIO_MODE_SPIO);
+	usleep(20);
 }
 
 static void _jc_conn_check()
 {
-	_jc_detect();
-
 	if (jc_gamepad.sio_mode)
+	{
+		//! TODO: Is there a way to detect a broken Sio?
+		jc_l.detected = true;
+
 		return;
+	}
+
+	_jc_rail_detect();
 
 	// Check if a Joy-Con was disconnected.
 	if (!jc_l.detected)
@@ -618,7 +615,7 @@ static u16 _jc_hid_output_rpt_craft(jc_wired_hdr_t *rpt, const u8 *payload, u16 
 	return _jc_packet_add_uart_hdr(rpt, JC_WIRED_HID, 0, payload_size, crc);
 }
 
-static void _jc_send_hid_output_rpt(joycon_ctxt_t *jc, jc_hid_out_rpt_t *hid_pkt, u16 size, bool crc)
+static void _jc_send_hid_output_rpt(jc_dev_t *jc, jc_hid_out_rpt_t *hid_pkt, u16 size, bool crc)
 {
 	u8 rpt[0x50];
 	memset(rpt, 0, sizeof(rpt));
@@ -629,7 +626,7 @@ static void _jc_send_hid_output_rpt(joycon_ctxt_t *jc, jc_hid_out_rpt_t *hid_pkt
 	_joycon_send_raw(jc->uart, rpt, rpt_size);
 }
 
-static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 size)
+static void _jc_send_hid_cmd(jc_dev_t *jc, u8 subcmd, const u8 *data, u16 size)
 {
 	static const u8 rumble_mute[8] = { 0x00, 0x01, 0x40, 0x40, 0x00, 0x01, 0x40, 0x40 };
 	static const u8 rumble_init[8] = { 0xc2, 0xc8, 0x03, 0x72, 0xc2, 0xc8, 0x03, 0x72 };
@@ -693,7 +690,7 @@ static void _jc_send_hid_cmd(joycon_ctxt_t *jc, u8 subcmd, const u8 *data, u16 s
 	}
 }
 
-static void _jc_parse_input(joycon_ctxt_t *jc, const jc_hid_in_rpt_t *hid_pkt)
+static void _jc_parse_input(jc_dev_t *jc, const jc_hid_in_rpt_t *hid_pkt)
 {
 	u32 btn_tmp;
 	btn_tmp = hid_pkt->btn_right | hid_pkt->btn_left << 12;
@@ -720,7 +717,7 @@ static void _jc_parse_input(joycon_ctxt_t *jc, const jc_hid_in_rpt_t *hid_pkt)
 	}
 }
 
-static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
+static void _jc_parse_wired_hid(jc_dev_t *jc, const u8 *packet, int size)
 {
 	const jc_hid_in_rpt_t *hid_pkt = (jc_hid_in_rpt_t *)packet;
 
@@ -777,7 +774,7 @@ static void _jc_parse_wired_hid(joycon_ctxt_t *jc, const u8 *packet, int size)
 	}
 }
 
-static void _jc_parse_wired_init(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int size)
+static void _jc_parse_wired_init(jc_dev_t *jc, const jc_wired_hdr_t *pkt, int size)
 {
 	// Discard empty packets.
 	if (size <= 0)
@@ -810,7 +807,7 @@ static void _jc_parse_wired_init(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, i
 	}
 }
 
-static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int size)
+static void _jc_uart_pkt_parse(jc_dev_t *jc, const jc_wired_hdr_t *pkt, int size)
 {
 	switch (pkt->cmd)
 	{
@@ -834,7 +831,7 @@ static void _jc_uart_pkt_parse(joycon_ctxt_t *jc, const jc_wired_hdr_t *pkt, int
 	jc->last_received_time = get_tmr_ms();
 }
 
-static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8 *payload, int size)
+static void _jc_sio_parse_payload(jc_dev_t *jc, u8 cmd, const u8 *payload, int size)
 {
 	switch (cmd)
 	{
@@ -864,7 +861,7 @@ static void _jc_sio_parse_payload(joycon_ctxt_t *jc, u8 cmd, const u8 *payload, 
 	}
 }
 
-static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt, int size)
+static void _jc_sio_uart_pkt_parse(jc_dev_t *jc, const jc_sio_in_rpt_t *pkt, int size)
 {
 	if (pkt->crc_hdr != _jc_crc((u8 *)pkt, sizeof(jc_sio_in_rpt_t) - 1))
 		return;
@@ -898,7 +895,7 @@ static void _jc_sio_uart_pkt_parse(joycon_ctxt_t *jc, const jc_sio_in_rpt_t *pkt
 	jc->last_received_time = get_tmr_ms();
 }
 
-static void _jc_rcv_pkt(joycon_ctxt_t *jc)
+static void _jc_rcv_pkt(jc_dev_t *jc)
 {
 	if (!jc->detected)
 		return;
@@ -926,7 +923,7 @@ static void _jc_rcv_pkt(joycon_ctxt_t *jc)
 	}
 }
 
-static bool _jc_handle_charging(joycon_ctxt_t *jc)
+static bool _jc_handle_charging(jc_dev_t *jc)
 {
 	if (jc->last_chrger_chk_time > get_tmr_ms())
 		return false;
@@ -1013,7 +1010,7 @@ set_mode:
 	return true;
 }
 
-static bool _jc_send_enable_rumble(joycon_ctxt_t *jc)
+static bool _jc_send_enable_rumble(jc_dev_t *jc)
 {
 	// Send init rumble or request nx pad status report.
 	if ((jc_r.connected && !jc_r.rumble_sent) ||
@@ -1034,7 +1031,7 @@ static bool _jc_send_enable_rumble(joycon_ctxt_t *jc)
 	return 0;
 }
 
-static void _jc_req_status(joycon_ctxt_t *jc)
+static void _jc_req_status(jc_dev_t *jc)
 {
 	if (!jc->detected)
 		return;
@@ -1092,6 +1089,19 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	if (!jc_init_done || jc_gamepad.sio_mode)
 		return NULL;
 
+	// Detect and init if needed.
+	for (u32 i = 0; i < 6; i++)
+	{
+		joycon_poll();
+		msleep(15);
+	}
+
+	while ((jc_l.last_status_req_time + 15) > get_tmr_ms())
+	{
+		_jc_rcv_pkt(&jc_r);
+		_jc_rcv_pkt(&jc_l);
+	}
+
 	bt_conn = &jc_gamepad.bt_conn_l;
 	memset(bt_conn->host_mac, 0, 6);
 	memset(bt_conn->ltk,      0, 16);
@@ -1100,14 +1110,7 @@ jc_gamepad_rpt_t *jc_get_bt_pairing_info(bool *is_l_hos, bool *is_r_hos)
 	memset(bt_conn->host_mac, 0, 6);
 	memset(bt_conn->ltk,      0, 16);
 
-	_jc_conn_check();
-
-	while (jc_l.last_status_req_time > get_tmr_ms())
-	{
-		_jc_rcv_pkt(&jc_r);
-		_jc_rcv_pkt(&jc_l);
-	}
-
+	// Setup initial SPI address.
 	jc_hid_out_spi_read_t subcmd_data_l;
 	subcmd_data_l.addr = 0x2000;
 	subcmd_data_l.size = 0x1A;
@@ -1223,7 +1226,7 @@ retry:
 	return &jc_gamepad;
 }
 
-static void _jc_init_conn(joycon_ctxt_t *jc)
+static void _jc_conn_init(jc_dev_t *jc)
 {
 	if (!jc->detected)
 		return;
@@ -1480,8 +1483,8 @@ jc_gamepad_rpt_t *joycon_poll()
 
 	_jc_conn_check();
 
-	_jc_init_conn(&jc_r);
-	_jc_init_conn(&jc_l);
+	_jc_conn_init(&jc_r);
+	_jc_conn_init(&jc_l);
 
 	_jc_req_status(&jc_r);
 	_jc_req_status(&jc_l);
