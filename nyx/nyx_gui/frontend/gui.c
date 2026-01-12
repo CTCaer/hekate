@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -935,7 +935,7 @@ static void _launch_hos(u8 autoboot, u8 autoboot_list)
 
 	sd_end();
 
-	hw_deinit(false, 0);
+	hw_deinit(false);
 
 	(*main_ptr)();
 }
@@ -970,7 +970,7 @@ void reload_nyx(lv_obj_t *obj, bool force)
 
 	sd_end();
 
-	hw_deinit(false, 0);
+	hw_deinit(false);
 
 	(*main_ptr)();
 }

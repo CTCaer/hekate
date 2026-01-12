@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -97,29 +97,17 @@ static void _check_power_off_from_hos()
 #define PATCHED_RELOC_ENTRY 0x40010000
 #define EXT_PAYLOAD_ADDR    0xC0000000
 #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
-#define COREBOOT_END_ADDR   0xD0000000
-#define COREBOOT_VER_OFF    0x41
-#define CBFS_DRAM_EN_ADDR   0x4003E000
-#define  CBFS_DRAM_MAGIC    0x4452414D // "DRAM"
 
-static void *coreboot_addr;
-
-static void _reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
+static void _reloc_append(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
 	memcpy((u8 *)payload_src, (u8 *)IPL_LOAD_ADDR, PATCHED_RELOC_SZ);
 
-	reloc_meta_t *relocator = (reloc_meta_t *)(payload_src + RELOC_META_OFF);
+	volatile reloc_meta_t *relocator = (reloc_meta_t *)(payload_src + RELOC_META_OFF);
 
 	relocator->start = payload_dst - ALIGN(PATCHED_RELOC_SZ, 0x10);
 	relocator->stack = PATCHED_RELOC_STACK;
 	relocator->end   = payload_dst + payload_size;
 	relocator->ep    = payload_dst;
-
-	if (payload_size == 0x7000)
-	{
-		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), coreboot_addr, 0x7000); // Bootblock.
-		*(vu32 *)CBFS_DRAM_EN_ADDR = CBFS_DRAM_MAGIC;
-	}
 }
 
 bool is_ipl_updated(void *buf, u32 size, const char *path, bool force)
@@ -183,66 +171,42 @@ static void _launch_payload(char *path, bool update, bool clear_screen)
 	if (update && is_ipl_updated(buf, size, path, false))
 		goto out;
 
-
-	// Set payload address.
-	void *payload;
-	if (size < 0x30000)
-		payload = (void *)RCM_PAYLOAD_ADDR;
-	else
+	// Check if it safely fits IRAM.
+	if (size > 0x30000)
 	{
-		coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
-		payload = coreboot_addr;
-		if (h_cfg.t210b01)
-		{
-			gfx_con.mute = false;
-			EPRINTF("Coreboot not allowed on Mariko!");
+		gfx_con.mute = false;
+		EPRINTF("Payload is too big!");
 
-			goto out;
-		}
+		goto out;
 	}
 
 	sd_end();
 
 	// Copy the payload to our chosen address.
-	memcpy(payload, buf, size);
+	memcpy((void *)RCM_PAYLOAD_ADDR, buf, size);
 
-	if (size < 0x30000)
-	{
-		if (update)
-			memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
-		else
-			_reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
-
-		hw_deinit(false, byte_swap_32(*(u32 *)(payload + size - sizeof(u32))));
-	}
-	else
-	{
-		_reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
-
-		// Get coreboot seamless display magic.
-		u32 magic = 0;
-		char *magic_ptr = payload + COREBOOT_VER_OFF;
-		memcpy(&magic, magic_ptr + strlen(magic_ptr) - 4, 4);
-		hw_deinit(true, magic);
-	}
-
-	void (*update_ptr)()      = (void *)RCM_PAYLOAD_ADDR;
-	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
-
-	// Launch our payload.
+	// Append relocator or set config.
+	void (*payload_ptr)();
 	if (!update)
 	{
-		// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-		sdmmc_storage_init_wait_sd();
+		_reloc_append(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
-		(*ext_payload_ptr)();
+		payload_ptr = (void *)EXT_PAYLOAD_ADDR;
 	}
 	else
 	{
+		memcpy((u8 *)(RCM_PAYLOAD_ADDR + PATCHED_RELOC_SZ), &b_cfg, sizeof(boot_cfg_t)); // Transfer boot cfg.
+
 		// Set updated flag to skip check on launch.
 		EMC(EMC_SCRATCH0) |= EMC_HEKA_UPD;
-		(*update_ptr)();
+
+		payload_ptr = (void *)RCM_PAYLOAD_ADDR;
 	}
+
+	hw_deinit(false);
+
+	// Launch our payload.
+	(*payload_ptr)();
 
 out:
 	free(buf);
@@ -1354,7 +1318,7 @@ static void _r2c_get_config_t210b01()
 
 static void _ipl_reload()
 {
-	hw_deinit(false, 0);
+	hw_deinit(false);
 
 	// Reload hekate.
 	void (*ipl_ptr)() = (void *)IPL_LOAD_ADDR;

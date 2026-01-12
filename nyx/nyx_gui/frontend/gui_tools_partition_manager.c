@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 CTCaer
+ * Copyright (c) 2019-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -1174,7 +1174,7 @@ static lv_res_t _action_reboot_recovery(lv_obj_t * btns, const char * txt)
 
 		// Deinit hardware.
 		sd_end();
-		hw_deinit(false, 0);
+		hw_deinit(false);
 
 		// Chainload to hekate main.
 		(*main_ptr)();

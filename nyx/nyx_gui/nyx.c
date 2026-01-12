@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  *
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -96,13 +96,8 @@ create_dir:
 #define PATCHED_RELOC_ENTRY 0x40010000
 #define EXT_PAYLOAD_ADDR    0xC0000000
 #define RCM_PAYLOAD_ADDR    (EXT_PAYLOAD_ADDR + ALIGN(PATCHED_RELOC_SZ, 0x10))
-#define COREBOOT_END_ADDR   0xD0000000
-#define CBFS_DRAM_EN_ADDR   0x4003E000
-#define  CBFS_DRAM_MAGIC    0x4452414D // "DRAM"
 
-static void *coreboot_addr;
-
-void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
+static void _reloc_append(u32 payload_dst, u32 payload_src, u32 payload_size)
 {
 	memcpy((u8 *)payload_src, (u8 *)nyx_str->hekate, PATCHED_RELOC_SZ);
 
@@ -112,12 +107,6 @@ void reloc_patcher(u32 payload_dst, u32 payload_src, u32 payload_size)
 	relocator->stack = PATCHED_RELOC_STACK;
 	relocator->end   = payload_dst + payload_size;
 	relocator->ep    = payload_dst;
-
-	if (payload_size == 0x7000)
-	{
-		memcpy((u8 *)(payload_src + ALIGN(PATCHED_RELOC_SZ, 0x10)), coreboot_addr, 0x7000); // Bootblock.
-		*(vu32 *)CBFS_DRAM_EN_ADDR = CBFS_DRAM_MAGIC;
-	}
 }
 
 lv_res_t launch_payload(lv_obj_t *list)
@@ -135,63 +124,37 @@ lv_res_t launch_payload(lv_obj_t *list)
 	if (!sd_mount())
 		goto out;
 
-	FIL fp;
-	if (f_open(&fp, path, FA_READ))
+	// Read payload.
+	u32 size = 0;
+	void *buf = sd_file_read(path, &size);
+	if (!buf)
 	{
 		EPRINTFARGS("Payload file is missing!\n(%s)", path);
 
 		goto out;
 	}
 
-	// Read and copy the payload to our chosen address
-	void *buf;
-	u32 size = f_size(&fp);
-
-	if (size < 0x30000)
-		buf = (void *)RCM_PAYLOAD_ADDR;
-	else
+	// Check if it safely fits IRAM.
+	if (size > 0x30000)
 	{
-		coreboot_addr = (void *)(COREBOOT_END_ADDR - size);
-		buf = coreboot_addr;
-		if (h_cfg.t210b01)
-		{
-			f_close(&fp);
-
-			EPRINTF("Coreboot not allowed on Mariko!");
-
-			goto out;
-		}
-	}
-
-	if (f_read(&fp, buf, size, NULL))
-	{
-		f_close(&fp);
+		EPRINTF("Payload is too big!");
 
 		goto out;
 	}
 
-	f_close(&fp);
-
 	sd_end();
 
-	if (size < 0x30000)
-	{
-		reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
-		hw_deinit(false, byte_swap_32(*(u32 *)(buf + size - sizeof(u32))));
-	}
-	else
-	{
-		reloc_patcher(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, 0x7000);
-		hw_deinit(true, 0);
-	}
+	// Copy the payload to our chosen address.
+	memcpy((void *)RCM_PAYLOAD_ADDR, buf, size);
 
-	void (*ext_payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+	// Append relocator.
+	_reloc_append(PATCHED_RELOC_ENTRY, EXT_PAYLOAD_ADDR, ALIGN(size, 0x10));
 
-	// Some cards (Sandisk U1), do not like a fast power cycle. Wait min 100ms.
-	sdmmc_storage_init_wait_sd();
+	hw_deinit(false);
 
 	// Launch our payload.
-	(*ext_payload_ptr)();
+	void (*payload_ptr)() = (void *)EXT_PAYLOAD_ADDR;
+	(*payload_ptr)();
 
 out:
 	sd_unmount();
