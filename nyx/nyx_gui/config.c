@@ -55,6 +55,7 @@ void set_nyx_default_configuration()
 	n_cfg.timedst        = 1;
 	n_cfg.home_screen    = 0;
 	n_cfg.verification   = 1;
+	n_cfg.password		 = 0;
 	n_cfg.ums_emmc_rw    = 0;
 	n_cfg.jc_disable     = 0;
 	n_cfg.jc_force_right = 0;
@@ -227,6 +228,10 @@ int create_nyx_config_entry(bool force_unmount)
 
 	f_puts("\nverification=", &fp);
 	itoa(n_cfg.verification, lbuf, 10);
+	f_puts(lbuf, &fp);
+
+	f_puts("\npassword=", &fp);
+	itoa(n_cfg.password, lbuf, 10);
 	f_puts(lbuf, &fp);
 
 	f_puts("\numsemmcrw=", &fp);
