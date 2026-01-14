@@ -26,13 +26,15 @@ LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc
 
 all: $(TARGET).bso
 $(BUILDDIR)/%.o: ./%.c $(TRACK_CFLAGS)
-	@mkdir -p "$(BUILDDIR)"
 	@$(CC) $(CFLAGS) $(BDKINC) -MMD -MP -c $< -o $@
 
 $(TARGET).bso: $(OBJS) $(TRACK_LDFLAGS)
 	@$(CC) $(LDFLAGS) -e minerva_entry $(OBJS) -o $(OUTPUTDIR)/$(TARGET).bso
 	@$(STRIP) -g $(OUTPUTDIR)/$(TARGET).bso
 	@echo "Built module: "$(TARGET)".bso"
+
+$(BUILDDIR):
+	@mkdir -p "$(BUILDDIR)"
 
 # Non objects change detectors.
 $(TRACK_CFLAGS): $(BUILDDIR)

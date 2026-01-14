@@ -33,7 +33,6 @@ LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc
 
 all: $(TARGET).bso
 $(BUILDDIR)/%.o: ./%.c $(TRACK_CFLAGS)
-	@mkdir -p "$(BUILDDIR)"
 	@$(CC) $(CFLAGS) $(BDKINC) -MMD -MP -c $< -o $@
 
 $(TARGET).bso: $(OBJS) $(TRACK_LDFLAGS)
@@ -44,6 +43,9 @@ $(TARGET).bso: $(OBJS) $(TRACK_LDFLAGS)
 clean:
 	@rm -rf $(BUILDDIR)/$(TARGET)
 	@rm -rf $(OUTPUTDIR)/$(TARGET).bso
+
+$(BUILDDIR):
+	@mkdir -p "$(BUILDDIR)"
 
 # Non objects change detectors.
 $(TRACK_CFLAGS): $(BUILDDIR)

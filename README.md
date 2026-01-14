@@ -193,9 +193,9 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 
 ```
 hekate  (c) 2018,      naehrwert, st4rk.
-        (c) 2018-2025, CTCaer.
+        (c) 2018-2026, CTCaer.
 
-Nyx GUI (c) 2019-2025, CTCaer.
+Nyx GUI (c) 2019-2026, CTCaer.
 
 Thanks to: derrek, nedwill, plutoo, shuffle2, smea, thexyz, yellows8.
 Greetings to: fincs, hexkyz, SciresM, Shiny Quagsire, WinterMute.
