@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -353,6 +353,18 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 mke
 		// Check if not overridden.
 		if (!ctxt->warmboot)
 		{
+			char path[32];
+			strcpy(path, "warmboot_mariko/wb_00.bin");
+			itoa(fuses_fw, &path[19 + (fuses_fw < 0x10 ? 1 : 0)], 16);
+			path[21] = '.';
+
+			//!OBSOLETE: Check if warmboot fw does not exist and save it.
+			if (ctxt->warmboot_size && warmboot_base && f_stat(path, NULL))
+			{
+				f_mkdir("warmboot_mariko");
+				sd_save_to_file((void *)warmboot_base, ctxt->warmboot_size, path);
+			}
+
 			// Load sc7exit-fw from storage if low.
 			if (burnt_fuses > fuses_fw)
 			{
