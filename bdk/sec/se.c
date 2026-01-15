@@ -91,28 +91,33 @@ static int _se_op_wait()
 		return 0;
 	}
 
-	// T210B01: IRAM/TZRAM/DRAM AHB coherency WAR.
-	if (!tegra_t210 && ll_dst_ptr)
+	// WAR: Coherency flushing.
+	if (ll_dst_ptr)
 	{
-		u32 timeout = get_tmr_us() + 1000000;
 		// Ensure data is out from SE.
-		while (SE(SE_STATUS_REG) & SE_STATUS_MEM_IF_BUSY)
+		if (tegra_t210)
+			usleep(15); // Worst case scenario.
+		else
 		{
-			if (get_tmr_us() > timeout)
-				return 0;
-			usleep(1);
+			// T210B01 has a status bit for that.
+			u32 retries = 500000;
+			while (SE(SE_STATUS_REG) & SE_STATUS_MEM_IF_BUSY)
+			{
+				if (!retries)
+					return 0;
+				usleep(1);
+				retries--;
+			}
 		}
 
 		// Ensure data is out from AHB.
-		if (ll_dst_ptr->addr >= DRAM_START)
+		u32 retries = 500000;
+		while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
 		{
-			timeout = get_tmr_us() + 200000;
-			while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
-			{
-				if (get_tmr_us() > timeout)
-					return 0;
-				usleep(1);
-			}
+			if (!retries)
+				return 0;
+			usleep(1);
+			retries--;
 		}
 	}
 
