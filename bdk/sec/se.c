@@ -512,10 +512,14 @@ static int _se_sha_hash_256(void *hash, u64 total_size, const void *src, u32 src
 	// Set total size: BITS(total_size), up to 2 EB.
 	SE(SE_SHA_MSG_LENGTH_0_REG) = (u32)(total_size << 3);
 	SE(SE_SHA_MSG_LENGTH_1_REG) = (u32)(total_size >> 29);
+	SE(SE_SHA_MSG_LENGTH_2_REG) = 0;
+	SE(SE_SHA_MSG_LENGTH_3_REG) = 0;
 
 	// Set leftover size: BITS(src_size).
 	SE(SE_SHA_MSG_LEFT_0_REG) = (u32)(msg_left << 3);
 	SE(SE_SHA_MSG_LEFT_1_REG) = (u32)(msg_left >> 29);
+	SE(SE_SHA_MSG_LEFT_2_REG) = 0;
+	SE(SE_SHA_MSG_LEFT_3_REG) = 0;
 
 	// Set config based on init or partial continuation.
 	if (total_size == src_size || !total_size)
