@@ -181,7 +181,7 @@ static int _se_execute_aes_oneshot(void *dst, const void *src, u32 size)
 
 	u32 size_aligned = ALIGN_DOWN(size, SE_AES_BLOCK_SIZE);
 	u32 size_residue = size % SE_AES_BLOCK_SIZE;
-	int res = 0;
+	int res = 1;
 
 	// Handle initial aligned message.
 	if (size_aligned)
