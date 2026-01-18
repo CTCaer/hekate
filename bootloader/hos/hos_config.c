@@ -277,6 +277,38 @@ static int _config_ucid(launch_ctxt_t *ctxt, const char *value)
 	return 1;
 }
 
+static int _config_contents(launch_ctxt_t *ctxt, const char *value)
+{
+    bool contents_exists = !f_stat("atmosphere/contents", NULL);
+    char *path_flag = sd_file_read("atmosphere/path.flag", NULL);
+    int  res = 0;
+
+    if (!f_stat(value, NULL))
+    {
+        // Rename back folder if needed.
+        if (contents_exists)
+        {
+            if (path_flag && f_stat(path_flag, NULL) != FR_OK)
+                f_rename("atmosphere/contents", path_flag);
+            else
+                f_rename("atmosphere/contents", "atmosphere/contents.bak");
+        }
+        // Rename new folder into contents and save original into flag.
+        f_rename(value, "atmosphere/contents");
+        sd_save_to_file(value, strlen(value) + 1, "atmosphere/path.flag");
+
+        res = 1;
+    }
+    else if (contents_exists && path_flag && !strcmp(path_flag, value)) // Folder already renamed.
+		res = 1;
+    //else
+    //    res = 0; ///// Contents is missing or path flag is missing or original doesn't exist.
+
+    free(path_flag); ///// You can avoid `if (path_flag)` since free checks if >= DRAM
+
+    return res;
+}
+
 typedef struct _cfg_handler_t
 {
 	const char *key;
@@ -306,6 +338,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "cal0blank",        _config_exo_cal0_blanking },
 	{ "cal0writesys",     _config_exo_cal0_writes_enable },
 	{ "ucid",             _config_ucid },
+	{ "contents",         _config_contents },
 	{ NULL, NULL },
 };
 
