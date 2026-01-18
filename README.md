@@ -1,3 +1,13 @@
+# What this repo changes:
+
+Adds a new config option for your `hekate_ipl.ini` named `contents`
+- When defined, renames your input folder to `atmosphere/contents`, backing up the old one to the path specified in `atmosphere/path.flag`.
+- Doesn't do anything if it's already renamed
+- If no `path.flag` exists, creates it and renames `atmosphere/contents` to `atmosphere/contents/bak`
+Helpful if your sysMMC and emuMMC are not matched firmware version wise (themes), or if you have mods where you need a certain version of the game, or are unsafe for normal switch use.
+
+Now without further ado...
+
 # hekate - Nyx
 
 ![Image of Hekate](https://user-images.githubusercontent.com/3665130/60391760-bc1e8c00-9afe-11e9-8b7a-b065873081b2.png)
