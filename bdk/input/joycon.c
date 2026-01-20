@@ -107,9 +107,11 @@ enum
 {
 	JC_STATE_START         = 0,
 	JC_STATE_HANDSHAKED    = 1,
-	JC_STATE_BRATE_CHANGED = 2,
-	JC_STATE_BRATE_OK      = 3,
-	JC_STATE_INIT_DONE     = 4
+	JC_STATE_INFO_PARSED   = 2,
+	JC_STATE_BRATE_CHANGED = 3,
+	JC_STATE_HID_NO_CONN   = 4,
+	JC_STATE_HID_CONN      = 5,
+	JC_STATE_INIT_DONE     = 6
 };
 
 enum
@@ -650,14 +652,12 @@ static void _jc_send_hid_cmd(jc_dev_t *jc, u8 subcmd, const u8 *data, u16 size)
 		if (send_l_rumble)
 			_jc_send_hid_output_rpt(&jc_l, hid_pkt, 0x10, false);
 
-		if (send_r_rumble || send_l_rumble)
-		{
-			msleep(2);
-			if (send_r_rumble)
-				_jc_rcv_pkt(&jc_r);
-			if (send_l_rumble)
-				_jc_rcv_pkt(&jc_l);
-		}
+		msleep(15);
+
+		if (send_r_rumble)
+			_jc_rcv_pkt(&jc_r);
+		if (send_l_rumble)
+			_jc_rcv_pkt(&jc_l);
 
 		// Send rumble.
 		hid_pkt->cmd = JC_HID_RUMBLE_RPT;
@@ -785,23 +785,35 @@ static void _jc_parse_wired_init(jc_dev_t *jc, const jc_wired_hdr_t *pkt, int si
 	switch (pkt->subcmd)
 	{
 	case JC_WIRED_CMD_GET_INFO:
-		for (int i = 6; i > 0; i--)
+		if (!pkt->status)
+		{
+			for (int i = 6; i > 0; i--)
 			jc->mac[6 - i] = payload[i];
-		jc->type = payload[0];
-		jc->connected = true;
+			jc->type = payload[0];
+			jc->state = JC_STATE_INFO_PARSED;
+		}
 		break;
 
 	case JC_WIRED_CMD_SET_BRATE:
-		jc->state = JC_STATE_BRATE_CHANGED;
+		if (!pkt->status)
+			jc->state = JC_STATE_BRATE_CHANGED;
 		break;
 
 	case JC_WIRED_CMD_HID_DISC:
-		jc->state = JC_STATE_BRATE_OK;
+		if (pkt->status == 0xF)
+			jc->state = JC_STATE_HID_NO_CONN;
 		break;
 
 	case JC_WIRED_CMD_HID_CONN:
+		if (!pkt->status)
+			jc->state = JC_STATE_HID_CONN;
+		break;
+
 	case JC_WIRED_CMD_SET_HIDRATE:
-		// done.
+		jc->state = JC_STATE_INIT_DONE;
+		jc->connected = true;
+		break;
+
 	default:
 		break;
 	}
@@ -870,12 +882,13 @@ static void _jc_sio_uart_pkt_parse(jc_dev_t *jc, const jc_sio_in_rpt_t *pkt, int
 	switch (cmd)
 	{
 	case JC_SIO_CMD_INIT:
-		jc->connected = pkt->status == 0;
+		if (!pkt->status)
+			jc->state = JC_STATE_HANDSHAKED;
 		break;
 
 	case JC_SIO_CMD_VER_RPT:
-		if (jc->connected)
-			jc->connected = pkt->status == 0;
+		if (!pkt->status)
+			jc->state = JC_STATE_HID_CONN;
 		break;
 
 	case JC_SIO_CMD_IAP_VER:
@@ -1012,9 +1025,16 @@ set_mode:
 
 static bool _jc_send_enable_rumble(jc_dev_t *jc)
 {
+	bool send_r_rumble = jc_r.connected && !jc_r.rumble_sent;
+	bool send_l_rumble = jc_l.connected && !jc_l.rumble_sent;
+
+	// Do not sent report yet if second Joy-Con is expected to be initialized.
+	if ((send_r_rumble && !jc_l.rumble_sent && jc_l.state == JC_STATE_HID_CONN) ||
+		(send_l_rumble && !jc_r.rumble_sent && jc_r.state == JC_STATE_HID_CONN))
+		return 1;
+
 	// Send init rumble or request nx pad status report.
-	if ((jc_r.connected && !jc_r.rumble_sent) ||
-		(jc_l.connected && !jc_l.rumble_sent))
+	if (send_r_rumble || send_l_rumble)
 	{
 		_jc_send_hid_cmd(jc, JC_HID_SUBCMD_SND_RUMBLE, NULL, 0);
 
@@ -1033,13 +1053,13 @@ static bool _jc_send_enable_rumble(jc_dev_t *jc)
 
 static void _jc_req_status(jc_dev_t *jc)
 {
-	if (!jc->detected)
+	if (!jc->connected)
+		return;
+
+	if (jc->last_status_req_time > get_tmr_ms())
 		return;
 
 	bool is_nxpad = !(jc->type & JC_ID_HORI) && !jc->sio_mode;
-
-	if (jc->last_status_req_time > get_tmr_ms() || !jc->connected)
-		return;
 
 	// Init/maintenance for Joy-Con.
 	if (is_nxpad)
@@ -1258,24 +1278,26 @@ static void _jc_conn_init(jc_dev_t *jc)
 		// Initialize uart to 1 megabaud and manual RTS.
 		uart_init(jc->uart, 1000000, UART_AO_TX_MN_RX);
 
+		jc->state = JC_STATE_START;
+
 		if (!jc->sio_mode)
 		{
 			jc_gamepad.buttons = 0;
-			jc->state = JC_STATE_START;
 
 			// Set TX and RTS inversion for Joycon.
 			uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
 
-			// Wake up the controller.
-			_joycon_send_raw(jc->uart, _jc_init_wake, sizeof(_jc_init_wake));
-			_jc_rcv_pkt(jc); // Clear RX FIFO.
-
-			// Do a handshake.
+			// Initialize.
 			u32 retries = 10;
 			while (retries && jc->state != JC_STATE_HANDSHAKED)
 			{
+				// Wake up the controller.
+				_joycon_send_raw(jc->uart, _jc_init_wake, sizeof(_jc_init_wake));
+				_jc_rcv_pkt(jc); // Clear RX FIFO.
+
+				// Do a handshake.
 				_joycon_send_raw(jc->uart, _jc_init_handshake, sizeof(_jc_init_handshake));
-				msleep(5);
+				msleep(4);
 				_jc_rcv_pkt(jc);
 				retries--;
 			}
@@ -1287,6 +1309,9 @@ static void _jc_conn_init(jc_dev_t *jc)
 			_joycon_send_raw(jc->uart, _jc_init_get_info, sizeof(_jc_init_get_info));
 			msleep(2);
 			_jc_rcv_pkt(jc);
+
+			if (jc->state != JC_STATE_INFO_PARSED)
+				goto out;
 
 			if (!(jc->type & JC_ID_HORI))
 			{
@@ -1301,9 +1326,9 @@ static void _jc_conn_init(jc_dev_t *jc)
 					uart_init(jc->uart, 3000000, UART_AO_TX_MN_RX);
 					uart_invert(jc->uart, true, UART_INVERT_TXD | UART_INVERT_RTS);
 
-					// Disconnect HID.
+					// Make sure HID is disconnected and check connection. Reply expected after 30ms.
 					retries = 10;
-					while (retries && jc->state != JC_STATE_BRATE_OK)
+					while (retries && jc->state != JC_STATE_HID_NO_CONN)
 					{
 						_joycon_send_raw(jc->uart, _jc_init_hid_disconnect, sizeof(_jc_init_hid_disconnect));
 						msleep(5);
@@ -1311,7 +1336,8 @@ static void _jc_conn_init(jc_dev_t *jc)
 						retries--;
 					}
 
-					if (jc->state != JC_STATE_BRATE_OK)
+					// Was connected before or no response. Do a reinit.
+					if (jc->state != JC_STATE_HID_NO_CONN)
 						goto out;
 				}
 
@@ -1320,10 +1346,15 @@ static void _jc_conn_init(jc_dev_t *jc)
 				msleep(2);
 				_jc_rcv_pkt(jc);
 
+				if (jc->state != JC_STATE_HID_CONN)
+					goto out;
+
 				// Set hid packet rate.
 				_joycon_send_raw(jc->uart, _jc_init_set_hid_rate, sizeof(_jc_init_set_hid_rate));
 				msleep(2);
 				_jc_rcv_pkt(jc);
+
+				goto out; // Wait for set hid rate reply.
 			}
 			else // Hori. Unset RTS inversion.
 				uart_invert(jc->uart, false, UART_INVERT_RTS);
@@ -1342,7 +1373,7 @@ static void _jc_conn_init(jc_dev_t *jc)
 
 			// Initialize the controller.
 			u32 retries = 10;
-			while (!jc->connected && retries)
+			while (retries && jc->state != JC_STATE_HANDSHAKED)
 			{
 				_joycon_send_raw(jc->uart, _sio_init, sizeof(_sio_init));
 				msleep(5);
@@ -1350,17 +1381,26 @@ static void _jc_conn_init(jc_dev_t *jc)
 				retries--;
 			}
 
-			if (!jc->connected)
+			if (jc->state != JC_STATE_HANDSHAKED)
 				goto out;
 
 			// Set output report version.
-			_joycon_send_raw(jc->uart, _sio_set_rpt_version, sizeof(_sio_set_rpt_version));
-			msleep(5);
-			_jc_rcv_pkt(jc);
+			retries = 10;
+			while (retries && jc->state != JC_STATE_HID_CONN)
+			{
+				_joycon_send_raw(jc->uart, _sio_set_rpt_version, sizeof(_sio_set_rpt_version));
+				msleep(5);
+				_jc_rcv_pkt(jc);
+				retries--;
+			}
+
+			if (jc->state != JC_STATE_HID_CONN)
+				goto out;
 		}
 
 		// Initialization done.
 		jc->state = JC_STATE_INIT_DONE;
+		jc->connected = true;
 
 out:
 		jc->last_received_time = get_tmr_ms();
