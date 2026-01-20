@@ -2,7 +2,7 @@
  * Copyright (c) 2018 naehrwert
  * Copyright (c) 2018 st4rk
  * Copyright (c) 2018 Ced2911
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -1008,14 +1008,14 @@ void hos_launch(ini_sec_t *cfg)
 	{
 		EHPRINTFARGS("Failed to apply '%s'!", failed_patch);
 
-		bool emmc_patch_failed = !strcmp(failed_patch, "emummc");
-		if (!emmc_patch_failed)
+		bool emu_patch_failed = !strcmp(failed_patch, "emummc");
+		if (!emu_patch_failed)
 		{
 			gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
 			display_backlight_brightness(h_cfg.backlight, 1000);
 		}
 
-		if (emmc_patch_failed || !(btn_wait() & BTN_POWER))
+		if (emu_patch_failed || !(btn_wait() & BTN_POWER))
 			goto error; // MUST stop here, because if user requests 'nogc' but it's not applied, their GC controller gets updated!
 	}
 

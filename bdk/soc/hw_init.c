@@ -470,7 +470,12 @@ void hw_init()
 
 void hw_deinit(bool keep_display)
 {
-	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;
+	// Seamless display or display power off.
+	if (!keep_display)
+	{
+		display_end();
+		clock_disable_host1x();
+	}
 
 	// Scale down BPMP clock.
 	bpmp_clk_rate_set(BPMP_CLK_NORMAL);
@@ -495,16 +500,9 @@ void hw_deinit(bool keep_display)
 	hw_config_arbiter(true);
 
 	// Re-enable clocks to Audio Processing Engine as a workaround to rerunning mbist war.
-	if (tegra_t210)
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
 	{
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_V_SET) = BIT(CLK_V_AHUB);
 		CLOCK(CLK_RST_CONTROLLER_CLK_ENB_Y_SET) = BIT(CLK_Y_APE);
-	}
-
-	// Seamless display or display power off.
-	if (!keep_display)
-	{
-		display_end();
-		clock_disable_host1x();
 	}
 }

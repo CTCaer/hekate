@@ -196,10 +196,10 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 		// Copy file to destination disk.
 		if (!(fno.fattrib & AM_DIR))
 		{
-			u32 file_size = fno.fsize > RAMDISK_CLUSTER_SZ ? fno.fsize : RAMDISK_CLUSTER_SZ; // Ramdisk cluster size.
+			u64 file_size = fno.fsize > RAMDISK_CLUSTER_SZ ? fno.fsize : RAMDISK_CLUSTER_SZ;
 
-			// Check for overflow.
-			if ((file_size + *total_size) < *total_size)
+			// Check for FAT32 or total overflow.
+			if ((file_size + *total_size) > 0xFFFFFFFFu)
 			{
 				// Set size to > 1GB, skip next folders and return.
 				*total_size = SZ_2G;
@@ -207,9 +207,10 @@ static int _stat_and_copy_files(const char *src, const char *dst, char *path, u3
 				break;
 			}
 
-			*total_size += file_size;
+			*total_size  += file_size;
 			*total_files += 1;
 
+			// Create a copy to destination.
 			if (dst)
 			{
 				FIL fp_src;

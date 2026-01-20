@@ -1426,7 +1426,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate v6.5.0", 0, 0 };
+menu_t menu_top = { ment_top, "hekate v6.5.1", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
@@ -1446,7 +1446,7 @@ void ipl_main()
 	heap_init((void *)IPL_HEAP_START);
 
 #ifdef DEBUG_UART_PORT
-	uart_send(DEBUG_UART_PORT, (u8 *)"hekate: Hello!\r\n", 16);
+	uart_send(DEBUG_UART_PORT, (u8 *)"hekate: Hello!\n", 15);
 	uart_wait_xfer(DEBUG_UART_PORT, UART_TX_IDLE);
 #endif
 
@@ -1481,7 +1481,7 @@ void ipl_main()
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
-	if (minerva_init((minerva_str_t *)&nyx_str->minerva)) //!TODO: Add Tegra210B01 support to minerva.
+	if (minerva_init((minerva_str_t *)&nyx_str->minerva))
 		h_cfg.errors |= ERR_LIBSYS_MTC;
 
 	// Disable watchdog protection.

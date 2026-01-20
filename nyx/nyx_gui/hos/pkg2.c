@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -209,7 +209,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(pkg2_keyslot, pdata, pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
+		se_aes_crypt_ctr(pkg2_keyslot, pdata, pdata, hdr->sec_size[i], hdr->sec_ctr[i]);
 
 		pdata += hdr->sec_size[i];
 	}

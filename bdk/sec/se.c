@@ -91,28 +91,33 @@ static int _se_op_wait()
 		return 0;
 	}
 
-	// T210B01: IRAM/TZRAM/DRAM AHB coherency WAR.
-	if (!tegra_t210 && ll_dst_ptr)
+	// WAR: Coherency flushing.
+	if (ll_dst_ptr)
 	{
-		u32 timeout = get_tmr_us() + 1000000;
 		// Ensure data is out from SE.
-		while (SE(SE_STATUS_REG) & SE_STATUS_MEM_IF_BUSY)
+		if (tegra_t210)
+			usleep(15); // Worst case scenario.
+		else
 		{
-			if (get_tmr_us() > timeout)
-				return 0;
-			usleep(1);
+			// T210B01 has a status bit for that.
+			u32 retries = 500000;
+			while (SE(SE_STATUS_REG) & SE_STATUS_MEM_IF_BUSY)
+			{
+				if (!retries)
+					return 0;
+				usleep(1);
+				retries--;
+			}
 		}
 
 		// Ensure data is out from AHB.
-		if (ll_dst_ptr->addr >= DRAM_START)
+		u32 retries = 500000;
+		while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
 		{
-			timeout = get_tmr_us() + 200000;
-			while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
-			{
-				if (get_tmr_us() > timeout)
-					return 0;
-				usleep(1);
-			}
+			if (!retries)
+				return 0;
+			usleep(1);
+			retries--;
 		}
 	}
 
@@ -181,7 +186,7 @@ static int _se_execute_aes_oneshot(void *dst, const void *src, u32 size)
 
 	u32 size_aligned = ALIGN_DOWN(size, SE_AES_BLOCK_SIZE);
 	u32 size_residue = size % SE_AES_BLOCK_SIZE;
-	int res = 0;
+	int res = 1;
 
 	// Handle initial aligned message.
 	if (size_aligned)
@@ -507,10 +512,14 @@ static int _se_sha_hash_256(void *hash, u64 total_size, const void *src, u32 src
 	// Set total size: BITS(total_size), up to 2 EB.
 	SE(SE_SHA_MSG_LENGTH_0_REG) = (u32)(total_size << 3);
 	SE(SE_SHA_MSG_LENGTH_1_REG) = (u32)(total_size >> 29);
+	SE(SE_SHA_MSG_LENGTH_2_REG) = 0;
+	SE(SE_SHA_MSG_LENGTH_3_REG) = 0;
 
 	// Set leftover size: BITS(src_size).
 	SE(SE_SHA_MSG_LEFT_0_REG) = (u32)(msg_left << 3);
 	SE(SE_SHA_MSG_LEFT_1_REG) = (u32)(msg_left >> 29);
+	SE(SE_SHA_MSG_LEFT_2_REG) = 0;
+	SE(SE_SHA_MSG_LEFT_3_REG) = 0;
 
 	// Set config based on init or partial continuation.
 	if (total_size == src_size || !total_size)

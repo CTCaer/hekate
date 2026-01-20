@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -730,7 +730,7 @@ DPRINTF("sec %d has size %08X\n", i, hdr->sec_size[i]);
 		if (!hdr->sec_size[i])
 			continue;
 
-		se_aes_crypt_ctr(pkg2_keyslot, pdata, pdata, hdr->sec_size[i], &hdr->sec_ctr[i * SE_AES_IV_SIZE]);
+		se_aes_crypt_ctr(pkg2_keyslot, pdata, pdata, hdr->sec_size[i], hdr->sec_ctr[i]);
 
 		pdata += hdr->sec_size[i];
 	}
@@ -776,7 +776,7 @@ DPRINTF("adding kip1 '%s' @ %08X (%08X)\n", (char *)ki->kip1->name, (u32)ki->kip
 	{
 		hdr->sec_size[PKG2_SEC_INI1] = ini1_size;
 		hdr->sec_off[PKG2_SEC_INI1] = 0x14080000;
-		se_aes_crypt_ctr(8, ini1, ini1, ini1_size, &hdr->sec_ctr[PKG2_SEC_INI1 * SE_AES_IV_SIZE]);
+		se_aes_crypt_ctr(8, ini1, ini1, ini1_size, hdr->sec_ctr[PKG2_SEC_INI1]);
 	}
 	else
 	{
@@ -854,7 +854,7 @@ DPRINTF("%s @ %08X (%08X)\n", is_meso ? "Mesosphere": "kernel",(u32)ctxt->kernel
 		kernel_size += ini1_size;
 	}
 	hdr->sec_size[PKG2_SEC_KERNEL] = kernel_size;
-	se_aes_crypt_ctr(pkg2_keyslot, pdst, pdst, kernel_size, &hdr->sec_ctr[PKG2_SEC_KERNEL * SE_AES_IV_SIZE]);
+	se_aes_crypt_ctr(pkg2_keyslot, pdst, pdst, kernel_size, hdr->sec_ctr[PKG2_SEC_KERNEL]);
 	pdst += kernel_size;
 DPRINTF("kernel encrypted\n");
 
@@ -870,7 +870,7 @@ DPRINTF("INI1 encrypted\n");
 		u8 *pk2_hash_data = (u8 *)dst + 0x100 + sizeof(pkg2_hdr_t);
 		for (u32 i = PKG2_SEC_KERNEL; i <= PKG2_SEC_UNUSED; i++)
 		{
-			se_sha_hash_256_oneshot(&hdr->sec_sha256[SE_SHA_256_SIZE * i], (void *)pk2_hash_data, hdr->sec_size[i]);
+			se_sha_hash_256_oneshot(hdr->sec_sha256[i], (void *)pk2_hash_data, hdr->sec_size[i]);
 			pk2_hash_data += hdr->sec_size[i];
 		}
 	}

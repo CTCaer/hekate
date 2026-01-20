@@ -1069,17 +1069,63 @@ static void _nyx_emmc_issues_warning(void *params)
 	}
 }
 
+static lv_res_t _reboot_ofw_action(lv_obj_t *btns, const char *txt)
+{
+	if (!lv_btnm_get_pressed(btns))
+		power_set_state(REBOOT_BYPASS_FUSES);
+
+	return mbox_action(btns, txt);
+}
+
+static lv_res_t _create_mbox_reboot_ofw()
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char * mbox_btn_map[] = { "\221OK", "\221Cancel", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES * 2 / 3);
+
+	lv_mbox_set_text(mbox,
+		"#FF8000 Warning#\n\n"
+		"#FFDD00 Your real DRAM ID does not match your RAM!#\n"
+		"#FFDD00 Density and rank differ!#\n\n"
+		"#FFDD00 Choosing to boot that way will cause #\n"
+		"#FFDD00 performance degradation or even crashes.#\n\n"
+		"Do you really want to boot via OFW method?#");
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _reboot_ofw_action);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+
+	return LV_RES_OK;
+}
+
 static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
 {
 	u32 btnidx = lv_btnm_get_pressed(btns);
 
+	u8 dram_id     = fuse_read_dramid(true);
+	u8 dram_id_adj = fuse_read_dramid(false);
+
+	// No OFW support if fuses burnt to 7. Custom secmon is mandatory.
+	bool t210_8gb_dramid = !h_cfg.t210b01 && dram_id     == LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX;
+	// Warn against OFW if T210B01 and dram id has the wrong density and ranks with actual ram.
+	bool unmatched_fuses =  h_cfg.t210b01 && dram_id_adj == LPDDR4X_AULA_8GB_SAMSUNG_K4UBE3D4AA_MGCL && dram_id != dram_id_adj;
+
 	switch (btnidx)
 	{
 	case 0:
-		power_set_state(REBOOT_BYPASS_FUSES);
+		if (unmatched_fuses)
+			_create_mbox_reboot_ofw();
+		else
+			power_set_state(REBOOT_BYPASS_FUSES);
 		break;
 	case 1:
-		if (h_cfg.rcm_patched)
+		if (h_cfg.rcm_patched && !t210_8gb_dramid)
 			power_set_state(POWER_OFF_REBOOT);
 		else
 			power_set_state(REBOOT_RCM);
@@ -1134,8 +1180,13 @@ static lv_res_t _create_mbox_reboot(lv_obj_t *btn)
 
 	lv_mbox_set_text(mbox, "#FF8000 Choose where to reboot:#");
 
-	if (h_cfg.rcm_patched)
+	// No OFW support if fuses burnt to 7. Custom secmon is mandatory.
+	bool t210_8gb_dramid = !h_cfg.t210b01 && fuse_read_dramid(true) == LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX;
+
+	if (h_cfg.rcm_patched && !t210_8gb_dramid)
 		lv_mbox_add_btns(mbox, mbox_btn_map_patched, _reboot_action);
+	else if (t210_8gb_dramid)
+		lv_mbox_add_btns(mbox, mbox_btn_map_autorcm, _reboot_action);
 	else
 		lv_mbox_add_btns(mbox, !h_cfg.autorcm_enabled ? mbox_btn_map : mbox_btn_map_autorcm, _reboot_action);
 
