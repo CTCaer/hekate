@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2024 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <soc/i2c.h>
 #include <soc/pinmux.h>
 #include <soc/t210.h>
 
@@ -30,6 +31,13 @@ void pinmux_config_i2c(u32 idx)
 {
 	PINMUX_AUX(PINMUX_AUX_X_I2C_SCL(idx)) = PINMUX_INPUT_ENABLE;
 	PINMUX_AUX(PINMUX_AUX_X_I2C_SDA(idx)) = PINMUX_INPUT_ENABLE;
+
+	// Detach I2C4 pins from I2C3 function.
+	if (idx == I2C_3 || idx == I2C_4)
+	{
+		PINMUX_AUX(PINMUX_AUX_X_I2C_SCL(I2C_4)) |= 1;
+		PINMUX_AUX(PINMUX_AUX_X_I2C_SDA(I2C_4)) |= 1;
+	}
 }
 
 void pinmux_config_i2s(u32 idx)

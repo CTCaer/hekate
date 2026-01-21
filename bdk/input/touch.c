@@ -2,7 +2,7 @@
  * Touch driver for Nintendo Switch's STM FingerTip S (FTM4CD60DA1BE/FTM4CD50TA1BE) touch controller
  *
  * Copyright (c) 2018 langerhans
- * Copyright (c) 2018-2023 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -367,6 +367,7 @@ int touch_execute_autotune()
 	// Trim low power oscillator.
 	if (touch_command(STMFTS_LP_TIMER_CALIB, NULL, 0))
 		return 0;
+
 	msleep(200);
 
 	// Apply Mutual Sense Compensation tuning.
@@ -401,11 +402,6 @@ static int touch_init()
 
 int touch_power_on()
 {
-	// Configure Touscreen and GCAsic shared GPIO.
-	PINMUX_AUX(PINMUX_AUX_CAM_I2C_SDA) = PINMUX_LPDR | PINMUX_INPUT_ENABLE | PINMUX_TRISTATE | PINMUX_PULL_UP | 2;
-	PINMUX_AUX(PINMUX_AUX_CAM_I2C_SCL) = PINMUX_IO_HV | PINMUX_LPDR | PINMUX_TRISTATE | PINMUX_PULL_DOWN | 2; // Unused.
-	gpio_config(GPIO_PORT_S, GPIO_PIN_3, GPIO_MODE_GPIO); // GC detect.
-
 	// Configure touchscreen Touch Reset pin.
 	PINMUX_AUX(PINMUX_AUX_DAP4_SCLK) = PINMUX_PULL_DOWN | 1;
 	gpio_direction_output(GPIO_PORT_J, GPIO_PIN_7, GPIO_LOW);
