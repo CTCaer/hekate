@@ -1466,7 +1466,8 @@ void ipl_main()
 	bpmp_clk_rate_set(h_cfg.t210b01 ? ipl_ver.rcfg.bclk_t210b01 : ipl_ver.rcfg.bclk_t210);
 
 	// Mount SD Card.
-	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
+	if (!sd_mount())
+		h_cfg.errors |= ERR_SD_BOOT_EN;
 
 	// Check if watchdog was fired previously.
 	if (watchdog_fired())
@@ -1477,7 +1478,7 @@ void ipl_main()
 
 	// Save sdram lp0 config.
 	void *sdram_params = h_cfg.t210b01 ? sdram_get_params_t210b01() : sdram_get_params_patched();
-	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
+	if (!ianos_static_module("bootloader/sys/libsys_lp0.bso", sdram_params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.
