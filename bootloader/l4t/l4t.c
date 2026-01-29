@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include <bdk.h>
-#include <soc/pmc_lp0_t210.h>
 
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
@@ -353,21 +352,21 @@ static int _l4t_sd_load(u32 idx)
 
 static void _l4t_sdram_lp0_save_params(bool t210b01)
 {
-	struct tegra_pmc_regs *pmc = (struct tegra_pmc_regs *)PMC_BASE;
+	pmc_regs_t210_t *pmc = (pmc_regs_t210_t *)PMC_BASE;
 
 #define _REG_S(base, off) *(u32 *)((base) + (off))
 #define MC_S(off) _REG_S(MC_BASE, off)
 
 #define pack(src, src_bits, dst, dst_bits) { \
-		u32 mask = 0xffffffff >> (31 - ((1 ? src_bits) - (0 ? src_bits))); \
+		u32 mask = 0xFFFFFFFF >> (31 - ((1 ? src_bits) - (0 ? src_bits))); \
 		dst &= ~(mask << (0 ? dst_bits)); \
 		dst |= ((src >> (0 ? src_bits)) & mask) << (0 ? dst_bits); }
 
 #define s(param, src_bits, pmcreg, dst_bits) \
-	pack(MC_S(param), src_bits, pmc->pmcreg, dst_bits)
+	pack(MC_S(param), src_bits, pmc->pmc_ ## pmcreg, dst_bits)
 
 // 32 bits version of s macro.
-#define s32(param, pmcreg) pmc->pmcreg = MC_S(param)
+#define s32(param, pmcreg) pmc->pmc_ ## pmcreg = MC_S(param)
 
 	// Only save changed carveout registers into PMC for SC7 Exit.
 
@@ -702,7 +701,7 @@ static void _l4t_late_hw_config(bool t210b01)
 	PMC(APBDEV_PMC_SCRATCH201) = BIT(1);
 
 	// Clear PLLM override for SC7.
-	PMC(APBDEV_PMC_PLLP_WB0_OVERRIDE) &= ~PMC_PLLP_WB0_OVERRIDE_PLLM_OVERRIDE_ENABLE;
+	PMC(APBDEV_PMC_PLLP_WB0_OVERRIDE) &= ~PMC_PLLP_WB0_OVR_PLLM_OVR_ENABLE;
 
 	// Set spare reg to 0xE0000 and clear everything else.
 	if (t210b01 && (SYSREG(AHB_AHB_SPARE_REG) & 0xE0000000) != 0xE0000000)
@@ -806,7 +805,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 
 	// Save BPMP-FW entrypoint for TZ.
 	PMC(APBDEV_PMC_SCRATCH39) = BPMPFW_B01_ENTRYPOINT;
-	PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1) |= BIT(15);
+	PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1_B01) |= BIT(15);
 }
 
 static int _l4t_sc7_exit_config(bool t210b01)
