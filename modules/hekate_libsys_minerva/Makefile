@@ -20,7 +20,7 @@ OBJS = $(addprefix $(BUILDDIR)/,\
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork
 CFLAGS = $(ARCH) -O2 -nostdlib -fpie -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 -Wall -Wsign-compare $(CUSTOMDEFINES)
-LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc
+LDFLAGS = $(ARCH) -fpie -pie -nostartfiles -lgcc -Wl,-z,max-page-size=256
 
 .PHONY: all
 
