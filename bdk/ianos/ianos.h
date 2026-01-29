@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 M4xw
- * Copyright (c) 2018 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -19,16 +19,26 @@
 #define IANOS_H
 
 #include <utils/types.h>
+#include <module.h>
 
 typedef enum
 {
-	DRAM_LIB = 0, // DRAM library.
-	EXEC_ELF = 1, // Executable elf that does not return.
-	DR64_LIB = 2, // AARCH64 DRAM library.
-	AR64_ELF = 3, // Executable elf that does not return.
-	KEEP_IN_RAM = (1 << 31)  // Shared library mask.
-} elfType_t;
+	IA_DRAM_LIB   = 0, // DRAM library.
+	IA_IRAM_LIB   = 1, // IRAM library. No support for now.
+	IA_AUTO_LIB   = 2, // AUTO library. Defaults to DRAM for now.
+	IA_SHARED_LIB = BIT(7) // Shared library mask. No support for now.
+} ianos_type_t;
 
-uintptr_t ianos_loader(char *path, elfType_t type, void* config);
+typedef struct _ianos_lib_t
+{
+	uintptr_t epaddr;
+	void *buf;
+	void *private;
+	ianos_type_t type;
+	bdk_params_t *bdk;
+} ianos_lib_t;
+
+int       ianos_loader(ianos_lib_t *lib, char *path);
+uintptr_t ianos_static_module(char *path, void *private); // Session-lived DRAM lib.
 
 #endif

@@ -1,6 +1,7 @@
 /*
  * Common Module Header
  * Copyright (c) 2018 M4xw
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -21,7 +22,7 @@
 #include <stddef.h>
 #include <mem/heap.h>
 
-#define IANOS_EXT0 0x304E4149
+#define IANOS_EXT1 0x314E4149
 
 // Module Callback
 typedef void (*cbMainModule_t)(const char *s);
@@ -31,16 +32,15 @@ typedef int  (*reg_voltage_set_t)(u32, u32);
 
 typedef struct _bdkParams_t
 {
-	void *gfxCon;
-	void *gfxCtx;
-	heap_t *sharedHeap;
+	void *gfx_con;
+	void *gfx_ctx;
+	heap_t *heap;
 	memcpy_t memcpy;
 	memset_t memset;
 	u32 extension_magic;
-	reg_voltage_set_t reg_voltage_set;
-} *bdkParams_t;
+} bdk_params_t;
 
-// Module Entrypoint
-typedef void (*moduleEntrypoint_t)(void *, bdkParams_t);
+// Module Caller.
+typedef void (*moduleEntrypoint)(void *, bdk_params_t *);
 
 #endif

@@ -53,13 +53,16 @@ typedef enum
 
 typedef struct el_ctx
 {
-	bool (*pread)(struct el_ctx *ctx, void *dest, size_t nb, size_t offset);
+	el_status (*pread)(struct el_ctx *ctx, void *dest, size_t nb, size_t offset);
 
 	/* base_load_* -> address we are actually going to load at
 	 */
 	Elf_Addr
 		base_load_paddr,
 		base_load_vaddr;
+
+	/* original memory of binary */
+	Elf_Addr eaddr;
 
 	/* size in memory of binary */
 	Elf_Addr memsz;

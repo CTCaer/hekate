@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 CTCaer
+ * Copyright (c) 2019-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -52,8 +52,7 @@ u32 minerva_init(minerva_str_t *mtc_str)
 	{
 		// Load library and do a periodic training if needed.
 		mtc_cfg->train_mode = OP_PERIODIC_TRAIN;
-		u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
-		mtc_call = (void *)ep_addr;
+		mtc_call = (void *)ianos_static_module("bootloader/sys/libsys_minerva.bso", (void *)mtc_cfg);
 
 		return !mtc_call ? 1 : 0;
 	}
@@ -67,7 +66,7 @@ u32 minerva_init(minerva_str_t *mtc_str)
 		mtc_tmp.init_done  = !no_table ? MTC_NEW_MAGIC : MTC_IRB_MAGIC;
 
 		// Load library and get table.
-		u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)&mtc_tmp);
+		u32 ep_addr = ianos_static_module("bootloader/sys/libsys_minerva.bso", (void *)&mtc_tmp);
 
 		// Ensure that Minerva is initialized.
 		if (mtc_tmp.init_done == MTC_INIT_MAGIC)
@@ -88,7 +87,7 @@ u32 minerva_init(minerva_str_t *mtc_str)
 	mtc_cfg->sdram_id   = fuse_read_dramid(false);
 	mtc_cfg->init_done  = !no_table ? MTC_NEW_MAGIC : MTC_IRB_MAGIC;
 
-	u32 ep_addr = ianos_loader("bootloader/sys/libsys_minerva.bso", DRAM_LIB, (void *)mtc_cfg);
+	u32 ep_addr = ianos_static_module("bootloader/sys/libsys_minerva.bso", (void *)mtc_cfg);
 
 	// Ensure that Minerva is initialized.
 	if (mtc_cfg->init_done == MTC_INIT_MAGIC)
