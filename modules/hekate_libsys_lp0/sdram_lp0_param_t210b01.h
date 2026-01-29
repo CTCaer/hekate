@@ -16,7 +16,7 @@
 
 #include "types.h"
 
-struct sdram_params_t210b01
+typedef struct _sdram_params_t210b01_t
 {
 	/* Specifies the type of memory device */
 	u32 memory_type;
@@ -986,6 +986,6 @@ struct sdram_params_t210b01
 
 	/* Just a place holder for special usage when there is no BCT for certain registers */
 	u32 bct_na;
-};
+} sdram_params_t210b01_t;
 
 #endif
