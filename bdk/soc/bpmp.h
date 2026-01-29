@@ -51,7 +51,7 @@ typedef enum
 	BPMP_CLK_SUPER_BOOST, // 576MHz 41% - 144MHz APB.
 	BPMP_CLK_HYPER_BOOST, // 589MHz 44% - 147MHz APB.
 	//BPMP_CLK_DEV_BOOST, // 608MHz 49% - 152MHz APB.
-	BPMP_CLK_NUM 
+	BPMP_CLK_NUM
 } bpmp_freq_t;
 
 typedef enum
