@@ -2101,7 +2101,7 @@ static void _sdram_lp0_save_params_t210b01(sdram_params_t210b01_t *sdram)
 	s(pllm_stable_time, 9:0, scratch4, 19:10);
 }
 
-void sdram_lp0_entry(void *sdram_config, bdkParams_t bp)
+void sdram_lp0_entry(void *sdram_config, bdk_params_t *bp)
 {
 	u32 chip_id = (APB_MISC(APB_MISC_GP_HIDREV) >> 4) & 0xF;
 

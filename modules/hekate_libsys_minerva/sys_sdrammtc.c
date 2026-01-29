@@ -4012,7 +4012,7 @@ error:
 	return;
 }
 
-void minerva_entry(mtc_config_t *mtc_cfg, bdkParams_t bp)
+void minerva_entry(mtc_config_t *mtc_cfg, bdk_params_t *bp)
 {
 	EPRINTF("-- Minerva Training Cell --");
 
