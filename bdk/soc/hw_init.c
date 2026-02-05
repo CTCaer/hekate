@@ -372,7 +372,7 @@ static void _config_regulators(bool tegra_t210, bool nx_hoag)
 	}
 }
 
-void hw_init()
+void __attribute__((noinline)) hw_init()
 {
 	// Get Chip ID and SKU.
 	bool tegra_t210 = hw_get_chip_id() == GP_HIDREV_MAJOR_T210;

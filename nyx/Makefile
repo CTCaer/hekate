@@ -91,8 +91,10 @@ WARNINGS := -Wall -Wsign-compare -Wtype-limits -Wno-array-bounds -Wno-stringop-o
 #-Wstack-usage=byte-size -fstack-usage
 
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb-interwork $(WARNINGS)
-CFLAGS = $(ARCH) -O2 -g -gdwarf-4 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -std=gnu11 $(CUSTOMDEFINES)
-LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=NYX_LOAD_ADDR=$(NYX_LOAD_ADDR)
+OPTFLAGS := -O2 -g -gdwarf-4 -ffunction-sections -fdata-sections -fomit-frame-pointer -finline-limit=4 -fno-keep-static-consts -fira-loop-pressure
+LTOFLAGS := -flto -ffat-lto-objects
+CFLAGS = $(ARCH) $(OPTFLAGS) $(LTOFLAGS) -nostdlib -std=gnu11 $(CUSTOMDEFINES)
+LDFLAGS = $(ARCH) $(LTOFLAGS) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=NYX_LOAD_ADDR=$(NYX_LOAD_ADDR)
 
 ifndef NYXECHO
 T := $(shell $(MAKE) $(BUILDDIR)/$(TARGET).elf --no-print-directory -nrRf $(firstword $(MAKEFILE_LIST)) NYXECHO="NYXOBJ" | grep -c "NYXOBJ")

@@ -75,9 +75,11 @@ WARNINGS := -Wall -Wsign-compare -Wtype-limits -Wno-array-bounds -Wno-stringop-o
 #-fno-delete-null-pointer-checks
 #-Wstack-usage=byte-size -fstack-usage
 
+OPTFLAGS := -O2 -g -gdwarf-4 -ffunction-sections -fdata-sections -fomit-frame-pointer -finline-limit=4 -fno-keep-static-consts -fira-loop-pressure
+LTOFLAGS := -flto -ffat-lto-objects
 ARCH := -march=armv4t -mtune=arm7tdmi -mthumb -mthumb-interwork $(WARNINGS)
-CFLAGS = $(ARCH) -O2 -g -gdwarf-4 -nostdlib -ffunction-sections -fdata-sections -fomit-frame-pointer -fno-inline -std=gnu11 $(CUSTOMDEFINES)
-LDFLAGS = $(ARCH) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=IPL_LOAD_ADDR=$(IPL_LOAD_ADDR)
+CFLAGS = $(ARCH) $(OPTFLAGS) $(LTOFLAGS) -nostdlib -std=gnu11 $(CUSTOMDEFINES)
+LDFLAGS = $(ARCH) $(LTOFLAGS) -nostartfiles -lgcc -Wl,--nmagic,--gc-sections -Xlinker --defsym=IPL_LOAD_ADDR=$(IPL_LOAD_ADDR)
 
 MODULEDIRS := $(wildcard modules/*)
 NYXDIR := $(wildcard nyx)

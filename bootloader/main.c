@@ -1430,7 +1430,9 @@ menu_t menu_top = { ment_top, "hekate v6.5.1", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
-void ipl_main()
+static void ipl_main_real(void);
+
+void __attribute__((noreturn)) ipl_main()
 {
 	// Override DRAM ID if needed.
 	if (ipl_ver.rcfg.rsvd_flags & RSVD_FLAG_DRAM_8GB)
@@ -1442,6 +1444,11 @@ void ipl_main()
 	// Pivot the stack under IPL. (Only max 4KB is needed).
 	pivot_stack(IPL_LOAD_ADDR);
 
+	ipl_main_real();
+}
+
+static void __attribute__((noinline)) __attribute__((noreturn)) ipl_main_real(void)
+{
 	// Place heap at a place outside of L4T/HOS configuration and binaries.
 	heap_init((void *)IPL_HEAP_START);
 
