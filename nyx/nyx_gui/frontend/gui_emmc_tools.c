@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -54,7 +54,7 @@ static void _create_window_backup_restore(emmcPartType_t type, const char* win_l
 
 	s_printf(win_label_full, "%s%s", emmc_btn_ctxt.restore ? SYMBOL_DOWNLOAD"  Restore " : SYMBOL_UPLOAD"  Backup ", win_label+3);
 
-	lv_obj_t *win = nyx_create_standard_window(win_label_full);
+	lv_obj_t *win = nyx_create_standard_window(win_label_full, NULL);
 
 	//Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -285,9 +285,9 @@ lv_res_t create_window_backup_restore_tool(lv_obj_t *btn)
 		emmc_btn_ctxt.restore = true;
 
 	if (!emmc_btn_ctxt.restore)
-		win = nyx_create_standard_window(SYMBOL_SD" Backup");
+		win = nyx_create_standard_window(SYMBOL_SD" Backup", NULL);
 	else
-		win = nyx_create_standard_window(SYMBOL_SD" Restore");
+		win = nyx_create_standard_window(SYMBOL_SD" Restore", NULL);
 
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);

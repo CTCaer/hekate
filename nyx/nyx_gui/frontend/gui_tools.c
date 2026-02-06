@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -158,7 +158,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 			"The boot process is now normal and you need the #FF8000 VOL+# + #FF8000 HOME# (jig) combo to enter RCM.\n");
 	}
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -178,8 +178,8 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\251", "\262Close", "\251", "" };
-	static const char *mbox_btn_map2[] = { "\251", "\222Close", "\251", "" };
+	static const char *mbox_btn_map_dis[] = { "\251", "\262Close", "\251", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222Close", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -205,14 +205,14 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 	lv_label_set_static_text(lbl_tip, "Note: To end it, press #C7EA46 L3# + #C7EA46 HOME# or remove the cable.");
 	lv_obj_set_style(lbl_tip, &hint_small_style);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map_dis, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
 	usb_device_gadget_hid(usbs);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	return LV_RES_OK;
 }
@@ -223,8 +223,8 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\251", "\262Close", "\251", "" };
-	static const char *mbox_btn_map2[] = { "\251", "\222Close", "\251", "" };
+	static const char *mbox_btn_map_dis[] = { "\251", "\262Close", "\251", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222Close", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -299,7 +299,7 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	}
 	lv_obj_set_style(lbl_tip, &hint_small_style);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map_dis, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -312,7 +312,7 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	// Restore backlight.
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	ums_mbox = dark_bg;
 
@@ -342,7 +342,7 @@ static lv_res_t _create_mbox_ums_error(int error)
 		break;
 	}
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -675,7 +675,7 @@ static lv_res_t _emmc_read_only_toggle(lv_obj_t *btn)
 
 static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_USB" USB Tools");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_USB" USB Tools", NULL);
 
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);
@@ -928,7 +928,7 @@ out:
 
 static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Fix Archive Bit (All folders)");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Fix Archive Bit (All folders)", NULL);
 
 	// Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -1111,7 +1111,7 @@ out:
 		lv_mbox_set_text(mbox, "#FFFF00 The touchscreen calibration failed!");
 
 out2:
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	free(txt_buf);
 
@@ -1120,7 +1120,7 @@ out2:
 
 static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_MODULES" Dump package1/2");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_MODULES" Dump package1/2", NULL);
 
 	// Disable buttons.
 	nyx_window_toggle_buttons(win, true);

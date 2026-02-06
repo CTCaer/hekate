@@ -781,7 +781,7 @@ lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-lv_res_t mbox_action(lv_obj_t *btns, const char *txt)
+lv_res_t nyx_mbox_action(lv_obj_t *btns, const char *txt)
 {
 	lv_obj_t *mbox = lv_mbox_get_from_btn(btns);
 	lv_obj_t *dark_bg = lv_obj_get_parent(mbox);
@@ -816,7 +816,7 @@ bool nyx_emmc_check_battery_enough()
 			"#FFDD00 with selected operation!#\n\n"
 			"Charge to at least #C7EA46 3650 mV#, and try again!");
 
-		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+		lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
@@ -843,7 +843,7 @@ static void _nyx_sd_card_issues_warning(void *param)
 		"#FFDD00 This might mean detached or broken connector!#\n\n"
 		"You might want to check\n#C7EA46 Console Info# -> #C7EA46 microSD#");
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -878,14 +878,14 @@ void nyx_window_toggle_buttons(lv_obj_t *win, bool disable)
 	}
 }
 
-lv_res_t nyx_win_close_action_custom(lv_obj_t * btn)
+lv_res_t nyx_win_close_action(lv_obj_t * btn)
 {
 	close_btn = NULL;
 
 	return lv_win_close_action(btn);
 }
 
-lv_obj_t *nyx_create_standard_window(const char *win_title)
+lv_obj_t *nyx_create_standard_window(const char *win_title, lv_action_t close_action)
 {
 	static lv_style_t win_bg_style;
 
@@ -898,25 +898,10 @@ lv_obj_t *nyx_create_standard_window(const char *win_title)
 	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
 	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
 
-	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", nyx_win_close_action_custom);
-
-	return win;
-}
-
-lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t rel_action)
-{
-	static lv_style_t win_bg_style;
-
-	lv_style_copy(&win_bg_style, &lv_style_plain);
-	win_bg_style.body.main_color = lv_theme_get_current()->bg->body.main_color;
-	win_bg_style.body.grad_color = win_bg_style.body.main_color;
-
-	lv_obj_t *win = lv_win_create(lv_scr_act(), NULL);
-	lv_win_set_title(win, win_title);
-	lv_win_set_style(win, LV_WIN_STYLE_BG, &win_bg_style);
-	lv_obj_set_size(win, LV_HOR_RES, LV_VER_RES);
-
-	close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", rel_action);
+	if (!close_action)
+		close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", nyx_win_close_action);
+	else
+		close_btn = lv_win_add_btn(win, NULL, SYMBOL_CLOSE" Close", close_action);
 
 	return win;
 }
@@ -980,7 +965,7 @@ static lv_res_t reload_action(lv_obj_t *btns, const char *txt)
 	if (!lv_btnm_get_pressed(btns))
 		reload_nyx(NULL, false);
 
-	return mbox_action(btns, txt);
+	return nyx_mbox_action(btns, txt);
 }
 
 static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
@@ -1004,7 +989,7 @@ static lv_res_t _removed_sd_action(lv_obj_t *btns, const char *txt)
 		break;
 	}
 
-	return mbox_action(btns, txt);
+	return nyx_mbox_action(btns, txt);
 }
 
 static void _check_sd_card_removed(void *params)
@@ -1062,7 +1047,7 @@ static void _nyx_emmc_issues_warning(void *params)
 			"#FFDD00 This might mean hardware issues!#\n\n"
 			"You might want to check\n#C7EA46 Console Info# -> #C7EA46 eMMC#");
 
-		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+		lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
@@ -1074,7 +1059,7 @@ static lv_res_t _reboot_ofw_action(lv_obj_t *btns, const char *txt)
 	if (!lv_btnm_get_pressed(btns))
 		power_set_state(REBOOT_BYPASS_FUSES);
 
-	return mbox_action(btns, txt);
+	return nyx_mbox_action(btns, txt);
 }
 
 static lv_res_t _create_mbox_reboot_ofw()
@@ -1132,7 +1117,7 @@ static lv_res_t _reboot_action(lv_obj_t *btns, const char *txt)
 		break;
 	}
 
-	return mbox_action(btns, txt);
+	return nyx_mbox_action(btns, txt);
 }
 
 static lv_res_t _poweroff_action(lv_obj_t *btns, const char *txt)
@@ -1140,7 +1125,7 @@ static lv_res_t _poweroff_action(lv_obj_t *btns, const char *txt)
 	if (!lv_btnm_get_pressed(btns))
 		power_set_state(POWER_OFF_RESET);
 
-	return mbox_action(btns, txt);
+	return nyx_mbox_action(btns, txt);
 }
 
 static lv_res_t _create_mbox_reload(lv_obj_t *btn)
@@ -1495,7 +1480,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 	}
 
 out_end:
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -2226,7 +2211,7 @@ static lv_res_t _create_mbox_save_changes_action(lv_obj_t *btns, const char * tx
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
 
-	mbox_action(btns, txt);
+	nyx_mbox_action(btns, txt);
 
 	if (!btn_idx)
 		_save_options_action(NULL);
