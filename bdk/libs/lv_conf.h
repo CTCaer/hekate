@@ -346,7 +346,7 @@
 #define USE_LV_KB       0
 
 /*Check box (dependencies: lv_btn, lv_label)*/
-#define USE_LV_CB       1
+#define USE_LV_CB       0
 
 /*List (dependencies: lv_page, lv_btn, lv_label, (lv_img optionally for icons ))*/
 #define USE_LV_LIST     1
@@ -370,7 +370,7 @@
 #define USE_LV_SLIDER    1
 
 /*Switch (dependencies: lv_slider)*/
-#define USE_LV_SW        1
+#define USE_LV_SW        0
 
 #endif /*LV_CONF_H*/
 

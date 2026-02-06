@@ -82,13 +82,6 @@ typedef struct {
     } label;
 #endif
 
-#if USE_LV_IMG != 0
-    struct {
-        lv_style_t *light;
-        lv_style_t *dark;
-    } img;
-#endif
-
 #if USE_LV_LINE != 0
     struct {
         lv_style_t *decor;
