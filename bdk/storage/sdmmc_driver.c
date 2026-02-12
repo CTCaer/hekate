@@ -612,7 +612,7 @@ static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd, u32 tap)
 
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 	// Set tap if manual tuning.
-	if (tap != HW_TAP_TUNING)
+	if (tap != SDMMC_HW_TAP_TUNING)
 	{
 		sdmmc->regs->ventunctl0 &= ~SDHCI_TEGRA_TUNING_TAP_HW_UPDATED;
 		sdmmc->regs->venclkctl   = (sdmmc->regs->venclkctl & 0xFF00FFFF) | (tap << 16);
@@ -662,7 +662,7 @@ typedef struct _sdmmc_manual_tuning_t
 
 static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *tuning)
 {
-	u32 tap_start = INVALID_TAP;
+	u32 tap_start = SDMMC_INVALID_TAP;
 	u32 win_size  = 0;
 	u32 best_tap  = 0;
 	u32 best_size = 0;
@@ -673,14 +673,14 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 		u32 stable = tuning->result[i / 32] & BIT(i % 32);
 		if (stable && !iter_end)
 		{
-			if (tap_start == INVALID_TAP)
+			if (tap_start == SDMMC_INVALID_TAP)
 				tap_start = i;
 
 			win_size++;
 		}
 		else
 		{
-			if (tap_start != INVALID_TAP)
+			if (tap_start != SDMMC_INVALID_TAP)
 			{
 				u32 tap_end = !iter_end ? (i - 1) : i;
 
@@ -691,7 +691,7 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 					best_size = win_size + iter_end;
 				}
 
-				tap_start = INVALID_TAP;
+				tap_start = SDMMC_INVALID_TAP;
 				win_size  = 0;
 			}
 		}
@@ -699,7 +699,7 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 
 
 	// Check if failed or window too small.
-	if (!best_tap || best_size < SAMPLING_WINDOW_SIZE_MIN)
+	if (!best_tap || best_size < SDMMC_SAMPLE_WIN_SIZE_MIN)
 		return 0;
 
 	sdmmc->regs->clkcon     &= ~SDHCI_CLOCK_CARD_EN;
@@ -799,7 +799,7 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 
 	for (u32 i = 0; i < num_iter; i++)
 	{
-		_sdmmc_tuning_execute_once(sdmmc, cmd, HW_TAP_TUNING);
+		_sdmmc_tuning_execute_once(sdmmc, cmd, SDMMC_HW_TAP_TUNING);
 
 		if (!(sdmmc->regs->hostctl2 & SDHCI_CTRL_EXEC_TUNING))
 			break;
