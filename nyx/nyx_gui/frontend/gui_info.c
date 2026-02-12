@@ -2833,7 +2833,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		bool inserted;
 		u32 wattage = 0;
 		usb_pd_objects_t usb_pd;
-		bm92t36_get_sink_info(&inserted, &usb_pd);
+		bm92t36_get_source_info(&inserted, &usb_pd);
 		strcat(txt_buf, inserted ? "Connected" : "Disconnected");
 
 		// Select 5V is no PD contract.
@@ -2844,9 +2844,8 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		if (!usb_pd.pdo_no)
 			strcat(txt_buf, "\nNon PD");
 
-		// Limit to 6 profiles so it can fit.
+		// Show 6 profiles max so they can fit.
 		usb_pd.pdo_no = MIN(usb_pd.pdo_no, 6);
-
 		for (u32 i = 0; i < usb_pd.pdo_no; i++)
 		{
 			bool selected =
