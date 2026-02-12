@@ -317,7 +317,7 @@ static void _create_gpt_partition(gpt_t *gpt, u8 *gpt_idx, u32 *curr_part_lba, u
 	memcpy(gpt->entries[*gpt_idx].name, name_utf16, name_lenth * sizeof(u16));
 
 	// Wipe the first 1MB to sanitize it as raw-empty partition.
-	sdmmc_storage_write(part_info.storage, *curr_part_lba, 0x800, (void *)SDMMC_UPPER_BUFFER);
+	sdmmc_storage_write(part_info.storage, *curr_part_lba, 0x800, (void *)SDMMC_ALT_DMA_BUFFER);
 
 	// Prepare for next.
 	(*curr_part_lba) += size_lba;
@@ -339,8 +339,8 @@ static void _sd_prepare_and_flash_mbr_gpt()
 		memcpy(&mbr.bootstrap[0xE0], &part_info.mbr_old.bootstrap[0xE0], 208);
 
 	// Clear the first 16MB.
-	memset((void *)SDMMC_UPPER_BUFFER, 0, AU_ALIGN_BYTES);
-	sdmmc_storage_write(&sd_storage, 0, AU_ALIGN_SECTORS, (void *)SDMMC_UPPER_BUFFER);
+	memset((void *)SDMMC_ALT_DMA_BUFFER, 0, AU_ALIGN_BYTES);
+	sdmmc_storage_write(&sd_storage, 0, AU_ALIGN_SECTORS, (void *)SDMMC_ALT_DMA_BUFFER);
 
 	// Set disk signature.
 	se_rng_pseudo(random_number, sizeof(u32));
@@ -355,7 +355,7 @@ static void _sd_prepare_and_flash_mbr_gpt()
 		mbr.partitions[mbr_idx].type = 0x83; // Linux system partition.
 		mbr.partitions[mbr_idx].start_sct = AU_ALIGN_SECTORS + ((u32)part_info.hos_size << 11);
 		mbr.partitions[mbr_idx].size_sct = part_info.l4t_size << 11;
-		sdmmc_storage_write(&sd_storage, mbr.partitions[mbr_idx].start_sct, 0x800, (void *)SDMMC_UPPER_BUFFER); // Clear the first 1MB.
+		sdmmc_storage_write(&sd_storage, mbr.partitions[mbr_idx].start_sct, 0x800, (void *)SDMMC_ALT_DMA_BUFFER); // Clear the first 1MB.
 		mbr_idx++;
 	}
 
@@ -471,7 +471,7 @@ static void _sd_prepare_and_flash_mbr_gpt()
 
 			// Android Encryption partition. 16MB.
 			// Note: 16MB size is for aligning UDA. If any other tiny partition must be added, it should split the MDA one.
-			sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear the whole of it.
+			sdmmc_storage_write(&sd_storage, curr_part_lba, 0x8000, (void *)SDMMC_ALT_DMA_BUFFER); // Clear the whole of it.
 			_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, "MDA", 6);
 
 			// Android Cache partition. 700MB.
@@ -551,6 +551,8 @@ static int _emmc_prepare_and_flash_mbr_gpt()
 {
 	gpt_t *gpt = zalloc(sizeof(gpt_t));
 	gpt_header_t gpt_hdr_backup = { 0 };
+
+	memset((void *)SDMMC_ALT_DMA_BUFFER, 0, AU_ALIGN_BYTES);
 
 	// Read main GPT.
 	sdmmc_storage_read(&emmc_storage, 1, sizeof(gpt_t) >> 9, gpt);
@@ -638,7 +640,7 @@ static int _emmc_prepare_and_flash_mbr_gpt()
 
 		// Android Encryption partition. 16MB.
 		// Note: 16MB size is for aligning UDA. If any other tiny partition must be added, it should split the MDA one.
-		sdmmc_storage_write(&emmc_storage, curr_part_lba, 0x8000, (void *)SDMMC_UPPER_BUFFER); // Clear the whole of it.
+		sdmmc_storage_write(&emmc_storage, curr_part_lba, 0x8000, (void *)SDMMC_ALT_DMA_BUFFER); // Clear the whole of it.
 		_create_gpt_partition(gpt, &gpt_idx, &curr_part_lba,   0x8000, "MDA", 6);
 
 		// Android Cache partition. 700MB.
