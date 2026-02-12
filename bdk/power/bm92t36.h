@@ -37,6 +37,6 @@ typedef struct _usb_pd_objects_t
 } usb_pd_objects_t;
 
 int  bm92t36_get_version(u32 *value);
-void bm92t36_get_sink_info(bool *inserted, usb_pd_objects_t *usb_pd);
+void bm92t36_get_source_info(bool *inserted, usb_pd_objects_t *usb_pd);
 
 #endif
