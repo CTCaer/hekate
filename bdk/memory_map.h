@@ -36,7 +36,7 @@
 #define IRQ_STACK_TOP      0x40040000
 #define IPL_RELOC_ADDR     0x4003FF00
 #define  IPL_RELOC_SZ            0x10
-#define EXCP_STORAGE_ADDR  0x4003FFF0
+#define EXCP_STORAGE_ADDR  0x4003FF10
 #define  EXCP_STORAGE_SZ         0x10
 
 /* --- DRAM START --- */

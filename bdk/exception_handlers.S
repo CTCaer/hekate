@@ -41,9 +41,9 @@
  * 11111  | SYS  | r0–r7, SP,     LR,     PC, CPSR           | r0–r14,                   PC, CPSR
  */
 
-#define EXCP_EN_ADDR   0x4003FFFC
-#define EXCP_TYPE_ADDR 0x4003FFF8
-#define EXCP_LR_ADDR   0x4003FFF4
+#define EXCP_EN_ADDR   0x4003FF1C
+#define EXCP_TYPE_ADDR 0x4003FF18
+#define EXCP_LR_ADDR   0x4003FF14
 
 #define EXCP_VEC_BASE  0x6000F000
 #define EVP_COP_RESET_VECTOR          0x200

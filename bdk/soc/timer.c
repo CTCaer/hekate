@@ -22,7 +22,7 @@
 #include <soc/t210.h>
 #include <utils/types.h>
 
-#define EXCP_TYPE_ADDR 0x4003FFF8
+#define EXCP_TYPE_ADDR 0x4003FF18
 #define  EXCP_TYPE_WDT 0x544457 // "WDT".
 
 #define USE_RTC_TIMER
