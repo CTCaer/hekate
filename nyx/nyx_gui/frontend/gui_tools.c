@@ -31,8 +31,6 @@
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
 
-extern volatile boot_cfg_t *b_cfg;
-
 lv_obj_t *ums_mbox;
 
 extern char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_t *storage);
@@ -1515,7 +1513,7 @@ out_end:
 	return LV_RES_OK;
 }
 
-static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
+static void _create_tab_tools_emmc_sd_usb(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
 
@@ -1613,10 +1611,6 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
-	label_sep = lv_label_create(h2, NULL);
-	lv_label_set_static_text(label_sep, "");
-	lv_obj_align(label_sep, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 11 / 7);
-
 	// Create USB Tools button.
 	lv_obj_t *btn4 = lv_btn_create(h2, btn3);
 	label_btn = lv_label_create(btn4, NULL);
@@ -1634,7 +1628,7 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_align(label_txt4, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
 
-static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
+static void _create_tab_tools_arc_rcm_pkg12(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
 
@@ -1671,8 +1665,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to fix the archive bit for all folders including\n"
-		"the root and emuMMC \'Nintendo\' folders.\n"
+		"Allows you to fix the archive bit for all folders including the\n"
+		"root and emuMMC \'Nintendo\' folders.\n"
 		"#C7EA46 It sets the archive bit to folders named with ##FF8000 .[ext]#\n"
 		"#FF8000 Use that option when you have corruption messages.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -1689,7 +1683,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
 		"Allows you to calibrate the touchscreen module.\n"
-		"#FF8000 This fixes any issues with touchscreen in Nyx and HOS.#");
+		"#FF8000 This can fix any issues with touchscreen in Nyx and HOS.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1712,10 +1706,11 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *btn3 = lv_btn_create(h2, NULL);
 	if (hekate_bg)
 	{
-		lv_btn_set_style(btn3, LV_BTN_STYLE_REL, &btn_transp_rel);
-		lv_btn_set_style(btn3, LV_BTN_STYLE_PR, &btn_transp_pr);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_REL,     &btn_transp_rel);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_PR,      &btn_transp_pr);
 		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_REL, &btn_transp_tgl_rel);
-		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_PR, &btn_transp_tgl_pr);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_PR,  &btn_transp_tgl_pr);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_INA,     &btn_transp_ina);
 	}
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
@@ -1806,8 +1801,8 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
 	lv_obj_align(line_sep, tv, LV_ALIGN_IN_BOTTOM_MID, -1, -LV_DPI * 2 / 12);
 
-	_create_tab_tools_emmc_pkg12(th, tab1);
-	_create_tab_tools_arc_autorcm(th, tab2);
+	_create_tab_tools_emmc_sd_usb(th, tab1);
+	_create_tab_tools_arc_rcm_pkg12(th, tab2);
 
 	lv_tabview_set_tab_act(tv, 0, false);
 }

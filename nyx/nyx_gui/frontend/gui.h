@@ -62,7 +62,7 @@ extern lv_img_dsc_t *icon_lakka;
 
 extern lv_img_dsc_t *hekate_bg;
 
-extern lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr;
+extern lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr, btn_transp_ina;
 extern lv_style_t ddlist_transp_bg, ddlist_transp_sel;
 extern lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 
@@ -72,7 +72,7 @@ extern char *text_color;
 
 extern gui_status_bar_ctx status_bar;
 
-void reload_nyx();
+void reload_nyx(lv_obj_t *obj, bool force);
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);
 bool nyx_emmc_check_battery_enough();
 lv_res_t nyx_mbox_action(lv_obj_t * btns, const char * txt);

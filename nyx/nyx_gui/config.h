@@ -45,7 +45,7 @@ typedef struct _hekate_config
 
 typedef struct _nyx_config
 {
-	u32 theme_bg;
+	u32 theme_bg; // COLOR_BG_BASE_MIN - COLOR_BG_BASE_MAX.
 	u32 theme_color;
 	u32 entries_5_col;
 	u32 timeoffset;

@@ -30,7 +30,6 @@
 
 static const char base36[37] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
 extern lv_res_t launch_payload(lv_obj_t *list);
@@ -2948,7 +2947,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	if (hekate_bg)
 	{
 		lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_transp_rel);
-		lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_transp_pr);
+		lv_btn_set_style(btn, LV_BTN_STYLE_PR,  &btn_transp_pr);
+		lv_btn_set_style(btn, LV_BTN_STYLE_INA, &btn_transp_ina);
 	}
 	lv_obj_t *label_btn = lv_label_create(btn, NULL);
 	lv_btn_set_fit(btn, true, true);
@@ -2988,13 +2988,13 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 
 	static lv_style_t line_style;
 	lv_style_copy(&line_style, th->line.decor);
-	line_style.line.color = LV_COLOR_HEX(0x444444);
+	line_style.line.color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x171717) : 0x343434);
 
 	line_sep = lv_line_create(h1, line_sep);
 	lv_obj_align(line_sep, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 16);
 	lv_line_set_style(line_sep, &line_style);
 
-	// Create Fuses button.
+	// Create HW info button.
 	lv_obj_t *btn3 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);

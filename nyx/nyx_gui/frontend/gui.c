@@ -52,7 +52,7 @@ lv_img_dsc_t *icon_lakka;
 
 lv_img_dsc_t *hekate_bg;
 
-lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr;
+lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr, btn_transp_ina;
 lv_style_t ddlist_transp_bg, ddlist_transp_sel;
 lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 
@@ -701,7 +701,7 @@ lv_img_dsc_t *bmp_to_lvimg_obj(const char *path)
 		}
 
 		lv_img_dsc_t *img_desc = (lv_img_dsc_t *)bitmap;
-		u32 offset_copy = ALIGN((u32)bitmap + sizeof(lv_img_dsc_t), 0x10);
+		uptr offset_copy = ALIGN((uptr)bitmap + sizeof(lv_img_dsc_t), 0x10);
 
 		img_desc->header.always_zero = 0;
 		img_desc->header.w = bmpData.size_x;
@@ -1220,7 +1220,7 @@ void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, co
 		btn_onoff_pr_hos_style.body.opa = 35;
 	}
 	else
-		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D);
+		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D); // COLOR_HOS_BG_LIGHT.
 	btn_onoff_pr_hos_style.body.grad_color = btn_onoff_pr_hos_style.body.main_color;
 	btn_onoff_pr_hos_style.text.color = th->btn.pr->text.color;
 	btn_onoff_pr_hos_style.body.empty = 0;
@@ -1270,7 +1270,7 @@ static void _create_text_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn,
 		btn_onoff_pr_hos_style.body.opa = 35;
 	}
 	else
-		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D);
+		btn_onoff_pr_hos_style.body.main_color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x101010) : 0x2D2D2D); // COLOR_HOS_BG_LIGHT
 	btn_onoff_pr_hos_style.body.grad_color = btn_onoff_pr_hos_style.body.main_color;
 	btn_onoff_pr_hos_style.text.color = th->btn.pr->text.color;
 	btn_onoff_pr_hos_style.body.empty = 0;
@@ -1720,7 +1720,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	lv_obj_t *boot_entry_label;
 	bool no_boot_entries = false;
 
-	// Create CFW buttons.
+	// Create Boot Entry buttons.
 	// Buttons are 200 x 200 with 4 pixel borders.
 	// Icons must be <= 192 x 192.
 	// Create first Button.
@@ -1915,11 +1915,20 @@ ini_parsing:
 				btn_height = 200;
 
 			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_REL, &btn_home_noborder_rel);
-			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_PR, &btn_home_noborder_rel);
+			lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_PR,  &btn_home_noborder_rel);
 		}
 		lv_obj_set_size(btns, btn_width, btn_height);
 		lv_btn_set_style(btns, LV_BTN_STYLE_REL, img_noborder ? &btn_home_noborder_rel : &btn_home_transp_rel);
 		lv_btn_set_style(btns, LV_BTN_STYLE_PR, &btn_home_transp_pr);
+
+		// Button transparency if custom background, but loses color.
+		// if (!btn && hekate_bg && !img_noborder)
+		// {
+		// 	lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_REL, &btn_transp_rel);
+		// 	lv_btn_set_style(launch_ctxt.btn[curr_btn_idx], LV_BTN_STYLE_PR,  &btn_transp_pr);
+		// 	lv_btn_set_style(btns, LV_BTN_STYLE_REL, &btn_home_noborder_rel);
+		// }
+
 		if (img)
 			lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 		if (img_noborder)
@@ -2063,6 +2072,12 @@ static void _create_tab_home(lv_theme_t *th, lv_obj_t *parent)
 	// lv_obj_set_width(btn_quick_launch, 256);
 	// lv_obj_set_pos(btn_quick_launch, 343, 448);
 	// lv_btn_set_action(btn_quick_launch, LV_BTN_ACTION_CLICK, NULL);
+	// if (hekate_bg)
+	// {
+	// 	lv_btn_set_style(btn_quick_launch, LV_BTN_STYLE_REL, &btn_transp_rel);
+	// 	lv_btn_set_style(btn_quick_launch, LV_BTN_STYLE_PR, &btn_transp_pr);
+	// 	lv_btn_set_style(btn_quick_launch, LV_BTN_STYLE_INA, &btn_transp_ina);
+	// }
 
 	lv_obj_t *btn_nyx_options = lv_btn_create(parent, NULL);
 	_create_text_button(th, NULL, btn_nyx_options, SYMBOL_SETTINGS" Nyx Settings", NULL);
@@ -2280,9 +2295,9 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	hint_small_style_white.text.font = &interui_20;
 
 	lv_style_copy(&monospace_text, &lv_style_plain);
-	monospace_text.body.main_color = LV_COLOR_HEX(0x1B1B1B);
-	monospace_text.body.grad_color = LV_COLOR_HEX(0x1B1B1B);
-	monospace_text.body.border.color = LV_COLOR_HEX(0x1B1B1B);
+	monospace_text.body.main_color = COLOR_HOS_BG_DARKER;
+	monospace_text.body.grad_color = COLOR_HOS_BG_DARKER;
+	monospace_text.body.border.color = COLOR_HOS_BG_DARKER;
 	monospace_text.body.border.width = 0;
 	monospace_text.body.opa = LV_OPA_TRANSP;
 	monospace_text.text.color = LV_COLOR_HEX(0xD8D8D8);
@@ -2293,42 +2308,53 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	lv_style_copy(&btn_transp_rel, th->btn.rel);
 	btn_transp_rel.body.main_color = LV_COLOR_HEX(0x444444);
 	btn_transp_rel.body.grad_color = btn_transp_rel.body.main_color;
+	btn_transp_rel.body.shadow.color = LV_COLOR_HEX(0x0F0F0F);
 	btn_transp_rel.body.opa = LV_OPA_50;
 
 	lv_style_copy(&btn_transp_pr, th->btn.pr);
 	btn_transp_pr.body.main_color = LV_COLOR_HEX(0x888888);
 	btn_transp_pr.body.grad_color = btn_transp_pr.body.main_color;
+	btn_transp_pr.body.shadow.color = LV_COLOR_HEX(0x0F0F0F);
 	btn_transp_pr.body.opa = LV_OPA_50;
 
 	lv_style_copy(&btn_transp_tgl_rel, th->btn.tgl_rel);
 	btn_transp_tgl_rel.body.main_color = LV_COLOR_HEX(0x444444);
 	btn_transp_tgl_rel.body.grad_color = btn_transp_tgl_rel.body.main_color;
+	btn_transp_tgl_rel.body.shadow.color = LV_COLOR_HEX(0x0F0F0F);
 	btn_transp_tgl_rel.body.opa = LV_OPA_50;
 
 	lv_style_copy(&btn_transp_tgl_pr, th->btn.tgl_pr);
 	btn_transp_tgl_pr.body.main_color = LV_COLOR_HEX(0x888888);
 	btn_transp_tgl_pr.body.grad_color = btn_transp_tgl_pr.body.main_color;
+	btn_transp_tgl_pr.body.shadow.color = LV_COLOR_HEX(0x0F0F0F);
 	btn_transp_tgl_pr.body.opa = LV_OPA_50;
+
+	lv_style_copy(&btn_transp_ina, th->btn.ina);
+	btn_transp_ina.body.main_color = LV_COLOR_HEX(0x292929);
+	btn_transp_ina.body.grad_color = btn_transp_ina.body.main_color;
+	btn_transp_ina.body.border.color = LV_COLOR_HEX(0x444444);
+	btn_transp_ina.body.shadow.color = LV_COLOR_HEX(0x0F0F0F);
+	btn_transp_ina.body.opa = LV_OPA_50;
 
 	lv_style_copy(&ddlist_transp_bg, th->ddlist.bg);
 	ddlist_transp_bg.body.main_color = LV_COLOR_HEX(0x2D2D2D);
 	ddlist_transp_bg.body.grad_color = ddlist_transp_bg.body.main_color;
-	ddlist_transp_bg.body.opa = 180;
+	ddlist_transp_bg.body.opa = 180; // 70.6%.
 
 	lv_style_copy(&ddlist_transp_sel, th->ddlist.sel);
 	ddlist_transp_sel.body.main_color = LV_COLOR_HEX(0x4D4D4D);
 	ddlist_transp_sel.body.grad_color = ddlist_transp_sel.body.main_color;
-	ddlist_transp_sel.body.opa = 180;
+	ddlist_transp_sel.body.opa = 180; // 70.6%.
 
 	lv_style_copy(&tabview_btn_pr, th->tabview.btn.pr);
 	tabview_btn_pr.body.main_color = LV_COLOR_HEX(0xFFFFFF);
 	tabview_btn_pr.body.grad_color = tabview_btn_pr.body.main_color;
-	tabview_btn_pr.body.opa = 35;
+	tabview_btn_pr.body.opa = 35; // 13.7%.
 
 	lv_style_copy(&tabview_btn_tgl_pr, th->tabview.btn.tgl_pr);
 	tabview_btn_tgl_pr.body.main_color = LV_COLOR_HEX(0xFFFFFF);
 	tabview_btn_tgl_pr.body.grad_color = tabview_btn_tgl_pr.body.main_color;
-	tabview_btn_tgl_pr.body.opa = 35;
+	tabview_btn_tgl_pr.body.opa = 35; // 13.7%.
 
 	lv_color_t tmp_color = lv_color_hsv_to_rgb(n_cfg.theme_color, 100, 100);
 	text_color = malloc(32);
