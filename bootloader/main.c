@@ -1015,15 +1015,15 @@ out:
 	_nyx_load_run();
 }
 
-#define EXCP_EN_ADDR   0x4003FFFC
+#define EXCP_EN_ADDR   0x4003FF1C
 #define  EXCP_MAGIC       0x30505645 // "EVP0".
-#define EXCP_TYPE_ADDR 0x4003FFF8
+#define EXCP_TYPE_ADDR 0x4003FF18
 #define  EXCP_TYPE_RESET  0x545352   // "RST".
 #define  EXCP_TYPE_UNDEF  0x464455   // "UDF".
 #define  EXCP_TYPE_PABRT  0x54424150 // "PABT".
 #define  EXCP_TYPE_DABRT  0x54424144 // "DABT".
 #define  EXCP_TYPE_WDT    0x544457   // "WDT".
-#define EXCP_LR_ADDR   0x4003FFF4
+#define EXCP_LR_ADDR   0x4003FF14
 
 #define PSTORE_LOG_OFFSET 0x180000
 #define PSTORE_RAM_SIG    0x43474244 // "DBGC".
