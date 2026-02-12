@@ -367,13 +367,13 @@ out:
 int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
 {
 	// Ensure that SDMMC has access to buffer and it's SDMMC DMA aligned.
-	if (mc_client_has_access(buf) && !((u32)buf % 8))
+	if (mc_client_has_access(buf) && !((u32)buf % SDMMC_ADMA_ADDR_ALIGN))
 		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 0);
 
-	if (num_sectors > (SDMMC_UP_BUF_SZ / SDMMC_DAT_BLOCKSIZE))
+	if (num_sectors > (SDMMC_ALT_DMA_BUF_SZ / SDMMC_DAT_BLOCKSIZE))
 		return 0;
 
-	u8 *tmp_buf = (u8 *)SDMMC_UPPER_BUFFER;
+	u8 *tmp_buf = (u8 *)SDMMC_ALT_DMA_BUFFER;
 	if (_sdmmc_storage_readwrite(storage, sector, num_sectors, tmp_buf, 0))
 	{
 		memcpy(buf, tmp_buf, SDMMC_DAT_BLOCKSIZE * num_sectors);
@@ -385,13 +385,13 @@ int sdmmc_storage_read(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, vo
 int sdmmc_storage_write(sdmmc_storage_t *storage, u32 sector, u32 num_sectors, void *buf)
 {
 	// Ensure that SDMMC has access to buffer and it's SDMMC DMA aligned.
-	if (mc_client_has_access(buf) && !((u32)buf % 8))
+	if (mc_client_has_access(buf) && !((u32)buf % SDMMC_ADMA_ADDR_ALIGN))
 		return _sdmmc_storage_readwrite(storage, sector, num_sectors, buf, 1);
 
-	if (num_sectors > (SDMMC_UP_BUF_SZ / SDMMC_DAT_BLOCKSIZE))
+	if (num_sectors > (SDMMC_ALT_DMA_BUF_SZ / SDMMC_DAT_BLOCKSIZE))
 		return 0;
 
-	u8 *tmp_buf = (u8 *)SDMMC_UPPER_BUFFER;
+	u8 *tmp_buf = (u8 *)SDMMC_ALT_DMA_BUFFER;
 	memcpy(tmp_buf, buf, SDMMC_DAT_BLOCKSIZE * num_sectors);
 	return _sdmmc_storage_readwrite(storage, sector, num_sectors, tmp_buf, 1);
 }
@@ -780,7 +780,7 @@ int sdmmc_storage_init_mmc(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_wid
 		return 0;
 	DPRINTF("[MMC] switched buswidth\n");
 
-	if (!mmc_storage_get_ext_csd(storage, (u8 *)SDMMC_UPPER_BUFFER))
+	if (!mmc_storage_get_ext_csd(storage, (u8 *)SDMMC_ALT_DMA_BUFFER))
 		return 0;
 	DPRINTF("[MMC] got ext_csd\n");
 
@@ -1370,7 +1370,7 @@ static int _sd_storage_set_card_bus_speed(sdmmc_storage_t *storage, u32 hs_type,
 int sd_storage_get_fmodes(sdmmc_storage_t *storage, u8 *buf, sd_func_modes_t *fmodes)
 {
 	if (!buf)
-		buf = (u8 *)SDMMC_UPPER_BUFFER;
+		buf = (u8 *)SDMMC_ALT_DMA_BUFFER;
 
 	if (!_sd_storage_switch_get(storage, buf))
 		return 0;
@@ -1797,7 +1797,7 @@ int sdmmc_storage_init_sd(sdmmc_storage_t *storage, sdmmc_t *sdmmc, u32 bus_widt
 {
 	u32  tmp = 0;
 	bool is_sdsc = 0;
-	u8  *buf = (u8 *)SDMMC_UPPER_BUFFER;
+	u8  *buf = (u8 *)SDMMC_ALT_DMA_BUFFER;
 	bool bus_uhs_support = _sdmmc_storage_get_bus_uhs_support(bus_width, type);
 
 	DPRINTF("[SD]-[init: bus: %d, type: %d]\n", bus_width, type);
