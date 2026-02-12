@@ -1,5 +1,5 @@
 /*
- * VIC driver for Tegra X1
+ * VIC (4.0) driver for Tegra X1
  *
  * Copyright (c) 2018-2024 CTCaer
  *
@@ -45,9 +45,10 @@
 #define VIC_FC_CFG_STRUCT_SLOT_CFG2            0x10B0C
 #define  CACHE_WIDTH(n) ((n) << 16)
 #define  CACHE_WIDTH_16BX16                     0 // Block Linear.
-#define  CACHE_WIDTH_32BX8                      1 // Block Linear. Recommended for Block Linear.
-#define  CACHE_WIDTH_64BX4                      2 // Block Linear, Pitch. Recommended for Pitch.
+#define  CACHE_WIDTH_32BX8                      1 // Block Linear.
+#define  CACHE_WIDTH_64BX4                      2 // Block Linear, Pitch. Recommended.
 #define  CACHE_WIDTH_128BX2                     3 // Block Linear, Pitch.
+#define  CACHE_WIDTH_256BX1                     4 // Pitch.
 #define  OUTPUT_FLIP_X                          BIT(20)
 #define  OUTPUT_FLIP_Y                          BIT(21)
 #define  OUTPUT_TRANSPOSE                       BIT(22)
