@@ -1950,9 +1950,13 @@ ini_parsing:
 		lv_label_set_text(launch_ctxt.label[curr_btn_idx], ini_sec->name);
 		lv_obj_set_opa_scale(launch_ctxt.label[curr_btn_idx], LV_OPA_COVER);
 
-		// Set rolling text if name is big.
-		if (strlen(ini_sec->name) > 22)
+		// Set rolling text if name is too big.
+		u32 max_label_size = 238 - (n_cfg.entries_5_col ? 12 : 0);
+		if (lv_obj_get_width(launch_ctxt.label[curr_btn_idx]) > max_label_size)
+		{
 			lv_label_set_long_mode(launch_ctxt.label[curr_btn_idx], LV_LABEL_LONG_ROLL);
+			lv_obj_set_width(launch_ctxt.label[curr_btn_idx], max_label_size);
+		}
 
 		entry_idx++;
 		curr_btn_idx++;
