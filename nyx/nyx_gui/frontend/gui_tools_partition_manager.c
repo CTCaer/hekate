@@ -2155,11 +2155,10 @@ static lv_res_t _create_mbox_partitioning_warn()
 
 static lv_res_t _create_mbox_partitioning_android(lv_obj_t *btns, const char *txt)
 {
-	int btn_idx = lv_btnm_get_pressed(btns);
+	part_info.and_dynamic = lv_btnm_get_pressed(btns);
 
 	nyx_mbox_action(btns, txt);
 
-	part_info.and_dynamic = !btn_idx;
 	_create_mbox_partitioning_warn();
 
 	return LV_RES_INV;
@@ -2171,7 +2170,7 @@ static lv_res_t _create_mbox_partitioning_andr_part()
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\222Dynamic", "\222Legacy", "" };
+	static const char *mbox_btn_map[] = { "\222Legacy", "\222Dynamic", "" };
 	lv_obj_t * mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -2183,8 +2182,8 @@ static lv_res_t _create_mbox_partitioning_andr_part()
 
 	lv_label_set_text(lbl_status,
 		"Please select a partition scheme:\n\n"
-		"#C7EA46 Dynamic:# Android 13+\n"
-		"#C7EA46 Legacy:# Android 10-11\n");
+		"#C7EA46 Dynamic:# Android 13+ (Preferred)\n"
+		"#C7EA46 Legacy:# Android 11\n");
 
 	lv_mbox_add_btns(mbox, mbox_btn_map, _create_mbox_partitioning_android);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -3343,8 +3342,8 @@ lv_res_t create_window_partition_manager(bool emmc)
 		lv_obj_set_click(btn_flash_android, false);
 		lv_btn_set_state(btn_flash_android, LV_BTN_STATE_INA);
 		break;
-	case 1: // Android 10/11.
-		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android 10/11");
+	case 1: // Android 11.
+		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android 11");
 		break;
 	case 2: // Android 13+
 		lv_label_set_static_text(label_btn, SYMBOL_DOWNLOAD"  Flash Android 13+");
