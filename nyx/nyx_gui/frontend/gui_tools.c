@@ -1039,7 +1039,7 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	}
 
 	u8 err[2];
-	if (!touch_panel_ito_test(err))
+	if (touch_panel_ito_test(err))
 		goto ito_failed;
 
 	if (!err[0] && !err[1])
