@@ -29,10 +29,6 @@
 #include <utils/btn.h>
 #include "touch.h"
 
-
-#include <gfx_utils.h>
-#define DPRINTF(...) gfx_printf(__VA_ARGS__)
-
 static touch_panel_info_t _panels[] =
 {
 	{  0,  1, 1, 1,  "NISSHA NFT-K12D" },// 0.
@@ -67,14 +63,16 @@ static int touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 	u32 timer = get_tmr_ms() + timeout;
 	while (true)
 	{
-		u8 tmp[8] = {0};
-		i2c_recv_buf_small(tmp, 8, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
-		if (tmp[1] == event && tmp[2] == status)
+		u8 tmp[STMFTS_EVENT_SIZE] = {0};
+		int res = i2c_recv_buf_small(tmp, STMFTS_EVENT_SIZE, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
+		if (res && tmp[1] == event && tmp[2] == status)
 		{
 			if (buf)
 				memcpy(buf, &tmp[3], 5);
 			return 0;
 		}
+
+		usleep(1000);
 
 		if (get_tmr_ms() > timer)
 			return 1;
@@ -159,59 +157,42 @@ static void _touch_parse_event(touch_event *event)
 			event->type = STMFTS_EV_MULTI_TOUCH_MOTION;
 		else
 			event->type = STMFTS_EV_MULTI_TOUCH_LEAVE;
+		break;
 	}
-
-	// gfx_con_setpos(0, 300);
-	// DPRINTF("x = %d    \ny = %d    \nz = %d  \n", event->x, event->y, event->z);
-	// DPRINTF("0 = %02X\n1 = %02X\n2 = %02X\n3 = %02X\n", event->raw[0], event->raw[1], event->raw[2], event->raw[3]);
-	// DPRINTF("4 = %02X\n5 = %02X\n6 = %02X\n7 = %02X\n", event->raw[4], event->raw[5], event->raw[6], event->raw[7]);
 }
 
 void touch_poll(touch_event *event)
 {
-	i2c_recv_buf_small(event->raw, 8, I2C_3, STMFTS_I2C_ADDR, STMFTS_LATEST_EVENT);
+	i2c_recv_buf_small(event->raw, STMFTS_EVENT_SIZE, I2C_3, STMFTS_I2C_ADDR, STMFTS_LATEST_EVENT);
 
 	_touch_parse_event(event);
 }
 
-touch_event touch_poll_wait()
-{
-	touch_event event;
-	do
-	{
-		touch_poll(&event);
-	} while (event.type != STMFTS_EV_MULTI_TOUCH_LEAVE);
-
-	return event;
-}
-
 touch_info touch_get_info()
 {
-	touch_info info;
-	u8 buf[8];
-	memset(&buf, 0, 8);
-	i2c_recv_buf_small(buf, 8, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_INFO);
+	touch_info info = {0};
+	u8 buf[STMFTS_EVENT_SIZE] = {0};
 
-	info.chip_id = buf[0] << 8 | buf[1];
-	info.fw_ver = buf[2] << 8 | buf[3];
-	info.config_id = buf[4];
-	info.config_ver = buf[5];
+	if (!i2c_recv_buf_small(buf, STMFTS_EVENT_SIZE, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_INFO))
+		return info;
 
-	//DPRINTF("ID: %04X, FW Ver: %d.%02d\nCfg ID: %02X, Cfg Ver: %d\n",
-	//	info.chip_id, info.fw_ver >> 8, info.fw_ver & 0xFF, info.config_id, info.config_ver);
+	info.chip_id    = buf[0] << 8 | buf[1]; // 0x3670.
+	info.fw_ver     = buf[2] << 8 | buf[3];
+	info.config_id  = buf[4]; // FTB.
+	info.config_ver = buf[5]; // FTB.
 
 	return info;
 }
 
 touch_panel_info_t *touch_get_panel_vendor()
 {
-	u8 buf[5] = {0};
 	u8 cmd = STMFTS_VENDOR_GPIO_STATE;
 	static touch_panel_info_t panel_info = { -2,  0, 0, 0,  ""};
 
 	if (touch_command(STMFTS_VENDOR, &cmd, 1))
 		return NULL;
 
+	u8 buf[5] = {0};
 	if (touch_wait_event(STMFTS_EV_VENDOR, STMFTS_VENDOR_GPIO_STATE, 2000, buf))
 		return NULL;
 
@@ -232,26 +213,26 @@ touch_panel_info_t *touch_get_panel_vendor()
 
 int touch_get_fw_info(touch_fw_info_t *fw)
 {
-	u8 buf[8] = {0};
+	u8 buf[STMFTS_EVENT_SIZE] = {0};
 
 	memset(fw, 0, sizeof(touch_fw_info_t));
 
 	// Get fw address info.
 	u8 cmd[3] = { STMFTS_RW_FRAMEBUFFER_REG, 0, 0x60 };
-	int res = touch_read_reg(cmd, 3, buf, 3);
+	int res = touch_read_reg(cmd, sizeof(cmd), buf, 3);
 	if (!res)
 	{
 		// Get fw info.
 		cmd[1] = buf[2]; cmd[2] = buf[1];
-		res = touch_read_reg(cmd, 3, buf, 8);
+		res = touch_read_reg(cmd, sizeof(cmd), buf, 8);
 		if (!res)
 		{
 			fw->fw_id   = (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8) | buf[4];
-			fw->ftb_ver = (buf[6] << 8) | buf[5];
+			fw->ftb_ver = (buf[6] <<  8) |  buf[5];
 		}
 
 		cmd[2]++;
-		res = touch_read_reg(cmd, 3, buf, 8);
+		res = touch_read_reg(cmd, sizeof(cmd), buf, 8);
 		if (!res)
 			fw->fw_rev = (buf[7] << 8) | buf[6];
 	}
@@ -281,36 +262,21 @@ int touch_sys_reset()
 
 int touch_panel_ito_test(u8 *err)
 {
-	int res = 0;
-
 	// Reset touchscreen module.
 	if (touch_sys_reset())
-		return res;
+		return 1;
 
 	// Do ITO Production test.
 	u8 cmd[2] = { 1, 0 };
 	if (touch_command(STMFTS_ITO_CHECK, cmd, 2))
-		return res;
+		return 1;
 
-	u32 timer = get_tmr_ms() + 2000;
-	while (true)
+	u8 buf[5] = {0};
+	int res = touch_wait_event(STMFTS_EV_ERROR, 5, 2000, buf);
+	if (!res && err)
 	{
-		u8 tmp[8] = {0};
-		i2c_recv_buf_small(tmp, 8, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
-		if (tmp[1] == 0xF && tmp[2] == 0x5)
-		{
-			if (err)
-			{
-				err[0] = tmp[3];
-				err[1] = tmp[4];
-			}
-
-			res = 1;
-			break;
-		}
-
-		if (get_tmr_ms() > timer)
-			break;
+		err[0] = buf[0];
+		err[1] = buf[1];
 	}
 
 	// Reset touchscreen module.
@@ -334,12 +300,35 @@ int touch_get_fb_info(u8 *buf)
 			cmd[1] = (i >> 8) & 0xFF;
 			cmd[2] = i & 0xFF;
 			memset(tmp, 0xCC, 5);
-			res = touch_read_reg(cmd, 3, tmp, 5);
+			res = touch_read_reg(cmd, sizeof(cmd), tmp, 5);
 			memcpy(&buf[i], tmp + 1, 4);
 		}
 	}
 
 	return res;
+}
+
+int touch_switch_sense_mode(u8 mode, bool gis_6_2)
+{
+	// Set detection config.
+	u8 cmd[3] = { 1, 0x64, 0 };
+
+	switch (mode)
+	{
+	case STMFTS_STYLUS_MODE:
+		cmd[2] = !gis_6_2 ? 0xC8 : 0xAD;
+		break;
+	case STMFTS_FINGER_MODE:
+		cmd[2] = !gis_6_2 ? 0x8C : 0x79;
+		break;
+	}
+
+	touch_command(STMFTS_DETECTION_CONFIG, cmd, 3);
+
+	// Sense mode.
+	cmd[0] = mode;
+
+	return touch_command(STMFTS_SWITCH_SENSE_MODE, cmd, 1);
 }
 
 int touch_sense_enable()
@@ -428,7 +417,7 @@ int touch_power_on()
 	if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
 	{
 		u8 err[2];
-		if (touch_panel_ito_test(err))
+		if (!touch_panel_ito_test(err))
 			if (!err[0] && !err[1])
 				return touch_execute_autotune();
 	}

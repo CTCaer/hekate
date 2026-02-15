@@ -2,7 +2,7 @@
  * Touch driver for Nintendo Switch's STM FingerTip S (4CD60D) touch controller
  *
  * Copyright (c) 2018 langerhans
- * Copyright (c) 2018-2020 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -163,12 +163,12 @@ typedef struct _touch_fw_info_t {
 } touch_fw_info_t;
 
 void touch_poll(touch_event *event);
-touch_event touch_poll_wait();
 touch_panel_info_t *touch_get_panel_vendor();
 int touch_get_fw_info(touch_fw_info_t *fw);
 touch_info touch_get_info();
 int touch_panel_ito_test(u8 *err);
 int touch_execute_autotune();
+int touch_switch_sense_mode(u8 mode, bool gis_6_2);
 int touch_sense_enable();
 int touch_power_on();
 void touch_power_off();
