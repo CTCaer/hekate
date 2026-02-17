@@ -199,7 +199,8 @@
 #define UTMIPLL_LOCK         BIT(31)
 
 /*! Clock source */
-#define CLK_SRC_DIV(d) ((d) ? ((u32)(((d) - 1) * 2)) : 0)
+#define CLK_SRC_DIV(d)     ((d) ? ((u32)(((d) - 1) * 2)) : 0)
+#define CLK_I2C_SRC_DIV(d) ((d) ? ((u32)(((d) - 1))) : 0)
 
 /*! PTO_CLK_CNT */
 #define PTO_REF_CLK_WIN_CFG_MASK 0xF
