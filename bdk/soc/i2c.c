@@ -198,11 +198,6 @@ static int _i2c_send_packet(u32 i2c_idx, const u8 *buf, u32 size, u32 dev_addr)
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
-	// Enable interrupts.
-	base[I2C_INT_EN] = ALL_PACKETS_COMPLETE | PACKET_COMPLETE | NO_ACK |
-		ARB_LOST | TX_FIFO_OVER | RX_FIFO_UNDER | TX_FIFO_DATA_REQ;
-	base[I2C_INT_STATUS] = base[I2C_INT_STATUS];
-
 	// Set device address and send mode.
 	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_WRITE;
 
@@ -218,29 +213,26 @@ static int _i2c_send_packet(u32 i2c_idx, const u8 *buf, u32 size, u32 dev_addr)
 	// Initiate transaction on packet mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & ~NORMAL_MODE_GO) | PACKET_MODE_GO;
 
-	u32 hdr[3];
-	hdr[0] = I2C_PACKET_PROT_I2C;
-	hdr[1] = size - 1;
-	hdr[2] = I2C_HEADER_IE_ENABLE | I2C_HEADER_CONT_XFER | (dev_addr << 1);
-
 	// Send header with request.
-	base[I2C_TX_FIFO] = hdr[0];
-	base[I2C_TX_FIFO] = hdr[1];
-	base[I2C_TX_FIFO] = hdr[2];
+	base[I2C_TX_FIFO] = I2C_PACKET_PROT_I2C;
+	base[I2C_TX_FIFO] = size - 1;
+	base[I2C_TX_FIFO] = I2C_HEADER_IE_ENABLE | I2C_HEADER_CONT_XFER | (dev_addr << 1);
+
+	// Send data.
+	u32 rem = size;
+	while (rem)
+	{
+		u32 len = MIN(rem, sizeof(u32));
+		u32 word = 0;
+		memcpy(&word, buf, len);
+		base[I2C_TX_FIFO] = word;
+		buf += len;
+		rem -= len;
+	}
 
 	u32 timeout = get_tmr_ms() + 200;
-	while (size)
+	while (((base[I2C_PACKET_TRANSFER_STATUS] >> 4) & 0xFFF) != (size - 1))
 	{
-		if (base[I2C_FIFO_STATUS] & TX_FIFO_EMPTY_CNT)
-		{
-			u32 tmp = 0;
-			u32 snd_size = MIN(size, 4);
-			memcpy(&tmp, buf, snd_size);
-			base[I2C_TX_FIFO] = tmp;
-			buf += snd_size;
-			size -= snd_size;
-		}
-
 		if (get_tmr_ms() > timeout)
 		{
 			res = 0;
@@ -248,32 +240,26 @@ static int _i2c_send_packet(u32 i2c_idx, const u8 *buf, u32 size, u32 dev_addr)
 		}
 	}
 
-	if (base[I2C_STATUS] & I2C_STATUS_NOACK || base[I2C_INT_STATUS] & NO_ACK)
+	// Check if no reply.
+	if (base[I2C_STATUS] & I2C_STATUS_NOACK)
 		res = 0;
 
 	// Wait for STOP and disable packet mode.
 	usleep(20);
 	base[I2C_CNFG] &= ~(PACKET_MODE_GO | NORMAL_MODE_GO);
 
-	// Disable interrupts.
-	base[I2C_INT_EN] = 0;
-
 	return res;
 }
 
-int i2c_xfer_packet(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
+int i2c_xfer_packet(u32 i2c_idx, u32 dev_addr, const u8 *tx_buf, u32 tx_size, u8 *rx_buf, u32 rx_size)
 {
-	if (size > 32)
+	// Max 32 bytes TX/RX fifo.
+	if (tx_size > 20 || rx_size > 32) // Header included.
 		return 0;
 
 	int res = 1;
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
-
-	// Enable interrupts.
-	base[I2C_INT_EN] = ALL_PACKETS_COMPLETE | PACKET_COMPLETE | NO_ACK |
-		ARB_LOST | TX_FIFO_OVER | RX_FIFO_UNDER | RX_FIFO_DATA_REQ;
-	base[I2C_INT_STATUS] = base[I2C_INT_STATUS];
 
 	// Set device address and recv mode.
 	base[I2C_CMD_ADDR0] = (dev_addr << 1) | ADDR0_READ;
@@ -290,42 +276,49 @@ int i2c_xfer_packet(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 	// Initiate transaction on packet mode.
 	base[I2C_CNFG] = (base[I2C_CNFG] & ~NORMAL_MODE_GO) | PACKET_MODE_GO;
 
-	// Send reg request.
-	u32 hdr[3];
-	hdr[0] = I2C_PACKET_PROT_I2C;
-	hdr[1] = 1 - 1;
-	hdr[2] = I2C_HEADER_REP_START | (dev_addr << 1);
+	// Send header with send request.
+	base[I2C_TX_FIFO] = I2C_PACKET_PROT_I2C;
+	base[I2C_TX_FIFO] = tx_size - 1;
+	base[I2C_TX_FIFO] = I2C_HEADER_REP_START | (dev_addr << 1);
 
-	// Send header with reg request.
-	base[I2C_TX_FIFO] = hdr[0];
-	base[I2C_TX_FIFO] = hdr[1];
-	base[I2C_TX_FIFO] = hdr[2];
-	base[I2C_TX_FIFO] = reg;
+	// Send data.
+	u32 tx_rem = tx_size;
+	while (tx_rem)
+	{
+		u32 len = MIN(tx_rem, sizeof(u32));
+		u32 word = 0;
+		memcpy(&word, tx_buf, len);
+		base[I2C_TX_FIFO] = word;
+		tx_buf += len;
+		tx_rem -= len;
+	}
 
 	u32 timeout = get_tmr_ms() + 200;
-	while (!(base[I2C_FIFO_STATUS] & TX_FIFO_EMPTY_CNT))
+	while (((base[I2C_PACKET_TRANSFER_STATUS] >> 4) & 0xFFF) != (tx_size - 1))
+	{
 		if (get_tmr_ms() > timeout)
-			break;
+		{
+			res = 0;
+			goto out;
+		}
+	}
 
-	// Send read request.
-	hdr[1] = size - 1;
-	hdr[2] = I2C_HEADER_READ | (dev_addr << 1);
+	// Send header with receive request
+	base[I2C_TX_FIFO] = I2C_PACKET_PROT_I2C;
+	base[I2C_TX_FIFO] = rx_size - 1;
+	base[I2C_TX_FIFO] = I2C_HEADER_READ | (dev_addr << 1);
 
-	// Send header with read request.
-	base[I2C_TX_FIFO] = hdr[0];
-	base[I2C_TX_FIFO] = hdr[1];
-	base[I2C_TX_FIFO] = hdr[2];
-
+	// Receive data.
 	timeout = get_tmr_ms() + 200;
-	while (size)
+	while (rx_size)
 	{
 		if (base[I2C_FIFO_STATUS] & RX_FIFO_FULL_CNT)
 		{
-			u32 rcv_size = MIN(size, 4);
-			u32 tmp = base[I2C_RX_FIFO];
-			memcpy(buf, &tmp, rcv_size);
-			buf += rcv_size;
-			size -= rcv_size;
+			u32 len = MIN(rx_size, sizeof(u32));
+			u32 word = base[I2C_RX_FIFO];
+			memcpy(rx_buf, &word, len);
+			rx_buf  += len;
+			rx_size -= len;
 		}
 
 		if (get_tmr_ms() > timeout)
@@ -335,15 +328,14 @@ int i2c_xfer_packet(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 		}
 	}
 
-	if (base[I2C_STATUS] & I2C_STATUS_NOACK || base[I2C_INT_STATUS] & NO_ACK)
+out:
+	// Check if no reply.
+	if (base[I2C_STATUS] & I2C_STATUS_NOACK)
 		res = 0;
 
 	// Wait for STOP and disable packet mode.
 	usleep(20);
 	base[I2C_CNFG] &= ~(PACKET_MODE_GO | NORMAL_MODE_GO);
-
-	// Disable interrupts.
-	base[I2C_INT_EN] = 0;
 
 	return res;
 }
@@ -376,7 +368,7 @@ int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 
 int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 {
-	return i2c_xfer_packet(i2c_idx, buf, size, dev_addr, reg);
+	return i2c_xfer_packet(i2c_idx, dev_addr, (u8 *)&reg, 1, buf, size);
 }
 
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, const u8 *buf, u32 size)

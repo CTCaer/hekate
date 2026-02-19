@@ -28,7 +28,7 @@
 #define I2C_6 5
 
 void i2c_init(u32 i2c_idx);
-int i2c_xfer_packet(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg);
+int i2c_xfer_packet(u32 i2c_idx, u32 dev_addr, const u8 *tx_buf, u32 tx_size, u8 *rx_buf, u32 rx_size);
 int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size);
 int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg);
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, const u8 *buf, u32 size);
