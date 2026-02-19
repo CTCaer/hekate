@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -49,6 +49,9 @@
 #define I2C_TX_FIFO           (0x50 / 4)
 #define I2C_RX_FIFO           (0x54 / 4)
 
+#define I2C_PACKET_TRANSFER_STATUS (0x58 / 4)
+#define  PKT_TRANSFER_COMPLETE BIT(24)
+
 #define I2C_FIFO_CONTROL      (0x5C / 4)
 #define  RX_FIFO_FLUSH        BIT(0)
 #define  TX_FIFO_FLUSH        BIT(1)
@@ -96,7 +99,7 @@ static void _i2c_load_cfg_wait(vu32 *base)
 	}
 }
 
-static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
+static int _i2c_send_normal(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 {
 	if (size > 8)
 		return 0;
@@ -129,12 +132,12 @@ static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 	_i2c_load_cfg_wait(base);
 
 	// Initiate transaction on normal mode.
-	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | NORMAL_MODE_GO;
+	base[I2C_CNFG] = (base[I2C_CNFG] & ~NORMAL_MODE_GO) | NORMAL_MODE_GO;
 
-	u32 timeout = get_tmr_us() + 200000; // Actual for max 8 bytes at 100KHz is 0.74ms.
+	u32 timeout = get_tmr_ms() + 100; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 			return 0;
 	}
 
@@ -144,7 +147,7 @@ static int _i2c_send_single(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 	return 1;
 }
 
-static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
+static int _i2c_recv_normal(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 {
 	if (size > 8)
 		return 0;
@@ -161,12 +164,12 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	_i2c_load_cfg_wait(base);
 
 	// Initiate transaction on normal mode.
-	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | NORMAL_MODE_GO;
+	base[I2C_CNFG] = (base[I2C_CNFG] & ~NORMAL_MODE_GO) | NORMAL_MODE_GO;
 
-	u32 timeout = get_tmr_us() + 200000; // Actual for max 8 bytes at 100KHz is 0.74ms.
+	u32 timeout = get_tmr_ms() + 100; // Actual for max 8 bytes at 100KHz is 0.74ms.
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
-		if (get_tmr_us() > timeout)
+		if (get_tmr_ms() > timeout)
 			return 0;
 	}
 
@@ -186,12 +189,12 @@ static int _i2c_recv_single(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	return 1;
 }
 
-static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
+static int _i2c_send_packet(u32 i2c_idx, const u8 *buf, u32 size, u32 dev_addr)
 {
 	if (size > 32)
 		return 0;
 
-	int res = 0;
+	int res = 1;
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
@@ -213,7 +216,7 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	_i2c_load_cfg_wait(base);
 
 	// Initiate transaction on packet mode.
-	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | PACKET_MODE_GO;
+	base[I2C_CNFG] = (base[I2C_CNFG] & ~NORMAL_MODE_GO) | PACKET_MODE_GO;
 
 	u32 hdr[3];
 	hdr[0] = I2C_PACKET_PROT_I2C;
@@ -225,7 +228,7 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	base[I2C_TX_FIFO] = hdr[1];
 	base[I2C_TX_FIFO] = hdr[2];
 
-	u32 timeout = get_tmr_ms() + 400;
+	u32 timeout = get_tmr_ms() + 200;
 	while (size)
 	{
 		if (base[I2C_FIFO_STATUS] & TX_FIFO_EMPTY_CNT)
@@ -240,17 +243,17 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 
 		if (get_tmr_ms() > timeout)
 		{
-			res = 1;
+			res = 0;
 			break;
 		}
 	}
 
 	if (base[I2C_STATUS] & I2C_STATUS_NOACK || base[I2C_INT_STATUS] & NO_ACK)
-		res = 1;
+		res = 0;
 
-	// Disable packet mode.
+	// Wait for STOP and disable packet mode.
 	usleep(20);
-	base[I2C_CNFG] &= 0xFFFFF9FF;
+	base[I2C_CNFG] &= ~(PACKET_MODE_GO | NORMAL_MODE_GO);
 
 	// Disable interrupts.
 	base[I2C_INT_EN] = 0;
@@ -258,12 +261,12 @@ static int _i2c_send_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	return res;
 }
 
-static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
+int i2c_xfer_packet(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 {
 	if (size > 32)
 		return 0;
 
-	int res = 0;
+	int res = 1;
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
@@ -285,7 +288,7 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 	_i2c_load_cfg_wait(base);
 
 	// Initiate transaction on packet mode.
-	base[I2C_CNFG] = (base[I2C_CNFG] & 0xFFFFF9FF) | PACKET_MODE_GO;
+	base[I2C_CNFG] = (base[I2C_CNFG] & ~NORMAL_MODE_GO) | PACKET_MODE_GO;
 
 	// Send reg request.
 	u32 hdr[3];
@@ -299,7 +302,7 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 	base[I2C_TX_FIFO] = hdr[2];
 	base[I2C_TX_FIFO] = reg;
 
-	u32 timeout = get_tmr_ms() + 400;
+	u32 timeout = get_tmr_ms() + 200;
 	while (!(base[I2C_FIFO_STATUS] & TX_FIFO_EMPTY_CNT))
 		if (get_tmr_ms() > timeout)
 			break;
@@ -313,7 +316,7 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 	base[I2C_TX_FIFO] = hdr[1];
 	base[I2C_TX_FIFO] = hdr[2];
 
-	timeout = get_tmr_ms() + 400;
+	timeout = get_tmr_ms() + 200;
 	while (size)
 	{
 		if (base[I2C_FIFO_STATUS] & RX_FIFO_FULL_CNT)
@@ -327,17 +330,17 @@ static int _i2c_recv_pkt(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr, u32 reg)
 
 		if (get_tmr_ms() > timeout)
 		{
-			res = 1;
+			res = 0;
 			break;
 		}
 	}
 
 	if (base[I2C_STATUS] & I2C_STATUS_NOACK || base[I2C_INT_STATUS] & NO_ACK)
-		res = 1;
+		res = 0;
 
-	// Disable packet mode.
+	// Wait for STOP and disable packet mode.
 	usleep(20);
-	base[I2C_CNFG] &= 0xFFFFF9FF;
+	base[I2C_CNFG] &= ~(PACKET_MODE_GO | NORMAL_MODE_GO);
 
 	// Disable interrupts.
 	base[I2C_INT_EN] = 0;
@@ -366,42 +369,33 @@ void i2c_init(u32 i2c_idx)
 	base[I2C_INT_STATUS] = base[I2C_INT_STATUS];
 }
 
-int i2c_recv_buf(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr)
+int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 {
-	return _i2c_recv_single(i2c_idx, buf, size, dev_addr);
-}
-
-int i2c_send_buf_big(u32 i2c_idx, u32 dev_addr, u8 *buf, u32 size)
-{
-	if (size > 32)
-		return 0;
-
-	return _i2c_send_pkt(i2c_idx, buf, size, dev_addr);
+	return _i2c_send_packet(i2c_idx, buf, size, dev_addr);
 }
 
 int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 {
-	return _i2c_recv_pkt(i2c_idx, buf, size, dev_addr, reg);
+	return i2c_xfer_packet(i2c_idx, buf, size, dev_addr, reg);
 }
 
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, const u8 *buf, u32 size)
 {
-	u8 tmp[8];
-
 	if (size > 7)
 		return 0;
 
+	u8 tmp[8];
 	tmp[0] = reg;
 	memcpy(tmp + 1, buf, size);
 
-	return _i2c_send_single(i2c_idx, dev_addr, tmp, size + 1);
+	return _i2c_send_normal(i2c_idx, dev_addr, tmp, size + 1);
 }
 
 int i2c_recv_buf_small(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 {
-	int res = _i2c_send_single(i2c_idx, dev_addr, (u8 *)&reg, 1);
+	int res = _i2c_send_normal(i2c_idx, dev_addr, (u8 *)&reg, 1);
 	if (res)
-		res = _i2c_recv_single(i2c_idx, buf, size, dev_addr);
+		res = _i2c_recv_normal(i2c_idx, buf, size, dev_addr);
 	return res;
 }
 
