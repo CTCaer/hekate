@@ -39,32 +39,26 @@ static touch_panel_info_t _panels[] =
 	{ -1,  1, 0, 1,  "GiS VA 6.2\""    } // 2.
 };
 
-static int touch_command(u8 cmd, u8 *buf, u8 size)
+static touch_info_t _touch_info = { 0 };
+static touch_panel_info_t _touch_panel_info = { 0 };
+
+static int _touch_command(u8 cmd, u8 *buf, u8 size)
 {
-	int res = i2c_send_buf_small(I2C_3, STMFTS_I2C_ADDR, cmd, buf, size);
-	if (!res)
-		return 1;
-	return 0;
+	return !i2c_send_buf_small(I2C_3, FTS4_I2C_ADDR, cmd, buf, size);
 }
 
-static int touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
+static int _touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
 {
-	int res = i2c_send_buf_small(I2C_3, STMFTS_I2C_ADDR, cmd[0], &cmd[1], csize - 1);
-	if (res)
-		res = i2c_recv_buf(buf, size, I2C_3, STMFTS_I2C_ADDR);
-	if (!res)
-		return 1;
-
-	return 0;
+	return !i2c_xfer_packet(I2C_3, FTS4_I2C_ADDR, cmd, csize, buf, size);
 }
 
-static int touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
+static int _touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 {
 	u32 timer = get_tmr_ms() + timeout;
 	while (true)
 	{
-		u8 tmp[STMFTS_EVENT_SIZE] = {0};
-		int res = i2c_recv_buf_small(tmp, STMFTS_EVENT_SIZE, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_ONE_EVENT);
+		u8 tmp[FTS4_EVENT_SIZE] = {0};
+		int res = i2c_recv_buf_small(tmp, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_ONE_EVENT);
 		if (res && tmp[1] == event && tmp[2] == status)
 		{
 			if (buf)
@@ -83,7 +77,7 @@ static int touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 #define Y_REAL_MAX 704
 #define EDGE_OFFSET 15
 
-static void _touch_compensate_limits(touch_event *event, bool touching)
+static void _touch_compensate_limits(touch_event_t *event, bool touching)
 {
 	event->x  = MAX(event->x, EDGE_OFFSET);
 	event->x  = MIN(event->x, X_REAL_MAX);
@@ -101,15 +95,15 @@ static void _touch_compensate_limits(touch_event *event, bool touching)
 	}
 }
 
-static void _touch_process_contact_event(touch_event *event, bool touching)
+static void _touch_process_contact_event(touch_event_t *event, bool touching)
 {
-	event->x = (event->raw[2] << 4) | ((event->raw[4] & STMFTS_MASK_Y_LSB) >> 4);
+	event->x = (event->raw[2] << 4) | ((event->raw[4] & FTS4_MASK_Y_LSB) >> 4);
 
 	// Normally, GUI elements have bigger horizontal estate.
 	// Avoid parsing y axis when finger is removed to minimize touch noise.
 	if (touching)
 	{
-		event->y = (event->raw[3] << 4) | (event->raw[4] & STMFTS_MASK_X_MSB);
+		event->y = (event->raw[3] << 4) | (event->raw[4] & FTS4_MASK_X_MSB);
 
 		event->z = event->raw[5] | (event->raw[6] << 8);
 		event->z = event->z << 6;
@@ -119,7 +113,7 @@ static void _touch_process_contact_event(touch_event *event, bool touching)
 			tmp = event->raw[7] & 0x3F;
 		event->z /= tmp + 0x40;
 
-		event->fingers = ((event->raw[1] & STMFTS_MASK_TOUCH_ID) >> 4) + 1;
+		event->fingers = ((event->raw[1] & FTS4_MASK_TOUCH_ID) >> 4) + 1;
 	}
 	else
 		event->fingers = 0;
@@ -127,73 +121,79 @@ static void _touch_process_contact_event(touch_event *event, bool touching)
 	_touch_compensate_limits(event, touching);
 }
 
-static void _touch_parse_event(touch_event *event)
+static void _touch_parse_input_event(touch_event_t *event)
 {
-	event->type = event->raw[1] & STMFTS_MASK_EVENT_ID;
+	event->type = event->raw[1] & FTS4_MASK_EVENT_ID;
 
 	switch (event->type)
 	{
-	case STMFTS_EV_MULTI_TOUCH_ENTER:
-	case STMFTS_EV_MULTI_TOUCH_MOTION:
+	case FTS4_EV_MULTI_TOUCH_ENTER:
+	case FTS4_EV_MULTI_TOUCH_MOTION:
 		_touch_process_contact_event(event, true);
 		if (event->z < 255) // Reject palm rest.
 			event->touch = true;
 		else
 		{
 			event->touch = false;
-			event->type = STMFTS_EV_MULTI_TOUCH_LEAVE;
+			event->type = FTS4_EV_MULTI_TOUCH_LEAVE;
 		}
 		break;
-	case STMFTS_EV_MULTI_TOUCH_LEAVE:
+
+	case FTS4_EV_MULTI_TOUCH_LEAVE:
 		event->touch = false;
 		_touch_process_contact_event(event, false);
 		break;
-	case STMFTS_EV_NO_EVENT:
+
+	case FTS4_EV_NO_EVENT:
 		if (event->touch)
-			event->type = STMFTS_EV_MULTI_TOUCH_MOTION;
+			event->type = FTS4_EV_MULTI_TOUCH_MOTION;
 		break;
+
 	default:
-		if (event->touch && event->raw[0] == STMFTS_EV_MULTI_TOUCH_MOTION)
-			event->type = STMFTS_EV_MULTI_TOUCH_MOTION;
+		if (event->touch && event->raw[0] == FTS4_EV_MULTI_TOUCH_MOTION)
+			event->type = FTS4_EV_MULTI_TOUCH_MOTION;
 		else
-			event->type = STMFTS_EV_MULTI_TOUCH_LEAVE;
+			event->type = FTS4_EV_MULTI_TOUCH_LEAVE;
 		break;
 	}
 }
 
-void touch_poll(touch_event *event)
+void touch_poll(touch_event_t *event)
 {
-	i2c_recv_buf_small(event->raw, STMFTS_EVENT_SIZE, I2C_3, STMFTS_I2C_ADDR, STMFTS_LATEST_EVENT);
+	i2c_recv_buf_small(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
 
-	_touch_parse_event(event);
+	_touch_parse_input_event(event);
 }
 
-touch_info touch_get_info()
+touch_info_t *touch_get_chip_info()
 {
-	touch_info info = {0};
-	u8 buf[STMFTS_EVENT_SIZE] = {0};
+	u8 buf[FTS4_EVENT_SIZE] = {0};
 
-	if (!i2c_recv_buf_small(buf, STMFTS_EVENT_SIZE, I2C_3, STMFTS_I2C_ADDR, STMFTS_READ_INFO))
-		return info;
+	if (!i2c_recv_buf_small(buf, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_INFO))
+	{
+		memset(&_touch_info, 0, sizeof(touch_info_t));
+		goto exit;
+	}
 
-	info.chip_id    = buf[0] << 8 | buf[1]; // 0x3670.
-	info.fw_ver     = buf[2] << 8 | buf[3];
-	info.config_id  = buf[4]; // FTB.
-	info.config_ver = buf[5]; // FTB.
+	_touch_info.chip_id    = buf[0] << 8 | buf[1]; // 0x3670.
+	_touch_info.fw_ver     = buf[2] << 8 | buf[3];
+	_touch_info.config_id  = buf[4]; // FTB.
+	_touch_info.config_ver = buf[5]; // FTB.
 
-	return info;
+exit:
+	return &_touch_info;
 }
 
 touch_panel_info_t *touch_get_panel_vendor()
 {
-	u8 cmd = STMFTS_VENDOR_GPIO_STATE;
-	static touch_panel_info_t panel_info = { -2,  0, 0, 0,  ""};
+	_touch_panel_info.idx = -2;
 
-	if (touch_command(STMFTS_VENDOR, &cmd, 1))
+	u8 cmd = FTS4_VENDOR_GPIO_STATE;
+	if (_touch_command(FTS4_CMD_VENDOR, &cmd, 1))
 		return NULL;
 
-	u8 buf[5] = {0};
-	if (touch_wait_event(STMFTS_EV_VENDOR, STMFTS_VENDOR_GPIO_STATE, 2000, buf))
+	u8 buf[5] = { 0 };
+	if (_touch_wait_event(FTS4_EV_VENDOR, FTS4_VENDOR_GPIO_STATE, 2000, buf))
 		return NULL;
 
 	for (u32 i = 0; i < ARRAY_SIZE(_panels); i++)
@@ -204,27 +204,27 @@ touch_panel_info_t *touch_get_panel_vendor()
 	}
 
 	// Touch panel not found, return current gpios.
-	panel_info.gpio0 = buf[0];
-	panel_info.gpio1 = buf[1];
-	panel_info.gpio2 = buf[2];
+	_touch_panel_info.gpio0 = buf[0];
+	_touch_panel_info.gpio1 = buf[1];
+	_touch_panel_info.gpio2 = buf[2];
 
-	return &panel_info;
+	return &_touch_panel_info;
 }
 
 int touch_get_fw_info(touch_fw_info_t *fw)
 {
-	u8 buf[STMFTS_EVENT_SIZE] = {0};
+	u8 buf[FTS4_EVENT_SIZE] = {0};
 
 	memset(fw, 0, sizeof(touch_fw_info_t));
 
 	// Get fw address info.
-	u8 cmd[3] = { STMFTS_RW_FRAMEBUFFER_REG, 0, 0x60 };
-	int res = touch_read_reg(cmd, sizeof(cmd), buf, 3);
+	u8 cmd[3] = { FTS4_CMD_FB_REG_READ, 0, 0x60 };
+	int res = _touch_read_reg(cmd, sizeof(cmd), buf, 3);
 	if (!res)
 	{
 		// Get fw info.
 		cmd[1] = buf[2]; cmd[2] = buf[1];
-		res = touch_read_reg(cmd, sizeof(cmd), buf, 8);
+		res = _touch_read_reg(cmd, sizeof(cmd), buf, sizeof(buf));
 		if (!res)
 		{
 			fw->fw_id   = (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8) | buf[4];
@@ -232,7 +232,7 @@ int touch_get_fw_info(touch_fw_info_t *fw)
 		}
 
 		cmd[2]++;
-		res = touch_read_reg(cmd, sizeof(cmd), buf, 8);
+		res = _touch_read_reg(cmd, sizeof(cmd), buf, 8);
 		if (!res)
 			fw->fw_rev = (buf[7] << 8) | buf[6];
 	}
@@ -245,13 +245,13 @@ int touch_sys_reset()
 	u8 cmd[3] = { 0, 0x28, 0x80 }; // System reset cmd.
 	for (u8 retries = 0; retries < 3; retries++)
 	{
-		if (touch_command(STMFTS_WRITE_REG, cmd, 3))
+		if (_touch_command(FTS4_CMD_HW_REG_WRITE, cmd, 3))
 		{
 			msleep(10);
 			continue;
 		}
 		msleep(10);
-		if (touch_wait_event(STMFTS_EV_CONTROLLER_READY, 0, 20, NULL))
+		if (_touch_wait_event(FTS4_EV_CONTROLLER_READY, 0, 20, NULL))
 			continue;
 		else
 			return 0;
@@ -268,11 +268,11 @@ int touch_panel_ito_test(u8 *err)
 
 	// Do ITO Production test.
 	u8 cmd[2] = { 1, 0 };
-	if (touch_command(STMFTS_ITO_CHECK, cmd, 2))
+	if (_touch_command(FTS4_CMD_ITO_CHECK, cmd, 2))
 		return 1;
 
-	u8 buf[5] = {0};
-	int res = touch_wait_event(STMFTS_EV_ERROR, 5, 2000, buf);
+	u8 buf[5] = { 0 };
+	int res = _touch_wait_event(FTS4_EV_ERROR, 5, 2000, buf);
 	if (!res && err)
 	{
 		err[0] = buf[0];
@@ -287,11 +287,8 @@ int touch_panel_ito_test(u8 *err)
 
 int touch_get_fb_info(u8 *buf)
 {
-	u8 tmp[5];
-
-	u8 cmd[3] = { STMFTS_RW_FRAMEBUFFER_REG, 0, 0 };
+	u8 cmd[3] = { FTS4_CMD_FB_REG_READ, 0, 0 };
 	int res = 0;
-
 
 	for (u32 i = 0; i < 0x10000; i += 4)
 	{
@@ -299,8 +296,10 @@ int touch_get_fb_info(u8 *buf)
 		{
 			cmd[1] = (i >> 8) & 0xFF;
 			cmd[2] = i & 0xFF;
-			memset(tmp, 0xCC, 5);
-			res = touch_read_reg(cmd, sizeof(cmd), tmp, 5);
+
+			u8 tmp[5];
+			memset(tmp, 0xCC, sizeof(tmp));
+			res = _touch_read_reg(cmd, sizeof(cmd), tmp, sizeof(tmp));
 			memcpy(&buf[i], tmp + 1, 4);
 		}
 	}
@@ -315,33 +314,33 @@ int touch_switch_sense_mode(u8 mode, bool gis_6_2)
 
 	switch (mode)
 	{
-	case STMFTS_STYLUS_MODE:
+	case FTS4_STYLUS_MODE:
 		cmd[2] = !gis_6_2 ? 0xC8 : 0xAD;
 		break;
-	case STMFTS_FINGER_MODE:
+	case FTS4_FINGER_MODE:
 		cmd[2] = !gis_6_2 ? 0x8C : 0x79;
 		break;
 	}
 
-	touch_command(STMFTS_DETECTION_CONFIG, cmd, 3);
+	_touch_command(FTS4_CMD_DETECTION_CONFIG, cmd, 3);
 
 	// Sense mode.
 	cmd[0] = mode;
 
-	return touch_command(STMFTS_SWITCH_SENSE_MODE, cmd, 1);
+	return _touch_command(FTS4_CMD_SWITCH_SENSE_MODE, cmd, 1);
 }
 
 int touch_sense_enable()
 {
 	// Switch sense mode and enable multi-touch sensing.
-	u8 cmd = STMFTS_FINGER_MODE;
-	if (touch_command(STMFTS_SWITCH_SENSE_MODE, &cmd, 1))
+	u8 cmd = FTS4_FINGER_MODE;
+	if (_touch_command(FTS4_CMD_SWITCH_SENSE_MODE, &cmd, 1))
 		return 0;
 
-	if (touch_command(STMFTS_MS_MT_SENSE_ON, NULL, 0))
+	if (_touch_command(FTS4_CMD_MS_MT_SENSE_ON, NULL, 0))
 		return 0;
 
-	if (touch_command(STMFTS_CLEAR_EVENT_STACK, NULL, 0))
+	if (_touch_command(FTS4_CMD_CLEAR_EVENT_STACK, NULL, 0))
 		return 0;
 
 	return 1;
@@ -354,27 +353,27 @@ int touch_execute_autotune()
 		return 0;
 
 	// Trim low power oscillator.
-	if (touch_command(STMFTS_LP_TIMER_CALIB, NULL, 0))
+	if (_touch_command(FTS4_CMD_LP_TIMER_CALIB, NULL, 0))
 		return 0;
 
 	msleep(200);
 
 	// Apply Mutual Sense Compensation tuning.
-	if (touch_command(STMFTS_MS_CX_TUNING, NULL, 0))
+	if (_touch_command(FTS4_CMD_MS_CX_TUNING, NULL, 0))
 		return 0;
-	if (touch_wait_event(STMFTS_EV_STATUS, STMFTS_EV_STATUS_MS_CX_TUNING_DONE, 2000, NULL))
+	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_MS_CX_TUNING_DONE, 2000, NULL))
 		return 0;
 
 	// Apply Self Sense Compensation tuning.
-	if (touch_command(STMFTS_SS_CX_TUNING, NULL, 0))
+	if (_touch_command(FTS4_CMD_SS_CX_TUNING, NULL, 0))
 		return 0;
-	if (touch_wait_event(STMFTS_EV_STATUS, STMFTS_EV_STATUS_SS_CX_TUNING_DONE, 2000, NULL))
+	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_SS_CX_TUNING_DONE, 2000, NULL))
 		return 0;
 
 	// Save Compensation data to EEPROM.
-	if (touch_command(STMFTS_SAVE_CX_TUNING, NULL, 0))
+	if (_touch_command(FTS4_CMD_SAVE_CX_TUNING, NULL, 0))
 		return 0;
-	if (touch_wait_event(STMFTS_EV_STATUS, STMFTS_EV_STATUS_WRITE_CX_TUNE_DONE, 2000, NULL))
+	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_WRITE_CX_TUNE_DONE, 2000, NULL))
 		return 0;
 
 	return touch_sense_enable();
@@ -411,7 +410,7 @@ int touch_power_on()
 	usleep(10000);
 
 	// Wait for the touchscreen module to get ready.
-	touch_wait_event(STMFTS_EV_CONTROLLER_READY, 0, 20, NULL);
+	_touch_wait_event(FTS4_EV_CONTROLLER_READY, 0, 20, NULL);
 
 	// Check for forced boot time calibration.
 	if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
