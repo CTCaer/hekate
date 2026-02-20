@@ -58,15 +58,16 @@ static int _touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 	while (true)
 	{
 		u8 tmp[FTS4_EVENT_SIZE] = {0};
-		int res = i2c_recv_buf_small(tmp, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_ONE_EVENT);
-		if (res && tmp[1] == event && tmp[2] == status)
+		int res = i2c_recv_buf_big(tmp, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_ONE_EVENT);
+		if (res && tmp[0] == event && tmp[1] == status)
 		{
 			if (buf)
-				memcpy(buf, &tmp[3], 5);
+				memcpy(buf, &tmp[2], 6);
 			return 0;
 		}
 
-		usleep(1000);
+retry:
+		usleep(500);
 
 		if (get_tmr_ms() > timer)
 			return 1;
@@ -97,23 +98,23 @@ static void _touch_compensate_limits(touch_event_t *event, bool touching)
 
 static void _touch_process_contact_event(touch_event_t *event, bool touching)
 {
-	event->x = (event->raw[2] << 4) | ((event->raw[4] & FTS4_MASK_Y_LSB) >> 4);
+	event->x = (event->raw[1] << 4) | ((event->raw[3] & FTS4_MASK_Y_LSB) >> 4);
 
 	// Normally, GUI elements have bigger horizontal estate.
 	// Avoid parsing y axis when finger is removed to minimize touch noise.
 	if (touching)
 	{
-		event->y = (event->raw[3] << 4) | (event->raw[4] & FTS4_MASK_X_MSB);
+		event->y = (event->raw[2] << 4) | (event->raw[3] & FTS4_MASK_X_MSB);
 
-		event->z = event->raw[5] | (event->raw[6] << 8);
+		event->z = event->raw[4] | (event->raw[5] << 8);
 		event->z = event->z << 6;
 
 		u16 tmp = 0x40;
-		if ((event->raw[7] & 0x3F) != 1 && (event->raw[7] & 0x3F) != 0x3F)
-			tmp = event->raw[7] & 0x3F;
+		if ((event->raw[6] & 0x3F) != 1 && (event->raw[6] & 0x3F) != 0x3F)
+			tmp = event->raw[6] & 0x3F;
 		event->z /= tmp + 0x40;
 
-		event->fingers = ((event->raw[1] & FTS4_MASK_TOUCH_ID) >> 4) + 1;
+		event->fingers = ((event->raw[0] & FTS4_MASK_TOUCH_ID) >> 4) + 1;
 	}
 	else
 		event->fingers = 0;
@@ -123,7 +124,7 @@ static void _touch_process_contact_event(touch_event_t *event, bool touching)
 
 static void _touch_parse_input_event(touch_event_t *event)
 {
-	event->type = event->raw[1] & FTS4_MASK_EVENT_ID;
+	event->type = event->raw[0] & FTS4_MASK_EVENT_ID;
 
 	switch (event->type)
 	{
@@ -160,7 +161,7 @@ static void _touch_parse_input_event(touch_event_t *event)
 
 void touch_poll(touch_event_t *event)
 {
-	i2c_recv_buf_small(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
+	i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
 
 	_touch_parse_input_event(event);
 }
@@ -192,7 +193,7 @@ touch_panel_info_t *touch_get_panel_vendor()
 	if (_touch_command(FTS4_CMD_VENDOR, &cmd, 1))
 		return NULL;
 
-	u8 buf[5] = { 0 };
+	u8 buf[6] = { 0 };
 	if (_touch_wait_event(FTS4_EV_VENDOR, FTS4_VENDOR_GPIO_STATE, 2000, buf))
 		return NULL;
 
@@ -213,7 +214,7 @@ touch_panel_info_t *touch_get_panel_vendor()
 
 int touch_get_fw_info(touch_fw_info_t *fw)
 {
-	u8 buf[FTS4_EVENT_SIZE] = {0};
+	u8 buf[9] = { 0 };
 
 	memset(fw, 0, sizeof(touch_fw_info_t));
 
@@ -229,12 +230,8 @@ int touch_get_fw_info(touch_fw_info_t *fw)
 		{
 			fw->fw_id   = (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8) | buf[4];
 			fw->ftb_ver = (buf[6] <<  8) |  buf[5];
+			fw->fw_rev  = (buf[8] <<  8) |  buf[7];
 		}
-
-		cmd[2]++;
-		res = _touch_read_reg(cmd, sizeof(cmd), buf, 8);
-		if (!res)
-			fw->fw_rev = (buf[7] << 8) | buf[6];
 	}
 
 	return res;
@@ -251,6 +248,7 @@ int touch_sys_reset()
 			continue;
 		}
 		msleep(10);
+
 		if (_touch_wait_event(FTS4_EV_CONTROLLER_READY, 0, 20, NULL))
 			continue;
 		else
@@ -271,7 +269,7 @@ int touch_panel_ito_test(u8 *err)
 	if (_touch_command(FTS4_CMD_ITO_CHECK, cmd, 2))
 		return 1;
 
-	u8 buf[5] = { 0 };
+	u8 buf[6] = { 0 };
 	int res = _touch_wait_event(FTS4_EV_ERROR, 5, 2000, buf);
 	if (!res && err)
 	{
