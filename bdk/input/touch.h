@@ -143,11 +143,10 @@ typedef enum _touch_ito_error {
 
 typedef struct _touch_event_t {
 	u8   raw[FTS4_EVENT_SIZE];
-	u8   fingers;
-	u8  type; // Event type.
 	u16  x, y; // Coordinates.
 	u32  z;    // Orientation.
 	bool touch;
+	int  finger;
 } touch_event_t;
 
 typedef struct _touch_panel_info_t
@@ -172,7 +171,7 @@ typedef struct _touch_fw_info_t {
 	u16 fw_rev;
 } touch_fw_info_t;
 
-void touch_poll(touch_event_t *event);
+int touch_poll(touch_event_t *event);
 touch_info_t *touch_get_chip_info();
 touch_panel_info_t *touch_get_panel_vendor();
 int touch_get_fw_info(touch_fw_info_t *fw);

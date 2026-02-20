@@ -317,31 +317,28 @@ static bool _fts_touch_read(touchpad_report_t *rpt)
 {
 	static touch_event_t touchpad;
 
-	touch_poll(&touchpad);
+	if (touch_poll(&touchpad))
+		return false;
 
 	rpt->rpt_id = 5;
 	rpt->count = 1;
 
 	// Decide touch enable.
-	switch (touchpad.type & FTS4_MASK_EVENT_ID)
+	if (touchpad.touch)
 	{
-	//case FTS4_EV_MULTI_TOUCH_ENTER:
-	case FTS4_EV_MULTI_TOUCH_MOTION:
 		rpt->x = touchpad.x;
 		rpt->y = touchpad.y;
 		//rpt->z = touchpad.z;
-		rpt->id = touchpad.fingers ? touchpad.fingers - 1 : 0;
+		rpt->id = touchpad.finger;
 		rpt->tip_switch = 1;
-		break;
-	case FTS4_EV_MULTI_TOUCH_LEAVE:
+	}
+	else
+	{
 		rpt->x = touchpad.x;
 		rpt->y = touchpad.y;
 		//rpt->z = touchpad.z;
-		rpt->id = touchpad.fingers ? touchpad.fingers - 1 : 0;
+		rpt->id = touchpad.finger;
 		rpt->tip_switch = 0;
-		break;
-	case FTS4_EV_NO_EVENT:
-		return false;
 	}
 
 	return true;

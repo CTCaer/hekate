@@ -113,19 +113,17 @@ static void _touch_process_contact_event(touch_event_t *event, bool touching)
 			tmp = event->raw[6] & 0x3F;
 		event->z /= tmp + 0x40;
 
-		event->fingers = ((event->raw[0] & FTS4_MASK_TOUCH_ID) >> 4) + 1;
+		event->finger = ((event->raw[0] & FTS4_MASK_TOUCH_ID) >> 4) + 1;
 	}
 	else
-		event->fingers = 0;
+		event->finger = 0;
 
 	_touch_compensate_limits(event, touching);
 }
 
-static void _touch_parse_input_event(touch_event_t *event)
+static int _touch_parse_input_event(touch_event_t *event)
 {
-	event->type = event->raw[0] & FTS4_MASK_EVENT_ID;
-
-	switch (event->type)
+	switch (event->raw[0] & FTS4_MASK_EVENT_ID)
 	{
 	case FTS4_EV_MULTI_TOUCH_ENTER:
 	case FTS4_EV_MULTI_TOUCH_MOTION:
@@ -133,36 +131,27 @@ static void _touch_parse_input_event(touch_event_t *event)
 		if (event->z < 255) // Reject palm rest.
 			event->touch = true;
 		else
-		{
 			event->touch = false;
-			event->type = FTS4_EV_MULTI_TOUCH_LEAVE;
-		}
-		break;
+		return 0;
 
 	case FTS4_EV_MULTI_TOUCH_LEAVE:
 		event->touch = false;
 		_touch_process_contact_event(event, false);
-		break;
-
-	case FTS4_EV_NO_EVENT:
-		if (event->touch)
-			event->type = FTS4_EV_MULTI_TOUCH_MOTION;
-		break;
+		return 0;
 
 	default:
-		if (event->touch && event->raw[0] == FTS4_EV_MULTI_TOUCH_MOTION)
-			event->type = FTS4_EV_MULTI_TOUCH_MOTION;
-		else
-			event->type = FTS4_EV_MULTI_TOUCH_LEAVE;
-		break;
+		return 1; // No event.
 	}
 }
 
-void touch_poll(touch_event_t *event)
+int touch_poll(touch_event_t *event)
 {
-	i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
+	int res = !i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
 
-	_touch_parse_input_event(event);
+	if (!res)
+		res = _touch_parse_input_event(event);
+
+	return res;
 }
 
 touch_info_t *touch_get_chip_info()
