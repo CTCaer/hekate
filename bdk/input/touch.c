@@ -66,7 +66,6 @@ static int _touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 			return 0;
 		}
 
-retry:
 		usleep(500);
 
 		if (get_tmr_ms() > timer)
@@ -168,18 +167,20 @@ void touch_poll(touch_event_t *event)
 
 touch_info_t *touch_get_chip_info()
 {
-	u8 buf[FTS4_EVENT_SIZE] = {0};
+	u8 buf[7] = { 0 };
 
-	if (!i2c_recv_buf_small(buf, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_INFO))
+	// Get chip info.
+	u8 cmd[3] = { FTS4_CMD_HW_REG_READ, 0, 4 };
+	if (_touch_read_reg(cmd, sizeof(cmd), buf, sizeof(buf)))
 	{
 		memset(&_touch_info, 0, sizeof(touch_info_t));
 		goto exit;
 	}
 
-	_touch_info.chip_id    = buf[0] << 8 | buf[1]; // 0x3670.
-	_touch_info.fw_ver     = buf[2] << 8 | buf[3];
-	_touch_info.config_id  = buf[4]; // FTB.
-	_touch_info.config_ver = buf[5]; // FTB.
+	_touch_info.chip_id    = buf[1] << 8 | buf[2];
+	_touch_info.fw_ver     = buf[3] << 8 | buf[4];
+	_touch_info.config_id  = buf[5];
+	_touch_info.config_ver = buf[6];
 
 exit:
 	return &_touch_info;
@@ -260,6 +261,11 @@ int touch_sys_reset()
 
 int touch_panel_ito_test(u8 *err)
 {
+	// Check that touch IC is supported.
+	touch_info_t *info = touch_get_chip_info();
+	if (info->chip_id != FTS4_I2C_CHIP_ID)
+		return 1;
+
 	// Reset touchscreen module.
 	if (touch_sys_reset())
 		return 1;
@@ -379,6 +385,11 @@ int touch_execute_autotune()
 
 static int touch_init()
 {
+	// Check that touch IC is supported.
+	touch_info_t *info = touch_get_chip_info();
+	if (info->chip_id != FTS4_I2C_CHIP_ID)
+		return 0;
+
 	// Initialize touchscreen module.
 	if (touch_sys_reset())
 		return 0;
