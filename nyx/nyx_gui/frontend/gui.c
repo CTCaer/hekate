@@ -327,19 +327,19 @@ static void _disp_fb_flush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const
 	lv_flush_ready();
 }
 
-static touch_event touchpad;
+static touch_event_t touchpad;
 static bool touch_enabled;
 static bool console_enabled = false;
 
 static bool _fts_touch_read(lv_indev_data_t *data)
 {
-	if (touch_enabled)
-		touch_poll(&touchpad);
-	else
+	if (!touch_enabled)
 		return false;
 
-	// Take a screenshot if 3 fingers.
-	if (touchpad.fingers > 2)
+	int res = touch_poll(&touchpad);
+
+	// Take a screenshot if 3rd finger.
+	if (touchpad.finger > 2)
 	{
 		_save_fb_to_bmp();
 
@@ -347,16 +347,16 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 		return false;
 	}
 
-	if (console_enabled)
+	if (console_enabled && !res)
 	{
 		// Print input debugging in console.
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
 		gfx_con_setpos(32, 638, GFX_COL_AUTO);
 		gfx_con.fntsz = 8;
 		gfx_printf("x: %4d, y: %4d | z: %3d | ", touchpad.x, touchpad.y, touchpad.z);
-		gfx_printf("1: %02X, 2: %02X, 3: %02X, ", touchpad.raw[1], touchpad.raw[2], touchpad.raw[3]);
-		gfx_printf("4: %02X, 5: %02X, 6: %02X, 7: %02X",
-			touchpad.raw[4], touchpad.raw[5], touchpad.raw[6], touchpad.raw[7]);
+		gfx_printf("0: %02X, 1: %02X, 2: %02X, ", touchpad.raw[0], touchpad.raw[1], touchpad.raw[2]);
+		gfx_printf("3: %02X, 4: %02X, 5: %02X, 6: %02X",
+			touchpad.raw[3], touchpad.raw[4], touchpad.raw[5], touchpad.raw[6]);
 		gfx_con_setpos(gfx_con.savedx, gfx_con.savedy, gfx_con.savedcol);
 		gfx_con.fntsz = 16;
 
@@ -368,23 +368,10 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 	data->point.y = touchpad.y;
 
 	// Decide touch enable.
-	switch (touchpad.type & STMFTS_MASK_EVENT_ID)
-	{
-	case STMFTS_EV_MULTI_TOUCH_ENTER:
-	case STMFTS_EV_MULTI_TOUCH_MOTION:
+	if (touchpad.touch)
 		data->state = LV_INDEV_STATE_PR;
-		break;
-	case STMFTS_EV_MULTI_TOUCH_LEAVE:
+	else
 		data->state = LV_INDEV_STATE_REL;
-		break;
-	case STMFTS_EV_NO_EVENT:
-	default:
-		if (touchpad.touch)
-			data->state = LV_INDEV_STATE_PR;
-		else
-			data->state = LV_INDEV_STATE_REL;
-		break;
-	}
 
 	return false; // No buffering so no more data read.
 }
@@ -1951,7 +1938,7 @@ ini_parsing:
 		lv_obj_set_opa_scale(launch_ctxt.label[curr_btn_idx], LV_OPA_COVER);
 
 		// Set rolling text if name is too big.
-		u32 max_label_size = 238 - (n_cfg.entries_5_col ? 12 : 0);
+		int max_label_size = 238 - (n_cfg.entries_5_col ? 12 : 0);
 		if (lv_obj_get_width(launch_ctxt.label[curr_btn_idx]) > max_label_size)
 		{
 			lv_label_set_long_mode(launch_ctxt.label[curr_btn_idx], LV_LABEL_LONG_ROLL);
