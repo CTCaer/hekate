@@ -52,13 +52,29 @@ static int _touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
 	return !i2c_xfer_packet(I2C_3, FTS4_I2C_ADDR, cmd, csize, buf, size);
 }
 
+int touch_get_event_count()
+{
+	u8 cmd[3] = { FTS4_CMD_HW_REG_READ, 0, FTS4_HW_REG_EVENT_COUNT };
+	u8 buf[2];
+
+	if (_touch_read_reg(cmd, sizeof(cmd), buf, sizeof(buf)))
+		return 0;
+
+	return (buf[1] >> 1);
+}
+
 static int _touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 {
 	u32 timer = get_tmr_ms() + timeout;
 	while (true)
 	{
-		u8 tmp[FTS4_EVENT_SIZE] = {0};
+		if (!touch_get_event_count())
+			goto retry;
+
+		u8 tmp[FTS4_EVENT_SIZE];
 		int res = i2c_recv_buf_big(tmp, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_ONE_EVENT);
+
+		// Check that event type and status match.
 		if (res && tmp[0] == event && tmp[1] == status)
 		{
 			if (buf)
@@ -66,6 +82,7 @@ static int _touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 			return 0;
 		}
 
+retry:
 		usleep(500);
 
 		if (get_tmr_ms() > timer)
@@ -159,7 +176,7 @@ touch_info_t *touch_get_chip_info()
 	u8 buf[7] = { 0 };
 
 	// Get chip info.
-	u8 cmd[3] = { FTS4_CMD_HW_REG_READ, 0, 4 };
+	u8 cmd[3] = { FTS4_CMD_HW_REG_READ, 0, FTS4_HW_REG_CHIP_ID_INFO };
 	if (_touch_read_reg(cmd, sizeof(cmd), buf, sizeof(buf)))
 	{
 		memset(&_touch_info, 0, sizeof(touch_info_t));
@@ -229,7 +246,7 @@ int touch_get_fw_info(touch_fw_info_t *fw)
 
 int touch_sys_reset()
 {
-	u8 cmd[3] = { 0, 0x28, 0x80 }; // System reset cmd.
+	u8 cmd[3] = { 0, FTS4_HW_REG_SYS_RESET, 0x80 }; // System reset cmd.
 	for (u8 retries = 0; retries < 3; retries++)
 	{
 		if (_touch_command(FTS4_CMD_HW_REG_WRITE, cmd, 3))
@@ -260,12 +277,11 @@ int touch_panel_ito_test(u8 *err)
 		return 1;
 
 	// Do ITO Production test.
-	u8 cmd[2] = { 1, 0 };
-	if (_touch_command(FTS4_CMD_ITO_CHECK, cmd, 2))
+	if (_touch_command(FTS4_CMD_ITO_CHECK, NULL, 0))
 		return 1;
 
 	u8 buf[6] = { 0 };
-	int res = _touch_wait_event(FTS4_EV_ERROR, 5, 2000, buf);
+	int res = _touch_wait_event(FTS4_EV_ERROR, FTS4_EV_ERROR_ITO_TEST, 2000, buf);
 	if (!res && err)
 	{
 		err[0] = buf[0];
@@ -341,6 +357,8 @@ int touch_sense_enable()
 
 int touch_execute_autotune()
 {
+	u8 buf[6] = { 0 };
+
 	// Reset touchscreen module.
 	if (touch_sys_reset())
 		return 0;
@@ -354,19 +372,19 @@ int touch_execute_autotune()
 	// Apply Mutual Sense Compensation tuning.
 	if (_touch_command(FTS4_CMD_MS_CX_TUNING, NULL, 0))
 		return 0;
-	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_MS_CX_TUNING_DONE, 2000, NULL))
+	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_MS_CX_TUNING_DONE, 2000, buf) || buf[0] || buf[1])
 		return 0;
 
 	// Apply Self Sense Compensation tuning.
 	if (_touch_command(FTS4_CMD_SS_CX_TUNING, NULL, 0))
 		return 0;
-	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_SS_CX_TUNING_DONE, 2000, NULL))
+	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_SS_CX_TUNING_DONE, 2000, buf) || buf[0] || buf[1])
 		return 0;
 
 	// Save Compensation data to EEPROM.
 	if (_touch_command(FTS4_CMD_SAVE_CX_TUNING, NULL, 0))
 		return 0;
-	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_WRITE_CX_TUNE_DONE, 2000, NULL))
+	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_WRITE_CX_TUNE_DONE, 2000, buf) || buf[0] || buf[1])
 		return 0;
 
 	return touch_sense_enable();

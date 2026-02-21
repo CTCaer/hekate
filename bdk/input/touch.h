@@ -75,6 +75,7 @@
 
 /* HW Registers */
 #define FTS4_HW_REG_CHIP_ID_INFO     0x0004
+#define FTS4_HW_REG_EVENT_COUNT      0x0023
 #define FTS4_HW_REG_SYS_RESET        0x0028
 
 /* FB Addresses */
@@ -91,32 +92,28 @@
 #define FTS4_EV_HOVER_MOTION         0x09
 #define FTS4_EV_KEY_STATUS           0x0E
 #define FTS4_EV_ERROR                0x0F
+#define FTS4_EV_CONTROLLER_READY     0x10
+#define FTS4_EV_STATUS               0x16
 #define FTS4_EV_NOISE_READ           0x17
 #define FTS4_EV_NOISE_WRITE          0x18
 #define FTS4_EV_VENDOR               0x20
-
-#define FTS4_EV_CONTROLLER_READY     0x10
-#define FTS4_EV_STATUS               0x16
 #define FTS4_EV_DEBUG                0xDB
 
-#define FTS4_EV_STATUS_MS_CX_TUNING_DONE  1
-#define FTS4_EV_STATUS_SS_CX_TUNING_DONE  2
-#define FTS4_EV_STATUS_WRITE_CX_TUNE_DONE 4
+/* FTS4_EV_STATUS Events. */
+#define FTS4_EV_STATUS_MS_CX_TUNING_DONE  0x01
+#define FTS4_EV_STATUS_SS_CX_TUNING_DONE  0x02
+#define FTS4_EV_STATUS_WRITE_CX_TUNE_DONE 0x04
+
+#define FTS4_EV_ERROR_ITO_TEST            0x05
 
 /* Multi touch related event masks. */
 #define FTS4_MASK_EVENT_ID   0x0F
 #define FTS4_MASK_TOUCH_ID   0xF0
-#define FTS4_MASK_LEFT_EVENT 0x0F
 #define FTS4_MASK_X_MSB      0x0F
 #define FTS4_MASK_Y_LSB      0xF0
 
-/* Key related event masks. */
-#define FTS4_MASK_KEY_NO_TOUCH 0x00
-#define FTS4_MASK_KEY_MENU     0x01
-#define FTS4_MASK_KEY_BACK     0x02
-
 #define FTS4_EVENT_SIZE     8
-#define FTS4_STACK_DEPTH   32
+#define FTS4_STACK_DEPTH   32 // Actual 128.
 #define FTS4_DATA_MAX_SIZE (FTS4_EVENT_SIZE * FTS4_STACK_DEPTH)
 #define FTS4_MAX_FINGERS   10
 
@@ -175,6 +172,7 @@ int touch_poll(touch_event_t *event);
 touch_info_t *touch_get_chip_info();
 touch_panel_info_t *touch_get_panel_vendor();
 int touch_get_fw_info(touch_fw_info_t *fw);
+int touch_get_event_count();
 int touch_panel_ito_test(u8 *err);
 int touch_execute_autotune();
 int touch_switch_sense_mode(u8 mode, bool gis_6_2);
