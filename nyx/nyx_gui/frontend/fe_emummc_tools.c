@@ -270,7 +270,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 		retryCount = 0;
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
-		while (!sdmmc_storage_read(storage, lba_curr, num, buf))
+		while (sdmmc_storage_read(storage, lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
 				"\n#FFDD00 Error reading %d blocks @ LBA %08X,#\n"
@@ -368,7 +368,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 
 	manual_system_maintenance(true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
@@ -380,7 +380,7 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	// Get SD Card free space for file based emuMMC.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
@@ -570,7 +570,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 		num = MIN(totalSectors, NUM_SECTORS_PER_ITER);
 
 		// Read data from eMMC.
-		while (!sdmmc_storage_read(&emmc_storage, lba_curr, num, buf))
+		while (sdmmc_storage_read(&emmc_storage, lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
 				"\n#FFDD00 Error reading %d blocks @LBA %08X,#\n"
@@ -600,7 +600,7 @@ static int _dump_emummc_raw_part(emmc_tool_gui_t *gui, int active_part, int part
 
 		// Write data to SD card.
 		retryCount = 0;
-		while (!sdmmc_storage_write(&sd_storage, sd_sector_off + lba_curr, num, buf))
+		while (sdmmc_storage_write(&sd_storage, sd_sector_off + lba_curr, num, buf))
 		{
 			s_printf(gui->txt_buf,
 				"\n#FFDD00 Error writing %d blocks @LBA %08X,#\n"
@@ -837,13 +837,13 @@ void dump_emummc_raw(emmc_tool_gui_t *gui, int part_idx, u32 sector_start, u32 r
 
 	manual_system_maintenance(true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;

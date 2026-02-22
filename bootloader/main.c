@@ -228,7 +228,7 @@ static void _launch_payloads()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto failed_sd_mount;
 
 	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
@@ -310,7 +310,7 @@ static void _launch_ini_list()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto parse_failed;
 
 	// Check that ini files exist and parse them.
@@ -440,7 +440,7 @@ static void _launch_config()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto parse_failed;
 
 	// Load emuMMC configuration.
@@ -1466,7 +1466,7 @@ void ipl_main()
 	bpmp_clk_rate_set(h_cfg.t210b01 ? ipl_ver.rcfg.bclk_t210b01 : ipl_ver.rcfg.bclk_t210);
 
 	// Mount SD Card.
-	if (!sd_mount())
+	if (sd_mount())
 		h_cfg.errors |= ERR_SD_BOOT_EN;
 
 	// Check if watchdog was fired previously.

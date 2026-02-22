@@ -43,7 +43,7 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	return sdmmc_storage_read(&sd_storage, sector, count, buff) ? RES_OK : RES_ERROR;
+	return sdmmc_storage_read(&sd_storage, sector, count, buff);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -56,7 +56,7 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+	return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff);
 }
 
 /*-----------------------------------------------------------------------*/

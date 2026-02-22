@@ -1180,7 +1180,7 @@ static lv_res_t _joycon_info_dump_action(lv_obj_t * btn)
 	jc_pad->bt_conn_r.type = is_r_hos ? jc_pad->bt_conn_r.type : 0;
 
 save_data:
-	error = !sd_mount() ? 5 : 0;
+	error = sd_mount() ? 5 : 0;
 
 	if (!error)
 	{

@@ -1448,7 +1448,7 @@ static lv_res_t _create_mbox_payloads(lv_obj_t *btn)
 	lv_obj_set_size(list, LV_HOR_RES * 3 / 7, LV_VER_RES * 3 / 7);
 	lv_list_set_single_mode(list, true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_mbox_set_text(mbox, "#FFDD00 Failed to init SD!#");
 
@@ -1760,7 +1760,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	u32 curr_btn_idx = 0; // Active buttons.
 	LIST_INIT(ini_sections);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto failed_sd_mount;
 
 	// Check if we use custom system icons.
@@ -2138,10 +2138,10 @@ static lv_res_t _save_options_action(lv_obj_t *btn)
 
 	int res = 0;
 
-	if (sd_mount())
-		res = !create_config_entry();
+	if (!sd_mount())
+		res = create_config_entry();
 
-	if (res)
+	if (!res)
 		lv_mbox_set_text(mbox, "#FF8000 hekate Configuration#\n\n#96FF00 The configuration was saved to sd card!#");
 	else
 		lv_mbox_set_text(mbox, "#FF8000 hekate Configuration#\n\n#FFDD00 Failed to save the configuration#\n#FFDD00 to sd card!#");

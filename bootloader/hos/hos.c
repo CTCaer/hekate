@@ -137,12 +137,12 @@ static int _hos_eks_rw_try(u8 *buf, bool write)
 	{
 		if (!write)
 		{
-			if (sdmmc_storage_read(&sd_storage, 0, 1, buf))
+			if (!sdmmc_storage_read(&sd_storage, 0, 1, buf))
 				return 0;
 		}
 		else
 		{
-			if (sdmmc_storage_write(&sd_storage, 0, 1, buf))
+			if (!sdmmc_storage_write(&sd_storage, 0, 1, buf))
 				return 0;
 		}
 	}

@@ -211,7 +211,7 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 			// Full provides all that, plus protection from extremely rare I/O corruption.
 			if ((n_cfg.verification >= 2) || !(sparseShouldVerify % 4))
 			{
-				if (!sdmmc_storage_read(storage, lba_curr, num, bufEm))
+				if (sdmmc_storage_read(storage, lba_curr, num, bufEm))
 				{
 					s_printf(gui->txt_buf,
 						"\n#FF0000 Failed to read %d blocks (@LBA %08X),#\n"
@@ -629,9 +629,9 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 
 		int res_read;
 		if (!gui->raw_emummc)
-			res_read = !sdmmc_storage_read(storage, lba_curr, num, buf);
+			res_read = sdmmc_storage_read(storage, lba_curr, num, buf);
 		else
-			res_read = !sdmmc_storage_read(&sd_storage, lba_curr + sd_sector_off, num, buf);
+			res_read = sdmmc_storage_read(&sd_storage, lba_curr + sd_sector_off, num, buf);
 
 		while (res_read)
 		{
@@ -671,8 +671,13 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 				manual_system_maintenance(true);
 			}
+
+			if (!gui->raw_emummc)
+				res_read = sdmmc_storage_read(storage, lba_curr, num, buf);
+			else
+				res_read = sdmmc_storage_read(&sd_storage, lba_curr + sd_sector_off, num, buf);
+			manual_system_maintenance(false);
 		}
-		manual_system_maintenance(false);
 
 		res = f_write_fast(&fp, buf, EMMC_BLOCKSIZE * num);
 
@@ -781,7 +786,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	lv_label_set_text(gui->label_info, "Checking for available free space...");
 	manual_system_maintenance(true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
@@ -790,7 +795,7 @@ void dump_emmc_selected(emmcPartType_t dumpType, emmc_tool_gui_t *gui)
 	// Get SD Card free space for Partial Backup.
 	f_getfree("", &sd_fs.free_clst, NULL);
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;
@@ -1302,9 +1307,9 @@ multipart_not_allowed:
 			return 1;
 		}
 		if (!gui->raw_emummc)
-			res = !sdmmc_storage_write(storage, lba_curr, num, buf);
+			res = sdmmc_storage_write(storage, lba_curr, num, buf);
 		else
-			res = !sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
+			res = sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
 
 		manual_system_maintenance(false);
 
@@ -1337,9 +1342,9 @@ multipart_not_allowed:
 				manual_system_maintenance(true);
 			}
 			if (!gui->raw_emummc)
-				res = !sdmmc_storage_write(storage, lba_curr, num, buf);
+				res = sdmmc_storage_write(storage, lba_curr, num, buf);
 			else
-				res = !sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
+				res = sdmmc_storage_write(&sd_storage, lba_curr + sd_sector_off, num, buf);
 			manual_system_maintenance(false);
 		}
 		pct = (u64)((u64)(lba_curr - part->lba_start) * 100u) / (u64)(lba_end - part->lba_start);
@@ -1457,13 +1462,13 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 	lv_obj_del(warn_mbox_bg);
 	manual_system_maintenance(true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init SD!#");
 		goto out;
 	}
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
 		goto out;

@@ -52,7 +52,7 @@ char *emmcsn_path_impl(char *path, char *sub_dir, char *filename, sdmmc_storage_
 	// Get actual eMMC S/N.
 	if (!storage)
 	{
-		if (!emmc_initialize(false))
+		if (emmc_initialize(false))
 			strcpy(emmc_sn, "00000000");
 		else
 		{
@@ -121,7 +121,7 @@ lv_res_t launch_payload(lv_obj_t *list)
 	strcpy(path,"bootloader/payloads/");
 	strcat(path, filename);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto out;
 
 	// Read payload.
@@ -425,13 +425,13 @@ void nyx_init_load_res()
 	_show_errors(SD_NO_ERROR);
 
 	// Try 2 times to mount SD card.
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		// Restore speed to SDR104.
 		sd_end();
 
 		// Retry.
-		if (!sd_mount())
+		if (sd_mount())
 			_show_errors(SD_MOUNT_ERROR); // Fatal.
 	}
 

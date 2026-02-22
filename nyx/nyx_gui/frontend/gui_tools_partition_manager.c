@@ -887,7 +887,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 		}
 
 		// Write data block to L4T partition.
-		res = !sdmmc_storage_write(part_info.storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
+		res = sdmmc_storage_write(part_info.storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
 
 		manual_system_maintenance(false);
 
@@ -907,7 +907,7 @@ static lv_res_t _action_flash_linux_data(lv_obj_t * btns, const char * txt)
 				goto exit;
 			}
 
-			res = !sdmmc_storage_write(part_info.storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
+			res = sdmmc_storage_write(part_info.storage, lba_curr + l4t_flash_ctxt.offset_sct, num, buf);
 			manual_system_maintenance(false);
 		}
 
@@ -1922,7 +1922,7 @@ static lv_res_t _emmc_create_mbox_start_partitioning()
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	manual_system_maintenance(true);
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lbl_extra, "#FFDD00 Failed to init eMMC!#");
 		goto exit;
@@ -2661,7 +2661,7 @@ static lv_res_t _action_fix_mbr_gpt(lv_obj_t *btn)
 	int  gpt_emummc_migrate_no = 0;
 
 	// Try to init sd card. No need for valid MBR.
-	if (!sd_mount() && !sd_get_card_initialized())
+	if (sd_mount() && !sd_get_card_initialized())
 	{
 		lv_label_set_text(lbl_status, "#FFDD00 Failed to init SD!#");
 		goto out;
@@ -3044,7 +3044,7 @@ lv_res_t create_window_partition_manager(bool emmc)
 	u32 emmc_size = 0;
 	if (!emmc)
 	{
-		if (!sd_mount())
+		if (sd_mount())
 		{
 			lv_obj_t *lbl = lv_label_create(h1, NULL);
 			lv_label_set_recolor(lbl, true);
@@ -3052,7 +3052,7 @@ lv_res_t create_window_partition_manager(bool emmc)
 			return LV_RES_OK;
 		}
 
-		if (emmc_initialize(false))
+		if (!emmc_initialize(false))
 		{
 			emmc_set_partition(EMMC_GPP);
 			emmc_size = emmc_storage.sec_cnt >> 11;
@@ -3061,7 +3061,7 @@ lv_res_t create_window_partition_manager(bool emmc)
 	}
 	else
 	{
-		if (!emmc_initialize(false))
+		if (emmc_initialize(false))
 		{
 			lv_obj_t *lbl = lv_label_create(h1, NULL);
 			lv_label_set_recolor(lbl, true);

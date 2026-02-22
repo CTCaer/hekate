@@ -55,14 +55,14 @@ DRESULT disk_read (
 	switch (pdrv)
 	{
 	case DRIVE_SD:
-		return sdmmc_storage_read(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+		return sdmmc_storage_read(&sd_storage, sector, count, (void *)buff);
 	case DRIVE_RAM:
 		return ram_disk_read(sector, count, (void *)buff);
 	case DRIVE_EMMC:
-		return sdmmc_storage_read(&emmc_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+		return sdmmc_storage_read(&emmc_storage, sector, count, (void *)buff);
 	case DRIVE_BIS:
 	case DRIVE_EMU:
-		return nx_emmc_bis_read(sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+		return nx_emmc_bis_read(sector, count, (void *)buff);
 	}
 
 	return RES_ERROR;
@@ -81,7 +81,7 @@ DRESULT disk_write (
 	switch (pdrv)
 	{
 	case DRIVE_SD:
-		return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+		return sdmmc_storage_write(&sd_storage, sector, count, (void *)buff);
 	case DRIVE_RAM:
 		return ram_disk_write(sector, count, (void *)buff);
 	case DRIVE_EMMC:
@@ -90,7 +90,7 @@ DRESULT disk_write (
 	case DRIVE_EMU:
 		if (pdrv == DRIVE_BIS && !bis_write_allowed)
 			return RES_WRPRT;
-		return nx_emmc_bis_write(sector, count, (void *)buff) ? RES_OK : RES_ERROR;
+		return nx_emmc_bis_write(sector, count, (void *)buff);
 	}
 
 	return RES_ERROR;

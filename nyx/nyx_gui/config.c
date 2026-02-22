@@ -188,7 +188,7 @@ int create_nyx_config_entry(bool force_unmount)
 {
 	bool sd_mounted = sd_get_card_mounted();
 
-	if (!sd_mount())
+	if (sd_mount())
 		return 1;
 
 	char lbuf[64];

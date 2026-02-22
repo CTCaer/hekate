@@ -483,7 +483,7 @@ static lv_res_t _action_ums_emuemmc_boot0(lv_obj_t *btn)
 
 	usb_ctxt_t usbs;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		emummc_cfg_t emu_info;
@@ -530,7 +530,7 @@ static lv_res_t _action_ums_emuemmc_boot1(lv_obj_t *btn)
 
 	usb_ctxt_t usbs;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		emummc_cfg_t emu_info;
@@ -577,7 +577,7 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 
 	usb_ctxt_t usbs;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		emummc_cfg_t emu_info;
@@ -593,7 +593,7 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 				usbs.offset = emu_info.sector + 0x4000;
 
 				u8 *gpt = malloc(SD_BLOCKSIZE);
-				if (sdmmc_storage_read(&sd_storage, usbs.offset + 1, 1, gpt))
+				if (!sdmmc_storage_read(&sd_storage, usbs.offset + 1, 1, gpt))
 				{
 					if (!memcmp(gpt, "EFI PART", 8))
 					{
@@ -938,7 +938,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
@@ -1141,7 +1141,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 
@@ -1159,7 +1159,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char *txt_buf  = (char *)malloc(SZ_16K);
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 

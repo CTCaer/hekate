@@ -74,7 +74,7 @@ static lv_res_t _cal0_dump_window_action(lv_obj_t *btns, const char * txt)
 
 	if (btn_idx == 1)
 	{
-		int error = !sd_mount();
+		int error = sd_mount();
 
 		if (!error)
 		{
@@ -94,7 +94,7 @@ static lv_res_t _cal0_dump_window_action(lv_obj_t *btns, const char * txt)
 
 static lv_res_t _battery_dump_window_action(lv_obj_t * btn)
 {
-	int error = !sd_mount();
+	int error = sd_mount();
 
 	if (!error)
 	{
@@ -118,7 +118,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 {
 	static const u32 BOOTROM_SIZE = 0x18000;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		char path[64];
@@ -179,7 +179,7 @@ static void _unlock_reserved_odm_fuses(bool lock)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		char path[128];
@@ -230,7 +230,7 @@ static lv_res_t _kfuse_dump_window_action(lv_obj_t * btn)
 	int error = kfuse_read(buf);
 
 	if (!error)
-		error = !sd_mount();
+		error = sd_mount();
 
 	if (!error)
 	{
@@ -1444,7 +1444,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
@@ -1454,7 +1454,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	int res = sdmmc_storage_vendor_sandisk_report(&emmc_storage, buf);
 	emmc_end();
 
-	if (!res)
+	if (res)
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Device Report not supported!#");
 		lv_label_set_text(lb_desc2, " ");
@@ -1638,12 +1638,12 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 
 		// Re-initialize to update trimmers.
 		sd_end();
-		res = !sd_mount();
+		res = sd_mount();
 	}
 	else
 	{
 		storage = &emmc_storage;
-		res = !emmc_initialize(false);
+		res = emmc_initialize(false);
 		if (!res)
 			emmc_set_partition(EMMC_GPP);
 	}
@@ -1707,7 +1707,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 			timer += time_taken;
 
@@ -1754,7 +1754,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 
 			timer += time_taken;
@@ -1829,7 +1829,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector_off + random_offsets[lba_idx], sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = sdmmc_storage_read(storage, sector_off + random_offsets[lba_idx], sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 
 			timer += time_taken;
@@ -1965,7 +1965,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	txt_buf[1] = 0;
 	u16 *emmc_errors;
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
@@ -2234,7 +2234,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 	manual_system_maintenance(true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 		goto failed;
@@ -2879,7 +2879,7 @@ static bool _lockpick_exists_check()
 
 	bool found = false;
 	void *buf = malloc(0x200);
-	if (sd_mount())
+	if (!sd_mount())
 	{
 		FIL fp;
 		if (f_open(&fp, "bootloader/payloads/Lockpick_RCM.bin", FA_READ))
