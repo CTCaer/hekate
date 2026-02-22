@@ -104,7 +104,7 @@ int ini_patch_parse(link_t *dst, const char *ini_path)
 
 	// Open ini.
 	if (f_open(&fp, ini_path, FA_READ) != FR_OK)
-		return 0;
+		return 1;
 
 	lbuf = malloc(512);
 
@@ -176,5 +176,5 @@ int ini_patch_parse(link_t *dst, const char *ini_path)
 
 	free(lbuf);
 
-	return 1;
+	return 0;
 }

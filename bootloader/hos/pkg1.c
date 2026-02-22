@@ -195,7 +195,7 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1)
 	return NULL;
 }
 
-int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
+bool pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 {
 	pk11_hdr_t *hdr;
 
@@ -344,7 +344,7 @@ void pkg1_warmboot_patch(void *hos_ctxt)
 int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 mkey)
 {
 	launch_ctxt_t *ctxt = (launch_ctxt_t *)hos_ctxt;
-	int res = 1;
+	int res = 0;
 
 	if (h_cfg.t210b01)
 	{
@@ -374,7 +374,7 @@ int pkg1_warmboot_config(void *hos_ctxt, u32 warmboot_base, u32 fuses_fw, u8 mke
 
 				// Check if high enough.
 				if (!warmboot_fw || burnt_fuses > fuses_fw)
-					res = 0;
+					res = 1;
 				else
 				{
 					ctxt->warmboot = warmboot_fw + sizeof(u32);

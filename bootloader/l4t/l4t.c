@@ -824,7 +824,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 	{
 		// Get latest SC7-Exit if needed and setup PA id.
 		launch_ctxt_t hos_ctxt = {0};
-		if (!pkg1_warmboot_config(&hos_ctxt, 0, 0, 0))
+		if (pkg1_warmboot_config(&hos_ctxt, 0, 0, 0))
 		{
 			gfx_con.mute = false;
 			gfx_wputs("\nFailed to match warmboot with fuses!\nIf you continue, sleep wont work!");

@@ -131,23 +131,23 @@ static void _se_lock(bool lock_se)
 	SB(SB_CSR) = SB_CSR_PIROM_DISABLE;
 }
 
-static bool _hos_eks_rw_try(u8 *buf, bool write)
+static int _hos_eks_rw_try(u8 *buf, bool write)
 {
 	for (u32 i = 0; i < 3; i++)
 	{
 		if (!write)
 		{
 			if (sdmmc_storage_read(&sd_storage, 0, 1, buf))
-				return true;
+				return 0;
 		}
 		else
 		{
 			if (sdmmc_storage_write(&sd_storage, 0, 1, buf))
-				return true;
+				return 0;
 		}
 	}
 
-	return false;
+	return 1;
 }
 
 static void _hos_eks_get()
@@ -161,7 +161,7 @@ static void _hos_eks_get()
 	{
 		// Read EKS blob.
 		u8 *mbr = malloc(SD_BLOCKSIZE);
-		if (!_hos_eks_rw_try(mbr, false))
+		if (_hos_eks_rw_try(mbr, false))
 			goto out;
 
 		// Decrypt EKS blob.
@@ -199,7 +199,7 @@ static void _hos_eks_save()
 	{
 		// Read EKS blob.
 		u8 *mbr = malloc(SD_BLOCKSIZE);
-		if (!_hos_eks_rw_try(mbr, false))
+		if (_hos_eks_rw_try(mbr, false))
 		{
 			if (new_eks)
 			{
@@ -253,7 +253,7 @@ static void _hos_eks_clear(u32 mkey)
 		{
 			// Read EKS blob.
 			u8 *mbr = malloc(SD_BLOCKSIZE);
-			if (!_hos_eks_rw_try(mbr, false))
+			if (_hos_eks_rw_try(mbr, false))
 				goto out;
 
 			// Disable current Master key version.
@@ -291,7 +291,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 	tsec_keys_t tsec_keys;
 
 	if (mkey > HOS_MKEY_VER_MAX)
-		return 0;
+		return 1;
 
 	// Do Mariko keygen.
 	if (h_cfg.t210b01)
@@ -306,7 +306,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 		// Derive latest pkg2 key.
 		se_aes_unwrap_key(8, 7, package2_keyseed);
 
-		return 1;
+		return 0;
 	}
 
 	// Do Erista keygen.
@@ -317,7 +317,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 		if (fuse_set_sbk())
 			sbk_is_set = true;
 		else
-			return 1; // Continue with current SE keys.
+			return 0; // Continue with current SE keys.
 	}
 
 	// Use HOS EKS if it exists.
@@ -354,7 +354,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 		if (!tsec_ctxt->fw)
 		{
 			_hos_crit_error("Failed to load thk.bin");
-			return 0;
+			return 1;
 		}
 
 		tsec_ctxt->size = 0x1F00;
@@ -378,7 +378,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 		if (retries > 15)
 		{
 			_hos_crit_error("Failed to get TSEC keys.");
-			return 0;
+			return 1;
 		}
 	}
 
@@ -483,7 +483,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 		se_aes_unwrap_key(11, 13, cmac_keyseed);
 		se_aes_hash_cmac(cmac, SE_KEY_128_SIZE, 11, (void *)eks->ctr, sizeof(eks->ctr) + sizeof(eks->keys));
 		if (!memcmp(eks->cmac, cmac, SE_KEY_128_SIZE))
-			return 0;
+			return 1;
 */
 
 		se_aes_crypt_ecb(13, DECRYPT, tsec_keys.tsec, cmac_keyseed, SE_KEY_128_SIZE);
@@ -537,7 +537,7 @@ static int _hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt, bool s
 		se_aes_unwrap_key(8, !is_exo ? 12 : 13, package2_keyseed);
 	}
 
-	return 1;
+	return 0;
 }
 
 static int _read_emmc_pkg1(launch_ctxt_t *ctxt)
@@ -586,7 +586,7 @@ try_load:
 			goto try_load;
 		}
 
-		return 0;
+		return 1;
 	}
 	gfx_printf("Identified pkg1 and mkey %d\n\n", ctxt->pkg1_id->mkey);
 
@@ -599,7 +599,7 @@ try_load:
 							eks_size / EMMC_BLOCKSIZE, ctxt->eks);
 	}
 
-	return 1;
+	return 0;
 }
 
 static u8 *_read_emmc_pkg2(launch_ctxt_t *ctxt)
@@ -734,14 +734,14 @@ void hos_launch(ini_sec_t *cfg)
 	}
 
 	// Try to parse config if present.
-	if (!parse_boot_config(&ctxt))
+	if (hos_parse_boot_config(&ctxt))
 	{
 		_hos_crit_error("Wrong ini cfg or missing/corrupt files!");
 		goto error;
 	}
 
 	// Read package1 and the correct eks.
-	if (!_read_emmc_pkg1(&ctxt))
+	if (_read_emmc_pkg1(&ctxt))
 	{
 		// Check if stock is enabled and device can boot in OFW.
 		if (ctxt.stock && (h_cfg.t210b01 || !tools_autorcm_enabled()))
@@ -770,7 +770,7 @@ void hos_launch(ini_sec_t *cfg)
 		}
 
 		ctxt.patch_krn_proc_id = true; // Set kernel process id patching in case of no pkg3.
-		config_kip1patch(&ctxt, "emummc");
+		hos_config_kip1patch(&ctxt, "emummc");
 	}
 	else if (!emu_cfg.enabled && ctxt.emummc_forced)
 	{
@@ -801,7 +801,7 @@ void hos_launch(ini_sec_t *cfg)
 				((fuses & BIT(14)) && (ctxt.pkg1_id->fuses <= 14))    // HOS 12.0.2+ fuses burnt.
 			  )
 			))
-			config_kip1patch(&ctxt, "nogc");
+			hos_config_kip1patch(&ctxt, "nogc");
 	}
 
 	gfx_printf("Loaded config and pkg1\n%s mode\n", ctxt.stock ? "Stock" : "CFW");
@@ -821,7 +821,7 @@ void hos_launch(ini_sec_t *cfg)
 	tsec_ctxt.pkg11_off = ctxt.pkg1_id->pkg11_off;
 
 	// Generate keys.
-	if (!_hos_keygen(ctxt.eks, mkey, &tsec_ctxt, ctxt.stock, is_exo))
+	if (_hos_keygen(ctxt.eks, mkey, &tsec_ctxt, ctxt.stock, is_exo))
 		goto error;
 	gfx_puts("Generated keys\n");
 
@@ -871,7 +871,7 @@ void hos_launch(ini_sec_t *cfg)
 	}
 
 	// Configure and manage Warmboot binary.
-	if (!pkg1_warmboot_config(&ctxt, warmboot_base, ctxt.pkg1_id->fuses, mkey))
+	if (pkg1_warmboot_config(&ctxt, warmboot_base, ctxt.pkg1_id->fuses, mkey))
 	{
 		// Can only happen on T210B01.
 		_hos_crit_error("\nFailed to match warmboot with fuses!\nIf you continue, sleep wont work!");
@@ -928,7 +928,7 @@ void hos_launch(ini_sec_t *cfg)
 	}
 
 	LIST_INIT(kip1_info);
-	if (!pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2))
+	if (pkg2_parse_kips(&kip1_info, pkg2_hdr, &ctxt.new_pkg2))
 	{
 		_hos_crit_error("INI1 parsing failed!");
 		goto error;

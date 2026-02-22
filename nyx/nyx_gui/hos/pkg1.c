@@ -86,7 +86,7 @@ const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date)
 	return NULL;
 }
 
-int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
+bool pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1)
 {
 	pk11_hdr_t *hdr;
 
