@@ -104,6 +104,7 @@ static void _nyx_disp_init()
 
 	// Rotate and copy the first frame.
 	vic_compose();
+	vic_wait_idle();
 
 	// Switch to new window configuration.
 	display_init_window_a_pitch_vic();
