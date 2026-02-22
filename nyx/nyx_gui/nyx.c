@@ -167,7 +167,7 @@ static void _load_saved_configuration()
 	LIST_INIT(ini_sections);
 	LIST_INIT(ini_nyx_sections);
 
-	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 	{
 		create_config_entry();
 		goto skip_main_cfg_parse;
@@ -212,7 +212,7 @@ static void _load_saved_configuration()
 	ini_free(&ini_sections);
 
 skip_main_cfg_parse:
-	if (!ini_parse(&ini_nyx_sections, "bootloader/nyx.ini", false))
+	if (ini_parse(&ini_nyx_sections, "bootloader/nyx.ini", false))
 		return;
 
 	// Load Nyx configuration.

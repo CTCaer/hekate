@@ -39,7 +39,7 @@ void load_emummc_cfg(emummc_cfg_t *emu_info)
 
 	// Parse emuMMC configuration.
 	LIST_INIT(ini_sections);
-	if (!ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
+	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
 		return;
 
 	LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)

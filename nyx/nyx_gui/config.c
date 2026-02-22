@@ -65,12 +65,12 @@ int create_config_entry()
 {
 	char lbuf[64];
 	FIL fp;
-	bool mainIniFound = false;
+	bool ini_found = false;
 
 	LIST_INIT(ini_sections);
 
-	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
-		mainIniFound = true;
+	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+		ini_found = true;
 	else
 	{
 		u8 res = f_open(&fp, "bootloader/hekate_ipl.ini", FA_READ);
@@ -137,7 +137,7 @@ int create_config_entry()
 
 	f_puts("\n", &fp);
 
-	if (mainIniFound)
+	if (ini_found)
 	{
 		// Re-construct existing entries.
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)

@@ -1770,15 +1770,15 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	// Choose what to parse.
 	bool ini_parse_success = false;
 	if (!more_cfg)
-		ini_parse_success = ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
+		ini_parse_success = !ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false);
 	else
-		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+		ini_parse_success = !ini_parse(&ini_sections, "bootloader/ini", true);
 
 	if (combined_cfg && !ini_parse_success)
 	{
 ini_parsing:
 		list_init(&ini_sections);
-		ini_parse_success = ini_parse(&ini_sections, "bootloader/ini", true);
+		ini_parse_success = !ini_parse(&ini_sections, "bootloader/ini", true);
 		more_cfg = true;
 	}
 

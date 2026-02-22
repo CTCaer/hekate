@@ -43,7 +43,7 @@ void emummc_load_cfg()
 	emu_cfg.emummc_file_based_path[0] = 0;
 
 	LIST_INIT(ini_sections);
-	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
+	if (!ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
 	{
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 		{

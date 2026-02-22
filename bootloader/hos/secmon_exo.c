@@ -206,7 +206,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	if (!ctxt->stock)
 	{
 		LIST_INIT(ini_exo_sections);
-		if (ini_parse(&ini_exo_sections, "exosphere.ini", false))
+		if (!ini_parse(&ini_exo_sections, "exosphere.ini", false))
 		{
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_exo_sections, link)
 			{
@@ -245,7 +245,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		if (!ctxt->exo_ctx.usb3_force)
 		{
 			LIST_INIT(ini_sys_sections);
-			if (ini_parse(&ini_sys_sections, "atmosphere/config/system_settings.ini", false))
+			if (!ini_parse(&ini_sys_sections, "atmosphere/config/system_settings.ini", false))
 			{
 				LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sys_sections, link)
 				{
