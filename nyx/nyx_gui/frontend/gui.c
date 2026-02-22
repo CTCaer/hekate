@@ -348,8 +348,12 @@ static bool _fts_touch_read(lv_indev_data_t *data)
 		return false;
 	}
 
-	if (console_enabled && !res)
+	if (console_enabled)
 	{
+		// If no event, keep last debug message.
+		if (res)
+			return false;
+
 		// Print input debugging in console.
 		gfx_con_getpos(&gfx_con.savedx, &gfx_con.savedy, &gfx_con.savedcol);
 		gfx_con_setpos(32, 638, GFX_COL_AUTO);
@@ -2516,7 +2520,7 @@ void nyx_load_and_run()
 	close_btn = NULL;
 
 	// Initialize touch.
-	touch_enabled = touch_power_on();
+	touch_enabled = !touch_power_on();
 	lv_indev_drv_t indev_drv_touch;
 	lv_indev_drv_init(&indev_drv_touch);
 	indev_drv_touch.type = LV_INDEV_TYPE_POINTER;

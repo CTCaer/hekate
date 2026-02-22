@@ -999,7 +999,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 {
-	int res = 0;
+	int res = 1;
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -1045,7 +1045,7 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	if (!err[0] && !err[1])
 	{
 		res = touch_execute_autotune();
-		if (res)
+		if (!res)
 			goto out;
 	}
 	else
@@ -1103,7 +1103,7 @@ ito_failed:
 	touch_sense_enable();
 
 out:
-	if (res)
+	if (!res)
 		lv_mbox_set_text(mbox, "#C7EA46 The touchscreen calibration finished!");
 	else
 		lv_mbox_set_text(mbox, "#FFFF00 The touchscreen calibration failed!");
