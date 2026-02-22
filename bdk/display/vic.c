@@ -375,7 +375,7 @@ static void _vic_write_priv(u32 addr, u32 data)
 		VIC(PVIC_FALCON_ADDR) = 0;
 }
 
-static int _vic_wait_idle()
+int vic_wait_idle()
 {
 	u32 timeout_count = 15000; // 150ms.
 
@@ -385,7 +385,7 @@ static int _vic_wait_idle()
 
 		timeout_count--;
 		if (!timeout_count)
-			return -1;
+			return 1;
 	};
 
 	return 0;
@@ -509,7 +509,7 @@ void vic_set_surface(const vic_surface_t *sfc)
 	_vic_write_priv(VIC_SC_PRAMSIZE, sizeof(vic_config_t) >> 6);
 
 	// Wait for surface cache to get ready.
-	_vic_wait_idle();
+	vic_wait_idle();
 
 	// Set slot mapping.
 	_vic_write_priv(VIC_FC_SLOT_MAP, 0xFFFFFFF0);
@@ -524,13 +524,13 @@ void vic_set_surface(const vic_surface_t *sfc)
 	_vic_write_priv(VIC_BL_CONFIG, SLOTMASK(0x1F) | PROCESS_CFG_STRUCT_TRIGGER | SUBPARTITION_MODE);
 
 	// Wait for surface cache to get ready.
-	_vic_wait_idle();
+	vic_wait_idle();
 }
 
 int vic_compose()
 {
 	// Wait for surface cache to get ready. Otherwise VIC will hang.
-	int res = _vic_wait_idle();
+	int res = vic_wait_idle();
 
 	// Start composition of a single frame.
 	_vic_write_priv(VIC_FC_COMPOSE, COMPOSE_START);
@@ -552,7 +552,7 @@ int vic_init()
 	// Start Fetch Control Engine.
 	_vic_write_priv(VIC_FC_FCE_CTRL, START_TRIGGER);
 
-	return _vic_wait_idle();
+	return vic_wait_idle();
 }
 
 void vic_end()

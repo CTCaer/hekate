@@ -59,6 +59,7 @@ typedef struct _vic_surface_t
 } vic_surface_t;
 
 void vic_set_surface(const vic_surface_t *sfc);
+int  vic_wait_idle();
 int  vic_compose();
 int  vic_init();
 void vic_end();
