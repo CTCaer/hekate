@@ -163,8 +163,9 @@ static int _touch_parse_input_event(touch_event_t *event)
 
 int touch_poll(touch_event_t *event)
 {
-	int res = i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
+	u8 cmd = !_touch_info.clone ? FTS4_CMD_LATEST_EVENT : FTS4_CMD_READ_ONE_EVENT;
 
+	int res = i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, cmd);
 	if (!res)
 		res = _touch_parse_input_event(event);
 
@@ -187,6 +188,11 @@ touch_info_t *touch_get_chip_info()
 	_touch_info.fw_ver     = buf[3] << 8 | buf[4];
 	_touch_info.config_id  = buf[5];
 	_touch_info.config_ver = buf[6];
+
+	// Validate that device is genuine or proper.
+	cmd[2] = 2;
+	_touch_read_reg(cmd, sizeof(cmd), buf, sizeof(buf));
+	_touch_info.clone = _touch_info.chip_id != (buf[3] << 8 | buf[4]);
 
 exit:
 	return &_touch_info;
@@ -269,7 +275,7 @@ int touch_panel_ito_test(u8 *err)
 {
 	// Check that touch IC is supported.
 	touch_info_t *info = touch_get_chip_info();
-	if (info->chip_id != FTS4_I2C_CHIP_ID)
+	if (info->chip_id != FTS4_I2C_CHIP_ID || info->clone)
 		return 1;
 
 	// Reset touchscreen module.

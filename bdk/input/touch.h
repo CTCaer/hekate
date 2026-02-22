@@ -31,7 +31,7 @@
 #define FTS4_CMD_READ_STATUS         0x84
 #define FTS4_CMD_READ_ONE_EVENT      0x85
 #define FTS4_CMD_READ_ALL_EVENT      0x86
-#define FTS4_CMD_LATEST_EVENT        0x87
+#define FTS4_CMD_LATEST_EVENT        0x87 // Clears event stack.
 #define FTS4_CMD_SLEEP_IN            0x90
 #define FTS4_CMD_SLEEP_OUT           0x91
 #define FTS4_CMD_MS_MT_SENSE_OFF     0x92
@@ -156,10 +156,11 @@ typedef struct _touch_panel_info_t
 } touch_panel_info_t;
 
 typedef struct _touch_info_t {
-	u16 chip_id;
-	u16 fw_ver;
-	u16 config_id;
-	u16 config_ver;
+	u16  chip_id;
+	u16  fw_ver;
+	u16  config_id;
+	u16  config_ver;
+	bool clone;
 } touch_info_t;
 
 typedef struct _touch_fw_info_t {
