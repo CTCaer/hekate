@@ -115,28 +115,26 @@ int pmc_domain_pwrgate_set(pmc_power_rail_t part, u32 enable)
 
 	// Check if the power domain has the state we want.
 	if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
-		return 1;
+		return 0;
 
-	u32 i = 5001;
+	int retries = 5000;
 	while (PMC(APBDEV_PMC_PWRGATE_TOGGLE) & PMC_PWRGATE_TOGGLE_START)
 	{
 		usleep(1);
-		i--;
-		if (i < 1)
-			return 0;
+		if (--retries < 1)
+			return 1;
 	}
 
 	// Toggle power gating.
 	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = part | PMC_PWRGATE_TOGGLE_START;
 
-	i = 5001;
-	while (i > 0)
+	retries = 5000;
+	while ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) != desired_state)
 	{
-		if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
-			break;
 		usleep(1);
-		i--;
+		if (--retries < 1)
+			return 1;
 	}
 
-	return 1;
+	return 0;
 }
