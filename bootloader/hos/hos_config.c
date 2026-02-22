@@ -299,7 +299,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "secmon",           _config_secmon },
 	{ "kernel",           _config_kernel },
 	{ "kip1",             _config_kip1 },
-	{ "kip1patch",        config_kip1patch },
+	{ "kip1patch",        hos_config_kip1patch },
 	{ "fullsvcperm",      _config_svcperm },
 	{ "debugmode",        _config_debugmode },
 	{ "kernelprocid",     _config_kernel_proc_id },
