@@ -1810,7 +1810,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		for (u32 i = 0; i < rnd_off_cnt; i += 4)
 		{
 			// Generate new random numbers.
-			while (!se_rng_pseudo(random_numbers, SE_RNG_BLOCK_SIZE))
+			while (se_rng_pseudo(random_numbers, SE_RNG_BLOCK_SIZE))
 				;
 			// Clamp offsets to 256MB range.
 			random_offsets[i + 0] = random_numbers[0] % sct_rem_4kb;
