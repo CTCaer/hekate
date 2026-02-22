@@ -227,7 +227,7 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 static lv_res_t _kfuse_dump_window_action(lv_obj_t * btn)
 {
 	u32 buf[KFUSE_NUM_WORDS];
-	int error = !kfuse_read(buf);
+	int error = kfuse_read(buf);
 
 	if (!error)
 		error = !sd_mount();
