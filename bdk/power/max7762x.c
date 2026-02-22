@@ -137,7 +137,7 @@ static void _max7762x_set_reg(u8 addr, u8 reg, u8 val)
 	u32 retries = 100;
 	while (retries)
 	{
-		if (i2c_send_byte(I2C_5, addr, reg, val))
+		if (!i2c_send_byte(I2C_5, addr, reg, val))
 			break;
 
 		usleep(50);

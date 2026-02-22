@@ -102,7 +102,7 @@ static void _i2c_load_cfg_wait(vu32 *base)
 static int _i2c_send_normal(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 {
 	if (size > 8)
-		return 0;
+		return 1;
 
 	u32 tmp = 0;
 
@@ -138,19 +138,19 @@ static int _i2c_send_normal(u32 i2c_idx, u32 dev_addr, const u8 *buf, u32 size)
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
 		if (get_tmr_ms() > timeout)
-			return 0;
+			return 1;
 	}
 
 	if (base[I2C_STATUS] & I2C_STATUS_NOACK)
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 static int _i2c_recv_normal(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 {
 	if (size > 8)
-		return 0;
+		return 1;
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
@@ -170,11 +170,11 @@ static int _i2c_recv_normal(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	while (base[I2C_STATUS] & I2C_STATUS_BUSY)
 	{
 		if (get_tmr_ms() > timeout)
-			return 0;
+			return 1;
 	}
 
 	if (base[I2C_STATUS] & I2C_STATUS_NOACK)
-		return 0;
+		return 1;
 
 	u32 tmp = base[I2C_CMD_DATA1]; // Get LS value.
 	if (size > 4)
@@ -186,15 +186,15 @@ static int _i2c_recv_normal(u32 i2c_idx, u8 *buf, u32 size, u32 dev_addr)
 	else
 		memcpy(buf, &tmp, size);
 
-	return 1;
+	return 0;
 }
 
 static int _i2c_send_packet(u32 i2c_idx, const u8 *buf, u32 size, u32 dev_addr)
 {
 	if (size > 32)
-		return 0;
+		return 1;
 
-	int res = 1;
+	int res = 0;
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
@@ -235,14 +235,14 @@ static int _i2c_send_packet(u32 i2c_idx, const u8 *buf, u32 size, u32 dev_addr)
 	{
 		if (get_tmr_ms() > timeout)
 		{
-			res = 0;
+			res = 1;
 			break;
 		}
 	}
 
 	// Check if no reply.
 	if (base[I2C_STATUS] & I2C_STATUS_NOACK)
-		res = 0;
+		res = 1;
 
 	// Wait for STOP and disable packet mode.
 	usleep(20);
@@ -255,9 +255,9 @@ int i2c_xfer_packet(u32 i2c_idx, u32 dev_addr, const u8 *tx_buf, u32 tx_size, u8
 {
 	// Max 32 bytes TX/RX fifo.
 	if (tx_size > 20 || rx_size > 32) // Header included.
-		return 0;
+		return 1;
 
-	int res = 1;
+	int res = 0;
 
 	vu32 *base = (vu32 *)(I2C_BASE + (u32)_i2c_base_offsets[i2c_idx]);
 
@@ -298,7 +298,7 @@ int i2c_xfer_packet(u32 i2c_idx, u32 dev_addr, const u8 *tx_buf, u32 tx_size, u8
 	{
 		if (get_tmr_ms() > timeout)
 		{
-			res = 0;
+			res = 1;
 			goto out;
 		}
 	}
@@ -323,7 +323,7 @@ int i2c_xfer_packet(u32 i2c_idx, u32 dev_addr, const u8 *tx_buf, u32 tx_size, u8
 
 		if (get_tmr_ms() > timeout)
 		{
-			res = 0;
+			res = 1;
 			break;
 		}
 	}
@@ -331,7 +331,7 @@ int i2c_xfer_packet(u32 i2c_idx, u32 dev_addr, const u8 *tx_buf, u32 tx_size, u8
 out:
 	// Check if no reply.
 	if (base[I2C_STATUS] & I2C_STATUS_NOACK)
-		res = 0;
+		res = 1;
 
 	// Wait for STOP and disable packet mode.
 	usleep(20);
@@ -374,7 +374,7 @@ int i2c_recv_buf_big(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, const u8 *buf, u32 size)
 {
 	if (size > 7)
-		return 0;
+		return 1;
 
 	u8 tmp[8];
 	tmp[0] = reg;
@@ -386,7 +386,7 @@ int i2c_send_buf_small(u32 i2c_idx, u32 dev_addr, u32 reg, const u8 *buf, u32 si
 int i2c_recv_buf_small(u8 *buf, u32 size, u32 i2c_idx, u32 dev_addr, u32 reg)
 {
 	int res = _i2c_send_normal(i2c_idx, dev_addr, (u8 *)&reg, 1);
-	if (res)
+	if (!res)
 		res = _i2c_recv_normal(i2c_idx, buf, size, dev_addr);
 	return res;
 }

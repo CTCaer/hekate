@@ -44,12 +44,12 @@ static touch_panel_info_t _touch_panel_info = { 0 };
 
 static int _touch_command(u8 cmd, u8 *buf, u8 size)
 {
-	return !i2c_send_buf_small(I2C_3, FTS4_I2C_ADDR, cmd, buf, size);
+	return i2c_send_buf_small(I2C_3, FTS4_I2C_ADDR, cmd, buf, size);
 }
 
 static int _touch_read_reg(u8 *cmd, u32 csize, u8 *buf, u32 size)
 {
-	return !i2c_xfer_packet(I2C_3, FTS4_I2C_ADDR, cmd, csize, buf, size);
+	return i2c_xfer_packet(I2C_3, FTS4_I2C_ADDR, cmd, csize, buf, size);
 }
 
 int touch_get_event_count()
@@ -75,7 +75,7 @@ static int _touch_wait_event(u8 event, u8 status, u32 timeout, u8 *buf)
 		int res = i2c_recv_buf_big(tmp, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_READ_ONE_EVENT);
 
 		// Check that event type and status match.
-		if (res && tmp[0] == event && tmp[1] == status)
+		if (!res && tmp[0] == event && tmp[1] == status)
 		{
 			if (buf)
 				memcpy(buf, &tmp[2], 6);
@@ -163,7 +163,7 @@ static int _touch_parse_input_event(touch_event_t *event)
 
 int touch_poll(touch_event_t *event)
 {
-	int res = !i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
+	int res = i2c_recv_buf_big(event->raw, FTS4_EVENT_SIZE, I2C_3, FTS4_I2C_ADDR, FTS4_CMD_LATEST_EVENT);
 
 	if (!res)
 		res = _touch_parse_input_event(event);

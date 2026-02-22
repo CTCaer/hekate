@@ -147,18 +147,14 @@ static int _max17050_write_verify_reg(u8 reg, u16 value)
 {
 	int retries = 8;
 	int ret;
-	u16 read_value;
 
 	do
 	{
 		ret = i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, reg, (u8 *)&value, 2);
-		read_value = max17050_get_reg(reg);
-		if (read_value != value)
-		{
-			ret = -1;
-			retries--;
-		}
-	} while (retries && read_value != value);
+		u16 read_value = max17050_get_reg(reg);
+		if (!ret && read_value == value)
+			break;
+	} while (--retries);
 
 	return ret;
 }
