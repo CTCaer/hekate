@@ -37,7 +37,7 @@ static bool no_table = false;
 static mtc_config_t *mtc_cfg = NULL;
 void (*mtc_call)(mtc_config_t *mtc_cfg, void *);
 
-u32 minerva_init(minerva_str_t *mtc_str)
+int minerva_init(minerva_str_t *mtc_str)
 {
 	mtc_call = NULL;
 	mtc_cfg  = (mtc_config_t *)&mtc_str->mtc_cfg;

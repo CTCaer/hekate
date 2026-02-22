@@ -72,7 +72,7 @@ typedef enum
 } minerva_freq_t;
 
 extern void (*minerva_cfg)(mtc_config_t *mtc_cfg, void *);
-u32  minerva_init(minerva_str_t *mtc_str);
+int  minerva_init(minerva_str_t *mtc_str);
 void minerva_deinit();
 void minerva_change_freq(minerva_freq_t freq);
 void minerva_sdmmc_la_program(void *table, bool t210b01);
