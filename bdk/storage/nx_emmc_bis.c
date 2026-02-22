@@ -99,7 +99,7 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 		res = emmc_part_write(system_part, sector, count, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_write(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
-	if (!res)
+	if (res)
 		return 1; // R/W error.
 
 	// Mark cache entry not dirty if write succeeds.
@@ -159,7 +159,7 @@ static int nx_emmc_bis_read_block_normal(u32 sector, u32 count, void *buff)
 		res = emmc_part_read(system_part, sector, count, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
-	if (!res)
+	if (res)
 		return 1; // R/W error.
 
 	if (prev_cluster != cluster) // Sector in different cluster than last read.
@@ -216,7 +216,7 @@ static int nx_emmc_bis_read_block_cached(u32 sector, u32 count, void *buff)
 		res = emmc_part_read(system_part, cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
-	if (!res)
+	if (res)
 		return 1; // R/W error.
 
 	// Decrypt cluster.
@@ -258,14 +258,14 @@ int nx_emmc_bis_read(u32 sector, u32 count, void *buff)
 		u32 sct_cnt = MIN(count, cnt_max); // Only allow cluster sized access.
 
 		if (nx_emmc_bis_read_block(curr_sct, sct_cnt, buf))
-			return 0;
+			return 1;
 
 		count    -= sct_cnt;
 		curr_sct += sct_cnt;
 		buf      += sct_cnt * EMMC_BLOCKSIZE;
 	}
 
-	return 1;
+	return 0;
 }
 
 int nx_emmc_bis_write(u32 sector, u32 count, void *buff)
@@ -282,14 +282,14 @@ int nx_emmc_bis_write(u32 sector, u32 count, void *buff)
 		u32 sct_cnt = MIN(count, cnt_max); // Only allow cluster sized access.
 
 		if (nx_emmc_bis_write_block(curr_sct, sct_cnt, buf, false))
-			return 0;
+			return 1;
 
 		count    -= sct_cnt;
 		curr_sct += sct_cnt;
 		buf      += sct_cnt * EMMC_BLOCKSIZE;
 	}
 
-	return 1;
+	return 0;
 }
 
 void nx_emmc_bis_init(emmc_part_t *part, bool enable_cache, u32 emummc_offset)
