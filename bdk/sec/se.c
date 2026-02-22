@@ -88,7 +88,7 @@ static int _se_op_wait()
 		(SE(SE_ERR_STATUS_REG) != 0)
 	   )
 	{
-		return 0;
+		return 1;
 	}
 
 	// WAR: Coherency flushing.
@@ -104,7 +104,7 @@ static int _se_op_wait()
 			while (SE(SE_STATUS_REG) & SE_STATUS_MEM_IF_BUSY)
 			{
 				if (!retries)
-					return 0;
+					return 1;
 				usleep(1);
 				retries--;
 			}
@@ -115,13 +115,13 @@ static int _se_op_wait()
 		while (AHB_GIZMO(AHB_ARBITRATION_AHB_MEM_WRQUE_MST_ID) & MEM_WRQUE_SE_MST_ID)
 		{
 			if (!retries)
-				return 0;
+				return 1;
 			usleep(1);
 			retries--;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 static int _se_execute_finalize()
@@ -137,7 +137,7 @@ static int _se_execute_finalize()
 static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size, bool is_oneshot)
 {
 	if (dst_size > SE_LL_MAX_SIZE || src_size > SE_LL_MAX_SIZE)
-		return 0;
+		return 1;
 
 	ll_src_ptr = NULL;
 	ll_dst_ptr = NULL;
@@ -170,7 +170,7 @@ static int _se_execute(u32 op, void *dst, u32 dst_size, const void *src, u32 src
 	if (is_oneshot)
 		return _se_execute_finalize();
 
-	return 1;
+	return 0;
 }
 
 static int _se_execute_oneshot(u32 op, void *dst, u32 dst_size, const void *src, u32 src_size)
@@ -186,7 +186,7 @@ static int _se_execute_aes_oneshot(void *dst, const void *src, u32 size)
 
 	u32 size_aligned = ALIGN_DOWN(size, SE_AES_BLOCK_SIZE);
 	u32 size_residue = size % SE_AES_BLOCK_SIZE;
-	int res = 1;
+	int res = 0;
 
 	// Handle initial aligned message.
 	if (size_aligned)
@@ -197,7 +197,7 @@ static int _se_execute_aes_oneshot(void *dst, const void *src, u32 size)
 	}
 
 	// Handle leftover partial message.
-	if (res && size_residue)
+	if (!res && size_residue)
 	{
 		// Copy message to a block sized buffer in case it's partial.
 		u32 block[SE_AES_BLOCK_SIZE / sizeof(u32)] = {0};
@@ -380,7 +380,6 @@ int se_aes_crypt_ctr(u32 ks, void *dst, const void *src, u32 size, void *ctr)
 
 int se_aes_crypt_xts_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize)
 {
-	int res = 0;
 	u32 tmp[SE_AES_BLOCK_SIZE / sizeof(u32)];
 	u8 *tweak = (u8 *)tmp;
 	u8 *pdst = (u8 *)dst;
@@ -392,27 +391,27 @@ int se_aes_crypt_xts_sec(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst
 		tweak[i] = sec & 0xFF;
 		sec >>= 8;
 	}
-	if (!se_aes_crypt_ecb(tweak_ks, ENCRYPT, tweak, tweak, SE_AES_BLOCK_SIZE))
-		goto out;
+	if (se_aes_crypt_ecb(tweak_ks, ENCRYPT, tweak, tweak, SE_AES_BLOCK_SIZE))
+		return 1;
 
 	// We are assuming a 0x10-aligned sector size in this implementation.
 	for (u32 i = 0; i < secsize / SE_AES_BLOCK_SIZE; i++)
 	{
 		for (u32 j = 0; j < SE_AES_BLOCK_SIZE; j++)
 			pdst[j] = psrc[j] ^ tweak[j];
-		if (!se_aes_crypt_ecb(crypt_ks, enc, pdst, pdst, SE_AES_BLOCK_SIZE))
-			goto out;
+
+		if (se_aes_crypt_ecb(crypt_ks, enc, pdst, pdst, SE_AES_BLOCK_SIZE))
+			return 1;
+
 		for (u32 j = 0; j < SE_AES_BLOCK_SIZE; j++)
 			pdst[j] = pdst[j] ^ tweak[j];
+
 		_se_ls_1bit(tweak);
 		psrc += SE_AES_BLOCK_SIZE;
 		pdst += SE_AES_BLOCK_SIZE;
 	}
 
-	res = 1;
-
-out:
-	return res;
+	return 0;
 }
 
 int se_aes_crypt_xts_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tweak, bool regen_tweak, u32 tweak_exp, void *dst, void *src, u32 sec_size)
@@ -428,8 +427,8 @@ int se_aes_crypt_xts_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tw
 			tweak[i] = sec & 0xFF;
 			sec >>= 8;
 		}
-		if (!se_aes_crypt_ecb(tweak_ks, ENCRYPT, tweak, tweak, SE_AES_BLOCK_SIZE))
-			return 0;
+		if (se_aes_crypt_ecb(tweak_ks, ENCRYPT, tweak, tweak, SE_AES_BLOCK_SIZE))
+			return 1;
 	}
 
 	// tweak_exp allows using a saved tweak to reduce _se_ls_1bit_le calls.
@@ -450,8 +449,8 @@ int se_aes_crypt_xts_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tw
 		pdst += sizeof(u32);
 	}
 
-	if (!se_aes_crypt_ecb(crypt_ks, enc, dst, dst, sec_size))
-		return 0;
+	if (se_aes_crypt_ecb(crypt_ks, enc, dst, dst, sec_size))
+		return 1;
 
 	pdst = (u32 *)dst;
 	ptweak = (u32 *)orig_tweak;
@@ -464,7 +463,7 @@ int se_aes_crypt_xts_sec_nx(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, u8 *tw
 		pdst += sizeof(u32);
 	}
 
-	return 1;
+	return 0;
 }
 
 int se_aes_crypt_xts(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, void *src, u32 secsize, u32 num_secs)
@@ -473,10 +472,10 @@ int se_aes_crypt_xts(u32 tweak_ks, u32 crypt_ks, int enc, u64 sec, void *dst, vo
 	u8 *psrc = (u8 *)src;
 
 	for (u32 i = 0; i < num_secs; i++)
-		if (!se_aes_crypt_xts_sec(tweak_ks, crypt_ks, enc, sec + i, pdst + secsize * i, psrc + secsize * i, secsize))
-			return 0;
+		if (se_aes_crypt_xts_sec(tweak_ks, crypt_ks, enc, sec + i, pdst + secsize * i, psrc + secsize * i, secsize))
+			return 1;
 
-	return 1;
+	return 0;
 }
 
 static void _se_sha_hash_256_get_hash(void *hash)
@@ -498,7 +497,7 @@ static int _se_sha_hash_256(void *hash, u64 total_size, const void *src, u32 src
 			0x27, 0xAE, 0x41, 0xE4, 0x64, 0x9B, 0x93, 0x4C, 0xA4, 0x95, 0x99, 0x1B, 0x78, 0x52, 0xB8, 0x55
 		};
 		memcpy(hash, null_hash, SE_SHA_256_SIZE);
-		return 1;
+		return 0;
 	}
 
 	// Increase leftover size if not last message. (Engine will always stop at src_size.)
@@ -530,7 +529,7 @@ static int _se_sha_hash_256(void *hash, u64 total_size, const void *src, u32 src
 	// Trigger the operation. src vs total size decides if it's partial.
 	int res = _se_execute(SE_OP_START, NULL, 0, src, src_size, is_oneshot);
 
-	if (res && is_oneshot)
+	if (!res && is_oneshot)
 		_se_sha_hash_256_get_hash(hash);
 
 	return res;
@@ -550,7 +549,7 @@ int se_sha_hash_256_partial_start(void *hash, const void *src, u32 size, bool is
 {
 	// Check if aligned SHA256 block size.
 	if (size % SE_SHA2_MIN_BLOCK_SIZE)
-		return 0;
+		return 1;
 
 	return _se_sha_hash_256(hash, 0, src, size, is_oneshot);
 }
@@ -559,7 +558,7 @@ int se_sha_hash_256_partial_update(void *hash, const void *src, u32 size, bool i
 {
 	// Check if aligned to SHA256 block size.
 	if (size % SE_SHA2_MIN_BLOCK_SIZE)
-		return 0;
+		return 1;
 
 	return _se_sha_hash_256(hash, size - 1, src, size, is_oneshot);
 }
@@ -600,7 +599,7 @@ int se_rng_pseudo(void *dst, u32 size)
 	}
 
 	// Handle leftover partial message.
-	if (res && size_residue)
+	if (!res && size_residue)
 	{
 		// Copy message to a block sized buffer in case it's partial.
 		u32 block[SE_RNG_BLOCK_SIZE / sizeof(u32)] = {0};
@@ -610,8 +609,7 @@ int se_rng_pseudo(void *dst, u32 size)
 		res = _se_execute_oneshot(SE_OP_START, block, SE_RNG_BLOCK_SIZE, NULL, 0);
 
 		// Copy result back.
-		if (res)
-			memcpy(dst + size_aligned, block, size_residue);
+		memcpy(dst + size_aligned, block, size_residue);
 	}
 
 	return res;
@@ -682,8 +680,8 @@ int se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size)
 
 	// Generate sub key (CBC with zeroed IV, basically ECB).
 	se_aes_iv_clear(ks);
-	if (!se_aes_crypt_cbc(ks, ENCRYPT, subkey, subkey, SE_KEY_128_SIZE))
-		return 0;
+	if (se_aes_crypt_cbc(ks, ENCRYPT, subkey, subkey, SE_KEY_128_SIZE))
+		return 1;
 
 	// Generate K1 subkey.
 	_se_ls_1bit(subkey);
@@ -700,8 +698,8 @@ int se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size)
 	{
 		SE(SE_CRYPTO_LAST_BLOCK_REG) = num_blocks - 2;
 
-		if (!_se_execute_oneshot(SE_OP_START, NULL, 0, src, size))
-			return 0;
+		if (_se_execute_oneshot(SE_OP_START, NULL, 0, src, size))
+			return 1;
 
 		// Use updated IV for next OP as a continuation.
 		SE(SE_CRYPTO_CONFIG_REG) |= SE_CRYPTO_IV_SEL(IV_UPDATED);
@@ -721,15 +719,13 @@ int se_aes_hash_cmac(u32 ks, void *hash, const void *src, u32 size)
 
 	SE(SE_CRYPTO_LAST_BLOCK_REG) = (SE_AES_BLOCK_SIZE >> 4) - 1;
 
-	int res = _se_execute_oneshot(SE_OP_START, NULL, 0, last_block, SE_AES_BLOCK_SIZE);
+	if (_se_execute_oneshot(SE_OP_START, NULL, 0, last_block, SE_AES_BLOCK_SIZE))
+		return 1;
 
 	// Copy output hash.
-	if (res)
-	{
-		u32 *hash32 = (u32 *)hash;
-		for (u32 i = 0; i < (SE_AES_CMAC_DIGEST_SIZE / sizeof(u32)); i++)
-			hash32[i] = SE(SE_HASH_RESULT_REG + sizeof(u32) * i);
-	}
+	u32 *hash32 = (u32 *)hash;
+	for (u32 i = 0; i < (SE_AES_CMAC_DIGEST_SIZE / sizeof(u32)); i++)
+		hash32[i] = SE(SE_HASH_RESULT_REG + sizeof(u32) * i);
 
-	return res;
+	return 0;
 }
