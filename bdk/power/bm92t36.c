@@ -55,7 +55,7 @@
 #define STATUS1_INSERT      BIT(7)  // Cable inserted.
 
 #define VER_36     0x36
-#define MAX_ROHM  0x4B5
+#define MAN_ROHM  0x4B5
 #define DEV_BM92T 0x3B0
 
 #define PDO_TYPE_FIXED  0
@@ -89,10 +89,10 @@ int bm92t36_get_version(u32 *value)
 	if (value)
 		*value = (dev << 16) | version;
 
-	if (version == VER_36 && man == MAX_ROHM && dev == DEV_BM92T)
+	if (version == VER_36 && man == MAN_ROHM && dev == DEV_BM92T)
 	 	return 0;
 	else
-		return -1;
+		return 1;
 }
 
 void bm92t36_get_source_info(bool *inserted, usb_pd_objects_t *usb_pd)

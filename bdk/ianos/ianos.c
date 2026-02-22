@@ -21,7 +21,6 @@
 #include "elfload/elfload.h"
 #include <module.h>
 #include <mem/heap.h>
-#include <power/max7762x.h>
 #include <storage/sd.h>
 #include <utils/types.h>
 
