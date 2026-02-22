@@ -331,7 +331,8 @@ int touch_switch_sense_mode(u8 mode, bool gis_6_2)
 		break;
 	}
 
-	_touch_command(FTS4_CMD_DETECTION_CONFIG, cmd, 3);
+	if (_touch_command(FTS4_CMD_DETECTION_CONFIG, cmd, 3))
+		return 1;
 
 	// Sense mode.
 	cmd[0] = mode;
@@ -344,15 +345,15 @@ int touch_sense_enable()
 	// Switch sense mode and enable multi-touch sensing.
 	u8 cmd = FTS4_FINGER_MODE;
 	if (_touch_command(FTS4_CMD_SWITCH_SENSE_MODE, &cmd, 1))
-		return 0;
+		return 1;
 
 	if (_touch_command(FTS4_CMD_MS_MT_SENSE_ON, NULL, 0))
-		return 0;
+		return 1;
 
 	if (_touch_command(FTS4_CMD_CLEAR_EVENT_STACK, NULL, 0))
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 int touch_execute_autotune()
@@ -361,31 +362,31 @@ int touch_execute_autotune()
 
 	// Reset touchscreen module.
 	if (touch_sys_reset())
-		return 0;
+		return 1;
 
 	// Trim low power oscillator.
 	if (_touch_command(FTS4_CMD_LP_TIMER_CALIB, NULL, 0))
-		return 0;
+		return 1;
 
 	msleep(200);
 
 	// Apply Mutual Sense Compensation tuning.
 	if (_touch_command(FTS4_CMD_MS_CX_TUNING, NULL, 0))
-		return 0;
+		return 1;
 	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_MS_CX_TUNING_DONE, 2000, buf) || buf[0] || buf[1])
-		return 0;
+		return 1;
 
 	// Apply Self Sense Compensation tuning.
 	if (_touch_command(FTS4_CMD_SS_CX_TUNING, NULL, 0))
-		return 0;
+		return 1;
 	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_SS_CX_TUNING_DONE, 2000, buf) || buf[0] || buf[1])
-		return 0;
+		return 1;
 
 	// Save Compensation data to EEPROM.
 	if (_touch_command(FTS4_CMD_SAVE_CX_TUNING, NULL, 0))
-		return 0;
+		return 1;
 	if (_touch_wait_event(FTS4_EV_STATUS, FTS4_EV_STATUS_WRITE_CX_TUNE_DONE, 2000, buf) || buf[0] || buf[1])
-		return 0;
+		return 1;
 
 	return touch_sense_enable();
 }
@@ -395,11 +396,11 @@ static int touch_init()
 	// Check that touch IC is supported.
 	touch_info_t *info = touch_get_chip_info();
 	if (info->chip_id != FTS4_I2C_CHIP_ID)
-		return 0;
+		return 1;
 
 	// Initialize touchscreen module.
 	if (touch_sys_reset())
-		return 0;
+		return 1;
 
 	return touch_sense_enable();
 }
@@ -441,12 +442,12 @@ int touch_power_on()
 	u32 retries = 3;
 	while (retries)
 	{
-		if (touch_init())
-			return 1;
+		if (!touch_init())
+			return 0;
 		retries--;
 	}
 
-	return 0;
+	return 1;
 }
 
 void touch_power_off()
