@@ -733,7 +733,7 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 clock)
 	u32 source  = SDMMC_CLOCK_SRC_PLLP_OUT0;
 
 	if (id > SDMMC_4)
-		return 0;
+		return 1;
 
 	// Get IO clock divisor.
 	switch (clock)
@@ -813,7 +813,7 @@ static int _clock_sdmmc_config_clock_host(u32 *pclock, u32 id, u32 clock)
 	const clk_rst_mgd_t *clk = &_clock_sdmmc[id];
 	CLOCK(clk->source) = (source << 29u) | divisor;
 
-	return 1;
+	return 0;
 }
 
 void clock_sdmmc_config_clock_source(u32 *pclock, u32 id, u32 clock)
