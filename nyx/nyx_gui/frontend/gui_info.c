@@ -561,7 +561,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	lv_label_set_style(lb_desc, &monospace_text);
 
 	char version[32];
-	s_printf(version, "%s%d.%d.%d%c", NYX_VER_RL ? "v" : "", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF, NYX_VER_RL > 'A' ? NYX_VER_RL : 0);
+	s_printf(version, "%s%d.%d.%d%c", NYX_VER_RL ? "v" : "", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF, NYX_VER_RL > 'a' ? NYX_VER_RL : 0);
 	lv_obj_t * lbl_ver = lv_label_create(lv_scr_act(), NULL);
 	lv_label_set_style(lbl_ver, &hint_small_style_white);
 	lv_label_set_text(lbl_ver, version);

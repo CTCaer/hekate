@@ -2209,7 +2209,7 @@ static void _create_status_bar(lv_theme_t * th)
 	lv_obj_t *btn_mid = lv_btn_create(status_bar_bg, NULL);
 	lv_obj_t *lbl_mid = lv_label_create(btn_mid, NULL);
 	lv_label_set_static_text(lbl_mid, "Save Options");
-	lv_obj_set_size(btn_mid, LV_DPI * 5 / 2, LV_DPI / 2);
+	lv_obj_set_size(btn_mid, LV_DPI * 17 / 8, LV_DPI / 2);
 	lv_obj_align(btn_mid, NULL, LV_ALIGN_CENTER, 0, 0);
 	status_bar.mid = btn_mid;
 	lv_obj_set_opa_scale(btn_mid, LV_OPA_0);
@@ -2410,8 +2410,9 @@ static void _nyx_main_menu(lv_theme_t * th)
 	// Add all tabs content.
 	char version[32];
 	char rel = (nyx_str->version >> 24) & 0xFF;
-	s_printf(version, "hekate %s%d.%d.%d%c",
-			 rel ? "v" : "", nyx_str->version & 0xFF, (nyx_str->version >> 8) & 0xFF, (nyx_str->version >> 16) & 0xFF, rel > 'A' ? rel : 0);
+	s_printf(version, "hekate %s%d.%d.%d%c%c",
+			 rel ? "v" : "", nyx_str->version & 0xFF, (nyx_str->version >> 8) & 0xFF, (nyx_str->version >> 16) & 0xFF, rel > 'a' ? rel : 0,
+			 (nyx_str->info_ex.rsvd_flags & RSVD_FLAG_DRAM_8GB) ? '*' : 0);
 	lv_obj_t *tab_about = lv_tabview_add_tab(tv, version);
 
 	lv_obj_t *tab_home = lv_tabview_add_tab(tv, SYMBOL_HOME" Home");
