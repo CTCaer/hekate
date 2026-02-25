@@ -307,10 +307,8 @@ out:
 	bpmp_mmu_enable();
 	bpmp_clk_rate_relaxed(false);
 
-#ifdef BDK_MC_ENABLE_AHB_REDIRECT
 	// Re-enable AHB aperture.
 	mc_enable_ahb_redirect();
-#endif
 
 	return res;
 }

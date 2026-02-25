@@ -149,9 +149,6 @@ void mc_enable()
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
 	usleep(5);
 
-#ifdef BDK_MC_ENABLE_AHB_REDIRECT
+	// Enable redirection by default.
 	mc_enable_ahb_redirect();
-#else
-	mc_disable_ahb_redirect();
-#endif
 }
