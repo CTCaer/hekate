@@ -26,10 +26,10 @@
  *********************/
 #define DEF_RADIUS             4
 
-#define COLOR_HOS_TURQUOISE    (lv_color_hsv_to_rgb(_hue, 100, 100)) // 0x00FFC9
-#define COLOR_HOS_TEAL_LIGHTER (lv_color_hsv_to_rgb(_hue, 100,  93)) // 0x00EDBA
-#define COLOR_HOS_TEAL_LIGHT   (lv_color_hsv_to_rgb(_hue, 100,  72)) // 0x00B78F
-#define COLOR_HOS_TEAL         (lv_color_hsv_to_rgb(_hue, 100,  64)) // 0x00A273
+#define COLOR_HOS_TURQUOISE    (_hue ? lv_color_hsv_to_rgb(_hue, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90)) // 0x00FFC9
+#define COLOR_HOS_TEAL_LIGHTER (_hue ? lv_color_hsv_to_rgb(_hue, 100,  93) : lv_color_hsv_to_rgb(53, 8, 81)) // 0x00EDBA
+#define COLOR_HOS_TEAL_LIGHT   (_hue ? lv_color_hsv_to_rgb(_hue, 100,  72) : lv_color_hsv_to_rgb(53, 8, 65)) // 0x00B78F
+#define COLOR_HOS_TEAL         (_hue ? lv_color_hsv_to_rgb(_hue, 100,  64) : lv_color_hsv_to_rgb(53, 8, 58)) // 0x00A273
 #define COLOR_HOS_ORANGE       LV_COLOR_HEX(0xFF5500)
 #define COLOR_HOS_TXT_WHITE    LV_COLOR_HEX(0xFBFBFB)
 
