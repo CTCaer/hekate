@@ -145,7 +145,7 @@ static int _touch_parse_input_event(touch_event_t *event)
 	case FTS4_EV_MULTI_TOUCH_ENTER:
 	case FTS4_EV_MULTI_TOUCH_MOTION:
 		_touch_process_contact_event(event, true);
-		if (event->z < 255) // Reject palm rest.
+		if (event->z < 500) // Reject palm rest.
 			event->touch = true;
 		else
 			event->touch = false;
