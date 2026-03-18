@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2020-2025 CTCaer
+ * Copyright (c) 2020-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -497,7 +497,7 @@ static const sdram_params_t210_t _dram_cfg_0_samsung_4gb = {
 	.mc_emem_adr_cfg_bank_mask2                      = 0x4B9C1000,
 	/*
 	 * Specifies the value for MC_EMEM_CFG which holds the external memory
-	 * size (in KBytes)
+	 * size (in MBytes)
 	 */
 	.mc_emem_cfg                                     = 0x00001000, // 4GB total density. Max 8GB.
 
@@ -685,5 +685,7 @@ static const sdram_vendor_patch_t sdram_cfg_vendor_patches_t210[] = {
 	{ 0x00080302, DRAM_ID(LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX),  DCFG_OFFSET_OF(mc_emem_adr_cfg_dev0)         }, // 1024MB Chip 0 density.
 	{ 0x00080302, DRAM_ID(LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX),  DCFG_OFFSET_OF(mc_emem_adr_cfg_dev1)         }, // 1024MB Chip 1 density.
 	{ 0x00002000, DRAM_ID(LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX),  DCFG_OFFSET_OF(mc_emem_cfg)                  }, // 8GB total density. Max 8GB.
+	{ 0x00000007, DRAM_ID(LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX),  DCFG_OFFSET_OF(mc_emem_arb_timing_rfcpb)     },
+	{ 0x72A30504, DRAM_ID(LPDDR4_ICOSA_8GB_SAMSUNG_K4FBE3D4HM_MGXX),  DCFG_OFFSET_OF(mc_emem_arb_misc0)            },
 };
 #undef DCFG_OFFSET_OF
