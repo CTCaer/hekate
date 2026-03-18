@@ -1147,10 +1147,6 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 		{
 			sdmmc->expected_rsp_type = cmd->rsp_type;
 			res = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, cmd->rsp_type);
-#ifdef ERROR_EXTRA_PRINTING
-			if (res)
-				EPRINTFARGS("SDMMC%d: Unknown response type!", sdmmc->id + 1);
-#endif
 		}
 		if (request && !res)
 		{
