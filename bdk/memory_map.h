@@ -29,6 +29,7 @@
 #define SECMON_MIN_START  0x4002B000 // Minimum reserved address for secmon.
 
 #define SDRAM_PARAMS_ADDR 0x40030000 // SDRAM extraction buffer during sdram init.
+#define  SDRAM_PARAMS_SZ       0x838
 
 /* start.S / exception_handlers.S */
 #define SYS_STACK_TOP_INIT 0x4003FF00
