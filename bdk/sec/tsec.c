@@ -146,7 +146,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	if (type == TSEC_FW_TYPE_EMU)
 	{
 		// Init SMMU translation for TSEC.
-		ptb = smmu_init_domain(MC_SMMU_TSEC_ASID, 1);
+		ptb = smmu_domain_init(MC_SMMU_TSEC_ASID, 1);
 		smmu_init();
 
 		// Enable SMMU.
@@ -230,7 +230,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		if (kidx != 8)
 		{
 			res = -6;
-			smmu_deinit_domain(MC_SMMU_TSEC_ASID, 1);
+			smmu_domain_deinit(MC_SMMU_TSEC_ASID, 1);
 
 			goto out_free;
 		}
@@ -241,7 +241,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		memcpy(tsec_keys, &key, 0x20);
 		memcpy(tsec_ctxt->pkg1, iram, 0x30000);
 
-		smmu_deinit_domain(MC_SMMU_TSEC_ASID, 1);
+		smmu_domain_deinit(MC_SMMU_TSEC_ASID, 1);
 
 		// for (int i = 0; i < kidx; i++)
 		// 	gfx_printf("key %08X\n", key[i]);
