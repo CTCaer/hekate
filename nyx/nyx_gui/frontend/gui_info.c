@@ -387,7 +387,7 @@ u32 wafer16nm[] =
 	0x1FFFFFFF, 0x1FFFFFFF, 0x0FFFFFFE, 0x0FFFFFFE,
 	0x0FFFFFFE, 0x07FFFFFC, 0x07FFFFFC, 0x03FFFFF8,
 	0x01FFFFF0, 0x00FFFFE0, 0x007FFFC0, 0x001FFF00,
-	0x00000000
+	0x0000E000
 };
 
 u32 wafer20nm[] =
@@ -421,7 +421,7 @@ hw_info_t *hw_info = NULL;
 #define WAFER_16NM_X_MIN -11
 #define WAFER_16NM_X_MAX  17
 #define WAFER_16NM_Y_MIN   0
-#define WAFER_16NM_Y_MAX  27
+#define WAFER_16NM_Y_MAX  28
 
 void _hw_info_wafer(int die_x, int die_y)
 {
@@ -469,8 +469,8 @@ void _hw_info_wafer(int die_x, int die_y)
 		int pos_y = y * die_line * die_side + die_line;
 		for (int x = 0; x < diameter; x++)
 		{
+			bool in_wafer   = wafer_row & (1u << x);
 			bool die_found  = x == die_x && die_y == y;
-			bool in_wafer = wafer_row & (1u << x);
 			u32  die_column = x * die_side;
 
 			// Paint street rows;
