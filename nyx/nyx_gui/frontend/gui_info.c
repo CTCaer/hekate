@@ -1092,6 +1092,12 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	u8  display_rev = (nyx_str->info.panel_id >> 8) & 0xFF;
 	u32 display_id = ((nyx_str->info.panel_id >> 8) & 0xFF00) | (nyx_str->info.panel_id & 0xFF);
 
+	// For OLED LCD 7" OEM clone use touch to identify it.
+	touch_info_t *touch_info = touch_get_chip_info();
+	bool touch_clone_oled = touch_info->chip_id == FTS4_I2C_CHIP_ID && touch_info->clone;
+	if (touch_clone_oled)
+		display_id = 0x10000;
+
 	strcat(txt_buf, "#00DDFF Display Panel:#\n#FF8000 Model:# ");
 
 	switch (display_id)
@@ -1099,9 +1105,11 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	case PANEL_JDI_LAM062M109A:
 		strcat(txt_buf, "JDI LAM062M109A");
 		break;
+
 	case PANEL_JDI_LPM062M326A:
 		strcat(txt_buf, "JDI LPM062M326A");
 		break;
+
 	case PANEL_INL_P062CCA_AZ1:
 		strcat(txt_buf, "InnoLux P062CCA");
 		switch (display_rev)
@@ -1129,6 +1137,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			break;
 		}
 		break;
+
 	case PANEL_AUO_A062TAN01:
 		strcat(txt_buf, "AUO A062TAN");
 		switch (display_rev)
@@ -1156,31 +1165,44 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			break;
 		}
 		break;
+
 	case PANEL_INL_2J055IA_27A:
 		strcat(txt_buf, "InnoLux 2J055IA-27A");
 		break;
+
 	case PANEL_AUO_A055TAN01:
 		strcat(txt_buf, "AUO A055TAN");
 		s_printf(txt_buf + strlen(txt_buf), "%02d", display_rev - 0x92);
 		break;
+
 	case PANEL_SHP_LQ055T1SW10:
 		strcat(txt_buf, "Sharp LQ055T1SW10");
 		break;
+
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
 		break;
+
 	case PANEL_OEM_CLONE_6_2:
 		strcat(txt_buf, "#FFDD00 OEM Clone 6.2\"#");
 		break;
+
 	case PANEL_OEM_CLONE_5_5:
 		strcat(txt_buf, "#FFDD00 OEM Clone 5.5\"#");
 		break;
+
 	case PANEL_OEM_CLONE:
 		strcat(txt_buf, "#FFDD00 OEM Clone#");
 		break;
+
 	case 0xCCCC:
 		strcat(txt_buf, "#FFDD00 Failed to get info!#");
 		break;
+
+	case 0x10000: // Custom ID for LCD OEM Clone for Switch OLED.
+		strcat(txt_buf, "#FFDD00 LCD OEM Clone 7\"#");
+		break;
+
 	default:
 		switch (display_id & 0xFF)
 		{
@@ -1204,17 +1226,16 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# #96FF00 %02X# %02X #96FF00 %02X#",
 		nyx_str->info.panel_id & 0xFF, (nyx_str->info.panel_id >> 8) & 0xFF, (nyx_str->info.panel_id >> 16) & 0xFF);
 
-	touch_fw_info_t touch_fw;
-	touch_panel_info_t *touch_panel;
-	bool panel_ic_paired = false;
-
 	// Prepare touch panel/ic info.
+	touch_fw_info_t touch_fw;
 	if (!touch_get_fw_info(&touch_fw))
 	{
 		strcat(txt_buf, "\n\n#00DDFF Touch Panel:#\n#FF8000 Model:# ");
 
-		touch_panel = touch_get_panel_vendor();
-		if (touch_panel)
+		touch_panel_info_t *touch_panel = touch_get_panel_vendor();
+		if (touch_clone_oled)
+			strcat(txt_buf, "#FFDD00 OEM Clone TSP#");
+		else if (touch_panel)
 		{
 			if ((u8)touch_panel->idx == (u8)-2) // Touch panel not found, print gpios.
 			{
@@ -1231,7 +1252,11 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %02X.%02X.%02X.%02X (",
 			(touch_fw.fw_id >> 24) & 0xFF, (touch_fw.fw_id >> 16) & 0xFF, (touch_fw.fw_id >> 8) & 0xFF, touch_fw.fw_id & 0xFF);
 
+		if (touch_clone_oled)
+			touch_fw.fw_id = 0xFFFFFFFF;
+
 		// Check panel pair info.
+		bool panel_ic_paired = false;
 		switch (touch_fw.fw_id)
 		{
 		case 0x00100100:
@@ -1239,6 +1264,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = (u8)touch_panel->idx == (u8)-1;
 			break;
+
 		case 0x00100200: // 4CD 1602.
 		case 0x00120100:
 		case 0x32000001:
@@ -1246,6 +1272,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 0; // NISSHA NFT-K12D.
 			break;
+
 		// case 0x98000004: // New 6.2" panel?
 		// case 0x50000001:
 		// case 0x50000002:
@@ -1253,24 +1280,28 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		// 	if (touch_panel)
 		// 		panel_ic_paired = touch_panel->idx == 0;
 		// 	break;
+
 		case 0x001A0300:
 		case 0x32000102:
 			strcat(txt_buf, "4CD60D/2");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 1; // GiS GGM6 B2X.
 			break;
+
 		case 0x00290100:
 		case 0x32000302:
 			strcat(txt_buf, "4CD60D/3");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 2; // NISSHA NBF-K9A.
 			break;
+
 		case 0x31051820:
 		case 0x32000402:
 			strcat(txt_buf, "4CD60D/4");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 3; // GiS 5.5".
 			break;
+
 		case 0x32000501:
 		case 0x33000502:
 		case 0x33000503:
@@ -1279,6 +1310,12 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 4; // Samsung BH2109.
 			break;
+
+		case 0xFFFFFFFF: // Custom for OLED clone.
+			strcat(txt_buf, "Clone");
+			panel_ic_paired = true;
+			break;
+
 		default:
 			strcat(txt_buf, "#FF8000 Contact me#");
 			break;
