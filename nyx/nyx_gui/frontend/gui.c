@@ -1752,7 +1752,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	// Create colorized icon style based on its parent style.
 	static lv_style_t img_style;
 	lv_style_copy(&img_style, &lv_style_plain);
-	img_style.image.color = lv_color_hsv_to_rgb(n_cfg.theme_color, 100, 100);
+	img_style.image.color = COLOR_HOS_TURQUOISE_EX(n_cfg.theme_color);
 	img_style.image.intense = LV_OPA_COVER;
 
 	// Parse ini boot entries and set buttons/icons.
@@ -2352,7 +2352,7 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	tabview_btn_tgl_pr.body.grad_color = tabview_btn_tgl_pr.body.main_color;
 	tabview_btn_tgl_pr.body.opa = 35; // 13.7%.
 
-	lv_color_t tmp_color = lv_color_hsv_to_rgb(n_cfg.theme_color, 100, 100);
+	lv_color_t tmp_color = COLOR_HOS_TURQUOISE_EX(n_cfg.theme_color);
 	text_color = malloc(32);
 	s_printf(text_color, "#%06X", (u32)(tmp_color.full & 0xFFFFFF));
 }

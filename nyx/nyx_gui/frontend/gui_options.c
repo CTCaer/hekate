@@ -373,8 +373,9 @@ static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-void create_flat_button(lv_obj_t *parent, lv_obj_t *btn, lv_color_t color, lv_action_t action)
+void create_flat_button(lv_obj_t *btn, int color_idx, lv_action_t action)
 {
+	lv_color_t color = color_idx ? lv_color_hsv_to_rgb(color_idx, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90);
 	lv_style_t *btn_onoff_rel_hos_style = malloc(sizeof(lv_style_t));
 	lv_style_t *btn_onoff_pr_hos_style  = malloc(sizeof(lv_style_t));
 	lv_style_copy(btn_onoff_rel_hos_style, lv_theme_get_current()->btn.rel);
@@ -382,6 +383,13 @@ void create_flat_button(lv_obj_t *parent, lv_obj_t *btn, lv_color_t color, lv_ac
 	btn_onoff_rel_hos_style->body.grad_color  = btn_onoff_rel_hos_style->body.main_color;
 	btn_onoff_rel_hos_style->body.padding.hor = 0;
 	btn_onoff_rel_hos_style->body.radius      = 0;
+
+	if (color_idx == 167)
+	{
+		btn_onoff_rel_hos_style->body.border.color = LV_COLOR_HEX(0x000000);
+		btn_onoff_rel_hos_style->body.border.opa = LV_OPA_20;
+		btn_onoff_rel_hos_style->body.border.width = 3;
+	}
 
 	lv_style_copy(btn_onoff_pr_hos_style, lv_theme_get_current()->btn.pr);
 	btn_onoff_pr_hos_style->body.main_color   = color;
@@ -397,8 +405,8 @@ void create_flat_button(lv_obj_t *parent, lv_obj_t *btn, lv_color_t color, lv_ac
 	lv_btn_set_style(btn, LV_BTN_STYLE_TGL_REL, btn_onoff_rel_hos_style);
 	lv_btn_set_style(btn, LV_BTN_STYLE_TGL_PR,  btn_onoff_pr_hos_style);
 
-	lv_btn_set_fit(btn, false, true);
-	lv_obj_set_width(btn, lv_obj_get_height(btn));
+	lv_btn_set_fit(btn, false, false);
+	lv_obj_set_size(btn, LV_DPI * 7 / 11, LV_DPI * 7 / 11);
 	lv_btn_set_toggle(btn, true);
 
 	if (action)
@@ -433,9 +441,9 @@ typedef struct _color_test_ctxt
 	lv_style_t box_style;
 	lv_obj_t *box;
 
+	lv_obj_t *btn_reset;
 	lv_obj_t *btn_apply;
 	lv_obj_t *btn_black;
-	lv_obj_t *btn_reset;
 } color_test_ctxt;
 
 color_test_ctxt color_test;
@@ -462,7 +470,7 @@ static void _show_new_nyx_color(bool update_bg)
 	lv_color_t bgc_light = LV_COLOR_HEX(bg ? (bg + 0x101010) : 0x2D2D2D); // COLOR_HOS_BG_LIGHT.
 	lv_color_t bgc_press = LV_COLOR_HEX(bg ? (bg + 0x232323) : 0x404040); // 0x505050.
 	lv_color_t bg_border = LV_COLOR_HEX(bg ? (bg + 0x202020) : 0x3D3D3D); // COLOR_HOS_BG_LIGHTER.
-	lv_color_t color     = lv_color_hsv_to_rgb(hue, 100, 100);
+	lv_color_t color     = hue ? lv_color_hsv_to_rgb(hue, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90);
 
 	static lv_style_t btn_tgl_pr_test;
 	lv_style_copy(&btn_tgl_pr_test, lv_btn_get_style(color_test.button, LV_BTN_STATE_TGL_PR));
@@ -498,15 +506,15 @@ static void _show_new_nyx_color(bool update_bg)
 		lv_cont_set_style(color_test.header2, &hdr2_bg_test);
 
 		static lv_style_t btn_tgl_rel_test;
-		lv_style_copy(&btn_tgl_rel_test, lv_btn_get_style(color_test.btn_apply, LV_BTN_STATE_REL));
+		lv_style_copy(&btn_tgl_rel_test, lv_btn_get_style(color_test.btn_reset, LV_BTN_STATE_REL));
 		btn_tgl_rel_test.body.main_color = bgc_light;
 		btn_tgl_rel_test.body.grad_color = btn_tgl_rel_test.body.main_color;
+		lv_btn_set_style(color_test.btn_reset, LV_BTN_STATE_REL, &btn_tgl_rel_test);
+		lv_btn_set_style(color_test.btn_reset, LV_BTN_STATE_PR, &btn_tgl_pr_test);
 		lv_btn_set_style(color_test.btn_apply, LV_BTN_STATE_REL, &btn_tgl_rel_test);
 		lv_btn_set_style(color_test.btn_apply, LV_BTN_STATE_PR, &btn_tgl_pr_test);
 		lv_btn_set_style(color_test.btn_black, LV_BTN_STATE_REL, &btn_tgl_rel_test);
 		lv_btn_set_style(color_test.btn_black, LV_BTN_STATE_PR, &btn_tgl_pr_test);
-		lv_btn_set_style(color_test.btn_reset, LV_BTN_STATE_REL, &btn_tgl_rel_test);
-		lv_btn_set_style(color_test.btn_reset, LV_BTN_STATE_PR, &btn_tgl_pr_test);
 
 		static lv_style_t slider_bg;
 		lv_style_copy(&slider_bg, lv_slider_get_style(color_test.slider, LV_SLIDER_STYLE_BG));
@@ -538,7 +546,7 @@ static void _show_new_nyx_color(bool update_bg)
 
 		static lv_style_t slider_ind;
 		lv_style_copy(&slider_ind, lv_slider_get_style(color_test.slider, LV_SLIDER_STYLE_INDIC));
-		slider_ind.body.main_color = lv_color_hsv_to_rgb(hue, 100, 72);
+		slider_ind.body.main_color = hue ? lv_color_hsv_to_rgb(hue, 100, 72) : lv_color_hsv_to_rgb(53, 8, 65);
 		slider_ind.body.grad_color = slider_ind.body.main_color;
 		lv_slider_set_style(color_test.hue_slider, LV_SLIDER_STYLE_INDIC, &slider_ind);
 		lv_slider_set_style(color_test.slider,     LV_SLIDER_STYLE_INDIC, &slider_ind);
@@ -637,14 +645,24 @@ static lv_res_t _preset_bg_black(lv_obj_t *btn)
 
 static lv_res_t _preset_bg_reset(lv_obj_t *btn)
 {
-	color_test.r = (n_cfg.theme_bg >> 16) & 0xFF;
-	color_test.g = (n_cfg.theme_bg >>  8) & 0xFF;
-	color_test.b = (n_cfg.theme_bg >>  0) & 0xFF;
-	color_test.bg = n_cfg.theme_bg;
+	color_test.r = 0x2D;
+	color_test.g = 0x2D;
+	color_test.b = 0x2D;
+	color_test.bg = 0x2D2D2D;
+
+	color_test.box_style.body.main_color = LV_COLOR_HEX(color_test.bg);
+	color_test.box_style.body.grad_color = color_test.box_style.body.main_color;
+	lv_obj_set_style(color_test.box, &color_test.box_style);
 
 	lv_bar_set_value(color_test.r_slider, color_test.r);
 	lv_bar_set_value(color_test.g_slider, color_test.g);
 	lv_bar_set_value(color_test.b_slider, color_test.b);
+
+	char shade[8];
+	s_printf(shade, "%03d", color_test.r);
+	lv_label_set_text(color_test.r_label, shade);
+	lv_label_set_text(color_test.g_label, shade);
+	lv_label_set_text(color_test.b_label, shade);
 
 	_show_new_nyx_color(true);
 
@@ -670,8 +688,8 @@ static lv_res_t _preset_hue_action(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
-static const u16 theme_colors[17] = {
-	4, 13, 23, 33, 43, 54, 66, 89, 124, 167, 187, 200, 208, 231, 261, 291, 341
+static const u16 theme_colors[18] = {
+	0, 4, 13, 23, 33, 43, 54, 66, 89, 124, 167, 187, 200, 208, 231, 261, 291, 341
 };
 
 lv_res_t _action_win_nyx_colors_close(lv_obj_t * btn)
@@ -705,7 +723,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 
 	// Create container to keep content inside.
 	lv_obj_t *h1 = lv_cont_create(win, NULL);
-	lv_obj_set_size(h1, LV_DPI * 12, LV_DPI * 14 / 13);
+	lv_obj_set_size(h1, LV_DPI * 299 / 25, LV_DPI * 27 / 26);
 	color_test.header1 = h1;
 
 	lv_obj_t *acc_label = lv_label_create(h1, NULL);
@@ -715,16 +733,16 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	lv_obj_t *color_btn = lv_btn_create(h1, NULL);
 	lv_btn_ext_t *ext = lv_obj_get_ext_attr(color_btn);
 	ext->idx = theme_colors[0];
-	create_flat_button(h1, color_btn, lv_color_hsv_to_rgb(theme_colors[0], 100, 100), _preset_hue_action);
+	create_flat_button(color_btn, ext->idx, _preset_hue_action);
 	lv_obj_align(color_btn, acc_label, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 10);
 	lv_obj_t *color_btn2;
 
-	for (u32 i = 1; i < 17; i++)
+	for (u32 i = 1; i < ARRAY_SIZE(theme_colors); i++)
 	{
 		color_btn2 = lv_btn_create(h1, NULL);
 		ext = lv_obj_get_ext_attr(color_btn2);
 		ext->idx = theme_colors[i];
-		create_flat_button(h1, color_btn2, lv_color_hsv_to_rgb(theme_colors[i], 100, 100), _preset_hue_action);
+		create_flat_button(color_btn2, ext->idx, _preset_hue_action);
 		lv_obj_align(color_btn2, color_btn, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 		color_btn = color_btn2;
 	}
@@ -733,7 +751,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 
 	// Create hue slider.
 	lv_obj_t *h_slider = lv_slider_create(win, NULL);
-	lv_obj_set_width(h_slider, 1070);
+	lv_obj_set_width(h_slider, LV_DPI * 213 / 20);
 	lv_obj_set_height(h_slider, LV_DPI * 4 / 10);
 	lv_bar_set_range(h_slider, 0, 359);
 	lv_bar_set_value(h_slider, color_test.hue);
@@ -751,11 +769,11 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 
 	lv_obj_t *bg_label = lv_label_create(win, NULL);
 	lv_label_set_static_text(bg_label, "Theme color:");
-	lv_obj_align(bg_label, h_slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
+	lv_obj_align(bg_label, h_slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 6 / 25);
 
 	// Create red slider.
 	lv_obj_t *r_slider = lv_slider_create(win, NULL);
-	lv_obj_set_width(r_slider, 535);
+	lv_obj_set_width(r_slider, LV_DPI * 85 / 16);
 	lv_obj_set_height(r_slider, LV_DPI * 4 / 10);
 	lv_bar_set_range(r_slider, 11, 100);
 	lv_bar_set_value(r_slider, color_test.r);
@@ -771,10 +789,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	color_test.r_label = r_text_label;
 
 	// Create green slider.
-	lv_obj_t *g_slider = lv_slider_create(win, NULL);
-	lv_obj_set_width(g_slider, 535);
-	lv_obj_set_height(g_slider, LV_DPI * 4 / 10);
-	lv_bar_set_range(g_slider, 11, 100);
+	lv_obj_t *g_slider = lv_slider_create(win, r_slider);
 	lv_bar_set_value(g_slider, color_test.g);
 	lv_slider_set_action(g_slider, _slider_g_action);
 	lv_obj_align(g_slider, r_slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 7);
@@ -788,10 +803,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	color_test.g_label = g_text_label;
 
 	// Create blue slider.
-	lv_obj_t *b_slider = lv_slider_create(win, NULL);
-	lv_obj_set_width(b_slider, 535);
-	lv_obj_set_height(b_slider, LV_DPI * 4 / 10);
-	lv_bar_set_range(b_slider, 11, 100);
+	lv_obj_t *b_slider = lv_slider_create(win, r_slider);
 	lv_bar_set_value(b_slider, color_test.b);
 	lv_slider_set_action(b_slider, _slider_b_action);
 	lv_obj_align(b_slider, g_slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 7);
@@ -812,34 +824,34 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	color_test.box = bg_box;
 
 	// Create theme color buttons.
-	lv_obj_t *btn_apply = lv_btn_create(win, NULL);
-	lv_obj_t *label_btn = lv_label_create(btn_apply, NULL);
-	lv_label_set_static_text(label_btn, SYMBOL_OK" Custom");
-	lv_btn_set_fit(btn_apply, false, true);
-	lv_obj_set_width(btn_apply, LV_DPI * 5 / 3);
-	lv_btn_set_action(btn_apply, LV_BTN_ACTION_CLICK, _preset_bg_apply);
-	lv_obj_align(btn_apply, bg_box, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI / 5, 0);
-	color_test.btn_apply = btn_apply;
+	lv_obj_t *btn_reset = lv_btn_create(win, NULL);
+	lv_obj_t *label_btn = lv_label_create(btn_reset, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_REFRESH" Grey");
+	lv_btn_set_fit(btn_reset, false, true);
+	lv_obj_set_width(btn_reset, LV_DPI * 5 / 3);
+	lv_btn_set_action(btn_reset, LV_BTN_ACTION_CLICK, _preset_bg_reset);
+	lv_obj_align(btn_reset, bg_box, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI / 5, 0);
+	color_test.btn_reset = btn_reset;
 
-	lv_obj_t *btn_black = lv_btn_create(win, btn_apply);
+	lv_obj_t *btn_black = lv_btn_create(win, btn_reset);
 	label_btn = lv_label_create(btn_black, NULL);
 	lv_label_set_static_text(label_btn, SYMBOL_BRIGHTNESS" Black");
 	lv_btn_set_action(btn_black, LV_BTN_ACTION_CLICK, _preset_bg_black);
-	lv_obj_align(btn_black, btn_apply, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI / 5, 0);
+	lv_obj_align(btn_black, btn_reset, LV_ALIGN_OUT_RIGHT_TOP, LV_DPI / 5, 0);
 	color_test.btn_black = btn_black;
 
-	lv_obj_t *btn_reset = lv_btn_create(win, btn_apply);
-	label_btn = lv_label_create(btn_reset, NULL);
-	lv_label_set_static_text(label_btn, SYMBOL_REFRESH" Reset");
-	lv_obj_set_width(btn_reset, LV_DPI * 10 / 3 + LV_DPI / 5);
-	lv_btn_set_action(btn_reset, LV_BTN_ACTION_CLICK, _preset_bg_reset);
-	lv_obj_align(btn_reset, btn_apply, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 7);
-	color_test.btn_reset = btn_reset;
+	lv_obj_t *btn_apply = lv_btn_create(win, btn_reset);
+	label_btn = lv_label_create(btn_apply, NULL);
+	lv_label_set_static_text(label_btn, SYMBOL_LIST" Custom Color");
+	lv_obj_set_width(btn_apply, LV_DPI * 10 / 3 + LV_DPI / 5);
+	lv_btn_set_action(btn_apply, LV_BTN_ACTION_CLICK, _preset_bg_apply);
+	lv_obj_align(btn_apply, btn_reset, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 7);
+	color_test.btn_apply = btn_apply;
 
 	// Create sample text.
 	lv_obj_t *h2 = lv_cont_create(win, NULL);
 	lv_obj_set_size(h2, LV_DPI * 12, LV_DPI * 18 / 10);
-	lv_obj_align(h2, b_slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 5);
+	lv_obj_align(h2, b_slider, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 6 / 25);
 	color_test.header2 = h2;
 
 	lv_obj_t *lbl_sample = lv_label_create(h2, NULL);
@@ -850,7 +862,7 @@ static lv_res_t _create_window_nyx_colors(lv_obj_t *btn)
 	lv_label_set_static_text(lbl_test,
 		"Lorem ipsum dolor sit amet, consectetur adipisicing elit, "
 		"sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.");
-	lv_obj_set_width(lbl_test, lv_obj_get_width(h2) - LV_DPI * 6 / 10);
+	lv_obj_set_width(lbl_test, LV_DPI * 261 / 23);
 	lv_obj_align(lbl_test, lbl_sample, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 34);
 	color_test.label = lbl_test;
 
