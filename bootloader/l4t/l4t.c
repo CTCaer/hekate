@@ -832,7 +832,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 			gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
 
 			if (!(btn_wait() & BTN_POWER))
-				return 0;
+				return 1;
 		}
 
 		// Copy loaded warmboot fw to address if from storage.
@@ -844,7 +844,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 		PMC(APBDEV_PMC_SEC_DISABLE8) |= BIT(30);
 	}
 
-	return 1;
+	return 0;
 }
 
 static void _l4t_bl33_cfg_set_key(char *env, const char *key, const char *val)
@@ -1021,7 +1021,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	}
 
 	// Set SC7-Exit firmware address to PMC for bootrom and do further setup.
-	if (!_l4t_sc7_exit_config(t210b01))
+	if (_l4t_sc7_exit_config(t210b01))
 		return;
 
 	// Done loading bootloaders/firmware.
