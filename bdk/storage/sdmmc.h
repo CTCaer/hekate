@@ -143,6 +143,8 @@ typedef struct _mmc_csd
 
 typedef struct _mmc_ext_csd
 {
+	u8  bkops;        /* background support bit */
+	u8  bkops_en;     /* manual bkops enable bit */
 	u8  rev;
 	u8  ext_struct;   /* 194 */
 	u8  card_type;    /* 196 */

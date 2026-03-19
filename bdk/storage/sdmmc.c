@@ -526,6 +526,8 @@ static void _mmc_storage_parse_ext_csd(sdmmc_storage_t *storage)
 	storage->ext_csd.dev_version  = *(u16 *)&ext_csd[EXT_CSD_DEVICE_VERSION];
 	storage->ext_csd.boot_mult    = ext_csd[EXT_CSD_BOOT_MULT];
 	storage->ext_csd.rpmb_mult    = ext_csd[EXT_CSD_RPMB_MULT];
+	storage->ext_csd.bkops        = ext_csd[EXT_CSD_BKOPS_SUPPORT];
+	storage->ext_csd.bkops_en     = ext_csd[EXT_CSD_BKOPS_EN];
 
 	storage->ext_csd.pre_eol_info   = ext_csd[EXT_CSD_PRE_EOL_INFO];
 	storage->ext_csd.dev_life_est_a = ext_csd[EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A];
