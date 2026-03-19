@@ -668,7 +668,7 @@ static bool _get_fs_exfat_compatible(link_t *info, u32 *hos_revision)
 		if (strcmp((char *)ki->kip1->name, "FS"))
 			continue;
 
-		if (!se_sha_hash_256_oneshot(sha_buf, ki->kip1, ki->size))
+		if (se_sha_hash_256_oneshot(sha_buf, ki->kip1, ki->size))
 			break;
 
 		pkg2_get_ids(&kip_ids, &fs_ids_cnt);

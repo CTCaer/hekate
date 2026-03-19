@@ -877,7 +877,7 @@ static const kip1_patch_t _fs_nogc_2200[] = {
 };
 
 static const kip1_patchset_t _fs_patches_2200[] = {
-	{ "nogc",     _fs_nogc_2100 },
+	{ "nogc",     _fs_nogc_2200 },
 	{ NULL, NULL }
 };
 
@@ -889,7 +889,7 @@ static const kip1_patch_t _fs_nogc_2200_exfat[] = {
 };
 
 static const kip1_patchset_t _fs_patches_2200_exfat[] = {
-	{ "nogc",     _fs_nogc_2100_exfat },
+	{ "nogc",     _fs_nogc_2200_exfat },
 	{ NULL, NULL }
 };
 
