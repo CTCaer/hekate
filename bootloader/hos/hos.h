@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -48,7 +48,8 @@ enum {
 	HOS_MKEY_VER_1900 = 18,
 	HOS_MKEY_VER_2000 = 19,
 	HOS_MKEY_VER_2100 = 20,
-	HOS_MKEY_VER_MAX  = HOS_MKEY_VER_2100
+	HOS_MKEY_VER_2200 = 21,
+	HOS_MKEY_VER_MAX  = HOS_MKEY_VER_2200
 };
 
 #define HOS_TSEC_VERSION 4 //! TODO: Update on TSEC Root Key changes.
@@ -62,9 +63,10 @@ enum {
 
 typedef struct _exo_ctxt_t
 {
-	u32  hos_revision;
-	bool no_user_exceptions;
-	bool user_pmu;
+	u32   hos_revision;
+	bool  no_user_exceptions;
+	bool  user_pmu;
+	bool *force_mem_mode;
 	bool *usb3_force;
 	bool *cal0_blank;
 	bool *cal0_allow_writes_sys;

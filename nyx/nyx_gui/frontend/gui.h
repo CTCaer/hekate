@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -62,7 +62,7 @@ extern lv_img_dsc_t *icon_lakka;
 
 extern lv_img_dsc_t *hekate_bg;
 
-extern lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr;
+extern lv_style_t btn_transp_rel, btn_transp_pr, btn_transp_tgl_rel, btn_transp_tgl_pr, btn_transp_ina;
 extern lv_style_t ddlist_transp_bg, ddlist_transp_sel;
 extern lv_style_t tabview_btn_pr, tabview_btn_tgl_pr;
 
@@ -72,14 +72,13 @@ extern char *text_color;
 
 extern gui_status_bar_ctx status_bar;
 
-void reload_nyx();
+void reload_nyx(lv_obj_t *obj, bool force);
 lv_img_dsc_t *bmp_to_lvimg_obj(const char *path);
-lv_res_t mbox_action(lv_obj_t * btns, const char * txt);
 bool nyx_emmc_check_battery_enough();
-lv_res_t nyx_win_close_action_custom(lv_obj_t * btn);
+lv_res_t nyx_mbox_action(lv_obj_t * btns, const char * txt);
+lv_res_t nyx_win_close_action(lv_obj_t * btn);
 void nyx_window_toggle_buttons(lv_obj_t *win, bool disable);
-lv_obj_t *nyx_create_standard_window(const char *win_title);
-lv_obj_t *nyx_create_window_custom_close_btn(const char *win_title, lv_action_t rel_action);
+lv_obj_t *nyx_create_standard_window(const char *win_title, lv_action_t close_action);
 void nyx_create_onoff_button(lv_theme_t *th, lv_obj_t *parent, lv_obj_t *btn, const char *btn_name, lv_action_t action, bool transparent);
 lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn);
 void manual_system_maintenance(bool refresh);

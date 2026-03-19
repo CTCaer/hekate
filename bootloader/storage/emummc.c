@@ -43,7 +43,7 @@ void emummc_load_cfg()
 	emu_cfg.emummc_file_based_path[0] = 0;
 
 	LIST_INIT(ini_sections);
-	if (ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
+	if (!ini_parse(&ini_sections, "emuMMC/emummc.ini", false))
 	{
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sections, link)
 		{
@@ -137,13 +137,13 @@ int emummc_storage_init_mmc()
 	emu_cfg.active_part = 0;
 
 	// Always init eMMC even when in emuMMC. eMMC is needed from the emuMMC driver anyway.
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 		return 2;
 
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable)
 		return 0;
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto out;
 
 	if (!emu_cfg.sector)
@@ -180,7 +180,7 @@ int emummc_storage_end()
 	else
 		sd_end();
 
-	return 1;
+	return 0;
 }
 
 int emummc_storage_read(u32 sector, u32 num_sectors, void *buf)
@@ -211,21 +211,19 @@ int emummc_storage_read(u32 sector, u32 num_sectors, void *buf)
 		if (f_open(&fp, emu_cfg.emummc_file_based_path, FA_READ))
 		{
 			EPRINTF("Failed to open emuMMC image.");
-			return 0;
+			return 1;
 		}
 		f_lseek(&fp, (u64)sector << 9);
 		if (f_read(&fp, buf, (u64)num_sectors << 9, NULL))
 		{
 			EPRINTF("Failed to read emuMMC image.");
 			f_close(&fp);
-			return 0;
+			return 1;
 		}
 
 		f_close(&fp);
-		return 1;
+		return 0;
 	}
-
-	return 1;
 }
 
 int emummc_storage_write(u32 sector, u32 num_sectors, void *buf)
@@ -255,17 +253,17 @@ int emummc_storage_write(u32 sector, u32 num_sectors, void *buf)
 		}
 
 		if (f_open(&fp, emu_cfg.emummc_file_based_path, FA_WRITE))
-			return 0;
+			return 1;
 
 		f_lseek(&fp, (u64)sector << 9);
 		if (f_write(&fp, buf, (u64)num_sectors << 9, NULL))
 		{
 			f_close(&fp);
-			return 0;
+			return 1;
 		}
 
 		f_close(&fp);
-		return 1;
+		return 0;
 	}
 }
 
@@ -275,7 +273,7 @@ int emummc_storage_set_mmc_partition(u32 partition)
 	emmc_set_partition(partition);
 
 	if (!emu_cfg.enabled || h_cfg.emummc_force_disable || emu_cfg.sector)
-		return 1;
+		return 0;
 	else
 	{
 		strcpy(emu_cfg.emummc_file_based_path, emu_cfg.path);
@@ -294,8 +292,6 @@ int emummc_storage_set_mmc_partition(u32 partition)
 			break;
 		}
 
-		return 1;
+		return 0;
 	}
-
-	return 1;
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 CTCaer
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 /**
  * @file lv_slider.c
@@ -437,16 +452,17 @@ static lv_res_t lv_slider_signal(lv_obj_t * slider, lv_signal_t sign, void * par
         lv_indev_get_point(param, &p);
         int16_t tmp = 0;
         if(w > h) {
-            lv_coord_t knob_w = h;
-            p.x -= slider->coords.x1 + h / 2;    /*Modify the point to shift with half knob (important on the start and end)*/
-            tmp = (int32_t)((int32_t) p.x * (ext->bar.max_value - ext->bar.min_value + 1)) / (w - knob_w);
-            tmp += ext->bar.min_value;
+			lv_coord_t knob_w = h;
+			lv_coord_t offset = (ext->knob_in == 0) ? w : w - knob_w;
+			p.x -= slider->coords.x1 + ((ext->knob_in == 0) ? 0 : knob_w / 2);
+			tmp = ((int32_t)p.x * (ext->bar.max_value - ext->bar.min_value) + offset / 2) / offset;
         } else {
-            lv_coord_t knob_h = w;
-            p.y -= slider->coords.y1 + w / 2;    /*Modify the point to shift with half knob (important on the start and end)*/
-            tmp = (int32_t)((int32_t) p.y * (ext->bar.max_value - ext->bar.min_value + 1)) / (h - knob_h);
-            tmp = ext->bar.max_value - tmp;     /*Invert the value: smaller value means higher y*/
+			lv_coord_t knob_h = w;
+			lv_coord_t offset = (ext->knob_in == 0) ? h : h - knob_h;
+			p.y -= slider->coords.y1 + ((ext->knob_in == 0) ? 0 : knob_h / 2);
+			tmp = ((int32_t)p.y * (ext->bar.max_value - ext->bar.min_value) + offset / 2) / offset;
         }
+		tmp += ext->bar.min_value;
 
         if(tmp < ext->bar.min_value) tmp = ext->bar.min_value;
         else if(tmp > ext->bar.max_value) tmp = ext->bar.max_value;

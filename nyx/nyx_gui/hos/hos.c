@@ -26,7 +26,6 @@
 #include "../config.h"
 
 u8 *cal0_buf = NULL;
-static u8 *bis_keys = NULL;
 
 static const u8 eks_keyseeds[HOS_MKEY_VER_600 - HOS_MKEY_VER_100 + 1][SE_KEY_128_SIZE] = {
 	{ 0xDF, 0x20, 0x6F, 0x59, 0x44, 0x54, 0xEF, 0xDC, 0x70, 0x74, 0x48, 0x3B, 0x0D, 0xED, 0x9F, 0xD3 }, // 1.0.0.
@@ -52,7 +51,7 @@ static const u8 master_kekseed_620[SE_KEY_128_SIZE] =
 
 //!TODO: Update on mkey changes.
 static const u8 master_kekseed_t210_max[SE_KEY_128_SIZE] =
-	{ 0x66, 0xC8, 0xCB, 0x3D, 0xEC, 0xF4, 0x59, 0x73, 0x54, 0x88, 0xE1, 0x2E, 0xE6, 0x3D, 0x68, 0x46 }; // 21.0.0.
+	{ 0x15, 0xAC, 0x96, 0x34, 0xF5, 0x32, 0x56, 0x68, 0xFE, 0x5B, 0x9D, 0xD7, 0xED, 0x19, 0xB7, 0x8E }; // 22.0.0.
 
 //!TODO: Update on mkey changes.
 static const u8 master_kekseed_t210b01[HOS_MKEY_VER_MAX - HOS_MKEY_VER_600 + 1][SE_KEY_128_SIZE] = {
@@ -72,6 +71,7 @@ static const u8 master_kekseed_t210b01[HOS_MKEY_VER_MAX - HOS_MKEY_VER_600 + 1][
 	{ 0x31, 0xBE, 0x25, 0xFB, 0xDB, 0xB4, 0xEE, 0x49, 0x5C, 0x77, 0x05, 0xC2, 0x36, 0x9F, 0x34, 0x80 }, // 19.0.0.
 	{ 0x1A, 0x31, 0x62, 0x87, 0xA8, 0x09, 0xCA, 0xF8, 0x69, 0x15, 0x45, 0xC2, 0x6B, 0xAA, 0x5A, 0x8A }, // 20.0.0.
 	{ 0xEB, 0xF3, 0x5B, 0x2D, 0x4A, 0x2D, 0xCE, 0x45, 0x3A, 0x6F, 0x61, 0x38, 0x0B, 0x00, 0x3B, 0x46 }, // 21.0.0.
+	{ 0x82, 0xE2, 0x0A, 0x59, 0x67, 0xDF, 0xBF, 0x51, 0x47, 0x62, 0x11, 0xF2, 0x41, 0xD3, 0xEE, 0x13 }, // 22.0.0.
 };
 
 static const u8 console_keyseed[SE_KEY_128_SIZE] =
@@ -106,6 +106,7 @@ static const u8 mkey_vectors[HOS_MKEY_VER_MAX + 1][SE_KEY_128_SIZE] = {
 	{ 0x4A, 0x01, 0x3B, 0xC7, 0x44, 0x6E, 0x45, 0xBD, 0xE6, 0x5E, 0x2B, 0xEC, 0x07, 0x37, 0x52, 0x86 }, // Mkey 17 encrypted with mkey 18.
 	{ 0x97, 0xE4, 0x11, 0xAB, 0x22, 0x72, 0x1A, 0x1F, 0x70, 0x5C, 0x00, 0xB3, 0x96, 0x30, 0x05, 0x28 }, // Mkey 18 encrypted with mkey 19.
 	{ 0xF7, 0x92, 0xC0, 0xEC, 0xF3, 0xA4, 0x8C, 0xB7, 0x0D, 0xB3, 0xF3, 0xAB, 0x10, 0x9B, 0x18, 0xBA }, // Mkey 19 encrypted with mkey 20.
+	{ 0x14, 0xCB, 0x60, 0x29, 0x3D, 0xE0, 0xFB, 0xF2, 0x5B, 0x60, 0xB6, 0xC5, 0x2E, 0x77, 0x8F, 0x98 }, // Mkey 20 encrypted with mkey 21.
 };
 
 //!TODO: Update on mkey changes.
@@ -128,6 +129,7 @@ static const u8 new_console_keyseed[HOS_MKEY_VER_MAX - HOS_MKEY_VER_400 + 1][SE_
 	{ 0x07, 0x38, 0x9A, 0xEC, 0x9C, 0xBD, 0x50, 0x4A, 0x4C, 0x1F, 0x04, 0xDA, 0x40, 0x68, 0x29, 0xE3 }, // 19.0.0 New Device Key Source.
 	{ 0xA3, 0x6B, 0x0A, 0xB5, 0x6F, 0x57, 0x4C, 0x5E, 0x00, 0xFD, 0x56, 0x21, 0xF5, 0x06, 0x6B, 0xD1 }, // 20.0.0 New Device Key Source.
 	{ 0xF9, 0x62, 0x05, 0x99, 0xE0, 0xB9, 0xA6, 0x9B, 0x9D, 0xAA, 0xB4, 0x12, 0x0B, 0x0F, 0xF5, 0x8F }, // 21.0.0 New Device Key Source.
+	{ 0xF8, 0xF4, 0x22, 0xA4, 0x34, 0xAE, 0x0E, 0x0C, 0x4D, 0x5C, 0x5B, 0xA1, 0x1B, 0x46, 0x1C, 0x78 }, // 22.0.0 New Device Key Source.
 };
 
 //!TODO: Update on mkey changes.
@@ -150,6 +152,7 @@ static const u8 new_console_kekseed[HOS_MKEY_VER_MAX - HOS_MKEY_VER_400 + 1][SE_
 	{ 0x9B, 0xA5, 0xFD, 0x74, 0x7F, 0xCD, 0x23, 0xD1, 0xD9, 0xBD, 0x6C, 0x51, 0x72, 0x5F, 0x3D, 0x1F }, // 19.0.0 New Device Keygen Source.
 	{ 0xDA, 0xFB, 0x61, 0x39, 0x48, 0x2D, 0xC2, 0x7E, 0x0D, 0x8E, 0x8F, 0x98, 0x57, 0x20, 0xB8, 0x15 }, // 20.0.0 New Device Keygen Source.
 	{ 0x92, 0xBF, 0x37, 0x80, 0x0E, 0x79, 0x56, 0x8C, 0x57, 0x75, 0x72, 0x0A, 0x48, 0xD8, 0x15, 0x39 }, // 21.0.0 New Device Keygen Source.
+	{ 0xC4, 0x6F, 0x0E, 0x72, 0x43, 0xCE, 0x87, 0xFC, 0x38, 0x95, 0x9B, 0xC9, 0x31, 0x44, 0x97, 0x63 }, // 22.0.0 New Device Keygen Source.
 };
 
 static const u8 gen_keyseed[SE_KEY_128_SIZE] =
@@ -173,23 +176,23 @@ static const u8 bis_keyseed[][SE_KEY_128_SIZE] = {
 	{ 0x4D, 0x12, 0xE1, 0x4B, 0x2A, 0x47, 0x4C, 0x1C, 0x09, 0xCB, 0x03, 0x59, 0xF0, 0x15, 0xF4, 0xE4 }  // BIS 2/3 Tweak seed.
 };
 
-bool hos_eks_rw_try(u8 *buf, bool write)
+static int _hos_eks_rw_try(u8 *buf, bool write)
 {
 	for (u32 i = 0; i < 3; i++)
 	{
 		if (!write)
 		{
-			if (sdmmc_storage_read(&sd_storage, 0, 1, buf))
-				return true;
+			if (!sdmmc_storage_read(&sd_storage, 0, 1, buf))
+				return 0;
 		}
 		else
 		{
-			if (sdmmc_storage_write(&sd_storage, 0, 1, buf))
-				return true;
+			if (!sdmmc_storage_write(&sd_storage, 0, 1, buf))
+				return 0;
 		}
 	}
 
-	return false;
+	return 1;
 }
 
 static void _hos_eks_get()
@@ -203,7 +206,7 @@ static void _hos_eks_get()
 	{
 		// Read EKS blob.
 		u8 *mbr = malloc(SD_BLOCKSIZE);
-		if (!hos_eks_rw_try(mbr, false))
+		if (_hos_eks_rw_try(mbr, false))
 			goto out;
 
 		// Decrypt EKS blob.
@@ -241,7 +244,7 @@ static void _hos_eks_save()
 	{
 		// Read EKS blob.
 		u8 *mbr = malloc(SD_BLOCKSIZE);
-		if (!hos_eks_rw_try(mbr, false))
+		if (_hos_eks_rw_try(mbr, false))
 		{
 			if (new_eks)
 			{
@@ -273,7 +276,7 @@ static void _hos_eks_save()
 
 		// Write EKS blob to SD.
 		memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-		hos_eks_rw_try(mbr, true);
+		_hos_eks_rw_try(mbr, true);
 
 		free(eks);
 		free(keys);
@@ -295,7 +298,7 @@ void hos_eks_clear(u32 mkey)
 		{
 			// Read EKS blob.
 			u8 *mbr = malloc(SD_BLOCKSIZE);
-			if (!hos_eks_rw_try(mbr, false))
+			if (_hos_eks_rw_try(mbr, false))
 				goto out;
 
 			// Disable current Master key version.
@@ -308,7 +311,7 @@ void hos_eks_clear(u32 mkey)
 
 			// Write EKS blob to SD.
 			memcpy(mbr + 0x80, eks, sizeof(hos_eks_mbr_t));
-			hos_eks_rw_try(mbr, true);
+			_hos_eks_rw_try(mbr, true);
 
 			free(eks);
 out:
@@ -331,7 +334,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 	tsec_keys_t tsec_keys;
 
 	if (mkey > HOS_MKEY_VER_MAX)
-		return 0;
+		return 1;
 
 	// Do Mariko keygen.
 	if (h_cfg.t210b01)
@@ -346,7 +349,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		// Derive latest pkg2 key.
 		se_aes_unwrap_key(8, 7, package2_keyseed);
 
-		return 1;
+		return 0;
 	}
 
 	// Do Erista keygen.
@@ -385,7 +388,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		if (!tsec_ctxt->fw)
 		{
 			EPRINTF("\nFailed to load thk.bin");
-			return 0;
+			return 1;
 		}
 
 		tsec_ctxt->size = 0x1F00;
@@ -409,7 +412,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		if (retries > 15)
 		{
 			EPRINTF("\nFailed to get TSEC keys. Please try again.");
-			return 0;
+			return 1;
 		}
 	}
 
@@ -480,7 +483,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		se_aes_unwrap_key(11, 13, cmac_keyseed);
 		se_aes_hash_cmac(cmac, SE_KEY_128_SIZE, 11, (void *)eks->ctr, sizeof(eks->ctr) + sizeof(eks->keys));
 		if (!memcmp(eks->cmac, cmac, SE_KEY_128_SIZE))
-			return 0;
+			return 1;
 */
 
 		se_aes_crypt_ecb(13, DECRYPT, tsec_keys.tsec, cmac_keyseed, SE_KEY_128_SIZE);
@@ -521,7 +524,7 @@ int hos_keygen(pkg1_eks_t *eks, u32 mkey, tsec_ctxt_t *tsec_ctxt)
 		se_aes_unwrap_key(8, 12, package2_keyseed);
 	}
 
-	return 1;
+	return 0;
 }
 
 static void _hos_validate_mkey()
@@ -568,11 +571,9 @@ int hos_bis_keygen()
 	u32 console_key_slot = 15; // HOS_MKEY_VER_MAX. Only for Erista.
 	tsec_ctxt_t tsec_ctxt = {0};
 
-	if (!bis_keys)
-		bis_keys = malloc(SE_KEY_128_SIZE * 6);
-
 	// Run initial keygen.
-	hos_keygen(NULL, HOS_MKEY_VER_MAX, &tsec_ctxt);
+	if (hos_keygen(NULL, HOS_MKEY_VER_MAX, &tsec_ctxt))
+		return 1;
 
 	// All Mariko use new device keygen. New keygen was introduced in 4.0.0.
 	// We check unconditionally in order to support downgrades.
@@ -613,6 +614,7 @@ int hos_bis_keygen()
 	se_aes_unwrap_key(2, console_key_slot, gen_keyseed_retail);
 
 	// Clear bis keys storage.
+	u8 *bis_keys = malloc(SE_KEY_128_SIZE * 6);
 	memset(bis_keys, 0, SE_KEY_128_SIZE * 6);
 
 	// Generate BIS 0 Keys.
@@ -655,7 +657,7 @@ int hos_bis_keygen()
 	se_aes_key_set(4, bis_keys + (4 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 	se_aes_key_set(5, bis_keys + (5 * SE_KEY_128_SIZE), SE_KEY_128_SIZE);
 
-	return 1;
+	return 0;
 }
 
 void hos_bis_keys_clear()
@@ -668,11 +670,12 @@ void hos_bis_keys_clear()
 int hos_dump_cal0()
 {
 	// Init eMMC.
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 		return 1;
 
 	// Generate BIS keys
-	hos_bis_keygen();
+	if (hos_bis_keygen())
+		return 2;
 
 	if (!cal0_buf)
 		cal0_buf = malloc(SZ_64K);

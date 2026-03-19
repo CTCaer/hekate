@@ -143,9 +143,8 @@ typedef struct _mmc_csd
 
 typedef struct _mmc_ext_csd
 {
-	//u8  bkops;        /* background support bit */
-	//u8  bkops_en;     /* manual bkops enable bit */
-	//u8  bkops_status; /* 246 */
+	u8  bkops;        /* background support bit */
+	u8  bkops_en;     /* manual bkops enable bit */
 	u8  rev;
 	u8  ext_struct;   /* 194 */
 	u8  card_type;    /* 196 */
@@ -193,6 +192,7 @@ typedef struct _sd_ext_reg_t
 typedef struct _sdmmc_storage_t
 {
 	sdmmc_t *sdmmc;
+
 	int initialized;
 	int is_low_voltage;
 	int has_sector_access;
@@ -200,10 +200,11 @@ typedef struct _sdmmc_storage_t
 	u32 sec_cnt;
 	u32 partition;
 	u32 max_power;
-	u8  raw_cid[0x10];
-	u8  raw_csd[0x10];
-	u8  raw_scr[8];
-	u8  raw_ssr[0x40];
+	u8  raw_cid[0x10]                    __attribute__((aligned(SDMMC_ADMA_ADDR_ALIGN)));
+	u8  raw_csd[0x10]                    __attribute__((aligned(SDMMC_ADMA_ADDR_ALIGN)));
+	u8  raw_scr[8]                       __attribute__((aligned(SDMMC_ADMA_ADDR_ALIGN)));
+	u8  raw_ssr[SDMMC_CMD_BLOCKSIZE]     __attribute__((aligned(SDMMC_ADMA_ADDR_ALIGN)));
+	u8  raw_ext_csd[SDMMC_DAT_BLOCKSIZE] __attribute__((aligned(SDMMC_ADMA_ADDR_ALIGN)));
 	mmc_cid_t     cid;
 	mmc_csd_t     csd;
 	mmc_ext_csd_t ext_csd;
@@ -232,12 +233,12 @@ int  sdmmc_storage_init_gc(sdmmc_storage_t *storage, sdmmc_t *sdmmc);
 int  sdmmc_storage_execute_vendor_cmd(sdmmc_storage_t *storage, u32 arg);
 int  sdmmc_storage_vendor_sandisk_report(sdmmc_storage_t *storage, void *buf);
 
-int  mmc_storage_get_ext_csd(sdmmc_storage_t *storage, void *buf);
+int  mmc_storage_get_ext_csd(sdmmc_storage_t *storage);
 
 int  sd_storage_get_ext_reg(sdmmc_storage_t *storage, u8 fno, u8 page, u16 offset, u32 len, void *buf);
 int  sd_storage_get_fmodes(sdmmc_storage_t *storage, u8 *buf, sd_func_modes_t *functions);
-int  sd_storage_get_scr(sdmmc_storage_t *storage, u8 *buf);
-int  sd_storage_get_ssr(sdmmc_storage_t *storage, u8 *buf);
+int  sd_storage_get_scr(sdmmc_storage_t *storage);
+int  sd_storage_get_ssr(sdmmc_storage_t *storage);
 u32  sd_storage_get_ssr_au(sdmmc_storage_t *storage);
 
 void sd_storage_get_ext_regs(sdmmc_storage_t *storage, u8 *buf);

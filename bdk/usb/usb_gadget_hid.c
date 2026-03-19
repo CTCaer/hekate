@@ -1,7 +1,7 @@
 /*
  * USB Gadget HID driver for Tegra X1
  *
- * Copyright (c) 2019-2025 CTCaer
+ * Copyright (c) 2019-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -315,33 +315,30 @@ typedef struct _touchpad_report_t
 
 static bool _fts_touch_read(touchpad_report_t *rpt)
 {
-	static touch_event touchpad;
+	static touch_event_t touchpad;
 
-	touch_poll(&touchpad);
+	if (touch_poll(&touchpad))
+		return false;
 
 	rpt->rpt_id = 5;
 	rpt->count = 1;
 
 	// Decide touch enable.
-	switch (touchpad.type & STMFTS_MASK_EVENT_ID)
+	if (touchpad.touch)
 	{
-	//case STMFTS_EV_MULTI_TOUCH_ENTER:
-	case STMFTS_EV_MULTI_TOUCH_MOTION:
 		rpt->x = touchpad.x;
 		rpt->y = touchpad.y;
 		//rpt->z = touchpad.z;
-		rpt->id = touchpad.fingers ? touchpad.fingers - 1 : 0;
+		rpt->id = touchpad.finger;
 		rpt->tip_switch = 1;
-		break;
-	case STMFTS_EV_MULTI_TOUCH_LEAVE:
+	}
+	else
+	{
 		rpt->x = touchpad.x;
 		rpt->y = touchpad.y;
 		//rpt->z = touchpad.z;
-		rpt->id = touchpad.fingers ? touchpad.fingers - 1 : 0;
+		rpt->id = touchpad.finger;
 		rpt->tip_switch = 0;
-		break;
-	case STMFTS_EV_NO_EVENT:
-		return false;
 	}
 
 	return true;

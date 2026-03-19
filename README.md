@@ -77,7 +77,7 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 
 ## Bootloader configuration
 
-The bootloader can be configured via 'bootloader/hekate_ipl.ini' (if it is present on the SD card). Each ini section represents a boot entry, except for the special section 'config' that controls the global configuration.
+The bootloader can be configured via `Nyx` -> `Options` or 'bootloader/hekate_ipl.ini'. The special section 'config' controls the actual global configuration. Any other ini section represents a boot entry and can only be edited manually via the ini.
 
 
 There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Caption, "**#**": Comment, "*newline*": .ini cosmetic newline.
@@ -86,22 +86,27 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 **You can find a template [Here](./res/hekate_ipl_template.ini)**
 
 
-### hekate Global Configuration keys/values (when entry is *[config]*):
+### hekate Configuration keys/values (section *[config]*)
+
+Use `Options` in Nyx to edit the following configuration:
 
 | Config option      | Description                                                    |
 | ------------------ | -------------------------------------------------------------- |
 | autoboot=0         | 0: Disable, #: Boot entry number to auto boot.                 |
 | autoboot_list=0    | 0: Read `autoboot` boot entry from hekate_ipl.ini, 1: Read from ini folder (ini files are ASCII ordered). |
 | bootwait=3         | 0: Disable (It also disables bootlogo. Having **VOL-** pressed since injection goes to menu.), #: Time to wait for **VOL-** to enter menu. Max: 20s. |
-| noticker=0         | 0: Animated line is drawn during custom bootlogo, signifying time left to skip to menu. 1: Disable. |
 | autohosoff=1       | 0: Disable, 1: If woke up from HOS via an RTC alarm, shows logo, then powers off completely, 2: No logo, immediately powers off.|
 | autonogc=1         | 0: Disable, 1: Automatically applies nogc patch if unburnt fuses found and a >= 4.0.0 HOS is booted. |
-| bootprotect=0      | 0: Disable, 1: Protect bootloader folder from being corrupted by disallowing reading or editing in HOS. |
 | updater2p=0        | 0: Disable, 1: Force updates (if needed) the reboot2payload binary to be hekate. |
 | backlight=100      | Screen backlight level. 0-255.                                 |
+| ------------------ | --------- *The following can be edited via ini only* --------- |
+| noticker=0         | 0: Animated line is drawn during custom bootlogo, signifying time left to skip to menu. 1: Disable. |
+| bootprotect=0      | 0: Disable, 1: Protect bootloader folder from being corrupted by disallowing reading or editing in HOS. |
 
 
-### Boot entry key/value combinations:
+### Boot entry key/value combinations
+
+A boot entry needs to be manually added/edited with the user's chosen key/value combos.
 
 | Config option          | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
@@ -151,7 +156,9 @@ You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage
 That's in case the kips are incompatible between them. If compatible, you can override `pkg3`/`fss0` kips with no issues (useful for testing with intermediate kip changes). In such cases, the `kip1` line must be **after** `pkg3`/`fss0` line.
 
 
-### Boot entry key/value combinations for Exosphère:
+### Boot entry key/value combinations for Exosphère
+
+The following can be paired together with a HOS boot entry:
 
 | Config option          | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
@@ -160,6 +167,7 @@ That's in case the kips are incompatible between them. If compatible, you can ov
 | cal0blank=1            | Overrides Exosphère config `blank_prodinfo_{sys/emu}mmc`. If that key doesn't exist, `exosphere.ini` will be used. |
 | cal0writesys=1         | Overrides Exosphère config `allow_writing_to_cal_sysmmc`. If that key doesn't exist, `exosphere.ini` will be used. |
 | usb3force=1            | Overrides system settings mitm config `usb30_force_enabled`. If that key doesn't exist, `system_settings.ini` will be used. |
+| memmode=1              | Enables boot config memory mode for retail units. By default, max ram is limited to 4GB. Enabling this will automatically choose size. |
 
 
 **Note**: `cal0blank`, `cal0writesys`, `usb3force`, as stated override the `exosphere.ini` or `system_settings.ini`. 0: Disable, 1: Enable, Key Missing: Use original value.
@@ -168,7 +176,7 @@ That's in case the kips are incompatible between them. If compatible, you can ov
 **Note2**: `blank_prodinfo_{sys/emu}mmc`, `allow_writing_to_cal_sysmmc` and `usb30_force_enabled` in `exosphere.ini` and `system_settings.ini` respectively, are the only atmosphere config keys that can affect hekate booting configuration externally, **if** the equivalent keys in hekate config are missing.
 
 
-### Payload storage:
+## Payload storage
 
 hekate has a boot storage in the binary that helps it configure it outside of BPMP environment:
 
@@ -179,23 +187,25 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | '0x96' autoboot_list    | If `Force AutoBoot` and `autoboot` then it boots from ini folder. |
 | '0x97' extra_cfg        | When menu is forced: bit5: `Run UMS`.                             |
 | '0x98' xt_str[128]      | Depends on the set cfg bits.                                      |
-| '0x98' ums[1]           | When `Run UMS` is set, it will launch the selected UMS. 0: SD, 1: eMMC BOOT0, 2: eMMC BOOT1, 3: eMMC GPP, 4: emuMMC BOOT0, 5: emuMMC BOOT1, 6: emuMMC GPP,  |
+| '0x98' ums[1]           | When `Run UMS` is set, it will launch the selected UMS. 0: SD, 1/2/3: eMMC BOOT0/BOOT1/GPP, 4/5/6: emuMMC BOOT0/BOOT1/GPP,  |
 | '0x98' id[8]            | When `Boot from ID` is set, it will search all inis automatically and find the boot entry with that id and boot it. Must be NULL terminated. |
 | '0xA0' emummc_path[120] | When `Boot to emuMMC` is set, it will override the current emuMMC (boot entry or emummc.ini). Must be NULL terminated. |
 
 
-### Nyx Configuration keys/values (nyx.ini):
+## Nyx Configuration keys/values (nyx.ini)
+
+Use `Nyx Settings` in Nyx to edit the following configuration:
 
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
-| themebg=2d2d2d     | Sets Nyx background color in HEX. EXPERIMENTAL.            |
+| themebg=2d2d2d     | Sets Nyx background color in HEX. 0x0B0B0B to 0xC7C7C7.    |
 | themecolor=167     | Sets Nyx color of text highlights.                         |
 | entries5col=0      | 1: Sets Launch entry columns from 4 to 5 per line. For a total of 10 entries. |
-| timeoffset=100     | Sets time offset in HEX. Must be in epoch format           |
-| timedst=0          | Enables automatic daylight saving hour adjustment          |
+| timeoffset=0       | Sets time offset in HEX. Must be in epoch format           |
+| timedst=1          | Enables automatic daylight saving hour adjustment          |
 | homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
-| ------------------ | ------- The following options can only be edited in nyx.ini ------- |
+| ------------------ | ----- *The following can be edited via nyx.ini only* ----- |
 | umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
 | jcforceright=0     | 1: Forces right joycon to be used as main mouse control.   |

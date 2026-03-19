@@ -34,7 +34,7 @@ int bq24193_get_version(u32 *value)
 	if (data == 0x2F)
 		return 0;
 	else
-		return -1;
+		return 1;
 }
 
 int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
@@ -162,7 +162,7 @@ int bq24193_get_property(enum BQ24193_reg_prop prop, int *value)
 		*value = (data & BQ24193_VENDORPART_PN_MASK) >> 3;
 		break;
 	default:
-		return -1;
+		return 1;
 	}
 	return 0;
 }

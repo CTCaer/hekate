@@ -63,101 +63,101 @@ static void parse_external_kip_patches()
 	if (ext_patches_parsed)
 		return;
 
+	ext_patches_parsed = true;
+
 	LIST_INIT(ini_kip_sections);
 	if (ini_patch_parse(&ini_kip_sections, "bootloader/patches.ini"))
+		return;
+
+	// Copy ids into a new patchset.
+	_kip_id_sets = zalloc(sizeof(kip1_id_t) * 256); // Max 256 kip ids.
+	memcpy(_kip_id_sets, _kip_ids, sizeof(_kip_ids));
+
+	// Parse patchsets and glue them together.
+	LIST_FOREACH_ENTRY(ini_kip_sec_t, ini_psec, &ini_kip_sections, link)
 	{
-		// Copy ids into a new patchset.
-		_kip_id_sets = zalloc(sizeof(kip1_id_t) * 256); // Max 256 kip ids.
-		memcpy(_kip_id_sets, _kip_ids, sizeof(_kip_ids));
-
-		// Parse patchsets and glue them together.
-		LIST_FOREACH_ENTRY(ini_kip_sec_t, ini_psec, &ini_kip_sections, link)
+		kip1_id_t *kip = NULL;
+		bool found = false;
+		for (u32 kip_idx = 0; kip_idx < _kip_id_sets_cnt + 1; kip_idx++)
 		{
-			kip1_id_t *kip = NULL;
-			bool found = false;
-			for (u32 kip_idx = 0; kip_idx < _kip_id_sets_cnt + 1; kip_idx++)
+			kip = &_kip_id_sets[kip_idx];
+
+			// Check if reached the end of predefined list.
+			if (!kip->name)
+				break;
+
+			// Check if name and hash match.
+			if (!strcmp(kip->name, ini_psec->name) && !memcmp(kip->hash, ini_psec->hash, 8))
 			{
-				kip = &_kip_id_sets[kip_idx];
-
-				// Check if reached the end of predefined list.
-				if (!kip->name)
-					break;
-
-				// Check if name and hash match.
-				if (!strcmp(kip->name, ini_psec->name) && !memcmp(kip->hash, ini_psec->hash, 8))
-				{
-					found = true;
-					break;
-				}
+				found = true;
+				break;
 			}
-
-			if (!kip)
-				continue;
-
-			// If not found, create a new empty entry.
-			if (!found)
-			{
-				kip->name = ini_psec->name;
-				memcpy(kip->hash, ini_psec->hash, 8);
-				kip->patchset = zalloc(sizeof(kip1_patchset_t));
-
-				_kip_id_sets_cnt++;
-			}
-
-			kip1_patchset_t *patchsets = (kip1_patchset_t *)zalloc(sizeof(kip1_patchset_t) * 16); // Max 16 patchsets per kip.
-
-			u32 patchset_idx;
-			for (patchset_idx = 0; kip->patchset[patchset_idx].name != NULL; patchset_idx++)
-			{
-				patchsets[patchset_idx].name    = kip->patchset[patchset_idx].name;
-				patchsets[patchset_idx].patches = kip->patchset[patchset_idx].patches;
-			}
-
-			kip->patchset = patchsets;
-			bool first_ext_patch = true;
-			u32 patch_idx = 0;
-
-			// Parse patches and glue them together to a patchset.
-			kip1_patch_t *patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
-			LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
-			{
-				if (first_ext_patch)
-				{
-					first_ext_patch = false;
-					patchsets[patchset_idx].name    = pt->name;
-					patchsets[patchset_idx].patches = patches;
-				}
-				else if (strcmp(pt->name, patchsets[patchset_idx].name))
-				{
-					// New patchset name found, create a new set.
-					patchset_idx++;
-					patch_idx = 0;
-					patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
-
-					patchsets[patchset_idx].name    = pt->name;
-					patchsets[patchset_idx].patches = patches;
-				}
-
-				if (pt->length)
-				{
-					patches[patch_idx].offset = pt->offset;
-					patches[patch_idx].length = pt->length;
-
-					patches[patch_idx].src_data = (char *)pt->src_data;
-					patches[patch_idx].dst_data = (char *)pt->dst_data;
-				}
-				else
-					patches[patch_idx].src_data = malloc(1); // Empty patches check. Keep everything else as 0.
-
-				patch_idx++;
-			}
-			patchset_idx++;
-			patchsets[patchset_idx].name = NULL;
-			patchsets[patchset_idx].patches = NULL;
 		}
-	}
 
-	ext_patches_parsed = true;
+		if (!kip)
+			continue;
+
+		// If not found, create a new empty entry.
+		if (!found)
+		{
+			kip->name = ini_psec->name;
+			memcpy(kip->hash, ini_psec->hash, 8);
+			kip->patchset = zalloc(sizeof(kip1_patchset_t));
+
+			_kip_id_sets_cnt++;
+		}
+
+		kip1_patchset_t *patchsets = (kip1_patchset_t *)zalloc(sizeof(kip1_patchset_t) * 16); // Max 16 patchsets per kip.
+
+		u32 patchset_idx;
+		for (patchset_idx = 0; kip->patchset[patchset_idx].name != NULL; patchset_idx++)
+		{
+			patchsets[patchset_idx].name    = kip->patchset[patchset_idx].name;
+			patchsets[patchset_idx].patches = kip->patchset[patchset_idx].patches;
+		}
+
+		kip->patchset = patchsets;
+		bool first_ext_patch = true;
+		u32 patch_idx = 0;
+
+		// Parse patches and glue them together to a patchset.
+		kip1_patch_t *patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
+		LIST_FOREACH_ENTRY(ini_patchset_t, pt, &ini_psec->pts, link)
+		{
+			if (first_ext_patch)
+			{
+				first_ext_patch = false;
+				patchsets[patchset_idx].name    = pt->name;
+				patchsets[patchset_idx].patches = patches;
+			}
+			else if (strcmp(pt->name, patchsets[patchset_idx].name))
+			{
+				// New patchset name found, create a new set.
+				patchset_idx++;
+				patch_idx = 0;
+				patches = zalloc(sizeof(kip1_patch_t) * 32); // Max 32 patches per set.
+
+				patchsets[patchset_idx].name    = pt->name;
+				patchsets[patchset_idx].patches = patches;
+			}
+
+			if (pt->length)
+			{
+				patches[patch_idx].offset = pt->offset;
+				patches[patch_idx].length = pt->length;
+
+				patches[patch_idx].src_data = (char *)pt->src_data;
+				patches[patch_idx].dst_data = (char *)pt->dst_data;
+			}
+			else
+				patches[patch_idx].src_data = malloc(1); // Empty patches check. Keep everything else as 0.
+
+			patch_idx++;
+		}
+		patchset_idx++;
+		patchsets[patchset_idx].name = NULL;
+		patchsets[patchset_idx].patches = NULL;
+	}
 }
 
 const pkg2_kernel_id_t *pkg2_identify(const u8 *hash)
@@ -226,7 +226,7 @@ static void _pkg2_get_newkern_info(u8 *kern_data)
 	}
 }
 
-bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
+int pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 {
 	u8 *ptr;
 	// Check for new pkg2 type.
@@ -235,7 +235,7 @@ bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 		_pkg2_get_newkern_info(pkg2->data);
 
 		if (!pkg2_newkern_ini1_start)
-			return false;
+			return 1;
 
 		ptr = pkg2->data + pkg2_newkern_ini1_start;
 		*new_pkg2 = true;
@@ -257,15 +257,15 @@ bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2)
 DPRINTF(" kip1 %d:%s @ %08X (%08X)\n", i, kip1->name, (u32)kip1, ki->size);
 	}
 
-	return true;
+	return 0;
 }
 
-int pkg2_has_kip(link_t *info, u64 tid)
+bool pkg2_has_kip(link_t *info, u64 tid)
 {
 	LIST_FOREACH_ENTRY(pkg2_kip1_info_t, ki, info, link)
 		if (ki->kip1->tid == tid)
-			return 1;
-	return 0;
+			return true;
+	return false;
 }
 
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1)
@@ -371,65 +371,63 @@ static int _decompress_kip(pkg2_kip1_info_t *ki, u32 sectsToDecomp)
 
 static int _kipm_inject(const char *kipm_path, char *target_name, pkg2_kip1_info_t *ki)
 {
-	if (!strcmp((char *)ki->kip1->name, target_name))
+	if (strcmp((char *)ki->kip1->name, target_name))
+		return 1;
+
+	u32 size = 0;
+	u8 *kipm_data = (u8 *)sd_file_read(kipm_path, &size);
+	if (!kipm_data)
+		return 1;
+
+	u32 inject_size = size - sizeof(ki->kip1->caps);
+	u8 *kip_patched_data = (u8 *)malloc(ki->size + inject_size);
+
+	// Copy headers.
+	memcpy(kip_patched_data, ki->kip1, sizeof(pkg2_kip1_t));
+
+	pkg2_kip1_t *fs_kip = ki->kip1;
+	ki->kip1 = (pkg2_kip1_t *)kip_patched_data;
+	ki->size = ki->size + inject_size;
+
+	// Patch caps.
+	memcpy(&ki->kip1->caps, kipm_data, sizeof(ki->kip1->caps));
+	// Copy our .text data.
+	memcpy(&ki->kip1->data, kipm_data + sizeof(ki->kip1->caps), inject_size);
+
+	u32 new_offset = 0;
+
+	for (u32 section_idx = 0; section_idx < KIP1_NUM_SECTIONS - 2; section_idx++)
 	{
-		u32 size = 0;
-		u8 *kipm_data = (u8 *)sd_file_read(kipm_path, &size);
-		if (!kipm_data)
-			return 1;
-
-		u32 inject_size = size - sizeof(ki->kip1->caps);
-		u8 *kip_patched_data = (u8 *)malloc(ki->size + inject_size);
-
-		// Copy headers.
-		memcpy(kip_patched_data, ki->kip1, sizeof(pkg2_kip1_t));
-
-		pkg2_kip1_t *fs_kip = ki->kip1;
-		ki->kip1 = (pkg2_kip1_t *)kip_patched_data;
-		ki->size = ki->size + inject_size;
-
-		// Patch caps.
-		memcpy(&ki->kip1->caps, kipm_data, sizeof(ki->kip1->caps));
-		// Copy our .text data.
-		memcpy(&ki->kip1->data, kipm_data + sizeof(ki->kip1->caps), inject_size);
-
-		u32 new_offset = 0;
-
-		for (u32 section_idx = 0; section_idx < KIP1_NUM_SECTIONS - 2; section_idx++)
+		if (!section_idx) // .text.
 		{
-			if (!section_idx) // .text.
-			{
-				memcpy(ki->kip1->data + inject_size, fs_kip->data, fs_kip->sections[0].size_comp);
-				ki->kip1->sections[0].size_decomp += inject_size;
-				ki->kip1->sections[0].size_comp += inject_size;
-			}
-			else // Others.
-			{
-				if (section_idx < 3)
-					memcpy(ki->kip1->data + new_offset + inject_size, fs_kip->data + new_offset, fs_kip->sections[section_idx].size_comp);
-				ki->kip1->sections[section_idx].offset += inject_size;
-			}
-			new_offset += fs_kip->sections[section_idx].size_comp;
+			memcpy(ki->kip1->data + inject_size, fs_kip->data, fs_kip->sections[0].size_comp);
+			ki->kip1->sections[0].size_decomp += inject_size;
+			ki->kip1->sections[0].size_comp += inject_size;
 		}
-
-		// Patch PMC capabilities for 1.0.0.
-		if (!emu_cfg.fs_ver)
+		else // Others.
 		{
-			for (u32 i = 0; i < 0x20; i++)
-			{
-				if (ki->kip1->caps[i] == 0xFFFFFFFF)
-				{
-					ki->kip1->caps[i] = 0x07000E7F;
-					break;
-				}
-			}
+			if (section_idx < 3)
+				memcpy(ki->kip1->data + new_offset + inject_size, fs_kip->data + new_offset, fs_kip->sections[section_idx].size_comp);
+			ki->kip1->sections[section_idx].offset += inject_size;
 		}
-
-		free(kipm_data);
-		return 0;
+		new_offset += fs_kip->sections[section_idx].size_comp;
 	}
 
-	return 1;
+	// Patch PMC capabilities for 1.0.0.
+	if (!emu_cfg.fs_ver)
+	{
+		for (u32 i = 0; i < 0x20; i++)
+		{
+			if (ki->kip1->caps[i] == 0xFFFFFFFF)
+			{
+				ki->kip1->caps[i] = 0x07000E7F;
+				break;
+			}
+		}
+	}
+
+	free(kipm_data);
+	return 0;
 }
 
 const char *pkg2_patch_kips(link_t *info, char *patch_names)
@@ -544,7 +542,7 @@ const char *pkg2_patch_kips(link_t *info, char *patch_names)
 
 			// Check if current KIP not hashed and hash it.
 			if (kip_hash[0] == 0)
-				if (!se_sha_hash_256_oneshot(kip_hash, ki->kip1, ki->size))
+				if (se_sha_hash_256_oneshot(kip_hash, ki->kip1, ki->size))
 					memset(kip_hash, 0, sizeof(kip_hash));
 
 			// Check if kip is the expected version.

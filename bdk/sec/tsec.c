@@ -44,9 +44,9 @@ static int _tsec_dma_wait_idle()
 
 	while (!(TSEC(TSEC_DMATRFCMD) & TSEC_DMATRFCMD_IDLE))
 		if (get_tmr_ms() > timeout)
-			return 0;
+			return 1;
 
-	return 1;
+	return 0;
 }
 
 static int _tsec_dma_pa_to_internal_100(int not_imem, int i_offset, int pa_offset)
@@ -116,7 +116,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		TSEC_IRQDEST_SWGEN0    |
 		TSEC_IRQDEST_SWGEN1;
 	TSEC(TSEC_ITFEN) = TSEC_ITFEN_CTXEN | TSEC_ITFEN_MTHDEN;
-	if (!_tsec_dma_wait_idle())
+	if (_tsec_dma_wait_idle())
 	{
 		res = -1;
 		goto out;
@@ -136,7 +136,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 
 	for (u32 addr = 0; addr < tsec_ctxt->size; addr += 0x100)
 	{
-		if (!_tsec_dma_pa_to_internal_100(false, addr, addr))
+		if (_tsec_dma_pa_to_internal_100(false, addr, addr))
 		{
 			res = -2;
 			goto out_free;
@@ -146,7 +146,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	if (type == TSEC_FW_TYPE_EMU)
 	{
 		// Init SMMU translation for TSEC.
-		ptb = smmu_init_domain(MC_SMMU_TSEC_ASID, 1);
+		ptb = smmu_domain_init(MC_SMMU_TSEC_ASID, 1);
 		smmu_init();
 
 		// Enable SMMU.
@@ -230,7 +230,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		if (kidx != 8)
 		{
 			res = -6;
-			smmu_deinit_domain(MC_SMMU_TSEC_ASID, 1);
+			smmu_domain_deinit(MC_SMMU_TSEC_ASID, 1);
 
 			goto out_free;
 		}
@@ -241,7 +241,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		memcpy(tsec_keys, &key, 0x20);
 		memcpy(tsec_ctxt->pkg1, iram, 0x30000);
 
-		smmu_deinit_domain(MC_SMMU_TSEC_ASID, 1);
+		smmu_domain_deinit(MC_SMMU_TSEC_ASID, 1);
 
 		// for (int i = 0; i < kidx; i++)
 		// 	gfx_printf("key %08X\n", key[i]);
@@ -257,7 +257,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 	}
 	else
 	{
-		if (!_tsec_dma_wait_idle())
+		if (_tsec_dma_wait_idle())
 		{
 			res = -3;
 			goto out_free;
@@ -307,10 +307,8 @@ out:
 	bpmp_mmu_enable();
 	bpmp_clk_rate_relaxed(false);
 
-#ifdef BDK_MC_ENABLE_AHB_REDIRECT
 	// Re-enable AHB aperture.
 	mc_enable_ahb_redirect();
-#endif
 
 	return res;
 }

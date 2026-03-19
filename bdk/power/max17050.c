@@ -69,7 +69,7 @@ int max17050_get_version(u32 *value)
 	if (data == 0x00AC)
 		return 0;
 	else
-		return -1;
+		return 1;
 }
 
 int max17050_get_property(enum MAX17050_reg reg, int *value)
@@ -138,7 +138,7 @@ int max17050_get_property(enum MAX17050_reg reg, int *value)
 		*value = (int)(s16)data * 15625 / ADJ_RSENSE_MOHM / 10; /* Units of LSB = 1.5625uV / Rsense = 156.25uA */
 		break;
 	default:
-		return -1;
+		return 1;
 	}
 	return 0;
 }
@@ -147,18 +147,14 @@ static int _max17050_write_verify_reg(u8 reg, u16 value)
 {
 	int retries = 8;
 	int ret;
-	u16 read_value;
 
 	do
 	{
 		ret = i2c_send_buf_small(I2C_1, MAXIM17050_I2C_ADDR, reg, (u8 *)&value, 2);
-		read_value = max17050_get_reg(reg);
-		if (read_value != value)
-		{
-			ret = -1;
-			retries--;
-		}
-	} while (retries && read_value != value);
+		u16 read_value = max17050_get_reg(reg);
+		if (!ret && read_value == value)
+			break;
+	} while (--retries);
 
 	return ret;
 }
@@ -251,7 +247,7 @@ static void _max17050_set_por_bit(u16 value)
 	_max17050_write_verify_reg(MAX17050_STATUS, value);
 }
 
-int max17050_fix_configuration()
+void max17050_fix_configuration()
 {
 	/* Init phase, set the POR bit */
 	_max17050_set_por_bit(STATUS_POR_BIT);
@@ -285,8 +281,6 @@ int max17050_fix_configuration()
 
 	// Sets POR, BI, BR.
 	_max17050_set_por_bit(0x8801);
-
-	return 0;
 }
 
 void max17050_dump_regs(void *buf)

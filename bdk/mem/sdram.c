@@ -85,9 +85,9 @@ static const u8 dram_encoding_t210b01[] = {
 #include "sdram_config.inl"
 #include "sdram_config_t210b01.inl"
 
-static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
+static int _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_state, s32 emc_channel)
 {
-	bool err = true;
+	int err = 1;
 
 	for (s32 i = 0; i < EMC_STATUS_UPDATE_TIMEOUT; i++)
 	{
@@ -98,13 +98,13 @@ static bool _sdram_wait_emc_status(u32 reg_offset, u32 bit_mask, bool updated_st
 
 			if (((EMC_CH1(reg_offset) & bit_mask) != 0) == updated_state)
 			{
-				err = false;
+				err = 0;
 				break;
 			}
 		}
 		else if (((EMC(reg_offset) & bit_mask) != 0) == updated_state)
 		{
-			err = false;
+			err = 0;
 			break;
 		}
 		usleep(1);

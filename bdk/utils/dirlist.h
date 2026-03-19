@@ -16,6 +16,9 @@
 
 #include <utils/types.h>
 
+#ifndef _DIRLIST_H_
+#define _DIRLIST_H_
+
 #define DIR_MAX_ENTRIES 64
 
 #define DIR_SHOW_HIDDEN BIT(0)
@@ -29,3 +32,5 @@ typedef struct _dirlist_t
 } dirlist_t;
 
 dirlist_t *dirlist(const char *directory, const char *pattern, u32 flags);
+
+#endif

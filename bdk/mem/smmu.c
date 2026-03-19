@@ -156,6 +156,7 @@ void smmu_disable()
 	smmu_enable_payload[SMMU_PAYLOAD_EN_SHIFT] = SMMU_PAYLOAD_EN_SET;
 
 	smmu_enabled = false;
+	smmu_heap    = (void *)SMMU_HEAP_ADDR;
 }
 
 void smmu_reset_heap()
@@ -163,7 +164,7 @@ void smmu_reset_heap()
 	smmu_heap = (void *)SMMU_HEAP_ADDR;
 }
 
-void *smmu_init_domain(u32 dev_base, u32 asid)
+void *smmu_domain_init(u32 dev_base, u32 asid)
 {
 	void *ptb = _smmu_pdir_alloc();
 
@@ -178,7 +179,7 @@ void *smmu_init_domain(u32 dev_base, u32 asid)
 	return ptb;
 }
 
-void smmu_deinit_domain(u32 dev_base, u32 asid)
+void smmu_domain_deinit(u32 dev_base, u32 asid)
 {
 	MC(MC_SMMU_PTB_ASID) = asid;
 	MC(MC_SMMU_PTB_DATA) = 0;

@@ -103,7 +103,7 @@ int sd_init_retry(bool power_cycle)
 	switch (sd_mode)
 	{
 	case SD_INIT_FAIL: // Reset to max.
-		return 0;
+		return 1;
 
 	case SD_1BIT_HS25:
 		bus_width = SDMMC_BUS_WIDTH_1;
@@ -134,7 +134,7 @@ int sd_init_retry(bool power_cycle)
 	}
 
 	int res = sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
-	if (res)
+	if (!res)
 	{
 		sd_init_done    = true;
 		insertion_event = true;
@@ -145,17 +145,17 @@ int sd_init_retry(bool power_cycle)
 	return res;
 }
 
-bool sd_initialize(bool power_cycle)
+int sd_initialize(bool power_cycle)
 {
 	if (power_cycle)
 		sdmmc_storage_end(&sd_storage);
 
-	int res = !sd_init_retry(false);
+	int res = sd_init_retry(false);
 
 	while (true)
 	{
 		if (!res)
-			return true;
+			return 0;
 		else if (!sdmmc_get_sd_inserted()) // SD Card is not inserted.
 		{
 			sd_mode = SD_DEFAULT_SPEED;
@@ -168,24 +168,24 @@ bool sd_initialize(bool power_cycle)
 			if (sd_mode == SD_INIT_FAIL)
 				break;
 			else
-				res = !sd_init_retry(true);
+				res = sd_init_retry(true);
 		}
 	}
 
 	sdmmc_storage_end(&sd_storage);
 
-	return false;
+	return 1;
 }
 
-bool sd_mount()
+int sd_mount()
 {
 	if (sd_init_done && sd_mounted)
-		return true;
+		return 0;
 
 	int res = 0;
 
 	if (!sd_init_done)
-		res = !sd_initialize(false);
+		res = sd_initialize(false);
 
 	if (res)
 	{
@@ -203,7 +203,7 @@ bool sd_mount()
 		if (res == FR_OK)
 		{
 			sd_mounted = true;
-			return true;
+			return 0;
 		}
 		else
 		{
@@ -212,7 +212,7 @@ bool sd_mount()
 		}
 	}
 
-	return false;
+	return 1;
 }
 
 static void _sd_deinit(bool deinit)

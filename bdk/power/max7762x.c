@@ -137,7 +137,7 @@ static void _max7762x_set_reg(u8 addr, u8 reg, u8 val)
 	u32 retries = 100;
 	while (retries)
 	{
-		if (i2c_send_byte(I2C_5, addr, reg, val))
+		if (!i2c_send_byte(I2C_5, addr, reg, val))
 			break;
 
 		usleep(50);
@@ -166,7 +166,7 @@ int max77620_regulator_get_status(u32 id)
 int max77620_regulator_config_fps(u32 id)
 {
 	if (id > REGULATOR_LDO8)
-		return 0;
+		return 1;
 
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
@@ -177,22 +177,22 @@ int max77620_regulator_config_fps(u32 id)
 		(reg->fps.pu_period << MAX77620_FPS_PU_PERIOD_SHIFT) |
 		(reg->fps.pd_period << MAX77620_FPS_PD_PERIOD_SHIFT));
 
-	return 1;
+	return 0;
 }
 
 int max7762x_regulator_set_voltage(u32 id, u32 uv)
 {
 	if (id > REGULATOR_MAX)
-		return 0;
+		return 1;
 
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
 	if (uv < reg->uv_min || uv > reg->uv_max)
-		return 0;
+		return 1;
 
 	u8 addr = _max7762x_get_i2c_address(id);
 	if (!addr)
-		return 0;
+		return 1;
 
 	// Calculate voltage multiplier.
 	u32 mult = (uv + reg->uv_step - 1 - reg->uv_min) / reg->uv_step;
@@ -209,7 +209,7 @@ int max7762x_regulator_set_voltage(u32 id, u32 uv)
 	// Wait for ramp up/down delay.
 	usleep(1000);
 
-	return 1;
+	return 0;
 }
 
 int max7762x_regulator_enable(u32 id, bool enable)
@@ -220,7 +220,7 @@ int max7762x_regulator_enable(u32 id, bool enable)
 	u8 enable_shift;
 
 	if (id > REGULATOR_MAX)
-		return 0;
+		return 1;
 
 	const max77620_regulator_t *reg = &_pmic_regulators[id];
 
@@ -252,12 +252,12 @@ int max7762x_regulator_enable(u32 id, bool enable)
 		enable_shift = reg->enable.shift;
 		break;
 	default:
-		return 0;
+		return 1;
 	}
 
 	u8 addr = _max7762x_get_i2c_address(id);
 	if (!addr)
-		return 0;
+		return 1;
 
 	// Read and enable/disable.
 	u8 val = i2c_recv_byte(I2C_5, addr, reg_addr);
@@ -272,7 +272,7 @@ int max7762x_regulator_enable(u32 id, bool enable)
 	// Wait for enable/disable ramp delay.
 	usleep(1000);
 
-	return 1;
+	return 0;
 }
 
 void max77620_config_gpio(u32 gpio_id, bool enable)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 CTCaer
+ * Copyright (c) 2020-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -75,10 +75,10 @@ void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 		PMC(APBDEV_PMC_SEC_DISABLE)  |= 0xFF000;    // RW lock: 4-7
 
 	if (lock_mask & PMC_SEC_LOCK_SE2_SRK_B01)
-		PMC(APBDEV_PMC_SEC_DISABLE9)  |= 0x3FC;     // RW lock: 120-123 (T210B01). LP0 also sets global bits (b0-1).
+		PMC(APBDEV_PMC_SEC_DISABLE9_B01)  |= 0x3FC; // RW lock: 120-123 (T210B01). LP0 also sets global bits (b0-1).
 
 	if (lock_mask & PMC_SEC_LOCK_MISC_B01)
-		PMC(APBDEV_PMC_SEC_DISABLE10) = 0xFFFFFFFF; // RW lock: 135-150. Happens on T210B01 LP0 always.
+		PMC(APBDEV_PMC_SEC_DISABLE10_B01) = 0xFFFFFFFF; // RW lock: 135-150. Happens on T210B01 LP0 always.
 
 	if (lock_mask & PMC_SEC_LOCK_CARVEOUTS_L4T)
 		PMC(APBDEV_PMC_SEC_DISABLE2) |= 0x5555;     // W: 8-15 LP0 and Carveouts. Superseded by LP0 lock.
@@ -87,15 +87,15 @@ void pmc_scratch_lock(pmc_sec_lock_t lock_mask)
 	// They could also use the NS write disable registers instead.
 	if (lock_mask & PMC_SEC_LOCK_LP0_PARAMS_B01)
 	{
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE0) |= 0xCBCFE0;   // W lock: 5-11, 14-17, 19, 22-23.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1) |= 0x583FF;    // W lock: 24-33, 39-40, 42.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE2) |= 0x1BE;      // W lock: 44-48, 50-51.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE3)  = 0xFFFFFFFF; // W lock: 56-87.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE4) |= 0xFFFFFFF;  // W lock: 88-115.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE5) |= 0xFFFFFFF8; // W lock: 123-151.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE6)  = 0xFFFFFFFF; // W lock: 152-183.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE7) |= 0xFC00FFFF; // W lock: 184-199, 210-215.
-		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE8) |= 0xF;        // W lock: 216-219.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE0_B01) |= 0xCBCFE0;   // W lock: 5-11, 14-17, 19, 22-23.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1_B01) |= 0x583FF;    // W lock: 24-33, 39-40, 42.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE2_B01) |= 0x1BE;      // W lock: 44-48, 50-51.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE3_B01)  = 0xFFFFFFFF; // W lock: 56-87.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE4_B01) |= 0xFFFFFFF;  // W lock: 88-115.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE5_B01) |= 0xFFFFFFF8; // W lock: 123-151.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE6_B01)  = 0xFFFFFFFF; // W lock: 152-183.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE7_B01) |= 0xFC00FFFF; // W lock: 184-199, 210-215.
+		PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE8_B01) |= 0xF;        // W lock: 216-219.
 	}
 }
 
@@ -115,28 +115,26 @@ int pmc_domain_pwrgate_set(pmc_power_rail_t part, u32 enable)
 
 	// Check if the power domain has the state we want.
 	if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
-		return 1;
+		return 0;
 
-	u32 i = 5001;
+	int retries = 5000;
 	while (PMC(APBDEV_PMC_PWRGATE_TOGGLE) & PMC_PWRGATE_TOGGLE_START)
 	{
 		usleep(1);
-		i--;
-		if (i < 1)
-			return 0;
+		if (--retries < 1)
+			return 1;
 	}
 
 	// Toggle power gating.
 	PMC(APBDEV_PMC_PWRGATE_TOGGLE) = part | PMC_PWRGATE_TOGGLE_START;
 
-	i = 5001;
-	while (i > 0)
+	retries = 5000;
+	while ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) != desired_state)
 	{
-		if ((PMC(APBDEV_PMC_PWRGATE_STATUS) & part_mask) == desired_state)
-			break;
 		usleep(1);
-		i--;
+		if (--retries < 1)
+			return 1;
 	}
 
-	return 1;
+	return 0;
 }

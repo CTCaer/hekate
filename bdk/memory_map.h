@@ -29,6 +29,7 @@
 #define SECMON_MIN_START  0x4002B000 // Minimum reserved address for secmon.
 
 #define SDRAM_PARAMS_ADDR 0x40030000 // SDRAM extraction buffer during sdram init.
+#define  SDRAM_PARAMS_SZ       0x838
 
 /* start.S / exception_handlers.S */
 #define SYS_STACK_TOP_INIT 0x4003FF00
@@ -36,7 +37,7 @@
 #define IRQ_STACK_TOP      0x40040000
 #define IPL_RELOC_ADDR     0x4003FF00
 #define  IPL_RELOC_SZ            0x10
-#define EXCP_STORAGE_ADDR  0x4003FFF0
+#define EXCP_STORAGE_ADDR  0x4003FF10
 #define  EXCP_STORAGE_SZ         0x10
 
 /* --- DRAM START --- */
@@ -71,9 +72,9 @@
 //#define DRAM_LIB_ADDR    0xE0000000
 /* --- Chnldr: 252MB 0xC03C0000 - 0xCFFFFFFF --- */ //! Only used when chainloading.
 
-// SDMMC DMA buffers 1
-#define SDMMC_UPPER_BUFFER 0xE5000000
-#define  SDMMC_UP_BUF_SZ      SZ_128M
+// SDMMC DMA buffer. Used for unaligned DMA buffer address.
+#define SDMMC_ALT_DMA_BUFFER 0xE5000000
+#define  SDMMC_ALT_DMA_BUF_SZ   SZ_128M
 
 // Nyx buffers. !Do not change!
 #define NYX_STORAGE_ADDR 0xED000000
@@ -81,10 +82,10 @@
 #define NYX_RES_ADDR     0xEE000000
 #define  NYX_RES_SZ          SZ_16M
 
-// SDMMC DMA buffers 2
-#define SDXC_BUF_ALIGNED   0xEF000000
-#define MIXD_BUF_ALIGNED   0xF0000000
-#define EMMC_BUF_ALIGNED   MIXD_BUF_ALIGNED
+// SDMMC Application DMA aligned buffers.
+#define SDXC_BUF_ALIGNED   0xEF000000 // Also used by UMS.
+#define EMMC_BUF_ALIGNED   0xF0000000
+#define MIXD_BUF_ALIGNED   EMMC_BUF_ALIGNED
 #define  SDMMC_DMA_BUF_SZ      SZ_16M // 4MB currently used.
 
 // Nyx LvGL buffers.

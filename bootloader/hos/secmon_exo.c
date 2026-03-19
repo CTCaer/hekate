@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  * Copyright (c) 2019 Atmosphère-NX
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ typedef struct _atm_fatal_error_ctx
 #define  EXO_FLAG_CAL0_BLANKING   BIT(5)
 #define  EXO_FLAG_CAL0_WRITES_SYS BIT(6)
 #define  EXO_FLAG_ENABLE_USB3     BIT(7)
+#define  EXO_FLAG_BC_MEM_MODE     BIT(8)
 
 #define EXO_FW_VER(mj, mn) (((mj) << 24) | ((mn) << 16))
 
@@ -145,6 +146,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	u32 exo_flags = 0;
 	bool usb3_force = false;
 	bool user_debug = false;
+	bool bc_mem_mode = false;
 	bool cal0_blanking = false;
 	bool cal0_allow_writes_sys = false;
 
@@ -197,7 +199,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	case 12:
 		exo_fw_no = EXO_FW_VER(9, 1);
 		break;
-	case 13 ... 24: //!TODO: Update on API changes. 24: 21.0.0.
+	case 13 ... 25: //!TODO: Update on API changes. 25: 22.0.0.
 		exo_fw_no = EXO_FW_VER(exo_fw_no - 3, ctxt->exo_ctx.hos_revision);
 		break;
 	}
@@ -206,7 +208,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	if (!ctxt->stock)
 	{
 		LIST_INIT(ini_exo_sections);
-		if (ini_parse(&ini_exo_sections, "exosphere.ini", false))
+		if (!ini_parse(&ini_exo_sections, "exosphere.ini", false))
 		{
 			LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_exo_sections, link)
 			{
@@ -224,6 +226,8 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 						exo_cfg->uart_invert = atoi(kv->val);
 					else if (!strcmp("log_baud_rate", kv->key))
 						exo_cfg->uart_baudrate = atoi(kv->val);
+					else if (!strcmp("enable_mem_mode", kv->key))
+						bc_mem_mode = atoi(kv->val);
 					else if (emu_cfg.enabled && !h_cfg.emummc_force_disable)
 					{
 						if (!strcmp("blank_prodinfo_emummc", kv->key))
@@ -245,7 +249,7 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 		if (!ctxt->exo_ctx.usb3_force)
 		{
 			LIST_INIT(ini_sys_sections);
-			if (ini_parse(&ini_sys_sections, "atmosphere/config/system_settings.ini", false))
+			if (!ini_parse(&ini_sys_sections, "atmosphere/config/system_settings.ini", false))
 			{
 				LIST_FOREACH_ENTRY(ini_sec_t, ini_sec, &ini_sys_sections, link)
 				{
@@ -282,6 +286,11 @@ void config_exosphere(launch_ctxt_t *ctxt, u32 warmboot_base)
 	// Enable user access to PMU.
 	if (ctxt->exo_ctx.user_pmu)
 		exo_flags |= EXO_FLAG_USER_PMU;
+
+	// Enable Boot Config Memory Mode. Check if system_settings ini value is overridden. If not, check if enabled in ini.
+	if ((ctxt->exo_ctx.force_mem_mode && *ctxt->exo_ctx.force_mem_mode)
+			|| (!ctxt->exo_ctx.force_mem_mode && bc_mem_mode))
+		exo_flags |= EXO_FLAG_BC_MEM_MODE;
 
 	// Enable USB 3.0. Check if system_settings ini value is overridden. If not, check if enabled in ini.
 	if ((ctxt->exo_ctx.usb3_force && *ctxt->exo_ctx.usb3_force)

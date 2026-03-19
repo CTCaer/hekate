@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include <bdk.h>
-#include <soc/pmc_lp0_t210.h>
 
 #include "../hos/hos.h"
 #include "../hos/pkg1.h"
@@ -353,21 +352,21 @@ static int _l4t_sd_load(u32 idx)
 
 static void _l4t_sdram_lp0_save_params(bool t210b01)
 {
-	struct tegra_pmc_regs *pmc = (struct tegra_pmc_regs *)PMC_BASE;
+	pmc_regs_t210_t *pmc = (pmc_regs_t210_t *)PMC_BASE;
 
 #define _REG_S(base, off) *(u32 *)((base) + (off))
 #define MC_S(off) _REG_S(MC_BASE, off)
 
 #define pack(src, src_bits, dst, dst_bits) { \
-		u32 mask = 0xffffffff >> (31 - ((1 ? src_bits) - (0 ? src_bits))); \
+		u32 mask = 0xFFFFFFFF >> (31 - ((1 ? src_bits) - (0 ? src_bits))); \
 		dst &= ~(mask << (0 ? dst_bits)); \
 		dst |= ((src >> (0 ? src_bits)) & mask) << (0 ? dst_bits); }
 
 #define s(param, src_bits, pmcreg, dst_bits) \
-	pack(MC_S(param), src_bits, pmc->pmcreg, dst_bits)
+	pack(MC_S(param), src_bits, pmc->pmc_ ## pmcreg, dst_bits)
 
 // 32 bits version of s macro.
-#define s32(param, pmcreg) pmc->pmcreg = MC_S(param)
+#define s32(param, pmcreg) pmc->pmc_ ## pmcreg = MC_S(param)
 
 	// Only save changed carveout registers into PMC for SC7 Exit.
 
@@ -702,7 +701,7 @@ static void _l4t_late_hw_config(bool t210b01)
 	PMC(APBDEV_PMC_SCRATCH201) = BIT(1);
 
 	// Clear PLLM override for SC7.
-	PMC(APBDEV_PMC_PLLP_WB0_OVERRIDE) &= ~PMC_PLLP_WB0_OVERRIDE_PLLM_OVERRIDE_ENABLE;
+	PMC(APBDEV_PMC_PLLP_WB0_OVERRIDE) &= ~PMC_PLLP_WB0_OVR_PLLM_OVR_ENABLE;
 
 	// Set spare reg to 0xE0000 and clear everything else.
 	if (t210b01 && (SYSREG(AHB_AHB_SPARE_REG) & 0xE0000000) != 0xE0000000)
@@ -806,7 +805,7 @@ static void _l4t_bpmpfw_b01_config(l4t_ctxt_t *ctxt)
 
 	// Save BPMP-FW entrypoint for TZ.
 	PMC(APBDEV_PMC_SCRATCH39) = BPMPFW_B01_ENTRYPOINT;
-	PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1) |= BIT(15);
+	PMC(APBDEV_PMC_SCRATCH_WRITE_DISABLE1_B01) |= BIT(15);
 }
 
 static int _l4t_sc7_exit_config(bool t210b01)
@@ -825,7 +824,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 	{
 		// Get latest SC7-Exit if needed and setup PA id.
 		launch_ctxt_t hos_ctxt = {0};
-		if (!pkg1_warmboot_config(&hos_ctxt, 0, 0, 0))
+		if (pkg1_warmboot_config(&hos_ctxt, 0, 0, 0))
 		{
 			gfx_con.mute = false;
 			gfx_wputs("\nFailed to match warmboot with fuses!\nIf you continue, sleep wont work!");
@@ -833,7 +832,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 			gfx_puts("\nPress POWER to continue.\nPress VOL to go to the menu.\n");
 
 			if (!(btn_wait() & BTN_POWER))
-				return 0;
+				return 1;
 		}
 
 		// Copy loaded warmboot fw to address if from storage.
@@ -845,7 +844,7 @@ static int _l4t_sc7_exit_config(bool t210b01)
 		PMC(APBDEV_PMC_SEC_DISABLE8) |= BIT(30);
 	}
 
-	return 1;
+	return 0;
 }
 
 static void _l4t_bl33_cfg_set_key(char *env, const char *key, const char *val)
@@ -1022,7 +1021,7 @@ void launch_l4t(const ini_sec_t *ini_sec, int entry_idx, int is_list, bool t210b
 	}
 
 	// Set SC7-Exit firmware address to PMC for bootrom and do further setup.
-	if (!_l4t_sc7_exit_config(t210b01))
+	if (_l4t_sc7_exit_config(t210b01))
 		return;
 
 	// Done loading bootloaders/firmware.

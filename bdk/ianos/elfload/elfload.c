@@ -21,7 +21,7 @@
 
 el_status el_pread(el_ctx *ctx, void *def, size_t nb, size_t offset)
 {
-	return ctx->pread(ctx, def, nb, offset) ? EL_OK : EL_EIO;
+	return ctx->pread(ctx, def, nb, offset);
 }
 
 #define EL_PHOFF(ctx, num) (((ctx)->ehdr.e_phoff + (num) *(ctx)->ehdr.e_phentsize))

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  * Copyright (c) 2018 balika011
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 
 static const char base36[37] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-extern volatile boot_cfg_t *b_cfg;
 extern volatile nyx_storage_t *nyx_str;
 
 extern lv_res_t launch_payload(lv_obj_t *list);
@@ -59,7 +58,7 @@ static lv_res_t _create_window_dump_done(int error, char *dump_filenames)
 	lv_mbox_set_text(mbox, txt_buf);
 	free(txt_buf);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action); // Important. After set_text.
 
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -71,11 +70,11 @@ static lv_res_t _cal0_dump_window_action(lv_obj_t *btns, const char * txt)
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
 
-	mbox_action(btns, txt);
+	nyx_mbox_action(btns, txt);
 
 	if (btn_idx == 1)
 	{
-		int error = !sd_mount();
+		int error = sd_mount();
 
 		if (!error)
 		{
@@ -95,7 +94,7 @@ static lv_res_t _cal0_dump_window_action(lv_obj_t *btns, const char * txt)
 
 static lv_res_t _battery_dump_window_action(lv_obj_t * btn)
 {
-	int error = !sd_mount();
+	int error = sd_mount();
 
 	if (!error)
 	{
@@ -119,7 +118,7 @@ static lv_res_t _bootrom_dump_window_action(lv_obj_t * btn)
 {
 	static const u32 BOOTROM_SIZE = 0x18000;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		char path[64];
@@ -180,7 +179,7 @@ static void _unlock_reserved_odm_fuses(bool lock)
 
 static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 {
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		char path[128];
@@ -228,10 +227,10 @@ static lv_res_t _fuse_dump_window_action(lv_obj_t * btn)
 static lv_res_t _kfuse_dump_window_action(lv_obj_t * btn)
 {
 	u32 buf[KFUSE_NUM_WORDS];
-	int error = !kfuse_read(buf);
+	int error = kfuse_read(buf);
 
 	if (!error)
-		error = !sd_mount();
+		error = sd_mount();
 
 	if (!error)
 	{
@@ -388,7 +387,7 @@ u32 wafer16nm[] =
 	0x1FFFFFFF, 0x1FFFFFFF, 0x0FFFFFFE, 0x0FFFFFFE,
 	0x0FFFFFFE, 0x07FFFFFC, 0x07FFFFFC, 0x03FFFFF8,
 	0x01FFFFF0, 0x00FFFFE0, 0x007FFFC0, 0x001FFF00,
-	0x00000000
+	0x0000E000
 };
 
 u32 wafer20nm[] =
@@ -422,7 +421,7 @@ hw_info_t *hw_info = NULL;
 #define WAFER_16NM_X_MIN -11
 #define WAFER_16NM_X_MAX  17
 #define WAFER_16NM_Y_MIN   0
-#define WAFER_16NM_Y_MAX  27
+#define WAFER_16NM_Y_MAX  28
 
 void _hw_info_wafer(int die_x, int die_y)
 {
@@ -470,8 +469,8 @@ void _hw_info_wafer(int die_x, int die_y)
 		int pos_y = y * die_line * die_side + die_line;
 		for (int x = 0; x < diameter; x++)
 		{
+			bool in_wafer   = wafer_row & (1u << x);
 			bool die_found  = x == die_x && die_y == y;
-			bool in_wafer = wafer_row & (1u << x);
 			u32  die_column = x * die_side;
 
 			// Paint street rows;
@@ -542,14 +541,14 @@ static lv_res_t _action_win_hw_info_status_close(lv_obj_t *btn)
 		hw_info = NULL;
 	}
 
-	return nyx_win_close_action_custom(btn);
+	return nyx_win_close_action(btn);
 }
 
 static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 {
 	u32 uptime_s = get_tmr_s();
 
-	lv_obj_t *win = nyx_create_window_custom_close_btn(SYMBOL_CHIP" HW & Fuses Info", _action_win_hw_info_status_close);
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" HW & Fuses Info", _action_win_hw_info_status_close);
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump fuses", _fuse_dump_window_action);
 	lv_win_add_btn(win, NULL, SYMBOL_INFO" CAL0 Info", _create_mbox_cal0);
 
@@ -562,7 +561,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	lv_label_set_style(lb_desc, &monospace_text);
 
 	char version[32];
-	s_printf(version, "%s%d.%d.%d%c", NYX_VER_RL ? "v" : "", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF, NYX_VER_RL > 'A' ? NYX_VER_RL : 0);
+	s_printf(version, "%s%d.%d.%d%c", NYX_VER_RL ? "v" : "", NYX_VER_MJ, NYX_VER_MN, NYX_VER_HF, NYX_VER_RL > 'a' ? NYX_VER_RL : 0);
 	lv_obj_t * lbl_ver = lv_label_create(lv_scr_act(), NULL);
 	lv_label_set_style(lbl_ver, &hint_small_style_white);
 	lv_label_set_text(lbl_ver, version);
@@ -808,7 +807,10 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		strcpy(fuses_hos_version, "20.0.0 - 20.5.0");
 		break;
 	case 22:
-		strcpy(fuses_hos_version, "21.0.0+");
+		strcpy(fuses_hos_version, "21.0.0 - 21.2.0");
+		break;
+	case 23:
+		strcpy(fuses_hos_version, "22.0.0+");
 		break;
 	case 255:
 		strcpy(fuses_hos_version, "#FFD000 Overburnt#");
@@ -1090,6 +1092,12 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	u8  display_rev = (nyx_str->info.panel_id >> 8) & 0xFF;
 	u32 display_id = ((nyx_str->info.panel_id >> 8) & 0xFF00) | (nyx_str->info.panel_id & 0xFF);
 
+	// For OLED LCD 7" OEM clone use touch to identify it.
+	touch_info_t *touch_info = touch_get_chip_info();
+	bool touch_clone_oled = touch_info->chip_id == FTS4_I2C_CHIP_ID && touch_info->clone;
+	if (touch_clone_oled)
+		display_id = 0x10000;
+
 	strcat(txt_buf, "#00DDFF Display Panel:#\n#FF8000 Model:# ");
 
 	switch (display_id)
@@ -1097,9 +1105,11 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	case PANEL_JDI_LAM062M109A:
 		strcat(txt_buf, "JDI LAM062M109A");
 		break;
+
 	case PANEL_JDI_LPM062M326A:
 		strcat(txt_buf, "JDI LPM062M326A");
 		break;
+
 	case PANEL_INL_P062CCA_AZ1:
 		strcat(txt_buf, "InnoLux P062CCA");
 		switch (display_rev)
@@ -1127,6 +1137,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			break;
 		}
 		break;
+
 	case PANEL_AUO_A062TAN01:
 		strcat(txt_buf, "AUO A062TAN");
 		switch (display_rev)
@@ -1154,31 +1165,44 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			break;
 		}
 		break;
+
 	case PANEL_INL_2J055IA_27A:
 		strcat(txt_buf, "InnoLux 2J055IA-27A");
 		break;
+
 	case PANEL_AUO_A055TAN01:
 		strcat(txt_buf, "AUO A055TAN");
 		s_printf(txt_buf + strlen(txt_buf), "%02d", display_rev - 0x92);
 		break;
+
 	case PANEL_SHP_LQ055T1SW10:
 		strcat(txt_buf, "Sharp LQ055T1SW10");
 		break;
+
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
 		break;
+
 	case PANEL_OEM_CLONE_6_2:
 		strcat(txt_buf, "#FFDD00 OEM Clone 6.2\"#");
 		break;
+
 	case PANEL_OEM_CLONE_5_5:
 		strcat(txt_buf, "#FFDD00 OEM Clone 5.5\"#");
 		break;
+
 	case PANEL_OEM_CLONE:
 		strcat(txt_buf, "#FFDD00 OEM Clone#");
 		break;
+
 	case 0xCCCC:
 		strcat(txt_buf, "#FFDD00 Failed to get info!#");
 		break;
+
+	case 0x10000: // Custom ID for LCD OEM Clone for Switch OLED.
+		strcat(txt_buf, "#FFDD00 LCD OEM Clone 7\"#");
+		break;
+
 	default:
 		switch (display_id & 0xFF)
 		{
@@ -1202,17 +1226,16 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# #96FF00 %02X# %02X #96FF00 %02X#",
 		nyx_str->info.panel_id & 0xFF, (nyx_str->info.panel_id >> 8) & 0xFF, (nyx_str->info.panel_id >> 16) & 0xFF);
 
-	touch_fw_info_t touch_fw;
-	touch_panel_info_t *touch_panel;
-	bool panel_ic_paired = false;
-
 	// Prepare touch panel/ic info.
+	touch_fw_info_t touch_fw;
 	if (!touch_get_fw_info(&touch_fw))
 	{
 		strcat(txt_buf, "\n\n#00DDFF Touch Panel:#\n#FF8000 Model:# ");
 
-		touch_panel = touch_get_panel_vendor();
-		if (touch_panel)
+		touch_panel_info_t *touch_panel = touch_get_panel_vendor();
+		if (touch_clone_oled)
+			strcat(txt_buf, "#FFDD00 OEM Clone TSP#");
+		else if (touch_panel)
 		{
 			if ((u8)touch_panel->idx == (u8)-2) // Touch panel not found, print gpios.
 			{
@@ -1229,7 +1252,11 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "\n#FF8000 ID:# %02X.%02X.%02X.%02X (",
 			(touch_fw.fw_id >> 24) & 0xFF, (touch_fw.fw_id >> 16) & 0xFF, (touch_fw.fw_id >> 8) & 0xFF, touch_fw.fw_id & 0xFF);
 
+		if (touch_clone_oled)
+			touch_fw.fw_id = 0xFFFFFFFF;
+
 		// Check panel pair info.
+		bool panel_ic_paired = false;
 		switch (touch_fw.fw_id)
 		{
 		case 0x00100100:
@@ -1237,6 +1264,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = (u8)touch_panel->idx == (u8)-1;
 			break;
+
 		case 0x00100200: // 4CD 1602.
 		case 0x00120100:
 		case 0x32000001:
@@ -1244,6 +1272,7 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 0; // NISSHA NFT-K12D.
 			break;
+
 		// case 0x98000004: // New 6.2" panel?
 		// case 0x50000001:
 		// case 0x50000002:
@@ -1251,24 +1280,28 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 		// 	if (touch_panel)
 		// 		panel_ic_paired = touch_panel->idx == 0;
 		// 	break;
+
 		case 0x001A0300:
 		case 0x32000102:
 			strcat(txt_buf, "4CD60D/2");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 1; // GiS GGM6 B2X.
 			break;
+
 		case 0x00290100:
 		case 0x32000302:
 			strcat(txt_buf, "4CD60D/3");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 2; // NISSHA NBF-K9A.
 			break;
+
 		case 0x31051820:
 		case 0x32000402:
 			strcat(txt_buf, "4CD60D/4");
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 3; // GiS 5.5".
 			break;
+
 		case 0x32000501:
 		case 0x33000502:
 		case 0x33000503:
@@ -1277,6 +1310,12 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 			if (touch_panel)
 				panel_ic_paired = touch_panel->idx == 4; // Samsung BH2109.
 			break;
+
+		case 0xFFFFFFFF: // Custom for OLED clone.
+			strcat(txt_buf, "Clone");
+			panel_ic_paired = true;
+			break;
+
 		default:
 			strcat(txt_buf, "#FF8000 Contact me#");
 			break;
@@ -1328,7 +1367,7 @@ static void _ipatch_process(u32 offset, u32 value)
 
 static lv_res_t _create_window_bootrom_info_status(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Bootrom Info");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Bootrom Info", NULL);
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump Bootrom", _bootrom_dump_window_action);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
@@ -1360,7 +1399,7 @@ static lv_res_t _launch_lockpick_action(lv_obj_t *btns, const char * txt)
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
 
-	mbox_action(btns, txt);
+	nyx_mbox_action(btns, txt);
 
 	if (btn_idx == 1)
 	{
@@ -1445,7 +1484,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
@@ -1455,7 +1494,7 @@ static lv_res_t _create_mbox_emmc_sandisk_report(lv_obj_t * btn)
 	int res = sdmmc_storage_vendor_sandisk_report(&emmc_storage, buf);
 	emmc_end();
 
-	if (!res)
+	if (res)
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Device Report not supported!#");
 		lv_label_set_text(lb_desc2, " ");
@@ -1582,7 +1621,7 @@ out:
 	free (txt_buf);
 	free (txt_buf2);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action); // Important. After set_text.
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
@@ -1639,12 +1678,12 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 
 		// Re-initialize to update trimmers.
 		sd_end();
-		res = !sd_mount();
+		res = sd_mount();
 	}
 	else
 	{
 		storage = &emmc_storage;
-		res = !emmc_initialize(false);
+		res = emmc_initialize(false);
 		if (!res)
 			emmc_set_partition(EMMC_GPP);
 	}
@@ -1708,7 +1747,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 			timer += time_taken;
 
@@ -1755,7 +1794,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = sdmmc_storage_read(storage, sector_off + lba_curr, sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 
 			timer += time_taken;
@@ -1811,7 +1850,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		for (u32 i = 0; i < rnd_off_cnt; i += 4)
 		{
 			// Generate new random numbers.
-			while (!se_rng_pseudo(random_numbers, SE_RNG_BLOCK_SIZE))
+			while (se_rng_pseudo(random_numbers, SE_RNG_BLOCK_SIZE))
 				;
 			// Clamp offsets to 256MB range.
 			random_offsets[i + 0] = random_numbers[0] % sct_rem_4kb;
@@ -1830,7 +1869,7 @@ static lv_res_t _create_mbox_benchmark(bool sd_bench)
 		while (data_remaining)
 		{
 			u32 time_taken = get_tmr_us();
-			error = !sdmmc_storage_read(storage, sector_off + random_offsets[lba_idx], sector_num, (u8 *)MIXD_BUF_ALIGNED);
+			error = sdmmc_storage_read(storage, sector_off + random_offsets[lba_idx], sector_num, (u8 *)MIXD_BUF_ALIGNED);
 			time_taken = get_tmr_us() - time_taken;
 
 			timer += time_taken;
@@ -1890,9 +1929,9 @@ error:
 	if (error)
 	{
 		if (error == -1)
-			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00 Aborted!#");
+			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00                      Aborted!                     #");
 		else
-			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00 IO Error occurred!#");
+			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00                 IO Error occurred!                #");
 
 		lv_label_set_text(lbl_status, txt_buf);
 		lv_obj_align(lbl_status, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -1929,7 +1968,7 @@ out:
 
 	free(txt_buf);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action); // Important. After set_text.
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action); // Important. After set_text.
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 
 	return LV_RES_OK;
@@ -1951,7 +1990,7 @@ static lv_res_t _create_mbox_sd_bench(lv_obj_t * btn)
 
 static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Internal eMMC Info");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_CHIP" Internal eMMC Info", NULL);
 	lv_win_add_btn(win, NULL, SYMBOL_CHIP" Benchmark", _create_mbox_emmc_bench);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
@@ -1966,7 +2005,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	txt_buf[1] = 0;
 	u16 *emmc_errors;
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
@@ -1975,16 +2014,16 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		goto out_error;
 	}
 
-	u32 speed = 0;
+	u32 bus_clock = 0;
 	char *rsvd_blocks;
 	char life_a_txt[8];
 	char life_b_txt[8];
+	char bkops[64];
 	u32 cache = emmc_storage.ext_csd.cache_size;
 	u32 life_a = emmc_storage.ext_csd.dev_life_est_a;
 	u32 life_b = emmc_storage.ext_csd.dev_life_est_b;
 	u16 card_type = emmc_storage.ext_csd.card_type;
-	char card_type_support[96];
-	card_type_support[0] = 0;
+	char *max_bus_support = "Unknown";
 
 	// Identify manufacturer. Only official eMMCs.
 	switch (emmc_storage.cid.manfid)
@@ -2018,50 +2057,69 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		emmc_storage.cid.prv & 0xF, emmc_storage.cid.prv >> 4,
 		emmc_storage.cid.serial, emmc_storage.cid.month, emmc_storage.cid.year);
 
-	if (card_type & EXT_CSD_CARD_TYPE_HS_26)
-	{
-		strcat(card_type_support, "HS26");
-		speed = (26 << 16) | 26;
-	}
-	if (card_type & EXT_CSD_CARD_TYPE_HS_52)
-	{
-		strcat(card_type_support, ", HS52");
-		speed = (52 << 16) | 52;
-	}
-	if (card_type & EXT_CSD_CARD_TYPE_DDR_1_8V)
-	{
-		strcat(card_type_support, ", DDR52 1.8V");
-		speed = (52 << 16) | 104;
-	}
-	if (card_type & EXT_CSD_CARD_TYPE_HS200_1_8V)
-	{
-		strcat(card_type_support, ", HS200 1.8V");
-		speed = (200 << 16) | 200;
-	}
 	if (card_type & EXT_CSD_CARD_TYPE_HS400_1_8V)
+		max_bus_support = "HS400";
+	else if (card_type & EXT_CSD_CARD_TYPE_HS200_1_8V)
+		max_bus_support = "HS200";
+	else if (card_type & EXT_CSD_CARD_TYPE_DDR_1_8V)
+		max_bus_support = "DDR52";
+	else if (card_type & EXT_CSD_CARD_TYPE_HS_52)
+		max_bus_support = "HS52";
+	else if (card_type & EXT_CSD_CARD_TYPE_HS_26)
+		max_bus_support = "HS26";
+
+	if (emmc_storage.csd.busspeed == 400)
+		bus_clock = 200;
+	else
+		bus_clock = emmc_storage.csd.busspeed; // Except DDR52 where it's 26 MHz.
+
+	strcpy(bkops, "-");
+	if (emmc_storage.ext_csd.bkops)
 	{
-		strcat(card_type_support, ", HS400 1.8V");
-		speed = (200 << 16) | 400;
+		if (emmc_storage.ext_csd.bkops_en & EXT_CSD_BKOPS_AUTO)
+		{
+			strcpy(bkops, "Auto");
+			if (emmc_storage.ext_csd.bkops_en & EXT_CSD_BKOPS_MANUAL)
+				strcat(bkops, " + Manual");
+		}
+		else
+			strcpy(bkops, "Off");
+		strcat(bkops, ": ");
+
+		switch (emmc_storage.raw_ext_csd[EXT_CSD_BKOPS_STATUS])
+		{
+		case 0:
+			strcat(bkops, "OK");
+			break;
+		case 1:
+			strcat(bkops, "Minor");
+			break;
+		case 2:
+			strcat(bkops, "#FFDD00 Degraded#");
+			break;
+		case 3:
+			strcat(bkops, "#FFDD00 Critical#");
+			break;
+		}
 	}
 
 	strcpy(life_a_txt, "-");
 	strcpy(life_b_txt, "-");
 
-	// Normalize cells life.
-	if (life_a) // SK Hynix is 0 (undefined).
+	// Normalize cells life (Used -> Left).
+	if (life_a) // If 0 no NAND Type A.
 	{
-		life_a--;
-		life_a = (10 - life_a) * 10;
+		life_a = (10 - (life_a - 1)) * 10;
 		s_printf(life_a_txt, "%d%%", life_a);
 	}
 
-	if (life_b) // Toshiba is 0 (undefined).
+	if (life_b) // If 0 no NAND Type B.
 	{
-		life_b--;
-		life_b = (10 - life_b) * 10;
+		life_b = (10 - (life_b - 1)) * 10;
 		s_printf(life_b_txt, "%d%%", life_b);
 	}
 
+	// Reserved blocks used.
 	switch (emmc_storage.ext_csd.pre_eol_info)
 	{
 	case 1:
@@ -2079,12 +2137,13 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	}
 
 	s_printf(txt_buf + strlen(txt_buf),
-		"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s\n%d %s\n%d MiB\nA: %s, B: %s\n%s",
+		"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%s\n%d MB/s (%d MHz)\n%d MiB\n%d %s\n\n%s\nA: %s, B: %s\n%s",
 		emmc_storage.ext_csd.ext_struct, emmc_storage.ext_csd.rev,
-		emmc_storage.csd.cmdclass, speed & 0xFFFF, (speed >> 16) & 0xFFFF,
-		emmc_storage.csd.busspeed, card_type_support,
-		!(cache % 1024) ? (cache / 1024) : cache, !(cache % 1024) ? "MiB" : "KiB",
+		emmc_storage.csd.cmdclass, max_bus_support,
+		emmc_storage.csd.busspeed, bus_clock,
 		emmc_storage.ext_csd.max_enh_mult * EMMC_BLOCKSIZE / 1024,
+		!(cache % 1024) ? (cache / 1024) : cache, !(cache % 1024) ? "MiB" : "KiB",
+		bkops,
 		life_a_txt, life_b_txt, rsvd_blocks);
 
 	lv_label_set_static_text(lb_desc,
@@ -2096,25 +2155,25 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		"Month/Year:\n\n"
 		"#00DDFF Ext CSD:#\n"
 		"Cmd Classes:\n"
-		"Max Rate:\n"
+		"Max Bus Rate:\n"
 		"Current Rate:\n"
-		"Type Support:\n\n"
-		"Write Cache:\n"
 		"Enhanced Area:\n"
+		"Write Cache:\n\n"
+		"Maintenance:\n"
 		"Estimated Life:\n"
 		"Reserved Used:"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
-	lv_obj_t *val = lv_cont_create(win, NULL);
-	lv_obj_set_size(val, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
+	lv_obj_t *info = lv_cont_create(win, NULL);
+	lv_obj_set_size(info, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
 
-	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
+	lv_obj_t * lb_val = lv_label_create(info, lb_desc);
 
 	lv_label_set_text(lb_val, txt_buf);
 
-	lv_obj_set_width(lb_val, lv_obj_get_width(val));
-	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	lv_obj_set_width(lb_val, lv_obj_get_width(info));
+	lv_obj_align(info, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 	lv_obj_t *desc2 = lv_cont_create(win, NULL);
 	lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 4, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
@@ -2170,7 +2229,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 	lv_label_set_text(lb_desc2, txt_buf);
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
-	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
+	lv_obj_align(desc2, info, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
 
 	emmc_errors = emmc_get_error_count();
 	if (emmc_get_mode() < EMMC_MMC_HS400  ||
@@ -2203,7 +2262,7 @@ out_error:
 			emmc_errors[EMMC_ERROR_RW_RETRY]);
 
 		lv_mbox_set_text(mbox, txt_buf);
-		lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+		lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 		lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 		lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 		lv_obj_set_top(mbox, true);
@@ -2217,7 +2276,7 @@ out_error:
 
 static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SD" microSD Card Info");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_SD" microSD Card Info", NULL);
 	lv_win_add_btn(win, NULL, SYMBOL_SD" Benchmark", _create_mbox_sd_bench);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
@@ -2235,7 +2294,7 @@ static lv_res_t _create_window_sdcard_info_status(lv_obj_t *btn)
 
 	manual_system_maintenance(true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 		goto failed;
@@ -2622,7 +2681,7 @@ failed:
 
 static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_BATTERY_FULL" Battery Info");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_BATTERY_FULL" Battery Info", NULL);
 	lv_win_add_btn(win, NULL, SYMBOL_DOWNLOAD" Dump Fuel Regs", _battery_dump_window_action);
 
 	lv_obj_t *desc = lv_cont_create(win, NULL);
@@ -2834,7 +2893,7 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		bool inserted;
 		u32 wattage = 0;
 		usb_pd_objects_t usb_pd;
-		bm92t36_get_sink_info(&inserted, &usb_pd);
+		bm92t36_get_source_info(&inserted, &usb_pd);
 		strcat(txt_buf, inserted ? "Connected" : "Disconnected");
 
 		// Select 5V is no PD contract.
@@ -2845,9 +2904,8 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		if (!usb_pd.pdo_no)
 			strcat(txt_buf, "\nNon PD");
 
-		// Limit to 6 profiles so it can fit.
+		// Show 6 profiles max so they can fit.
 		usb_pd.pdo_no = MIN(usb_pd.pdo_no, 6);
-
 		for (u32 i = 0; i < usb_pd.pdo_no; i++)
 		{
 			bool selected =
@@ -2881,7 +2939,7 @@ static bool _lockpick_exists_check()
 
 	bool found = false;
 	void *buf = malloc(0x200);
-	if (sd_mount())
+	if (!sd_mount())
 	{
 		FIL fp;
 		if (f_open(&fp, "bootloader/payloads/Lockpick_RCM.bin", FA_READ))
@@ -2948,7 +3006,8 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 	if (hekate_bg)
 	{
 		lv_btn_set_style(btn, LV_BTN_STYLE_REL, &btn_transp_rel);
-		lv_btn_set_style(btn, LV_BTN_STYLE_PR, &btn_transp_pr);
+		lv_btn_set_style(btn, LV_BTN_STYLE_PR,  &btn_transp_pr);
+		lv_btn_set_style(btn, LV_BTN_STYLE_INA, &btn_transp_ina);
 	}
 	lv_obj_t *label_btn = lv_label_create(btn, NULL);
 	lv_btn_set_fit(btn, true, true);
@@ -2988,13 +3047,13 @@ void create_tab_info(lv_theme_t *th, lv_obj_t *parent)
 
 	static lv_style_t line_style;
 	lv_style_copy(&line_style, th->line.decor);
-	line_style.line.color = LV_COLOR_HEX(0x444444);
+	line_style.line.color = LV_COLOR_HEX(theme_bg_color ? (theme_bg_color + 0x171717) : 0x343434);
 
 	line_sep = lv_line_create(h1, line_sep);
 	lv_obj_align(line_sep, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, -(LV_DPI / 4), LV_DPI / 16);
 	lv_line_set_style(line_sep, &line_style);
 
-	// Create Fuses button.
+	// Create HW info button.
 	lv_obj_t *btn3 = lv_btn_create(h1, btn);
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);

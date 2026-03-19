@@ -208,8 +208,8 @@ typedef struct _nx_bc_t {
 	u8  padding2[0xC0];
 } nx_bc_t;
 
-bool pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2);
-int  pkg2_has_kip(link_t *info, u64 tid);
+int  pkg2_parse_kips(link_t *info, pkg2_hdr_t *pkg2, bool *new_pkg2);
+bool pkg2_has_kip(link_t *info, u64 tid);
 void pkg2_replace_kip(link_t *info, u64 tid, pkg2_kip1_t *kip1);
 void pkg2_add_kip(link_t *info, pkg2_kip1_t *kip1);
 void pkg2_merge_kip(link_t *info, pkg2_kip1_t *kip1);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 M4xw
- * Copyright (c) 2018-2019 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -21,103 +21,141 @@
 #include "elfload/elfload.h"
 #include <module.h>
 #include <mem/heap.h>
-#include <power/max7762x.h>
 #include <storage/sd.h>
 #include <utils/types.h>
 
 #include <gfx_utils.h>
 
-#define IRAM_LIB_ADDR 0x4002B000
-#define DRAM_LIB_ADDR 0xE0000000
-
 extern heap_t _heap;
 
-void *elfBuf = NULL;
-void *fileBuf = NULL;
+static bdk_params_t _bdk_params = {
+	.gfx_con = (void *)&gfx_con,
+	.gfx_ctx = (void *)&gfx_ctxt,
+	.heap    = &_heap,
+	.memcpy  = (memcpy_t)&memcpy,
+	.memset  = (memset_t)&memset,
 
-static void _ianos_call_ep(moduleEntrypoint_t entrypoint, void *moduleConfig)
-{
-	bdkParams_t bdkParameters = (bdkParams_t)malloc(sizeof(struct _bdkParams_t));
-	bdkParameters->gfxCon = (void *)&gfx_con;
-	bdkParameters->gfxCtx = (void *)&gfx_ctxt;
-	bdkParameters->memcpy = (memcpy_t)&memcpy;
-	bdkParameters->memset = (memset_t)&memset;
-	bdkParameters->sharedHeap = &_heap;
-
-	// Extra functions.
-	bdkParameters->extension_magic = IANOS_EXT0;
-	bdkParameters->reg_voltage_set = (reg_voltage_set_t)&max7762x_regulator_set_voltage;
-
-	entrypoint(moduleConfig, bdkParameters);
-}
+	.extension_magic = 0
+};
 
 static void *_ianos_alloc_cb(el_ctx *ctx, Elf_Addr phys, Elf_Addr virt, Elf_Addr size)
 {
-	(void)ctx;
-	(void)phys;
-	(void)size;
 	return (void *)virt;
 }
 
-static bool _ianos_read_cb(el_ctx *ctx, void *dest, size_t numberBytes, size_t offset)
+static el_status _ianos_read_cb(el_ctx *ctx, void *dest, size_t nb, size_t offset)
 {
-	(void)ctx;
+	memcpy(dest, (void *)(ctx->eaddr + offset), nb);
 
-	memcpy(dest, fileBuf + offset, numberBytes);
-
-	return true;
+	return EL_OK;
 }
 
 //TODO: Support shared libraries.
-uintptr_t ianos_loader(char *path, elfType_t type, void *moduleConfig)
+int ianos_loader(ianos_lib_t *lib, char *path)
 {
 	el_ctx ctx;
-	uintptr_t epaddr = 0;
+	lib->buf = NULL;
+	if (!lib->bdk)
+		lib->bdk = &_bdk_params;
 
 	// Read library.
-	fileBuf = sd_file_read(path, NULL);
-
-	if (!fileBuf)
-		goto out;
+	ctx.eaddr = (Elf_Addr)sd_file_read(path, NULL);
+	if (!ctx.eaddr)
+		goto error;
 
 	ctx.pread = _ianos_read_cb;
 
 	if (el_init(&ctx))
-		goto out;
+		goto error;
+
+	if (lib->type & IA_SHARED_LIB)
+		goto error; // No support for shared libs now.
 
 	// Set our relocated library's buffer.
-	switch (type & 0xFFFF)
+	switch (lib->type & ~IA_SHARED_LIB)
 	{
-	case EXEC_ELF:
-	case AR64_ELF:
-		elfBuf = (void *)DRAM_LIB_ADDR;
+	case IA_DRAM_LIB:
+		lib->buf = malloc(ctx.memsz); // Aligned to 0x10 by default.
 		break;
+
+	case IA_IRAM_LIB:
+		break;
+
+	case IA_AUTO_LIB: // Default to DRAM for now.
 	default:
-		elfBuf = malloc(ctx.memsz); // Aligned to 0x10 by default.
+		lib->buf = malloc(ctx.memsz); // Aligned to 0x10 by default.
+		break;
 	}
 
-	if (!elfBuf)
-		goto out;
+	if (!lib->buf)
+		goto error;
 
 	// Load and relocate library.
-	ctx.base_load_vaddr = ctx.base_load_paddr = (uintptr_t)elfBuf;
+	ctx.base_load_vaddr = ctx.base_load_paddr = (Elf_Addr)lib->buf;
 	if (el_load(&ctx, _ianos_alloc_cb))
-		goto out_free;
+		goto error;
 
 	if (el_relocate(&ctx))
-		goto out_free;
+		goto error;
+
+	free((void *)ctx.eaddr);
 
 	// Launch.
-	epaddr = ctx.ehdr.e_entry + (uintptr_t)elfBuf;
-	moduleEntrypoint_t ep = (moduleEntrypoint_t)epaddr;
+	Elf_Addr epaddr = ctx.ehdr.e_entry + (Elf_Addr)lib->buf;
+	moduleEntrypoint ep = (moduleEntrypoint)epaddr;
+	ep(lib->private, lib->bdk);
 
-	_ianos_call_ep(ep, moduleConfig);
+	return 0;
 
-out_free:
-	free(fileBuf);
-	elfBuf = NULL;
-	fileBuf = NULL;
+error:
+	free((void *)ctx.eaddr);
+	free(lib->buf);
 
-out:
-	return epaddr;
+	return 1;
+}
+
+uintptr_t ianos_static_module(char *path, void *private)
+{
+	el_ctx ctx;
+	Elf_Addr buf = 0;
+	Elf_Addr epaddr = 0;
+
+	// Read library.
+	ctx.eaddr = (Elf_Addr)sd_file_read(path, NULL);
+	if (!ctx.eaddr)
+		goto error;
+
+	ctx.pread = _ianos_read_cb;
+
+	// Initialize elfload context.
+	if (el_init(&ctx))
+		goto error;
+
+	// Set our relocated library's buffer.
+	buf = (Elf_Addr)malloc(ctx.memsz); // Aligned to 0x10 by default.
+	if (!buf)
+		goto error;
+
+	// Load and relocate library.
+	ctx.base_load_vaddr = ctx.base_load_paddr = buf;
+	if (el_load(&ctx, _ianos_alloc_cb))
+		goto error;
+
+	if (el_relocate(&ctx))
+		goto error;
+
+	free((void *)ctx.eaddr);
+
+	// Launch.
+	epaddr = ctx.ehdr.e_entry + buf;
+	moduleEntrypoint ep = (moduleEntrypoint)epaddr;
+	ep(private, &_bdk_params);
+
+	return (uintptr_t)epaddr;
+
+error:
+	free((void *)ctx.eaddr);
+	free((void *)buf);
+
+	return 0;
 }

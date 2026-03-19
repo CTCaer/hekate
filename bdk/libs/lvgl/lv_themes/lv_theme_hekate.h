@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2022 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -35,14 +35,17 @@ extern "C" {
 /*********************
  *      DEFINES
  *********************/
-#define COLOR_HOS_BG_BASE_DEFAULT 0x1B1B1B
-#define COLOR_HOS_BG_BASE_BLACK   0x000000
+#define COLOR_BG_BASE_MIN      0x0B0B0B
+#define COLOR_BG_BASE_MAX      0xC7C7C7
 
-#define COLOR_HOS_BG_DARKER    0x1B1B1B
-#define COLOR_HOS_BG_DARK      0x222222
-#define COLOR_HOS_BG           0x2D2D2D
-#define COLOR_HOS_BG_LIGHT     0x3D3D3D
-#define COLOR_HOS_LIGHT_BORDER 0x4D4D4D
+#define COLOR_HOS_BG_DARKER    LV_COLOR_HEX(0x1B1B1B)
+#define COLOR_HOS_BG_DARK      LV_COLOR_HEX(0x222222)
+#define COLOR_HOS_BG           LV_COLOR_HEX(0x2D2D2D)
+#define COLOR_HOS_BG_RGB       0x2D2D2D
+#define COLOR_HOS_BG_LIGHT     LV_COLOR_HEX(0x3D3D3D)
+#define COLOR_HOS_BG_LIGHTER   LV_COLOR_HEX(0x4D4D4D)
+
+#define COLOR_HOS_TURQUOISE_EX(hue) (hue ? lv_color_hsv_to_rgb(hue, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90)) // 0x00FFC9
 
 /**********************
  *      TYPEDEFS

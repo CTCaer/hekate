@@ -416,8 +416,8 @@
 /*
  * BKOPS modes
  */
-#define EXT_CSD_MANUAL_BKOPS_MASK	0x01
-#define EXT_CSD_AUTO_BKOPS_MASK		0x02
+#define EXT_CSD_BKOPS_MANUAL	0x01 /* STICKY! */
+#define EXT_CSD_BKOPS_AUTO		0x02
 
 /*
  * Command Queue

@@ -57,7 +57,7 @@ enum
 /**
  * Defines the SDRAM parameter structure
  */
-struct sdram_params_t210
+typedef struct _sdram_params_t210_t
 {
 
 	/* Specifies the type of memory device */
@@ -959,6 +959,6 @@ struct sdram_params_t210
 	u32 McMtsCarveoutRegCtrl;
 
 	/* End */
-};
+} sdram_params_t210_t;
 
 #endif /* __SOC_NVIDIA_TEGRA210_SDRAM_PARAM_H__ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 CTCaer
+ * Copyright (c) 2020-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -550,7 +550,7 @@ static const sdram_params_t210b01_t _dram_cfg_08_10_12_14_samsung_hynix_4gb = {
 	.mc_emem_adr_cfg_bank_mask2                      = 0x4B9C1000,
 	/*
 	 * Specifies the value for MC_EMEM_CFG which holds the external memory
-	 * size (in KBytes)
+	 * size (in MBytes)
 	 */
 	.mc_emem_cfg                                     = 0x00001000, // 4GB total density. Max 8GB.
 

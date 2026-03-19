@@ -94,7 +94,7 @@ typedef struct _pk11_hdr_t
 } pk11_hdr_t;
 
 const pkg1_id_t *pkg1_identify(u8 *pkg1, char *build_date);
-int pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
+bool  pkg1_decrypt(const pkg1_id_t *id, u8 *pkg1);
 const u8 *pkg1_unpack(void *wm_dst, void *sm_dst, void *ldr_dst, const pkg1_id_t *id, u8 *pkg1);
 
 #endif

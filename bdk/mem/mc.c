@@ -113,7 +113,7 @@ void mc_enable_ahb_redirect()
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) |= BIT(19);
 	//MC(MC_IRAM_REG_CTRL) &= ~BIT(0);
 	MC(MC_IRAM_BOM) = IRAM_BASE;
-	MC(MC_IRAM_TOM) = DRAM_START; // Default is only IRAM: 0x4003F000.
+	MC(MC_IRAM_TOM) = DRAM_START - 1; // Default is only IRAM: 0x4003F000.
 }
 
 void mc_disable_ahb_redirect()
@@ -149,9 +149,6 @@ void mc_enable()
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_H_CLR) = BIT(CLK_H_EMC) | BIT(CLK_H_MEM);
 	usleep(5);
 
-#ifdef BDK_MC_ENABLE_AHB_REDIRECT
+	// Enable redirection by default.
 	mc_enable_ahb_redirect();
-#else
-	mc_disable_ahb_redirect();
-#endif
 }

@@ -274,9 +274,11 @@
 /*! Helper for SWITCH command argument. */
 #define SDMMC_SWITCH(mode, index, value) (((mode) << 24) | ((index) << 16) | ((value) << 8))
 
-#define HW_TAP_TUNING            0x100
-#define INVALID_TAP              0x100
-#define SAMPLING_WINDOW_SIZE_MIN 8
+#define SDMMC_HW_TAP_TUNING       0x100
+#define SDMMC_INVALID_TAP         0x100
+#define SDMMC_SAMPLE_WIN_SIZE_MIN 8
+
+#define SDMMC_ADMA_ADDR_ALIGN 8
 
 /*! SDMMC controller context. */
 typedef struct _sdmmc_t
@@ -332,7 +334,7 @@ bool sdmmc_get_sd_inserted();
 int  sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type);
 void sdmmc_end(sdmmc_t *sdmmc);
 void sdmmc_init_cmd(sdmmc_cmd_t *cmdbuf, u16 cmd, u32 arg, u32 rsp_type, u32 check_busy);
-int  sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out);
+int  sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *request, u32 *blkcnt_out);
 int  sdmmc_enable_low_voltage(sdmmc_t *sdmmc);
 
 #endif

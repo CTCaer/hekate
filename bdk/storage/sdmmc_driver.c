@@ -70,13 +70,13 @@ static int _sdmmc_set_io_power(sdmmc_t *sdmmc, u32 power)
 		break;
 
 	default:
-		return 0;
+		return 1;
 	}
 
 	if (power != SDMMC_POWER_OFF)
 		sdmmc->regs->pwrcon |= SDHCI_POWER_ON;
 
-	return 1;
+	return 0;
 }
 
 u32 sdmmc_get_bus_width(sdmmc_t *sdmmc)
@@ -121,8 +121,9 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 
 	if (type == SDHCI_TIMING_MMC_HS400)
 	{
+		// Tap is saved during HS200 switch.
 		if (!sdmmc->venclkctl_set)
-			return 0;
+			return 1;
 
 		tap_val = sdmmc->venclkctl_tap;
 	}
@@ -131,7 +132,7 @@ static int _sdmmc_config_tap_val(sdmmc_t *sdmmc, u32 type)
 
 	sdmmc->regs->venclkctl = (sdmmc->regs->venclkctl & ~0xFF0000) | (tap_val << 16);
 
-	return 1;
+	return 0;
 }
 
 static void _sdmmc_commit_changes(sdmmc_t *sdmmc)
@@ -236,7 +237,7 @@ static void _sdmmc_autocal_execute(sdmmc_t *sdmmc, u32 power)
 
 static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 {
-	int result = 1, should_disable_sd_clock = 0;
+	int res = 0, should_disable_sd_clock = 0;
 
 	if (!(sdmmc->regs->clkcon & SDHCI_CLOCK_CARD_EN))
 	{
@@ -256,7 +257,7 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 	{
 		if (get_tmr_ms() > timeout)
 		{
-			result = 0;
+			res = 1;
 			goto out;
 		}
 	}
@@ -266,15 +267,16 @@ static int _sdmmc_dll_cal_execute(sdmmc_t *sdmmc)
 	{
 		if (get_tmr_ms() > timeout)
 		{
-			result = 0;
+			res = 1;
 			goto out;
 		}
 	}
 
-out:;
+out:
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
-	return result;
+
+	return res;
 }
 
 static void _sdmmc_reset_cmd_data(sdmmc_t *sdmmc)
@@ -389,7 +391,7 @@ int sdmmc_setup_clock(sdmmc_t *sdmmc, u32 type)
 	if (type == SDHCI_TIMING_MMC_HS400)
 		return _sdmmc_dll_cal_execute(sdmmc);
 
-	return 1;
+	return 0;
 }
 
 static void _sdmmc_card_clock_enable(sdmmc_t *sdmmc)
@@ -455,16 +457,16 @@ static int _sdmmc_cache_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 		break;
 
 	default:
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int sdmmc_get_cached_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 {
-	if (!rsp || sdmmc->expected_rsp_type != type)
-		return 0;
+	if (sdmmc->expected_rsp_type != type)
+		return 1;
 
 	switch (type)
 	{
@@ -481,10 +483,10 @@ int sdmmc_get_cached_rsp(sdmmc_t *sdmmc, u32 *rsp, u32 type)
 		break;
 
 	default:
-		return 0;
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_wait_cmd_data_inhibit(sdmmc_t *sdmmc, bool wait_dat)
@@ -496,7 +498,7 @@ static int _sdmmc_wait_cmd_data_inhibit(sdmmc_t *sdmmc, bool wait_dat)
 		if (get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset_cmd_data(sdmmc);
-			return 0;
+			return 1;
 		}
 
 	if (wait_dat)
@@ -506,11 +508,11 @@ static int _sdmmc_wait_cmd_data_inhibit(sdmmc_t *sdmmc, bool wait_dat)
 			if (get_tmr_ms() > timeout)
 			{
 				_sdmmc_reset_cmd_data(sdmmc);
-				return 0;
+				return 1;
 			}
 	}
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_wait_card_busy(sdmmc_t *sdmmc)
@@ -522,10 +524,10 @@ static int _sdmmc_wait_card_busy(sdmmc_t *sdmmc)
 		if (get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset_cmd_data(sdmmc);
-			return 0;
+			return 1;
 		}
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_setup_read_small_block(sdmmc_t *sdmmc)
@@ -533,7 +535,7 @@ static int _sdmmc_setup_read_small_block(sdmmc_t *sdmmc)
 	switch (sdmmc_get_bus_width(sdmmc))
 	{
 	case SDMMC_BUS_WIDTH_1:
-		return 0;
+		return 1;
 
 	case SDMMC_BUS_WIDTH_4:
 		sdmmc->regs->blksize = 64;
@@ -547,7 +549,7 @@ static int _sdmmc_setup_read_small_block(sdmmc_t *sdmmc)
 	sdmmc->regs->blkcnt = 1;
 	sdmmc->regs->trnmod = SDHCI_TRNS_READ;
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_send_cmd(sdmmc_t *sdmmc, const sdmmc_cmd_t *cmd, bool is_data_present)
@@ -577,7 +579,7 @@ static int _sdmmc_send_cmd(sdmmc_t *sdmmc, const sdmmc_cmd_t *cmd, bool is_data_
 		break;
 
 	default:
-		return 0;
+		return 1;
 	}
 
 	if (is_data_present)
@@ -586,7 +588,7 @@ static int _sdmmc_send_cmd(sdmmc_t *sdmmc, const sdmmc_cmd_t *cmd, bool is_data_
 	sdmmc->regs->argument = cmd->arg;
 	sdmmc->regs->cmdreg   = SDHCI_CMD_IDX(cmd->cmd) | cmdflags;
 
-	return 1;
+	return 0;
 }
 
 static void _sdmmc_send_tuning_cmd(sdmmc_t *sdmmc, u32 cmd)
@@ -601,8 +603,8 @@ static void _sdmmc_send_tuning_cmd(sdmmc_t *sdmmc, u32 cmd)
 
 static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd, u32 tap)
 {
-	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, true))
-		return 0;
+	if (_sdmmc_wait_cmd_data_inhibit(sdmmc, true))
+		return 1;
 
 	_sdmmc_setup_read_small_block(sdmmc);
 
@@ -612,7 +614,7 @@ static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd, u32 tap)
 
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 	// Set tap if manual tuning.
-	if (tap != HW_TAP_TUNING)
+	if (tap != SDMMC_HW_TAP_TUNING)
 	{
 		sdmmc->regs->ventunctl0 &= ~SDHCI_TEGRA_TUNING_TAP_HW_UPDATED;
 		sdmmc->regs->venclkctl   = (sdmmc->regs->venclkctl & 0xFF00FFFF) | (tap << 16);
@@ -632,13 +634,15 @@ static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd, u32 tap)
 	u32 timeout = get_tmr_us() + 5000;
 	while (get_tmr_us() < timeout)
 	{
+		// Check if we got valid data.
 		if (sdmmc->regs->norintsts & SDHCI_INT_DATA_AVAIL)
 		{
 			sdmmc->regs->norintsts = SDHCI_INT_DATA_AVAIL;
 			sdmmc->regs->norintstsen &= ~SDHCI_INT_DATA_AVAIL;
 			_sdmmc_commit_changes(sdmmc);
 			usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
-			return 1;
+
+			return 0;
 		}
 	}
 
@@ -648,7 +652,7 @@ static int _sdmmc_tuning_execute_once(sdmmc_t *sdmmc, u32 cmd, u32 tap)
 	_sdmmc_commit_changes(sdmmc);
 	usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 
-	return 0;
+	return 1;
 }
 
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
@@ -662,7 +666,7 @@ typedef struct _sdmmc_manual_tuning_t
 
 static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *tuning)
 {
-	u32 tap_start = INVALID_TAP;
+	u32 tap_start = SDMMC_INVALID_TAP;
 	u32 win_size  = 0;
 	u32 best_tap  = 0;
 	u32 best_size = 0;
@@ -673,14 +677,14 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 		u32 stable = tuning->result[i / 32] & BIT(i % 32);
 		if (stable && !iter_end)
 		{
-			if (tap_start == INVALID_TAP)
+			if (tap_start == SDMMC_INVALID_TAP)
 				tap_start = i;
 
 			win_size++;
 		}
 		else
 		{
-			if (tap_start != INVALID_TAP)
+			if (tap_start != SDMMC_INVALID_TAP)
 			{
 				u32 tap_end = !iter_end ? (i - 1) : i;
 
@@ -691,7 +695,7 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 					best_size = win_size + iter_end;
 				}
 
-				tap_start = INVALID_TAP;
+				tap_start = SDMMC_INVALID_TAP;
 				win_size  = 0;
 			}
 		}
@@ -699,8 +703,8 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 
 
 	// Check if failed or window too small.
-	if (!best_tap || best_size < SAMPLING_WINDOW_SIZE_MIN)
-		return 0;
+	if (!best_tap || best_size < SDMMC_SAMPLE_WIN_SIZE_MIN)
+		return 1;
 
 	sdmmc->regs->clkcon     &= ~SDHCI_CLOCK_CARD_EN;
 	sdmmc->regs->ventunctl0 &= ~SDHCI_TEGRA_TUNING_TAP_HW_UPDATED;
@@ -711,7 +715,7 @@ static int _sdmmc_manual_tuning_set_tap(sdmmc_t *sdmmc, sdmmc_manual_tuning_t *t
 	sdmmc->regs->ventunctl0 |=  SDHCI_TEGRA_TUNING_TAP_HW_UPDATED;
 	sdmmc->regs->clkcon     |= SDHCI_CLOCK_CARD_EN;
 
-	return 1;
+	return 0;
 }
 
 /*
@@ -758,7 +762,7 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 	u32 num_iter, flag;
 
 	if (sdmmc->powersave_enabled)
-		return 0;
+		return 1;
 
 	switch (type)
 	{
@@ -779,7 +783,7 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 	case SDHCI_TIMING_MMC_HS400:
 	case SDHCI_TIMING_UHS_SDR12:
 	case SDHCI_TIMING_UHS_SDR25:
-		return 1;
+		return 0;
 
 #ifdef BDK_SDMMC_UHS_DDR200_SUPPORT
 	case SDHCI_TIMING_UHS_DDR200:
@@ -787,7 +791,7 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 #endif
 
 	default:
-		return 0;
+		return 1;
 	}
 
 	sdmmc->regs->ventunctl1  = 0; // step_size 1.
@@ -799,16 +803,16 @@ int sdmmc_tuning_execute(sdmmc_t *sdmmc, u32 type, u32 cmd)
 
 	for (u32 i = 0; i < num_iter; i++)
 	{
-		_sdmmc_tuning_execute_once(sdmmc, cmd, HW_TAP_TUNING);
+		_sdmmc_tuning_execute_once(sdmmc, cmd, SDMMC_HW_TAP_TUNING);
 
 		if (!(sdmmc->regs->hostctl2 & SDHCI_CTRL_EXEC_TUNING))
 			break;
 	}
 
 	if (sdmmc->regs->hostctl2 & SDHCI_CTRL_TUNED_CLK)
-		return 1;
+		return 0;
 
-	return 0;
+	return 1;
 }
 
 static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
@@ -820,7 +824,7 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 	while (!(sdmmc->regs->clkcon & SDHCI_CLOCK_INT_STABLE))
 	{
 		if (get_tmr_ms() > timeout)
-			return 0;
+			return 1;
 	}
 
 	sdmmc->regs->hostctl2 &= ~SDHCI_CTRL_PRESET_VAL_EN;
@@ -829,13 +833,13 @@ static int _sdmmc_enable_internal_clock(sdmmc_t *sdmmc)
 	sdmmc->regs->hostctl2 |= SDHCI_HOST_VERSION_4_EN;
 
 	if (!(sdmmc->regs->capareg & SDHCI_CAP_64BIT))
-		return 0;
+		return 1;
 
 	sdmmc->regs->hostctl2  |= SDHCI_ADDRESSING_64BIT_EN;
 	sdmmc->regs->hostctl   &= ~SDHCI_CTRL_DMA_MASK; // Use SDMA. Host V4 enabled so adma address regs in use.
 	sdmmc->regs->timeoutcon = (sdmmc->regs->timeoutcon & 0xF0) | 14; // TMCLK * 2^27.
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
@@ -848,7 +852,7 @@ static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
 	case SDMMC_2:
 	case SDMMC_4:
 		if (power != SDMMC_POWER_1_8)
-			return 0;
+			return 1;
 		off_pd = 5;
 		off_pu = 5;
 		break;
@@ -876,12 +880,12 @@ static int _sdmmc_autocal_config_offset(sdmmc_t *sdmmc, u32 power)
 			}
 		}
 		else
-			return 0;
+			return 1;
 		break;
 	}
 
 	sdmmc->regs->autocalcfg = (sdmmc->regs->autocalcfg & 0xFFFF8080) | (off_pd << 8) | off_pu;
-	return 1;
+	return 0;
 }
 
 static void _sdmmc_enable_interrupts(sdmmc_t *sdmmc)
@@ -935,25 +939,25 @@ static int _sdmmc_wait_response(sdmmc_t *sdmmc)
 	u32 timeout = get_tmr_ms() + 2000;
 	while (true)
 	{
-		u32 result = _sdmmc_check_mask_interrupt(sdmmc, NULL, SDHCI_INT_RESPONSE);
-		if (result == SDMMC_MASKINT_MASKED)
+		u32 res = _sdmmc_check_mask_interrupt(sdmmc, NULL, SDHCI_INT_RESPONSE);
+		if (res == SDMMC_MASKINT_MASKED)
 			break;
-		if (result != SDMMC_MASKINT_NOERROR || get_tmr_ms() > timeout)
+		if (res != SDMMC_MASKINT_NOERROR || get_tmr_ms() > timeout)
 		{
 			_sdmmc_reset_cmd_data(sdmmc);
-			return 0;
+			return 1;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 {
 	sdmmc_cmd_t cmd;
 
-	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, false))
-		return 0;
+	if (_sdmmc_wait_cmd_data_inhibit(sdmmc, false))
+		return 1;
 
 	_sdmmc_enable_interrupts(sdmmc);
 
@@ -964,11 +968,11 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 
 	_sdmmc_send_cmd(sdmmc, &cmd, false);
 
-	int result = _sdmmc_wait_response(sdmmc);
+	int res = _sdmmc_wait_response(sdmmc);
 	_sdmmc_mask_interrupts(sdmmc);
 
-	if (!result)
-		return 0;
+	if (res)
+		return 1;
 
 	_sdmmc_cache_rsp(sdmmc, rsp, SDMMC_RSP_TYPE_1);
 
@@ -978,7 +982,7 @@ static int _sdmmc_stop_transmission_inner(sdmmc_t *sdmmc, u32 *rsp)
 int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 {
 	if (!sdmmc->card_clock_enabled)
-		return 0;
+		return 1;
 
 	// Recalibrate periodically if needed.
 	if (sdmmc->periodic_calibration && sdmmc->powersave_enabled)
@@ -993,35 +997,35 @@ int sdmmc_stop_transmission(sdmmc_t *sdmmc, u32 *rsp)
 		usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 	}
 
-	int result = _sdmmc_stop_transmission_inner(sdmmc, rsp);
+	int res = _sdmmc_stop_transmission_inner(sdmmc, rsp);
 	usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 
-	return result;
+	return res;
 }
 
-static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, const sdmmc_req_t *req)
+static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, const sdmmc_req_t *request)
 {
-	if (!req->blksize || !req->num_sectors)
-		return 0;
+	if (!request->blksize || !request->num_sectors)
+		return 1;
 
-	u32 blkcnt = req->num_sectors;
+	u32 blkcnt = request->num_sectors;
 	if (blkcnt >= SDMMC_HMAX_BLOCKNUM)
 		blkcnt = SDMMC_HMAX_BLOCKNUM;
-	u32 admaaddr = (u32)req->buf;
+	u32 admaaddr = (u32)request->buf;
 
 	// Check alignment.
 	if (admaaddr & 7)
-		return 0;
+		return 1;
 
 	sdmmc->regs->admaaddr = admaaddr;
 	sdmmc->regs->admaaddr_hi = 0;
 
 	sdmmc->dma_addr_next = ALIGN_DOWN((admaaddr + SZ_512K), SZ_512K);
 
-	sdmmc->regs->blksize = req->blksize | (7u << 12); // SDMA DMA 512KB Boundary (Detects A18 carry out).
+	sdmmc->regs->blksize = request->blksize | (7u << 12); // SDMA DMA 512KB Boundary (Detects A18 carry out).
 	sdmmc->regs->blkcnt  = blkcnt;
 
 	if (blkcnt_out)
@@ -1030,22 +1034,22 @@ static int _sdmmc_config_sdma(sdmmc_t *sdmmc, u32 *blkcnt_out, const sdmmc_req_t
 	u32 trnmode = SDHCI_TRNS_DMA | SDHCI_TRNS_RTYPE_R1;
 
 	// Set multiblock request.
-	if (req->is_multi_block)
+	if (request->is_multi_block)
 		trnmode |= SDHCI_TRNS_MULTI | SDHCI_TRNS_BLK_CNT_EN;
 
 	// Set request direction.
-	if (!req->is_write)
+	if (!request->is_write)
 		trnmode |= SDHCI_TRNS_READ;
 
 	// Automatic send of stop transmission or set block count cmd.
-	if (req->is_auto_stop_trn)
+	if (request->is_auto_stop_trn)
 		trnmode |= SDHCI_TRNS_AUTO_CMD12;
-	//else if (req->is_auto_set_blkcnt)
+	//else if (request->is_auto_set_blkcnt)
 	//	trnmode |= SDHCI_TRNS_AUTO_CMD23;
 
 	sdmmc->regs->trnmod = trnmode;
 
-	return 1;
+	return 0;
 }
 
 static int _sdmmc_update_sdma(sdmmc_t *sdmmc)
@@ -1057,17 +1061,17 @@ static int _sdmmc_update_sdma(sdmmc_t *sdmmc)
 		u32 timeout = get_tmr_ms() + 1500;
 		do
 		{
-			u32 result = SDMMC_MASKINT_MASKED;
+			u32 res = SDMMC_MASKINT_MASKED;
 			while (true)
 			{
 				u16 intr = 0;
-				result = _sdmmc_check_mask_interrupt(sdmmc, &intr,
+				res = _sdmmc_check_mask_interrupt(sdmmc, &intr,
 					SDHCI_INT_DATA_END | SDHCI_INT_DMA_END);
-				if (result != SDMMC_MASKINT_MASKED)
+				if (res != SDMMC_MASKINT_MASKED)
 					break;
 
 				if (intr & SDHCI_INT_DATA_END)
-					return 1; // Transfer complete.
+					return 0; // Transfer complete.
 
 				if (intr & SDHCI_INT_DMA_END)
 				{
@@ -1078,39 +1082,39 @@ static int _sdmmc_update_sdma(sdmmc_t *sdmmc)
 				}
 			}
 
-			if (result != SDMMC_MASKINT_NOERROR)
+			if (res != SDMMC_MASKINT_NOERROR)
 			{
 #ifdef ERROR_EXTRA_PRINTING
 				EPRINTFARGS("SDMMC%d: int error!", sdmmc->id + 1);
 #endif
 				_sdmmc_reset_cmd_data(sdmmc);
 
-				return 0;
+				return 1;
 			}
 		} while (get_tmr_ms() < timeout);
 	} while (sdmmc->regs->blkcnt != blkcnt);
 
 	_sdmmc_reset_cmd_data(sdmmc);
 
-	return 0;
+	return 1;
 }
 
-static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out)
+static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *request, u32 *blkcnt_out)
 {
-	bool has_req_or_check_busy = req || cmd->check_busy;
-	if (!_sdmmc_wait_cmd_data_inhibit(sdmmc, has_req_or_check_busy))
-		return 0;
+	bool has_req_or_check_busy = request || cmd->check_busy;
+	if (_sdmmc_wait_cmd_data_inhibit(sdmmc, has_req_or_check_busy))
+		return 1;
 
 	u32 blkcnt = 0;
 	bool is_data_present = false;
-	if (req)
+	if (request)
 	{
-		if (!_sdmmc_config_sdma(sdmmc, &blkcnt, req))
+		if (_sdmmc_config_sdma(sdmmc, &blkcnt, request))
 		{
 #ifdef ERROR_EXTRA_PRINTING
 			EPRINTFARGS("SDMMC%d: DMA Wrong cfg!", sdmmc->id + 1);
 #endif
-			return 0;
+			return 1;
 		}
 
 		// Flush cache before starting the transfer.
@@ -1121,37 +1125,34 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 
 	_sdmmc_enable_interrupts(sdmmc);
 
-	if (!_sdmmc_send_cmd(sdmmc, cmd, is_data_present))
+	if (_sdmmc_send_cmd(sdmmc, cmd, is_data_present))
 	{
 #ifdef ERROR_EXTRA_PRINTING
 		EPRINTFARGS("SDMMC%d: Wrong Response type %08X!", sdmmc->id + 1, cmd->rsp_type);
 #endif
-		return 0;
+		return 1;
 	}
 
-	int result = _sdmmc_wait_response(sdmmc);
+	int res = _sdmmc_wait_response(sdmmc);
 #ifdef ERROR_EXTRA_PRINTING
-	if (!result)
+	if (res)
 		EPRINTFARGS("SDMMC%d: Transfer error!", sdmmc->id + 1);
 #endif
-	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", result,
+	DPRINTF("rsp(%d): %08X, %08X, %08X, %08X\n", res,
 		sdmmc->regs->rspreg[0], sdmmc->regs->rspreg[1], sdmmc->regs->rspreg[2], sdmmc->regs->rspreg[3]);
-	if (result)
+
+	if (!res)
 	{
 		if (cmd->rsp_type)
 		{
 			sdmmc->expected_rsp_type = cmd->rsp_type;
-			result = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, cmd->rsp_type);
-#ifdef ERROR_EXTRA_PRINTING
-			if (!result)
-				EPRINTFARGS("SDMMC%d: Unknown response type!", sdmmc->id + 1);
-#endif
+			res = _sdmmc_cache_rsp(sdmmc, sdmmc->rsp, cmd->rsp_type);
 		}
-		if (req && result)
+		if (request && !res)
 		{
-			result = _sdmmc_update_sdma(sdmmc);
+			res = _sdmmc_update_sdma(sdmmc);
 #ifdef ERROR_EXTRA_PRINTING
-			if (!result)
+			if (res)
 				EPRINTFARGS("SDMMC%d: DMA Update failed!", sdmmc->id + 1);
 #endif
 		}
@@ -1159,9 +1160,9 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 
 	_sdmmc_mask_interrupts(sdmmc);
 
-	if (result)
+	if (!res)
 	{
-		if (req)
+		if (request)
 		{
 			// Invalidate cache after transfer.
 			bpmp_mmu_maintenance(BPMP_MMU_MAINT_INVALID_WAY, false);
@@ -1169,22 +1170,21 @@ static int _sdmmc_execute_cmd_inner(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_
 			if (blkcnt_out)
 				*blkcnt_out = blkcnt;
 
-			if (req->is_auto_stop_trn)
+			if (request->is_auto_stop_trn)
 				sdmmc->stop_trn_rsp = sdmmc->regs->rspreg[3];
 		}
 
 		if (has_req_or_check_busy)
 		{
-			result = _sdmmc_wait_card_busy(sdmmc);
+			res = _sdmmc_wait_card_busy(sdmmc);
 #ifdef ERROR_EXTRA_PRINTING
-			if (!result)
+			if (res)
 				EPRINTFARGS("SDMMC%d: Busy timeout!", sdmmc->id + 1);
 #endif
-			return result;
 		}
 	}
 
-	return result;
+	return res;
 }
 
 bool sdmmc_get_sd_inserted()
@@ -1251,7 +1251,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 
 	// Check if SD card is inserted.
 	if (!sdmmc_get_sd_inserted())
-		return 0;
+		return 1;
 
 	// Enable deep loopback for SDMMC1 CLK pad so reads work.
 	APB_MISC(APB_MISC_GP_SDMMC1_CLK_LPBK_CONTROL) = 1;
@@ -1300,7 +1300,7 @@ static int _sdmmc_config_sdmmc1(bool t210b01)
 		usleep(1000);
 	}
 
-	return 1;
+	return 0;
 }
 
 static void _sdmmc_config_emmc(u32 id, bool t210b01)
@@ -1342,7 +1342,7 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	const u8 *trim_values;
 
 	if (id > SDMMC_4 || id == SDMMC_3)
-		return 0;
+		return 1;
 
 	memset(sdmmc, 0, sizeof(sdmmc_t));
 
@@ -1357,8 +1357,8 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	switch (id)
 	{
 	case SDMMC_1:
-		if (!_sdmmc_config_sdmmc1(sdmmc->t210b01))
-			return 0;
+		if (_sdmmc_config_sdmmc1(sdmmc->t210b01))
+			return 1;
 		if (sdmmc->t210b01)
 			vref_sel = 0;
 		else
@@ -1393,8 +1393,8 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	sdmmc->regs->sdmemcmppadctl = (sdmmc->regs->sdmemcmppadctl & ~SDHCI_TEGRA_PADCTRL_VREF_SEL_MASK) | vref_sel;
 
 	// Configure auto calibration values.
-	if (!_sdmmc_autocal_config_offset(sdmmc, power))
-		return 0;
+	if (_sdmmc_autocal_config_offset(sdmmc, power))
+		return 1;
 
 	_sdmmc_commit_changes(sdmmc);
 
@@ -1402,22 +1402,23 @@ int sdmmc_init(sdmmc_t *sdmmc, u32 id, u32 power, u32 bus_width, u32 type)
 	_sdmmc_autocal_execute(sdmmc, power);
 
 	// Enable internal clock and power.
-	if (_sdmmc_enable_internal_clock(sdmmc))
+	if (!_sdmmc_enable_internal_clock(sdmmc))
 	{
 		sdmmc_set_bus_width(sdmmc, bus_width);
 		_sdmmc_set_io_power(sdmmc, power);
 
-		if (sdmmc_setup_clock(sdmmc, type))
+		if (!sdmmc_setup_clock(sdmmc, type))
 		{
 			sdmmc_card_clock_powersave(sdmmc, SDMMC_POWER_SAVE_DISABLE);
 			_sdmmc_card_clock_enable(sdmmc);
 			_sdmmc_commit_changes(sdmmc);
 
-			return 1;
+			return 0;
 		}
 	}
 
-	return 0;
+	// Failed to enable clock.
+	return 1;
 }
 
 void sdmmc1_disable_power()
@@ -1480,10 +1481,10 @@ void sdmmc_init_cmd(sdmmc_cmd_t *cmdbuf, u16 cmd, u32 arg, u32 rsp_type, u32 che
 	cmdbuf->check_busy = check_busy;
 }
 
-int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *blkcnt_out)
+int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *request, u32 *blkcnt_out)
 {
 	if (!sdmmc->card_clock_enabled)
-		return 0;
+		return 1;
 
 	// Recalibrate periodically if needed.
 	if (sdmmc->periodic_calibration && sdmmc->powersave_enabled)
@@ -1498,19 +1499,19 @@ int sdmmc_execute_cmd(sdmmc_t *sdmmc, sdmmc_cmd_t *cmd, sdmmc_req_t *req, u32 *b
 		usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 	}
 
-	int result = _sdmmc_execute_cmd_inner(sdmmc, cmd, req, blkcnt_out);
+	int res = _sdmmc_execute_cmd_inner(sdmmc, cmd, request, blkcnt_out);
 	usleep((8 * 1000 + sdmmc->card_clock - 1) / sdmmc->card_clock); // Wait 8 cycles.
 
 	if (should_disable_sd_clock)
 		sdmmc->regs->clkcon &= ~SDHCI_CLOCK_CARD_EN;
 
-	return result;
+	return res;
 }
 
 int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 {
 	if (sdmmc->id != SDMMC_1)
-		return 0;
+		return 1;
 
 	_sdmmc_commit_changes(sdmmc);
 
@@ -1538,8 +1539,8 @@ int sdmmc_enable_low_voltage(sdmmc_t *sdmmc)
 		_sdmmc_commit_changes(sdmmc);
 		usleep(1000);
 		if ((sdmmc->regs->prnsts & SDHCI_DATA_LVL_MASK) == SDHCI_DATA_LVL_MASK)
-			return 1;
+			return 0;
 	}
 
-	return 0;
+	return 1;
 }

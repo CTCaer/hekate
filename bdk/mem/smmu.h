@@ -15,9 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
+#ifndef _SMMU_H_
+#define _SMMU_H_
 
 #include <utils/types.h>
+#include <assert.h>
 
 #define MC_SMMU_AVPC_ASID            0x23C
 #define MC_SMMU_TSEC_ASID            0x294
@@ -65,8 +67,10 @@ void  smmu_init();
 void  smmu_enable();
 void  smmu_disable();
 void  smmu_reset_heap();
-void *smmu_init_domain(u32 dev_base, u32 asid);
-void  smmu_deinit_domain(u32 dev_base, u32 asid);
+void *smmu_domain_init(u32 dev_base, u32 asid);
+void  smmu_domain_deinit(u32 dev_base, u32 asid);
 void  smmu_domain_bypass(u32 dev_base, bool bypass);
 void  smmu_map(void *ptb, u32 iova, u64 iopa, u32 pages, u32 attr);
 void  smmu_map_huge(void *ptb, u32 iova, u64 iopa, u32 regions, u32 attr);
+
+#endif

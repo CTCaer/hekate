@@ -25,7 +25,7 @@
 #include "types.h"
 #include <module.h>
 
-#define DVFS_T21X_CC_VERSION "Minerva Training Cell v0.1_T21X"
+#define DVFS_T21X_CC_VERSION "Minerva Training Cell v0.2_T21X"
 #define DVFS_T210_CC_VERSION "Minerva Training Cell v1.6_T210"
 
 #define EPRINTF(...)
@@ -3758,7 +3758,7 @@ static int _minerva_set_ir_boost(mtc_config_t *mtc_cfg)
 		MC(MC_EMEM_ARB_TIMING_FAW)   = 4;
 		MC(MC_EMEM_ARB_TIMING_RFCPB) = 0xE;
 		MC(MC_EMEM_ARB_DA_COVERS)    = 0x30203;
-		MC(MC_EMEM_ARB_MISC0)        = 0x73C30507;
+		MC(MC_EMEM_ARB_MISC0)        = 0x71E30507;
 
 		// Program base timings.
 		EMC(EMC_RP)      = 8;
@@ -4012,7 +4012,7 @@ error:
 	return;
 }
 
-void minerva_entry(mtc_config_t *mtc_cfg, bdkParams_t bp)
+void minerva_entry(mtc_config_t *mtc_cfg, bdk_params_t *bp)
 {
 	EPRINTF("-- Minerva Training Cell --");
 

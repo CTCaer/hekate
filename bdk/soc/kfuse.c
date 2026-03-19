@@ -25,25 +25,25 @@ int kfuse_wait_ready()
 		;
 
 	if (!(KFUSE(KFUSE_STATE) & KFUSE_STATE_CRCPASS))
-		return 0;
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 int kfuse_read(u32 *buf)
 {
-	int res = 0;
+	int res = 1;
 
 	clock_enable_kfuse();
 
-	if (!kfuse_wait_ready())
+	if (kfuse_wait_ready())
 		goto out;
 
 	KFUSE(KFUSE_KEYADDR) = KFUSE_KEYADDR_AUTOINC;
 	for (int i = 0; i < KFUSE_NUM_WORDS; i++)
 		buf[i] = KFUSE(KFUSE_KEYS);
 
-	res = 1;
+	res = 0;
 
 out:
 	clock_disable_kfuse();

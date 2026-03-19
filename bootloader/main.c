@@ -228,7 +228,7 @@ static void _launch_payloads()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto failed_sd_mount;
 
 	ments = (ment_t *)malloc(sizeof(ment_t) * (max_entries + 3));
@@ -310,11 +310,11 @@ static void _launch_ini_list()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto parse_failed;
 
 	// Check that ini files exist and parse them.
-	if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
+	if (ini_parse(&ini_list_sections, "bootloader/ini", true))
 	{
 		EPRINTF("No .ini files in bootloader/ini!");
 		goto parse_failed;
@@ -440,7 +440,7 @@ static void _launch_config()
 	gfx_clear_grey(0x1B);
 	gfx_con_setpos(0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 		goto parse_failed;
 
 	// Load emuMMC configuration.
@@ -752,7 +752,7 @@ static void _auto_launch()
 	emummc_load_cfg();
 
 	// Parse hekate main configuration.
-	if (!ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
+	if (ini_parse(&ini_sections, "bootloader/hekate_ipl.ini", false))
 		goto out; // Can't load hekate_ipl.ini.
 
 	// Load configuration.
@@ -839,7 +839,7 @@ static void _auto_launch()
 		boot_entry_id = 1;
 		bootlogoCustomEntry = NULL;
 
-		if (!ini_parse(&ini_list_sections, "bootloader/ini", true))
+		if (ini_parse(&ini_list_sections, "bootloader/ini", true))
 			goto skip_list;
 
 		LIST_FOREACH_ENTRY(ini_sec_t, ini_sec_list, &ini_list_sections, link)
@@ -1015,15 +1015,15 @@ out:
 	_nyx_load_run();
 }
 
-#define EXCP_EN_ADDR   0x4003FFFC
+#define EXCP_EN_ADDR   0x4003FF1C
 #define  EXCP_MAGIC       0x30505645 // "EVP0".
-#define EXCP_TYPE_ADDR 0x4003FFF8
+#define EXCP_TYPE_ADDR 0x4003FF18
 #define  EXCP_TYPE_RESET  0x545352   // "RST".
 #define  EXCP_TYPE_UNDEF  0x464455   // "UDF".
 #define  EXCP_TYPE_PABRT  0x54424150 // "PABT".
 #define  EXCP_TYPE_DABRT  0x54424144 // "DABT".
 #define  EXCP_TYPE_WDT    0x544457   // "WDT".
-#define EXCP_LR_ADDR   0x4003FFF4
+#define EXCP_LR_ADDR   0x4003FF14
 
 #define PSTORE_LOG_OFFSET 0x180000
 #define PSTORE_RAM_SIG    0x43474244 // "DBGC".
@@ -1426,7 +1426,7 @@ ment_t ment_top[] = {
 	MDEF_END()
 };
 
-menu_t menu_top = { ment_top, "hekate v6.5.1", 0, 0 };
+menu_t menu_top = { ment_top, "hekate v6.5.2", 0, 0 };
 
 extern void pivot_stack(u32 stack_top);
 
@@ -1466,7 +1466,8 @@ void ipl_main()
 	bpmp_clk_rate_set(h_cfg.t210b01 ? ipl_ver.rcfg.bclk_t210b01 : ipl_ver.rcfg.bclk_t210);
 
 	// Mount SD Card.
-	h_cfg.errors |= !sd_mount() ? ERR_SD_BOOT_EN : 0;
+	if (sd_mount())
+		h_cfg.errors |= ERR_SD_BOOT_EN;
 
 	// Check if watchdog was fired previously.
 	if (watchdog_fired())
@@ -1477,7 +1478,7 @@ void ipl_main()
 
 	// Save sdram lp0 config.
 	void *sdram_params = h_cfg.t210b01 ? sdram_get_params_t210b01() : sdram_get_params_patched();
-	if (!ianos_loader("bootloader/sys/libsys_lp0.bso", DRAM_LIB, sdram_params))
+	if (!ianos_static_module("bootloader/sys/libsys_lp0.bso", sdram_params))
 		h_cfg.errors |= ERR_LIBSYS_LP0;
 
 	// Train DRAM and switch to max frequency.

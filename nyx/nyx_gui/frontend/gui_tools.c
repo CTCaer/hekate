@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -30,8 +30,6 @@
 #include "../hos/hos.h"
 #include <libs/compr/blz.h>
 #include <libs/fatfs/ff.h>
-
-extern volatile boot_cfg_t *b_cfg;
 
 lv_obj_t *ums_mbox;
 
@@ -158,7 +156,7 @@ static lv_res_t _create_mbox_autorcm_status(lv_obj_t *btn)
 			"The boot process is now normal and you need the #FF8000 VOL+# + #FF8000 HOME# (jig) combo to enter RCM.\n");
 	}
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -178,8 +176,8 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\251", "\262Close", "\251", "" };
-	static const char *mbox_btn_map2[] = { "\251", "\222Close", "\251", "" };
+	static const char *mbox_btn_map_dis[] = { "\251", "\262Close", "\251", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222Close", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -205,14 +203,14 @@ static lv_res_t _create_mbox_hid(usb_ctxt_t *usbs)
 	lv_label_set_static_text(lbl_tip, "Note: To end it, press #C7EA46 L3# + #C7EA46 HOME# or remove the cable.");
 	lv_obj_set_style(lbl_tip, &hint_small_style);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map_dis, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
 
 	usb_device_gadget_hid(usbs);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	return LV_RES_OK;
 }
@@ -223,8 +221,8 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
 
-	static const char *mbox_btn_map[] = { "\251", "\262Close", "\251", "" };
-	static const char *mbox_btn_map2[] = { "\251", "\222Close", "\251", "" };
+	static const char *mbox_btn_map_dis[] = { "\251", "\262Close", "\251", "" };
+	static const char *mbox_btn_map[] = { "\251", "\222Close", "\251", "" };
 	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
 	lv_mbox_set_recolor_text(mbox, true);
 
@@ -299,7 +297,7 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	}
 	lv_obj_set_style(lbl_tip, &hint_small_style);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map_dis, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -312,7 +310,7 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	// Restore backlight.
 	display_backlight_brightness(h_cfg.backlight - 20, 1000);
 
-	lv_mbox_add_btns(mbox, mbox_btn_map2, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	ums_mbox = dark_bg;
 
@@ -342,7 +340,7 @@ static lv_res_t _create_mbox_ums_error(int error)
 		break;
 	}
 
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
 	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
 	lv_obj_set_top(mbox, true);
@@ -485,7 +483,7 @@ static lv_res_t _action_ums_emuemmc_boot0(lv_obj_t *btn)
 
 	usb_ctxt_t usbs;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		emummc_cfg_t emu_info;
@@ -532,7 +530,7 @@ static lv_res_t _action_ums_emuemmc_boot1(lv_obj_t *btn)
 
 	usb_ctxt_t usbs;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		emummc_cfg_t emu_info;
@@ -579,7 +577,7 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 
 	usb_ctxt_t usbs;
 
-	int error = !sd_mount();
+	int error = sd_mount();
 	if (!error)
 	{
 		emummc_cfg_t emu_info;
@@ -595,7 +593,7 @@ static lv_res_t _action_ums_emuemmc_gpp(lv_obj_t *btn)
 				usbs.offset = emu_info.sector + 0x4000;
 
 				u8 *gpt = malloc(SD_BLOCKSIZE);
-				if (sdmmc_storage_read(&sd_storage, usbs.offset + 1, 1, gpt))
+				if (!sdmmc_storage_read(&sd_storage, usbs.offset + 1, 1, gpt))
 				{
 					if (!memcmp(gpt, "EFI PART", 8))
 					{
@@ -675,7 +673,7 @@ static lv_res_t _emmc_read_only_toggle(lv_obj_t *btn)
 
 static lv_res_t _create_window_usb_tools(lv_obj_t *parent)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_USB" USB Tools");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_USB" USB Tools", NULL);
 
 	static lv_style_t h_style;
 	lv_style_copy(&h_style, &lv_style_transp);
@@ -928,7 +926,7 @@ out:
 
 static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Fix Archive Bit (All folders)");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_COPY" Fix Archive Bit (All folders)", NULL);
 
 	// Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -940,7 +938,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 	lv_label_set_long_mode(lb_desc, LV_LABEL_LONG_BREAK);
 	lv_label_set_recolor(lb_desc, true);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 		lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
@@ -1001,7 +999,7 @@ static lv_res_t _create_window_unset_abit_tool(lv_obj_t *btn)
 
 static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 {
-	int res = 0;
+	int res = 1;
 	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
 	lv_obj_set_style(dark_bg, &mbox_darken);
 	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
@@ -1041,13 +1039,13 @@ static lv_res_t _create_mbox_fix_touchscreen(lv_obj_t *btn)
 	}
 
 	u8 err[2];
-	if (!touch_panel_ito_test(err))
+	if (touch_panel_ito_test(err))
 		goto ito_failed;
 
 	if (!err[0] && !err[1])
 	{
 		res = touch_execute_autotune();
-		if (res)
+		if (!res)
 			goto out;
 	}
 	else
@@ -1105,13 +1103,13 @@ ito_failed:
 	touch_sense_enable();
 
 out:
-	if (res)
+	if (!res)
 		lv_mbox_set_text(mbox, "#C7EA46 The touchscreen calibration finished!");
 	else
 		lv_mbox_set_text(mbox, "#FFFF00 The touchscreen calibration failed!");
 
 out2:
-	lv_mbox_add_btns(mbox, mbox_btn_map, mbox_action);
+	lv_mbox_add_btns(mbox, mbox_btn_map, nyx_mbox_action);
 
 	free(txt_buf);
 
@@ -1120,7 +1118,7 @@ out2:
 
 static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 {
-	lv_obj_t *win = nyx_create_standard_window(SYMBOL_MODULES" Dump package1/2");
+	lv_obj_t *win = nyx_create_standard_window(SYMBOL_MODULES" Dump package1/2", NULL);
 
 	// Disable buttons.
 	nyx_window_toggle_buttons(win, true);
@@ -1143,7 +1141,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	lv_obj_align(lb_desc2, lb_desc, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
 
-	if (!sd_mount())
+	if (sd_mount())
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init SD!#");
 
@@ -1161,7 +1159,7 @@ static lv_res_t _create_window_dump_pk12_tool(lv_obj_t *btn)
 
 	char *txt_buf  = (char *)malloc(SZ_16K);
 
-	if (!emmc_initialize(false))
+	if (emmc_initialize(false))
 	{
 		lv_label_set_text(lb_desc, "#FFDD00 Failed to init eMMC!#");
 
@@ -1515,7 +1513,7 @@ out_end:
 	return LV_RES_OK;
 }
 
-static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
+static void _create_tab_tools_emmc_sd_usb(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
 
@@ -1613,10 +1611,6 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_set_style(label_txt4, &hint_small_style);
 	lv_obj_align(label_txt4, btn3, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
-	label_sep = lv_label_create(h2, NULL);
-	lv_label_set_static_text(label_sep, "");
-	lv_obj_align(label_sep, label_txt4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI * 11 / 7);
-
 	// Create USB Tools button.
 	lv_obj_t *btn4 = lv_btn_create(h2, btn3);
 	label_btn = lv_label_create(btn4, NULL);
@@ -1634,7 +1628,7 @@ static void _create_tab_tools_emmc_pkg12(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_align(label_txt4, btn4, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 }
 
-static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
+static void _create_tab_tools_arc_rcm_pkg12(lv_theme_t *th, lv_obj_t *parent)
 {
 	lv_page_set_scrl_layout(parent, LV_LAYOUT_PRETTY);
 
@@ -1671,8 +1665,8 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *label_txt2 = lv_label_create(h1, NULL);
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
-		"Allows you to fix the archive bit for all folders including\n"
-		"the root and emuMMC \'Nintendo\' folders.\n"
+		"Allows you to fix the archive bit for all folders including the\n"
+		"root and emuMMC \'Nintendo\' folders.\n"
 		"#C7EA46 It sets the archive bit to folders named with ##FF8000 .[ext]#\n"
 		"#FF8000 Use that option when you have corruption messages.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
@@ -1689,7 +1683,7 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_label_set_recolor(label_txt2, true);
 	lv_label_set_static_text(label_txt2,
 		"Allows you to calibrate the touchscreen module.\n"
-		"#FF8000 This fixes any issues with touchscreen in Nyx and HOS.#");
+		"#FF8000 This can fix any issues with touchscreen in Nyx and HOS.#");
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 3);
 
@@ -1712,10 +1706,11 @@ static void _create_tab_tools_arc_autorcm(lv_theme_t *th, lv_obj_t *parent)
 	lv_obj_t *btn3 = lv_btn_create(h2, NULL);
 	if (hekate_bg)
 	{
-		lv_btn_set_style(btn3, LV_BTN_STYLE_REL, &btn_transp_rel);
-		lv_btn_set_style(btn3, LV_BTN_STYLE_PR, &btn_transp_pr);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_REL,     &btn_transp_rel);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_PR,      &btn_transp_pr);
 		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_REL, &btn_transp_tgl_rel);
-		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_PR, &btn_transp_tgl_pr);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_TGL_PR,  &btn_transp_tgl_pr);
+		lv_btn_set_style(btn3, LV_BTN_STYLE_INA,     &btn_transp_ina);
 	}
 	label_btn = lv_label_create(btn3, NULL);
 	lv_btn_set_fit(btn3, true, true);
@@ -1806,8 +1801,8 @@ void create_tab_tools(lv_theme_t *th, lv_obj_t *parent)
 	lv_line_set_style(line_sep, lv_theme_get_current()->line.decor);
 	lv_obj_align(line_sep, tv, LV_ALIGN_IN_BOTTOM_MID, -1, -LV_DPI * 2 / 12);
 
-	_create_tab_tools_emmc_pkg12(th, tab1);
-	_create_tab_tools_arc_autorcm(th, tab2);
+	_create_tab_tools_emmc_sd_usb(th, tab1);
+	_create_tab_tools_arc_rcm_pkg12(th, tab2);
 
 	lv_tabview_set_tab_act(tv, 0, false);
 }
