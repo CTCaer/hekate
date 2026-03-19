@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 naehrwert
- * Copyright (c) 2018-2025 CTCaer
+ * Copyright (c) 2018-2026 CTCaer
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -223,6 +223,20 @@ static int _config_exo_user_pmu_access(launch_ctxt_t *ctxt, const char *value)
 	return 0;
 }
 
+static int _config_exo_force_mem_mode(launch_ctxt_t *ctxt, const char *value)
+{
+	// Override key found.
+	ctxt->exo_ctx.force_mem_mode = zalloc(sizeof(bool));
+
+	if (*value == '1')
+	{
+		DPRINTF("Enabled Auto Memory Mode\n");
+		*ctxt->exo_ctx.force_mem_mode = true;
+	}
+
+	return 0;
+}
+
 static int _config_exo_usb3_force(launch_ctxt_t *ctxt, const char *value)
 {
 	// Override key found.
@@ -312,6 +326,7 @@ static const cfg_handler_t _config_handlers[] = {
 	{ "emummcforce",      _config_emummc_forced },
 	{ "nouserexceptions", _config_dis_exo_user_exceptions },
 	{ "userpmu",          _config_exo_user_pmu_access },
+	{ "memmode",          _config_exo_force_mem_mode },
 	{ "usb3force",        _config_exo_usb3_force },
 	{ "cal0blank",        _config_exo_cal0_blanking },
 	{ "cal0writesys",     _config_exo_cal0_writes_enable },

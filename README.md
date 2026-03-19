@@ -66,7 +66,7 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 
 ## Bootloader configuration
 
-The bootloader can be configured via 'bootloader/hekate_ipl.ini' (if it is present on the SD card). Each ini section represents a boot entry, except for the special section 'config' that controls the global configuration.
+The bootloader can be configured via `Nyx` -> `Options` or 'bootloader/hekate_ipl.ini'. The special section 'config' controls the actual global configuration. Any other ini section represents a boot entry and can only be edited manually via the ini.
 
 
 There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Caption, "**#**": Comment, "*newline*": .ini cosmetic newline.
@@ -75,7 +75,9 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 **You can find a template [Here](./res/hekate_ipl_template.ini)**
 
 
-### hekate Global Configuration keys/values (when entry is *[config]*):
+### hekate Configuration keys/values (section *[config]*)
+
+Use `Options` in Nyx to edit the following configuration:
 
 | Config option      | Description                                                    |
 | ------------------ | -------------------------------------------------------------- |
@@ -91,7 +93,9 @@ There are four possible type of entries. "**[ ]**": Boot entry, "**{ }**": Capti
 | bootprotect=0      | 0: Disable, 1: Protect bootloader folder from being corrupted by disallowing reading or editing in HOS. |
 
 
-### Boot entry key/value combinations:
+### Boot entry key/value combinations
+
+A boot entry needs to be manually added/edited with the user's chosen key/value combos.
 
 | Config option          | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
@@ -141,7 +145,9 @@ You can define `kip1` to load an extra kip or many via the wildcard (`/*`) usage
 That's in case the kips are incompatible between them. If compatible, you can override `pkg3`/`fss0` kips with no issues (useful for testing with intermediate kip changes). In such cases, the `kip1` line must be **after** `pkg3`/`fss0` line.
 
 
-### Boot entry key/value combinations for Exosphère:
+### Boot entry key/value combinations for Exosphère
+
+The following can be paired together with a HOS boot entry:
 
 | Config option          | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
@@ -150,6 +156,7 @@ That's in case the kips are incompatible between them. If compatible, you can ov
 | cal0blank=1            | Overrides Exosphère config `blank_prodinfo_{sys/emu}mmc`. If that key doesn't exist, `exosphere.ini` will be used. |
 | cal0writesys=1         | Overrides Exosphère config `allow_writing_to_cal_sysmmc`. If that key doesn't exist, `exosphere.ini` will be used. |
 | usb3force=1            | Overrides system settings mitm config `usb30_force_enabled`. If that key doesn't exist, `system_settings.ini` will be used. |
+| memmode=1              | Enables boot config memory mode for retail units. By default, max ram is limited to 4GB. Enabling this will automatically choose size. |
 
 
 **Note**: `cal0blank`, `cal0writesys`, `usb3force`, as stated override the `exosphere.ini` or `system_settings.ini`. 0: Disable, 1: Enable, Key Missing: Use original value.
@@ -158,7 +165,7 @@ That's in case the kips are incompatible between them. If compatible, you can ov
 **Note2**: `blank_prodinfo_{sys/emu}mmc`, `allow_writing_to_cal_sysmmc` and `usb30_force_enabled` in `exosphere.ini` and `system_settings.ini` respectively, are the only atmosphere config keys that can affect hekate booting configuration externally, **if** the equivalent keys in hekate config are missing.
 
 
-### Payload storage:
+## Payload storage
 
 hekate has a boot storage in the binary that helps it configure it outside of BPMP environment:
 
@@ -174,7 +181,9 @@ hekate has a boot storage in the binary that helps it configure it outside of BP
 | '0xA0' emummc_path[120] | When `Boot to emuMMC` is set, it will override the current emuMMC (boot entry or emummc.ini). Must be NULL terminated. |
 
 
-### Nyx Configuration keys/values (nyx.ini):
+## Nyx Configuration keys/values (nyx.ini)
+
+Use `Nyx Settings` in Nyx to edit the following configuration:
 
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
