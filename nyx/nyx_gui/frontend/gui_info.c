@@ -1929,9 +1929,9 @@ error:
 	if (error)
 	{
 		if (error == -1)
-			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00 Aborted!#");
+			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00                      Aborted!                     #");
 		else
-			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00 IO Error occurred!#");
+			s_printf(txt_buf + strlen(txt_buf), "\n#FFDD00                 IO Error occurred!                #");
 
 		lv_label_set_text(lbl_status, txt_buf);
 		lv_obj_align(lbl_status, NULL, LV_ALIGN_CENTER, 0, 0);
@@ -2014,16 +2014,16 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		goto out_error;
 	}
 
-	u32 speed = 0;
+	u32 bus_clock = 0;
 	char *rsvd_blocks;
 	char life_a_txt[8];
 	char life_b_txt[8];
+	char bkops[64];
 	u32 cache = emmc_storage.ext_csd.cache_size;
 	u32 life_a = emmc_storage.ext_csd.dev_life_est_a;
 	u32 life_b = emmc_storage.ext_csd.dev_life_est_b;
 	u16 card_type = emmc_storage.ext_csd.card_type;
-	char card_type_support[96];
-	card_type_support[0] = 0;
+	char *max_bus_support = "Unknown";
 
 	// Identify manufacturer. Only official eMMCs.
 	switch (emmc_storage.cid.manfid)
@@ -2057,50 +2057,69 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		emmc_storage.cid.prv & 0xF, emmc_storage.cid.prv >> 4,
 		emmc_storage.cid.serial, emmc_storage.cid.month, emmc_storage.cid.year);
 
-	if (card_type & EXT_CSD_CARD_TYPE_HS_26)
-	{
-		strcat(card_type_support, "HS26");
-		speed = (26 << 16) | 26;
-	}
-	if (card_type & EXT_CSD_CARD_TYPE_HS_52)
-	{
-		strcat(card_type_support, ", HS52");
-		speed = (52 << 16) | 52;
-	}
-	if (card_type & EXT_CSD_CARD_TYPE_DDR_1_8V)
-	{
-		strcat(card_type_support, ", DDR52 1.8V");
-		speed = (52 << 16) | 104;
-	}
-	if (card_type & EXT_CSD_CARD_TYPE_HS200_1_8V)
-	{
-		strcat(card_type_support, ", HS200 1.8V");
-		speed = (200 << 16) | 200;
-	}
 	if (card_type & EXT_CSD_CARD_TYPE_HS400_1_8V)
+		max_bus_support = "HS400";
+	else if (card_type & EXT_CSD_CARD_TYPE_HS200_1_8V)
+		max_bus_support = "HS200";
+	else if (card_type & EXT_CSD_CARD_TYPE_DDR_1_8V)
+		max_bus_support = "DDR52";
+	else if (card_type & EXT_CSD_CARD_TYPE_HS_52)
+		max_bus_support = "HS52";
+	else if (card_type & EXT_CSD_CARD_TYPE_HS_26)
+		max_bus_support = "HS26";
+
+	if (emmc_storage.csd.busspeed == 400)
+		bus_clock = 200;
+	else
+		bus_clock = emmc_storage.csd.busspeed; // Except DDR52 where it's 26 MHz.
+
+	strcpy(bkops, "-");
+	if (emmc_storage.ext_csd.bkops)
 	{
-		strcat(card_type_support, ", HS400 1.8V");
-		speed = (200 << 16) | 400;
+		if (emmc_storage.ext_csd.bkops_en & EXT_CSD_BKOPS_AUTO)
+		{
+			strcpy(bkops, "Auto");
+			if (emmc_storage.ext_csd.bkops_en & EXT_CSD_BKOPS_MANUAL)
+				strcat(bkops, " + Manual");
+		}
+		else
+			strcpy(bkops, "Off");
+		strcat(bkops, ": ");
+
+		switch (emmc_storage.raw_ext_csd[EXT_CSD_BKOPS_STATUS])
+		{
+		case 0:
+			strcat(bkops, "OK");
+			break;
+		case 1:
+			strcat(bkops, "Minor");
+			break;
+		case 2:
+			strcat(bkops, "#FFDD00 Degraded#");
+			break;
+		case 3:
+			strcat(bkops, "#FFDD00 Critical#");
+			break;
+		}
 	}
 
 	strcpy(life_a_txt, "-");
 	strcpy(life_b_txt, "-");
 
-	// Normalize cells life.
-	if (life_a) // SK Hynix is 0 (undefined).
+	// Normalize cells life (Used -> Left).
+	if (life_a) // If 0 no NAND Type A.
 	{
-		life_a--;
-		life_a = (10 - life_a) * 10;
+		life_a = (10 - (life_a - 1)) * 10;
 		s_printf(life_a_txt, "%d%%", life_a);
 	}
 
-	if (life_b) // Toshiba is 0 (undefined).
+	if (life_b) // If 0 no NAND Type B.
 	{
-		life_b--;
-		life_b = (10 - life_b) * 10;
+		life_b = (10 - (life_b - 1)) * 10;
 		s_printf(life_b_txt, "%d%%", life_b);
 	}
 
+	// Reserved blocks used.
 	switch (emmc_storage.ext_csd.pre_eol_info)
 	{
 	case 1:
@@ -2118,12 +2137,13 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 	}
 
 	s_printf(txt_buf + strlen(txt_buf),
-		"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%d MB/s (%d MHz)\n%d MB/s\n%s\n%d %s\n%d MiB\nA: %s, B: %s\n%s",
+		"#00DDFF V1.%d (rev 1.%d)#\n%02X\n%s\n%d MB/s (%d MHz)\n%d MiB\n%d %s\n\n%s\nA: %s, B: %s\n%s",
 		emmc_storage.ext_csd.ext_struct, emmc_storage.ext_csd.rev,
-		emmc_storage.csd.cmdclass, speed & 0xFFFF, (speed >> 16) & 0xFFFF,
-		emmc_storage.csd.busspeed, card_type_support,
-		!(cache % 1024) ? (cache / 1024) : cache, !(cache % 1024) ? "MiB" : "KiB",
+		emmc_storage.csd.cmdclass, max_bus_support,
+		emmc_storage.csd.busspeed, bus_clock,
 		emmc_storage.ext_csd.max_enh_mult * EMMC_BLOCKSIZE / 1024,
+		!(cache % 1024) ? (cache / 1024) : cache, !(cache % 1024) ? "MiB" : "KiB",
+		bkops,
 		life_a_txt, life_b_txt, rsvd_blocks);
 
 	lv_label_set_static_text(lb_desc,
@@ -2135,25 +2155,25 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 		"Month/Year:\n\n"
 		"#00DDFF Ext CSD:#\n"
 		"Cmd Classes:\n"
-		"Max Rate:\n"
+		"Max Bus Rate:\n"
 		"Current Rate:\n"
-		"Type Support:\n\n"
-		"Write Cache:\n"
 		"Enhanced Area:\n"
+		"Write Cache:\n\n"
+		"Maintenance:\n"
 		"Estimated Life:\n"
 		"Reserved Used:"
 	);
 	lv_obj_set_width(lb_desc, lv_obj_get_width(desc));
 
-	lv_obj_t *val = lv_cont_create(win, NULL);
-	lv_obj_set_size(val, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
+	lv_obj_t *info = lv_cont_create(win, NULL);
+	lv_obj_set_size(info, LV_HOR_RES / 11 * 3, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
 
-	lv_obj_t * lb_val = lv_label_create(val, lb_desc);
+	lv_obj_t * lb_val = lv_label_create(info, lb_desc);
 
 	lv_label_set_text(lb_val, txt_buf);
 
-	lv_obj_set_width(lb_val, lv_obj_get_width(val));
-	lv_obj_align(val, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+	lv_obj_set_width(lb_val, lv_obj_get_width(info));
+	lv_obj_align(info, desc, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 
 	lv_obj_t *desc2 = lv_cont_create(win, NULL);
 	lv_obj_set_size(desc2, LV_HOR_RES / 2 / 4 * 4, LV_VER_RES - (LV_DPI * 11 / 7) - 5);
@@ -2209,7 +2229,7 @@ static lv_res_t _create_window_emmc_info_status(lv_obj_t *btn)
 
 	lv_label_set_text(lb_desc2, txt_buf);
 	lv_obj_set_width(lb_desc2, lv_obj_get_width(desc2));
-	lv_obj_align(desc2, val, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
+	lv_obj_align(desc2, info, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 6, 0);
 
 	emmc_errors = emmc_get_error_count();
 	if (emmc_get_mode() < EMMC_MMC_HS400  ||
