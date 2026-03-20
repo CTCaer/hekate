@@ -97,7 +97,7 @@ int tsec_query(void *tsec_keys, tsec_ctxt_t *tsec_ctxt)
 		pmc_domain_pwrgate_set(POWER_RAIL_CE3, DISABLE);
 
 		// Enable AHB aperture and set it to full mmio.
-		mc_enable_ahb_redirect();
+		mc_enable_ahb_redirect(0);
 	}
 
 	// Configure Falcon.
@@ -308,7 +308,7 @@ out:
 	bpmp_clk_rate_relaxed(false);
 
 	// Re-enable AHB aperture.
-	mc_enable_ahb_redirect();
+	mc_enable_ahb_redirect(1);
 
 	return res;
 }

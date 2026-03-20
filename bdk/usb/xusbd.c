@@ -931,7 +931,7 @@ int xusb_device_init()
 	bpmp_clk_rate_relaxed(false);
 
 	// Enable AHB redirect for access to IRAM for Event/EP ring buffers.
-	mc_enable_ahb_redirect();
+	mc_enable_ahb_redirect(1);
 
 	 // Enable XUSB device IPFS.
 	XUSB_DEV_DEV(XUSB_DEV_CONFIGURATION) |= DEV_CONFIGURATION_EN_FPCI;
