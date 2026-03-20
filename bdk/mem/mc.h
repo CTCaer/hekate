@@ -22,7 +22,7 @@
 
 void mc_config_tsec_carveout(u32 bom, u32 size1mb, bool lock);
 void mc_config_carveout_hos();
-void mc_enable_ahb_redirect();
+void mc_enable_ahb_redirect(u32 offset);
 void mc_disable_ahb_redirect();
 bool mc_client_has_access(void *address);
 void mc_enable();

@@ -107,13 +107,13 @@ void mc_config_carveout_hos()
 }
 
 // SDMMC, TSEC, XUSB and probably more need it to access < DRAM_START.
-void mc_enable_ahb_redirect()
+void mc_enable_ahb_redirect(u32 offset)
 {
 	// Bypass ARC clock gating.
 	CLOCK(CLK_RST_CONTROLLER_LVL2_CLK_GATE_OVRD) |= BIT(19);
 	//MC(MC_IRAM_REG_CTRL) &= ~BIT(0);
 	MC(MC_IRAM_BOM) = IRAM_BASE;
-	MC(MC_IRAM_TOM) = DRAM_START - 1; // Default is only IRAM: 0x4003F000.
+	MC(MC_IRAM_TOM) = DRAM_START - offset; // Default is only IRAM: 0x4003F000.
 }
 
 void mc_disable_ahb_redirect()
@@ -150,5 +150,5 @@ void mc_enable()
 	usleep(5);
 
 	// Enable redirection by default.
-	mc_enable_ahb_redirect();
+	mc_enable_ahb_redirect(1);
 }
