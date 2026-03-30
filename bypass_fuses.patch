@@ -1,0 +1,34 @@
+diff --git a/bootloader/main.c b/bootloader/main.c
+index 0000000..1111111 100644
+--- a/bootloader/main.c
++++ b/bootloader/main.c
+@@ -1,6 +1,7 @@
+ #include <string.h>
+ #include "ini.h"
+ #include "reboot.h"
++#include "utils/list.h"
+
+ void launch_entry(ini_sec_t *cfg)
+ {
++    // --- NEW FEATURE: bypass_fuses=1 ---
++    bool bypass_fuses = false;
++
++    LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg->kvs, link)
++    {
++        if (!strcmp(kv->key, "bypass_fuses"))
++        {
++            if (kv->val[0] != '0' && kv->val[0] != '\0')
++                bypass_fuses = true;
++            break;
++        }
++    }
++
++    if (bypass_fuses)
++    {
++        // Same behaviour as Tools → Reboot → OFW
++        reboot_to_ofw();
++        return;
++    }
++    // --- END NEW FEATURE ---
+
+     // existing launch logic continues here...
