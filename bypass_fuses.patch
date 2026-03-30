@@ -1,0 +1,51 @@
+diff --git a/bootloader/main.c b/bootloader/main.c
+--- a/bootloader/main.c
++++ b/bootloader/main.c
+@@ static void _launch_ini_list()
+-        if (cfg_sec && !special_path)
+-        {
+-            LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+-            {
+-                if (!strcmp("emummc_force_disable", kv->key))
+-                    h_cfg.emummc_force_disable = atoi(kv->val);
+-                else if (!strcmp("emupath", kv->key))
+-                    emummc_path = kv->val;
+-            }
+-
+-            if (emummc_path && !emummc_set_path(emummc_path))
+-            {
+-                EPRINTF("emupath is wrong!");
+-                goto wrong_emupath;
+-            }
+-        }
++        if (cfg_sec && !special_path)
++        {
++            bool bypass_fuses = false;
++
++            LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
++            {
++                if (!strcmp("emummc_force_disable", kv->key))
++                    h_cfg.emummc_force_disable = atoi(kv->val);
++                else if (!strcmp("emupath", kv->key))
++                    emummc_path = kv->val;
++                else if (!strcmp("bypass_fuses", kv->key))
++                {
++                    if (kv->val[0] != '0' && kv->val[0] != '\0')
++                        bypass_fuses = true;
++                }
++            }
++
++            if (emummc_path && !emummc_set_path(emummc_path))
++            {
++                EPRINTF("emupath is wrong!");
++                goto wrong_emupath;
++            }
++
++            if (bypass_fuses)
++            {
++                // Same behaviour as Tools → Reboot → OFW
++                reboot_to_ofw();
++                free(ments);
++                return;
++            }
++        }
