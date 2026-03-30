@@ -374,6 +374,27 @@ static void _launch_ini_list()
 				goto wrong_emupath;
 			}
 		}
+		
+		if (cfg_sec && !special_path)
+		{
+			bool bypass_fuses = false;
+
+			LIST_FOREACH_ENTRY(ini_kv_t, kv, &cfg_sec->kvs, link)
+			{
+				if (!strcmp("bypass_fuses", kv->key))
+				{
+					if (kv->val[0] != '0' && kv->val[0] != '\0')
+						bypass_fuses = true;
+				}
+			}
+
+			if (bypass_fuses)
+			{
+				reboot_to_ofw();
+				free(ments);
+				return;
+			}
+		}
 
 		if (!cfg_sec)
 		{
