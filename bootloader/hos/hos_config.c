@@ -321,7 +321,7 @@ static int _config_contents(launch_ctxt_t *ctxt, const char *value)
         f_rename(value, "atmosphere/contents");
         sd_save_to_file(value, strlen(value) + 1, "atmosphere/path.flag");
     }
-    else if !(contents_exists && path_flag && !strcmp(path_flag, value)) // Folder already renamed.
+    else if (!(contents_exists && path_flag && !strcmp(path_flag, value))) // Folder already renamed.
         res = 1; ///// Contents is missing or path flag is missing or original doesn't exist.
 
     free(path_flag); ///// You can avoid `if (path_flag)` since free checks if >= DRAM
