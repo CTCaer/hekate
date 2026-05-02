@@ -2758,7 +2758,9 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		s_printf(txt_buf + strlen(txt_buf), "%d mV\n", value);
 
 		max17050_get_property(MAX17050_TEMP, &value);
-		s_printf(txt_buf + strlen(txt_buf), "%d.%d oC\n\n\n", value / 10, (value >= 0 ? value : (~value + 1)) % 10);
+		s_printf(txt_buf + strlen(txt_buf), "#%s %d.%d oC#\n\n\n",
+			gui_temp_color(value, true),
+			value / 10, (value >= 0 ? value : (~value + 1)) % 10);
 	}
 	else
 		strcpy(txt_buf, "\n#FF8000 "SYMBOL_WARNING" Error!#\n\n\n\n\n\n\n\n\n\n\n\n\n");
@@ -2863,19 +2865,19 @@ static lv_res_t _create_window_battery_status(lv_obj_t *btn)
 		switch (value)
 		{
 		case 0:
-			strcat(txt_buf, "Normal");
+			strcat(txt_buf, "#88CC00 Normal#");
 			break;
 		case 2:
-			strcat(txt_buf, "Warm");
+			strcat(txt_buf, "#FFDD00 Warm#");
 			break;
 		case 3:
-			strcat(txt_buf, "Cool");
+			strcat(txt_buf, "#33CCFF Cool#");
 			break;
 		case 5:
-			strcat(txt_buf, "#FF8000 Cold#");
+			strcat(txt_buf, "#00BBFF Cold#");
 			break;
 		case 6:
-			strcat(txt_buf, "#FF8000 Hot#");
+			strcat(txt_buf, "#FF3030 Hot#");
 			break;
 		default:
 			s_printf(txt_buf + strlen(txt_buf), "Unknown (%d)", value);
