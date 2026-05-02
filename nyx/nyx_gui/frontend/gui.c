@@ -1360,6 +1360,27 @@ static void _create_tab_about(lv_theme_t * th, lv_obj_t * parent)
 	lv_label_set_text(lbl_ver, version);
 }
 
+const char *gui_temp_color(int temp_c10, bool is_battery)
+{
+	if (is_battery)
+	{
+		// Battery charge window is 0-45 °C; >50 is critical.
+		if (temp_c10 <    0) return "00BBFF";
+		if (temp_c10 <  100) return "33CCFF";
+		if (temp_c10 <  350) return "88CC00";
+		if (temp_c10 <  420) return "FFDD00";
+		if (temp_c10 <  500) return "FF8000";
+		return                      "FF3030";
+	}
+
+	// SoC: fan @41 °C, throttle ~75 °C, hard limit ~95 °C.
+	if (temp_c10 <  300) return "33CCFF";
+	if (temp_c10 <  500) return "88CC00";
+	if (temp_c10 <  650) return "FFDD00";
+	if (temp_c10 <  800) return "FF8000";
+	return                      "FF3030";
+}
+
 static void _update_status_bar(void *params)
 {
 	static char *label = NULL;
@@ -1387,10 +1408,18 @@ static void _update_status_bar(void *params)
 		label = (char *)malloc(512);
 
 	// Set time and SoC temperature.
-	s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d",
-		time.hour, time.min, soc_temp_dec, (soc_temp & 0xFF) / 10);
+	const char *soc_color = gui_temp_color((int)soc_temp_dec * 10, false);
+	s_printf(label, "%02d:%02d "SYMBOL_DOT" #%s "SYMBOL_TEMPERATURE" %02d.%d#",
+		time.hour, time.min, soc_color, soc_temp_dec, (soc_temp & 0xFF) / 10);
 
 	lv_label_set_text(status_bar.time_temp, label);
+
+	// "°" and "C" are separate labels (smaller font); recolor them to match.
+	char unit_buf[24];
+	s_printf(unit_buf, " #%s "SYMBOL_DOT"#", soc_color);
+	lv_label_set_text(status_bar.temp_symbol, unit_buf);
+	s_printf(unit_buf, "#%s C#", soc_color);
+	lv_label_set_text(status_bar.temp_degrees, unit_buf);
 
 	lv_obj_realign(status_bar.temp_symbol);
 	lv_obj_realign(status_bar.temp_degrees);
@@ -2190,16 +2219,19 @@ static void _create_status_bar(lv_theme_t * th)
 
 	// Time, temperature.
 	lv_obj_t *lbl_time_temp = lv_label_create(status_bar_bg, NULL);
+	lv_label_set_recolor(lbl_time_temp, true);
 	lv_label_set_text(lbl_time_temp, "00:00 "SYMBOL_DOT" "SYMBOL_TEMPERATURE" 00.0");
 	lv_obj_align(lbl_time_temp, lbl_left, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
 	status_bar.time_temp = lbl_time_temp;
 
 	lbl_left = lv_label_create(status_bar_bg, NULL);
+	lv_label_set_recolor(lbl_left, true);
 	lv_label_set_text(lbl_left, " "SYMBOL_DOT);
 	lv_obj_align(lbl_left, lbl_time_temp, LV_ALIGN_OUT_RIGHT_MID, 0, -LV_DPI / 14);
 	status_bar.temp_symbol = lbl_left;
 
 	lv_obj_t *lbl_degrees = lv_label_create(status_bar_bg, NULL);
+	lv_label_set_recolor(lbl_degrees, true);
 	lv_label_set_text(lbl_degrees, "C");
 	lv_obj_align(lbl_degrees, lbl_left, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 50, LV_DPI / 14);
 	status_bar.temp_degrees = lbl_degrees;
