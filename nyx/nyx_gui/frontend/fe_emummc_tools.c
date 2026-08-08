@@ -32,6 +32,7 @@
 
 #define OUT_FILENAME_SZ      128
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
+#define FILE_EMUMMC_SPLIT_SIZE      0xFE000000
 
 void load_emummc_cfg(emummc_cfg_t *emu_info)
 {
@@ -145,7 +146,7 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	static const u32 FAT32_FILESIZE_LIMIT = 0xFFFFFFFF;
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
-	u32 multipartSplitSize = 0xFE000000;
+	u32 multipartSplitSize = FILE_EMUMMC_SPLIT_SIZE;
 	u32 totalSectors = part->lba_end - part->lba_start + 1;
 	u32 currPartIdx = 0;
 	u32 numSplitParts = 0;
@@ -353,11 +354,188 @@ static int _dump_emummc_file_part(emmc_tool_gui_t *gui, char *sd_path, sdmmc_sto
 	return 0;
 }
 
-void dump_emummc_file(emmc_tool_gui_t *gui)
+static int _emummc_file_write_sectors(const char *base_path, u32 file_part_sectors, u32 sector, u32 count, const void *buff)
+{
+	FIL fp;
+	char path[OUT_FILENAME_SZ];
+	const u8 *buf = (const u8 *)buff;
+	u32 path_len;
+
+	strcpy(path, base_path);
+	path_len = strlen(path);
+	strcat(path, "00");
+
+	while (count)
+	{
+		u32 file_part = sector / file_part_sectors;
+		u32 file_sector = sector % file_part_sectors;
+		u32 sector_count = MIN(count, file_part_sectors - file_sector);
+
+		update_emummc_base_folder(path, path_len, file_part);
+
+		if (f_open(&fp, path, FA_WRITE))
+			return 1;
+
+		f_lseek(&fp, (u64)file_sector << 9);
+		if (f_write(&fp, buf, (u64)sector_count << 9, NULL))
+		{
+			f_close(&fp);
+			return 1;
+		}
+
+		f_close(&fp);
+
+		sector += sector_count;
+		count  -= sector_count;
+		buf    += sector_count * EMMC_BLOCKSIZE;
+	}
+
+	return 0;
+}
+
+static int _finalize_resized_file_emummc(emmc_tool_gui_t *gui, const char *base_path, u32 resized_count, u32 file_part_sectors)
+{
+	u32 user_offset = 0;
+	u8 *buf = (u8 *)MIXD_BUF_ALIGNED;
+
+	LIST_INIT(gpt_parsed);
+	emmc_gpt_parse(&gpt_parsed);
+	emmc_part_t *user_part_src = emmc_part_find(&gpt_parsed, "USER");
+	if (!user_part_src)
+	{
+		s_printf(gui->txt_buf, "\n#FFDD00 USER partition not found!#\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+		emmc_gpt_free(&gpt_parsed);
+		return 1;
+	}
+
+	user_offset = user_part_src->lba_start;
+	emmc_gpt_free(&gpt_parsed);
+	if (resized_count <= user_offset + 33)
+	{
+		s_printf(gui->txt_buf, "\n#FFDD00 Resized emuMMC is too small!#\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+		return 1;
+	}
+
+	// Calculate USER size and set it for FatFS.
+	u32 user_sectors = resized_count - user_offset - 33;
+	user_sectors = ALIGN_DOWN(user_sectors, 0x20); // Align down to cluster size.
+	disk_set_info(DRIVE_EMU, SET_SECTOR_COUNT, &user_sectors);
+
+	// Initialize BIS for file based emuMMC.
+	emmc_part_t user_part = {0};
+	user_part.lba_start = user_offset;
+	user_part.lba_end = user_offset + user_sectors - 1;
+	strcpy(user_part.name, "USER");
+	nx_emmc_bis_set_file_backend(base_path, file_part_sectors);
+	nx_emmc_bis_init(&user_part, true, 0);
+
+	s_printf(gui->txt_buf, "Formatting resized USER... ");
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+	manual_system_maintenance(true);
+
+	// Format USER partition as FAT32 with 16KB cluster and PRF2SAFE.
+	u8 *buff = malloc(SZ_4M);
+	int mkfs_error = f_mkfs("emu:", FM_FAT32 | FM_SFD | FM_PRF2, 16384, buff, SZ_4M);
+	free(buff);
+
+	// Mount sd card back.
+	sd_mount();
+
+	if (mkfs_error)
+	{
+		s_printf(gui->txt_buf, "#FF0000 Failed (%d)!#\nPlease try again...\n", mkfs_error);
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		nx_emmc_bis_end();
+
+		return 1;
+	}
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, "Done!\n");
+
+	// Flush BIS cache, deinit, clear BIS keys slots and reinstate SBK.
+	nx_emmc_bis_end();
+	hos_bis_keys_clear();
+
+	s_printf(gui->txt_buf, "Writing resized GPT... ");
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+	manual_system_maintenance(true);
+
+	// Read MBR, GPT and backup GPT from eMMC.
+	mbr_t mbr;
+	gpt_t *gpt = zalloc(sizeof(gpt_t));
+	gpt_header_t gpt_hdr_backup;
+	sdmmc_storage_read(&emmc_storage, 0, 1, &mbr);
+	sdmmc_storage_read(&emmc_storage, 1, sizeof(gpt_t) >> 9, gpt);
+	sdmmc_storage_read(&emmc_storage, gpt->header.alt_lba, 1, &gpt_hdr_backup);
+
+	// Find USER partition.
+	u32 gpt_entry_idx = 0;
+	for (gpt_entry_idx = 0; gpt_entry_idx < gpt->header.num_part_ents; gpt_entry_idx++)
+		if (!memcmp(gpt->entries[gpt_entry_idx].name, (char[]) { 'U', 0, 'S', 0, 'E', 0, 'R', 0 }, 8))
+			break;
+
+	if (gpt_entry_idx >= gpt->header.num_part_ents)
+	{
+		s_printf(gui->txt_buf, "\n#FF0000 No USER partition...#\nPlease try again...\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		free(gpt);
+
+		return 1;
+	}
+
+	// Set new emuMMC size and USER size.
+	mbr.partitions[0].size_sct = resized_count - 1; // Exclude MBR sector.
+	gpt->entries[gpt_entry_idx].lba_end = user_part.lba_end;
+
+	// Update Main GPT.
+	gpt->header.alt_lba = resized_count - 1;
+	gpt->header.last_use_lba = resized_count - 34;
+	gpt->header.part_ents_crc32 = crc32_calc(0, (const u8 *)gpt->entries, sizeof(gpt_entry_t) * gpt->header.num_part_ents);
+	gpt->header.crc32 = 0; // Set to 0 for calculation.
+	gpt->header.crc32 = crc32_calc(0, (const u8 *)&gpt->header, gpt->header.size);
+
+	// Update Backup GPT.
+	memcpy(&gpt_hdr_backup, &gpt->header, sizeof(gpt_header_t));
+	gpt_hdr_backup.my_lba = resized_count - 1;
+	gpt_hdr_backup.alt_lba = 1;
+	gpt_hdr_backup.part_ent_lba = resized_count - 33;
+	gpt_hdr_backup.crc32 = 0; // Set to 0 for calculation.
+	gpt_hdr_backup.crc32 = crc32_calc(0, (const u8 *)&gpt_hdr_backup, gpt_hdr_backup.size);
+
+	int res = 0;
+	res |= _emummc_file_write_sectors(base_path, file_part_sectors, gpt->header.my_lba, sizeof(gpt_t) >> 9, gpt);
+	res |= _emummc_file_write_sectors(base_path, file_part_sectors, gpt_hdr_backup.part_ent_lba, (sizeof(gpt_entry_t) * 128) >> 9, gpt->entries);
+	res |= _emummc_file_write_sectors(base_path, file_part_sectors, gpt_hdr_backup.my_lba, 1, &gpt_hdr_backup);
+	res |= _emummc_file_write_sectors(base_path, file_part_sectors, 0, 1, &mbr);
+
+	// Clear nand patrol.
+	memset(buf, 0, EMMC_BLOCKSIZE);
+	res |= _emummc_file_write_sectors(base_path, file_part_sectors, NAND_PATROL_SECTOR, 1, buf);
+
+	free(gpt);
+
+	if (res)
+	{
+		s_printf(gui->txt_buf, "#FF0000 Failed!#\nPlease try again...\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+
+		return 1;
+	}
+
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, "Done!\n");
+
+	return 0;
+}
+
+void dump_emummc_file(emmc_tool_gui_t *gui, u32 resized_count)
 {
 	int res = 1;
 	int base_len = 0;
 	u32 timer = 0;
+	u32 file_part_sectors = FILE_EMUMMC_SPLIT_SIZE / EMMC_BLOCKSIZE;
 
 	char *txt_buf = (char *)malloc(SZ_16K);
 	gui->base_path = (char *)malloc(OUT_FILENAME_SZ);
@@ -383,6 +561,13 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	if (emmc_initialize(false))
 	{
 		lv_label_set_text(gui->label_info, "#FFDD00 Failed to init eMMC!#");
+		goto out;
+	}
+
+	if (resized_count && !emummc_raw_derive_bis_keys())
+	{
+		s_printf(gui->txt_buf, "#FFDD00 For formatting USER partition,#\n#FFDD00 BIS keys are needed!#\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
 		goto out;
 	}
 
@@ -455,8 +640,16 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	emmc_part_t rawPart;
 	memset(&rawPart, 0, sizeof(rawPart));
 	rawPart.lba_start = 0;
-	rawPart.lba_end = RAW_AREA_NUM_SECTORS - 1;
 	strcpy(rawPart.name, "GPP");
+
+	if (resized_count)
+	{
+		if (RAW_AREA_NUM_SECTORS < resized_count)
+			resized_count = RAW_AREA_NUM_SECTORS;
+		rawPart.lba_end = resized_count - 1;
+	}
+	else
+		rawPart.lba_end = RAW_AREA_NUM_SECTORS - 1;
 
 	s_printf(txt_buf, "#00DDFF %02d: %s#\n#00DDFF Range: 0x%08X - 0x%08X#\n\n",
 		i, rawPart.name, rawPart.lba_start, rawPart.lba_end);
@@ -470,7 +663,15 @@ void dump_emummc_file(emmc_tool_gui_t *gui)
 	if (res)
 		s_printf(txt_buf, "#FFDD00 Failed!#\n");
 	else
+	{
 		s_printf(txt_buf, "Done!\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
+		manual_system_maintenance(true);
+
+		if (resized_count)
+			res = _finalize_resized_file_emummc(gui, gui->base_path, resized_count, file_part_sectors);
+		txt_buf[0] = 0;
+	}
 
 	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, txt_buf);
 	manual_system_maintenance(true);

@@ -26,6 +26,7 @@
 #include <storage/emmc.h>
 #include <storage/sd.h>
 #include <storage/sdmmc.h>
+#include <libs/fatfs/ff.h>
 #include <utils/types.h>
 
 #define BIS_CLUSTER_SECTORS   32
@@ -53,9 +54,81 @@ typedef struct _bis_cache_t
 static u8  ks_crypt = 0;
 static u8  ks_tweak = 0;
 static u32 emu_offset = 0;
+static bool emu_file_backend = false;
+static u32  emu_file_part_sectors = 0;
+static char emu_file_path[0x200];
 static emmc_part_t *system_part = NULL;
 static u32 *cache_lookup_tbl = (u32 *)NX_BIS_LOOKUP_ADDR;
 static bis_cache_t *bis_cache = (bis_cache_t *)NX_BIS_CACHE_ADDR;
+
+static void _nx_emmc_bis_update_file_path(u32 file_part)
+{
+	u32 path_len = strlen(emu_file_path);
+
+	if (file_part >= 10)
+	{
+		char tmp[12];
+		u32 idx = sizeof(tmp) - 1;
+		tmp[idx] = 0;
+
+		do
+		{
+			tmp[--idx] = '0' + (file_part % 10);
+			file_part /= 10;
+		}
+		while (file_part);
+
+		strcpy(emu_file_path + path_len - 2, &tmp[idx]);
+	}
+	else
+	{
+		emu_file_path[path_len - 2] = '0';
+		emu_file_path[path_len - 1] = '0' + file_part;
+		emu_file_path[path_len] = 0;
+	}
+}
+
+static int _nx_emmc_bis_file_read_write(u32 sector, u32 count, void *buff, bool write)
+{
+	FIL fp;
+	u8 *buf = (u8 *)buff;
+
+	while (count)
+	{
+		u32 file_part = sector / emu_file_part_sectors;
+		u32 file_sector = sector % emu_file_part_sectors;
+		u32 sector_count = MIN(count, emu_file_part_sectors - file_sector);
+
+		_nx_emmc_bis_update_file_path(file_part);
+
+		if (f_open(&fp, emu_file_path, write ? FA_WRITE : FA_READ))
+			return 1;
+
+		f_lseek(&fp, (u64)file_sector << 9);
+
+		if (write)
+		{
+			if (f_write(&fp, buf, (u64)sector_count << 9, NULL))
+			{
+				f_close(&fp);
+				return 1;
+			}
+		}
+		else if (f_read(&fp, buf, (u64)sector_count << 9, NULL))
+		{
+			f_close(&fp);
+			return 1;
+		}
+
+		f_close(&fp);
+
+		sector += sector_count;
+		count  -= sector_count;
+		buf    += sector_count * EMMC_BLOCKSIZE;
+	}
+
+	return 0;
+}
 
 static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush)
 {
@@ -95,7 +168,9 @@ static int nx_emmc_bis_write_block(u32 sector, u32 count, void *buff, bool flush
 		return 1; // Encryption error.
 
 	// If not reading from cache, do a regular read and decrypt.
-	if (!emu_offset)
+	if (emu_file_backend)
+		res = _nx_emmc_bis_file_read_write(system_part->lba_start + sector, count, bis_cache->dma_buff, true);
+	else if (!emu_offset)
 		res = emmc_part_write(system_part, sector, count, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_write(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
@@ -155,7 +230,9 @@ static int nx_emmc_bis_read_block_normal(u32 sector, u32 count, void *buff)
 	u32  sector_in_cluster = sector % BIS_CLUSTER_SECTORS;
 
 	// If not reading from cache, do a regular read and decrypt.
-	if (!emu_offset)
+	if (emu_file_backend)
+		res = _nx_emmc_bis_file_read_write(system_part->lba_start + sector, count, bis_cache->dma_buff, false);
+	else if (!emu_offset)
 		res = emmc_part_read(system_part, sector, count, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + sector, count, bis_cache->dma_buff);
@@ -212,7 +289,9 @@ static int nx_emmc_bis_read_block_cached(u32 sector, u32 count, void *buff)
 	cache_lookup_tbl[cluster] = bis_cache->top_idx;
 
 	// Read the whole cluster the sector resides in.
-	if (!emu_offset)
+	if (emu_file_backend)
+		res = _nx_emmc_bis_file_read_write(system_part->lba_start + cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff, false);
+	else if (!emu_offset)
 		res = emmc_part_read(system_part, cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
 	else
 		res = sdmmc_storage_read(&sd_storage, emu_offset + system_part->lba_start + cluster_sector, BIS_CLUSTER_SECTORS, bis_cache->dma_buff);
@@ -292,6 +371,22 @@ int nx_emmc_bis_write(u32 sector, u32 count, void *buff)
 	return 0;
 }
 
+void nx_emmc_bis_set_file_backend(const char *path, u32 file_part_sectors)
+{
+	emu_file_backend = path && file_part_sectors;
+	emu_file_part_sectors = file_part_sectors;
+
+	if (emu_file_backend)
+	{
+		strcpy(emu_file_path, path);
+		if (emu_file_path[strlen(emu_file_path) - 1] != '/')
+			strcat(emu_file_path, "/");
+		strcat(emu_file_path, "00");
+	}
+	else
+		emu_file_path[0] = 0;
+}
+
 void nx_emmc_bis_init(emmc_part_t *part, bool enable_cache, u32 emummc_offset)
 {
 	system_part = part;
@@ -322,4 +417,5 @@ void nx_emmc_bis_end()
 {
 	_nx_emmc_bis_flush_cache();
 	system_part = NULL;
+	nx_emmc_bis_set_file_backend(NULL, 0);
 }
