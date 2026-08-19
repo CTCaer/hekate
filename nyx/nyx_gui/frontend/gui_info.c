@@ -332,6 +332,12 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
 		break;
+	case PANEL_RRM_SUPER5_OLED:
+		strcat(txt_buf, "RRM SUPER5 OLED");
+		break;
+	case PANEL_RRM_SUPER5_OLED_FHD:
+		strcat(txt_buf, "RRM SUPER5 OLED FHD");
+		break;
 	default:
 		switch (cal0->lcd_vendor & 0xFF)
 		{
@@ -347,6 +353,9 @@ static lv_res_t _create_mbox_cal0(lv_obj_t *btn)
 			break;
 		case (PANEL_SAM_AMS699VC01 & 0xFF):
 			strcat(txt_buf, "Samsung ");
+			break;
+		case PANEL_RRM_FHD:
+			strcat(txt_buf, "Retro Remake ");
 			break;
 		}
 		strcat(txt_buf, "Unknown");
@@ -1130,6 +1139,22 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 
 	case PANEL_SAM_AMS699VC01:
 		strcat(txt_buf, "Samsung AMS699VC01");
+		break;
+
+	case PANEL_RRM_SUPER7:
+		strcat(txt_buf, display_rev == 0x11 ? "RRM SUPER7 OLED" : "RRM SUPER7 IPS");
+		break;
+
+	case PANEL_RRM_SUPER7_FHD:
+		strcat(txt_buf, display_rev == 0x11 ? "RRM SUPER7 OLED FHD" : "RRM SUPER7 IPS FHD");
+		break;
+
+	case PANEL_RRM_SUPER5_OLED:
+		strcat(txt_buf, "RRM SUPER5 OLED");
+		break;
+
+	case PANEL_RRM_SUPER5_OLED_FHD:
+		strcat(txt_buf, "RRM SUPER5 OLED FHD");
 		break;
 
 	case PANEL_OEM_CLONE_6_2:

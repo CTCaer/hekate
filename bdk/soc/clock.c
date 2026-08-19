@@ -482,17 +482,27 @@ static void _clock_pll_wait_lock(u32 base, u32 max_delay)
 	usleep(2);
 }
 
-void clock_enable_plld(u32 divp, u32 divn, bool lowpower, bool tegra_t210)
+void clock_enable_plld(u32 divp, u32 divn, bool lowpower,
+			bool tegra_t210, bool _display_fhd)
 {
+	u32 misc;
 	u32 plld_div = (divp << 20) | (divn << 11) | 1;
 
 	// N divider is fractional, so N = DIVN + 1/2 + PLLD_SDM_DIN/8192.
-	u32 misc = BIT(21) | BIT(19) | BIT(18) | BIT(16) | 0xFC00; // Clock enable and PLLD_SDM_DIN: -1024 -> DIVN + 0.375.
+	misc = BIT(21) | BIT(19) | BIT(18) | BIT(16) | 0xFC00; // Clock enable and PLLD_SDM_DIN: -1024 -> DIVN + 0.375.
+
+	// N divider is fractional, so N = DIVN + 1/2 + PLLD_SDM_DIN/8192. SDM_DIN (0x0C8E) is signed 16-bit.
+	if (_display_fhd)
+		misc = BIT(21) | BIT(19) | BIT(18) | BIT(16) | (0x0C8E & 0xFFFF); // Clock enable and PLLD_SDM_DIN.
+
 	if (lowpower && tegra_t210)
 		misc = BIT(21) | BIT(19) | BIT(18) | BIT(16) | 0x0AAA; // Clock enable and PLLD_SDM_DIN:  2730 -> DIVN + 0.833.
 
 	// Set DISP1 clock source.
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_DISP1) = 2 << 29u; // PLLD_OUT0.
+
+	// Disable PLLD. Changing PLLD_SDM_DIN or DIVP on an enabled PLL glitches it.
+	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE) &= ~PLL_BASE_ENABLE;
 
 	// Set dividers and enable PLLD.
 	CLOCK(CLK_RST_CONTROLLER_PLLD_BASE)  = PLL_BASE_ENABLE | PLL_BASE_LOCK | plld_div;
@@ -1008,4 +1018,3 @@ u32 clock_get_dev_freq(clock_pto_id_t id)
 
 	return freq_khz;
 }
-
