@@ -35,10 +35,18 @@ typedef struct _mbr_ctxt_t
 	u32 sector_start;
 } mbr_ctxt_t;
 
+#define FILE_EMUMMC_MIN_GIB         4
+#define FILE_EMUMMC_MAX_GIB         28
+#define FILE_EMUMMC_DEFAULT_GIB     5
+#define FILE_EMUMMC_SECTORS_PER_GIB 0x200000
+
 static bool emummc_backup;
 static mbr_ctxt_t mbr_ctx;
 static lv_obj_t *emummc_manage_window;
 static lv_res_t (*emummc_tools)(lv_obj_t *btn);
+static u32 file_resized_count;
+static u32 file_size_gib;
+static lv_obj_t *file_size_label;
 
 static lv_res_t _action_emummc_window_close(lv_obj_t *btn)
 {
@@ -132,7 +140,7 @@ static void _create_window_emummc()
 	emmc_tool_gui_ctxt.label_finish = label_finish;
 
 	if (!mbr_ctx.part_idx)
-		dump_emummc_file(&emmc_tool_gui_ctxt);
+		dump_emummc_file(&emmc_tool_gui_ctxt, file_resized_count);
 	else
 		dump_emummc_raw(&emmc_tool_gui_ctxt, mbr_ctx.part_idx, mbr_ctx.sector_start, mbr_ctx.resized_cnt[mbr_ctx.part_idx - 1]);
 
@@ -193,6 +201,109 @@ static lv_res_t _create_emummc_raw_action(lv_obj_t * btns, const char * txt)
 	nyx_mbox_action(btns, txt);
 
 	return LV_RES_INV;
+}
+
+static lv_res_t _action_slider_file_size(lv_obj_t *slider)
+{
+	char lbl_text[64];
+
+	file_size_gib = lv_slider_get_value(slider);
+	s_printf(lbl_text, "#C7EA46 %d GiB#", file_size_gib);
+	lv_label_set_text(file_size_label, lbl_text);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t _create_emummc_file_size_action(lv_obj_t *btns, const char *txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+
+	nyx_mbox_action(btns, txt);
+
+	if (!btn_idx)
+	{
+		file_resized_count = file_size_gib * FILE_EMUMMC_SECTORS_PER_GIB;
+		_create_window_emummc();
+	}
+
+	return LV_RES_INV;
+}
+
+static void _create_mbox_emummc_file_size()
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\222Continue", "\222Cancel", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 5);
+	lv_mbox_set_text(mbox,
+		"#FF8000 SD File emuMMC#\n\n"
+		"Choose resized emuMMC size:");
+
+	file_size_gib = FILE_EMUMMC_DEFAULT_GIB;
+	file_size_label = lv_label_create(mbox, NULL);
+	lv_label_set_recolor(file_size_label, true);
+	lv_label_set_static_text(file_size_label, "#C7EA46 5 GiB#");
+
+	lv_obj_t *slider = lv_slider_create(mbox, NULL);
+	lv_obj_set_size(slider, LV_DPI * 4, LV_DPI / 3);
+	lv_slider_set_range(slider, FILE_EMUMMC_MIN_GIB, FILE_EMUMMC_MAX_GIB);
+	lv_slider_set_value(slider, FILE_EMUMMC_DEFAULT_GIB);
+	lv_slider_set_action(slider, _action_slider_file_size);
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_file_size_action);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
+}
+
+static lv_res_t _create_emummc_file_mode_action(lv_obj_t *btns, const char *txt)
+{
+	int btn_idx = lv_btnm_get_pressed(btns);
+	lv_obj_t *bg = lv_obj_get_parent(lv_obj_get_parent(btns));
+
+	switch (btn_idx)
+	{
+	case 0:
+		file_resized_count = 0;
+		lv_obj_set_style(bg, &lv_style_transp);
+		_create_window_emummc();
+		break;
+	case 1:
+		_create_mbox_emummc_file_size();
+		break;
+	default:
+		break;
+	}
+
+	nyx_mbox_action(btns, txt);
+
+	return LV_RES_INV;
+}
+
+static void _create_mbox_emummc_file()
+{
+	lv_obj_t *dark_bg = lv_obj_create(lv_scr_act(), NULL);
+	lv_obj_set_style(dark_bg, &mbox_darken);
+	lv_obj_set_size(dark_bg, LV_HOR_RES, LV_VER_RES);
+
+	static const char *mbox_btn_map[] = { "\222Full Size", "\222Custom Size", "\222Cancel", "" };
+	lv_obj_t *mbox = lv_mbox_create(dark_bg, NULL);
+	lv_mbox_set_recolor_text(mbox, true);
+	lv_obj_set_width(mbox, LV_HOR_RES / 9 * 6);
+
+	lv_mbox_set_text(mbox,
+		"#FF8000 SD File emuMMC#\n\n"
+		"#C7EA46 Full Size# creates the classic 29/64 GiB file emuMMC.\n"
+		"#C7EA46 Custom Size# creates a resized file emuMMC.");
+
+	lv_mbox_add_btns(mbox, mbox_btn_map, _create_emummc_file_mode_action);
+
+	lv_obj_align(mbox, NULL, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_top(mbox, true);
 }
 
 static void _create_mbox_emummc_raw()
@@ -312,7 +423,6 @@ static void _create_mbox_emummc_raw()
 static lv_res_t _create_emummc_action(lv_obj_t * btns, const char * txt)
 {
 	int btn_idx = lv_btnm_get_pressed(btns);
-	lv_obj_t *bg = lv_obj_get_parent(lv_obj_get_parent(btns));
 
 	mbr_ctx.part_idx = 0;
 	mbr_ctx.sector_start = 0;
@@ -320,8 +430,7 @@ static lv_res_t _create_emummc_action(lv_obj_t * btns, const char * txt)
 	switch (btn_idx)
 	{
 	case 0:
-		lv_obj_set_style(bg, &lv_style_transp);
-		_create_window_emummc();
+		_create_mbox_emummc_file();
 		break;
 	case 1:
 		_create_mbox_emummc_raw();

@@ -237,6 +237,7 @@ typedef struct _nx_emmc_cal0_t
 
 int  nx_emmc_bis_read(u32 sector, u32 count, void *buff);
 int  nx_emmc_bis_write(u32 sector, u32 count, void *buff);
+void nx_emmc_bis_set_file_backend(const char *path, u32 file_part_sectors);
 void nx_emmc_bis_init(emmc_part_t *part, bool enable_cache, u32 emummc_offset);
 void nx_emmc_bis_end();
 
