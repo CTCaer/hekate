@@ -375,7 +375,7 @@ static lv_res_t _save_nyx_options_action(lv_obj_t *btn)
 
 void create_flat_button(lv_obj_t *btn, int color_idx, lv_action_t action)
 {
-	lv_color_t color = color_idx ? lv_color_hsv_to_rgb(color_idx, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90);
+	lv_color_t color = COLOR_HOS_TURQUOISE_EX(color_idx, n_cfg.theme_sat, n_cfg.theme_val);
 	lv_style_t *btn_onoff_rel_hos_style = malloc(sizeof(lv_style_t));
 	lv_style_t *btn_onoff_pr_hos_style  = malloc(sizeof(lv_style_t));
 	lv_style_copy(btn_onoff_rel_hos_style, lv_theme_get_current()->btn.rel);
@@ -470,7 +470,7 @@ static void _show_new_nyx_color(bool update_bg)
 	lv_color_t bgc_light = LV_COLOR_HEX(bg ? (bg + 0x101010) : 0x2D2D2D); // COLOR_HOS_BG_LIGHT.
 	lv_color_t bgc_press = LV_COLOR_HEX(bg ? (bg + 0x232323) : 0x404040); // 0x505050.
 	lv_color_t bg_border = LV_COLOR_HEX(bg ? (bg + 0x202020) : 0x3D3D3D); // COLOR_HOS_BG_LIGHTER.
-	lv_color_t color     = hue ? lv_color_hsv_to_rgb(hue, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90);
+	lv_color_t color     = COLOR_HOS_TURQUOISE_EX(hue, n_cfg.theme_sat, n_cfg.theme_val);
 
 	static lv_style_t btn_tgl_pr_test;
 	lv_style_copy(&btn_tgl_pr_test, lv_btn_get_style(color_test.button, LV_BTN_STATE_TGL_PR));
@@ -546,7 +546,7 @@ static void _show_new_nyx_color(bool update_bg)
 
 		static lv_style_t slider_ind;
 		lv_style_copy(&slider_ind, lv_slider_get_style(color_test.slider, LV_SLIDER_STYLE_INDIC));
-		slider_ind.body.main_color = hue ? lv_color_hsv_to_rgb(hue, 100, 72) : lv_color_hsv_to_rgb(53, 8, 65);
+		slider_ind.body.main_color = hue ? lv_color_hsv_to_rgb(hue, n_cfg.theme_sat, n_cfg.theme_val * 72 / 100) : lv_color_hsv_to_rgb(53, 8, 65);
 		slider_ind.body.grad_color = slider_ind.body.main_color;
 		lv_slider_set_style(color_test.hue_slider, LV_SLIDER_STYLE_INDIC, &slider_ind);
 		lv_slider_set_style(color_test.slider,     LV_SLIDER_STYLE_INDIC, &slider_ind);

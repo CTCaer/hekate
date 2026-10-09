@@ -38,6 +38,9 @@ extern "C" {
  * @param offset text offset in x and y direction (NULL if unused)
  *
  */
+
+void lv_draw_label_remap_clear(void);
+bool lv_draw_label_remap_add(uint32_t from_rgb, uint32_t to_rgb);
 void lv_draw_label(const lv_area_t * coords,const lv_area_t * mask, const lv_style_t * style, lv_opa_t opa_scale,
                    const char * txt, lv_txt_flag_t flag, lv_point_t * offset);
 

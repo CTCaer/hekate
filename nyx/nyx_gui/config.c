@@ -50,6 +50,8 @@ void set_nyx_default_configuration()
 {
 	n_cfg.theme_bg       = 0x2D2D2D;
 	n_cfg.theme_color    = 167;
+	n_cfg.theme_sat      = 100;
+	n_cfg.theme_val      = 100;
 	n_cfg.entries_5_col  = 0;
 	n_cfg.timeoffset     = 0;
 	n_cfg.timedst        = 1;
@@ -207,6 +209,14 @@ int create_nyx_config_entry(bool force_unmount)
 
 	f_puts("\nthemecolor=", &fp);
 	itoa(n_cfg.theme_color, lbuf, 10);
+	f_puts(lbuf, &fp);
+
+	f_puts("\nthemesat=", &fp);
+	itoa(n_cfg.theme_sat, lbuf, 10);
+	f_puts(lbuf, &fp);
+
+	f_puts("\nthemeval=", &fp);
+	itoa(n_cfg.theme_val, lbuf, 10);
 	f_puts(lbuf, &fp);
 
 	f_puts("\nentries5col=", &fp);

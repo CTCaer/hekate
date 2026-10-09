@@ -25,6 +25,50 @@ enum {
 };
 typedef uint8_t cmd_state_t;
 
+//this is super sketchy and totally not the best way to do this but wihtout rewriting every nyx file,
+// this is the only way I could fiture out to remap colors at runtime.
+#define LABEL_REMAP_MAX 48
+static struct {
+    uint32_t from;
+    uint32_t to;
+} label_remap[LABEL_REMAP_MAX];
+static uint32_t label_remap_cnt;
+
+void lv_draw_label_remap_clear(void)
+{
+    label_remap_cnt = 0;
+}
+
+bool lv_draw_label_remap_add(uint32_t from_rgb, uint32_t to_rgb)
+{
+    from_rgb &= 0xFFFFFF;
+    to_rgb &= 0xFFFFFF;
+
+    for(uint32_t i = 0; i < label_remap_cnt; i++) {
+        if(label_remap[i].from == from_rgb) {
+            label_remap[i].to = to_rgb;
+            return true;
+        }
+    }
+
+    if(label_remap_cnt >= LABEL_REMAP_MAX)
+        return false;
+
+    label_remap[label_remap_cnt].from = from_rgb;
+    label_remap[label_remap_cnt].to = to_rgb;
+    label_remap_cnt++;
+    return true;
+}
+
+static uint32_t label_remap_rgb(uint32_t rgb)
+{
+    for(uint32_t i = 0; i < label_remap_cnt; i++) {
+        if(label_remap[i].from == rgb)
+            return label_remap[i].to;
+    }
+    return rgb;
+}
+
 /**********************
  *  STATIC PROTOTYPES
  **********************/
@@ -168,7 +212,11 @@ void lv_draw_label(const lv_area_t * coords, const lv_area_t * mask, const lv_st
                             r = (hex_char_to_num(buf[0]) << 4) + hex_char_to_num(buf[1]);
                             g = (hex_char_to_num(buf[2]) << 4) + hex_char_to_num(buf[3]);
                             b = (hex_char_to_num(buf[4]) << 4) + hex_char_to_num(buf[5]);
-                            recolor = LV_COLOR_MAKE(r, g, b);
+
+                            //check the recoloring map here. this reads a runtime generated color map so
+                            // a theme file can be loaded by nyx
+                            uint32_t rgb = label_remap_rgb((r << 16) | (g << 8) | b);
+                            recolor = LV_COLOR_MAKE((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
                         } else {
                             recolor.full = style->text.color.full;
                         }
