@@ -1001,6 +1001,36 @@ static lv_res_t _action_auto_dst_toggle(lv_obj_t *btn)
 	return LV_RES_OK;
 }
 
+static lv_res_t clockin12hour_toggle(lv_obj_t *btn)
+{
+	n_cfg.clockin12hour = !n_cfg.clockin12hour;
+	ini_changes_made = true;
+
+	if (!n_cfg.clockin12hour)
+		lv_btn_set_state(btn, LV_BTN_STATE_REL);
+	else
+		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
+
+	nyx_generic_onoff_toggle(btn);
+
+	return LV_RES_OK;
+}
+
+static lv_res_t tempinf_toggle(lv_obj_t *btn)
+{
+	n_cfg.tempinf = !n_cfg.tempinf;
+	ini_changes_made = true;
+
+	if (!n_cfg.tempinf)
+		lv_btn_set_state(btn, LV_BTN_STATE_REL);
+	else
+		lv_btn_set_state(btn, LV_BTN_STATE_TGL_REL);
+
+	nyx_generic_onoff_toggle(btn);
+
+	return LV_RES_OK;
+}
+
 static const u32 month_days[12] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 static lv_res_t _action_date_validation(lv_obj_t *roller)
@@ -1651,6 +1681,30 @@ lv_res_t create_win_nyx_options(lv_obj_t *parrent_btn)
 	lv_obj_set_style(label_txt2, &hint_small_style);
 	lv_obj_align(label_txt2, btn5, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
 
+	
+	// Create 12-Hour Clock On/Off Button
+	lv_obj_t *btn6 = lv_btn_create(sw_h3, NULL);
+	nyx_create_onoff_button(th, sw_h3, btn6, SYMBOL_CLOCK" Clock in 12-Hour format", clockin12hour_toggle, true);
+	lv_obj_align(btn6, label_txt2, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+	if (n_cfg.clockin12hour)
+		lv_btn_set_state(btn6, LV_BTN_STATE_TGL_REL);
+	nyx_generic_onoff_toggle(btn6);
+		
+	// Create Temperature in Fahrenheit in On/Off Button
+	lv_obj_t *btn7 = lv_btn_create(sw_h3, NULL);
+	nyx_create_onoff_button(th, sw_h3, btn7, SYMBOL_TEMPERATURE" Temperature in Fahrenheit", tempinf_toggle, true);
+	lv_obj_align(btn7, btn6, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+	if (n_cfg.tempinf)
+		lv_btn_set_state(btn7, LV_BTN_STATE_TGL_REL);	
+	nyx_generic_onoff_toggle(btn7);
+	
+	label_txt2 = lv_label_create(sw_h3, NULL);
+	lv_label_set_recolor(label_txt2, true);
+	lv_label_set_static_text(label_txt2,
+		"enable or disable temperature in Fahrenheit\n\n\n");
+	lv_obj_set_style(label_txt2, &hint_small_style);
+	lv_obj_align(label_txt2, btn7, LV_ALIGN_OUT_BOTTOM_LEFT, 0, LV_DPI / 4);
+	
 	// Enable save options button in status bar and set action.
 	lv_btn_set_action(status_bar.mid, LV_BTN_ACTION_CLICK, _save_nyx_options_action);
 	lv_obj_set_opa_scale(status_bar.mid, LV_OPA_COVER);

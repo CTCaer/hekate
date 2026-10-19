@@ -53,6 +53,8 @@ void set_nyx_default_configuration()
 	n_cfg.entries_5_col  = 0;
 	n_cfg.timeoffset     = 0;
 	n_cfg.timedst        = 1;
+	n_cfg.clockin12hour	 = 0;
+	n_cfg.tempinf 		 = 0;	
 	n_cfg.home_screen    = 0;
 	n_cfg.verification   = 1;
 	n_cfg.ums_emmc_rw    = 0;
@@ -221,6 +223,14 @@ int create_nyx_config_entry(bool force_unmount)
 	itoa(n_cfg.timedst, lbuf, 10);
 	f_puts(lbuf, &fp);
 
+	f_puts("\nclockin12hour=", &fp);
+	itoa(n_cfg.clockin12hour, lbuf, 10);
+	f_puts(lbuf, &fp);
+	
+	f_puts("\ntempinf=", &fp);
+	itoa(n_cfg.tempinf, lbuf, 10);
+	f_puts(lbuf, &fp);
+	
 	f_puts("\nhomescreen=", &fp);
 	itoa(n_cfg.home_screen, lbuf, 10);
 	f_puts(lbuf, &fp);
