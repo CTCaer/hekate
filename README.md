@@ -193,7 +193,7 @@ Use `Nyx Settings` in Nyx to edit the following configuration:
 | timeoffset=0       | Sets time offset in HEX. Must be in epoch format           |
 | timedst=1          | Enables automatic daylight saving hour adjustment          |
 | homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
-| verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
+| verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable), 3: Full Hashes (saves hashes to <file>.sha256sums and verifies them during restoration). |
 | ------------------ | ----- *The following can be edited via nyx.ini only* ----- |
 | umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
