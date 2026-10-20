@@ -36,6 +36,7 @@
 #define NUM_SECTORS_PER_ITER 8192 // 4MB Cache.
 #define OUT_FILENAME_SZ 128
 #define HASH_FILENAME_SZ (OUT_FILENAME_SZ + 11) // 11 == strlen(".sha256sums")
+#define HASH_CHUNK_SIZE (NUM_SECTORS_PER_ITER * EMMC_BLOCKSIZE)
 
 extern nyx_config n_cfg;
 
@@ -141,26 +142,27 @@ static void _update_filename(char *outFilename, u32 sdPathLen, u32 currPartIdx)
 		itoa(currPartIdx, &outFilename[sdPathLen], 10);
 }
 
-static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32 lba_curr, const char *outFilename, const emmc_part_t *part)
+static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, u32 lba_curr, const char *outFilename, const emmc_part_t *part, bool save_hashes)
 {
 	FIL fp;
 	FIL hashFp;
+	bool saveHashes = save_hashes && n_cfg.verification == 3;
 	u8 sparseShouldVerify = 4;
 	u32 prevPct = 200;
 	u32 sdFileSector = 0;
 	int res = 0;
 	static const char hexa[] = "0123456789abcdef";
 	DWORD *clmt = NULL;
+	char hashFilename[HASH_FILENAME_SZ];
 
 	u8 hashEm[SE_SHA_256_SIZE];
 	u8 hashSd[SE_SHA_256_SIZE];
 
 	if (f_open(&fp, outFilename, FA_READ) == FR_OK)
 	{
-		if (n_cfg.verification == 3)
+		if (saveHashes)
 		{
-			char hashFilename[HASH_FILENAME_SZ];
-			strncpy(hashFilename, outFilename, OUT_FILENAME_SZ - 1);
+			strcpy(hashFilename, outFilename);
 			strcat(hashFilename, ".sha256sums");
 
 			res = f_open(&hashFp, hashFilename, FA_CREATE_ALWAYS | FA_WRITE);
@@ -222,8 +224,11 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 
 					free(clmt);
 					f_close(&fp);
-					if (n_cfg.verification == 3)
+					if (saveHashes)
+					{
 						f_close(&hashFp);
+						f_unlink(hashFilename);
+					}
 
 					return VERIF_STATUS_ERROR;
 				}
@@ -243,8 +248,11 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 
 					free(clmt);
 					f_close(&fp);
-					if (n_cfg.verification == 3)
+					if (saveHashes)
+					{
 						f_close(&hashFp);
+						f_unlink(hashFilename);
+					}
 
 					return VERIF_STATUS_ERROR;
 				}
@@ -264,13 +272,16 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 
 					free(clmt);
 					f_close(&fp);
-					if (n_cfg.verification == 3)
+					if (saveHashes)
+					{
 						f_close(&hashFp);
+						f_unlink(hashFilename);
+					}
 
 					return VERIF_STATUS_ERROR;
 				}
 
-				if (n_cfg.verification == 3)
+				if (saveHashes)
 				{
 					// Transform computed hash to readable hexadecimal
 					char hashStr[SE_SHA_256_SIZE * 2 + 1];
@@ -315,14 +326,20 @@ static int _emmc_sd_copy_verify(emmc_tool_gui_t *gui, sdmmc_storage_t *storage, 
 
 				free(clmt);
 				f_close(&fp);
-				f_close(&hashFp);
+				if (saveHashes)
+				{
+					// Remove incomplete hash file.
+					f_close(&hashFp);
+					f_unlink(hashFilename);
+				}
 
 				return VERIF_STATUS_ABORT;
 			}
 		}
 		free(clmt);
 		f_close(&fp);
-		f_close(&hashFp);
+		if (saveHashes)
+			f_close(&hashFp);
 
 		lv_bar_set_value(gui->bar, pct);
 		s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
@@ -544,7 +561,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 			if (verification && !gui->raw_emummc)
 			{
 				// Verify part.
-				res = _emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part);
+				res = _emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part, true);
 				switch (res)
 				{
 				case VERIF_STATUS_OK:
@@ -744,7 +761,7 @@ static int _dump_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part,
 	if (verification && !gui->raw_emummc)
 	{
 		// Verify last part or single file backup.
-		if (_emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part) == VERIF_STATUS_ERROR)
+		if (_emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part, true) == VERIF_STATUS_ERROR)
 		{
 			strcpy(gui->txt_buf, "\n#FFDD00 Please try again...#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -967,7 +984,408 @@ out:
 	}
 }
 
-static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part, sdmmc_storage_t *storage, emmc_part_t *part, bool allow_multi_part)
+static int _hash_line_parse(u8 *hash, const char *line)
+{
+	for (u32 i = 0; i < SE_SHA_256_SIZE * 2; i++)
+	{
+		char c = line[i];
+		u8 nibble;
+		if (c >= '0' && c <= '9')
+			nibble = c - '0';
+		else if (c >= 'a' && c <= 'f')
+			nibble = c - 'a' + 10;
+		else if (c >= 'A' && c <= 'F')
+			nibble = c - 'A' + 10;
+		else
+			return 1;
+
+		if (i & 1)
+			hash[i >> 1] |= nibble;
+		else
+			hash[i >> 1] = nibble << 4;
+	}
+
+	// Line must end after the hash.
+	char c = line[SE_SHA_256_SIZE * 2];
+	return (c != '\0' && c != '\n');
+}
+
+static const char *_base_name(const char *filename)
+{
+	const char *name = strrchr(filename, '/');
+	return name ? name + 1 : filename;
+}
+
+static bool _hash_file_exists(const char *filename)
+{
+	char hashFilename[HASH_FILENAME_SZ];
+	FILINFO fno;
+
+	strcpy(hashFilename, filename);
+	strcat(hashFilename, ".sha256sums");
+
+	return !f_stat(hashFilename, &fno);
+}
+
+// Open <filename>.sha256sums and check its header.
+static int _hash_file_open(emmc_tool_gui_t *gui, FIL *hashFp, const char *filename)
+{
+	char line[80];
+	char hashFilename[HASH_FILENAME_SZ];
+
+	strcpy(hashFilename, filename);
+	strcat(hashFilename, ".sha256sums");
+
+	int res = f_open(hashFp, hashFilename, FA_READ);
+	if (res)
+	{
+		s_printf(gui->txt_buf, "\n#FF0000 Error (%d) while opening hash file#\n#FFDD00 %s!#\n", res, _base_name(filename));
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		return VERIF_STATUS_ERROR;
+	}
+
+	if (!f_gets(line, sizeof(line), hashFp) || strncmp(line, "# chunksize: ", 13) || (u32)atoi(line + 13) != HASH_CHUNK_SIZE)
+	{
+		s_printf(gui->txt_buf, "\n#FF0000 Invalid hash file for#\n#FFDD00 %s#\n", _base_name(filename));
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		f_close(hashFp);
+
+		return VERIF_STATUS_ERROR;
+	}
+
+	return VERIF_STATUS_OK;
+}
+
+// Read the next hash line.
+static int _hash_line_read(emmc_tool_gui_t *gui, FIL *hashFp, u8 *hash, const char *filename)
+{
+	char line[80];
+
+	if (f_gets(line, sizeof(line), hashFp) && !_hash_line_parse(hash, line))
+		return 0;
+
+	s_printf(gui->txt_buf, "\n#FF0000 Hash file is incomplete or invalid:#\n#FFDD00 %s#\n", _base_name(filename));
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+	manual_system_maintenance(true);
+
+	return 1;
+}
+
+// Check a file against its .sha256sums.
+static int _hash_file_check(emmc_tool_gui_t *gui, const char *filename, u64 doneBytes, u64 totalBytes)
+{
+	FIL fp;
+	FIL hashFp;
+	u8 hashFile[SE_SHA_256_SIZE];
+	u8 hashSd[SE_SHA_256_SIZE];
+	u8 *bufs[2] = { (u8 *)SDXC_BUF_ALIGNED, (u8 *)EMMC_BUF_ALIGNED };
+	u32 prevPct = 200;
+	u32 chunk = 0;
+	bool hashPending = false;
+	const char *baseName = _base_name(filename);
+
+	int res = _hash_file_open(gui, &hashFp, filename);
+	if (res)
+		return res;
+
+	res = f_open(&fp, filename, FA_READ);
+	if (res)
+	{
+		s_printf(gui->txt_buf, "\n#FF0000 Error (%d) while opening file#\n#FFDD00 %s!#\n", res, baseName);
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		f_close(&hashFp);
+
+		return VERIF_STATUS_ERROR;
+	}
+
+	u64 fileSize = f_size(&fp);
+	u64 offset = 0;
+	DWORD *clmt = f_expand_cltbl(&fp, SZ_4M, 0);
+	if (!clmt)
+	{
+		s_printf(gui->txt_buf, "\n#FF0000 Failed to create cluster table for#\n#FFDD00 %s#\n", baseName);
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		f_close(&fp);
+		f_close(&hashFp);
+
+		return VERIF_STATUS_ERROR;
+	}
+
+	lv_bar_set_style(gui->bar, LV_BAR_STYLE_BG, gui->bar_teal_bg);
+	lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, gui->bar_teal_ind);
+
+	// Read the next chunk while SE hashes the previous one.
+	while (true)
+	{
+		bool fileEnd = offset >= fileSize;
+		u32 size = 0;
+		u8 *buf = bufs[chunk & 1];
+
+		if (!fileEnd)
+		{
+			size = (u32)MIN(fileSize - offset, (u64)HASH_CHUNK_SIZE);
+
+			f_lseek(&fp, offset);
+			if (f_read_fast(&fp, buf, size))
+			{
+				s_printf(gui->txt_buf,
+					"\n#FF0000 Failed to read from SD card#\n"
+					"#FF0000 (@chunk %d)! Validation failed..#\n",
+					chunk);
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+				manual_system_maintenance(true);
+
+				res = VERIF_STATUS_ERROR;
+				break;
+			}
+			manual_system_maintenance(false);
+		}
+
+		if (hashPending)
+		{
+			se_sha_hash_256_finalize(hashSd);
+			hashPending = false;
+
+			if (_hash_line_read(gui, &hashFp, hashFile, filename))
+			{
+				res = VERIF_STATUS_ERROR;
+				break;
+			}
+
+			if (memcmp(hashFile, hashSd, SE_SHA_256_SIZE))
+			{
+				s_printf(gui->txt_buf,
+					"\n#FF0000 SHA256 mismatch (@chunk %d) in#\n"
+					"#FFDD00 %s#\n#FF0000 The backup is corrupted!#\n",
+					chunk - 1, baseName);
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+				manual_system_maintenance(true);
+
+				res = VERIF_STATUS_ERROR;
+				break;
+			}
+		}
+
+		if (fileEnd)
+			break;
+
+		se_sha_hash_256_async(hashSd, buf, size);
+		hashPending = true;
+
+		offset += size;
+		chunk++;
+
+		u32 pct = (u32)(((doneBytes + offset) * 100u) / totalBytes);
+		if (pct != prevPct)
+		{
+			lv_bar_set_value(gui->bar, pct);
+			s_printf(gui->txt_buf, " "SYMBOL_DOT" %d%%", pct);
+			lv_label_set_text(gui->label_pct, gui->txt_buf);
+			manual_system_maintenance(true);
+			prevPct = pct;
+		}
+
+		// Check for cancellation combo.
+		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))
+		{
+			strcpy(gui->txt_buf, "\n#FFDD00 Hash validation was cancelled!#\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
+
+			msleep(1000);
+
+			res = VERIF_STATUS_ABORT;
+			break;
+		}
+	}
+
+	// Make sure SE is idle.
+	if (hashPending)
+		se_sha_hash_256_finalize(hashSd);
+
+	free(clmt);
+	f_close(&fp);
+	f_close(&hashFp);
+
+	return res;
+}
+
+// Check the hash file layout: one hash for each chunk of the file.
+static int _hash_file_check_format(emmc_tool_gui_t *gui, const char *filename, u64 fileSize)
+{
+	FIL hashFp;
+	char line[80];
+	u8 hash[SE_SHA_256_SIZE];
+
+	int res = _hash_file_open(gui, &hashFp, filename);
+	if (res)
+		return res;
+
+	u64 numChunks = (fileSize + HASH_CHUNK_SIZE - 1) / HASH_CHUNK_SIZE;
+	for (u64 i = 0; i < numChunks && !res; i++)
+		res = _hash_line_read(gui, &hashFp, hash, filename);
+
+	if (!res && f_gets(line, sizeof(line), &hashFp) && line[0] != '\n')
+	{
+		s_printf(gui->txt_buf, "\n#FF0000 Hash file has more hashes than#\n#FF0000 the file size:#\n#FFDD00 %s#\n", _base_name(filename));
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		res = VERIF_STATUS_ERROR;
+	}
+
+	f_close(&hashFp);
+
+	return res;
+}
+
+// Validate the backup files before restoring anything.
+static int _restore_files_hash_validate(emmc_tool_gui_t *gui, const char *outFilename, u32 sdPathLen, u32 numFiles, bool multipart)
+{
+	char filename[OUT_FILENAME_SZ];
+	u32 filesMissing = 0;
+	u32 filesChecked = 0;
+	u64 totalBytes = 0;
+	u64 doneBytes = 0;
+	FILINFO fno;
+
+	strcpy(filename, outFilename);
+
+	// Check the hash files and get the total size.
+	for (u32 i = 0; i < numFiles; i++)
+	{
+		if (multipart)
+			_update_filename(filename, sdPathLen, i);
+
+		// Stop at the last existing part.
+		if (f_stat(filename, &fno))
+			break;
+		filesChecked++;
+
+		if (!_hash_file_exists(filename))
+			filesMissing++;
+		else
+		{
+			if (_hash_file_check_format(gui, filename, fno.fsize))
+			{
+				strcpy(gui->txt_buf, "#FFDD00 Aborting...#\n");
+				lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+				manual_system_maintenance(true);
+
+				return 1;
+			}
+
+			totalBytes += fno.fsize;
+		}
+	}
+	if (!totalBytes)
+		totalBytes = 1;
+
+	// No hash files and no Full Hashes: old behavior.
+	if (filesMissing == filesChecked && n_cfg.verification != 3)
+		return 0;
+
+	if (filesMissing)
+	{
+		s_printf(gui->txt_buf, "\n#FFDD00 %d of %d files have no hash file!#\n", filesMissing, filesChecked);
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+
+		s_printf(gui->txt_buf,
+			"#FF8000 %d of %d backup files have no .sha256sums file!#\n\n"
+			"#FFDD00 These files can not be validated#\n#FFDD00 and might be corrupted!#\n"
+			"Backup with #C7EA46 Full Hashes# verification to create them.\n\n"
+			"Press #FF8000 POWER# to Continue.\nPress #FF8000 VOL# to abort.", filesMissing, filesChecked);
+		lv_obj_t *warn_mbox_bg = create_mbox_text(gui->txt_buf, false);
+		manual_system_maintenance(true);
+
+		if (!(btn_wait() & BTN_POWER))
+		{
+			lv_obj_del(warn_mbox_bg);
+			strcpy(gui->txt_buf, "#FFDD00 Aborting...#\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
+
+			return 1;
+		}
+		lv_obj_del(warn_mbox_bg);
+	}
+
+	// Nothing to validate.
+	if (filesMissing == filesChecked)
+		return 0;
+
+	lv_bar_set_value(gui->bar, 0);
+	lv_label_set_text(gui->label_pct, " "SYMBOL_DOT" 0%");
+	lv_obj_set_opa_scale(gui->bar, LV_OPA_COVER);
+	lv_obj_set_opa_scale(gui->label_pct, LV_OPA_COVER);
+
+	strcpy(gui->txt_buf, "\nValidating backup files hashes...\n");
+	lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+	manual_system_maintenance(true);
+
+	for (u32 i = 0; i < numFiles; i++)
+	{
+		if (multipart)
+			_update_filename(filename, sdPathLen, i);
+
+		// Stop at the last existing part.
+		if (f_stat(filename, &fno))
+			break;
+
+		// Skip files without a hash file.
+		if (!_hash_file_exists(filename))
+			continue;
+
+		if (multipart)
+		{
+			// Show the file being checked.
+			s_printf(gui->txt_buf, "%s#", filename + strlen(gui->base_path));
+			lv_label_cut_text(gui->label_info,
+				strlen(lv_label_get_text(gui->label_info)) - strlen(filename + strlen(gui->base_path)) - 1,
+				strlen(filename + strlen(gui->base_path)) + 1);
+			lv_label_ins_text(gui->label_info, LV_LABEL_POS_LAST, gui->txt_buf);
+		}
+
+		manual_system_maintenance(true);
+
+		int res = _hash_file_check(gui, filename, doneBytes, totalBytes);
+		doneBytes += fno.fsize;
+		if (res == VERIF_STATUS_ERROR || res == VERIF_STATUS_ABORT)
+		{
+			strcpy(gui->txt_buf, "#FFDD00 Aborting...#\n");
+			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+			manual_system_maintenance(true);
+
+			return 1;
+		}
+	}
+
+	if (!filesMissing)
+	{
+		strcpy(gui->txt_buf, "#96FF00 Hash validation passed!#\n");
+		lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
+		manual_system_maintenance(true);
+	}
+
+	lv_bar_set_value(gui->bar, 0);
+	lv_label_set_text(gui->label_pct, " "SYMBOL_DOT" 0%");
+	lv_bar_set_style(gui->bar, LV_BAR_STYLE_BG, gui->bar_orange_bg);
+	lv_bar_set_style(gui->bar, LV_BAR_STYLE_INDIC, gui->bar_orange_ind);
+	manual_system_maintenance(true);
+
+	return 0;
+}
+
+static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_part, sdmmc_storage_t *storage, emmc_part_t *part, bool allow_multi_part, bool hash_validate)
 {
 	static const u32 SECTORS_TO_MIB_COEFF = 11;
 
@@ -1116,6 +1534,11 @@ static int _restore_emmc_part(emmc_tool_gui_t *gui, char *sd_path, int active_pa
 	}
 
 multipart_not_allowed:
+	// Validate all backup files against their hash files before writing anything.
+	if (hash_validate && !f_stat(outFilename, &fno) &&
+		_restore_files_hash_validate(gui, outFilename, sdPathLen, use_multipart ? numSplitParts : 1, use_multipart))
+		return 1;
+
 	res = f_open(&fp, outFilename, FA_READ);
 	if (use_multipart)
 	{
@@ -1242,7 +1665,7 @@ multipart_not_allowed:
 			if (verification && !gui->raw_emummc)
 			{
 				// Verify part.
-				res = _emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part);
+				res = _emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part, false);
 				switch (res)
 				{
 				case VERIF_STATUS_OK:
@@ -1372,7 +1795,7 @@ multipart_not_allowed:
 	if (verification && !gui->raw_emummc)
 	{
 		// Verify restored data.
-		if (_emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part) == VERIF_STATUS_ERROR)
+		if (_emmc_sd_copy_verify(gui, storage, lbaStartPart, outFilename, part, false) == VERIF_STATUS_ERROR)
 		{
 			strcpy(gui->txt_buf, "\n#FFDD00 Please try again...#\n");
 			lv_label_ins_text(gui->label_log, LV_LABEL_POS_LAST, gui->txt_buf);
@@ -1515,7 +1938,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 				emmcsn_path_impl(sdPath, "/restore", bootPart.name, &emmc_storage);
 			else
 				emmcsn_path_impl(sdPath, "/restore/emummc", bootPart.name, &emmc_storage);
-			res = _restore_emmc_part(gui, sdPath, i, &emmc_storage, &bootPart, false);
+			res = _restore_emmc_part(gui, sdPath, i, &emmc_storage, &bootPart, false, true);
 
 			if (res == 1)
 				strcpy(txt_buf, "#FFDD00 Failed!#\n");
@@ -1550,7 +1973,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 			i++;
 
 			emmcsn_path_impl(sdPath, "/restore/partitions", part->name, &emmc_storage);
-			res = _restore_emmc_part(gui, sdPath, 0, &emmc_storage, part, false);
+			res = _restore_emmc_part(gui, sdPath, 0, &emmc_storage, part, false, true);
 
 			if (res == 1)
 				strcpy(txt_buf, "#FFDD00 Failed!#\n");
@@ -1588,7 +2011,7 @@ void restore_emmc_selected(emmcPartType_t restoreType, emmc_tool_gui_t *gui)
 				emmcsn_path_impl(sdPath, "/restore", rawPart.name, &emmc_storage);
 			else
 				emmcsn_path_impl(sdPath, "/restore/emummc", rawPart.name, &emmc_storage);
-			res = _restore_emmc_part(gui, sdPath, 2, &emmc_storage, &rawPart, true);
+			res = _restore_emmc_part(gui, sdPath, 2, &emmc_storage, &rawPart, true, true);
 
 			if (res == 1)
 				strcpy(txt_buf, "#FFDD00 Failed!#\n");
