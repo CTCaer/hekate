@@ -33,6 +33,7 @@
 #include "di.inl"
 
 static bool _nx_aula      = false;
+static bool _display_fhd  = false;
 static u32  _panel_id     = 0;
 static u32  _panel_id_raw = 0;
 
@@ -424,7 +425,7 @@ void display_init()
 	// Set DISP1 clock source, parent clock and DSI/PCLK to command mode.
 	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-BCLK): 50.0 MHz. (PCLK: 16.66 MHz)
 	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-BCLK): 48.9 MHz. (PCLK: 16.30 MHz)
-	clock_enable_plld(3, 20, true, tegra_t210);
+	clock_enable_plld(3, 20, true, tegra_t210, false);
 
 	// Setup Display Interface initial configuration.
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_init_config, ARRAY_SIZE(_di_dc_init_config));
@@ -472,9 +473,12 @@ void display_init()
 	if ((_panel_id & 0xFF) == PANEL_JDI_XXX062M)
 		_panel_id = PANEL_JDI_XXX062M;
 
-	// For Aula ensure that we have a compatible panel id.
+	// For Aula ensure that we have a compatible panel id. Retro Remake panels report their own id.
 	if (_nx_aula)
 		_panel_id = PANEL_SAM_AMS699VC01;
+
+	// Retro Remake FHD panels are driven at their native 1080x1920 resolution.
+	_display_fhd = PANEL_ID_IS_RRM_FHD(_panel_id);
 
 	// Initialize display panel.
 	switch (_panel_id)
@@ -540,6 +544,10 @@ void display_init()
 	case PANEL_INL_2J055IA_27A:
 	case PANEL_AUO_A055TAN01:
 	case PANEL_SHP_LQ055T1SW10:
+	case PANEL_RRM_SUPER7:
+	case PANEL_RRM_SUPER7_FHD:
+	case PANEL_RRM_SUPER5_OLED:
+	case PANEL_RRM_SUPER5_OLED_FHD:
 	default: // Allow spare part displays to work.
 		_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_EXIT_SLEEP_MODE, 120000);
 		break;
@@ -549,13 +557,24 @@ void display_init()
 	_display_dsi_send_cmd(MIPI_DSI_DCS_SHORT_WRITE, MIPI_DCS_SET_DISPLAY_ON, 20000);
 
 	// Switch to DSI HS mode.
-	// DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 468.0 MHz, PLLD_OUT0 (DSI-BCLK): 234.0 MHz. (PCLK: 78 MHz)
-	clock_enable_plld(1, 24, false, tegra_t210);
+	if (!_display_fhd)
+	{
+		// DIVM: 1, DIVN: 24, DIVP: 1. PLLD_OUT: 468.0 MHz, PLLD_OUT0 (DSI-BCLK): 234.0 MHz. (PCLK: 78 MHz)
+		clock_enable_plld(1, 24, false, tegra_t210, false);
 
-	// Set HS PHY timing and finalize DSI packet sequence configuration.
-	reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
+		// Set HS PHY timing and finalize DSI packet sequence configuration.
+		reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config));
+	}
+	else // 1080x1920 Retro Remake FHD panels.
+	{
+		// DIVM: 1, DIVN: 20, DIVP: 0, SDM: 3214. PLLD_OUT: 802.3 MHz, PLLD_OUT0 (DSI-BCLK): 401.1 MHz. (PCLK: 133.71 MHz)
+		clock_enable_plld(0, 20, false, tegra_t210, true);
 
-	// Set 1-by-1 pixel/clock and pixel clock to 234 / 3 = 78 MHz. For 60 Hz refresh rate.
+		// Set HS PHY timing and finalize DSI packet sequence configuration.
+		reg_write_array((vu32 *)DSI_BASE, _di_dsi_seq_pkt_video_non_burst_no_eot_config_1080p, ARRAY_SIZE(_di_dsi_seq_pkt_video_non_burst_no_eot_config_1080p));
+	}
+
+	// Set 1-by-1 pixel/clock and pixel clock to PLLD_OUT0 / 3 (78 or 133.71 MHz). For 60 Hz refresh rate.
 	DISPLAY_A(DC_DISP_DISP_CLOCK_CONTROL) = PIXEL_CLK_DIVIDER_PCD1 | SHIFT_CLK_DIVIDER(4); // div3. Default: div4.
 
 	// Set DSI mode to HOST.
@@ -597,7 +616,10 @@ void display_init()
 	usleep(10000);
 
 	// Setup video mode.
-	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_mode_config, ARRAY_SIZE(_di_dc_video_mode_config));
+	if (!_display_fhd)
+		reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_mode_config, ARRAY_SIZE(_di_dc_video_mode_config));
+	else
+		reg_write_array((vu32 *)DISPLAY_A_BASE, _di_dc_video_mode_config_1080p, ARRAY_SIZE(_di_dc_video_mode_config_1080p));
 }
 
 void display_backlight_pwm_init()
@@ -706,7 +728,7 @@ static void _display_panel_and_hw_end(bool no_panel_deinit)
 	// Set DISP1 clock source, parent clock and DSI/PCLK to command mode.
 	// T210:    DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT: 100.0 MHz, PLLD_OUT0 (DSI-BCLK): 50.0 MHz. (PCLK: 16.66 MHz)
 	// T210B01: DIVM: 1, DIVN: 20, DIVP: 3. PLLD_OUT:  97.8 MHz, PLLD_OUT0 (DSI-BCLK): 48.9 MHz. (PCLK: 16.30 MHz)
-	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210);
+	clock_enable_plld(3, 20, true, hw_get_chip_id() == GP_HIDREV_MAJOR_T210, false);
 
 	// DSI soft reset.
 	_display_dsi_soft_reset();
@@ -829,6 +851,9 @@ void display_set_decoded_panel_id(u32 id)
 	// For Aula ensure that we have a compatible panel id.
 	if (_nx_aula && _panel_id == 0xCCCC)
 		_panel_id = PANEL_SAM_AMS699VC01;
+
+	// Retro Remake HD panels are driven at their native 1080x1920 resolution.
+	_display_fhd = PANEL_ID_IS_RRM_FHD(_panel_id);
 }
 
 void display_color_screen(u32 color)
@@ -850,6 +875,31 @@ void display_color_screen(u32 color)
 		display_backlight_brightness(150, 0);
 }
 
+static void _display_window_fhd_upscale(u32 window)
+{
+	if (!_display_fhd)
+		return;
+
+	// Select window.
+	DISPLAY_A(DC_CMD_DISPLAY_WINDOW_HEADER) = BIT(WINDOW_SELECT + window);
+
+	// Set linear interpolation coefficients for the H/V 2-tap filters.
+	for (u32 i = 0; i < 16; i++)
+	{
+		DISPLAY_A(DC_WINC_H_FILTER_P(i)) = ((8 * i) << 16) | ((128 - 8 * i) << 8);
+		DISPLAY_A(DC_WINC_V_FILTER_P(i)) = 128 - 8 * i;
+	}
+
+	// Upscale the 720x1280 window raster to 1080x1920 (1.5x).
+	DISPLAY_A(DC_WIN_SIZE)         = V_SIZE(1920) | H_SIZE(1080);
+	DISPLAY_A(DC_WIN_DDA_INC)      = V_DDA_INC(0xAAA) | H_DDA_INC(0xAAA); // 720 / 1080 in 4.12 fp.
+	DISPLAY_A(DC_WIN_WIN_OPTIONS) |= H_FILTER_ENABLE | V_FILTER_ENABLE;
+
+	// Arm and activate changes.
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_UPDATE  | BIT(WIN_UPDATE  + window);
+	DISPLAY_A(DC_CMD_STATE_CONTROL) = GENERAL_ACT_REQ | BIT(WIN_ACT_REQ + window);
+}
+
 u32 *display_init_window_a_pitch()
 {
 	// Sanitize framebuffer area.
@@ -857,6 +907,7 @@ u32 *display_init_window_a_pitch()
 
 	// This configures the framebuffer @ IPL_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_pitch, ARRAY_SIZE(_di_winA_pitch));
+	_display_window_fhd_upscale(WINDOW_A);
 	//usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -868,6 +919,7 @@ u32 *display_init_window_a_pitch_vic()
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(8000); // Wait half frame for PWM to apply.
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_pitch_vic, ARRAY_SIZE(_di_winA_pitch_vic));
+	_display_window_fhd_upscale(WINDOW_A);
 	if (_panel_id != PANEL_SAM_AMS699VC01)
 		usleep(35000); // Wait 2 frames.
 
@@ -878,6 +930,7 @@ u32 *display_init_window_a_pitch_inv()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280 (line stride 720).
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_pitch_inv, ARRAY_SIZE(_di_winA_pitch_inv));
+	_display_window_fhd_upscale(WINDOW_A);
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -887,6 +940,7 @@ u32 *display_init_window_a_block()
 {
 	// This configures the framebuffer @ NYX_FB_ADDRESS with a resolution of 720x1280.
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winA_block, ARRAY_SIZE(_di_winA_block));
+	_display_window_fhd_upscale(WINDOW_A);
 	usleep(35000); // Wait 2 frames. No need on Aula.
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -895,6 +949,7 @@ u32 *display_init_window_a_block()
 u32 *display_init_window_d_console()
 {
 	// This configures the framebuffer @ LOG_FB_ADDRESS with a resolution of 1280x720 (line stride 720).
+	// Window D is a simple window and lacks scaling support, so it stays 656x1280 on 1080p panels.
 	reg_write_array((vu32 *)DISPLAY_A_BASE, _di_winD_log, ARRAY_SIZE(_di_winD_log));
 
 	return (u32 *)DISPLAY_A(DC_WINBUF_START_ADDR);
@@ -1026,6 +1081,13 @@ void display_cursor_init(void *crs_fb, u32 size)
 
 void display_cursor_set_pos(u32 x, u32 y)
 {
+	// Cursor coordinates are raster based. Scale from the 720p UI space on 1080p panels.
+	if (_display_fhd)
+	{
+		x = x * 3 / 2;
+		y = y * 3 / 2;
+	}
+
 	// Set cursor position.
 	DISPLAY_A(DC_DISP_CURSOR_POSITION) = x | (y << 16);
 

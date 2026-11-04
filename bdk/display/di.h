@@ -808,6 +808,10 @@
  * [30] 97 [0F]: AUO A062TAN02 (59.06A33.002) [From photo of assumed same panel]
  * [30] 98 [0F]: AUO A062TAN0? [UNCONFIRMED MODEL]
  * [30] XX [0F]: AUO A062TAN03 (59.06A33.003) [UNCONFIRMED ID]
+ * [E0] 01 [0F]: Retro Remake SUPER7 IPS (Rev 01)
+ * [E1] 01 [0F]: Retro Remake SUPER7 IPS FHD (Rev 01)
+ * [E0] 11 [0F]: Retro Remake SUPER7 OLED (Rev 01)
+ * [E1] 11 [0F]: Retro Remake SUPER7 OLED FHD (Rev 01)
  *
  *
  * 5.5" panels for Hoag SKU:
@@ -818,6 +822,8 @@
  * [30] 94 [10]: AUO A055TAN02 (59.05A30.002)
  * [30] 95 [10]: AUO A055TAN03 (59.05A30.003)
  * [40] 94 [10]: Sharp LQ055T1SW10 (Rev P)
+ * [E0] 01 [10]: Retro Remake SUPER5 OLED (Rev 01)
+ * [E1] 01 [10]: Retro Remake SUPER5 OLED FHD (Rev 01)
  *
  *
  * 7.0" OLED panels for Aula SKU:
@@ -836,6 +842,8 @@
  * 30h: AU Optronics
  * 40h: Sharp
  * 50h: Samsung
+ * E0h: Retro Remake
+ * E1h: Retro Remake FHD (1080p native)
  *
  * Boards, Panel Size:
  * 0Fh: Icosa/Iowa, 6.2"
@@ -855,6 +863,13 @@ enum
 	PANEL_SHP_LQ055T1SW10 = 0x1040,
 	PANEL_SAM_AMS699VC01  = 0x2050,
 
+	// Retro Remake aftermarket panels. Model byte: 01: IPS/OLED, 11: OLED (6.2" board id).
+	// HD (E1) variants are driven at native 1080x1920.
+	PANEL_RRM_SUPER7                = 0x0FE0,
+	PANEL_RRM_SUPER7_FHD            = 0x0FE1,
+	PANEL_RRM_SUPER5_OLED           = 0x10E0,
+	PANEL_RRM_SUPER5_OLED_FHD       = 0x10E1,
+
 	// Found on 6/2" clones. Unknown markings. Clone of AUO A062TAN01.
 	// Quality seems JDI like. Has bad low backlight scaling. ID: [83] 94 [0F]. Sometimes reports [30] 94 [0F]. Both IDs have correct CRC16.
 	PANEL_OEM_CLONE_6_2   = 0x0F83,
@@ -864,6 +879,10 @@ enum
 	PANEL_OEM_CLONE       = 0x0000
 	//0x0F40 [40] 94 [0F], 5.5" clone
 };
+
+// Retro Remake panel vendor ids.
+#define PANEL_RRM_FHD           0xE1
+#define PANEL_ID_IS_RRM_FHD(ID) (((ID) & 0xFF) == PANEL_RRM_FHD)
 
 void display_init();
 void display_backlight_pwm_init();
