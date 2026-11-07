@@ -118,7 +118,8 @@ typedef enum {
 	USB_REQUEST_GET_INTERFACE     = 10,
 	USB_REQUEST_SET_INTERFACE     = 11,
 	USB_REQUEST_SYNCH_FRAME       = 12,
-	USB_REQUEST_SET_SEL           = 13,
+	USB_REQUEST_SET_SEL           = 48,
+	USB_REQUEST_SET_ISOCH_DELAY   = 49,
 
 	USB_REQUEST_GET_MS_DESCRIPTOR = 0x99,
 
@@ -133,6 +134,8 @@ typedef enum {
 	USB_FEATURE_ENDPOINT_HALT        = 0,
 	USB_FEATURE_DEVICE_REMOTE_WAKEUP = 1,
 	USB_FEATURE_TEST_MODE            = 2,
+	USB_FEATURE_U1_ENABLE            = 48,
+	USB_FEATURE_U2_ENABLE            = 49,
 } usb_get_status_req_t;
 
 typedef enum _usb_error_t
@@ -196,6 +199,7 @@ typedef struct _usb_ctxt_t
 	u32 offset;
 	u32 sectors;
 	u32 ro;
+	bool superspeed; // Opt-in UMS PHY setup; initialized by the UMS frontend.
 
 	// HID.
 	u32 idle;
@@ -208,6 +212,25 @@ typedef struct _usb_ctxt_t
 
 void usb_device_get_ops(usb_ops_t *ops);
 void xusb_device_get_ops(usb_ops_t *ops);
+void xusb_device_set_superspeed(bool enable);
+bool xusb_device_get_superspeed(void);
+const char *xusb_device_get_usb3_status(void);
+
+typedef enum {
+	XUSB_SESSION_ACTIVE,
+	XUSB_SESSION_DISCONNECTED,
+	XUSB_SESSION_DECONFIGURED
+} xusb_session_end_t;
+
+xusb_session_end_t xusb_device_get_session_end(void);
+
+typedef struct {
+	u32 portsc, ss_portsc, hsfs_portsc;
+	u32 ctrl, portpm, configuration;
+	u32 last_setup, last_port_event, port_events, deconfig_requests;
+} xusb_diagnostics_t;
+
+void xusb_device_get_diagnostics(xusb_diagnostics_t *diag);
 
 int  usb_device_gadget_ums(usb_ctxt_t *usbs);
 int  usb_device_gadget_hid(usb_ctxt_t *usbs);

@@ -173,7 +173,8 @@ typedef struct _logical_unit_t
 	u32 ro;
 	u32 type;
 	u32 partition;
-	u32 removable;
+	u32 removable; // Transport still supports eject and removal locks.
+	bool fixed_media; // SCSI medium classification; independent of USB hot unplug.
 	u32 prevent_medium_removal;
 
 	u32 info_valid;
@@ -783,7 +784,8 @@ static int _scsi_inquiry(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 	else /* if (ums->cmnd[1] == 0 && ums->cmnd[2] == 0) */ // Standard inquiry.
 	{
 		buf[0] = SCSI_TYPE_DISK;
-		buf[1] = ums->lun.removable ? 0x80 : 0;
+		// RMB describes removable MEDIA, not whether the USB cable is removable.
+		buf[1] = ums->lun.removable && !ums->lun.fixed_media ? 0x80 : 0;
 		buf[2] = 6;  // ANSI INCITS 351-2001 (SPC-2).////////SPC2: 4, SPC4: 6
 		buf[3] = 2;  // SCSI-2 INQUIRY data format.
 		buf[4] = 31; // Additional length.
@@ -1732,6 +1734,7 @@ static void _send_status(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
 
 	bulk_ctxt->bulk_in_length = USB_BULK_CS_WRAP_LEN;
 	_transfer_start(ums, bulk_ctxt, bulk_ctxt->bulk_in, USB_XFER_SYNCED_CMD);
+
 }
 
 static void _handle_exception(usbd_gadget_ums_t *ums, bulk_ctxt_t *bulk_ctxt)
@@ -1814,9 +1817,10 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 {
 	int res = 0;
 	usbd_gadget_ums_t ums = {0};
+	xusb_device_set_superspeed(usbs->superspeed);
 
 	// Get USB Controller ops.
-	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210)
+	if (hw_get_chip_id() == GP_HIDREV_MAJOR_T210 && !usbs->superspeed)
 		usb_device_get_ops(&usb_ops);
 	else
 	{
@@ -1847,7 +1851,12 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	ums.lun.partition   = usbs->partition;
 	ums.lun.num_sectors = usbs->sectors;
 	ums.lun.offset      = usbs->offset;
-	ums.lun.removable = 1; // Always removable to force OSes to use prevent media removal.
+	ums.lun.removable = 1; // Keep eject commands and removal-lock handling enabled.
+	// All physical eMMC partitions are fixed media behind removable USB.
+	// Keep the same RMB classification when switching BOOT0/1 and GPP:
+	// Windows reuses the USB device instance across these exports.
+	// SD exports and the USB2-only configuration keep their legacy behavior.
+	ums.lun.fixed_media = usbs->superspeed && usbs->type == MMC_EMMC;
 	ums.lun.unit_attention_data = SS_RESET_OCCURRED;
 
 	// Set system functions
@@ -1886,6 +1895,15 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 		ums.lun.storage = &emmc_storage;
 	}
 
+	// If partition sectors are not set get them from hardware.
+	if (!ums.lun.num_sectors)
+	{
+		if (usbs->type == MMC_EMMC && (ums.lun.partition - 1)) // eMMC BOOT0/1.
+			ums.lun.num_sectors = emmc_storage.ext_csd.boot_mult << 8;
+		else
+			ums.lun.num_sectors = ums.lun.storage->sec_cnt;   // eMMC GPP or SD.
+	}
+
 	ums.set_text(ums.label, "#C7EA46 Status:# Waiting for connection");
 
 	// Initialize Control Endpoint.
@@ -1897,21 +1915,26 @@ int usb_device_gadget_ums(usb_ctxt_t *usbs)
 	if (usb_ops.usb_device_class_send_max_lun(0)) // One device for now.
 		goto usb_enum_error;
 
-	ums.set_text(ums.label, "#C7EA46 Status:# Started UMS");
-
-	// If partition sectors are not set get them from hardware.
-	if (!ums.lun.num_sectors)
-	{
-		if (usbs->type == MMC_EMMC && (ums.lun.partition - 1)) // eMMC BOOT0/1.
-			ums.lun.num_sectors = emmc_storage.ext_csd.boot_mult << 8;
-		else
-			ums.lun.num_sectors = ums.lun.storage->sec_cnt;   // eMMC GPP or SD.
-	}
+	ums.set_text(ums.label, ums.xusb && xusb_device_get_superspeed() ?
+		"#C7EA46 Status:# Started UMS (USB 3)" : "#C7EA46 Status:# Started UMS (USB 2)");
 
 	do
 	{
 		// Do DRAM training and update system tasks.
 		_system_maintainance(&ums);
+
+		// A host can remove a USB configuration without suspending the link.
+		// Explicit removal events are distinct from U1/U2 or an idle timeout.
+		if (ums.xusb)
+		{
+			xusb_session_end_t end = xusb_device_get_session_end();
+			if (end != XUSB_SESSION_ACTIVE)
+			{
+				if (end == XUSB_SESSION_DECONFIGURED)
+					ums.lun.prevent_medium_removal = 0;
+				break;
+			}
+		}
 
 		// Check for force unmount button combo.
 		if (btn_read_vol() == (BTN_VOL_UP | BTN_VOL_DOWN))

@@ -8,6 +8,7 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 
 
 - [Features](#features)
+- [Back up NAND directly to a Windows PC over USB](#back-up-nand-directly-to-a-windows-pc-over-usb)
 - [Bootloader folders and files](#bootloader-folders-and-files)
 - [Bootloader configuration](#bootloader-configuration)
   * [hekate global Configuration keys/values](#hekate-global-configuration-keysvalues-when-entry-is-config)
@@ -34,6 +35,44 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 - **Hardware and Peripherals info** (SoC, Fuses, RAM, Display, Touch, eMMC, SD, Battery, PSU, Charger)
 - **Many other tools** like Archive Bit Fixer, Touch Calibration, SD/eMMC Benchmark, AutoRCM enabler and more
 
+
+### Back up NAND directly to a Windows PC over USB
+
+The [Windows backup helper](tools/backup-nand.ps1) saves NAND directly to your PC without using microSD space. Requires Windows PowerShell 5.1 or later and an NTFS or exFAT destination with enough free space.
+
+1. Connect the Switch over USB. Open **Tools > USB Tools** and enable **Read-Only**.
+2. Open **PowerShell as Administrator** in this repository and run:
+
+   ```powershell
+   .\tools\backup-nand.ps1 -OutputDirectory D:\SwitchBackup
+   ```
+
+3. Select **eMMC BOOT0**, **eMMC BOOT1**, then **eMMC RAW GPP** when prompted. The helper detects each export and starts automatically; no Enter key is needed. Cancel any Windows request to format or initialize the disk.
+4. After each part, the helper verifies the saved file and requests eject. Wait for **Disk ejected** on the Switch, then close the USB session before selecting the next part.
+
+Alternatively, use the [Python version](tools/backup-nand.py) from an Administrator terminal with Python 3.9 or later:
+
+```powershell
+python .\tools\backup-nand.py -OutputDirectory D:\SwitchBackup
+```
+
+It supports the same options and automatic detection, verification, and eject behavior. No pip packages are needed; Windows PowerShell is used for disk discovery.
+
+Backups are saved under `<output directory>/<eMMC serial>/` as `BOOT0`, `BOOT1`, and `rawnand.bin`, with `.sha256` checksums. Keep all three for a full backup. Existing files are never overwritten; interrupted transfers leave `.partial` files. Add `-Part BOOT0`, `-Part BOOT1`, or `-Part GPP` to back up a single part.
+
+If automatic eject fails, use Windows' eject menu. If needed, after disk activity stops, press **VOL+ and VOL- together** on the Switch to request unmount.
+
+#### Optional USB 3 support
+
+1. Add the following under the existing `[config]` section in `bootloader/nyx.ini`:
+
+   ```ini
+   umsusb3=1
+   ```
+
+2. Reload hekate and use a USB 3 cable and PC port. The UMS status shows **USB 3** when connected at SuperSpeed. Use the same backup command above.
+
+Tested on an OLED Switch at approximately **133 MB/s**, with Windows eject working across BOOT0, BOOT1, and RAW GPP. Other models remain untested. Set `umsusb3=0` and reload to disable USB 3.
 
 ## Bootloader folders and files
 
@@ -196,6 +235,7 @@ Use `Nyx Settings` in Nyx to edit the following configuration:
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
 | ------------------ | ----- *The following can be edited via nyx.ini only* ----- |
 | umsemmcrw=0        | 1: eMMC/emuMMC UMS will be mounted as writable by default. |
+| umsusb3=0          | 1: Attempt experimental USB 3 UMS. 0: Use the previous USB 2 controller selection. Reload Nyx after changing. |
 | jcdisable=0        | 1: Disables Joycon driver completely.                      |
 | jcforceright=0     | 1: Forces right joycon to be used as main mouse control.   |
 | bpmpclock=1        | 0: Auto, 1: 589 MHz, 2: 576 MHz, 3: 563 MHz, 4: 544 MHz, 5: 408 MHz. Use 2 to 5 if Nyx hangs or some functions like UMS/Backup Verification fail. |

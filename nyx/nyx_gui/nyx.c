@@ -249,6 +249,8 @@ skip_main_cfg_parse:
 					n_cfg.verification   = atoi(kv->val);
 				else if (!strcmp("umsemmcrw",    kv->key))
 					n_cfg.ums_emmc_rw    = atoi(kv->val) == 1;
+				else if (!strcmp("umsusb3",      kv->key))
+					n_cfg.ums_usb3       = atoi(kv->val) == 1;
 				else if (!strcmp("jcdisable",    kv->key))
 					n_cfg.jc_disable     = atoi(kv->val) == 1;
 				else if (!strcmp("jcforceright", kv->key))

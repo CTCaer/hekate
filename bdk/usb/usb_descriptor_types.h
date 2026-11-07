@@ -34,7 +34,8 @@ typedef enum {
 	USB_DESCRIPTOR_DEVICE_BINARY_OBJECT      = 15,
 	USB_DESCRIPTOR_DEVICE_BINARY_OBJECT_CAP  = 16,
 	USB_DESCRIPTOR_HID                       = 33,
-	USB_DESCRIPTOR_HID_REPORT                = 34
+	USB_DESCRIPTOR_HID_REPORT                = 34,
+	USB_DESCRIPTOR_SS_EP_COMPANION           = 48
 } usb_desc_type_t;
 
 typedef enum {
@@ -138,6 +139,25 @@ typedef struct _usb_ep_descr_t
 	u16 wMaxPacketSize;   // Maximum packet size.
 	u8  bInterval;        // Polling interval in frames. For Interrupt and Isochronous data transfer only.
 } __attribute__((packed)) usb_ep_descr_t;
+
+typedef struct _usb_ss_ep_comp_descr_t
+{
+	u8  bLength;
+	u8  bDescriptorType;
+	u8  bMaxBurst;
+	u8  bmAttributes;
+	u16 wBytesPerInterval;
+} __attribute__((packed)) usb_ss_ep_comp_descr_t;
+
+typedef struct _usb_cfg_ss_descr_t
+{
+	usb_cfg_descr_t   config;
+	usb_inter_descr_t interface;
+	struct {
+		usb_ep_descr_t endpoint;
+		usb_ss_ep_comp_descr_t companion;
+	} __attribute__((packed)) ep[2];
+} __attribute__((packed)) usb_cfg_ss_descr_t;
 
 typedef struct _usb_cfg_simple_descr_t
 {

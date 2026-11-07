@@ -305,6 +305,7 @@ static lv_res_t _create_mbox_ums(usb_ctxt_t *usbs)
 	// Dim backlight.
 	display_backlight_brightness(20, 1000);
 
+	usbs->superspeed = n_cfg.ums_usb3;
 	usb_device_gadget_ums(usbs);
 
 	// Restore backlight.

@@ -37,6 +37,55 @@ static usb_dev_descr_t usb_device_descriptor_ums =
 	.bNumConfigs     = 1
 };
 
+// Separate objects keep USB2/HID descriptors intact across UMS sessions.
+usb_dev_descr_t usb_device_descriptor_ums_ss =
+{
+	.bLength = 18,
+	.bDescriptorType = USB_DESCRIPTOR_DEVICE,
+	.bcdUSB = 0x300,
+	.bMaxPacketSize = 9, // USB3 encodes log2(512) for EP0.
+	.idVendor = 0x11EC,
+	.idProduct = 0xA7E0,
+	.bcdDevice = 0x0101,
+	.iManufacturer = 1,
+	.iProduct = 2,
+	.iSerialNumber = 3,
+	.bNumConfigs = 1
+};
+
+usb_cfg_ss_descr_t usb_configuration_descriptor_ums_ss =
+{
+	.config = {
+		.bLength = 9, .bDescriptorType = USB_DESCRIPTOR_CONFIGURATION,
+		.wTotalLength = sizeof(usb_cfg_ss_descr_t), .bNumInterfaces = 1,
+		.bConfigurationValue = 1,
+		.bmAttributes = USB_ATTR_SELF_POWERED | USB_ATTR_BUS_POWERED_RSVD,
+		.bMaxPower = 32 / 8
+	},
+	.interface = {
+		.bLength = 9, .bDescriptorType = USB_DESCRIPTOR_INTERFACE,
+		.bNumEndpoints = 2, .bInterfaceClass = 0x08,
+		.bInterfaceSubClass = 0x06, .bInterfaceProtocol = 0x50
+	},
+	.ep = {
+		{ .endpoint = { 7, USB_DESCRIPTOR_ENDPOINT, 0x81, USB_EP_TYPE_BULK, 1024, 0 },
+		  .companion = { 6, USB_DESCRIPTOR_SS_EP_COMPANION, 0, 0, 0 } },
+		{ .endpoint = { 7, USB_DESCRIPTOR_ENDPOINT, 0x01, USB_EP_TYPE_BULK, 1024, 0 },
+		  .companion = { 6, USB_DESCRIPTOR_SS_EP_COMPANION, 0, 0, 0 } }
+	}
+};
+
+usb_dev_bot_t usb_device_binary_object_descriptor_ss =
+{
+	.bLength = 5, .bDescriptorType = USB_DESCRIPTOR_DEVICE_BINARY_OBJECT,
+	.wTotalLength = sizeof(usb_dev_bot_t), .bNumDeviceCaps = 2,
+	.bLengthCap0 = 7, .bDescriptorTypeCap0 = USB_DESCRIPTOR_DEVICE_BINARY_OBJECT_CAP,
+	.bDevCapabilityTypeCap0 = 2,
+	.bLengthCap1 = 10, .bDescriptorTypeCap1 = USB_DESCRIPTOR_DEVICE_BINARY_OBJECT_CAP,
+	.bDevCapabilityTypeCap1 = 3, .wSpeedsSupported = 0xE,
+	.bFunctionalitySupport = 1, .bU1DevExitLat = 10, .wU2DevExitLat = 0x7FF
+};
+
 static usb_dev_qual_descr_t usb_device_qualifier_descriptor =
 {
 	.bLength          = 10,
