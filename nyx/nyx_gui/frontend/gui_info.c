@@ -764,7 +764,8 @@ static lv_res_t _create_window_hw_info_status(lv_obj_t *btn)
 	case 21: strcpy(fuses_hos_version, "20.0.0 - 20.5.0");    break;
 	case 22: strcpy(fuses_hos_version, "21.0.0 - 21.2.0");    break;
 	case 23: strcpy(fuses_hos_version, "22.0.0 - 22.5.0");    break;
-	case 24: strcpy(fuses_hos_version, "23.0.0+");            break;
+	case 24: strcpy(fuses_hos_version, "23.0.0 - 23.0.1");    break;
+	case 25: strcpy(fuses_hos_version, "23.5.0+");            break;
 	case 64: strcpy(fuses_hos_version, "#FFD000 Overburnt#"); break;
 	default: strcpy(fuses_hos_version, "#FF8000 Unknown#");   break;
 	}
