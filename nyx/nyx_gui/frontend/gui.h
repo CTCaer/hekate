@@ -84,4 +84,7 @@ lv_res_t nyx_generic_onoff_toggle(lv_obj_t *btn);
 void manual_system_maintenance(bool refresh);
 void nyx_load_and_run();
 
+// temp_c10 is degrees Celsius * 10. is_battery selects battery vs SoC thresholds.
+const char *gui_temp_color(int temp_c10, bool is_battery);
+
 #endif
