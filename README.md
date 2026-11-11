@@ -188,7 +188,9 @@ Use `Nyx Settings` in Nyx to edit the following configuration:
 | Config option      | Description                                                |
 | ------------------ | ---------------------------------------------------------- |
 | themebg=2d2d2d     | Sets Nyx background color in HEX. 0x0B0B0B to 0xC7C7C7.    |
-| themecolor=167     | Sets Nyx color of text highlights.                         |
+| themecolor=167     | Sets Nyx color of text highlights. Hue, 0 to 359.          |
+| themesat=100       | Sets saturation of the Nyx highlight color. 0 to 100.      |
+| themeval=100       | Sets value (brightness) of the Nyx highlight color. 0 to 100. |
 | entries5col=0      | 1: Sets Launch entry columns from 4 to 5 per line. For a total of 10 entries. |
 | timeoffset=0       | Sets time offset in HEX. Must be in epoch format           |
 | timedst=1          | Enables automatic daylight saving hour adjustment          |

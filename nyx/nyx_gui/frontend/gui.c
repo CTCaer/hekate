@@ -1752,7 +1752,7 @@ static lv_res_t _create_window_home_launch(lv_obj_t *btn)
 	// Create colorized icon style based on its parent style.
 	static lv_style_t img_style;
 	lv_style_copy(&img_style, &lv_style_plain);
-	img_style.image.color = COLOR_HOS_TURQUOISE_EX(n_cfg.theme_color);
+	img_style.image.color = COLOR_HOS_TURQUOISE_EX(n_cfg.theme_color, n_cfg.theme_sat, n_cfg.theme_val);
 	img_style.image.intense = LV_OPA_COVER;
 
 	// Parse ini boot entries and set buttons/icons.
@@ -2165,6 +2165,8 @@ static void _create_status_bar(lv_theme_t * th)
 	lv_style_copy(&status_bar_style, &lv_style_plain_color);
 	status_bar_style.body.opa = LV_OPA_0;
 	status_bar_style.body.shadow.width = 0;
+	status_bar_style.text.color = COLOR_TEXT_EX(0xF0F0F0);
+	status_bar_style.image.color = COLOR_TEXT_EX(0xF0F0F0);
 
 	lv_obj_set_style(status_bar_bg, &status_bar_style);
 	lv_obj_set_size(status_bar_bg, LV_HOR_RES, LV_DPI * 9 / 14);
@@ -2300,6 +2302,7 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	monospace_text.text.font = &ubuntu_mono;
 	monospace_text.text.letter_space = 0;
 	monospace_text.text.line_space = 0;
+	monospace_text.text.color = COLOR_TEXT_EX(0xD8D8D8);
 
 	lv_style_copy(&btn_transp_rel, th->btn.rel);
 	btn_transp_rel.body.main_color = LV_COLOR_HEX(0x444444);
@@ -2352,7 +2355,7 @@ static void _nyx_set_default_styles(lv_theme_t * th)
 	tabview_btn_tgl_pr.body.grad_color = tabview_btn_tgl_pr.body.main_color;
 	tabview_btn_tgl_pr.body.opa = 35; // 13.7%.
 
-	lv_color_t tmp_color = COLOR_HOS_TURQUOISE_EX(n_cfg.theme_color);
+	lv_color_t tmp_color = COLOR_HOS_TURQUOISE_EX(n_cfg.theme_color, n_cfg.theme_sat, n_cfg.theme_val);
 	text_color = malloc(32);
 	s_printf(text_color, "#%06X", (u32)(tmp_color.full & 0xFFFFFF));
 }
@@ -2533,7 +2536,7 @@ void nyx_load_and_run()
 	tmp451_init();
 
 	// Set hekate theme based on chosen hue.
-	lv_theme_t *th = lv_theme_hekate_init(n_cfg.theme_bg, n_cfg.theme_color, NULL);
+	lv_theme_t *th = lv_theme_hekate_init(n_cfg.theme_bg, n_cfg.theme_color, n_cfg.theme_sat, n_cfg.theme_val, NULL);
 	lv_theme_set_current(th);
 
 	// Create main menu

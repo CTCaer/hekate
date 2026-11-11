@@ -26,12 +26,15 @@
  *********************/
 #define DEF_RADIUS             4
 
-#define COLOR_HOS_TURQUOISE    (_hue ? lv_color_hsv_to_rgb(_hue, 100, 100) : lv_color_hsv_to_rgb(53, 8, 90)) // 0x00FFC9
-#define COLOR_HOS_TEAL_LIGHTER (_hue ? lv_color_hsv_to_rgb(_hue, 100,  93) : lv_color_hsv_to_rgb(53, 8, 81)) // 0x00EDBA
-#define COLOR_HOS_TEAL_LIGHT   (_hue ? lv_color_hsv_to_rgb(_hue, 100,  72) : lv_color_hsv_to_rgb(53, 8, 65)) // 0x00B78F
-#define COLOR_HOS_TEAL         (_hue ? lv_color_hsv_to_rgb(_hue, 100,  64) : lv_color_hsv_to_rgb(53, 8, 58)) // 0x00A273
+// Accent color from the configured hue. s/v are the design values at the default sat/val of 100.
+#define ACCENT_HSV(s, v)       lv_color_hsv_to_rgb(_hue, (s) * _sat / 100, (v) * _val / 100)
+
+#define COLOR_HOS_TURQUOISE    (_hue ? ACCENT_HSV(100, 100) : lv_color_hsv_to_rgb(53, 8, 90)) // 0x00FFC9
+#define COLOR_HOS_TEAL_LIGHTER (_hue ? ACCENT_HSV(100,  93) : lv_color_hsv_to_rgb(53, 8, 81)) // 0x00EDBA
+#define COLOR_HOS_TEAL_LIGHT   (_hue ? ACCENT_HSV(100,  72) : lv_color_hsv_to_rgb(53, 8, 65)) // 0x00B78F
+#define COLOR_HOS_TEAL         (_hue ? ACCENT_HSV(100,  64) : lv_color_hsv_to_rgb(53, 8, 58)) // 0x00A273
 #define COLOR_HOS_ORANGE       LV_COLOR_HEX(0xFF5500)
-#define COLOR_HOS_TXT_WHITE    LV_COLOR_HEX(0xFBFBFB)
+#define COLOR_HOS_TXT_WHITE    COLOR_TEXT_EX(0xFBFBFB)
 
 #define COLOR_BG_DARK          LV_COLOR_HEX(theme_bg_color ? (theme_bg_color - 0x0B0B0B) : 0x121212) // 0x222222.
 #define COLOR_BG               LV_COLOR_HEX(theme_bg_color)                                          // 0x2D2D2D.
@@ -66,8 +69,12 @@ static lv_style_t sb;
 
 /*Saved input parameters*/
 static uint16_t    _hue;
+static uint8_t     _sat;
+static uint8_t     _val;
 static lv_font_t * _font;
 uint32_t theme_bg_color;
+uint32_t theme_txt_color;
+uint32_t theme_hint_color;
 
 /**********************
  *      MACROS
@@ -198,7 +205,7 @@ static void label_init(void)
 	sec.text.color = COLOR_HOS_ORANGE;
 
 	lv_style_copy(&hint, &prim);
-	hint.text.color = LV_COLOR_HEX(0xCCCCCC);
+	hint.text.color = COLOR_HINT_EX(0xCCCCCC);
 
 	theme.label.prim = &prim;
 	theme.label.sec = &sec;
@@ -225,10 +232,10 @@ static void led_init(void)
 	led.body.radius = LV_RADIUS_CIRCLE;
 	led.body.border.width = LV_DPI / 30;
 	led.body.border.opa = LV_OPA_30;
-	led.body.main_color = lv_color_hsv_to_rgb(_hue, 100, 100);
+	led.body.main_color = ACCENT_HSV(100, 100);
 	led.body.grad_color = led.body.main_color;
-	led.body.border.color = lv_color_hsv_to_rgb(_hue, 60, 60);
-	led.body.shadow.color = lv_color_hsv_to_rgb(_hue, 100, 100);
+	led.body.border.color = ACCENT_HSV(60, 60);
+	led.body.shadow.color = ACCENT_HSV(100, 100);
 
 	theme.led = &led;
 #endif
@@ -312,7 +319,7 @@ static void lmeter_init(void)
 #if USE_LV_LMETER != 0
 	static lv_style_t lmeter;
 	lv_style_copy(&lmeter, &def);
-	lmeter.body.main_color = lv_color_hsv_to_rgb(_hue, 75, 90);
+	lmeter.body.main_color = ACCENT_HSV(75, 90);
 	lmeter.body.grad_color = lmeter.body.main_color;
 	lmeter.body.padding.hor = LV_DPI / 10; // Scale line length.
 	lmeter.line.color = LV_COLOR_HEX(0x999999);
@@ -328,14 +335,14 @@ static void gauge_init(void)
 
 	static lv_style_t gauge;
 	lv_style_copy(&gauge, &def);
-	gauge.body.main_color = lv_color_hsv_to_rgb(_hue, 10, 60);
+	gauge.body.main_color = ACCENT_HSV(10, 60);
 	gauge.body.grad_color = gauge.body.main_color;
 	gauge.body.padding.hor = LV_DPI / 16; // Scale line length.
 	gauge.body.padding.inner = LV_DPI / 8;
 	gauge.body.border.color = LV_COLOR_HEX(0x999999);
 	gauge.text.color = LV_COLOR_HEX(0xDDDDDD);
 	gauge.line.width = 3;
-	gauge.line.color = lv_color_hsv_to_rgb(_hue, 95, 70);
+	gauge.line.color = ACCENT_HSV(95, 70);
 
 	theme.gauge = &gauge;
 #endif
@@ -348,11 +355,11 @@ static void arc_init(void)
 	static lv_style_t arc;
 	lv_style_copy(&arc, &def);
 	arc.line.width = 10;
-	arc.line.color = lv_color_hsv_to_rgb(_hue, 90, 90);
+	arc.line.color = ACCENT_HSV(90, 90);
 
 	/*For prelaoder*/
 	arc.body.border.width = 10;
-	arc.body.border.color = lv_color_hsv_to_rgb(_hue, 30, 90);
+	arc.body.border.color = ACCENT_HSV(30, 90);
 	arc.body.padding.hor = 0;
 	arc.body.padding.ver = 0;
 
@@ -380,15 +387,15 @@ static void calendar_init(void)
 #if USE_LV_CALENDAR
 	static lv_style_t ina_days;
 	lv_style_copy(&ina_days, &def);
-	ina_days.text.color = lv_color_hsv_to_rgb(_hue, 0, 70);
+	ina_days.text.color = ACCENT_HSV(0, 70);
 
 	static lv_style_t high_days;
 	lv_style_copy(&high_days, &def);
-	high_days.text.color = lv_color_hsv_to_rgb(_hue, 80, 90);
+	high_days.text.color = ACCENT_HSV(80, 90);
 
 	static lv_style_t week_box;
 	lv_style_copy(&week_box, &def);
-	week_box.body.main_color = lv_color_hsv_to_rgb(_hue, 40, 100);
+	week_box.body.main_color = ACCENT_HSV(40, 100);
 	week_box.body.grad_color = week_box.body.main_color;
 	week_box.body.padding.ver = LV_DPI / 20;
 	week_box.body.padding.hor = theme.panel->body.padding.hor;
@@ -427,12 +434,12 @@ static void cb_init(void)
 	pr.body.shadow.width = 3;
 
 	lv_style_copy(&tgl_rel, &rel);
-	tgl_rel.body.main_color = lv_color_hsv_to_rgb(_hue, 75, 85);
+	tgl_rel.body.main_color = ACCENT_HSV(75, 85);
 	tgl_rel.body.grad_color = tgl_rel.body.main_color;
 	tgl_rel.body.shadow.width = 0;
 
 	lv_style_copy(&tgl_pr, &tgl_rel);
-	tgl_pr.body.main_color = lv_color_hsv_to_rgb(_hue, 75, 65);
+	tgl_pr.body.main_color = ACCENT_HSV(75, 65);
 	tgl_pr.body.grad_color = tgl_pr.body.main_color;
 
 	lv_style_copy(&ina, theme.btn.ina);
@@ -473,12 +480,12 @@ static void btnm_init(void)
 	pr.body.empty = 0;
 
 	lv_style_copy(&tgl_rel, &pr);
-	tgl_rel.body.main_color = lv_color_hsv_to_rgb(_hue, 90, 70);
+	tgl_rel.body.main_color = ACCENT_HSV(90, 70);
 	tgl_rel.body.grad_color = tgl_rel.body.main_color;
-	tgl_rel.text.color = lv_color_hsv_to_rgb(_hue, 5, 95);
+	tgl_rel.text.color = ACCENT_HSV(5, 95);
 
 	lv_style_copy(&tgl_pr, &tgl_rel);
-	tgl_pr.body.main_color = lv_color_hsv_to_rgb(_hue, 95, 65);
+	tgl_pr.body.main_color = ACCENT_HSV(95, 65);
 	tgl_pr.body.grad_color = tgl_pr.body.main_color;
 	tgl_pr.body.border.width = 0;
 
@@ -620,7 +627,7 @@ static void list_init(void)
 	lv_style_copy(&tgl_rel, &pr);
 	tgl_rel.body.main_color = COLOR_BG_LIGHT;
 	tgl_rel.body.grad_color = tgl_rel.body.main_color;
-	//tgl_rel.text.color = lv_color_hsv_to_rgb(_hue, 5, 95);
+	//tgl_rel.text.color = ACCENT_HSV(5, 95);
 	tgl_rel.text.color = COLOR_HOS_TEAL_LIGHTER;
 
 	lv_style_copy(&tgl_pr, &tgl_rel);
@@ -833,12 +840,14 @@ static void win_init(void)
  * @param font pointer to a font (NULL to use the default)
  * @return pointer to the initialized theme
  */
-lv_theme_t * lv_theme_hekate_init(uint32_t bg_color, uint16_t hue, lv_font_t * font)
+lv_theme_t * lv_theme_hekate_init(uint32_t bg_color, uint16_t hue, uint8_t sat, uint8_t val, lv_font_t * font)
 {
 	if(font == NULL) font = LV_FONT_DEFAULT;
 
 	theme_bg_color = bg_color;
 	_hue = hue;
+	_sat = sat;
+	_val = val;
 	_font = font;
 
 	/*For backward compatibility initialize all theme elements with a default style */
@@ -896,4 +905,3 @@ lv_theme_t * lv_theme_get_hekate(void)
  **********************/
 
 #endif
-
