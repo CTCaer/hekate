@@ -192,6 +192,8 @@ Use `Nyx Settings` in Nyx to edit the following configuration:
 | entries5col=0      | 1: Sets Launch entry columns from 4 to 5 per line. For a total of 10 entries. |
 | timeoffset=0       | Sets time offset in HEX. Must be in epoch format           |
 | timedst=1          | Enables automatic daylight saving hour adjustment          |
+| clockin12hour=0    | 0: Disable, 1: The Clock on the status bar to be in 12-Hour format, if it is enabled.   |  
+| tempinf=0          | 0: Disable  1: The Temperature on the status bar to be in Fahrenheit format, if it is enabled.  | 
 | homescreen=0       | Sets home screen. 0: Home menu, 1: All configs (merges Launch and More configs), 2: Launch, 3: More Configs. |
 | verification=1     | 0: Disable Backup/Restore verification, 1: Sparse (block based, fast and mostly reliable), 2: Full (sha256 based, slow and 100% reliable). |
 | ------------------ | ----- *The following can be edited via nyx.ini only* ----- |

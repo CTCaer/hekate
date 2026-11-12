@@ -50,6 +50,8 @@ typedef struct _nyx_config
 	u32 entries_5_col;
 	u32 timeoffset;
 	u32 timedst;
+	u32 clockin12hour;
+	u32 tempinf;	
 	u32 home_screen;
 	u32 verification;
 	u32 ums_emmc_rw;

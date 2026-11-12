@@ -1387,9 +1387,38 @@ static void _update_status_bar(void *params)
 		label = (char *)malloc(512);
 
 	// Set time and SoC temperature.
-	s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d",
-		time.hour, time.min, soc_temp_dec, (soc_temp & 0xFF) / 10);
+	//s_printf(label, "%02d:%02d "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %02d.%d", time.hour, time.min, soc_temp_dec, (soc_temp & 0xFF) / 10);
+	
+    static char *clock = NULL;
+	static char *temp = NULL;
+	
+	if (!clock)
+		clock = (char *)malloc(512);
+	if (!temp)
+		temp = (char *)malloc(512);
+	
+    if (n_cfg.clockin12hour) {
+	const char* ampm = (time.hour < 12) ? "AM" : "PM";	
+    // Convert hours to 12-hour format
+    int hour12 = time.hour % 12;
+    if (hour12 == 0) {
+        hour12 = 12; // Handles 00:xx (Midnight) and 12:xx (Noon)
+    }	
+	  s_printf(clock, "%d:%02d %s", hour12, time.min, ampm);
+	} else {
+	  s_printf(clock, "%02d:%02d ", time.hour, time.min);
+	}	
+	if (n_cfg.tempinf) {
+		float temp_c = soc_temp_dec + ((float)(soc_temp & 0xFF) / 10.0f);
+		float temp_f = (temp_c * 1.8f) + 32.0f;
+		int temp_f_dec = (int)temp_f;
+		int temp_f_frac = (int)((temp_f - temp_f_dec) * 10);
+		s_printf(temp, "%02d.%d ", temp_f_dec, temp_f_frac);
+	} else {
+		s_printf(temp, "%02d.%d ", soc_temp_dec, (soc_temp & 0xFF) / 10);		
+	}
 
+	s_printf(label, "%s "SYMBOL_DOT" "SYMBOL_TEMPERATURE" %s", clock, temp);
 	lv_label_set_text(status_bar.time_temp, label);
 
 	lv_obj_realign(status_bar.temp_symbol);
@@ -2200,7 +2229,11 @@ static void _create_status_bar(lv_theme_t * th)
 	status_bar.temp_symbol = lbl_left;
 
 	lv_obj_t *lbl_degrees = lv_label_create(status_bar_bg, NULL);
+	if (n_cfg.tempinf) { 
+	lv_label_set_text(lbl_degrees, "F");
+	} else {
 	lv_label_set_text(lbl_degrees, "C");
+	}
 	lv_obj_align(lbl_degrees, lbl_left, LV_ALIGN_OUT_RIGHT_MID, LV_DPI / 50, LV_DPI / 14);
 	status_bar.temp_degrees = lbl_degrees;
 

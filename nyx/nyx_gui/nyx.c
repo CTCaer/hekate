@@ -243,6 +243,10 @@ skip_main_cfg_parse:
 				}
 				else if (!strcmp("timedst",      kv->key))
 					n_cfg.timedst        = atoi(kv->val);
+				else if (!strcmp("clockin12hour",  kv->key))
+					n_cfg.clockin12hour  = atoi(kv->val);
+				else if (!strcmp("tempinf",  kv->key))
+					n_cfg.tempinf  = atoi(kv->val);				
 				else if (!strcmp("homescreen",   kv->key))
 					n_cfg.home_screen    = atoi(kv->val);
 				else if (!strcmp("verification", kv->key))
