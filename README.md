@@ -38,7 +38,7 @@ Custom Graphical Nintendo Switch bootloader, firmware patcher, tools, and many m
 
 ### Back up NAND directly to a Windows PC over USB
 
-The [Windows backup helper](tools/backup-nand.ps1) saves NAND directly to your PC without using microSD space. Requires Windows PowerShell 5.1 or later and an NTFS or exFAT destination with enough free space.
+The [Windows backup helper](tools/backup-nand.ps1) saves NAND directly to your PC without using microSD space. Requires Windows PowerShell 5.1 or later and enough destination space. Use NTFS or exFAT for a single RAW GPP file, or add `-Split` for FAT32-compatible files.
 
 1. Connect the Switch over USB. Open **Tools > USB Tools** and enable **Read-Only**.
 2. Open **PowerShell as Administrator** in this repository and run:
@@ -59,6 +59,17 @@ python .\tools\backup-nand.py -OutputDirectory D:\SwitchBackup
 It supports the same options and automatic detection, verification, and eject behavior. No pip packages are needed; Windows PowerShell is used for disk discovery.
 
 Backups are saved under `<output directory>/<eMMC serial>/` as `BOOT0`, `BOOT1`, and `rawnand.bin`, with `.sha256` checksums. Keep all three for a full backup. Existing files are never overwritten; interrupted transfers leave `.partial` files. Add `-Part BOOT0`, `-Part BOOT1`, or `-Part GPP` to back up a single part.
+
+For FAT32-compatible backups, add `-Split` to either command:
+
+```powershell
+.\tools\backup-nand.ps1 -OutputDirectory D:\SwitchBackup -Split
+python .\tools\backup-nand.py -OutputDirectory D:\SwitchBackup -Split
+```
+
+RAW GPP is saved directly as 2 GiB pieces (`rawnand.bin.00`, `.01`, ...), each with a `.sha256` checksum. BOOT0 and BOOT1 remain single files. Keep every numbered piece; files stay marked `.partial` until the entire export has been read and verified. Existing single-file or split backups are never overwritten.
+
+To restore, copy BOOT0, BOOT1, and **all** numbered pieces to `SD:/backup/<eMMC serial>/restore/`. In hekate, use **Tools > Restore eMMC > eMMC BOOT0 & BOOT1**, then **eMMC RAW GPP**. Use a backup from the same Switch; restoration overwrites the current NAND contents.
 
 If automatic eject fails, use Windows' eject menu. If needed, after disk activity stops, press **VOL+ and VOL- together** on the Switch to request unmount.
 

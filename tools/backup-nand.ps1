@@ -5,6 +5,9 @@ Save a hekate read-only eMMC USB export directly to this Windows PC.
 .EXAMPLE
 .\tools\backup-nand.ps1 -OutputDirectory D:\SwitchBackup
 .EXAMPLE
+.\tools\backup-nand.ps1 -OutputDirectory D:\SwitchBackup -Split
+Save RAW GPP in FAT32-compatible 2 GiB pieces.
+.EXAMPLE
 .\tools\backup-nand.ps1 -Part GPP -EjectOnly
 Request eject for a read-only export after other backup tools have finished.
 #>
@@ -13,7 +16,8 @@ param(
     [string]$OutputDirectory,
     [ValidateSet('All', 'BOOT0', 'BOOT1', 'GPP')]
     [string]$Part = 'All',
-    [switch]$EjectOnly
+    [switch]$EjectOnly,
+    [switch]$Split
 )
 
 function Get-NandUsbDisk {
@@ -73,65 +77,86 @@ function Wait-NandUsbDisk {
 }
 
 function Copy-NandImage {
-    param([string]$SourcePath, [long]$Size, [string]$Destination)
+    param([string]$SourcePath, [long]$Size, [string]$Destination, [long]$SplitSize = 0)
 
     if ($Size -le 0 -or ($Size % 512) -ne 0) { throw 'Invalid image size; expected complete 512-byte sectors.' }
-    $partial = $Destination + '.partial'
-    $checksum = $Destination + '.sha256'
-    foreach ($path in @($Destination, $partial, $checksum)) {
+    if ($SplitSize -and ($SplitSize -lt 4MB -or $SplitSize -gt 2GB -or ($SplitSize % 4MB))) {
+        throw 'Split size must be a multiple of 4 MiB, up to 2 GiB.'
+    }
+    $candidates = @($Destination, ($Destination + '.partial'), ($Destination + '.sha256'))
+    $parent = Split-Path -Parent $Destination
+    if (!$parent) { $parent = '.' }
+    $leaf = Split-Path -Leaf $Destination
+    $pattern = '^' + [regex]::Escape($leaf) + '\.\d{2,}(?:\.partial|\.sha256)?$'
+    $candidates += @(Get-ChildItem -LiteralPath $parent -ErrorAction Stop | Where-Object { $_.Name -match $pattern } | ForEach-Object FullName)
+    foreach ($path in $candidates) {
         if (Test-Path -LiteralPath $path) { throw "File already exists: $path" }
     }
+    [long]$partSize = if ($SplitSize) { $SplitSize } else { $Size }
+    $verified = [System.Collections.Generic.List[object]]::new()
     $source = $null
     $target = $null
-    $hash = [System.Security.Cryptography.SHA256]::Create()
+    $hash = $null
     try {
-        # Source is opened with FileAccess.Read only, including for physical disks.
-        $source = [System.IO.FileStream]::new($SourcePath, [System.IO.FileMode]::Open,
-            [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
-        $target = [System.IO.FileStream]::new($partial, [System.IO.FileMode]::CreateNew,
-            [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        $source = [IO.FileStream]::new($SourcePath, [IO.FileMode]::Open,
+            [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
         $buffer = New-Object byte[] (1MB)
         [long]$copied = 0
-        $timer = [System.Diagnostics.Stopwatch]::StartNew()
+        $index = 0
+        $timer = [Diagnostics.Stopwatch]::StartNew()
         [long]$lastProgress = -1000
         while ($copied -lt $Size) {
-            # Select the Int64 overload before narrowing the bounded chunk size.
-            $count = [int][Math]::Min([long]$buffer.Length, $Size - $copied)
-            $read = $source.Read($buffer, 0, $count)
-            if ($read -eq 0) { throw "USB source ended after $copied of $Size bytes." }
-            $target.Write($buffer, 0, $read)
-            [void]$hash.TransformBlock($buffer, 0, $read, $buffer, 0)
-            $copied += $read
-            if ($timer.ElapsedMilliseconds - $lastProgress -ge 500) {
-                Write-Progress -Activity "Backing up $([IO.Path]::GetFileName($Destination))" `
-                    -Status ("{0:N0} / {1:N0} MiB" -f ($copied / 1MB), ($Size / 1MB)) `
-                    -PercentComplete ([int](100.0 * $copied / $Size))
-                $lastProgress = $timer.ElapsedMilliseconds
+            $final = if ($SplitSize) { '{0}.{1:D2}' -f $Destination, $index } else { $Destination }
+            $partial = $final + '.partial'
+            $hash = [Security.Cryptography.SHA256]::Create()
+            $target = [IO.FileStream]::new($partial, [IO.FileMode]::CreateNew,
+                [IO.FileAccess]::Write, [IO.FileShare]::None)
+            [long]$remaining = [Math]::Min($partSize, $Size - $copied)
+            while ($remaining -gt 0) {
+                $count = [int][Math]::Min([long]$buffer.Length, $remaining)
+                $read = $source.Read($buffer, 0, $count)
+                if ($read -eq 0) { throw "USB source ended after $copied of $Size bytes." }
+                $target.Write($buffer, 0, $read)
+                [void]$hash.TransformBlock($buffer, 0, $read, $buffer, 0)
+                $copied += $read
+                $remaining -= $read
+                if ($timer.ElapsedMilliseconds - $lastProgress -ge 500) {
+                    Write-Progress -Activity "Backing up $leaf" `
+                        -Status ("{0:N0} / {1:N0} MiB" -f ($copied / 1MB), ($Size / 1MB)) `
+                        -PercentComplete ([int](100.0 * $copied / $Size))
+                    $lastProgress = $timer.ElapsedMilliseconds
+                }
             }
+            [void]$hash.TransformFinalBlock($buffer, 0, 0)
+            $expected = [BitConverter]::ToString($hash.Hash).Replace('-', '').ToLowerInvariant()
+            $hash.Dispose()
+            $hash = $null
+            $target.Flush($true)
+            $target.Dispose()
+            $target = $null
+            Write-Progress -Activity 'Verifying saved backup' -Status $partial
+            $actual = (Get-FileHash -LiteralPath $partial -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+            if ($actual -ne $expected) { throw 'Saved backup checksum does not match the USB data.' }
+            $verified.Add([pscustomobject]@{ Final = $final; Partial = $partial; Hash = $expected })
+            $index++
         }
-        [void]$hash.TransformFinalBlock($buffer, 0, 0)
-        $expectedHash = [BitConverter]::ToString($hash.Hash).Replace('-', '').ToLowerInvariant()
-        $target.Flush($true)
-        $target.Dispose()
-        $target = $null
         $source.Dispose()
         $source = $null
-        Write-Progress -Activity 'Verifying saved backup' -Status $partial
-        $actualHash = (Get-FileHash -LiteralPath $partial -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
-        if ($actualHash -ne $expectedHash) { throw 'Saved backup checksum does not match the USB data.' }
-        # Publish the normal filename only after a complete, verified transfer.
-        [System.IO.File]::Move($partial, $Destination)
-        $checksumFile = [System.IO.FileStream]::new($checksum, [System.IO.FileMode]::CreateNew)
-        try {
-            $line = $expectedHash + '  ' + [IO.Path]::GetFileName($Destination) + "`n"
-            $bytes = [System.Text.Encoding]::ASCII.GetBytes($line)
-            $checksumFile.Write($bytes, 0, $bytes.Length)
-        } finally { $checksumFile.Dispose() }
-        Write-Host "Saved and verified: $Destination"
+        # Publish only after the whole export has been read and every part verified.
+        foreach ($part in $verified) {
+            [IO.File]::Move($part.Partial, $part.Final)
+            $checksumFile = [IO.FileStream]::new(($part.Final + '.sha256'), [IO.FileMode]::CreateNew)
+            try {
+                $line = $part.Hash + '  ' + [IO.Path]::GetFileName($part.Final) + "`n"
+                $bytes = [Text.Encoding]::ASCII.GetBytes($line)
+                $checksumFile.Write($bytes, 0, $bytes.Length)
+            } finally { $checksumFile.Dispose() }
+            Write-Host "Saved and verified: $($part.Final)"
+        }
     } finally {
         if ($target) { $target.Dispose() }
         if ($source) { $source.Dispose() }
-        $hash.Dispose()
+        if ($hash) { $hash.Dispose() }
         Write-Progress -Activity 'Backing up NAND' -Completed
     }
 }
@@ -213,7 +238,7 @@ function Eject-NandUsbDisk {
 }
 
 function Invoke-NandUsbBackup {
-    param([string]$Directory, [string]$SelectedPart, [switch]$OnlyEject)
+    param([string]$Directory, [string]$SelectedPart, [switch]$OnlyEject, [switch]$SplitBackup)
 
     $ErrorActionPreference = 'Stop'
     if (!$OnlyEject -and !$Directory) { throw 'Specify -OutputDirectory on a PC drive with enough free space.' }
@@ -237,12 +262,13 @@ function Invoke-NandUsbBackup {
         $serial = $disk.Serial
         $folder = [IO.Directory]::CreateDirectory((Join-Path $root $serial)).FullName
         $drive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($folder))
-        if ($drive.DriveFormat -eq 'FAT32' -and $disk.Size -gt [uint32]::MaxValue) {
+        if (!($SplitBackup -and $partition -eq 'GPP') -and $drive.DriveFormat -eq 'FAT32' -and $disk.Size -gt [uint32]::MaxValue) {
             throw 'Use NTFS or exFAT for the PC destination; RAW GPP will not fit in a single FAT32 file.'
         }
         if ($drive.AvailableFreeSpace -lt ($disk.Size + 1MB)) { throw 'Not enough free space on the PC destination.' }
         $name = if ($partition -eq 'GPP') { 'rawnand.bin' } else { $partition }
-        Copy-NandImage -SourcePath $disk.Path -Size $disk.Size -Destination (Join-Path $folder $name)
+        [long]$splitSize = if ($SplitBackup -and $partition -eq 'GPP') { 2GB } else { 0 }
+        Copy-NandImage -SourcePath $disk.Path -Size $disk.Size -Destination (Join-Path $folder $name) -SplitSize $splitSize
         # Copy-NandImage has closed its handles and verified the saved file.
         # A failed copy throws before this point, so it never triggers eject.
         try {
@@ -254,12 +280,12 @@ function Invoke-NandUsbBackup {
         Write-Host 'Wait for Disk ejected on the Switch, then close the USB session before selecting the next part.'
     }
     if ($SelectedPart -eq 'All') { Write-Host "Full NAND backup saved in $folder" }
-    else { Write-Host 'A full NAND backup requires BOOT0, BOOT1, and rawnand.bin from the same console.' }
+    else { Write-Host 'A full NAND backup requires BOOT0, BOOT1, and the complete RAW GPP image (one file or all numbered pieces) from the same console.' }
 }
 
 # Dot sourcing exposes functions for local tests without accessing hardware.
 if ($MyInvocation.InvocationName -ne '.') {
-    try { Invoke-NandUsbBackup -Directory $OutputDirectory -SelectedPart $Part -OnlyEject:$EjectOnly }
+    try { Invoke-NandUsbBackup -Directory $OutputDirectory -SelectedPart $Part -OnlyEject:$EjectOnly -SplitBackup:$Split }
     catch {
         if ($EjectOnly) {
             Write-Error "Eject request failed: $_" -ErrorAction Continue

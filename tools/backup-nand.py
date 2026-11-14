@@ -146,47 +146,61 @@ def hash_file(path):
     return digest.hexdigest()
 
 
-def copy_nand_image(source_path, size, destination):
+def copy_nand_image(source_path, size, destination, split_size=0):
     if size <= 0 or size % 512:
         raise ValueError('Invalid image size; expected complete 512-byte sectors.')
+    if split_size and (split_size < 4 * 1024**2 or split_size > 2 * 1024**3 or split_size % (4 * 1024**2)):
+        raise ValueError('Split size must be a multiple of 4 MiB, up to 2 GiB.')
     destination = Path(destination)
-    partial = Path(str(destination) + '.partial')
-    checksum = Path(str(destination) + '.sha256')
-    for path in (destination, partial, checksum):
+    # Reject both layouts, including leftovers from a previous split backup.
+    candidates = [destination, Path(str(destination)+'.partial'), Path(str(destination)+'.sha256')]
+    candidates += [p for p in destination.parent.glob(destination.name+'.*')
+                   if re.fullmatch(re.escape(destination.name)+r'\.\d{2,}(?:\.partial|\.sha256)?', p.name)]
+    for path in candidates:
         if path.exists():
             raise FileExistsError(f'File already exists: {path}')
-    digest = hashlib.sha256()
+    part_size = split_size or size
+    count = (size + part_size - 1) // part_size
+    verified = []
     copied = 0
     last_progress = -1.0
     try:
-        with open_nand_source(source_path) as source, partial.open('xb') as target:
-            while copied < size:
-                chunk = source.read(min(1024 * 1024, size - copied))
-                if not chunk:
-                    raise RuntimeError(f'USB source ended after {copied} of {size} bytes.')
-                target.write(chunk)
-                digest.update(chunk)
-                copied += len(chunk)
-                now = time.monotonic()
-                if now - last_progress >= 0.5:
-                    print(f'\rBacking up {destination.name}: {copied / 1048576:,.0f} / '
-                          f'{size / 1048576:,.0f} MiB ({100 * copied / size:.0f}%)',
-                          end='', file=sys.stderr, flush=True)
-                    last_progress = now
-            target.flush()
-            os.fsync(target.fileno())
+        with open_nand_source(source_path) as source:
+            for index in range(count):
+                final = Path(f'{destination}.{index:02d}') if split_size else destination
+                partial = Path(str(final)+'.partial')
+                digest = hashlib.sha256()
+                remaining = min(part_size, size-copied)
+                with partial.open('xb') as target:
+                    while remaining:
+                        chunk = source.read(min(1024*1024, remaining))
+                        if not chunk:
+                            raise RuntimeError(f'USB source ended after {copied} of {size} bytes.')
+                        target.write(chunk)
+                        digest.update(chunk)
+                        copied += len(chunk)
+                        remaining -= len(chunk)
+                        now = time.monotonic()
+                        if now-last_progress >= 0.5:
+                            print(f'\rBacking up {destination.name}: {copied/1048576:,.0f} / '
+                                  f'{size/1048576:,.0f} MiB ({100*copied/size:.0f}%)',
+                                  end='', file=sys.stderr, flush=True)
+                            last_progress = now
+                    target.flush()
+                    os.fsync(target.fileno())
+                print(f'\nVerifying {final.name}...', file=sys.stderr)
+                expected = digest.hexdigest()
+                if hash_file(partial) != expected:
+                    raise RuntimeError('Saved backup checksum does not match the USB data.')
+                verified.append((final, partial, expected))
     finally:
         print(file=sys.stderr)
-    print('Verifying saved backup...')
-    expected = digest.hexdigest()
-    if hash_file(partial) != expected:
-        raise RuntimeError('Saved backup checksum does not match the USB data.')
-    # On Windows rename fails if the destination exists, including a file
-    # created since the initial checks. Keep the partial on any failure.
-    os.rename(partial, destination)
-    with checksum.open('x', encoding='ascii', newline='\n') as saved:
-        saved.write(f'{expected}  {destination.name}\n')
-    print(f'Saved and verified: {destination}')
+    # Publish only after the whole export has been read and every part verified.
+    for final, partial, expected in verified:
+        os.rename(partial, final)  # Windows refuses to replace an existing file.
+        with Path(str(final)+'.sha256').open('x', encoding='ascii', newline='\n') as saved:
+            saved.write(f'{expected}  {final.name}\n')
+        print(f'Saved and verified: {final}')
 
 
 def initialize_nand_usb_native():
@@ -267,7 +281,7 @@ def get_destination_filesystem(folder):
     return filesystem.value
 
 
-def invoke_nand_usb_backup(directory=None, selected_part='All', only_eject=False):
+def invoke_nand_usb_backup(directory=None, selected_part='All', only_eject=False, split=False):
     if not only_eject and not directory:
         raise ValueError('Specify -OutputDirectory on a PC drive with enough free space.')
     if selected_part not in ('All', 'BOOT0', 'BOOT1', 'GPP'):
@@ -289,12 +303,12 @@ def invoke_nand_usb_backup(directory=None, selected_part='All', only_eject=False
         serial = disk.serial
         folder = root / serial
         folder.mkdir(exist_ok=True)
-        if get_destination_filesystem(folder).upper() == 'FAT32' and disk.size > 0xffffffff:
+        if not (split and partition == 'GPP') and get_destination_filesystem(folder).upper() == 'FAT32' and disk.size > 0xffffffff:
             raise RuntimeError('Use NTFS or exFAT for the PC destination; RAW GPP will not fit in a single FAT32 file.')
         if shutil.disk_usage(folder).free < disk.size + 1024 * 1024:
             raise RuntimeError('Not enough free space on the PC destination.')
         name = 'rawnand.bin' if partition == 'GPP' else partition
-        copy_nand_image(disk.path, disk.size, folder / name)
+        copy_nand_image(disk.path, disk.size, folder / name, split_size=2*1024**3 if split and partition == 'GPP' else 0)
         # Never request removal until copying and read-back verification succeed.
         try:
             eject_nand_usb_disk(partition, disk)
@@ -305,7 +319,7 @@ def invoke_nand_usb_backup(directory=None, selected_part='All', only_eject=False
     if selected_part == 'All':
         print(f'Full NAND backup saved in {folder}')
     else:
-        print('A full NAND backup requires BOOT0, BOOT1, and rawnand.bin from the same console.')
+        print('A full NAND backup requires BOOT0, BOOT1, and the complete RAW GPP image (one file or all numbered pieces) from the same console.')
 
 
 def parse_args(argv=None):
@@ -314,13 +328,15 @@ def parse_args(argv=None):
     parser.add_argument('-Part', '--part', type=lambda s: s.upper() if s.lower() != 'all' else 'All',
                         choices=('All', 'BOOT0', 'BOOT1', 'GPP'), default='All')
     parser.add_argument('-EjectOnly', '--eject-only', action='store_true')
+    parser.add_argument('-Split', '--split', action='store_true',
+                        help='Save RAW GPP as FAT32-compatible 2 GiB rawnand.bin.00, .01, ... files.')
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
     try:
-        invoke_nand_usb_backup(args.output_directory, args.part, args.eject_only)
+        invoke_nand_usb_backup(args.output_directory, args.part, args.eject_only, args.split)
     except KeyboardInterrupt:
         print('\nStopped. Existing files were kept; .partial files are incomplete backups.', file=sys.stderr)
         return 130
