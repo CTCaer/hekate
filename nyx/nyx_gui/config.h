@@ -53,6 +53,7 @@ typedef struct _nyx_config
 	u32 home_screen;
 	u32 verification;
 	u32 ums_emmc_rw;
+	u32 ums_usb3;
 	u32 jc_disable;
 	u32 jc_force_right;
 	u32 bpmp_clock;

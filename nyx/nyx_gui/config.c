@@ -56,6 +56,7 @@ void set_nyx_default_configuration()
 	n_cfg.home_screen    = 0;
 	n_cfg.verification   = 1;
 	n_cfg.ums_emmc_rw    = 0;
+	n_cfg.ums_usb3       = 0;
 	n_cfg.jc_disable     = 0;
 	n_cfg.jc_force_right = 0;
 	n_cfg.bpmp_clock     = 0;
@@ -231,6 +232,9 @@ int create_nyx_config_entry(bool force_unmount)
 
 	f_puts("\numsemmcrw=", &fp);
 	itoa(n_cfg.ums_emmc_rw, lbuf, 10);
+	f_puts(lbuf, &fp);
+	f_puts("\numsusb3=", &fp);
+	itoa(n_cfg.ums_usb3, lbuf, 10);
 	f_puts(lbuf, &fp);
 
 	f_puts("\njcdisable=", &fp);

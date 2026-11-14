@@ -388,6 +388,7 @@ static bool _hid_poll_touch(usb_ctxt_t *usbs)
 
 int usb_device_gadget_hid(usb_ctxt_t *usbs)
 {
+	xusb_device_set_superspeed(false);
 	int res = 0;
 	u32 gadget_type;
 	u32 polling_time;

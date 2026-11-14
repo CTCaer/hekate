@@ -21,6 +21,7 @@
 #include <usb/usbd.h>
 #include <usb/usb_descriptor_types.h>
 #include <usb/usb_t210.h>
+#include <usb/xusb_phy.h>
 
 #include <gfx_utils.h>
 #include <mem/mc.h>
@@ -386,6 +387,12 @@ typedef struct _xusbd_controller_t
 	u32  intr_idle_rate;
 	bool intr_idle_req;
 	bool bulk_reset_req;
+	bool superspeed_phy;
+	bool control_data_out;
+	bool configured_once;
+	bool deconfiguration_pending;
+	xusb_session_end_t session_end;
+	u32 last_setup, last_port_event, port_events, deconfig_requests;
 } xusbd_controller_t;
 
 extern u32 hid_report_descriptor_jc_size;
@@ -395,6 +402,16 @@ extern u8 hid_report_descriptor_touch[];
 extern usb_desc_t usb_gadget_hid_jc_descriptors;
 extern usb_desc_t usb_gadget_hid_touch_descriptors;
 extern usb_desc_t usb_gadget_ums_descriptors;
+extern usb_dev_descr_t usb_device_descriptor_ums_ss;
+extern usb_cfg_ss_descr_t usb_configuration_descriptor_ums_ss;
+extern usb_dev_bot_t usb_device_binary_object_descriptor_ss;
+
+static bool superspeed_requested;
+
+void xusb_device_set_superspeed(bool enable)
+{
+	superspeed_requested = enable;
+}
 
 // All rings and EP context must be aligned to 0x10.
 typedef struct _xusbd_event_queues_t
@@ -412,6 +429,57 @@ xusbd_event_queues_t *xusb_evtq = (xusbd_event_queues_t *)XUSB_RING_ADDR;
 
 xusbd_controller_t *usbd_xotg;
 xusbd_controller_t usbd_xotg_controller_ctxt;
+
+bool xusb_device_get_superspeed(void)
+{
+	return usbd_xotg && usbd_xotg->port_speed == XUSB_SUPER_SPEED;
+}
+
+xusb_session_end_t xusb_device_get_session_end(void)
+{
+	return usbd_xotg ? usbd_xotg->session_end : XUSB_SESSION_ACTIVE;
+}
+
+const char *xusb_device_get_usb3_status(void)
+{
+	if (!superspeed_requested)
+		return "disabled in nyx.ini";
+	if (xusb_device_get_superspeed())
+		return "SuperSpeed connected";
+	return xusb_phy_superspeed_status();
+}
+
+void xusb_device_get_diagnostics(xusb_diagnostics_t *diag)
+{
+	if (!diag)
+		return;
+	memset(diag, 0, sizeof(*diag));
+	if (!usbd_xotg)
+		return;
+
+	// Read each port view without writing PORTSC's write-one-to-clear bits.
+	// Restore the selector before returning to the transfer/event loop.
+	u32 selector = XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE);
+	diag->portsc = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTSC);
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE) =
+		(selector & ~XHCI_CFG_DEV_FE_PORTREGSEL_MASK) | XHCI_CFG_DEV_FE_PORTREGSEL_SS;
+	(void)XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE);
+	diag->ss_portsc = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTSC);
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE) =
+		(selector & ~XHCI_CFG_DEV_FE_PORTREGSEL_MASK) | XHCI_CFG_DEV_FE_PORTREGSEL_HSFS;
+	(void)XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE);
+	diag->hsfs_portsc = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTSC);
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE) = selector;
+	(void)XUSB_DEV_XHCI(XUSB_DEV_XHCI_CFG_DEV_FE);
+
+	diag->ctrl = XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL);
+	diag->portpm = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTPM);
+	diag->configuration = usbd_xotg->config_num;
+	diag->last_setup = usbd_xotg->last_setup;
+	diag->last_port_event = usbd_xotg->last_port_event;
+	diag->port_events = usbd_xotg->port_events;
+	diag->deconfig_requests = usbd_xotg->deconfig_requests;
+}
 
 static int _xusb_xhci_mask_wait(u32 reg, u32 mask, u32 val, u32 retries)
 {
@@ -432,8 +500,6 @@ static void _xusbd_ep_init_event_ring()
 {
 	memset(xusb_evtq->xusb_event_ring_seg0, 0, sizeof(xusb_evtq->xusb_event_ring_seg0));
 	memset(xusb_evtq->xusb_event_ring_seg1, 0, sizeof(xusb_evtq->xusb_event_ring_seg1));
-
-	//! TODO USB3: enable pcie regulators.
 
 	// Set Event Ring Segment 0 Base Address.
 	XUSB_DEV_XHCI(XUSB_DEV_XHCI_ERST0BALO) = (u32)xusb_evtq->xusb_event_ring_seg0;
@@ -474,7 +540,7 @@ static void _xusb_ep_set_type_and_metrics(u32 ep_idx, volatile xusb_ep_ctx_t *ep
 
 		// Set max packet size based on port speed.
 		ep_ctxt->avg_trb_len = 8;
-		ep_ctxt->max_packet_size = 64; //! TODO USB3: max_packet_size = 512.
+		ep_ctxt->max_packet_size = usbd_xotg->port_speed == XUSB_SUPER_SPEED ? 512 : 64;
 		break;
 
 	case USB_EP_BULK_OUT:
@@ -541,6 +607,7 @@ static void _xusb_ep_set_type_and_metrics(u32 ep_idx, volatile xusb_ep_ctx_t *ep
 		if (usbd_xotg->port_speed == XUSB_SUPER_SPEED)
 		{
 			ep_ctxt->max_packet_size = 1024;
+			ep_ctxt->max_burst_size = 0; // Matches the UMS companion descriptor.
 
 			//! TODO USB3:
 			// If ISO or INTR EP, set Max Esit Payload size.
@@ -630,6 +697,7 @@ static void _xusb_ep_set_type_and_metrics(u32 ep_idx, volatile xusb_ep_ctx_t *ep
 		if (usbd_xotg->port_speed == XUSB_SUPER_SPEED)
 		{
 			ep_ctxt->max_packet_size = 1024;
+			ep_ctxt->max_burst_size = 0;
 
 			//! TODO USB3:
 			// If ISO or INTR EP, set Max Esit Payload size.
@@ -913,10 +981,6 @@ int xusb_device_init()
 	// Set USB2.0 Port 0 to device mode.
 	XUSB_PADCTL(XUSB_PADCTL_USB2_PORT_CAP) = (XUSB_PADCTL(XUSB_PADCTL_USB2_PORT_CAP) & ~PADCTL_USB2_PORT_CAP_PORT_0_CAP_MASK) | PADCTL_USB2_PORT_CAP_PORT_0_CAP_DEV;
 
-	//! TODO USB3
-	// // Set USB3.0 Port 0 cap to device.
-	// XUSB_PADCTL(XUSB_PADCTL_SS_PORT_CAP) = (XUSB_PADCTL(XUSB_PADCTL_SS_PORT_CAP) & ~PADCTL_SS_PORT_CAP_0_PORT1_CAP_MASK) | PADCTL_SS_PORT_CAP_0_PORT1_CAP_DEVICE_ONLY;
-
 	// Set Super Speed Port 0 to USB2 Port 0.
 	XUSB_PADCTL(XUSB_PADCTL_SS_PORT_MAP) &= ~PADCTL_SS_PORT_MAP_PORT0_MASK; // 0: USB2_PORT0
 
@@ -971,8 +1035,7 @@ int xusb_device_init()
 	XUSB_DEV_XHCI(XUSB_DEV_XHCI_ECPLO) = (u32)xusb_evtq->xusb_ep_ctxt & 0xFFFFFFF0;
 	XUSB_DEV_XHCI(XUSB_DEV_XHCI_ECPHI) = 0;
 
-	//! TODO USB3:
-	// XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTHALT) |= DEV_XHCI_PORTHALT_STCHG_INTR_EN;
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTHALT) |= XHCI_PORTHALT_STCHG_INTR_EN;
 
 	return USB_RES_OK;
 }
@@ -980,6 +1043,8 @@ int xusb_device_init()
 //! TODO: Power down more stuff.
 static void _xusb_device_power_down()
 {
+	xusb_phy_superspeed_end();
+	usbd_xotg->superspeed_phy = false;
 	// Disable clock for XUSB Super-Speed and set source to CLK_M.
 	CLOCK(CLK_RST_CONTROLLER_RST_DEV_W_SET) = BIT(CLK_W_XUSB_SS);
 	CLOCK(CLK_RST_CONTROLLER_CLK_SOURCE_XUSB_SS) &= 0x1FFFFF00;
@@ -1268,9 +1333,20 @@ static int _xusb_handle_transfer_event(const transfer_event_trb_t *trb)
 		{
 		case XUSB_EP_CTRL_IN:
 			if (usbd_xotg->wait_for_event_trb == XUSB_TRB_DATA)
-				return _xusb_issue_status_trb(USB_DIR_OUT);
+			{
+				usb_dir_t status_dir = usbd_xotg->control_data_out ? USB_DIR_IN : USB_DIR_OUT;
+				usbd_xotg->control_data_out = false;
+				return _xusb_issue_status_trb(status_dir);
+			}
 			else if (usbd_xotg->wait_for_event_trb == XUSB_TRB_STATUS)
 			{
+				// Do not tear down the link until the host receives the status
+				// stage of SET_CONFIGURATION(0).
+				if (usbd_xotg->deconfiguration_pending)
+				{
+					usbd_xotg->deconfiguration_pending = false;
+					usbd_xotg->session_end = XUSB_SESSION_DECONFIGURED;
+				}
 				switch (usbd_xotg->device_state)
 				{
 				case XUSB_ADDRESSED_STS_WAIT:
@@ -1278,6 +1354,7 @@ static int _xusb_handle_transfer_event(const transfer_event_trb_t *trb)
 					break;
 				case XUSB_CONFIGURED_STS_WAIT:
 					usbd_xotg->device_state = XUSB_CONFIGURED;
+					usbd_xotg->configured_once = true;
 					break;
 				case XUSB_LUN_CONFIGURED_STS_WAIT:
 					usbd_xotg->device_state = XUSB_LUN_CONFIGURED;
@@ -1343,6 +1420,8 @@ static int _xusb_handle_port_change()
 {
 	u32 status = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTSC);
 	u32 halt = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTHALT);
+	usbd_xotg->last_port_event = status;
+	usbd_xotg->port_events++;
 	u32 clear_mask = XHCI_PORTSC_CEC | XHCI_PORTSC_PLC | XHCI_PORTSC_PRC | XHCI_PORTSC_WRC | XHCI_PORTSC_CSC;
 
 	// Port reset (PR).
@@ -1389,6 +1468,8 @@ static int _xusb_handle_port_change()
 	// Connect Status Change (CSC).
 	if (status & XHCI_PORTSC_CSC)
 	{
+		if (!(status & XHCI_PORTSC_CCS) && usbd_xotg->configured_once)
+			usbd_xotg->session_end = XUSB_SESSION_DISCONNECTED;
 		//! TODO: Check CCS.
 		// CCS check seems to be
 		// XHCI_PORTSC_CCS 1: device_state = XUSB_CONNECTED
@@ -1398,13 +1479,19 @@ static int _xusb_handle_port_change()
 		// Set port speed.
 		usbd_xotg->port_speed = (status & XHCI_PORTSC_PS) >> 10;
 
-		// In case host does not support Super Speed, revert the control EP packet size.
-		if (usbd_xotg->port_speed != XUSB_SUPER_SPEED)
+		// Update EP0 for either negotiated speed, including USB2 fallback.
+		if (status & XHCI_PORTSC_CCS)
 		{
 			volatile xusb_ep_ctx_t *ep_ctxt = &xusb_evtq->xusb_ep_ctxt[XUSB_EP_CTRL_IN];
 			ep_ctxt->avg_trb_len = 8;
-			ep_ctxt->max_packet_size = 64;
-			//! TODO: If super speed is supported, ep context reload, unpause and unhalt must happen.
+			ep_ctxt->max_packet_size = usbd_xotg->port_speed == XUSB_SUPER_SPEED ? 512 : 64;
+			bpmp_mmu_maintenance(BPMP_MMU_MAINT_CLEAN_WAY, false);
+			XUSB_DEV_XHCI(XUSB_DEV_XHCI_EP_RELOAD) = BIT(XUSB_EP_CTRL_IN);
+			int res = _xusb_xhci_mask_wait(XUSB_DEV_XHCI_EP_RELOAD, BIT(XUSB_EP_CTRL_IN), 0, 1000);
+			if (res)
+				return res;
+			XUSB_DEV_XHCI(XUSB_DEV_XHCI_EP_PAUSE) &= ~BIT(XUSB_EP_CTRL_IN);
+			XUSB_DEV_XHCI(XUSB_DEV_XHCI_EP_HALT) &= ~BIT(XUSB_EP_CTRL_IN);
 		}
 
 		// Clear CSC bit.
@@ -1528,7 +1615,6 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 	switch (descriptor_type)
 	{
 	case USB_DESCRIPTOR_DEVICE:
-		//! TODO USB3: Provide a super speed descriptor.
 /*
 		u32 soc_rev = APB_MISC(APB_MISC_GP_HIDREV);
 		usb_device_descriptor.idProduct  = (soc_rev >> 8)  & 0xFF; // chip_id.
@@ -1538,9 +1624,16 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 */
 		desc = usbd_xotg->desc->dev;
 		size = usbd_xotg->desc->dev->bLength;
+		if (usbd_xotg->port_speed == XUSB_SUPER_SPEED)
+			desc = &usb_device_descriptor_ums_ss;
 		break;
 	case USB_DESCRIPTOR_CONFIGURATION:
-		//! TODO USB3: Provide a super speed descriptor.
+		if (usbd_xotg->port_speed == XUSB_SUPER_SPEED)
+		{
+			desc = &usb_configuration_descriptor_ums_ss;
+			size = sizeof(usb_configuration_descriptor_ums_ss);
+			break;
+		}
 		if (usbd_xotg->gadget == USB_GADGET_UMS)
 		{
 			if (usbd_xotg->port_speed == XUSB_HIGH_SPEED) // High speed. 512 bytes.
@@ -1603,7 +1696,7 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 		}
 		break;
 	case USB_DESCRIPTOR_DEVICE_QUALIFIER:
-		if (!usbd_xotg->desc->dev_qual)
+		if (usbd_xotg->port_speed == XUSB_SUPER_SPEED || !usbd_xotg->desc->dev_qual)
 		{
 			xusb_set_ep_stall(XUSB_EP_CTRL_IN, USB_EP_CFG_STALL);
 			return USB_RES_OK;
@@ -1613,7 +1706,7 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 		size = usbd_xotg->desc->dev_qual->bLength;
 		break;
 	case USB_DESCRIPTOR_OTHER_SPEED_CONFIGURATION:
-		if (!usbd_xotg->desc->cfg_other)
+		if (usbd_xotg->port_speed == XUSB_SUPER_SPEED || !usbd_xotg->desc->cfg_other)
 		{
 			xusb_set_ep_stall(XUSB_EP_CTRL_IN, USB_EP_CFG_STALL);
 			return USB_RES_OK;
@@ -1634,6 +1727,8 @@ static int _xusb_handle_get_descriptor(const usb_ctrl_setup_t *ctrl_setup)
 	case USB_DESCRIPTOR_DEVICE_BINARY_OBJECT:
 		desc = usbd_xotg->desc->dev_bot;
 		size = usbd_xotg->desc->dev_bot->wTotalLength;
+		if (usbd_xotg->superspeed_phy)
+			desc = &usb_device_binary_object_descriptor_ss;
 		break;
 	default:
 		xusb_set_ep_stall(XUSB_EP_CTRL_IN, USB_EP_CFG_STALL);
@@ -1665,13 +1760,15 @@ static void _xusb_handle_set_request_configuration(const usb_ctrl_setup_t *ctrl_
 	// Remove configuration.
 	if (!usbd_xotg->config_num)
 	{
-		//! TODO: Signal that to userspace.
+		usbd_xotg->deconfig_requests++;
+		usbd_xotg->deconfiguration_pending = usbd_xotg->configured_once;
 		_xusb_disable_ep1();
 
 		_xusb_issue_status_trb(USB_DIR_IN);
 
 		return;
 	}
+	usbd_xotg->deconfiguration_pending = false;
 
 	// Initialize BULK EPs.
 	_xusbd_ep_initialize(USB_EP_BULK_OUT);
@@ -1697,11 +1794,15 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 	u16 _wValue        = ctrl_setup->wValue;
 	u16 _wIndex        = ctrl_setup->wIndex;
 	u16 _wLength       = ctrl_setup->wLength;
+	usbd_xotg->last_setup = ((u32)_bmRequestType << 24) | ((u32)_bRequest << 16) | _wValue;
 
 	static u8 xusb_dev_status_descriptor[2] = {USB_STATUS_DEV_SELF_POWERED, 0};
 	static u8 xusb_interface_descriptor[4] = {0};
 	static u8 xusb_configuration_descriptor[2] = {0};
 	static u8 xusb_status_descriptor[2] = {0};
+	usbd_xotg->control_data_out = false;
+	// A new setup packet supersedes any pending EP0 status stage.
+	usbd_xotg->deconfiguration_pending = false;
 
 	//gfx_printf("ctrl: %02X %02X %04X %04X %04X\n", _bmRequestType, _bRequest, _wValue, _wIndex, _wLength);
 
@@ -1718,7 +1819,30 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 			_xusb_handle_set_request_dev_address(ctrl_setup);
 		else if (_bRequest == USB_REQUEST_SET_CONFIGURATION)
 			_xusb_handle_set_request_configuration(ctrl_setup);
-		return USB_RES_OK; // What about others.
+		else if (usbd_xotg->port_speed == XUSB_SUPER_SPEED &&
+			_bRequest == USB_REQUEST_SET_SEL && !_wValue && !_wIndex && _wLength == 6)
+		{
+			usbd_xotg->control_data_out = true;
+			return _xusb_issue_data_trb((u8 *)USB_EP_CONTROL_BUF_ADDR, 6, USB_DIR_OUT);
+		}
+		else if (usbd_xotg->port_speed == XUSB_SUPER_SPEED &&
+			_bRequest == USB_REQUEST_SET_ISOCH_DELAY && !_wIndex && !_wLength)
+			return _xusb_issue_status_trb(USB_DIR_IN); // No isochronous endpoints.
+		else if (usbd_xotg->port_speed == XUSB_SUPER_SPEED && !_wIndex && !_wLength &&
+			(_bRequest == USB_REQUEST_SET_FEATURE || _bRequest == USB_REQUEST_CLEAR_FEATURE) &&
+			(_wValue == USB_FEATURE_U1_ENABLE || _wValue == USB_FEATURE_U2_ENABLE))
+		{
+			u32 mask = _wValue == USB_FEATURE_U1_ENABLE ? BIT(28) : BIT(29);
+			// Tegra210's U1 entry is disabled in the upstream device driver.
+			if (_bRequest == USB_REQUEST_SET_FEATURE && _wValue == USB_FEATURE_U2_ENABLE)
+				XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTPM) |= mask;
+			else
+				XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTPM) &= ~mask;
+			return _xusb_issue_status_trb(USB_DIR_IN);
+		}
+		else
+			xusb_set_ep_stall(XUSB_EP_CTRL_IN, USB_EP_CFG_STALL);
+		return USB_RES_OK;
 
 	case (USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_INTERFACE): // 0x01.
 		usbd_xotg->interface_num = _wValue;
@@ -1767,6 +1891,15 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 		switch (_bRequest)
 		{
 		case USB_REQUEST_GET_STATUS:
+			xusb_dev_status_descriptor[0] = USB_STATUS_DEV_SELF_POWERED;
+			if (usbd_xotg->port_speed == XUSB_SUPER_SPEED)
+			{
+				u32 pm = XUSB_DEV_XHCI(XUSB_DEV_XHCI_PORTPM);
+				if (pm & BIT(28))
+					xusb_dev_status_descriptor[0] |= BIT(2);
+				if (pm & BIT(29))
+					xusb_dev_status_descriptor[0] |= BIT(3);
+			}
 			desc = xusb_dev_status_descriptor;
 			size = sizeof(xusb_dev_status_descriptor);
 			transmit_data = true;
@@ -1895,6 +2028,8 @@ static int _xusbd_handle_ep0_control_transfer(usb_ctrl_setup_t *ctrl_setup)
 
 static int _xusb_ep_operation(u32 tries)
 {
+	if (xusb_device_get_session_end() != XUSB_SESSION_ACTIVE)
+		return USB2_ERROR_XFER_EP_DISABLED;
 	usb_ctrl_setup_t setup_event;
 	volatile event_trb_t *event_trb;
 	setup_event_trb_t *setup_event_trb;
@@ -1977,6 +2112,8 @@ int xusb_device_enumerate(usb_gadget_type gadget)
 	}
 
 	usbd_xotg->gadget = gadget;
+	if (gadget == USB_GADGET_UMS && superspeed_requested)
+		usbd_xotg->superspeed_phy = xusb_phy_superspeed_init();
 
 	/*
 	 * Set interrupt moderation to 0us.
@@ -1987,7 +2124,8 @@ int xusb_device_enumerate(usb_gadget_type gadget)
 
 	// Disable Wake events.
 	XUSB_PADCTL(XUSB_PADCTL_ELPG_PROGRAM_0) = 0;
-	XUSB_PADCTL(XUSB_PADCTL_ELPG_PROGRAM_1) = 0;
+	if (!usbd_xotg->superspeed_phy)
+		XUSB_PADCTL(XUSB_PADCTL_ELPG_PROGRAM_1) = 0;
 
 	// Enable overrides for VBUS and ID.
 	XUSB_PADCTL(XUSB_PADCTL_USB2_VBUS_ID) = (XUSB_PADCTL(XUSB_PADCTL_USB2_VBUS_ID) & ~(PADCTL_USB2_VBUS_ID_VBUS_OVR_MASK | PADCTL_USB2_VBUS_ID_SRC_MASK)) |
@@ -2030,10 +2168,28 @@ int xusb_device_enumerate(usb_gadget_type gadget)
 	return USB_RES_OK;
 }
 
+static void _xusb_device_disconnect(void)
+{
+	// Withdraw the device while its clocks and PHY are still running. Merely
+	// resetting the controller can leave an ejected SuperSpeed device present
+	// at the host until the user physically disconnects the cable.
+	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL) &= ~XHCI_CTRL_ENABLE;
+	XUSB_PADCTL(XUSB_PADCTL_USB2_VBUS_ID) =
+		(XUSB_PADCTL(XUSB_PADCTL_USB2_VBUS_ID) &
+		 ~(PADCTL_USB2_VBUS_ID_VBUS_OVR_MASK | PADCTL_USB2_VBUS_ID_VBUS_ON)) |
+		PADCTL_USB2_VBUS_ID_VBUS_OVR_EN;
+	(void)XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL);
+	(void)XUSB_PADCTL(XUSB_PADCTL_USB2_VBUS_ID);
+	// Give the host a disconnect interval before removing the PHY clocks.
+	usleep(100000);
+}
+
 void xusb_end(bool reset_ep, bool only_controller)
 {
 	// Disable endpoints and stop device mode operation.
 	_xusb_disable_ep1();
+
+	_xusb_device_disconnect();
 
 	// Disable device mode.
 	XUSB_DEV_XHCI(XUSB_DEV_XHCI_CTRL) = 0;
