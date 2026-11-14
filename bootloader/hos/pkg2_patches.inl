@@ -917,6 +917,30 @@ static const kip1_patchset_t _fs_patches_2300_exfat[] = {
 	{ NULL, NULL }
 };
 
+static const kip1_patch_t _fs_nogc_2350[] = {
+	{ KPS(KIP_TEXT) | 0x186250, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1B35CD, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1B35E5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ 0, 0, NULL, NULL }
+};
+
+static const kip1_patchset_t _fs_patches_2350[] = {
+	{ "nogc",     _fs_nogc_2350 },
+	{ NULL, NULL }
+};
+
+static const kip1_patch_t _fs_nogc_2350_exfat[] = {
+	{ KPS(KIP_TEXT) | 0x191450, 8, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_NOINIT },
+	{ KPS(KIP_TEXT) | 0x1BE7CD, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ KPS(KIP_TEXT) | 0x1BE7E5, 1, KIP1_PATCH_SRC_NO_CHECK, KIP1_FS_NOGC_PATCH_SDMMC3 },
+	{ 0, 0, NULL, NULL }
+};
+
+static const kip1_patchset_t _fs_patches_2350_exfat[] = {
+	{ "nogc",     _fs_nogc_2350_exfat },
+	{ NULL, NULL }
+};
+
 // SHA256 hashes.
 static const kip1_id_t _kip_ids[] =
 {
@@ -996,4 +1020,6 @@ static const kip1_id_t _kip_ids[] =
 	{ "FS", "\xD4\x45\x28\x29\x5B\x41\x92\xBA", _fs_patches_2200_exfat }, // FS 22.5.0 exFAT
 	{ "FS", "\x34\x38\x3E\xE7\x99\x92\x63\x40", _fs_patches_2300 },       // FS 23.0.0
 	{ "FS", "\xFD\xAF\x16\x32\x88\xE1\x08\x05", _fs_patches_2300_exfat }, // FS 23.0.0 exFAT
+	{ "FS", "\x01\xED\x6B\x87\x4C\x1F\xEF\x41", _fs_patches_2350 },       // FS 23.5.0
+	{ "FS", "\x7B\x90\x28\x37\xF2\x00\x27\x49", _fs_patches_2350_exfat }, // FS 23.5.0 exFAT
 };
